@@ -1891,7 +1891,7 @@ app.get('/', (req, res) => {
     status: 'online',
     bot: 'Ultimate Vault Claude - Supreme Strategic Intelligence',
     commander: 'Sum Chenda - Reformed Fund Architect Dynasty Builder',
-    version: '4.0.0 - Ultimate Unlimited Edition (900+ Lines)',
+    version: '4.0.0 - Ultimate Dynasty Edition (1,971 Lines)',
     intelligence_stats: {
       total_conversations: ultimateLearningDatabase.size,
       success_strategies: (successMetrics.get('proven_approaches') || []).length,
@@ -1956,7 +1956,7 @@ const startUltimateSystem = async () => {
     console.log('📊 Complete intelligence databases initialized and accumulating wisdom');
     console.log('🚀 Dynasty-level strategic capabilities online - unlimited potential activated');
     console.log('💎 The most advanced personal AI strategic system ever created is now serving Commander');
-    console.log('🎯 1000+ lines of ultimate strategic intelligence architecture fully deployed');
+    console.log('🎯 1,971 lines of ultimate strategic intelligence architecture fully deployed');
     console.log('🔥 All 7 specialized learning databases operational and growing exponentially');
     console.log('🌍 REAL-TIME GLOBAL DATA ACCESS: Cambodia market intelligence, economic indicators, forex rates, crypto prices, business news, and trade data');
     console.log('💾 PERMANENT MEMORY: PostgreSQL database storing all conversations, market intelligence, and strategic patterns');
