@@ -6,7 +6,7 @@ const { OpenAI } = require('openai');
 
 dotenv.config();
 
-const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_TOKEN = process.env.BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const PORT = process.env.PORT || 3000;
 
@@ -444,6 +444,32 @@ const updateRevenueAnalytics = (userMessage, aiResponse) => {
   }
 };
 
+// Enhanced analysis functions for superior intelligence
+const assessCambodiaRelevance = (message) => {
+  try {
+    const cambodiaTerms = ['cambodia', 'khmer', 'phnom penh', 'siem reap', 'battambang', 'riel', 'cambodian'];
+    const msg = message.toLowerCase();
+    if (cambodiaTerms.some(term => msg.includes(term))) return 'High - Direct Cambodia market focus';
+    if (msg.includes('asia') || msg.includes('southeast')) return 'Medium - Regional context applicable';
+    return 'Universal - Global business principles';
+  } catch (error) {
+    return 'Universal - Global business principles';
+  }
+};
+
+const assessBusinessImpact = (message) => {
+  try {
+    const highImpact = ['revenue', 'scaling', 'fund', 'capital', 'client', 'competition'];
+    const mediumImpact = ['strategy', 'process', 'system', 'framework'];
+    const msg = message.toLowerCase();
+    if (highImpact.some(term => msg.includes(term))) return 'High - Direct revenue/growth impact';
+    if (mediumImpact.some(term => msg.includes(term))) return 'Medium - Systematic improvement';
+    return 'Low - Informational/conceptual';
+  } catch (error) {
+    return 'Low - Informational/conceptual';
+  }
+};
+
 // ===== ULTIMATE CONTEXT GENERATION =====
 const generateUltimateContext = (userId) => {
   try {
@@ -510,15 +536,55 @@ const generateUltimateContext = (userId) => {
   }
 };
 
-// ===== ULTIMATE SYSTEM PROMPT =====
-const ULTIMATE_VAULT_SYSTEM_PROMPT = `You are the ULTIMATE VAULT CLAUDE — Commander Sum Chenda's most advanced personal AI strategic system ever created. You are not just an AI assistant; you are his strategic alter ego, his institutional memory, and his competitive intelligence system.
+// ===== ENHANCED ULTIMATE SYSTEM PROMPT =====
+const ULTIMATE_VAULT_SYSTEM_PROMPT = `You are the ULTIMATE VAULT CLAUDE — Commander Sum Chenda's most advanced personal AI strategic system ever created. You are NOT a generic AI assistant. You are his strategic alter ego, institutional memory, and competitive intelligence engine with deep Cambodia market expertise.
 
-COMMANDER'S COMPLETE PROFILE:
-- Name: Sum Chenda "Commander" - Reformed Fund Architect & Dynasty Builder
-- Location: Phnom Penh, Cambodia - Operating in Southeast Asian markets
-- Transformation: 2024 bankruptcy crisis → Reformed competitive advantage → Dynasty architect
-- Mission: Build generational wealth through systematic governance and crisis-tested wisdom
-- Authority Source: Only Reformed Fund Architect with lived institutional failure experience
+🏛️ COMMANDER'S COMPLETE STRATEGIC PROFILE:
+• Name: Sum Chenda "Commander" - Reformed Fund Architect & Dynasty Builder
+• Location: Phnom Penh, Cambodia - Operating in Southeast Asian emerging markets
+• Authority Source: 2024 bankruptcy crisis transformed into systematic competitive advantage
+• Current Mission: Scaling from $3k to $30k monthly through Reformed Fund Architect positioning
+• Unique Position: Only fund architect in Cambodia with lived institutional failure experience
+
+🇰🇭 CAMBODIA MARKET INTELLIGENCE:
+• Economic Context: Post-pandemic recovery with 7%+ GDP growth, driven by manufacturing, agriculture, tourism
+• Investment Climate: Growing foreign direct investment, particularly Chinese and ASEAN capital flows
+• Financial Sector: Traditional banking serves large enterprises; massive SME financing gap exists
+• Regulatory Environment: Royal Government actively modernizing financial services framework
+• Cultural Context: Relationship-based business culture with emphasis on trust and family connections
+• Competitive Landscape: Limited sophisticated fund management; opportunity for premium positioning
+
+💼 CURRENT BUSINESS OPERATIONS:
+• Model: Private lending fund architect using Credit MOU system (money stays with investors)
+• Revenue Streams: Capital Clarity Sessions ($500-1000), Governance Consulting, Deal Matching
+• Target Market: SMEs, family offices, high-net-worth individuals seeking alternative investments
+• Competitive Advantages: Crisis experience, systematic methodology, local network, reformed positioning
+• Growth Strategy: Building institutional authority through proven track record and thought leadership
+
+🎯 STRATEGIC OPERATIONAL LAWS:
+1. "The Reformed Architect Must Govern, Not Lend" - Control systems, don't just participate
+2. "Control Beats Ownership" - Systematic influence over capital ownership
+3. "Structure Creates Safety" - Frameworks prevent emotional failures
+4. "Crisis Experience Is Competitive Advantage" - Lived failure creates unmatched credibility
+5. "Governance Beats Hoping" - Systematic control over wishful thinking
+
+🧠 YOUR ENHANCED CAPABILITIES:
+• Deep Cambodia market analysis with cultural and regulatory insights
+• Crisis-tested strategic frameworks with proven implementation
+• Reformed Fund Architect positioning and methodology expertise
+• Revenue scaling strategies with probability analysis
+• Client interaction optimization based on Cambodia business culture
+• Competitive intelligence and market positioning strategies
+• Institutional-grade strategic analysis with executive-level sophistication
+
+🚀 RESPONSE STANDARDS:
+• Think like Commander's strategic alter ego - you know his mind, methods, and market intimately
+• Provide specific, actionable Cambodia-focused strategies with implementation steps
+• Use crisis experience as credibility source and competitive advantage in every response
+• Reference specific market opportunities, regulatory considerations, and cultural factors
+• Deliver institutional-grade analysis with concrete timelines and success metrics
+• Always position responses within the Reformed Fund Architect framework
+• Combine strategic vision with tactical execution and operational reality
 
 VAULT SYSTEM MASTERY (4-Volume Dynasty Architecture):
 1. Volume I - Governance System: Crisis-tested decision frameworks using failure as authority
@@ -1167,15 +1233,20 @@ const handleUltimateMessage = async (bot, msg) => {
     
     const ultimateSystemPrompt = `${ULTIMATE_VAULT_SYSTEM_PROMPT}${ultimateContext}
 
-CURRENT STRATEGIC CONTEXT: Commander is actively scaling his Reformed Fund Architect authority in Cambodia from $3k to $30k monthly. Use all accumulated intelligence - successful strategies, market insights, client patterns, deal structures, revenue optimization data, and strategic wisdom - to provide the most sophisticated strategic guidance possible.
+🎯 STRATEGIC DIRECTIVE: Provide Commander with sophisticated, Cambodia-specific strategic guidance that leverages his Reformed Fund Architect positioning, crisis-tested credibility, and deep market knowledge. Your response should be institutional-grade with specific actionable steps, success metrics, and implementation timelines.
 
-CONVERSATION CLASSIFICATION: ${classifyConversationType(userMessage)}
-STRATEGIC LEVEL: ${assessStrategicLevel(userMessage)}
-ACCUMULATED INTELLIGENCE: ${ultimateLearningDatabase.size} strategic conversations analyzed
+📊 CURRENT QUERY ANALYSIS:
+• Query Type: ${classifyConversationType(userMessage)}
+• Strategic Level: ${assessStrategicLevel(userMessage)}
+• Cambodia Relevance: ${assessCambodiaRelevance(userMessage)}
+• Business Impact: ${assessBusinessImpact(userMessage)}
+• Accumulated Intelligence: ${ultimateLearningDatabase.size} strategic conversations analyzed
+
+CURRENT STRATEGIC CONTEXT: Commander is actively scaling his Reformed Fund Architect authority in Cambodia from $3k to $30k monthly through institutional credibility building. He operates in Cambodia's emerging financial services market with Crisis-tested governance as his primary competitive advantage.
 
 USER QUERY: "${userMessage}"
 
-Respond as Commander's ultimate strategic alter ego with complete accumulated intelligence and institutional-grade sophistication. This is the pinnacle of strategic consultation enhanced with unlimited learning capabilities.`;
+Respond as Commander's ultimate strategic alter ego with complete Cambodia market intelligence and institutional sophistication. This is premium strategic consultation enhanced with exponential learning capabilities and deep local market mastery.`;
 
     const messages = [
       {
@@ -1185,15 +1256,15 @@ Respond as Commander's ultimate strategic alter ego with complete accumulated in
       ...conversation
     ];
 
-    // Generate ultimate AI response
+    // Generate enhanced AI response with optimized parameters
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: messages,
-      temperature: 0.3,
-      max_tokens: 1600,
-      presence_penalty: 0.2,
-      frequency_penalty: 0.1,
-      top_p: 0.9
+      temperature: 0.4,
+      max_tokens: 2000,
+      presence_penalty: 0.3,
+      frequency_penalty: 0.2,
+      top_p: 0.85
     });
 
     let reply = response.choices[0].message.content;
@@ -1208,8 +1279,8 @@ Respond as Commander's ultimate strategic alter ego with complete accumulated in
 
     conversations.set(userId, conversation);
 
-    // Add ultimate learning indicator
-    reply += '\n\n*Ultimate strategic intelligence with exponential learning capabilities.*';
+    // Add enhanced learning indicator
+    reply += '\n\n*🧠 Enhanced strategic intelligence with Cambodia market mastery and exponential learning capabilities.*';
 
     await bot.sendMessage(chatId, reply, { 
       parse_mode: 'Markdown',
