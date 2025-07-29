@@ -1,10 +1,54 @@
 // index.js - Entry point for Railway deployment
-// This file simply loads the main bot directly
+// This file loads the Ultimate Vault Claude bot with error handling
 
 console.log('🏛️ Starting IMPERIUM VAULT SYSTEM...');
 console.log('⚡ Initializing Ultimate Vault Claude Strategic AI...');
 
-// Load the main bot application directly
-require('./bot.js');
+// Try multiple paths to find the bot file
+const fs = require('fs');
+const path = require('path');
 
-console.log('🚀 Entry point loaded - Ultimate Vault Claude starting...');
+let botPath = null;
+
+// Check possible bot file locations
+const possiblePaths = [
+  './bot.js',
+  './src/bot.js',
+  path.join(__dirname, 'bot.js'),
+  path.join(__dirname, 'src', 'bot.js')
+];
+
+console.log('🔍 Searching for bot.js file...');
+for (const testPath of possiblePaths) {
+  try {
+    if (fs.existsSync(testPath)) {
+      botPath = testPath;
+      console.log(`✅ Found bot.js at: ${testPath}`);
+      break;
+    }
+  } catch (error) {
+    console.log(`❌ Cannot access: ${testPath}`);
+  }
+}
+
+if (!botPath) {
+  console.error('🚨 CRITICAL ERROR: bot.js file not found in any expected location');
+  console.log('📁 Current directory contents:');
+  try {
+    const files = fs.readdirSync('.');
+    files.forEach(file => console.log(`  - ${file}`));
+  } catch (error) {
+    console.error('Cannot read directory:', error.message);
+  }
+  process.exit(1);
+}
+
+// Load the main bot application
+console.log(`🚀 Loading Ultimate Vault Claude from: ${botPath}`);
+try {
+  require(botPath);
+  console.log('✅ Ultimate Vault Claude Strategic AI loaded successfully!');
+} catch (error) {
+  console.error('🚨 FATAL ERROR loading bot:', error.message);
+  process.exit(1);
+}
