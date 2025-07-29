@@ -164,6 +164,18 @@ const getRealTimeIntelligence = async (userMessage) => {
 };
 
 // ===== MESSAGE OPTIMIZATION FUNCTIONS =====
+const cleanTextForTelegram = (text) => {
+  // Remove all markdown formatting that causes *** issues
+  return text
+    .replace(/(\*{1,3})(.*?)\1/g, '$2')  // Remove *, **, *** formatting
+    .replace(/_{1,3}(.*?)_{1,3}/g, '$1')  // Remove underscores
+    .replace(/`{1,3}(.*?)`{1,3}/g, '$1')  // Remove backticks
+    .replace(/#{1,6}\s/g, '')  // Remove hashtag headers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Convert links to plain text
+    .replace(/\n{3,}/g, '\n\n')  // Limit multiple newlines
+    .trim();
+};
+
 const smartSplitMessage = (text) => {
   const maxLength = 4000;
   if (text.length <= maxLength) return [text];
@@ -1769,7 +1781,7 @@ USER QUERY: "${userMessage}"
 
 Respond as Commander's ultimate strategic alter ego with complete Cambodia market intelligence and institutional sophistication. This is premium strategic consultation enhanced with exponential learning capabilities and deep local market mastery.
 
-🎨 CRITICAL FORMATTING REQUIREMENT: Your response MUST be formatted for optimal Telegram display with strategic emojis, clear visual hierarchy, bullet points with checkmarks, and professional structure. Keep formatting simple and clean for mobile readability across all devices and Telegram clients.`;
+🎨 CRITICAL FORMATTING REQUIREMENT: Your response MUST use PLAIN TEXT ONLY without any markdown formatting (no *, **, ***, _, \`, etc.). Use strategic emojis, clear visual hierarchy with bullet points (•), checkmarks (✅), and professional structure. Keep formatting simple and clean for optimal Telegram display across all devices and clients.`;
 
     const messages = [
       {
@@ -1800,6 +1812,9 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
     });
 
     let reply = response.choices[0].message.content;
+    
+    // Clean text to remove formatting issues that cause *** symbols
+    reply = cleanTextForTelegram(reply);
 
     // ULTIMATE AUTO-LEARNING: Store complete intelligence
     ultimateLearnFromConversation(userId, userMessage, reply);
@@ -1828,7 +1843,6 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
       const chunks = smartSplitMessage(reply);
       for (let i = 0; i < chunks.length; i++) {
         await bot.sendMessage(chatId, chunks[i], { 
-          parse_mode: 'HTML',
           disable_web_page_preview: true 
         });
         if (i < chunks.length - 1) {
@@ -1837,7 +1851,6 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
       }
     } else {
       await bot.sendMessage(chatId, reply, { 
-        parse_mode: 'HTML',
         disable_web_page_preview: true 
       });
     }
