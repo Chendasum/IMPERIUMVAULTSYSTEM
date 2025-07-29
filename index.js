@@ -48,7 +48,10 @@ console.log(`🚀 Loading Ultimate Vault Claude from: ${botPath}`);
 try {
   require(botPath);
   console.log('✅ Ultimate Vault Claude Strategic AI loaded successfully!');
+  console.log('🏛️ ULTIMATE VAULT CLAUDE SUPREME STRATEGIC INTELLIGENCE SYSTEM FULLY OPERATIONAL');
 } catch (error) {
   console.error('🚨 FATAL ERROR loading bot:', error.message);
+  console.error('Full error details:', error);
+  console.error('Stack trace:', error.stack);
   process.exit(1);
 }
