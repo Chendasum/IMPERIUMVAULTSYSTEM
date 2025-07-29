@@ -456,7 +456,7 @@ Respond as Commander's personal strategic advisor with institutional-grade profe
 
     // Get AI response with optimized parameters
     const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o',
       messages: messages,
       temperature: 0.3, // Lower for more professional consistency
       max_tokens: 1200, // Increased for detailed professional responses
