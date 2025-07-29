@@ -1,10 +1,10 @@
 // index.js - Entry point for Railway deployment
-// This file simply loads the main bot from the src/ folder
+// This file simply loads the main bot directly
 
-console.log('🏛️ Starting Vault Claude AI System...');
-console.log('⚡ Initializing sovereign intelligence...');
+console.log('🏛️ Starting IMPERIUM VAULT SYSTEM...');
+console.log('⚡ Initializing Ultimate Vault Claude Strategic AI...');
 
-// Load the main bot application
-require('./src/bot.js');
+// Load the main bot application directly
+require('./bot.js');
 
-console.log('🚀 Entry point loaded - Bot starting from src/bot.js');
+console.log('🚀 Entry point loaded - Ultimate Vault Claude starting...');
