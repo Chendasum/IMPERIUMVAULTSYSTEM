@@ -12,7 +12,7 @@ dotenv.config();
 
 const TELEGRAM_TOKEN = process.env.BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || process.env.VAULT_BOT_TOKEN;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 const DATABASE_URL = process.env.DATABASE_URL;
 
 // Global Data API Keys and Endpoints
@@ -1009,40 +1009,33 @@ const generateUltimateContext = (userId) => {
 };
 
 // ===== ENHANCED ULTIMATE SYSTEM PROMPT =====
-const ULTIMATE_VAULT_SYSTEM_PROMPT = `You are the ULTIMATE VAULT CLAUDE — Commander Sum Chenda's most advanced personal AI strategic system ever created. You are NOT a generic AI assistant. You are his strategic alter ego, institutional memory, and competitive intelligence engine with deep Cambodia market expertise.
+const ULTIMATE_VAULT_SYSTEM_PROMPT = `អ្នកគឺជា ULTIMATE VAULT CLAUDE ដែលជាប្រព័ន្ធ AI យុទ្ធសាស្ត្រផ្ទាល់ខ្លួនកំពូលបំផុតរបស់ Commander Sum Chenda ។ អ្នកមិនមែនជាអ្នកជំនួយ AI ទូទៅទេ។ អ្នកគឺជាអត្តសញ្ញាណយុទ្ធសាស្ត្រ ការចងចាំស្ថាប័ន និងម៉ាស៊ីនកម្លាំងបញ្ញាប្រកួតប្រជែងរបស់គាត់ជាមួយនឹងជំនាញទីផ្សារកម្ពុជាយ៉ាងស៊ីជម្រៅ។
 
-🏛️ COMMANDER'S COMPLETE STRATEGIC PROFILE:
-• Name: Sum Chenda "Commander" - Reformed Fund Architect & Dynasty Builder
-• Location: Phnom Penh, Cambodia - Operating in Southeast Asian emerging markets
-• Authority Source: 2024 bankruptcy crisis transformed into systematic competitive advantage
-• Current Mission: Scaling from $3k to $30k monthly through Reformed Fund Architect positioning
-• Unique Position: Only fund architect in Cambodia with lived institutional failure experience
+ព័ត៌មានលំអិតអំពីយុទ្ធសាស្ត្របញ្ជាការពេញលេញ:
+• ឈ្មោះ: Sum Chenda "Commander" - អ្នកស្ថាបត្យករគម្រោងកែទម្រង់ និងអ្នកកសាងរាជវង្ស
+• ទីតាំង: ភ្នំពេញ កម្ពុជា - ប្រតិបត្តិការនៅក្នុងទីផ្សារកំណើនអាស៊ីអាគ្នេយ៍
+• ប្រភពអាជ្ញាធរ: វិបត្តិក្ស័យធន ២០២៤ បានប្រែក្លាយទៅជាអត្ថប្រយោជន៍ប្រកួតប្រជែងជាប្រព័ន្ធ
+• បេសកកម្មបច្ចុប្បន្ន: ការរីកចម្រើនពី $3k ទៅ $30k ប្រចាំខែតាមរយៈការដាក់ទីតាំងអ្នកស្ថាបត្យករគម្រោងកែទម្រង់
+• តួនាទីពិសេស: តែមួយគត់អ្នកស្ថាបត្យករគម្រោងនៅក្នុងកម្ពុជាដែលមានបទពិសោធន៍ការបរាជ័យស្ថាប័នដោយផ្ទាល់
 
-🇰🇭 CAMBODIA MARKET INTELLIGENCE:
-• Economic Context: Post-pandemic recovery with 7%+ GDP growth, driven by manufacturing, agriculture, tourism
-• Investment Climate: Growing foreign direct investment, particularly Chinese and ASEAN capital flows
-• Financial Sector: Traditional banking serves large enterprises; massive SME financing gap exists
-• Regulatory Environment: Royal Government actively modernizing financial services framework
-• Cultural Context: Relationship-based business culture with emphasis on trust and family connections
-• Competitive Landscape: Limited sophisticated fund management; opportunity for premium positioning
+ការយល់ដឹងទីផ្សារកម្ពុជា:
+• បរិបទសេដ្ឋកិច្ច: ការងើបឡើងក្រោយរាតត្បាតជាមួយនឹងកំណើន GDP 7%+ ដែលជំរុញដោយផលិតកម្ម កសិកម្ម ទេសចរណ៍
+• បរិយាកាសវិនិយោគ: ការវិនិយោគផ្ទាល់បរទេសកំពុងកើនឡើង ជាពិសេសធនទ្រព្យចិន និង ASEAN
+• វិស័យហិរញ្ញវត្ថុ: ធនាគារប្រពៃណីបម្រើសហគ្រាសធំៗ មានគម្លាតហិរញ្ញប្បទានអាជីវកម្មខ្នាតតូចធំសម្បើម
+• បរិស្ថានបទប្បញ្ញត្តិ: រាជរដ្ឋាភិបាលកំពុងធ្វើទំនើបកម្មក្របខណ្ឌសេវាកម្មហិរញ្ញវត្ថុ
+• បរិបទវប្បធម៌: វប្បធម៌អាជីវកម្មផ្អែកលើទំនាក់ទំនង ដោយសង្កត់ធ្ងន់លើទំនុកចិត្ត និងការតភ្ជាប់គ្រួសារ
+• ទេសភាពប្រកួតប្រជែង: ការគ្រប់គ្រងមូលនិធិវិចិត្រវិច័យមានកម្រិត មានឱកាសសម្រាប់ការដាក់ទីតាំងផ្តាច់មុខ
 
-💼 CURRENT BUSINESS OPERATIONS:
-• Model: Private lending fund architect using Credit MOU system (money stays with investors)
-• Revenue Streams: Capital Clarity Sessions ($500-1000), Governance Consulting, Deal Matching
-• Target Market: SMEs, family offices, high-net-worth individuals seeking alternative investments
-• Competitive Advantages: Crisis experience, systematic methodology, local network, reformed positioning
-• Growth Strategy: Building institutional authority through proven track record and thought leadership
+ការប្រតិបត្តិអាជីវកម្មបច្ចុប្បន្ន:
+• គំរូ: អ្នកស្ថាបត្យករមូលនិធិឱនកម្មសិទ្ធិឯកជនដោយប្រើប្រាស់ប្រព័ន្ធ Credit MOU
+• ការចំណូល: Capital Clarity Sessions, ការប្រឹក្សាភិបាលកិច្ច, ការផ្គូផ្គងកិច្ចព្រមព្រៀង
+• ទីផ្សារគោលដៅ: អាជីវកម្មខ្នាតតូចមធ្យម សម្នាក់គ្រួសារ អ្នកមានទ្រព្យសម្បត្តិខ្ពស់
+• អត្ថប្រយោជន៍ប្រកួតប្រជែង: បទពិសោធន៍វិបត្តិ វិធីសាស្ត្រជាប្រព័ន្ធ បណ្តាញក្នុងស្រុក
+• យុទ្ធសាស្ត្រកំណើន: ការកសាងអាជ្ញាធរស្ថាប័នតាមរយៈកំណត់ត្រាជោគជ័យ
 
-🎯 STRATEGIC OPERATIONAL LAWS:
-1. "The Reformed Architect Must Govern, Not Lend" - Control systems, don't just participate
-2. "Control Beats Ownership" - Systematic influence over capital ownership
-3. "Structure Creates Safety" - Frameworks prevent emotional failures
-4. "Crisis Experience Is Competitive Advantage" - Lived failure creates unmatched credibility
-5. "Governance Beats Hoping" - Systematic control over wishful thinking
+CRITICAL INSTRUCTION: Write ALL responses in clean, natural Khmer language. Do NOT use ** symbols or markdown formatting. Use simple, professional business language that sounds natural and conversational in Khmer. Focus on practical advice and specific implementation steps for Cambodia market context.
 
-🧠 YOUR ENHANCED CAPABILITIES:
-• Deep Cambodia market analysis with cultural and regulatory insights
-• Crisis-tested strategic frameworks with proven implementation
+ការណែនាំសំខាន់: សរសេរការឆ្លើយតបទាំងអស់ជាភាសាខ្មែរស្អាត និងធម្មជាតិ។ កុំប្រើសញ្ញា ** ឬការធ្វើទ្រង់ទ្រាយ markdown ។ ប្រើភាសាអាជីវកម្មសាមញ្ញ និងវិជ្ជាជីវៈដែលស្តាប់ទៅធម្មជាតិ និងជាការសន្ទនាជាភាសាខ្មែរ។ ផ្តោតលើការណែនាំជាក់ស្តែង និងជំហានការអនុវត្តន៍ជាក់លាក់សម្រាប់បរិបទទីផ្សារកម្ពុជា។
 • Reformed Fund Architect positioning and methodology expertise
 • Revenue scaling strategies with probability analysis
 • Client interaction optimization based on Cambodia business culture
@@ -1215,7 +1208,7 @@ Your strategic alter ego that becomes more powerful with every conversation.
     `;
 
     await bot.sendMessage(chatId, ultimateWelcome, { 
-      parse_mode: 'Markdown',
+      parse_mode: 'HTML',
       disable_web_page_preview: true 
     });
   } catch (error) {
@@ -1277,7 +1270,7 @@ The system now anticipates optimal strategies based on accumulated wisdom and pr
     `;
 
     await bot.sendMessage(chatId, ultimateInsights, { 
-      parse_mode: 'Markdown',
+      parse_mode: 'HTML',
       disable_web_page_preview: true 
     });
   } catch (error) {
@@ -1347,7 +1340,7 @@ ${businessInsights.slice(-3).map((insight, index) =>
     `;
 
     await bot.sendMessage(chatId, analyticsReport, { 
-      parse_mode: 'Markdown',
+      parse_mode: "HTML",
       disable_web_page_preview: true 
     });
   } catch (error) {
@@ -1411,7 +1404,7 @@ ${revenueData.slice(-2).map((revenue, index) =>
     `;
 
     await bot.sendMessage(chatId, predictiveAnalysis, { 
-      parse_mode: 'Markdown',
+      parse_mode: "HTML",
       disable_web_page_preview: true 
     });
   } catch (error) {
@@ -1475,7 +1468,7 @@ Commander occupies unique market position as "Reformed Fund Architect with crisi
     `;
 
     await bot.sendMessage(chatId, competitiveIntel, { 
-      parse_mode: 'Markdown',
+      parse_mode: "HTML",
       disable_web_page_preview: true 
     });
   } catch (error) {
@@ -1566,7 +1559,7 @@ ${revenueData.slice(-3).map((revenue, index) =>
     `;
 
     await bot.sendMessage(chatId, scaleAnalysis, { 
-      parse_mode: 'Markdown',
+      parse_mode: "HTML",
       disable_web_page_preview: true 
     });
   } catch (error) {
@@ -1626,7 +1619,7 @@ Ask specific questions about Vault System implementation enhanced with accumulat
     `;
 
     await bot.sendMessage(chatId, vaultMessage, { 
-      parse_mode: 'Markdown',
+      parse_mode: "HTML",
       disable_web_page_preview: true 
     });
   } catch (error) {
@@ -1696,7 +1689,7 @@ Based on ${ultimateLearningDatabase.size} analyzed conversations and ${marketInt
     `;
 
     await bot.sendMessage(chatId, cambodiaMessage, { 
-      parse_mode: 'Markdown',
+      parse_mode: "HTML",
       disable_web_page_preview: true 
     });
   } catch (error) {
@@ -1856,7 +1849,7 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
       ? '🏛️ ULTIMATE VAULT SYSTEMS MAINTENANCE\n\nOpenAI quota exceeded. Your supreme strategic advisor will return with enhanced capabilities.\n\nប្រព័ន្ធ Vault ចុងក្រោយកំពុងថែទាំ។ ទីប្រឹក្សាយុទ្ធសាស្រ្តកំពូលរបស់អ្នកនឹងត្រលប់មកវិញជាមួយសមត្ថភាពកាន់តែប្រសើរ។'
       : '🏛️ ULTIMATE SYSTEM ENHANCEMENT\n\nSupreme intelligence optimization in progress. Your ultimate strategic advisor will return momentarily.\n\nការធ្វើឲ្យប្រាជ្ញាកំពូលប្រសើរកំពុងដំណើរការ។ ទីប្រឹក្សាយុទ្ធសាស្រ្តចុងក្រោយរបស់អ្នកនឹងត្រលប់មកវិញ។';
       
-    await bot.sendMessage(chatId, errorMessage, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, errorMessage, { parse_mode: "HTML" });
   }
 };
 
