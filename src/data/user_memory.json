@@ -1,0 +1,23 @@
+{
+  "users": {
+    "484389665": {
+      "id": 484389665,
+      "joinedAt": "2025-07-29T09:56:43.503Z",
+      "totalQueries": 1,
+      "lastActive": "2025-07-29T09:56:44.100Z",
+      "status": "active",
+      "personalInfo": {
+        "name": null,
+        "preferences": [],
+        "interests": [],
+        "conversationHistory": [
+          {
+            "timestamp": "2025-07-29T09:56:43.504Z",
+            "interaction": "Hello"
+          }
+        ]
+      }
+    }
+  },
+  "lastSaved": "2025-07-29T09:56:44.100Z"
+}
