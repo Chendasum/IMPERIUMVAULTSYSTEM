@@ -2474,8 +2474,18 @@ app.listen(PORT, () => {
 // Setup webhook for Railway deployment with retry logic
 const setupWebhook = async (retryCount = 0) => {
   try {
-    // Get Railway domain from environment or use default
-    const domain = process.env.RAILWAY_PUBLIC_DOMAIN || 'imperiumvaultsystem-production.up.railway.app';
+    // Get actual deployment domain - auto-detect from environment
+    let domain;
+    if (process.env.REPLIT_DOMAINS) {
+      // Running on Replit - use Replit domain
+      domain = process.env.REPLIT_DOMAINS.split(',')[0] || process.env.REPLIT_DEV_DOMAIN;
+    } else if (process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL) {
+      // Running on Railway - use Railway domain
+      domain = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL;
+    } else {
+      // Fallback domain
+      domain = 'imperiumvaultsystem-production.up.railway.app';
+    }
     const webhookUrl = `https://${domain}/bot${TELEGRAM_TOKEN}`;
     
     console.log(`🔗 VaultClaude webhook set to: ${webhookUrl}`);
@@ -2502,11 +2512,27 @@ const setupWebhook = async (retryCount = 0) => {
     console.log(`✅ Webhook configured successfully: ${webhookUrl}`);
     console.log(`📡 Webhook result: ${result}`);
     
-    // Setup webhook endpoint
-    app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
+    // Setup webhook endpoint with enhanced error handling
+    app.post(`/bot${TELEGRAM_TOKEN}`, express.json(), (req, res) => {
       console.log("📨 Webhook message received");
-      bot.processUpdate(req.body);
-      res.sendStatus(200);
+      console.log("📋 Message data:", JSON.stringify(req.body, null, 2));
+      
+      try {
+        // Validate webhook data
+        if (!req.body || !req.body.update_id) {
+          console.log("⚠️ Invalid webhook data received");
+          return res.status(200).json({ status: "ok", message: "Invalid data" });
+        }
+        
+        // Process the update
+        bot.processUpdate(req.body);
+        console.log("✅ Webhook processed successfully");
+        res.status(200).json({ status: "ok" });
+      } catch (error) {
+        console.error("❌ Webhook processing error:", error.message);
+        console.error("❌ Error stack:", error.stack);
+        res.status(200).json({ status: "error", message: error.message });
+      }
     });
     
     return true;
