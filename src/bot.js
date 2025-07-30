@@ -102,7 +102,7 @@ if (!OPENAI_KEY) {
   );
   process.exit(1);
 }
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 5000;
 const DATABASE_URL = process.env.DATABASE_URL;
 
 // ELITE DYNASTY FINANCIAL INTELLIGENCE - GLOBAL DATA SOURCES
@@ -2736,11 +2736,16 @@ const handleUltimateMessage = async (bot, msg) => {
     // Build comprehensive Commander identity context while preserving unlimited intelligence
     const commanderContext = buildCommanderContext(ultimateContext);
     
+    console.log("🧠 Commander Context Generated:", commanderContext);
+    
     if (commanderContext) {
       messages.unshift({
         role: "system", 
         content: commanderContext
       });
+      console.log("✅ Commander context injected into GPT-4o");
+    } else {
+      console.log("❌ Commander context generation failed");
     }
 
     // ===== ULTIMATE GPT-4 DYNASTY CONFIGURATION =====
