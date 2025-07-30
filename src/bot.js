@@ -2600,12 +2600,8 @@ Based on ${ultimateLearningDatabase.size} analyzed conversations and ${marketInt
   }
 });
 
-// ===== QUICK RESPONSE TEST HANDLER =====
-bot.onText(/hello|hi|test|status/i, async (msg) => {
-  const chatId = msg.chat.id;
-  console.log("🟢 QUICK TEST: Responding to simple greeting...");
-  await bot.sendMessage(chatId, "🏛️ ULTIMATE VAULT CLAUDE OPERATIONAL\n\nDynasty AI System online and ready for strategic intelligence.\n\n✅ 6,533 lines of institutional-grade capabilities active\n✅ All 15 dynasty modules loaded\n✅ GPT-4 strategic analysis ready\n\nSend any message for full strategic analysis!");
-});
+// ===== QUICK RESPONSE HANDLER REMOVED =====
+// All messages now go directly to full GPT-4 strategic analysis for dynasty-level responses
 
 // ===== DYNASTY COMMAND PROCESSOR =====
 bot.on("message", async (msg) => {
