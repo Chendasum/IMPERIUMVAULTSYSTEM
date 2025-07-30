@@ -89,7 +89,7 @@ try {
       }
     }, 3000);
   } else {
-    console.log("⚙️ DEVELOPMENT MODE: Using polling for testing purposes");
+    console.log("🔧 FORCING POLLING MODE - Disabling all webhook functionality");
     bot = new TelegramBot(TELEGRAM_TOKEN, {
       polling: true,
       filepath: false,
@@ -2644,10 +2644,8 @@ app.listen(PORT, () => {
   console.log(`🌐 Ultimate health check server running on port ${PORT}`);
 });
 
-// WEBHOOK SETUP DISABLED - Using polling mode for reliability
+// WEBHOOK SETUP FOR RAILWAY DEPLOYMENT
 const setupWebhook = async (retryCount = 0) => {
-  console.log("🚫 Webhook setup disabled - using polling mode only");
-  return false;
   try {
     // Get actual deployment domain - auto-detect from environment
     let domain;
