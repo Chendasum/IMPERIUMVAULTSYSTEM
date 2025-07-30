@@ -12,6 +12,18 @@ dotenv.config();
 
 const TELEGRAM_TOKEN = process.env.VAULT_BOT_TOKEN;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
+
+// Verify essential environment variables
+if (!TELEGRAM_TOKEN) {
+  console.error("🚨 CRITICAL: VAULT_BOT_TOKEN not found in environment variables");
+  console.log("Available environment variables:", Object.keys(process.env).filter(key => key.includes('BOT') || key.includes('VAULT')));
+  process.exit(1);
+}
+
+if (!OPENAI_KEY) {
+  console.error("🚨 CRITICAL: OPENAI_API_KEY not found in environment variables");
+  process.exit(1);
+}
 const PORT = process.env.PORT || 4000;
 const DATABASE_URL = process.env.DATABASE_URL;
 
