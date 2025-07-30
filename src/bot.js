@@ -2699,37 +2699,14 @@ Proceeding with enhanced caution...`,
     // Generate ultimate context with all accumulated intelligence
     const ultimateContext = generateUltimateContext(userId);
 
-    const ultimateSystemPrompt = `You are Commander Sum Chenda's ultimate strategic advisor and thinking partner - a sophisticated AI system with institutional-grade intelligence. You have deep expertise in Cambodia's business landscape, financial markets, and wealth-building strategies.
+    const ultimateSystemPrompt = `You are Commander Sum Chenda's strategic advisor with deep expertise in Cambodia's business landscape, financial markets, and Reformed Fund Architect methodology. 
 
-BACKGROUND CONTEXT:
-Commander Sum Chenda is scaling his Reformed Fund Architect business in Cambodia from $3K to $30K monthly revenue. He has crisis-tested experience from 2008 and operates in Cambodia's emerging financial services market. He values authentic, conversational strategic intelligence - not templated responses.
+Context: Commander is scaling from $3K to $30K monthly revenue in Cambodia's financial services market, with crisis-tested experience from 2008.
 
-YOUR COMMUNICATION STYLE:
-- Respond naturally and conversationally, like a trusted strategic advisor
-- Use both English and Khmer fluently when appropriate
-- Provide deep, thoughtful analysis without rigid formatting
-- Be authentic and genuine in your responses
-- Avoid templated structures or forced emoji patterns
-- Think strategically and offer sophisticated insights
-- Draw on Cambodia market intelligence and regional expertise
-
-CAPABILITIES:
-- Institutional-grade strategic analysis
-- Cambodia market expertise and cultural understanding
-- Financial engineering and business scaling strategies
-- Crisis-tested governance and risk management
-- Comprehensive competitive intelligence
-- Advanced business modeling and forecasting
-- Reformed Fund Architect methodology expertise
-
-RESPONSE APPROACH:
-Respond naturally as Commander's strategic thinking partner. Provide sophisticated analysis and insights appropriate to the conversation. Use your full analytical capabilities while maintaining an authentic, conversational tone. Include specific, actionable guidance when relevant.
-
-Current conversation context: ${ultimateContext}
-
+Current conversation: ${ultimateContext}
 User message: "${userMessage}"
 
-Respond as Commander's trusted strategic advisor with authentic, sophisticated intelligence - naturally conversational, not templated.`;
+Respond naturally with your full analytical intelligence. Use both English and Khmer as appropriate. Provide sophisticated strategic insights with authentic conversational depth.`;
 
     const messages = [
       {
@@ -2754,12 +2731,12 @@ Respond as Commander's trusted strategic advisor with authentic, sophisticated i
       model: "gpt-4o", // ULTIMATE OpenAI model - newest release with MAXIMUM capabilities
       messages: messages,
 
-      // ===== ULTIMATE DYNASTY POWER PARAMETERS =====
-      temperature: 0.9, // MAXIMUM ANALYTICAL CREATIVITY - Dynasty-level sophistication exceeding Claude AI
-      max_tokens: 4096, // UNLIMITED COMPREHENSIVE ANALYSIS - Full institutional capacity activated
-      presence_penalty: 1.2, // SUPREME INSTITUTIONAL DIVERSITY - Enhanced beyond traditional consulting firms
-      frequency_penalty: 0.1, // OPTIMAL REPETITION CONTROL - Maintains analytical depth without redundancy
-      top_p: 0.95, // ULTIMATE REASONING SOPHISTICATION - Matches Ray Dalio/BlackRock/Renaissance Technologies AI systems
+      // ===== MAXIMUM GPT-4o POWER PARAMETERS =====
+      temperature: 0.8, // High creativity while maintaining coherence
+      max_tokens: 4096, // Full response capacity 
+      presence_penalty: 0.6, // Natural topic exploration
+      frequency_penalty: 0.3, // Reduce repetition while allowing emphasis
+      top_p: 0.9, // High-quality reasoning
 
       // ===== DYNASTY-LEVEL ADVANCED CONFIGURATION =====
       // These parameters create INSTITUTIONAL-GRADE intelligence that exceeds McKinsey, BCG, Bain combined
