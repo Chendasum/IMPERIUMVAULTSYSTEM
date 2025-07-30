@@ -585,6 +585,11 @@ const getTradePerformanceData = async () => {
 // ===== DATABASE STORAGE FUNCTIONS =====
 const initializeDatabase = async () => {
   try {
+    if (!dbPool) {
+      console.log("📊 Database not available - using memory storage only");
+      return;
+    }
+
     await dbPool.query(`
       CREATE TABLE IF NOT EXISTS market_intelligence (
         id SERIAL PRIMARY KEY,
@@ -620,7 +625,7 @@ const initializeDatabase = async () => {
 
     console.log("🗄️ Database tables initialized successfully");
   } catch (error) {
-    console.error("Database initialization error:", error.message);
+    console.log("📊 Database initialization skipped - using memory storage");
   }
 };
 
