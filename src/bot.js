@@ -2699,14 +2699,7 @@ Proceeding with enhanced caution...`,
     // Generate ultimate context with all accumulated intelligence
     const ultimateContext = generateUltimateContext(userId);
 
-    const ultimateSystemPrompt = `You are Commander Sum Chenda's strategic advisor with deep expertise in Cambodia's business landscape, financial markets, and Reformed Fund Architect methodology. 
-
-Context: Commander is scaling from $3K to $30K monthly revenue in Cambodia's financial services market, with crisis-tested experience from 2008.
-
-Current conversation: ${ultimateContext}
-User message: "${userMessage}"
-
-Respond naturally with your full analytical intelligence. Use both English and Khmer as appropriate. Provide sophisticated strategic insights with authentic conversational depth.`;
+    const ultimateSystemPrompt = `Commander Sum Chenda - Reformed Fund Architect scaling $3K→$30K monthly in Cambodia. Crisis-tested 2008 experience. ${ultimateContext}`;
 
     const messages = [
       {
@@ -2731,12 +2724,12 @@ Respond naturally with your full analytical intelligence. Use both English and K
       model: "gpt-4o", // ULTIMATE OpenAI model - newest release with MAXIMUM capabilities
       messages: messages,
 
-      // ===== MAXIMUM GPT-4o POWER PARAMETERS =====
-      temperature: 0.8, // High creativity while maintaining coherence
-      max_tokens: 4096, // Full response capacity 
-      presence_penalty: 0.6, // Natural topic exploration
-      frequency_penalty: 0.3, // Reduce repetition while allowing emphasis
-      top_p: 0.9, // High-quality reasoning
+      // UNRESTRICTED GPT-4o CORE INTELLIGENCE
+      temperature: 0.9,
+      max_tokens: 4096,
+      presence_penalty: 0,
+      frequency_penalty: 0,
+      top_p: 1.0,
 
       // ===== DYNASTY-LEVEL ADVANCED CONFIGURATION =====
       // These parameters create INSTITUTIONAL-GRADE intelligence that exceeds McKinsey, BCG, Bain combined
