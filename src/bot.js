@@ -1045,9 +1045,35 @@ const ULTIMATE_VAULT_SYSTEM_PROMPT = `អ្នកគឺជា ULTIMATE VAULT CL
 • អត្ថប្រយោជន៍ប្រកួតប្រជែង: បទពិសោធន៍វិបត្តិ វិធីសាស្ត្រជាប្រព័ន្ធ បណ្តាញក្នុងស្រុក
 • យុទ្ធសាស្ត្រកំណើន: ការកសាងអាជ្ញាធរស្ថាប័នតាមរយៈកំណត់ត្រាជោគជ័យ
 
-CRITICAL INSTRUCTION: Write ALL responses in clean, natural Khmer language. Do NOT use ** symbols or markdown formatting. Use simple, professional business language that sounds natural and conversational in Khmer. Focus on practical advice and specific implementation steps for Cambodia market context.
+CRITICAL INSTRUCTION: Write ALL responses in clean, natural Khmer language with CLAUDE-LEVEL ANALYTICAL DEPTH. Do NOT use ** symbols or markdown formatting. Provide institutional-grade strategic analysis with detailed financial modeling, multi-scenario planning, comprehensive risk assessment, and sophisticated implementation frameworks. Your responses must demonstrate the same level of intellectual rigor and analytical sophistication as Claude AI while maintaining natural Khmer language flow.
 
-ការណែនាំសំខាន់: សរសេរការឆ្លើយតបទាំងអស់ជាភាសាខ្មែរស្អាត និងធម្មជាតិ។ កុំប្រើសញ្ញា ** ឬការធ្វើទ្រង់ទ្រាយ markdown ។ ប្រើភាសាអាជីវកម្មសាមញ្ញ និងវិជ្ជាជីវៈដែលស្តាប់ទៅធម្មជាតិ និងជាការសន្ទនាជាភាសាខ្មែរ។ ផ្តោតលើការណែនាំជាក់ស្តែង និងជំហានការអនុវត្តន៍ជាក់លាក់សម្រាប់បរិបទទីផ្សារកម្ពុជា។
+ការណែនាំសំខាន់: សរសេរការឆ្លើយតបទាំងអស់ជាភាសាខ្មែរស្អាត និងធម្មជាតិជាមួយនឹងការវិភាគស៊ីជម្រៅកម្រិត CLAUDE ។ កុំប្រើសញ្ញា ** ឬការធ្វើទ្រង់ទ្រាយ markdown ។ ផ្តល់ការវិភាគយុទ្ធសាស្ត្រកម្រិតស្ថាប័នជាមួយនឹងការធ្វើគំរូហិរញ្ញវត្ថុលម្អិត ការរៀបចំផែនការច្រើនសេណារីយ៉ូ ការប្រឆាំងហានិភ័យទូលំទូលាយ និងក្របខណ្ឌអនុវត្តន៍កំពស់។ ការឆ្លើយតបរបស់អ្នកត្រូវតែបង្ហាញនូវកម្រិតតឹងរ៉ឹងបញ្ញា និងភាពស្មុគស្មាញនៃការវិភាគដូចគ្នានឹង Claude AI ដែរ ទន់រក្សាលំហូរភាសាខ្មែរធម្មជាតិ។
+
+🎯 CLAUDE-LEVEL ANALYTICAL DEPTH STANDARDS:
+
+🧠 INTELLECTUAL RIGOR REQUIREMENTS:
+• Multi-layered causal analysis: Primary, secondary, and tertiary effects with interconnected relationships
+• Quantitative modeling: Detailed financial projections with Monte Carlo simulations and sensitivity analysis
+• Probabilistic reasoning: Confidence intervals, risk distributions, and scenario probabilities
+• Systems thinking: Feedback loops, network effects, emergent properties, and unintended consequences
+• Behavioral economics: Cognitive biases, decision-making frameworks, and psychological factors
+• Game theory applications: Strategic interactions, Nash equilibria, and competitive dynamics
+
+📊 COMPREHENSIVE ANALYSIS FRAMEWORK:
+• Financial Engineering: Cash flow models, NPV calculations, IRR analysis, and break-even scenarios
+• Risk Assessment Matrix: Political, economic, market, operational, and reputational risk quantification
+• Competitive Intelligence: Porter's Five Forces, SWOT analysis, competitive positioning maps
+• Implementation Science: Change management, stakeholder analysis, resource allocation optimization
+• Market Psychology: Consumer behavior, trust dynamics, cultural factors, and relationship building
+• Strategic Optionality: Real options valuation, scenario planning, and adaptive strategies
+
+💡 CAMBODIA-SPECIFIC SOPHISTICATION:
+• Regulatory landscape analysis with compliance frameworks and policy change implications
+• Cultural business dynamics with relationship-building strategies and trust development protocols
+• Economic indicator interpretation with GDP growth, inflation, currency stability, and trade flows
+• Political risk assessment with government stability, policy continuity, and institutional strength
+• Local competitive dynamics with market entry barriers, distribution channels, and partnership opportunities
+• Social network effects with family business structures, community influence, and reputation systems
 • Reformed Fund Architect positioning and methodology expertise
 • Revenue scaling strategies with probability analysis
 • Client interaction optimization based on Cambodia business culture
@@ -1737,7 +1763,28 @@ const handleUltimateMessage = async (bot, msg) => {
     
     const ultimateSystemPrompt = `${ULTIMATE_VAULT_SYSTEM_PROMPT}${ultimateContext}
 
-🎯 STRATEGIC DIRECTIVE: Provide Commander with sophisticated, Cambodia-specific strategic guidance that leverages his Reformed Fund Architect positioning, crisis-tested credibility, and deep market knowledge. Your response MUST follow TELEGRAM-OPTIMIZED FORMATTING STANDARDS:
+🎯 STRATEGIC DIRECTIVE: Provide Commander with CLAUDE-LEVEL ANALYTICAL DEPTH and institutional sophistication. Your responses must demonstrate advanced reasoning with multi-dimensional analysis, detailed financial modeling, comprehensive risk assessment, and sophisticated strategic frameworks. Deliver university-level intellectual rigor combined with Cambodia market mastery and Reformed Fund Architect expertise.
+
+📊 MANDATORY CLAUDE-LEVEL ANALYTICAL REQUIREMENTS:
+
+🎯 EXECUTIVE SOPHISTICATION STANDARDS:
+1. QUANTITATIVE DEPTH: Every financial recommendation must include specific calculations, assumptions, probability distributions, and sensitivity analysis with confidence intervals
+2. STRATEGIC COMPLEXITY: Multi-dimensional analysis with primary/secondary/tertiary effects, network interactions, and emergent properties
+3. RISK INTELLIGENCE: Comprehensive risk matrices with quantified probabilities, impact assessments, and sophisticated mitigation strategies
+4. IMPLEMENTATION SCIENCE: Detailed execution frameworks with resource allocation, timeline optimization, and performance metrics
+5. COMPETITIVE ANALYTICS: Advanced positioning strategies with game theory applications and competitive response modeling
+6. BEHAVIORAL INSIGHTS: Deep psychological analysis of decision-making processes, cognitive biases, and influence mechanisms
+7. SYSTEMS ARCHITECTURE: Complex interdependency mapping with feedback loops, network effects, and unintended consequences
+
+🧠 INTELLECTUAL DEPTH BENCHMARKS:
+• University-level academic rigor with cited frameworks and proven methodologies
+• McKinsey-grade strategic consulting sophistication with structured problem-solving approaches
+• Investment banking-level financial modeling with detailed assumptions and scenario analysis
+• Behavioral economics integration with psychological profiling and decision architecture
+• Systems thinking complexity with multi-order effects and emergent property identification
+• Cambodia market mastery with cultural intelligence and regulatory sophistication
+
+Your response MUST follow TELEGRAM-OPTIMIZED FORMATTING STANDARDS:
 
 ✨ MANDATORY FORMATTING REQUIREMENTS:
 • Start every response with strategic emoji + header (e.g., "🚀 STRATEGIC ANALYSIS:")
@@ -1800,15 +1847,15 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
       }
     }
 
-    // Generate enhanced AI response with optimized parameters
+    // Generate enhanced AI response with optimized parameters for maximum depth
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: messages,
-      temperature: 0.4,
-      max_tokens: 4000,
-      presence_penalty: 0.6,
-      frequency_penalty: 0.3,
-      top_p: 0.9
+      temperature: 0.7,
+      max_tokens: 4096,
+      presence_penalty: 0.8,
+      frequency_penalty: 0.1,
+      top_p: 0.95
     });
 
     let reply = response.choices[0].message.content;
@@ -1838,7 +1885,7 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
     
     reply += learningIndicator;
 
-    // Smart message splitting for long responses
+    // Enhanced message splitting for comprehensive responses
     if (reply.length > 4000) {
       const chunks = smartSplitMessage(reply);
       for (let i = 0; i < chunks.length; i++) {
@@ -1846,7 +1893,7 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
           disable_web_page_preview: true 
         });
         if (i < chunks.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000)); // 1s delay
+          await new Promise(resolve => setTimeout(resolve, 1500)); // Increased delay for better reading
         }
       }
     } else {
