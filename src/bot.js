@@ -2703,46 +2703,8 @@ const handleUltimateMessage = async (bot, msg) => {
   try {
     await bot.sendChatAction(chatId, "typing");
 
-    // Skip dynasty protection for basic questions and conversation
-    const isBasicQuestion = /^(hello|hi|what|how|who|where|when|why|help|assist)/i.test(userMessage.toLowerCase());
-    
-    if (!isBasicQuestion) {
-      // Dynasty protection check only for decision-making queries
-      const decision = {
-        id: Date.now().toString(),
-        description: userMessage,
-        value: 0,
-        timeframe: "immediate",
-        expectedROI: null,
-        familyImpact: null,
-      };
-
-      const dangerAnalysis = dynastyEnforcer.analyzeDanger(decision);
-
-      if (dangerAnalysis.blocked) {
-        await bot.sendMessage(
-          chatId,
-          `🛡️ DYNASTY PROTECTION ACTIVATED
-
-${dangerAnalysis.blockReason}
-
-This decision has been blocked to protect your dynasty. Consider alternative approaches.`,
-        );
-        return;
-      }
-    }
-
-    if (dangerAnalysis.requiresApproval) {
-      await bot.sendMessage(
-        chatId,
-        `⚠️ DYNASTY REVIEW REQUIRED
-
-Risk Level: ${dangerAnalysis.riskLevel.toUpperCase()}
-Approval Type: ${dangerAnalysis.approvalType}
-
-Proceeding with enhanced caution...`,
-      );
-    }
+    // Skip dynasty protection completely for conversational messages
+    // All messages go directly to GPT-4o for natural AI conversation
 
     // Log message to memory for intelligence building
     dynastyMemoryLog.logConversation({
