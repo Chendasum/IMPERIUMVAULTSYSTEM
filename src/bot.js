@@ -3170,10 +3170,11 @@ const setupWebhook = async (retryCount = 0) => {
     ) {
       // Running on Railway - use Railway domain
       domain =
-        process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL;
+        process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL || "imperiumvaultsystem-production.up.railway.app";
     } else {
-      // Fallback domain - use actual Railway deployment URL
+      // Use confirmed Railway domain
       domain = "imperiumvaultsystem-production.up.railway.app";
+      console.log(`✅ Using confirmed Railway domain: ${domain}`);
     }
     const webhookUrl = `https://${domain}/bot${TELEGRAM_TOKEN}`;
 
@@ -6519,14 +6520,24 @@ bot.on('voice', async (msg) => {
     const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production';
     
     if (isRailway) {
-      // Railway mode - webhook only, no polling
-      console.log("🚀 RAILWAY DEPLOYMENT MODE");
-      console.log("🎯 Webhook-only mode active - Railway handling file processing");
+      // Railway mode - optimized for strategic AI channel
+      console.log("🚀 RAILWAY DEPLOYMENT MODE - STRATEGIC AI CHANNEL");
+      console.log("🎯 Polling mode active - Optimized for strategic conversations");
       console.log(`📊 Bot token check: ${TELEGRAM_TOKEN ? 'SET' : 'MISSING'}`);
       console.log(`📊 OpenAI key check: ${OPENAI_KEY ? 'SET' : 'MISSING'}`);
       
-      // Setup webhook for Railway
-      await setupWebhook();
+      // Try webhook setup first (more powerful), fallback to polling
+      console.log("🚀 Attempting webhook setup for maximum performance...");
+      const webhookSetup = await setupWebhook();
+      if (!webhookSetup) {
+        console.log("🔄 Webhook setup failed - using polling mode as fallback");
+        if (!bot.isPolling()) {
+          await bot.startPolling({ polling: true, onlyFirstMatch: true });
+          console.log("✅ Strategic AI polling mode activated for Railway");
+        }
+      } else {
+        console.log("⚡ WEBHOOK MODE ACTIVATED - Maximum performance enabled!");
+      }
     } else {
       // Replit mode - clear webhook and use polling
       await bot.deleteWebHook();
@@ -6538,10 +6549,11 @@ bot.on('voice', async (msg) => {
       }
     }
     
-    console.log("🚀 ULTIMATE VAULT CLAUDE - Dynasty AI System Started");
-    console.log("🏛️ HOUSE OF IMPERIUM - ULTIMATE STRATEGIC DOMINANCE - HOUSE OF SUM CHENDA 🏛️");
-    console.log("⚔️ Ready for Cambodia Market Domination");
+    console.log("🚀 ULTIMATE VAULT CLAUDE - Strategic AI Channel System Started");
+    console.log("🏛️ HOUSE OF IMPERIUM - STRATEGIC AI ADVISOR - HOUSE OF SUM CHENDA 🏛️");
+    console.log("⚔️ Ready for Strategic Intelligence via Telegram Channel");
     console.log("📄 File Processing: PDF, DOCX, XLSX, Images - OPERATIONAL");
+    console.log("🧠 Strategic Conversation Mode: Optimized for detailed analysis");
     
   } catch (error) {
     console.error("❌ Bot startup error:", error);
