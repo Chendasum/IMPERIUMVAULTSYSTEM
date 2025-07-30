@@ -2802,8 +2802,7 @@ const handleUltimateMessage = async (bot, msg) => {
 
     conversations.set(userId, conversation);
 
-    // Add enhanced learning indicator with real-time data notification
-    const hasRealTimeData = realTimeContext.length > 0;
+    // Add enhanced learning indicator
     const learningIndicator = "\n\n*🏛️ HOUSE OF IMPERIUM - ULTIMATE STRATEGIC DOMINANCE - HOUSE OF SUM CHENDA 🏛️*";
 
     reply += learningIndicator;
