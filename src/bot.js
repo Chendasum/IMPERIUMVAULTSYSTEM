@@ -55,7 +55,7 @@ let bot, openai, dbPool;
 
 try {
   bot = new TelegramBot(TELEGRAM_TOKEN, {
-    polling: false,
+    polling: true,
     filepath: false,
   });
 
@@ -64,17 +64,20 @@ try {
   });
 
   // Initialize PostgreSQL connection for permanent storage
-  dbPool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl:
-      process.env.NODE_ENV === "production"
-        ? { rejectUnauthorized: false }
-        : false,
-  });
-
-  console.log(
-    "🗄️ Database connection initialized for permanent intelligence storage",
-  );
+  if (DATABASE_URL) {
+    dbPool = new Pool({
+      connectionString: DATABASE_URL,
+      ssl:
+        process.env.NODE_ENV === "production"
+          ? { rejectUnauthorized: false }
+          : false,
+    });
+    console.log(
+      "🗄️ Database connection initialized for permanent intelligence storage",
+    );
+  } else {
+    console.log("📊 Running without database - using memory storage");
+  }
 } catch (error) {
   console.error("🚨 Initialization error:", error.message);
   process.exit(1);
@@ -2451,6 +2454,9 @@ const startUltimateSystem = async () => {
     console.error("System startup error:", error.message);
   }
 };
+
+// Add message handler to make bot respond
+bot.on('message', handleUltimateMessage);
 
 // Start the complete ultimate system
 startUltimateSystem();
