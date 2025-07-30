@@ -3172,12 +3172,15 @@ const setupWebhook = async (retryCount = 0) => {
       domain =
         process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL;
     } else {
-      // Fallback domain
+      // Fallback domain - use actual Railway deployment URL
       domain = "imperiumvaultsystem-production.up.railway.app";
     }
     const webhookUrl = `https://${domain}/bot${TELEGRAM_TOKEN}`;
 
     console.log(`🔗 VaultClaude webhook set to: ${webhookUrl}`);
+    console.log(`🌐 Railway domain detected: ${domain}`);
+    console.log(`🔑 Bot token configured: ${TELEGRAM_TOKEN ? 'YES' : 'NO'}`);
+    console.log(`🤖 OpenAI key configured: ${OPENAI_KEY ? 'YES' : 'NO'}`);
 
     // Wait between attempts to avoid rate limiting
     if (retryCount > 0) {
@@ -3251,6 +3254,11 @@ const setupWebhook = async (retryCount = 0) => {
 // Initialize database tables and start complete system
 const startUltimateSystem = async () => {
   try {
+    console.log(`🔧 Starting Ultimate Vault Claude System...`);
+    console.log(`📊 Environment check - TELEGRAM_TOKEN: ${TELEGRAM_TOKEN ? 'SET' : 'MISSING'}`);
+    console.log(`📊 Environment check - OPENAI_API_KEY: ${OPENAI_KEY ? 'SET' : 'MISSING'}`);
+    console.log(`📊 Environment check - PORT: ${PORT}`);
+    
     await initializeDatabase();
     console.log(
       "🏛️ ULTIMATE VAULT CLAUDE SUPREME STRATEGIC INTELLIGENCE SYSTEM FULLY OPERATIONAL",
@@ -6514,6 +6522,11 @@ bot.on('voice', async (msg) => {
       // Railway mode - webhook only, no polling
       console.log("🚀 RAILWAY DEPLOYMENT MODE");
       console.log("🎯 Webhook-only mode active - Railway handling file processing");
+      console.log(`📊 Bot token check: ${TELEGRAM_TOKEN ? 'SET' : 'MISSING'}`);
+      console.log(`📊 OpenAI key check: ${OPENAI_KEY ? 'SET' : 'MISSING'}`);
+      
+      // Setup webhook for Railway
+      await setupWebhook();
     } else {
       // Replit mode - clear webhook and use polling
       await bot.deleteWebHook();
