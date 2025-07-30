@@ -2735,18 +2735,20 @@ const handleUltimateMessage = async (bot, msg) => {
 
     // Build comprehensive Commander identity context while preserving unlimited intelligence
     const commanderContext = buildCommanderContext(ultimateContext);
-    
+
     console.log("🧠 Commander Context Generated:", commanderContext);
-    
+
     if (commanderContext) {
       messages.unshift({
         role: "system", 
         content: commanderContext
       });
-      console.log("✅ Commander context injected into GPT-4o");
+      console.log("✅ Commander context added to messages");
     } else {
-      console.log("❌ Commander context generation failed");
+      console.log("❌ No commander context generated");
     }
+
+    console.log("📨 Messages being sent to GPT:", JSON.stringify(messages, null, 2));
 
     // ===== ULTIMATE GPT-4 DYNASTY CONFIGURATION =====
     // UNLIMITED DYNASTY AI INSTALLATION: Maximum power configuration that exceeds all competitors
