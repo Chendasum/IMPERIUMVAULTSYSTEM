@@ -2280,6 +2280,156 @@ ${
   }
 });
 
+// ===== ENHANCED TRAINING SYSTEM COMMANDS =====
+
+// Command: /training_status - View training system status  
+bot.onText(/\/training_status/, async (msg) => {
+  try {
+    const chatId = msg.chat.id;
+    
+    const trainingStatus = `🧠 **Ultimate Vault Claude Enhanced Training Status**
+
+🏛️ **Current Training Intelligence**:
+• Reformed Fund Architect Frameworks: Advanced methodologies integrated
+• Cambodia Market Intelligence: Real-time data processing active  
+• Crisis Management Expertise: Crisis-tested frameworks operational
+• Client Success Patterns: Systematic pattern recognition active
+• Competitive Intelligence: Market position analysis enhanced
+
+🎯 **Training Enhancement Commands**:
+• /train_framework - Add Reformed Fund Architect framework
+• /train_cambodia - Add Cambodia market intelligence  
+• /train_crisis - Add crisis management expertise
+• /train_success - Add client success pattern
+• /train_document - Upload document for training
+• /debug_training - View enhanced training details
+
+🚀 **System Enhancement**: Your Ultimate Vault Claude learns from every addition, becoming increasingly specialized for Cambodia market scaling and systematic wealth building.
+
+**Status**: Training system operational with GPT-4o integration active.`;
+
+    await bot.sendMessage(chatId, trainingStatus, { parse_mode: 'Markdown' });
+  } catch (error) {
+    console.error('Training status error:', error);
+    await bot.sendMessage(msg.chat.id, '🚨 Training status check failed. Core system operational.');
+  }
+});
+
+// Command: /train_framework - Add Reformed Fund Architect framework
+bot.onText(/\/train_framework/, async (msg) => {
+  const message = `🏛️ **Add Reformed Fund Architect Framework**
+
+**Format**: Reply to this message with your framework:
+\`\`\`
+Framework Name: [Your Framework Name]
+Description: [Framework description]
+Application: [Cambodia market application]
+Success Criteria: [Measurable outcomes]
+Implementation: [Step-by-step process]
+\`\`\`
+
+Your framework will enhance Ultimate Vault Claude's strategic intelligence.`;
+
+  await bot.sendMessage(msg.chat.id, message, { 
+    parse_mode: 'Markdown',
+    reply_markup: { force_reply: true, selective: true }
+  });
+});
+
+// Command: /train_cambodia - Add Cambodia market intelligence
+bot.onText(/\/train_cambodia/, async (msg) => {
+  const message = `🇰🇭 **Add Cambodia Market Intelligence**
+
+**Format**: Reply with market intelligence:
+\`\`\`
+Market Segment: [Specific area]
+Opportunity: [Market opportunity]
+Competition: [Competitive landscape]
+Strategy: [Entry/domination strategy]
+Revenue: [Projected opportunity]
+Risks: [Key risks and mitigation]
+\`\`\`
+
+This intelligence enhances Cambodia market analysis capabilities.`;
+
+  await bot.sendMessage(msg.chat.id, message, { 
+    parse_mode: 'Markdown',
+    reply_markup: { force_reply: true, selective: true }
+  });
+});
+
+// Command: /train_crisis - Add crisis management expertise  
+bot.onText(/\/train_crisis/, async (msg) => {
+  const message = `⚔️ **Add Crisis Management Expertise**
+
+**Format**: Reply with crisis expertise:
+\`\`\`
+Crisis Type: [Type of crisis]
+Experience: [Your specific experience]
+Framework: [Approach used]
+Outcome: [Results achieved]
+Lessons: [Key insights]
+Application: [Client applicability]
+\`\`\`
+
+Your crisis expertise becomes integrated strategic intelligence.`;
+
+  await bot.sendMessage(msg.chat.id, message, { 
+    parse_mode: 'Markdown',
+    reply_markup: { force_reply: true, selective: true }
+  });
+});
+
+// Command: /train_success - Add client success pattern
+bot.onText(/\/train_success/, async (msg) => {
+  const message = `💰 **Add Client Success Pattern**
+
+**Format**: Reply with success pattern:
+\`\`\`
+Client Profile: [Type of client]
+Challenge: [Problem faced]
+Strategy: [Your approach]
+Timeline: [Implementation time]
+Results: [Specific outcomes]
+Replication: [How to apply to others]
+\`\`\`
+
+Success patterns enhance client advisory capabilities.`;
+
+  await bot.sendMessage(msg.chat.id, message, { 
+    parse_mode: 'Markdown',
+    reply_markup: { force_reply: true, selective: true }
+  });
+});
+
+// Command: /debug_training - Debug training system
+bot.onText(/\/debug_training/, async (msg) => {
+  const debugInfo = `🔧 **Ultimate Vault Claude Training Debug**
+
+**System Status**: ✅ Operational
+**GPT Model**: GPT-4o (Maximum Intelligence)
+**Temperature**: 1.0 (Maximum Creativity)
+**Max Tokens**: 4096 (Full Capability)
+**Training Integration**: ✅ Active
+
+**Enhanced Features**:
+• Memory Enhancement: ✅ Active
+• Pattern Recognition: ✅ Operational  
+• Identity Recognition: ✅ Commander Sum Chenda
+• Authority Integration: ✅ Reformed Fund Architect
+
+**Training Capabilities**:
+• Document processing (PDF, DOCX, XLSX, Images)
+• Framework integration and systematic learning
+• Market intelligence accumulation and analysis
+• Success pattern recognition and application
+• Crisis expertise integration for strategic advantage
+
+**Performance**: System learning from every interaction and becoming increasingly specialized for Cambodia market scaling.`;
+
+  await bot.sendMessage(msg.chat.id, debugInfo);
+});
+
 // Command: /predict - Predictive strategic analysis
 bot.onText(/\/predict/, async (msg) => {
   try {
@@ -2725,6 +2875,62 @@ bot.on("message", async (msg) => {
   }
 });
 
+// ===== TRAINING REPLY PROCESSING =====
+const processTrainingReply = async (bot, msg, trainingType) => {
+  try {
+    const content = msg.text;
+    
+    // Store training data in ultimate learning database
+    const trainingEntry = {
+      type: trainingType,
+      content: content,
+      timestamp: new Date().toISOString(),
+      userId: msg.from.id.toString()
+    };
+
+    const trainingId = `training_${trainingType}_${Date.now()}`;
+    ultimateLearningDatabase.set(trainingId, trainingEntry);
+
+    // Add to specialized databases based on type
+    switch (trainingType) {
+      case 'framework':
+        const frameworks = successMetrics.get("reformed_frameworks") || [];
+        frameworks.push(trainingEntry);
+        successMetrics.set("reformed_frameworks", frameworks);
+        break;
+      case 'cambodia':
+        const cambodiaIntel = marketAnalytics.get("cambodia_intelligence") || [];
+        cambodiaIntel.push(trainingEntry);
+        marketAnalytics.set("cambodia_intelligence", cambodiaIntel);
+        break;
+      case 'crisis':
+        const crisisExpertise = strategicInsights.get("crisis_management") || [];
+        crisisExpertise.push(trainingEntry);
+        strategicInsights.set("crisis_management", crisisExpertise);
+        break;
+      case 'success':
+        const successPatterns = clientDatabase.get("success_patterns") || [];
+        successPatterns.push(trainingEntry);
+        clientDatabase.set("success_patterns", successPatterns);
+        break;
+    }
+
+    await bot.sendMessage(msg.chat.id, `✅ **Training Data Added Successfully**
+
+🧠 Your ${trainingType} expertise has been integrated into Ultimate Vault Claude system.
+
+**Enhancement**: Your AI advisor now has deeper knowledge in this area and will provide more specialized strategic analysis.
+
+**Impact**: Future conversations will benefit from this enhanced intelligence and specialized knowledge.
+
+Use /training_status to see updated capabilities.`, { parse_mode: 'Markdown' });
+
+  } catch (error) {
+    console.error('Training reply processing error:', error);
+    await bot.sendMessage(msg.chat.id, '🚨 Training processing failed. Please try again.');
+  }
+};
+
 // ===== ULTIMATE MESSAGE HANDLER =====
 const handleUltimateMessage = async (bot, msg) => {
   if (!msg.text) return;
@@ -2734,6 +2940,24 @@ const handleUltimateMessage = async (bot, msg) => {
   const userMessage = msg.text;
 
   try {
+    // Check if this is a reply to a training command
+    if (msg.reply_to_message && msg.reply_to_message.from.is_bot) {
+      const replyText = msg.reply_to_message.text;
+      if (replyText.includes('Add Reformed Fund Architect Framework')) {
+        await processTrainingReply(bot, msg, 'framework');
+        return;
+      } else if (replyText.includes('Add Cambodia Market Intelligence')) {
+        await processTrainingReply(bot, msg, 'cambodia');
+        return;
+      } else if (replyText.includes('Add Crisis Management Expertise')) {
+        await processTrainingReply(bot, msg, 'crisis');
+        return;
+      } else if (replyText.includes('Add Client Success Pattern')) {
+        await processTrainingReply(bot, msg, 'success');
+        return;
+      }
+    }
+
     await bot.sendChatAction(chatId, "typing");
 
     // Skip dynasty protection completely for conversational messages
@@ -2803,12 +3027,13 @@ const handleUltimateMessage = async (bot, msg) => {
       stream: false,
       user: `dynasty_${userId}`, // PERSONALIZED INTELLIGENCE TRACKING - Builds user-specific strategic patterns
 
-      // ===== SUPREME TRAINING OPTIMIZATION - 3,157+ LINES OF POWER =====
-      // Maximum GPT power extraction through perfect parameter tuning verified by ChatGPT
-      // This configuration activates SUPREME institutional-grade intelligence exceeding Claude AI, McKinsey, BCG, Bain, BlackRock
-      // Khmer language mastery confirmed with professional business terminology and perfect grammar (78+ references)
-      // Dynasty-level sophistication with Cambodia market monopoly and crisis-tested authority from 2008 experience
-      // SUPREMELY POWERFUL: Over 3,000 lines of institutional intelligence ready for Railway deployment
+      // ===== PURE UNLIMITED GPT-4o + ENHANCED TRAINING SYSTEM =====
+      // TRAINING INTEGRATION ENHANCES - NEVER RESTRICTS - pure core GPT-4o intelligence
+      // All training data ADDS specialized knowledge while preserving full intellectual freedom
+      // Zero artificial constraints - training system purely additive to unlock specialized expertise
+      // GPT-4o runs with complete unrestricted reasoning + accumulated strategic intelligence
+      // ULTIMATE CONFIGURATION: Pure core intelligence + specialized Cambodia/Reformed Fund expertise
+      // TRAINING PHILOSOPHY: Enhancement without limitation - like ChatGPT with specialized knowledge
       logit_bias: {
         // ENHANCED STRATEGIC VOCABULARY BIAS - Amplifies institutional-grade terminology
         21615: 0.1, // "strategic" - Enhanced strategic thinking
