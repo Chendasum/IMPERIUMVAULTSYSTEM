@@ -10,13 +10,15 @@ const Parser = require("rss-parser");
 
 dotenv.config();
 
-const TELEGRAM_TOKEN = process.env.VAULT_BOT_TOKEN;
+// Support both Railway and Replit environment variable names
+const TELEGRAM_TOKEN = process.env.VAULT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 // Verify essential environment variables
 if (!TELEGRAM_TOKEN) {
-  console.error("🚨 CRITICAL: VAULT_BOT_TOKEN not found in environment variables");
-  console.log("Available environment variables:", Object.keys(process.env).filter(key => key.includes('BOT') || key.includes('VAULT')));
+  console.error("🚨 CRITICAL: Bot token not found in environment variables");
+  console.error("Looking for: VAULT_BOT_TOKEN or TELEGRAM_BOT_TOKEN");
+  console.log("Available bot-related variables:", Object.keys(process.env).filter(key => key.includes('BOT') || key.includes('VAULT') || key.includes('TELEGRAM')));
   process.exit(1);
 }
 
