@@ -44,7 +44,7 @@ if (!OPENAI_KEY) {
   );
   process.exit(1);
 }
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 const DATABASE_URL = process.env.DATABASE_URL;
 
 // ELITE DYNASTY FINANCIAL INTELLIGENCE - GLOBAL DATA SOURCES
@@ -3058,11 +3058,7 @@ process.on("SIGTERM", () => {
 const app = express();
 app.use(express.json());
 
-// Webhook endpoint
-app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
-  bot.processUpdate(req.body);
-  res.sendStatus(200);
-});
+// Note: Webhook endpoint configured in setupWebhook function below
 
 app.get("/", (req, res) => {
   res.json({
@@ -3205,30 +3201,33 @@ const setupWebhook = async (retryCount = 0) => {
     console.log(`✅ Webhook configured successfully: ${webhookUrl}`);
     console.log(`📡 Webhook result: ${result}`);
 
-    // Setup webhook endpoint with enhanced error handling
-    app.post(`/bot${TELEGRAM_TOKEN}`, express.json(), (req, res) => {
-      console.log("📨 Webhook message received");
-      console.log("📋 Message data:", JSON.stringify(req.body, null, 2));
+    // Setup webhook endpoint with enhanced error handling (configured once)
+    if (!app._webhookConfigured) {
+      app.post(`/bot${TELEGRAM_TOKEN}`, express.json(), (req, res) => {
+        console.log("📨 Webhook message received");
+        console.log("📋 Message data:", JSON.stringify(req.body, null, 2));
 
-      try {
-        // Validate webhook data
-        if (!req.body || !req.body.update_id) {
-          console.log("⚠️ Invalid webhook data received");
-          return res
-            .status(200)
-            .json({ status: "ok", message: "Invalid data" });
-        }
+        try {
+          // Validate webhook data
+          if (!req.body || !req.body.update_id) {
+            console.log("⚠️ Invalid webhook data received");
+            return res
+              .status(200)
+              .json({ status: "ok", message: "Invalid data" });
+          }
 
-        // Process the update
-        bot.processUpdate(req.body);
-        console.log("✅ Webhook processed successfully");
-        res.status(200).json({ status: "ok" });
-      } catch (error) {
+          // Process the update
+          bot.processUpdate(req.body);
+          console.log("✅ Webhook processed successfully");
+          res.status(200).json({ status: "ok" });
+        } catch (error) {
         console.error("❌ Webhook processing error:", error.message);
         console.error("❌ Error stack:", error.stack);
         res.status(200).json({ status: "error", message: error.message });
-      }
-    });
+        }
+      });
+      app._webhookConfigured = true;
+    }
 
     return true;
   } catch (error) {
