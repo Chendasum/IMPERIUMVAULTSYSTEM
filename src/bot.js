@@ -19,13 +19,13 @@ dotenv.config();
 
 // Support both Railway and Replit environment variable names
 const TELEGRAM_TOKEN =
-  process.env.VAULT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+  process.env.TELEGRAM_BOT_TOKEN || process.env.VAULT_BOT_TOKEN;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 // Verify essential environment variables
 if (!TELEGRAM_TOKEN) {
   console.error("🚨 CRITICAL: Bot token not found in environment variables");
-  console.error("Looking for: VAULT_BOT_TOKEN or TELEGRAM_BOT_TOKEN");
+  console.error("Looking for: TELEGRAM_BOT_TOKEN or VAULT_BOT_TOKEN");
   console.log(
     "Available bot-related variables:",
     Object.keys(process.env).filter(
