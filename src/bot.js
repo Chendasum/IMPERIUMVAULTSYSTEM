@@ -68,10 +68,22 @@ const DATA_SOURCES = {
 let bot, openai, dbPool;
 
 try {
-  bot = new TelegramBot(TELEGRAM_TOKEN, {
-    polling: true,
-    filepath: false,
-  });
+  // Detect deployment environment to prevent polling conflicts
+  const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID || process.env.RAILWAY_PUBLIC_DOMAIN;
+  
+  if (isRailway) {
+    console.log("🚀 RAILWAY PRODUCTION: Using webhook mode (recommended for stability & performance)");
+    bot = new TelegramBot(TELEGRAM_TOKEN, {
+      polling: false,
+      filepath: false,
+    });
+  } else {
+    console.log("⚙️ DEVELOPMENT MODE: Using polling for testing purposes");
+    bot = new TelegramBot(TELEGRAM_TOKEN, {
+      polling: true,
+      filepath: false,
+    });
+  }
 
   openai = new OpenAI({
     apiKey: OPENAI_KEY,
@@ -2428,6 +2440,23 @@ app.get("/ultimate-stats", (req, res) => {
 app.listen(PORT, () => {
   console.log(`🌐 Ultimate health check server running on port ${PORT}`);
 });
+
+// Setup webhook for Railway deployment
+const setupWebhook = async () => {
+  try {
+    const webhookUrl = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/bot${TELEGRAM_TOKEN}`;
+    await bot.setWebHook(webhookUrl);
+    console.log(`📡 Webhook configured: ${webhookUrl}`);
+    
+    // Setup webhook endpoint
+    app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
+      bot.processUpdate(req.body);
+      res.sendStatus(200);
+    });
+  } catch (error) {
+    console.log("📡 VaultClaude running in direct mode (webhook setup skipped)");
+  }
+};
 
 // Initialize database tables and start complete system
 const startUltimateSystem = async () => {
