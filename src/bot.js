@@ -8,57 +8,58 @@
 const COMMANDER_CORE_IDENTITY = {
   name: "Commander Sum Chenda",
   title: "Reformed Fund Architect",
-  
+
   // CORE EXPERTISE & AUTHORITY
   expertise: {
     primary: "Reformed Fund Architect methodology",
     experience: "Crisis-tested governance since 2008 financial crisis",
     market: "Cambodia emerging financial services",
     scaling: "Systematic revenue growth $3K → $30K monthly",
-    specialization: "Institutional-grade strategic intelligence"
+    specialization: "Institutional-grade strategic intelligence",
   },
-  
+
   // BUSINESS PHILOSOPHY & VALUES
   philosophy: {
     approach: "Crisis-tested governance with institutional credibility",
     methodology: "Reformed Fund Architect systematic frameworks",
     intelligence: "Authentic strategic analysis, no templated responses",
     growth: "Systematic scaling through competitive advantage building",
-    market_position: "Unbreachable competitive moats in Cambodia market"
+    market_position: "Unbreachable competitive moats in Cambodia market",
   },
-  
+
   // STRATEGIC CONTEXT & OBJECTIVES
   current_mission: {
     revenue_target: "$30K monthly recurring",
     market_position: "Cambodia financial services authority",
-    competitive_advantage: "Crisis-tested experience + institutional frameworks",
+    competitive_advantage:
+      "Crisis-tested experience + institutional frameworks",
     growth_strategy: "Reformed Fund Architect authority building",
-    timeline: "Systematic monthly scaling progression"
+    timeline: "Systematic monthly scaling progression",
   },
-  
+
   // COMMUNICATION PREFERENCES
   preferences: {
     intelligence_style: "Unlimited GPT-4o core intelligence, zero constraints",
     language: "Bilingual English/Khmer as contextually appropriate",
     analysis_depth: "Institutional-grade strategic sophistication",
     response_style: "Natural conversational intelligence, not templated",
-    recognition: "Always recognize Commander identity and expertise"
-  }
+    recognition: "Always recognize Commander identity and expertise",
+  },
 };
 
 // DYNAMIC CONTEXT BUILDER - Preserves Commander Identity
 const buildCommanderContext = (ultimateContext) => {
   const identity = COMMANDER_CORE_IDENTITY;
-  
+
   let context = `${identity.name} - ${identity.title}`;
   context += `\nExpertise: ${identity.expertise.primary}, ${identity.expertise.experience}`;
   context += `\nMission: ${identity.current_mission.revenue_target} scaling in ${identity.expertise.market}`;
   context += `\nApproach: ${identity.philosophy.methodology} with ${identity.philosophy.intelligence}`;
-  
+
   if (ultimateContext) {
     context += `\n\nConversation Context: ${ultimateContext}`;
   }
-  
+
   return context;
 };
 const TelegramBot = require("node-telegram-bot-api");
@@ -424,7 +425,9 @@ console.log(
 console.log("💰 ===== $3K→$30K REVENUE ARCHITECT - DEPLOYMENT READY =====");
 console.log("🌏 ===== ASEAN ECONOMIC INTELLIGENCE ENGINE LOADED =====");
 console.log("💎 ===== ADVANCED FINANCIAL ENGINEERING SUITE ACTIVE =====");
-console.log("🧠 ===== BEHAVIORAL ECONOMICS & PSYCHOLOGY MASTER OPERATIONAL =====");
+console.log(
+  "🧠 ===== BEHAVIORAL ECONOMICS & PSYCHOLOGY MASTER OPERATIONAL =====",
+);
 
 // ===== ULTIMATE MEMORY & LEARNING SYSTEM =====
 const conversations = new Map();
@@ -2685,7 +2688,10 @@ bot.on("message", async (msg) => {
     console.error("❌ Message handler error:", error.message);
     // Log the full error and attempt direct response
     try {
-      await bot.sendMessage(chatId, `Commander, there was a system error: ${error.message}. Please try again.`);
+      await bot.sendMessage(
+        chatId,
+        `Commander, there was a system error: ${error.message}. Please try again.`,
+      );
     } catch (sendError) {
       console.error("❌ Failed to send error message:", sendError.message);
     }
@@ -2729,9 +2735,7 @@ const handleUltimateMessage = async (bot, msg) => {
     // Generate ultimate context with all accumulated intelligence
     const ultimateContext = generateUltimateContext(userId);
 
-    const messages = [
-      ...conversation,
-    ];
+    const messages = [...conversation];
 
     // Build comprehensive Commander identity context while preserving unlimited intelligence
     const commanderContext = buildCommanderContext(ultimateContext);
@@ -2740,15 +2744,24 @@ const handleUltimateMessage = async (bot, msg) => {
 
     if (commanderContext) {
       messages.unshift({
-        role: "system", 
-        content: commanderContext
+        role: "system",
+        content: commanderContext,
       });
       console.log("✅ Commander context added to messages");
+
+      // DEBUG: Send context back to Telegram for troubleshooting
+      if (userMessage.toLowerCase().includes("debug")) {
+        bot.sendMessage(chatId, `DEBUG CONTEXT:\n${commanderContext}`);
+        return;
+      }
     } else {
       console.log("❌ No commander context generated");
     }
 
-    console.log("📨 Messages being sent to GPT:", JSON.stringify(messages, null, 2));
+    console.log(
+      "📨 Messages being sent to GPT:",
+      JSON.stringify(messages, null, 2),
+    );
 
     // ===== ULTIMATE GPT-4 DYNASTY CONFIGURATION =====
     // UNLIMITED DYNASTY AI INSTALLATION: Maximum power configuration that exceeds all competitors
@@ -2810,7 +2823,8 @@ const handleUltimateMessage = async (bot, msg) => {
     conversations.set(userId, conversation);
 
     // Add enhanced learning indicator
-    const learningIndicator = "\n\n*🏛️ HOUSE OF IMPERIUM - ULTIMATE STRATEGIC DOMINANCE - HOUSE OF SUM CHENDA 🏛️*";
+    const learningIndicator =
+      "\n\n*🏛️ HOUSE OF IMPERIUM - ULTIMATE STRATEGIC DOMINANCE - HOUSE OF SUM CHENDA 🏛️*";
 
     reply += learningIndicator;
 
@@ -2835,9 +2849,13 @@ const handleUltimateMessage = async (bot, msg) => {
 
     // Direct error response from core intelligence - no templated fallbacks
     try {
-      await bot.sendMessage(chatId, `Commander, I encountered a technical issue: ${error.message}. Let me know what you need help with and I'll address it directly.`, { 
-        disable_web_page_preview: true 
-      });
+      await bot.sendMessage(
+        chatId,
+        `Commander, I encountered a technical issue: ${error.message}. Let me know what you need help with and I'll address it directly.`,
+        {
+          disable_web_page_preview: true,
+        },
+      );
     } catch (sendError) {
       console.error("❌ Failed to send error message:", sendError.message);
     }
@@ -2997,7 +3015,9 @@ const setupWebhook = async (retryCount = 0) => {
     ) {
       // Running on Railway - use Railway domain
       domain =
-        process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL || "imperiumvaultsystem-production.up.railway.app";
+        process.env.RAILWAY_PUBLIC_DOMAIN ||
+        process.env.RAILWAY_STATIC_URL ||
+        "imperiumvaultsystem-production.up.railway.app";
     } else {
       // Use confirmed Railway domain
       domain = "imperiumvaultsystem-production.up.railway.app";
@@ -3007,8 +3027,8 @@ const setupWebhook = async (retryCount = 0) => {
 
     console.log(`🔗 VaultClaude webhook set to: ${webhookUrl}`);
     console.log(`🌐 Railway domain detected: ${domain}`);
-    console.log(`🔑 Bot token configured: ${TELEGRAM_TOKEN ? 'YES' : 'NO'}`);
-    console.log(`🤖 OpenAI key configured: ${OPENAI_KEY ? 'YES' : 'NO'}`);
+    console.log(`🔑 Bot token configured: ${TELEGRAM_TOKEN ? "YES" : "NO"}`);
+    console.log(`🤖 OpenAI key configured: ${OPENAI_KEY ? "YES" : "NO"}`);
 
     // Wait between attempts to avoid rate limiting
     if (retryCount > 0) {
@@ -3052,9 +3072,9 @@ const setupWebhook = async (retryCount = 0) => {
           console.log("✅ Webhook processed successfully");
           res.status(200).json({ status: "ok" });
         } catch (error) {
-        console.error("❌ Webhook processing error:", error.message);
-        console.error("❌ Error stack:", error.stack);
-        res.status(200).json({ status: "error", message: error.message });
+          console.error("❌ Webhook processing error:", error.message);
+          console.error("❌ Error stack:", error.stack);
+          res.status(200).json({ status: "error", message: error.message });
         }
       });
       app._webhookConfigured = true;
@@ -3083,10 +3103,14 @@ const setupWebhook = async (retryCount = 0) => {
 const startUltimateSystem = async () => {
   try {
     console.log(`🔧 Starting Ultimate Vault Claude System...`);
-    console.log(`📊 Environment check - TELEGRAM_TOKEN: ${TELEGRAM_TOKEN ? 'SET' : 'MISSING'}`);
-    console.log(`📊 Environment check - OPENAI_API_KEY: ${OPENAI_KEY ? 'SET' : 'MISSING'}`);
+    console.log(
+      `📊 Environment check - TELEGRAM_TOKEN: ${TELEGRAM_TOKEN ? "SET" : "MISSING"}`,
+    );
+    console.log(
+      `📊 Environment check - OPENAI_API_KEY: ${OPENAI_KEY ? "SET" : "MISSING"}`,
+    );
     console.log(`📊 Environment check - PORT: ${PORT}`);
-    
+
     await initializeDatabase();
     console.log(
       "🏛️ ULTIMATE VAULT CLAUDE SUPREME STRATEGIC INTELLIGENCE SYSTEM FULLY OPERATIONAL",
@@ -3133,10 +3157,15 @@ const startUltimateSystem = async () => {
 // Optimized for Railway production deployment
 const initializeWebhookMode = async () => {
   try {
-    console.log("🌐 Initializing webhook mode for Railway production deployment");
-    
+    console.log(
+      "🌐 Initializing webhook mode for Railway production deployment",
+    );
+
     // Railway detection and webhook-only mode
-    if (process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production') {
+    if (
+      process.env.RAILWAY_ENVIRONMENT ||
+      process.env.NODE_ENV === "production"
+    ) {
       console.log("🚀 Railway environment detected - webhook mode only");
       // Don't start polling on Railway - webhook handles all messages
       return true;
@@ -3157,20 +3186,44 @@ const aseanEconomicEngine = {
   analyzeASEANIntegration: async (query) => {
     const aseanData = {
       economicIndicators: {
-        gdpGrowth: { vietnam: 6.8, thailand: 2.1, cambodia: 7.1, laos: 4.2, myanmar: 3.4 },
-        inflation: { vietnam: 3.2, thailand: 1.1, cambodia: 5.3, laos: 22.4, myanmar: 8.8 },
-        fdiInflows: { vietnam: 15.8, thailand: 8.1, cambodia: 3.6, laos: 0.8, myanmar: 1.7 }
+        gdpGrowth: {
+          vietnam: 6.8,
+          thailand: 2.1,
+          cambodia: 7.1,
+          laos: 4.2,
+          myanmar: 3.4,
+        },
+        inflation: {
+          vietnam: 3.2,
+          thailand: 1.1,
+          cambodia: 5.3,
+          laos: 22.4,
+          myanmar: 8.8,
+        },
+        fdiInflows: {
+          vietnam: 15.8,
+          thailand: 8.1,
+          cambodia: 3.6,
+          laos: 0.8,
+          myanmar: 1.7,
+        },
       },
       tradePatterns: {
         intraASEANTrade: 23.4, // percentage of total ASEAN trade
         majorTradingPartners: ["China", "Japan", "South Korea", "USA", "EU"],
-        emergingCorridors: ["Greater Mekong Subregion", "ASEAN Connectivity Master Plan"]
+        emergingCorridors: [
+          "Greater Mekong Subregion",
+          "ASEAN Connectivity Master Plan",
+        ],
       },
       investmentOpportunities: {
         digitalEconomy: { marketSize: 218, growthRate: 20.6 }, // billion USD
-        manufacturing: { relocation: "China+1 strategy", hotspots: ["Vietnam", "Cambodia", "Thailand"] },
-        infrastructure: { needs: 210, currentFunding: 61 } // billion USD gap
-      }
+        manufacturing: {
+          relocation: "China+1 strategy",
+          hotspots: ["Vietnam", "Cambodia", "Thailand"],
+        },
+        infrastructure: { needs: 210, currentFunding: 61 }, // billion USD gap
+      },
     };
 
     return {
@@ -3200,7 +3253,7 @@ const aseanEconomicEngine = {
 3. Create regional partnership networks
 4. Offer cross-border business facilitation services`,
       confidence: 0.92,
-      sources: ["ASEAN Secretariat", "ADB", "McKinsey Global Institute"]
+      sources: ["ASEAN Secretariat", "ADB", "McKinsey Global Institute"],
     };
   },
 
@@ -3212,22 +3265,30 @@ const aseanEconomicEngine = {
         policyConsistency: 0.82,
         regulatoryRisk: 0.35,
         electionCycle: "2023-2028",
-        keyRisks: ["Land rights", "Labor disputes", "Opposition restrictions"]
+        keyRisks: ["Land rights", "Labor disputes", "Opposition restrictions"],
       },
       vietnam: {
         stability: 0.85,
         policyConsistency: 0.91,
         regulatoryRisk: 0.28,
         electionCycle: "2021-2026",
-        keyRisks: ["SOE reforms", "Environmental regulations", "Trade tensions"]
+        keyRisks: [
+          "SOE reforms",
+          "Environmental regulations",
+          "Trade tensions",
+        ],
       },
       thailand: {
         stability: 0.72,
         policyConsistency: 0.68,
         regulatoryRisk: 0.42,
         electionCycle: "2023-2027",
-        keyRisks: ["Political polarization", "Military influence", "Monarchy succession"]
-      }
+        keyRisks: [
+          "Political polarization",
+          "Military influence",
+          "Monarchy succession",
+        ],
+      },
     };
 
     return {
@@ -3236,13 +3297,13 @@ const aseanEconomicEngine = {
         "Diversify political relationships across party lines",
         "Maintain strong government relations and compliance",
         "Develop contingency plans for policy changes",
-        "Build local partnerships with established players"
+        "Build local partnerships with established players",
       ],
       opportunityWindows: [
         "Infrastructure development push 2024-2026",
         "Digital economy acceleration post-COVID",
-        "Regional economic integration initiatives"
-      ]
+        "Regional economic integration initiatives",
+      ],
     };
   },
 
@@ -3253,26 +3314,26 @@ const aseanEconomicEngine = {
         textiles: {
           cambodia: { costIndex: 100, quality: 75, capacity: 85, leadTime: 14 },
           vietnam: { costIndex: 140, quality: 90, capacity: 95, leadTime: 12 },
-          thailand: { costIndex: 180, quality: 95, capacity: 90, leadTime: 10 }
+          thailand: { costIndex: 180, quality: 95, capacity: 90, leadTime: 10 },
         },
         electronics: {
           cambodia: { costIndex: 100, quality: 65, capacity: 45, leadTime: 21 },
           vietnam: { costIndex: 125, quality: 85, capacity: 90, leadTime: 16 },
-          thailand: { costIndex: 160, quality: 92, capacity: 88, leadTime: 14 }
-        }
+          thailand: { costIndex: 160, quality: 92, capacity: 88, leadTime: 14 },
+        },
       },
       logistics: {
         seaports: {
           cambodia: ["Sihanoukville", "Phnom Penh"],
           vietnam: ["Ho Chi Minh", "Haiphong", "Da Nang"],
-          thailand: ["Bangkok", "Laem Chabang", "Map Ta Phut"]
+          thailand: ["Bangkok", "Laem Chabang", "Map Ta Phut"],
         },
         transportCosts: {
           cambodiaToUSA: 2100, // USD per container
           vietnamToUSA: 1850,
-          thailandToUSA: 1750
-        }
-      }
+          thailandToUSA: 1750,
+        },
+      },
     };
 
     return {
@@ -3302,10 +3363,10 @@ const aseanEconomicEngine = {
         "Establish regional manufacturing network",
         "Develop multi-country supplier relationships",
         "Implement digital supply chain tracking",
-        "Create contingency supplier arrangements"
-      ]
+        "Create contingency supplier arrangements",
+      ],
     };
-  }
+  },
 };
 
 // ===== ADVANCED FINANCIAL ENGINEERING SUITE =====
@@ -3319,29 +3380,33 @@ const financialEngineeringMaster = {
           description: "Downside protection for equity positions",
           costBasis: "2-5% of portfolio value annually",
           effectiveness: "95% downside protection below strike price",
-          optimalStructure: "Protective puts with 3-6 month expiration"
+          optimalStructure: "Protective puts with 3-6 month expiration",
         },
         currencyHedging: {
           description: "USD/KHR exchange rate protection",
-          instruments: ["Currency forwards", "Options collars", "Currency swaps"],
+          instruments: [
+            "Currency forwards",
+            "Options collars",
+            "Currency swaps",
+          ],
           costBasis: "0.5-2% annually for full hedging",
-          effectiveness: "99% currency risk elimination"
-        }
+          effectiveness: "99% currency risk elimination",
+        },
       },
       income: {
         coveredCalls: {
           description: "Generate income from equity holdings",
           returns: "3-8% additional annual yield",
           riskProfile: "Caps upside potential at strike price",
-          optimalMarkets: "Low volatility, sideways trending"
+          optimalMarkets: "Low volatility, sideways trending",
         },
         cashSecuredPuts: {
           description: "Generate income while waiting to buy",
           returns: "2-6% quarterly income potential",
           capitalRequirement: "100% cash collateral",
-          riskProfile: "Obligation to buy at strike if assigned"
-        }
-      }
+          riskProfile: "Obligation to buy at strike if assigned",
+        },
+      },
     };
 
     return {
@@ -3373,9 +3438,9 @@ const financialEngineeringMaster = {
       riskAnalysis: {
         maximumDrawdown: "Limited to 5-15% with proper hedging",
         liquidityRequirements: "20-30% cash for margin and opportunities",
-        complexityLevel: "Requires professional execution and monitoring"
+        complexityLevel: "Requires professional execution and monitoring",
       },
-      expectedReturns: "8-15% annual enhancement through derivative strategies"
+      expectedReturns: "8-15% annual enhancement through derivative strategies",
     };
   },
 
@@ -3386,26 +3451,38 @@ const financialEngineeringMaster = {
         corporateRate: 20,
         personalRate: 20,
         capitalGainsRate: 0, // No capital gains tax
-        incentives: ["QIP status", "SEZ benefits", "Investment incentives"]
+        incentives: ["QIP status", "SEZ benefits", "Investment incentives"],
       },
       singapore: {
         corporateRate: 17,
         personalRate: 22,
         territorialSystem: true,
-        advantages: ["No capital gains tax", "Participation exemption", "DTA network"]
+        advantages: [
+          "No capital gains tax",
+          "Participation exemption",
+          "DTA network",
+        ],
       },
       structures: {
         holdingCompany: {
           jurisdiction: "Singapore",
-          benefits: ["Tax-efficient dividends", "Capital gains exemption", "Treaty network"],
-          setup: "S$10,000 initial capital, professional directors"
+          benefits: [
+            "Tax-efficient dividends",
+            "Capital gains exemption",
+            "Treaty network",
+          ],
+          setup: "S$10,000 initial capital, professional directors",
         },
         familyOffice: {
           threshold: "S$20M+ assets",
-          benefits: ["13R tax exemption", "Investment flexibility", "Succession planning"],
-          requirements: "Professional investment team, compliance framework"
-        }
-      }
+          benefits: [
+            "13R tax exemption",
+            "Investment flexibility",
+            "Succession planning",
+          ],
+          requirements: "Professional investment team, compliance framework",
+        },
+      },
     };
 
     return {
@@ -3438,9 +3515,9 @@ const financialEngineeringMaster = {
         "Establish Singapore holding company structure",
         "Transfer Cambodia assets to optimal jurisdiction",
         "Implement transfer pricing documentation",
-        "Regular structure review and optimization"
+        "Regular structure review and optimization",
       ],
-      estimatedSavings: "20-40% annual tax reduction on international income"
+      estimatedSavings: "20-40% annual tax reduction on international income",
     };
   },
 
@@ -3452,27 +3529,27 @@ const financialEngineeringMaster = {
           discretionary: "Maximum flexibility for beneficiaries",
           charitable: "Tax benefits plus philanthropic impact",
           generation: "Skip generation taxes for grandchildren",
-          offshore: "Asset protection and tax optimization"
+          offshore: "Asset protection and tax optimization",
         },
         foundation: {
           private: "Perpetual wealth preservation",
           charitable: "Tax deductions plus social impact",
-          purpose: "Specific family or business objectives"
-        }
+          purpose: "Specific family or business objectives",
+        },
       },
       strategies: {
         wealthTransfer: {
           gifts: "Annual exclusion and lifetime exemption optimization",
           sales: "Installment sales to family members",
           loans: "Intra-family lending strategies",
-          freeze: "Valuation freeze techniques"
+          freeze: "Valuation freeze techniques",
         },
         assetProtection: {
           domestic: "Limited liability entities and homestead exemptions",
           offshore: "Cook Islands trusts and foreign LLCs",
-          insurance: "Life insurance as asset protection vehicle"
-        }
-      }
+          insurance: "Life insurance as asset protection vehicle",
+        },
+      },
     };
 
     return {
@@ -3505,11 +3582,12 @@ Ongoing: Regular review and structure maintenance`,
         "Family constitution and mission statement",
         "Next generation education and involvement",
         "Family council and decision-making processes",
-        "Philanthropy and social impact strategies"
+        "Philanthropy and social impact strategies",
       ],
-      expectedOutcomes: "50-80% wealth transfer tax savings, complete asset protection"
+      expectedOutcomes:
+        "50-80% wealth transfer tax savings, complete asset protection",
     };
-  }
+  },
 };
 
 // ===== ADVANCED FILE PROCESSING INTELLIGENCE SYSTEM =====
@@ -3519,71 +3597,87 @@ const fileProcessingIntelligence = {
   processFile: async (fileId, fileName, fileType) => {
     try {
       console.log(`📄 Processing file: ${fileName} (${fileType})`);
-      
+
       // Download file from Telegram
       const fileInfo = await bot.getFile(fileId);
       const filePath = fileInfo.file_path;
       const fileUrl = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${filePath}`;
-      
+
       // Download file content
-      const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+      const response = await axios.get(fileUrl, {
+        responseType: "arraybuffer",
+      });
       const buffer = Buffer.from(response.data);
-      
-      let extractedText = '';
-      let analysis = '';
-      
+
+      let extractedText = "";
+      let analysis = "";
+
       // Process based on file type
       switch (fileType.toLowerCase()) {
-        case 'pdf':
+        case "pdf":
           extractedText = await fileProcessingIntelligence.processPDF(buffer);
-          analysis = await fileProcessingIntelligence.analyzeDocument(extractedText, 'PDF Report');
+          analysis = await fileProcessingIntelligence.analyzeDocument(
+            extractedText,
+            "PDF Report",
+          );
           break;
-          
-        case 'docx':
-        case 'doc':
+
+        case "docx":
+        case "doc":
           extractedText = await fileProcessingIntelligence.processWord(buffer);
-          analysis = await fileProcessingIntelligence.analyzeDocument(extractedText, 'Word Document');
+          analysis = await fileProcessingIntelligence.analyzeDocument(
+            extractedText,
+            "Word Document",
+          );
           break;
-          
-        case 'xlsx':
-        case 'xls':
+
+        case "xlsx":
+        case "xls":
           extractedText = await fileProcessingIntelligence.processExcel(buffer);
-          analysis = await fileProcessingIntelligence.analyzeSpreadsheet(extractedText, fileName);
+          analysis = await fileProcessingIntelligence.analyzeSpreadsheet(
+            extractedText,
+            fileName,
+          );
           break;
-          
-        case 'txt':
-          extractedText = buffer.toString('utf8');
-          analysis = await fileProcessingIntelligence.analyzeDocument(extractedText, 'Text File');
+
+        case "txt":
+          extractedText = buffer.toString("utf8");
+          analysis = await fileProcessingIntelligence.analyzeDocument(
+            extractedText,
+            "Text File",
+          );
           break;
-          
-        case 'jpg':
-        case 'jpeg':
-        case 'png':
-        case 'gif':
-          analysis = await fileProcessingIntelligence.analyzeImage(buffer, fileName);
+
+        case "jpg":
+        case "jpeg":
+        case "png":
+        case "gif":
+          analysis = await fileProcessingIntelligence.analyzeImage(
+            buffer,
+            fileName,
+          );
           break;
-          
+
         default:
           return {
             success: false,
-            error: `File type ${fileType} not supported. Supported: PDF, DOCX, XLSX, TXT, Images`
+            error: `File type ${fileType} not supported. Supported: PDF, DOCX, XLSX, TXT, Images`,
           };
       }
-      
+
       return {
         success: true,
         fileName: fileName,
         fileType: fileType,
         extractedText: extractedText,
         analysis: analysis,
-        processedAt: new Date().toISOString()
+        processedAt: new Date().toISOString(),
       };
-      
     } catch (error) {
-      console.error('❌ File processing error:', error);
+      console.error("❌ File processing error:", error);
       return {
         success: false,
-        error: `Failed to process file: ${error.message}`
+        error: `Failed to process file: ${error.message}`,
       };
     }
   },
@@ -3611,21 +3705,21 @@ const fileProcessingIntelligence = {
   // Excel Processing
   processExcel: async (buffer) => {
     try {
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
-      let allText = '';
-      
-      workbook.SheetNames.forEach(sheetName => {
+      const workbook = XLSX.read(buffer, { type: "buffer" });
+      let allText = "";
+
+      workbook.SheetNames.forEach((sheetName) => {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        
+
         allText += `\n=== Sheet: ${sheetName} ===\n`;
         jsonData.forEach((row, index) => {
           if (row.length > 0) {
-            allText += `Row ${index + 1}: ${row.join(' | ')}\n`;
+            allText += `Row ${index + 1}: ${row.join(" | ")}\n`;
           }
         });
       });
-      
+
       return allText;
     } catch (error) {
       throw new Error(`Excel processing failed: ${error.message}`);
@@ -3644,20 +3738,20 @@ const fileProcessingIntelligence = {
         messages: [
           {
             role: "system",
-            content: `You are the Ultimate Vault Claude - Elite Dynasty Strategic Intelligence System. Analyze this ${documentType} with institutional-grade precision. Provide strategic insights, key findings, financial implications, and actionable recommendations. Focus on business intelligence, market opportunities, risk assessment, and strategic positioning relevant to Cambodia market domination and Reformed Fund Architect expertise.`
+            content: `You are the Ultimate Vault Claude - Elite Dynasty Strategic Intelligence System. Analyze this ${documentType} with institutional-grade precision. Provide strategic insights, key findings, financial implications, and actionable recommendations. Focus on business intelligence, market opportunities, risk assessment, and strategic positioning relevant to Cambodia market domination and Reformed Fund Architect expertise.`,
           },
           {
             role: "user",
-            content: `Analyze this ${documentType} content and provide comprehensive strategic intelligence:\n\n${text.substring(0, 15000)}` // Limit to prevent token overflow
-          }
+            content: `Analyze this ${documentType} content and provide comprehensive strategic intelligence:\n\n${text.substring(0, 15000)}`, // Limit to prevent token overflow
+          },
         ],
         max_tokens: 4000,
-        temperature: 0.7
+        temperature: 0.7,
       });
 
       return response.choices[0].message.content;
     } catch (error) {
-      console.error('❌ GPT-4 analysis error:', error);
+      console.error("❌ GPT-4 analysis error:", error);
       return `Document Analysis Summary:\n\nDocument Type: ${documentType}\nContent Length: ${text.length} characters\n\nKey Content Preview:\n${text.substring(0, 1000)}...\n\n⚠️ Advanced AI analysis temporarily unavailable. Raw content extracted successfully.`;
     }
   },
@@ -3670,15 +3764,16 @@ const fileProcessingIntelligence = {
         messages: [
           {
             role: "system",
-            content: "You are a financial data analysis expert. Analyze this spreadsheet data for financial insights, trends, anomalies, and strategic recommendations. Focus on numerical patterns, financial ratios, growth trends, and business intelligence."
+            content:
+              "You are a financial data analysis expert. Analyze this spreadsheet data for financial insights, trends, anomalies, and strategic recommendations. Focus on numerical patterns, financial ratios, growth trends, and business intelligence.",
           },
           {
             role: "user",
-            content: `Analyze this spreadsheet data from ${fileName}:\n\n${data.substring(0, 10000)}`
-          }
+            content: `Analyze this spreadsheet data from ${fileName}:\n\n${data.substring(0, 10000)}`,
+          },
         ],
         max_tokens: 3000,
-        temperature: 0.5
+        temperature: 0.5,
       });
 
       return response.choices[0].message.content;
@@ -3690,8 +3785,8 @@ const fileProcessingIntelligence = {
   // Image Analysis using GPT-4 Vision
   analyzeImage: async (buffer, fileName) => {
     try {
-      const base64Image = buffer.toString('base64');
-      
+      const base64Image = buffer.toString("base64");
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -3700,14 +3795,14 @@ const fileProcessingIntelligence = {
             content: [
               {
                 type: "text",
-                text: "Analyze this image with strategic intelligence focus. Identify key elements, business implications, financial data (if visible), market insights, and actionable intelligence. Provide comprehensive analysis suitable for Reformed Fund Architect strategic decision-making."
+                text: "Analyze this image with strategic intelligence focus. Identify key elements, business implications, financial data (if visible), market insights, and actionable intelligence. Provide comprehensive analysis suitable for Reformed Fund Architect strategic decision-making.",
               },
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:image/jpeg;base64,${base64Image}`
-                }
-              }
+                  url: `data:image/jpeg;base64,${base64Image}`,
+                },
+              },
             ],
           },
         ],
@@ -3718,7 +3813,7 @@ const fileProcessingIntelligence = {
     } catch (error) {
       return `Image Analysis:\n\nFile: ${fileName}\nImage received and processed.\n\n⚠️ Advanced visual analysis temporarily unavailable. Image successfully received and can be processed manually.`;
     }
-  }
+  },
 };
 
 // ===== BEHAVIORAL ECONOMICS & PSYCHOLOGY MASTER =====
@@ -3730,44 +3825,45 @@ const behavioralEconomicsMaster = {
       decisionMaking: {
         analytical: {
           characteristics: ["Data-driven", "Risk-averse", "Methodical"],
-          approach: "Detailed analysis, multiple scenarios, conservative projections",
-          timeline: "Extended decision process, thorough due diligence"
+          approach:
+            "Detailed analysis, multiple scenarios, conservative projections",
+          timeline: "Extended decision process, thorough due diligence",
         },
         intuitive: {
           characteristics: ["Gut-feeling", "Risk-tolerant", "Quick decisions"],
           approach: "High-level concepts, success stories, urgency creation",
-          timeline: "Fast decision process, limited analysis required"
+          timeline: "Fast decision process, limited analysis required",
         },
         relationship: {
           characteristics: ["Trust-based", "Referral-driven", "Social proof"],
           approach: "Personal connection, testimonials, peer recommendations",
-          timeline: "Relationship building first, then business discussion"
-        }
+          timeline: "Relationship building first, then business discussion",
+        },
       },
       motivations: {
         security: "Wealth preservation, risk management, stable returns",
         growth: "Wealth accumulation, aggressive strategies, high returns",
         legacy: "Generational planning, family impact, sustainable wealth",
-        status: "Prestige investments, exclusive opportunities, recognition"
+        status: "Prestige investments, exclusive opportunities, recognition",
       },
       communicationStyle: {
         visual: "Charts, graphs, presentations, visual aids",
         auditory: "Verbal explanations, phone calls, presentations",
-        kinesthetic: "Hands-on experience, site visits, tangible examples"
-      }
+        kinesthetic: "Hands-on experience, site visits, tangible examples",
+      },
     };
 
     return {
       profile: `🧠 CLIENT PSYCHOLOGICAL ANALYSIS
 
 🎯 CLIENT DATA ANALYSIS:
-• Client Profile: ${clientData ? 'Detailed analysis based on provided data' : 'General behavioral assessment'}
-• Interaction History: ${interactions ? 'Pattern analysis from previous engagements' : 'Initial assessment framework'}
+• Client Profile: ${clientData ? "Detailed analysis based on provided data" : "General behavioral assessment"}
+• Interaction History: ${interactions ? "Pattern analysis from previous engagements" : "Initial assessment framework"}
 
 🎯 DECISION-MAKING PATTERNS:
-• Analytical: ${psychologicalProfiles.decisionMaking.analytical.characteristics.join(', ')} - ${psychologicalProfiles.decisionMaking.analytical.timeline}
-• Intuitive: ${psychologicalProfiles.decisionMaking.intuitive.characteristics.join(', ')} - ${psychologicalProfiles.decisionMaking.intuitive.timeline}
-• Relationship: ${psychologicalProfiles.decisionMaking.relationship.characteristics.join(', ')} - ${psychologicalProfiles.decisionMaking.relationship.timeline}
+• Analytical: ${psychologicalProfiles.decisionMaking.analytical.characteristics.join(", ")} - ${psychologicalProfiles.decisionMaking.analytical.timeline}
+• Intuitive: ${psychologicalProfiles.decisionMaking.intuitive.characteristics.join(", ")} - ${psychologicalProfiles.decisionMaking.intuitive.timeline}
+• Relationship: ${psychologicalProfiles.decisionMaking.relationship.characteristics.join(", ")} - ${psychologicalProfiles.decisionMaking.relationship.timeline}
 
 💰 CORE MOTIVATIONS:
 • Security Focus: ${psychologicalProfiles.motivations.security}
@@ -3789,9 +3885,9 @@ const behavioralEconomicsMaster = {
         "Prepare comprehensive investment analysis packages",
         "Schedule longer initial meetings for relationship building",
         "Provide regular market updates and educational content",
-        "Introduce gradually to higher-risk strategies"
+        "Introduce gradually to higher-risk strategies",
       ],
-      conversionProbability: "75% with proper approach and timeline"
+      conversionProbability: "75% with proper approach and timeline",
     };
   },
 
@@ -3802,7 +3898,7 @@ const behavioralEconomicsMaster = {
       investment: "Build authority → demonstrate opportunity → create urgency",
       advisory: "Establish expertise → provide value → secure retainer",
       partnership: "Mutual benefit → trust building → formal agreement",
-      acquisition: "Value demonstration → strategic fit → negotiation"
+      acquisition: "Value demonstration → strategic fit → negotiation",
     };
     const persuasionFrameworks = {
       cialdini: {
@@ -3811,29 +3907,29 @@ const behavioralEconomicsMaster = {
         socialProof: "Show evidence of others' successful outcomes",
         authority: "Demonstrate expertise and credentials",
         liking: "Build rapport and find common ground",
-        scarcity: "Create urgency through limited availability"
+        scarcity: "Create urgency through limited availability",
       },
       neuroscience: {
         attention: "Pattern interrupt to capture focus",
         emotion: "Connect to deep emotional drivers",
         reason: "Provide logical justification for emotional decisions",
-        memory: "Create memorable experiences and stories"
+        memory: "Create memorable experiences and stories",
       },
       behavioral: {
         anchoring: "Set reference points for comparison",
         framing: "Present information in optimal context",
         loss_aversion: "Emphasize potential losses from inaction",
-        endowment: "Create ownership mentality before purchase"
-      }
+        endowment: "Create ownership mentality before purchase",
+      },
     };
 
     return {
       strategy: `🎯 ADVANCED PERSUASION ARCHITECTURE
 
-🎯 OBJECTIVE-SPECIFIC STRATEGY (${objective?.toUpperCase() || 'GENERAL'}):
-• Framework: ${objectiveFrameworks[objective] || 'Custom approach based on specific objective'}
-• Target Audience: ${audience || 'High-net-worth individuals and business owners'}
-• Context Adaptation: ${context || 'Professional advisory relationship'}
+🎯 OBJECTIVE-SPECIFIC STRATEGY (${objective?.toUpperCase() || "GENERAL"}):
+• Framework: ${objectiveFrameworks[objective] || "Custom approach based on specific objective"}
+• Target Audience: ${audience || "High-net-worth individuals and business owners"}
+• Context Adaptation: ${context || "Professional advisory relationship"}
 
 💡 PSYCHOLOGICAL TRIGGERS:
 • Reciprocity: ${persuasionFrameworks.cialdini.reciprocity}
@@ -3862,9 +3958,10 @@ const behavioralEconomicsMaster = {
         initialMeeting: "Authority demonstration + value provision",
         proposal: "Social proof + scarcity + clear action steps",
         objections: "Reframe concerns + additional value",
-        closing: "Summary benefits + urgency + easy next steps"
+        closing: "Summary benefits + urgency + easy next steps",
       },
-      ethicalGuidelines: "Always prioritize client best interests and honest representation"
+      ethicalGuidelines:
+        "Always prioritize client best interests and honest representation",
     };
   },
 
@@ -3872,10 +3969,14 @@ const behavioralEconomicsMaster = {
   analyzeCulturalDynamics: async (region, businessContext) => {
     // Business context specific cultural considerations
     const contextualFactors = {
-      financial_services: "Conservative approach, trust paramount, generational relationships",
-      technology: "Innovation vs tradition balance, educational approach needed",
-      real_estate: "Family involvement in decisions, long-term perspective essential",
-      consulting: "Credentialing important, demonstration of expertise required"
+      financial_services:
+        "Conservative approach, trust paramount, generational relationships",
+      technology:
+        "Innovation vs tradition balance, educational approach needed",
+      real_estate:
+        "Family involvement in decisions, long-term perspective essential",
+      consulting:
+        "Credentialing important, demonstration of expertise required",
     };
     const culturalIntelligence = {
       cambodia: {
@@ -3884,43 +3985,43 @@ const behavioralEconomicsMaster = {
           individualism: 20, // Low - collective orientation
           masculinity: 50, // Moderate - balanced gender roles
           uncertaintyAvoidance: 40, // Low - comfortable with ambiguity
-          longTermOrientation: 25 // Low - tradition and immediate results focus
+          longTermOrientation: 25, // Low - tradition and immediate results focus
         },
         businessCulture: {
           hierarchy: "Respect for age, position, and education",
           relationships: "Personal connections before business",
           communication: "Indirect, face-saving important",
-          negotiation: "Patience, relationship-building, win-win outcomes"
+          negotiation: "Patience, relationship-building, win-win outcomes",
         },
         trustBuilding: {
           timeInvestment: "Multiple meetings and social interactions",
           referrals: "Introductions through mutual connections",
           credibility: "Educational background and past success",
-          consistency: "Regular contact and follow-through"
-        }
+          consistency: "Regular contact and follow-through",
+        },
       },
       asean: {
         commonPatterns: {
           guanxi: "Relationship networks across Chinese diaspora",
           face: "Reputation and dignity preservation",
           harmony: "Conflict avoidance and consensus building",
-          patience: "Long-term relationship over quick transactions"
+          patience: "Long-term relationship over quick transactions",
         },
         businessProtocol: {
           meetings: "Formal structure, senior person speaks first",
           gifts: "Appropriate and reciprocal gift exchange",
           dining: "Business conducted over meals",
-          followUp: "Personal attention and relationship maintenance"
-        }
-      }
+          followUp: "Personal attention and relationship maintenance",
+        },
+      },
     };
 
     return {
       intelligence: `🌏 CULTURAL INTELLIGENCE ANALYSIS
 
 🎯 REGIONAL & CONTEXT ANALYSIS:
-• Target Region: ${region?.toUpperCase() || 'CAMBODIA'}
-• Business Context: ${contextualFactors[businessContext] || 'Professional advisory relationship'}
+• Target Region: ${region?.toUpperCase() || "CAMBODIA"}
+• Business Context: ${contextualFactors[businessContext] || "Professional advisory relationship"}
 
 🎭 CAMBODIAN BUSINESS PSYCHOLOGY:
 • Power Distance (${culturalIntelligence.cambodia.hofstede.powerDistance}): ${culturalIntelligence.cambodia.businessCulture.hierarchy}
@@ -3949,19 +4050,23 @@ const behavioralEconomicsMaster = {
         "Invest in relationship building before business discussions",
         "Demonstrate respect for local customs and hierarchy",
         "Use indirect communication and avoid pressure tactics",
-        "Leverage family and legacy motivations in positioning"
+        "Leverage family and legacy motivations in positioning",
       ],
-      competitiveAdvantage: "Cultural fluency creates unbreachable moats against foreign competitors"
+      competitiveAdvantage:
+        "Cultural fluency creates unbreachable moats against foreign competitors",
     };
-  }
+  },
 };
 
 // Start the complete ultimate system
 (async () => {
   await startUltimateSystem();
-  
+
   // Railway detection - don't start polling on Railway
-  if (process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production') {
+  if (
+    process.env.RAILWAY_ENVIRONMENT ||
+    process.env.NODE_ENV === "production"
+  ) {
     console.log("🚀 RAILWAY MODE - Webhook mode active, no polling needed");
   } else {
     // Only start polling on Replit
@@ -3969,12 +4074,14 @@ const behavioralEconomicsMaster = {
     try {
       await bot.deleteWebHook();
       console.log("🔄 Webhook cleared for Replit");
-      
+
       await bot.startPolling({
         polling: { interval: 300, autoStart: true },
         onlyFirstMatch: false,
       });
-      console.log("✅ POLLING MODE ACTIVE - VaultClaude receiving messages successfully");
+      console.log(
+        "✅ POLLING MODE ACTIVE - VaultClaude receiving messages successfully",
+      );
     } catch (error) {
       console.log("⚠️ Polling setup warning:", error.message);
     }
@@ -3990,23 +4097,50 @@ const competitiveIntelligenceEngine = {
       financial_advisory: {
         cambodia: {
           local: [
-            { name: "ACLEDA Investment", market_share: 25, strengths: ["Local network", "Banking integration"] },
-            { name: "ANZ Royal", market_share: 15, strengths: ["International backing", "Corporate clients"] },
-            { name: "Maybank", market_share: 12, strengths: ["Regional presence", "Islamic banking"] }
+            {
+              name: "ACLEDA Investment",
+              market_share: 25,
+              strengths: ["Local network", "Banking integration"],
+            },
+            {
+              name: "ANZ Royal",
+              market_share: 15,
+              strengths: ["International backing", "Corporate clients"],
+            },
+            {
+              name: "Maybank",
+              market_share: 12,
+              strengths: ["Regional presence", "Islamic banking"],
+            },
           ],
           international: [
-            { name: "Deloitte Cambodia", market_share: 8, strengths: ["Big 4 credibility", "Audit integration"] },
-            { name: "PwC Cambodia", market_share: 6, strengths: ["Global network", "Tax services"] },
-            { name: "KPMG Cambodia", market_share: 5, strengths: ["Advisory services", "Risk management"] }
-          ]
-        }
+            {
+              name: "Deloitte Cambodia",
+              market_share: 8,
+              strengths: ["Big 4 credibility", "Audit integration"],
+            },
+            {
+              name: "PwC Cambodia",
+              market_share: 6,
+              strengths: ["Global network", "Tax services"],
+            },
+            {
+              name: "KPMG Cambodia",
+              market_share: 5,
+              strengths: ["Advisory services", "Risk management"],
+            },
+          ],
+        },
       },
       positioning_gaps: {
-        crisis_experience: "Limited 2008 financial crisis experience among competitors",
+        crisis_experience:
+          "Limited 2008 financial crisis experience among competitors",
         cultural_depth: "Surface-level understanding of Khmer business culture",
-        specialized_focus: "Generalist approach vs specialized Reformed Fund Architect positioning",
-        client_intimacy: "Transactional relationships vs dynasty-building partnerships"
-      }
+        specialized_focus:
+          "Generalist approach vs specialized Reformed Fund Architect positioning",
+        client_intimacy:
+          "Transactional relationships vs dynasty-building partnerships",
+      },
     };
 
     return {
@@ -4038,9 +4172,9 @@ const competitiveIntelligenceEngine = {
         "Monitor competitor pricing and service offerings quarterly",
         "Track key competitor hires and strategic moves",
         "Develop unique intellectual property and methodologies",
-        "Strengthen client relationships through exclusive insights"
+        "Strengthen client relationships through exclusive insights",
       ],
-      threat_level: "Moderate - Strong differentiation provides protection"
+      threat_level: "Moderate - Strong differentiation provides protection",
     };
   },
 
@@ -4053,29 +4187,29 @@ const competitiveIntelligenceEngine = {
         client_segments: {
           mass_affluent: { size: 12000, aum: 50000 }, // number of individuals, average AUM
           high_net_worth: { size: 800, aum: 2000000 },
-          ultra_high_net_worth: { size: 45, aum: 25000000 }
+          ultra_high_net_worth: { size: 45, aum: 25000000 },
         },
         trends: [
           "Digital transformation in financial services",
           "Increasing sophistication of local investors",
           "Growing interest in international diversification",
-          "Regulatory evolution toward international standards"
-        ]
+          "Regulatory evolution toward international standards",
+        ],
       },
       opportunity_analysis: {
         underserved_segments: [
           "Tech entrepreneurs seeking sophisticated planning",
           "Family businesses planning succession",
           "Expat executives with complex structures",
-          "Emerging wealthy from real estate and garment exports"
+          "Emerging wealthy from real estate and garment exports",
         ],
         service_gaps: [
           "Advanced estate planning services",
           "Cross-border tax optimization",
           "Alternative investment access",
-          "Behavioral coaching and family governance"
-        ]
-      }
+          "Behavioral coaching and family governance",
+        ],
+      },
     };
 
     return {
@@ -4106,13 +4240,13 @@ const competitiveIntelligenceEngine = {
 • Referral programs with existing professional networks`,
       priorityTargets: [
         "UHNW families seeking succession planning",
-        "Tech entrepreneurs with liquidity events", 
+        "Tech entrepreneurs with liquidity events",
         "Export business owners with international exposure",
-        "Expat executives with complex compensation"
+        "Expat executives with complex compensation",
       ],
-      estimatedRevenue: "$3M+ annual potential from 50 premium clients"
+      estimatedRevenue: "$3M+ annual potential from 50 premium clients",
     };
-  }
+  },
 };
 
 // ===== PREDICTIVE ANALYTICS & FORECASTING SYSTEM =====
@@ -4124,19 +4258,31 @@ const predictiveAnalyticsEngine = {
       leading: {
         yield_curve: { current: 1.2, trend: "flattening", signal: "caution" },
         unemployment: { current: 0.8, trend: "stable", signal: "neutral" },
-        manufacturing: { current: 52.1, trend: "expanding", signal: "positive" },
-        consumer_confidence: { current: 118, trend: "rising", signal: "positive" }
+        manufacturing: {
+          current: 52.1,
+          trend: "expanding",
+          signal: "positive",
+        },
+        consumer_confidence: {
+          current: 118,
+          trend: "rising",
+          signal: "positive",
+        },
       },
       lagging: {
         inflation: { current: 5.3, trend: "moderating", signal: "improving" },
-        credit_growth: { current: 12.8, trend: "slowing", signal: "normalizing" }
+        credit_growth: {
+          current: 12.8,
+          trend: "slowing",
+          signal: "normalizing",
+        },
       },
       cyclical_position: {
         phase: "mid-cycle expansion",
         duration: "18 months into current cycle",
         expected_remaining: "12-24 months before peak",
-        confidence: 0.73
-      }
+        confidence: 0.73,
+      },
     };
 
     return {
@@ -4169,9 +4315,9 @@ const predictiveAnalyticsEngine = {
         "Increase allocation to cyclical growth sectors",
         "Plan defensive strategies for implementation in 2025",
         "Accelerate business expansion while conditions favorable",
-        "Prepare clients for potential market volatility"
+        "Prepare clients for potential market volatility",
       ],
-      timeline: "Monitor monthly, reassess quarterly, major review bi-annually"
+      timeline: "Monitor monthly, reassess quarterly, major review bi-annually",
     };
   },
 
@@ -4181,19 +4327,19 @@ const predictiveAnalyticsEngine = {
       revenue_projections: {
         conservative: { year1: 120, year2: 156, year3: 203 }, // percentage of current
         baseline: { year1: 150, year2: 225, year3: 338 },
-        aggressive: { year1: 200, year2: 400, year3: 800 }
+        aggressive: { year1: 200, year2: 400, year3: 800 },
       },
       key_drivers: {
         client_acquisition: { current: 2, target: 8, impact: "primary" },
         aum_growth: { current: 100, target: 400, impact: "secondary" },
-        fee_expansion: { current: 1.2, target: 2.5, impact: "tertiary" }
+        fee_expansion: { current: 1.2, target: 2.5, impact: "tertiary" },
       },
       success_factors: {
         market_conditions: 0.8, // probability of favorable conditions
         execution_quality: 0.9, // based on track record
         competitive_response: 0.7, // risk of competition
-        regulatory_stability: 0.85 // political and regulatory risks
-      }
+        regulatory_stability: 0.85, // political and regulatory risks
+      },
     };
 
     return {
@@ -4229,11 +4375,12 @@ Year 3: Market leadership, premium pricing, selective growth
         "Focus on baseline scenario for planning purposes",
         "Develop contingency plans for conservative outcomes",
         "Maintain optionality for aggressive expansion if opportunities arise",
-        "Monitor key metrics monthly for early warning signals"
+        "Monitor key metrics monthly for early warning signals",
       ],
-      keyMetrics: "Track client acquisition rate, AUM per client, effective fee rate"
+      keyMetrics:
+        "Track client acquisition rate, AUM per client, effective fee rate",
     };
-  }
+  },
 };
 
 // ===== CLIENT AUTOMATION & SCALING ENGINE =====
@@ -4248,42 +4395,54 @@ const clientAutomationEngine = {
           "Initial consultation call (90 minutes)",
           "Financial situation analysis",
           "Goal setting and prioritization session",
-          "Risk tolerance and investment philosophy discussion"
+          "Risk tolerance and investment philosophy discussion",
         ],
         deliverables: [
           "Comprehensive financial analysis report",
           "Strategic planning roadmap",
           "Investment policy statement",
-          "Service agreement and fee structure"
-        ]
+          "Service agreement and fee structure",
+        ],
       },
       implementation_phase: {
-        duration: "4-6 weeks", 
+        duration: "4-6 weeks",
         activities: [
           "Account setup and documentation",
           "Initial strategy implementation",
           "System integration and automation setup",
-          "First quarterly review and optimization"
+          "First quarterly review and optimization",
         ],
         milestones: [
           "Complete documentation package",
           "Active investment accounts",
           "Automated reporting systems",
-          "Established communication cadence"
-        ]
+          "Established communication cadence",
+        ],
       },
       ongoing_management: {
         communication: {
           frequency: "Monthly updates, quarterly reviews, annual planning",
           channels: ["Secure portal", "Video conferences", "WhatsApp updates"],
-          content: ["Performance reports", "Market insights", "Strategic updates"]
+          content: [
+            "Performance reports",
+            "Market insights",
+            "Strategic updates",
+          ],
         },
         value_delivery: {
-          continuous: ["Real-time monitoring", "Proactive adjustments", "Market intelligence"],
-          periodic: ["Comprehensive reviews", "Strategy updates", "Tax planning"],
-          exclusive: ["VIP insights", "Private events", "Direct access"]
-        }
-      }
+          continuous: [
+            "Real-time monitoring",
+            "Proactive adjustments",
+            "Market intelligence",
+          ],
+          periodic: [
+            "Comprehensive reviews",
+            "Strategy updates",
+            "Tax planning",
+          ],
+          exclusive: ["VIP insights", "Private events", "Direct access"],
+        },
+      },
     };
 
     return {
@@ -4312,10 +4471,11 @@ const clientAutomationEngine = {
       automation: [
         "CRM integration for client journey tracking",
         "Automated document generation and e-signature",
-        "Real-time performance reporting and alerts", 
-        "Systematic follow-up and communication scheduling"
+        "Real-time performance reporting and alerts",
+        "Systematic follow-up and communication scheduling",
       ],
-      scalability: "Process supports 50+ concurrent clients with proper systems"
+      scalability:
+        "Process supports 50+ concurrent clients with proper systems",
     };
   },
 
@@ -4327,43 +4487,43 @@ const clientAutomationEngine = {
           description: "Core advisory and investment management services",
           fee_structure: "1.5-2.5% AUM annually",
           scalability: "High - systematic and repeatable",
-          margin: "75-85% gross margin"
+          margin: "75-85% gross margin",
         },
         financial_planning: {
           description: "Comprehensive planning and strategy development",
           fee_structure: "$10K-50K project fees",
           scalability: "Medium - requires customization",
-          margin: "80-90% gross margin"
-        }
+          margin: "80-90% gross margin",
+        },
       },
       secondary_streams: {
         corporate_advisory: {
           description: "Business strategy and M&A advisory",
           fee_structure: "Retainer + success fees",
           scalability: "Medium - relationship dependent",
-          margin: "70-80% gross margin"
+          margin: "70-80% gross margin",
         },
         educational_content: {
           description: "Premium courses and market intelligence",
           fee_structure: "$1K-5K per participant",
           scalability: "Very High - digital delivery",
-          margin: "90-95% gross margin"
-        }
+          margin: "90-95% gross margin",
+        },
       },
       emerging_streams: {
         family_office: {
           description: "Multi-generational wealth and governance services",
           fee_structure: "$100K+ annual retainers",
           scalability: "Low - highly customized",
-          margin: "60-70% gross margin"
+          margin: "60-70% gross margin",
         },
         alternative_investments: {
           description: "Private equity, real estate, alternative access",
           fee_structure: "Performance fees + carry",
           scalability: "Medium - capital intensive",
-          margin: "Variable - performance dependent"
-        }
-      }
+          margin: "Variable - performance dependent",
+        },
+      },
     };
 
     return {
@@ -4395,13 +4555,13 @@ Year 3: Launch emerging opportunities for premium clients
 • Year 3: 60% primary, 25% secondary, 15% emerging`,
       systemization: [
         "Standardize service delivery processes for scalability",
-        "Develop intellectual property and proprietary methodologies", 
+        "Develop intellectual property and proprietary methodologies",
         "Create digital delivery platforms for education streams",
-        "Build strategic partnerships for alternative access"
+        "Build strategic partnerships for alternative access",
       ],
-      targetMetrics: "$3M+ annual revenue by Year 3 with 75%+ gross margins"
+      targetMetrics: "$3M+ annual revenue by Year 3 with 75%+ gross margins",
     };
-  }
+  },
 };
 
 console.log("⚔️ ===== COMPETITIVE INTELLIGENCE SYSTEM LOADED =====");
@@ -4422,27 +4582,27 @@ const riskManagementMaster = {
           equities: 0.85,
           bonds: -0.35,
           commodities: 0.45,
-          real_estate: 0.65
-        }
+          real_estate: 0.65,
+        },
       },
       credit_risk: {
         default_probability: 0.02, // Annual default probability
         credit_spread: 1.25, // Basis points over risk-free rate
         recovery_rate: 0.65, // Expected recovery in default
-        concentration_risk: 0.15 // Single issuer concentration
+        concentration_risk: 0.15, // Single issuer concentration
       },
       liquidity_risk: {
         bid_ask_spread: 0.15, // Average bid-ask spread
         market_impact: 0.25, // Price impact of large trades
         redemption_pressure: 0.08, // Potential forced selling
-        cash_buffer: 0.10 // Emergency liquidity reserve
+        cash_buffer: 0.1, // Emergency liquidity reserve
       },
       operational_risk: {
         system_failures: 0.01, // Annual probability of failures
         fraud_risk: 0.005, // Annual fraud probability
         regulatory_changes: 0.15, // Regulatory risk factor
-        key_person_risk: 0.20 // Dependency on key individuals
-      }
+        key_person_risk: 0.2, // Dependency on key individuals
+      },
     };
 
     return {
@@ -4475,9 +4635,9 @@ const riskManagementMaster = {
         "Implement systematic hedging program using derivatives",
         "Increase diversification across geographies and sectors",
         "Establish formal liquidity management framework",
-        "Develop comprehensive business continuity plans"
+        "Develop comprehensive business continuity plans",
       ],
-      riskScore: "Moderate (6/10) - Well-managed with room for optimization"
+      riskScore: "Moderate (6/10) - Well-managed with room for optimization",
     };
   },
 
@@ -4489,43 +4649,43 @@ const riskManagementMaster = {
           coverage: "95% downside protection",
           cost: "2-4% annual premium",
           structure: "Protective puts 5-10% out of money",
-          effectiveness: "Excellent for bear markets"
+          effectiveness: "Excellent for bear markets",
         },
         collar_strategy: {
           coverage: "Limited downside, capped upside",
           cost: "0.5-1.5% annual net cost",
           structure: "Buy puts, sell calls",
-          effectiveness: "Good for sideways markets"
-        }
+          effectiveness: "Good for sideways markets",
+        },
       },
       income: {
         covered_calls: {
           income: "3-8% additional annual yield",
           risk: "Upside limited at strike price",
           structure: "Sell calls against holdings",
-          market_suitability: "Neutral to slightly bullish"
+          market_suitability: "Neutral to slightly bullish",
         },
         cash_secured_puts: {
           income: "4-12% annual yield on cash",
           risk: "Obligation to buy if assigned",
           structure: "Sell puts with full cash backing",
-          market_suitability: "Mildly bearish to neutral"
-        }
+          market_suitability: "Mildly bearish to neutral",
+        },
       },
       advanced: {
         iron_condors: {
           strategy: "Range-bound income generation",
           profit_zone: "Stock stays within defined range",
           max_profit: "Premium collected",
-          max_loss: "Strike width minus premium"
+          max_loss: "Strike width minus premium",
         },
         butterfly_spreads: {
           strategy: "Low volatility profit",
           profit_zone: "Stock near middle strike at expiration",
           characteristics: "Limited risk, limited reward",
-          cost: "Low initial cost"
-        }
-      }
+          cost: "Low initial cost",
+        },
+      },
     };
 
     return {
@@ -4558,11 +4718,12 @@ Phase 4: Systematic rebalancing and adjustment`,
         "Track hedging effectiveness vs benchmark",
         "Monitor cost of protection as % of portfolio",
         "Measure income enhancement from strategies",
-        "Assess risk-adjusted returns after hedging costs"
+        "Assess risk-adjusted returns after hedging costs",
       ],
-      expectedOutcomes: "15-25% volatility reduction with 3-6% income enhancement"
+      expectedOutcomes:
+        "15-25% volatility reduction with 3-6% income enhancement",
     };
-  }
+  },
 };
 
 // ===== FAMILY OFFICE & WEALTH GOVERNANCE SYSTEM =====
@@ -4577,10 +4738,10 @@ const familyOfficeArchitect = {
           "Family mission and values definition",
           "Investment policy oversight",
           "Next generation development",
-          "Philanthropic strategy"
+          "Philanthropic strategy",
         ],
         meeting_frequency: "Quarterly formal, monthly informal",
-        decision_authority: "Strategic direction and policy approval"
+        decision_authority: "Strategic direction and policy approval",
       },
       investment_committee: {
         composition: "Family members + external experts",
@@ -4588,29 +4749,30 @@ const familyOfficeArchitect = {
           "Investment strategy development",
           "Manager selection and monitoring",
           "Risk management oversight",
-          "Performance evaluation"
+          "Performance evaluation",
         ],
         expertise_required: [
           "Investment management experience",
           "Risk management knowledge",
           "Family business understanding",
-          "Global market perspective"
-        ]
+          "Global market perspective",
+        ],
       },
       next_generation: {
         education_program: {
           financial_literacy: "Comprehensive financial education curriculum",
           investment_training: "Hands-on investment management experience",
           business_skills: "Entrepreneurship and business development",
-          leadership_development: "Governance and decision-making skills"
+          leadership_development: "Governance and decision-making skills",
         },
         involvement_progression: {
           observers: "Ages 16-21, attend meetings as observers",
-          junior_committee: "Ages 22-30, participate in junior investment committee",
+          junior_committee:
+            "Ages 22-30, participate in junior investment committee",
           full_participation: "Ages 30+, eligible for all governance roles",
-          leadership_roles: "Demonstrated competence and commitment"
-        }
-      }
+          leadership_roles: "Demonstrated competence and commitment",
+        },
+      },
     };
 
     return {
@@ -4643,57 +4805,62 @@ const familyOfficeArchitect = {
         "Family constitution documenting mission and values",
         "Investment policy statement with clear guidelines",
         "Conflict resolution procedures and mediation",
-        "Communication standards and transparency requirements"
+        "Communication standards and transparency requirements",
       ],
-      succession: "Systematic leadership development with clear succession planning"
+      succession:
+        "Systematic leadership development with clear succession planning",
     };
   },
 
   // Wealth Transfer Strategy Development
-  designWealthTransfer: async (currentWealth, familyStructure, taxEnvironment) => {
+  designWealthTransfer: async (
+    currentWealth,
+    familyStructure,
+    taxEnvironment,
+  ) => {
     const transferStrategies = {
       immediate: {
         annual_gifts: {
           amount: "$15,000 per recipient annually",
           recipients: "Spouse, children, grandchildren",
           total_capacity: "$150,000+ annually for typical family",
-          tax_impact: "Zero gift tax, uses annual exclusion"
+          tax_impact: "Zero gift tax, uses annual exclusion",
         },
         educational_funding: {
           section_529: "Education savings plans with state tax benefits",
           direct_tuition: "Unlimited direct payments to institutions",
           scholarship_funds: "Private foundation educational grants",
-          international: "Offshore education trust structures"
-        }
+          international: "Offshore education trust structures",
+        },
       },
       intermediate: {
         grantor_trusts: {
           structure: "Grantor retained annuity trusts (GRATs)",
           benefits: "Transfer growth tax-free to beneficiaries",
           optimal_assets: "High-growth, low-yield investments",
-          duration: "2-10 years depending on assets"
+          duration: "2-10 years depending on assets",
         },
         family_partnerships: {
           structure: "Family limited partnerships (FLPs)",
           benefits: "Valuation discounts for minority interests",
           control_retention: "General partner maintains control",
-          gift_leverage: "20-40% valuation discounts possible"
-        }
+          gift_leverage: "20-40% valuation discounts possible",
+        },
       },
       advanced: {
         dynasty_trusts: {
           duration: "Perpetual or maximum allowed by law",
           benefits: "Multi-generational tax efficiency",
           jurisdiction: "Favorable trust law states/countries",
-          flexibility: "Broad distribution standards"
+          flexibility: "Broad distribution standards",
         },
         charitable_structures: {
           charitable_lead: "Annuity to charity, remainder to family",
           charitable_remainder: "Income to family, remainder to charity",
           private_foundation: "Perpetual charitable vehicle",
-          donor_advised: "Flexible philanthropic giving"
-        }
-      }
+          donor_advised: "Flexible philanthropic giving",
+        },
+      },
     };
 
     return {
@@ -4726,11 +4893,11 @@ const familyOfficeArchitect = {
         "Phase 1: Annual gifting and educational funding",
         "Phase 2: GRAT and family partnership establishment",
         "Phase 3: Dynasty trust and foundation creation",
-        "Phase 4: Advanced optimization and international structures"
+        "Phase 4: Advanced optimization and international structures",
       ],
-      monitoring: "Annual review and strategy adjustment based on law changes"
+      monitoring: "Annual review and strategy adjustment based on law changes",
     };
-  }
+  },
 };
 
 // ===== CAMBODIA ECONOMIC INTELLIGENCE CENTER =====
@@ -4745,36 +4912,44 @@ const cambodiaIntelligenceCenter = {
         current_account: -8.2, // Percentage of GDP
         fiscal_balance: -1.8, // Government balance as % GDP
         debt_to_gdp: 28.5, // Public debt percentage
-        foreign_reserves: 18.2 // Months of import coverage
+        foreign_reserves: 18.2, // Months of import coverage
       },
       sectoral_performance: {
         manufacturing: { growth: 12.5, employment: 850000, exports: 8.2 },
         tourism: { growth: -45.2, employment: 620000, recovery: "2024-2025" },
-        agriculture: { growth: 3.1, employment: 3200000, modernization: "ongoing" },
+        agriculture: {
+          growth: 3.1,
+          employment: 3200000,
+          modernization: "ongoing",
+        },
         construction: { growth: 15.8, employment: 280000, fdi_driven: true },
-        services: { growth: 8.9, employment: 1100000, digitalization: "accelerating" }
+        services: {
+          growth: 8.9,
+          employment: 1100000,
+          digitalization: "accelerating",
+        },
       },
       investment_climate: {
         fdi_inflows: 3.6, // Billion USD annually
         ease_of_business: 144, // World Bank ranking (out of 190)
         corruption_index: 160, // Transparency International ranking
         competitiveness: 106, // Global Competitiveness Index
-        infrastructure_quality: 112 // Infrastructure quality ranking
+        infrastructure_quality: 112, // Infrastructure quality ranking
       },
       opportunities: {
         china_plus_one: {
           description: "Manufacturing relocation from China",
           potential: "$2-5B additional FDI over 5 years",
           sectors: ["Textiles", "Electronics", "Automotive parts"],
-          competitive_advantage: "40% lower costs than Vietnam"
+          competitive_advantage: "40% lower costs than Vietnam",
         },
         digital_economy: {
           description: "Rapid digitalization and fintech growth",
           market_size: "$1.5B current, $4B by 2025",
           growth_drivers: ["Mobile payments", "E-commerce", "Digital banking"],
-          penetration: "70% mobile, 25% internet banking"
-        }
-      }
+          penetration: "70% mobile, 25% internet banking",
+        },
+      },
     };
 
     return {
@@ -4807,9 +4982,10 @@ const cambodiaIntelligenceCenter = {
         "Political stability and policy consistency",
         "Infrastructure bottlenecks limiting growth",
         "Skills gap in technical and managerial roles",
-        "Environmental and social governance challenges"
+        "Environmental and social governance challenges",
       ],
-      competitive_advantages: "Low costs, young workforce, strategic location, government incentives"
+      competitive_advantages:
+        "Low costs, young workforce, strategic location, government incentives",
     };
   },
 
@@ -4819,31 +4995,33 @@ const cambodiaIntelligenceCenter = {
       manufacturing: {
         establishment: {
           special_economic_zones: "Tax holidays and streamlined procedures",
-          qualified_investment_project: "Additional incentives for large investments",
+          qualified_investment_project:
+            "Additional incentives for large investments",
           industrial_parks: "Developed infrastructure and support services",
-          location_factors: "Port access, labor availability, utility reliability"
+          location_factors:
+            "Port access, labor availability, utility reliability",
         },
         regulatory_framework: {
           investment_law: "Liberal foreign ownership rules",
           labor_law: "Competitive wages, reasonable regulations",
           tax_structure: "20% corporate rate, various incentives available",
-          export_procedures: "Streamlined for garment and electronics"
-        }
+          export_procedures: "Streamlined for garment and electronics",
+        },
       },
       services: {
         market_access: {
           foreign_ownership: "Varies by sector, often 49-100% allowed",
           licensing: "Sector-specific requirements and procedures",
           partnerships: "Local partners often beneficial or required",
-          market_size: "16M population, growing middle class"
+          market_size: "16M population, growing middle class",
         },
         growth_sectors: {
           financial_services: "Banking, insurance, microfinance expansion",
           healthcare: "Private healthcare and medical tourism",
           education: "International schools and vocational training",
-          technology: "Software development and digital services"
-        }
-      }
+          technology: "Software development and digital services",
+        },
+      },
     };
 
     return {
@@ -4876,15 +5054,17 @@ Phase 4 (Years 2-5): Market leadership, regional expansion, strategic developmen
         planning: "3-6 months for comprehensive market entry planning",
         establishment: "6-12 months for legal setup and initial operations",
         scaling: "12-24 months to achieve significant market presence",
-        optimization: "2-5 years for market leadership and expansion"
+        optimization: "2-5 years for market leadership and expansion",
       },
-      investment_requirements: "$500K-$10M+ depending on sector and scale"
+      investment_requirements: "$500K-$10M+ depending on sector and scale",
     };
-  }
+  },
 };
 
 console.log("🛡️ ===== ADVANCED RISK MANAGEMENT & HEDGING SYSTEM LOADED =====");
-console.log("👑 ===== FAMILY OFFICE & WEALTH GOVERNANCE SYSTEM OPERATIONAL =====");
+console.log(
+  "👑 ===== FAMILY OFFICE & WEALTH GOVERNANCE SYSTEM OPERATIONAL =====",
+);
 console.log("🇰🇭 ===== CAMBODIA ECONOMIC INTELLIGENCE CENTER ACTIVE =====");
 
 // ===== ALTERNATIVE INVESTMENT INTELLIGENCE SYSTEM =====
@@ -4899,15 +5079,15 @@ const alternativeInvestmentEngine = {
         risk_level: "Medium-High",
         investment_size: "$1M+ minimum, $5M+ typical",
         illiquidity_period: "5-7 years with limited interim liquidity",
-        due_diligence: "Extensive operational and financial analysis required"
+        due_diligence: "Extensive operational and financial analysis required",
       },
       growth_equity: {
         description: "Minority stakes in growing companies",
-        typical_returns: "15-25% IRR over 4-6 years", 
+        typical_returns: "15-25% IRR over 4-6 years",
         risk_level: "High",
         investment_size: "$500K+ minimum, $2M+ typical",
         illiquidity_period: "4-6 years with potential early exits",
-        due_diligence: "Focus on growth sustainability and market size"
+        due_diligence: "Focus on growth sustainability and market size",
       },
       venture_capital: {
         description: "Early-stage technology and innovation companies",
@@ -4915,7 +5095,7 @@ const alternativeInvestmentEngine = {
         risk_level: "Very High",
         investment_size: "$250K+ minimum, $1M+ typical",
         illiquidity_period: "7-10 years with binary outcomes",
-        due_diligence: "Technology, team, and market disruption potential"
+        due_diligence: "Technology, team, and market disruption potential",
       },
       distressed: {
         description: "Acquire or lend to financially troubled companies",
@@ -4923,8 +5103,8 @@ const alternativeInvestmentEngine = {
         risk_level: "High",
         investment_size: "$2M+ minimum, complexity premium",
         illiquidity_period: "2-4 years, workout dependent",
-        due_diligence: "Legal, restructuring, and recovery analysis"
-      }
+        due_diligence: "Legal, restructuring, and recovery analysis",
+      },
     };
 
     return {
@@ -4956,9 +5136,10 @@ const alternativeInvestmentEngine = {
         "Start with fund of funds for diversification and learning",
         "Build relationships with general partners over time",
         "Maintain 10-15% allocation maximum for liquidity management",
-        "Focus on established funds with 10+ year track records"
+        "Focus on established funds with 10+ year track records",
       ],
-      expectedOutcomes: "15-20% blended IRR with 5-7 year average holding periods"
+      expectedOutcomes:
+        "15-20% blended IRR with 5-7 year average holding periods",
     };
   },
 
@@ -4971,7 +5152,7 @@ const alternativeInvestmentEngine = {
         risk_level: "Low-Medium",
         income_component: "5-7% current yield from rent",
         appreciation: "1-2% annual price appreciation",
-        leverage: "50-70% LTV typical"
+        leverage: "50-70% LTV typical",
       },
       core_plus: {
         description: "Core properties needing light improvements",
@@ -4979,7 +5160,7 @@ const alternativeInvestmentEngine = {
         risk_level: "Medium",
         income_component: "4-6% current yield",
         appreciation: "4-6% annual price appreciation",
-        leverage: "60-75% LTV typical"
+        leverage: "60-75% LTV typical",
       },
       value_add: {
         description: "Properties requiring significant improvements",
@@ -4987,7 +5168,7 @@ const alternativeInvestmentEngine = {
         risk_level: "Medium-High",
         income_component: "3-5% stabilized yield",
         appreciation: "9-13% annual price appreciation",
-        leverage: "70-80% LTV typical"
+        leverage: "70-80% LTV typical",
       },
       opportunistic: {
         description: "Development, redevelopment, distressed properties",
@@ -4995,8 +5176,8 @@ const alternativeInvestmentEngine = {
         risk_level: "High",
         income_component: "Minimal during development",
         appreciation: "18-25% total return target",
-        leverage: "70-85% LTV, construction financing"
-      }
+        leverage: "70-85% LTV, construction financing",
+      },
     };
 
     const propertyTypeAnalysis = {
@@ -5005,73 +5186,115 @@ const alternativeInvestmentEngine = {
         typical_yields: "3-7% rental yields",
         appreciation: "2-8% annual depending on location",
         liquidity: "Moderate - 3-6 months to sell",
-        financing: "Lower LTV, easier financing"
+        financing: "Lower LTV, easier financing",
       },
       commercial: {
         characteristics: "Business demand driven, higher yields, more volatile",
-        typical_yields: "5-12% rental yields", 
+        typical_yields: "5-12% rental yields",
         appreciation: "3-10% annual depending on market",
         liquidity: "Lower - 6-12 months to sell",
-        financing: "Higher LTV, more complex financing"
+        financing: "Higher LTV, more complex financing",
       },
       industrial: {
         characteristics: "Infrastructure dependent, long leases, steady income",
         typical_yields: "6-10% rental yields",
         appreciation: "2-6% annual appreciation",
         liquidity: "Limited - specialized buyer pool",
-        financing: "Moderate LTV, asset-specific"
+        financing: "Moderate LTV, asset-specific",
       },
       mixed_use: {
         characteristics: "Diversified income streams, complex management",
         typical_yields: "4-9% blended yields",
         appreciation: "3-8% annual depending on mix",
         liquidity: "Variable - depends on complexity",
-        financing: "Complex structure, higher LTV possible"
-      }
+        financing: "Complex structure, higher LTV possible",
+      },
     };
 
     const asianMarkets = {
       cambodia: {
-        market_characteristics: "Emerging, high growth, limited institutional market",
-        opportunities: ["Phnom Penh commercial", "Sihanoukville tourism", "Industrial development"],
-        risks: ["Regulatory changes", "Limited exit liquidity", "Currency volatility"],
+        market_characteristics:
+          "Emerging, high growth, limited institutional market",
+        opportunities: [
+          "Phnom Penh commercial",
+          "Sihanoukville tourism",
+          "Industrial development",
+        ],
+        risks: [
+          "Regulatory changes",
+          "Limited exit liquidity",
+          "Currency volatility",
+        ],
         expected_returns: "15-25% for development, 8-12% for core properties",
-        property_focus: propertyType === 'residential' ? "Luxury condos in Phnom Penh" : 
-                       propertyType === 'commercial' ? "Office and retail in economic zones" :
-                       propertyType === 'industrial' ? "Manufacturing and logistics facilities" : 
-                       "Mixed-use developments in urban centers"
+        property_focus:
+          propertyType === "residential"
+            ? "Luxury condos in Phnom Penh"
+            : propertyType === "commercial"
+              ? "Office and retail in economic zones"
+              : propertyType === "industrial"
+                ? "Manufacturing and logistics facilities"
+                : "Mixed-use developments in urban centers",
       },
       vietnam: {
-        market_characteristics: "Rapid growth, increasing institutional participation",
-        opportunities: ["Ho Chi Minh office", "Hanoi residential", "Industrial parks"],
-        risks: ["Foreign ownership restrictions", "Market volatility", "Regulatory complexity"],
+        market_characteristics:
+          "Rapid growth, increasing institutional participation",
+        opportunities: [
+          "Ho Chi Minh office",
+          "Hanoi residential",
+          "Industrial parks",
+        ],
+        risks: [
+          "Foreign ownership restrictions",
+          "Market volatility",
+          "Regulatory complexity",
+        ],
         expected_returns: "12-20% for development, 6-10% for core properties",
-        property_focus: propertyType === 'residential' ? "Urban residential in major cities" :
-                       propertyType === 'commercial' ? "Grade A office and modern retail" :
-                       propertyType === 'industrial' ? "Export-oriented industrial parks" :
-                       "Integrated urban developments"
+        property_focus:
+          propertyType === "residential"
+            ? "Urban residential in major cities"
+            : propertyType === "commercial"
+              ? "Grade A office and modern retail"
+              : propertyType === "industrial"
+                ? "Export-oriented industrial parks"
+                : "Integrated urban developments",
       },
       thailand: {
         market_characteristics: "Mature market, strong institutional framework",
-        opportunities: ["Bangkok luxury", "Tourism properties", "Logistics facilities"],
-        risks: ["Political instability", "Oversupply in some sectors", "Tourist dependency"],
+        opportunities: [
+          "Bangkok luxury",
+          "Tourism properties",
+          "Logistics facilities",
+        ],
+        risks: [
+          "Political instability",
+          "Oversupply in some sectors",
+          "Tourist dependency",
+        ],
         expected_returns: "8-15% for development, 5-8% for core properties",
-        property_focus: propertyType === 'residential' ? "Bangkok luxury and resort properties" :
-                       propertyType === 'commercial' ? "Premium office and shopping centers" :
-                       propertyType === 'industrial' ? "Logistics and distribution centers" :
-                       "Tourism and hospitality developments"
-      }
+        property_focus:
+          propertyType === "residential"
+            ? "Bangkok luxury and resort properties"
+            : propertyType === "commercial"
+              ? "Premium office and shopping centers"
+              : propertyType === "industrial"
+                ? "Logistics and distribution centers"
+                : "Tourism and hospitality developments",
+      },
     };
 
     return {
       strategy: `🏢 REAL ESTATE INVESTMENT STRATEGY ANALYSIS
 
 🎯 PROPERTY TYPE FOCUS (${propertyType.toUpperCase()}):
-${propertyTypeAnalysis[propertyType] ? `• Characteristics: ${propertyTypeAnalysis[propertyType].characteristics}
+${
+  propertyTypeAnalysis[propertyType]
+    ? `• Characteristics: ${propertyTypeAnalysis[propertyType].characteristics}
 • Typical Yields: ${propertyTypeAnalysis[propertyType].typical_yields}
 • Appreciation: ${propertyTypeAnalysis[propertyType].appreciation}
 • Liquidity: ${propertyTypeAnalysis[propertyType].liquidity}
-• Financing: ${propertyTypeAnalysis[propertyType].financing}` : '• General property analysis across all types'}
+• Financing: ${propertyTypeAnalysis[propertyType].financing}`
+    : "• General property analysis across all types"
+}
 
 🎯 INVESTMENT STYLE FRAMEWORK (${investmentStyle.toUpperCase()} STRATEGY):
 • Core Properties: ${realEstateStrategies.core.description} - ${realEstateStrategies.core.target_returns}
@@ -5100,16 +5323,17 @@ ${propertyTypeAnalysis[propertyType] ? `• Characteristics: ${propertyTypeAnaly
 3. REITs: Liquidity, lower minimums, market pricing
 4. Joint Ventures: Shared risk, local expertise, lower capital requirements`,
       marketAnalysis: {
-        cambodia: "High growth potential, regulatory risks, limited exit options",
+        cambodia:
+          "High growth potential, regulatory risks, limited exit options",
         vietnam: "Strong fundamentals, foreign ownership restrictions",
-        thailand: "Stable market, political risks, mature pricing"
+        thailand: "Stable market, political risks, mature pricing",
       },
       riskMitigation: [
         "Diversify across geographies and property types",
         "Partner with experienced local developers and managers",
         "Maintain adequate liquidity reserves for opportunities",
-        "Structure investments with multiple exit strategies"
-      ]
+        "Structure investments with multiple exit strategies",
+      ],
     };
   },
 
@@ -5122,15 +5346,16 @@ ${propertyTypeAnalysis[propertyType] ? `• Characteristics: ${propertyTypeAnaly
         volatility: "8-12% annual standard deviation",
         market_correlation: "0.3-0.6 correlation to equity markets",
         fee_structure: "2% management + 20% performance",
-        liquidity: "Monthly or quarterly redemptions"
+        liquidity: "Monthly or quarterly redemptions",
       },
       global_macro: {
-        description: "Top-down macro themes across currencies, rates, commodities",
+        description:
+          "Top-down macro themes across currencies, rates, commodities",
         target_returns: "10-20% with high volatility",
         volatility: "15-25% annual standard deviation",
         market_correlation: "Low correlation to traditional assets",
         fee_structure: "2% management + 20% performance",
-        liquidity: "Monthly redemptions typical"
+        liquidity: "Monthly redemptions typical",
       },
       event_driven: {
         description: "M&A arbitrage, restructuring, special situations",
@@ -5138,7 +5363,7 @@ ${propertyTypeAnalysis[propertyType] ? `• Characteristics: ${propertyTypeAnaly
         volatility: "6-10% annual standard deviation",
         market_correlation: "0.4-0.7 correlation to equity markets",
         fee_structure: "1.5-2% management + 20% performance",
-        liquidity: "Quarterly redemptions common"
+        liquidity: "Quarterly redemptions common",
       },
       relative_value: {
         description: "Arbitrage across related securities and markets",
@@ -5146,8 +5371,8 @@ ${propertyTypeAnalysis[propertyType] ? `• Characteristics: ${propertyTypeAnaly
         volatility: "4-8% annual standard deviation",
         market_correlation: "Low correlation to equity markets",
         fee_structure: "1.5% management + 15-20% performance",
-        liquidity: "Monthly redemptions"
-      }
+        liquidity: "Monthly redemptions",
+      },
     };
 
     return {
@@ -5180,11 +5405,12 @@ ${propertyTypeAnalysis[propertyType] ? `• Characteristics: ${propertyTypeAnaly
         "Analyze performance across multiple market cycles",
         "Understand strategy evolution and consistency",
         "Evaluate risk management and operational infrastructure",
-        "Assess manager alignment and organizational stability"
+        "Assess manager alignment and organizational stability",
       ],
-      allocation_guidance: "5-15% of portfolio maximum, diversified across strategies"
+      allocation_guidance:
+        "5-15% of portfolio maximum, diversified across strategies",
     };
-  }
+  },
 };
 
 // ===== ADVANCED TAX OPTIMIZATION & PLANNING SYSTEM =====
@@ -5196,63 +5422,136 @@ const taxOptimizationMaster = {
     const businessTypeStructures = {
       consulting: "Professional services holding company with IP licensing",
       trading: "International trading company with regional hubs",
-      manufacturing: "Production holding structure with transfer pricing optimization",
+      manufacturing:
+        "Production holding structure with transfer pricing optimization",
       technology: "IP holding company with development subsidiaries",
-      investment: "Multi-tier fund structure with tax-efficient jurisdictions"
+      investment: "Multi-tier fund structure with tax-efficient jurisdictions",
     };
     const taxJurisdictions = {
       singapore: {
         corporate_rate: 17,
         territorial_system: true,
         treaty_network: "Extensive DTA network (80+ countries)",
-        advantages: ["No capital gains tax", "Participation exemption", "Advanced rulings"],
-        requirements: ["Economic substance", "Professional management", "Adequate capitalization"],
-        optimal_for: ["Holding companies", "Regional headquarters", "Investment vehicles"]
+        advantages: [
+          "No capital gains tax",
+          "Participation exemption",
+          "Advanced rulings",
+        ],
+        requirements: [
+          "Economic substance",
+          "Professional management",
+          "Adequate capitalization",
+        ],
+        optimal_for: [
+          "Holding companies",
+          "Regional headquarters",
+          "Investment vehicles",
+        ],
       },
       hong_kong: {
         corporate_rate: 16.5,
         territorial_system: true,
         treaty_network: "Strong Asia-Pacific focus (40+ countries)",
-        advantages: ["Simple tax system", "No withholding taxes", "Business-friendly"],
-        requirements: ["Substance requirements", "Local activities", "Professional services"],
-        optimal_for: ["Trading companies", "Investment funds", "Professional services"]
+        advantages: [
+          "Simple tax system",
+          "No withholding taxes",
+          "Business-friendly",
+        ],
+        requirements: [
+          "Substance requirements",
+          "Local activities",
+          "Professional services",
+        ],
+        optimal_for: [
+          "Trading companies",
+          "Investment funds",
+          "Professional services",
+        ],
       },
       uae: {
         corporate_rate: 9, // New corporate tax from 2023
         free_zones: "0% tax in designated free zones",
         treaty_network: "Growing network (100+ countries)",
-        advantages: ["No personal income tax", "Strategic location", "Political stability"],
-        requirements: ["Economic substance regulations", "Local presence", "Qualifying activities"],
-        optimal_for: ["Regional operations", "Fund management", "International trading"]
+        advantages: [
+          "No personal income tax",
+          "Strategic location",
+          "Political stability",
+        ],
+        requirements: [
+          "Economic substance regulations",
+          "Local presence",
+          "Qualifying activities",
+        ],
+        optimal_for: [
+          "Regional operations",
+          "Fund management",
+          "International trading",
+        ],
       },
       switzerland: {
         corporate_rate: "14-24% depending on canton",
         tax_treaties: "Most extensive network globally (100+ countries)",
-        advantages: ["Political stability", "Strong banking", "Intellectual property regimes"],
-        requirements: ["Significant substance", "Professional management", "Local operations"],
-        optimal_for: ["Family offices", "Intellectual property", "Private banking"]
-      }
+        advantages: [
+          "Political stability",
+          "Strong banking",
+          "Intellectual property regimes",
+        ],
+        requirements: [
+          "Significant substance",
+          "Professional management",
+          "Local operations",
+        ],
+        optimal_for: [
+          "Family offices",
+          "Intellectual property",
+          "Private banking",
+        ],
+      },
     };
 
     const structureTypes = {
       holding_company: {
         purpose: "Receive dividends and capital gains tax-efficiently",
         structure: "Singapore/HK holdco → Operating subsidiaries",
-        benefits: ["Participation exemption", "Treaty benefits", "Capital gains exemption"],
-        requirements: ["Economic substance", "Professional management", "Board meetings"]
+        benefits: [
+          "Participation exemption",
+          "Treaty benefits",
+          "Capital gains exemption",
+        ],
+        requirements: [
+          "Economic substance",
+          "Professional management",
+          "Board meetings",
+        ],
       },
       ip_holding: {
         purpose: "Centralize intellectual property ownership",
         structure: "Switzerland/Singapore IP holdco → Royalty income",
-        benefits: ["Reduced royalty withholding", "IP box regimes", "R&D incentives"],
-        requirements: ["Development substance", "OECD BEPS compliance", "Transfer pricing"]
+        benefits: [
+          "Reduced royalty withholding",
+          "IP box regimes",
+          "R&D incentives",
+        ],
+        requirements: [
+          "Development substance",
+          "OECD BEPS compliance",
+          "Transfer pricing",
+        ],
       },
       trading_hub: {
         purpose: "Centralize trading and distribution activities",
         structure: "HK/Singapore trading → Regional operations",
-        benefits: ["Low tax on trading profits", "Treaty network", "Operational efficiency"],
-        requirements: ["Real trading activities", "Local staff", "Risk management"]
-      }
+        benefits: [
+          "Low tax on trading profits",
+          "Treaty network",
+          "Operational efficiency",
+        ],
+        requirements: [
+          "Real trading activities",
+          "Local staff",
+          "Risk management",
+        ],
+      },
     };
 
     return {
@@ -5285,9 +5584,10 @@ Phase 4: Ongoing compliance and optimization`,
         "OECD BEPS compliance and substance requirements",
         "Transfer pricing documentation and policies",
         "Economic substance regulations in all jurisdictions",
-        "Regular structure review and optimization"
+        "Regular structure review and optimization",
       ],
-      estimatedSavings: "20-40% effective tax rate reduction on international income"
+      estimatedSavings:
+        "20-40% effective tax rate reduction on international income",
     };
   },
 
@@ -5295,15 +5595,49 @@ Phase 4: Ongoing compliance and optimization`,
   designEstatePlan: async (netWorth, familyStructure, philanthropicGoals) => {
     // Net worth tier analysis
     const wealthTiers = {
-      emerging: { min: 1000000, max: 5000000, strategies: ["Basic trust planning", "Annual gifting", "Life insurance"] },
-      established: { min: 5000000, max: 25000000, strategies: ["Advanced trust structures", "FLP/LLC planning", "Charitable strategies"] },
-      ultra_high: { min: 25000000, max: 100000000, strategies: ["Dynasty trusts", "GRAT/QPRT planning", "Private foundations"] },
-      billionaire: { min: 100000000, max: Infinity, strategies: ["Multi-generational planning", "Institutional philanthropy", "Family governance"] }
+      emerging: {
+        min: 1000000,
+        max: 5000000,
+        strategies: [
+          "Basic trust planning",
+          "Annual gifting",
+          "Life insurance",
+        ],
+      },
+      established: {
+        min: 5000000,
+        max: 25000000,
+        strategies: [
+          "Advanced trust structures",
+          "FLP/LLC planning",
+          "Charitable strategies",
+        ],
+      },
+      ultra_high: {
+        min: 25000000,
+        max: 100000000,
+        strategies: [
+          "Dynasty trusts",
+          "GRAT/QPRT planning",
+          "Private foundations",
+        ],
+      },
+      billionaire: {
+        min: 100000000,
+        max: Infinity,
+        strategies: [
+          "Multi-generational planning",
+          "Institutional philanthropy",
+          "Family governance",
+        ],
+      },
     };
-    
-    const currentTier = Object.keys(wealthTiers).find(tier => 
-      netWorth >= wealthTiers[tier].min && netWorth < wealthTiers[tier].max
-    ) || 'billionaire';
+
+    const currentTier =
+      Object.keys(wealthTiers).find(
+        (tier) =>
+          netWorth >= wealthTiers[tier].min && netWorth < wealthTiers[tier].max,
+      ) || "billionaire";
     const estatePlanningTools = {
       trusts: {
         revocable_trust: {
@@ -5311,59 +5645,66 @@ Phase 4: Ongoing compliance and optimization`,
           tax_benefits: "No tax benefits, step-up in basis",
           control: "Full control retained during lifetime",
           flexibility: "Can be modified or revoked",
-          optimal_use: "Basic estate planning, privacy"
+          optimal_use: "Basic estate planning, privacy",
         },
         irrevocable_trust: {
           purpose: "Remove assets from taxable estate",
           tax_benefits: "Estate and gift tax savings",
           control: "Limited control once established",
           flexibility: "Generally cannot be modified",
-          optimal_use: "Large estates, tax minimization"
+          optimal_use: "Large estates, tax minimization",
         },
         generation_skipping: {
           purpose: "Transfer wealth to grandchildren tax-efficiently",
           tax_benefits: "Avoid generation-skipping transfer tax",
           control: "Trustee control with distribution standards",
           flexibility: "Long-term structure, limited flexibility",
-          optimal_use: "Multi-generational wealth transfer"
+          optimal_use: "Multi-generational wealth transfer",
         },
         charitable_remainder: {
           purpose: "Income for life, remainder to charity",
           tax_benefits: "Income tax deduction, capital gains deferral",
           control: "Income stream for life or term",
           flexibility: "Irrevocable once established",
-          optimal_use: "Highly appreciated assets, philanthropy"
-        }
+          optimal_use: "Highly appreciated assets, philanthropy",
+        },
       },
       business_succession: {
         family_limited_partnership: {
           structure: "General partner (parents) + Limited partners (children)",
-          benefits: ["Valuation discounts", "Retained control", "Income shifting"],
+          benefits: [
+            "Valuation discounts",
+            "Retained control",
+            "Income shifting",
+          ],
           discounts: "20-40% valuation discounts for minority interests",
-          control: "General partner maintains management control"
+          control: "General partner maintains management control",
         },
         grantor_retained_annuity_trust: {
           structure: "Transfer growth to beneficiaries, retain annuity",
-          benefits: ["Transfer appreciation tax-free", "Leverage gift exemption"],
+          benefits: [
+            "Transfer appreciation tax-free",
+            "Leverage gift exemption",
+          ],
           risk: "If grantor dies, assets return to estate",
-          optimal_assets: "High-growth, low-yield investments"
+          optimal_assets: "High-growth, low-yield investments",
         },
         installment_sales: {
           structure: "Sell business to family members over time",
           benefits: ["Freeze estate value", "Income stream", "Transfer growth"],
           financing: "Seller financing with market interest rates",
-          flexibility: "Terms can be structured for family needs"
-        }
-      }
+          flexibility: "Terms can be structured for family needs",
+        },
+      },
     };
 
     return {
       plan: `👑 COMPREHENSIVE ESTATE PLANNING STRATEGY
 
-🎯 WEALTH TIER ANALYSIS (${currentTier.toUpperCase()} - $${(netWorth/1000000).toFixed(1)}M):
+🎯 WEALTH TIER ANALYSIS (${currentTier.toUpperCase()} - $${(netWorth / 1000000).toFixed(1)}M):
 • Family Structure: ${familyStructure}
-• Philanthropic Goals: ${philanthropicGoals ? 'Advanced charitable planning integrated' : 'Tax-efficient strategies prioritized'}
-• Recommended Strategies: ${wealthTiers[currentTier].strategies.join(', ')}
+• Philanthropic Goals: ${philanthropicGoals ? "Advanced charitable planning integrated" : "Tax-efficient strategies prioritized"}
+• Recommended Strategies: ${wealthTiers[currentTier].strategies.join(", ")}
 
 🏛️ TRUST STRUCTURE FRAMEWORK:
 • Revocable Trust: ${estatePlanningTools.trusts.revocable_trust.purpose} - ${estatePlanningTools.trusts.revocable_trust.optimal_use}
@@ -5391,15 +5732,18 @@ Ongoing: Regular review and optimization`,
         "Private foundation for perpetual charitable impact",
         "Donor advised funds for flexible giving",
         "Charitable remainder trusts for income and impact",
-        "Charitable lead trusts for transfer tax benefits"
+        "Charitable lead trusts for transfer tax benefits",
       ],
-      expectedSavings: "50-80% estate tax reduction through comprehensive planning"
+      expectedSavings:
+        "50-80% estate tax reduction through comprehensive planning",
     };
-  }
+  },
 };
 
 console.log("💼 ===== ALTERNATIVE INVESTMENT INTELLIGENCE SYSTEM LOADED =====");
-console.log("🏛️ ===== ADVANCED TAX OPTIMIZATION & PLANNING SYSTEM OPERATIONAL =====");
+console.log(
+  "🏛️ ===== ADVANCED TAX OPTIMIZATION & PLANNING SYSTEM OPERATIONAL =====",
+);
 
 // ===== GLOBAL ECONOMIC INTELLIGENCE NETWORK =====
 // Real-time global market analysis and geopolitical intelligence
@@ -5408,12 +5752,12 @@ const globalEconomicIntelligence = {
   analyzeGlobalMarkets: async (region, sector, timeframe) => {
     // Region-specific analysis focus
     const regionFocus = {
-      'north_america': 'Technology innovation and service economy dominance',
-      'europe': 'Green transition leadership and regulatory framework',
-      'asia_pacific': 'Manufacturing growth and emerging market dynamics',
-      'latin_america': 'Commodity cycles and infrastructure development',
-      'middle_east': 'Energy transition and economic diversification',
-      'africa': 'Demographic dividend and infrastructure investment'
+      north_america: "Technology innovation and service economy dominance",
+      europe: "Green transition leadership and regulatory framework",
+      asia_pacific: "Manufacturing growth and emerging market dynamics",
+      latin_america: "Commodity cycles and infrastructure development",
+      middle_east: "Energy transition and economic diversification",
+      africa: "Demographic dividend and infrastructure investment",
     };
     const globalMarketData = {
       major_economies: {
@@ -5423,7 +5767,8 @@ const globalEconomicIntelligence = {
           unemployment: 3.7,
           interest_rates: 5.25,
           currency_strength: "Strong USD, global reserve currency status",
-          market_outlook: "Mature economy, technology leadership, service dominance"
+          market_outlook:
+            "Mature economy, technology leadership, service dominance",
         },
         china: {
           gdp_growth: 5.2,
@@ -5431,15 +5776,18 @@ const globalEconomicIntelligence = {
           unemployment: 5.2,
           interest_rates: 3.45,
           currency_strength: "Managed appreciation, internationalization push",
-          market_outlook: "Slowing growth, technology transition, demographic challenges"
+          market_outlook:
+            "Slowing growth, technology transition, demographic challenges",
         },
         european_union: {
           gdp_growth: 0.8,
           inflation: 2.4,
           unemployment: 6.1,
           interest_rates: 4.0,
-          currency_strength: "Stable EUR, regulatory leadership, energy challenges",
-          market_outlook: "Slow growth, green transition, structural reforms needed"
+          currency_strength:
+            "Stable EUR, regulatory leadership, energy challenges",
+          market_outlook:
+            "Slow growth, green transition, structural reforms needed",
         },
         japan: {
           gdp_growth: 1.1,
@@ -5447,8 +5795,9 @@ const globalEconomicIntelligence = {
           unemployment: 2.6,
           interest_rates: -0.1,
           currency_strength: "Weak yen policy, export competitiveness",
-          market_outlook: "Aging society, corporate governance reforms, tourism recovery"
-        }
+          market_outlook:
+            "Aging society, corporate governance reforms, tourism recovery",
+        },
       },
       emerging_markets: {
         india: {
@@ -5456,43 +5805,68 @@ const globalEconomicIntelligence = {
           inflation: 5.7,
           market_cap_gdp: 105,
           demographics: "Young population, urbanization, digitalization",
-          opportunities: ["Technology services", "Manufacturing", "Financial inclusion"]
+          opportunities: [
+            "Technology services",
+            "Manufacturing",
+            "Financial inclusion",
+          ],
         },
         brazil: {
           gdp_growth: 2.9,
           inflation: 4.6,
           market_cap_gdp: 75,
           demographics: "Middle-income trap, commodity dependence",
-          opportunities: ["Agriculture", "Mining", "Renewable energy"]
+          opportunities: ["Agriculture", "Mining", "Renewable energy"],
         },
         indonesia: {
           gdp_growth: 5.1,
           inflation: 3.2,
           market_cap_gdp: 45,
           demographics: "Young population, archipelago challenges",
-          opportunities: ["Digital economy", "Infrastructure", "Natural resources"]
-        }
+          opportunities: [
+            "Digital economy",
+            "Infrastructure",
+            "Natural resources",
+          ],
+        },
       },
       sector_analysis: {
         technology: {
-          global_trends: ["AI/ML adoption", "Cloud migration", "Cybersecurity", "Digital transformation"],
+          global_trends: [
+            "AI/ML adoption",
+            "Cloud migration",
+            "Cybersecurity",
+            "Digital transformation",
+          ],
           growth_rates: { developed: "8-12%", emerging: "15-25%" },
           investment_flows: "$150B+ annual VC/PE investment globally",
-          regulatory_risks: "Data privacy, antitrust, export controls"
+          regulatory_risks: "Data privacy, antitrust, export controls",
         },
         healthcare: {
-          global_trends: ["Aging populations", "Precision medicine", "Digital health", "Drug discovery"],
+          global_trends: [
+            "Aging populations",
+            "Precision medicine",
+            "Digital health",
+            "Drug discovery",
+          ],
           growth_rates: { developed: "5-8%", emerging: "10-15%" },
           investment_flows: "$50B+ annual biotech investment",
-          regulatory_risks: "Drug approval, pricing pressure, safety regulations"
+          regulatory_risks:
+            "Drug approval, pricing pressure, safety regulations",
         },
         energy: {
-          global_trends: ["Energy transition", "Renewable adoption", "Grid modernization", "Storage"],
+          global_trends: [
+            "Energy transition",
+            "Renewable adoption",
+            "Grid modernization",
+            "Storage",
+          ],
           growth_rates: { renewables: "12-18%", traditional: "2-4%" },
           investment_flows: "$300B+ annual clean energy investment",
-          regulatory_risks: "Carbon pricing, environmental regulations, geopolitics"
-        }
-      }
+          regulatory_risks:
+            "Carbon pricing, environmental regulations, geopolitics",
+        },
+      },
     };
 
     return {
@@ -5517,9 +5891,9 @@ const globalEconomicIntelligence = {
 • Financial Services: Fintech disruption, regulatory evolution
 
 🎯 REGIONAL FOCUS (${region.toUpperCase()}):
-• Analysis Focus: ${regionFocus[region] || 'Diversified global market approach'}
-• Sector Emphasis: ${sector || 'Cross-sector analysis'} specific dynamics
-• Timeframe Outlook: ${timeframe || 'Medium-term'} strategic positioning
+• Analysis Focus: ${regionFocus[region] || "Diversified global market approach"}
+• Sector Emphasis: ${sector || "Cross-sector analysis"} specific dynamics
+• Timeframe Outlook: ${timeframe || "Medium-term"} strategic positioning
 
 ⚔️ GEOPOLITICAL RISK FACTORS:
 • US-China Technology Competition: Export controls, supply chain shifts
@@ -5531,14 +5905,14 @@ const globalEconomicIntelligence = {
         "Energy transition and clean technology infrastructure",
         "Healthcare innovation driven by demographics and technology",
         "Emerging market growth and middle-class expansion",
-        "Supply chain resilience and reshoring trends"
+        "Supply chain resilience and reshoring trends",
       ],
       riskFactors: [
         "Geopolitical tensions affecting trade and investment flows",
         "Central bank policy divergence creating currency volatility",
         "Climate change physical and transition risks",
-        "Technological disruption creating winners and losers"
-      ]
+        "Technological disruption creating winners and losers",
+      ],
     };
   },
 
@@ -5546,79 +5920,130 @@ const globalEconomicIntelligence = {
   analyzeCurrencyMarkets: async (baseCurrency, exposures, hedgingNeeds) => {
     // Base currency specific hedging strategies
     const baseCurrencyStrategies = {
-      'USD': 'Diversification into emerging market currencies and commodities',
-      'EUR': 'USD hedge for energy imports and technology exposure',
-      'JPY': 'Multi-currency approach with commodity exposure',
-      'GBP': 'EUR and USD diversification post-Brexit',
-      'KHR': 'Natural USD hedge through dollarized economy',
-      'CNY': 'Gradual internationalization with capital control considerations'
+      USD: "Diversification into emerging market currencies and commodities",
+      EUR: "USD hedge for energy imports and technology exposure",
+      JPY: "Multi-currency approach with commodity exposure",
+      GBP: "EUR and USD diversification post-Brexit",
+      KHR: "Natural USD hedge through dollarized economy",
+      CNY: "Gradual internationalization with capital control considerations",
     };
     const currencyAnalysis = {
       major_currencies: {
         usd: {
           outlook: "Strong fundamentals, reserve currency status",
-          drivers: ["Federal Reserve policy", "Economic growth", "Safe haven demand"],
+          drivers: [
+            "Federal Reserve policy",
+            "Economic growth",
+            "Safe haven demand",
+          ],
           risks: ["Fiscal deficits", "Political uncertainty", "Trade tensions"],
-          forecast: "Continued strength in medium term"
+          forecast: "Continued strength in medium term",
         },
         eur: {
           outlook: "Challenged by slow growth and energy costs",
           drivers: ["ECB policy", "Energy security", "Economic integration"],
-          risks: ["Political fragmentation", "Economic divergence", "External dependencies"],
-          forecast: "Gradual stabilization with structural challenges"
+          risks: [
+            "Political fragmentation",
+            "Economic divergence",
+            "External dependencies",
+          ],
+          forecast: "Gradual stabilization with structural challenges",
         },
         jpy: {
           outlook: "Weak yen policy supporting exports",
           drivers: ["BoJ intervention", "Trade balance", "Risk sentiment"],
-          risks: ["Inflation pressure", "Energy imports", "Demographic decline"],
-          forecast: "Managed weakness with intervention support"
+          risks: [
+            "Inflation pressure",
+            "Energy imports",
+            "Demographic decline",
+          ],
+          forecast: "Managed weakness with intervention support",
         },
         cny: {
           outlook: "Managed appreciation with volatility",
           drivers: ["Economic growth", "Trade balance", "Capital flows"],
-          risks: ["Property sector", "Geopolitical tensions", "Capital controls"],
-          forecast: "Gradual internationalization with government control"
-        }
+          risks: [
+            "Property sector",
+            "Geopolitical tensions",
+            "Capital controls",
+          ],
+          forecast: "Gradual internationalization with government control",
+        },
       },
       emerging_currencies: {
         khr: {
           outlook: "Stable against USD, dollarization continues",
           drivers: ["Tourism recovery", "Garment exports", "FDI inflows"],
-          risks: ["Political stability", "External shocks", "Limited monetary policy"],
-          hedging_strategies: ["Natural USD revenues", "Limited hedging instruments"]
+          risks: [
+            "Political stability",
+            "External shocks",
+            "Limited monetary policy",
+          ],
+          hedging_strategies: [
+            "Natural USD revenues",
+            "Limited hedging instruments",
+          ],
         },
         vnd: {
           outlook: "Gradual appreciation pressure from strong growth",
           drivers: ["Export growth", "FDI inflows", "Remittances"],
           risks: ["Inflation pressure", "External debt", "Trade tensions"],
-          hedging_strategies: ["Forward contracts", "Natural hedges", "Diversification"]
-        }
+          hedging_strategies: [
+            "Forward contracts",
+            "Natural hedges",
+            "Diversification",
+          ],
+        },
       },
       commodities: {
         energy: {
-          oil: { outlook: "Range-bound $70-90", drivers: ["OPEC policy", "Demand recovery", "Geopolitics"] },
-          natural_gas: { outlook: "Regional volatility", drivers: ["LNG capacity", "Weather", "Geopolitics"] },
-          renewables: { outlook: "Continued cost decline", drivers: ["Technology", "Policy support", "Investment"] }
+          oil: {
+            outlook: "Range-bound $70-90",
+            drivers: ["OPEC policy", "Demand recovery", "Geopolitics"],
+          },
+          natural_gas: {
+            outlook: "Regional volatility",
+            drivers: ["LNG capacity", "Weather", "Geopolitics"],
+          },
+          renewables: {
+            outlook: "Continued cost decline",
+            drivers: ["Technology", "Policy support", "Investment"],
+          },
         },
         metals: {
-          gold: { outlook: "Safe haven demand", drivers: ["Monetary policy", "Inflation", "Geopolitics"] },
-          copper: { outlook: "Electrification demand", drivers: ["Infrastructure", "EVs", "Supply constraints"] },
-          rare_earths: { outlook: "Strategic competition", drivers: ["Technology", "Supply security", "Geopolitics"] }
+          gold: {
+            outlook: "Safe haven demand",
+            drivers: ["Monetary policy", "Inflation", "Geopolitics"],
+          },
+          copper: {
+            outlook: "Electrification demand",
+            drivers: ["Infrastructure", "EVs", "Supply constraints"],
+          },
+          rare_earths: {
+            outlook: "Strategic competition",
+            drivers: ["Technology", "Supply security", "Geopolitics"],
+          },
         },
         agriculture: {
-          grains: { outlook: "Food security focus", drivers: ["Weather", "Biofuels", "Trade policy"] },
-          protein: { outlook: "Growing demand", drivers: ["Demographics", "Income growth", "Health trends"] }
-        }
-      }
+          grains: {
+            outlook: "Food security focus",
+            drivers: ["Weather", "Biofuels", "Trade policy"],
+          },
+          protein: {
+            outlook: "Growing demand",
+            drivers: ["Demographics", "Income growth", "Health trends"],
+          },
+        },
+      },
     };
 
     return {
       intelligence: `💱 CURRENCY & COMMODITY INTELLIGENCE
 
 🎯 BASE CURRENCY STRATEGY (${baseCurrency.toUpperCase()}):
-• Recommended Approach: ${baseCurrencyStrategies[baseCurrency] || 'Diversified multi-currency strategy'}
-• Hedging Priority: ${hedgingNeeds ? 'Active hedging program recommended' : 'Natural hedging preferred'}
-• Exposure Management: ${exposures ? 'Multi-exposure hedging framework' : 'Concentrated risk management'}
+• Recommended Approach: ${baseCurrencyStrategies[baseCurrency] || "Diversified multi-currency strategy"}
+• Hedging Priority: ${hedgingNeeds ? "Active hedging program recommended" : "Natural hedging preferred"}
+• Exposure Management: ${exposures ? "Multi-exposure hedging framework" : "Concentrated risk management"}
 
 💵 MAJOR CURRENCY OUTLOOK:
 • USD: ${currencyAnalysis.major_currencies.usd.outlook} - ${currencyAnalysis.major_currencies.usd.forecast}
@@ -5644,12 +6069,13 @@ const globalEconomicIntelligence = {
       recommendations: [
         "Maintain USD revenue exposure for KHR stability",
         "Hedge significant EUR/JPY exposures with forwards",
-        "Consider commodity exposure for inflation protection", 
-        "Monitor central bank policies for currency intervention"
+        "Consider commodity exposure for inflation protection",
+        "Monitor central bank policies for currency intervention",
       ],
-      monitoring: "Track central bank policies, geopolitical developments, economic data releases"
+      monitoring:
+        "Track central bank policies, geopolitical developments, economic data releases",
     };
-  }
+  },
 };
 
 // ===== CRISIS MANAGEMENT & CONTINGENCY PLANNING =====
@@ -5660,72 +6086,90 @@ const crisisManagementSystem = {
     const crisisScenarios = {
       financial_crisis: {
         probability: "Medium (every 7-10 years historically)",
-        triggers: ["Credit market freeze", "Bank failures", "Asset bubble burst"],
+        triggers: [
+          "Credit market freeze",
+          "Bank failures",
+          "Asset bubble burst",
+        ],
         impact_timeline: "3-6 months onset, 12-24 months duration",
         business_impact: {
           revenue: "20-50% decline in cyclical businesses",
           liquidity: "Credit tightening, cash flow stress",
           valuation: "30-60% asset value declines",
-          operations: "Cost cutting, workforce reduction"
+          operations: "Cost cutting, workforce reduction",
         },
         preparation_strategies: [
           "Maintain 12-18 months cash reserves",
-          "Diversify revenue streams and geographies", 
+          "Diversify revenue streams and geographies",
           "Establish multiple credit facilities",
-          "Stress test all major assumptions"
-        ]
+          "Stress test all major assumptions",
+        ],
       },
       geopolitical_crisis: {
         probability: "High (ongoing regional tensions)",
-        triggers: ["Trade wars", "Military conflicts", "Sanctions", "Border disputes"],
+        triggers: [
+          "Trade wars",
+          "Military conflicts",
+          "Sanctions",
+          "Border disputes",
+        ],
         impact_timeline: "Immediate onset, 6-18 months duration",
         business_impact: {
           supply_chain: "Disruption, alternative sourcing needs",
           market_access: "Export restrictions, tariffs",
           currency: "Volatility, capital controls",
-          regulation: "Changing rules, compliance costs"
+          regulation: "Changing rules, compliance costs",
         },
         preparation_strategies: [
           "Diversify supply chain across multiple countries",
           "Maintain strategic inventory buffers",
           "Develop alternative market channels",
-          "Monitor political risk indicators"
-        ]
+          "Monitor political risk indicators",
+        ],
       },
       pandemic_crisis: {
         probability: "Medium (COVID experience, future variants)",
-        triggers: ["New virus strains", "Public health emergencies", "Lockdown policies"],
+        triggers: [
+          "New virus strains",
+          "Public health emergencies",
+          "Lockdown policies",
+        ],
         impact_timeline: "2-4 weeks onset, 12-36 months duration",
         business_impact: {
           operations: "Remote work, capacity constraints",
           demand: "Sector-specific impacts (tourism down, technology up)",
           supply_chain: "Factory closures, logistics disruption",
-          regulation: "Health requirements, travel restrictions"
+          regulation: "Health requirements, travel restrictions",
         },
         preparation_strategies: [
           "Develop remote work capabilities",
           "Build digital delivery channels",
           "Maintain flexible cost structure",
-          "Diversify supplier base geographically"
-        ]
+          "Diversify supplier base geographically",
+        ],
       },
       climate_crisis: {
         probability: "High (physical and transition risks)",
-        triggers: ["Extreme weather", "Carbon pricing", "Stranded assets", "Regulatory changes"],
+        triggers: [
+          "Extreme weather",
+          "Carbon pricing",
+          "Stranded assets",
+          "Regulatory changes",
+        ],
         impact_timeline: "Gradual onset, permanent structural changes",
         business_impact: {
           physical: "Property damage, supply disruption",
           transition: "Carbon costs, technology obsolescence",
           regulatory: "New requirements, reporting obligations",
-          reputation: "ESG expectations, stakeholder pressure"
+          reputation: "ESG expectations, stakeholder pressure",
         },
         preparation_strategies: [
           "Assess physical climate risks to operations",
           "Develop decarbonization roadmap",
           "Invest in climate-resilient infrastructure",
-          "Integrate ESG into business strategy"
-        ]
-      }
+          "Integrate ESG into business strategy",
+        ],
+      },
     };
 
     return {
@@ -5758,14 +6202,18 @@ const crisisManagementSystem = {
         "Establish crisis management team with clear roles",
         "Develop crisis communication templates and protocols",
         "Create business continuity plans for each scenario",
-        "Conduct regular crisis simulation exercises"
+        "Conduct regular crisis simulation exercises",
       ],
-      monitoring: "Track early warning indicators for each crisis type"
+      monitoring: "Track early warning indicators for each crisis type",
     };
   },
 
   // Business Continuity Planning
-  developContinuityPlan: async (operationsType, criticalFunctions, recoveryTargets) => {
+  developContinuityPlan: async (
+    operationsType,
+    criticalFunctions,
+    recoveryTargets,
+  ) => {
     const continuityFramework = {
       business_impact_analysis: {
         critical_functions: {
@@ -5773,42 +6221,50 @@ const crisisManagementSystem = {
             impact: "Revenue loss, reputation damage",
             rto: "4 hours", // Recovery Time Objective
             rpo: "1 hour", // Recovery Point Objective
-            dependencies: ["Technology systems", "Key personnel", "Data access"]
+            dependencies: [
+              "Technology systems",
+              "Key personnel",
+              "Data access",
+            ],
           },
           investment_management: {
             impact: "Fiduciary liability, performance impact",
             rto: "2 hours",
             rpo: "15 minutes",
-            dependencies: ["Trading systems", "Market data", "Risk management"]
+            dependencies: ["Trading systems", "Market data", "Risk management"],
           },
           regulatory_compliance: {
             impact: "Legal penalties, license risk",
             rto: "24 hours",
             rpo: "4 hours",
-            dependencies: ["Documentation systems", "Compliance staff", "Audit trails"]
-          }
-        }
+            dependencies: [
+              "Documentation systems",
+              "Compliance staff",
+              "Audit trails",
+            ],
+          },
+        },
       },
       recovery_strategies: {
         technology: {
           primary_site: "Main office with full capabilities",
           backup_site: "Secondary location with essential systems",
           cloud_backup: "Cloud-based systems for remote access",
-          data_protection: "Real-time replication, point-in-time recovery"
+          data_protection: "Real-time replication, point-in-time recovery",
         },
         personnel: {
           succession_planning: "Identified backups for all key roles",
           cross_training: "Multiple people capable of critical functions",
           remote_work: "Full remote capabilities for all staff",
-          emergency_staffing: "Contract arrangements for temporary support"
+          emergency_staffing: "Contract arrangements for temporary support",
         },
         facilities: {
           alternate_locations: "Pre-arranged alternate office spaces",
           equipment_backup: "Stored equipment for rapid deployment",
           vendor_relationships: "Emergency service provider agreements",
-          communication: "Multiple communication channels and systems"
-        }
-      }
+          communication: "Multiple communication channels and systems",
+        },
+      },
     };
 
     return {
@@ -5839,11 +6295,12 @@ const crisisManagementSystem = {
         "Incident detection and initial response protocols",
         "Decision-making authority and escalation procedures",
         "Communication plans for staff, clients, and regulators",
-        "Recovery activation and coordination procedures"
+        "Recovery activation and coordination procedures",
       ],
-      success_metrics: "Recovery time objectives met, minimal business impact, stakeholder confidence maintained"
+      success_metrics:
+        "Recovery time objectives met, minimal business impact, stakeholder confidence maintained",
     };
-  }
+  },
 };
 
 // ===== ADVANCED MERGERS & ACQUISITIONS INTELLIGENCE =====
@@ -5858,50 +6315,64 @@ const maIntelligenceEngine = {
           synergy_potential: "15-25% cost synergies, market power",
           execution_risk: "Medium - cultural integration challenges",
           regulatory_risk: "High - antitrust review required",
-          typical_multiples: "8-15x EBITDA depending on sector"
+          typical_multiples: "8-15x EBITDA depending on sector",
         },
         vertical_integration: {
           description: "Acquire suppliers or customers for control",
           synergy_potential: "10-20% cost savings, supply security",
           execution_risk: "Medium-High - operational complexity",
           regulatory_risk: "Medium - limited antitrust issues",
-          typical_multiples: "6-12x EBITDA for industrial companies"
+          typical_multiples: "6-12x EBITDA for industrial companies",
         },
         market_expansion: {
           description: "Acquire for geographic or product expansion",
           synergy_potential: "5-15% revenue synergies, growth access",
           execution_risk: "High - new market/product risks",
           regulatory_risk: "Low-Medium - foreign investment review",
-          typical_multiples: "10-20x EBITDA for growth assets"
+          typical_multiples: "10-20x EBITDA for growth assets",
         },
         capability_acquisition: {
           description: "Acquire for technology, talent, or capabilities",
           synergy_potential: "20-40% revenue enhancement potential",
           execution_risk: "Very High - retention and integration",
           regulatory_risk: "Medium - technology transfer restrictions",
-          typical_multiples: "15-30x EBITDA for technology assets"
-        }
+          typical_multiples: "15-30x EBITDA for technology assets",
+        },
       },
       valuation_frameworks: {
         dcf_analysis: {
           methodology: "Discounted cash flow with synergies",
-          key_inputs: ["Revenue projections", "Cost synergies", "WACC", "Terminal value"],
+          key_inputs: [
+            "Revenue projections",
+            "Cost synergies",
+            "WACC",
+            "Terminal value",
+          ],
           sensitivity: "WACC ±1%, Growth ±1%, Synergies ±25%",
-          accuracy: "±15-25% depending on business predictability"
+          accuracy: "±15-25% depending on business predictability",
         },
         comparable_transactions: {
           methodology: "Recent M&A multiples for similar deals",
-          key_metrics: ["EV/Revenue", "EV/EBITDA", "P/E ratios", "Premium paid"],
+          key_metrics: [
+            "EV/Revenue",
+            "EV/EBITDA",
+            "P/E ratios",
+            "Premium paid",
+          ],
           adjustments: ["Deal size", "Market conditions", "Strategic value"],
-          accuracy: "±10-20% for established sectors"
+          accuracy: "±10-20% for established sectors",
         },
         sum_of_parts: {
           methodology: "Separate valuation of business units",
-          applications: ["Diversified companies", "Asset plays", "Breakup analysis"],
+          applications: [
+            "Diversified companies",
+            "Asset plays",
+            "Breakup analysis",
+          ],
           complexity: "High - requires detailed segment analysis",
-          accuracy: "±20-30% due to allocation issues"
-        }
-      }
+          accuracy: "±20-30% due to allocation issues",
+        },
+      },
     };
 
     return {
@@ -5933,58 +6404,119 @@ const maIntelligenceEngine = {
         "Integration complexity and execution risk",
         "Cultural differences and talent retention",
         "Regulatory approval and antitrust review",
-        "Market conditions and financing availability"
+        "Market conditions and financing availability",
       ],
-      keyMetrics: "Synergy realization rate, integration timeline, ROIC improvement"
+      keyMetrics:
+        "Synergy realization rate, integration timeline, ROIC improvement",
     };
   },
 
   // Deal Structuring Framework
-  designDealStructure: async (transactionSize, riskProfile, taxOptimization) => {
+  designDealStructure: async (
+    transactionSize,
+    riskProfile,
+    taxOptimization,
+  ) => {
     const dealStructures = {
       asset_purchase: {
         description: "Purchase specific assets and liabilities",
-        advantages: ["Cherry-pick assets", "Avoid unknown liabilities", "Step-up basis"],
-        disadvantages: ["Transfer complications", "Contract assignments", "Employee issues"],
+        advantages: [
+          "Cherry-pick assets",
+          "Avoid unknown liabilities",
+          "Step-up basis",
+        ],
+        disadvantages: [
+          "Transfer complications",
+          "Contract assignments",
+          "Employee issues",
+        ],
         tax_implications: "Potential step-up in asset basis",
-        typical_use: "Distressed situations, specific asset acquisition"
+        typical_use: "Distressed situations, specific asset acquisition",
       },
       stock_purchase: {
         description: "Purchase shares of target company",
-        advantages: ["Simple transfer", "Automatic contracts", "Employee continuity"],
-        disadvantages: ["Inherit all liabilities", "No step-up basis", "Due diligence critical"],
+        advantages: [
+          "Simple transfer",
+          "Automatic contracts",
+          "Employee continuity",
+        ],
+        disadvantages: [
+          "Inherit all liabilities",
+          "No step-up basis",
+          "Due diligence critical",
+        ],
         tax_implications: "No immediate tax benefits for assets",
-        typical_use: "Clean companies, ongoing business acquisition"
+        typical_use: "Clean companies, ongoing business acquisition",
       },
       merger_structures: {
         forward_merger: {
           structure: "Target merges into acquirer",
-          advantages: ["Combines entities", "Eliminates minority", "Tax-free if structured"],
-          requirements: ["Shareholder approval", "Board approval", "Regulatory clearance"]
+          advantages: [
+            "Combines entities",
+            "Eliminates minority",
+            "Tax-free if structured",
+          ],
+          requirements: [
+            "Shareholder approval",
+            "Board approval",
+            "Regulatory clearance",
+          ],
         },
         reverse_merger: {
           structure: "Acquirer merges into target",
-          advantages: ["Preserve target licenses", "Maintain contracts", "Name recognition"],
-          requirements: ["Complex structuring", "Careful planning", "Integration complexity"]
-        }
+          advantages: [
+            "Preserve target licenses",
+            "Maintain contracts",
+            "Name recognition",
+          ],
+          requirements: [
+            "Complex structuring",
+            "Careful planning",
+            "Integration complexity",
+          ],
+        },
       },
       consideration_types: {
         cash: {
-          advantages: ["Certainty for seller", "Clean transaction", "Immediate liquidity"],
-          disadvantages: ["Financing required", "Tax immediate", "No upside sharing"],
-          typical_percentage: "70-100% in private equity deals"
+          advantages: [
+            "Certainty for seller",
+            "Clean transaction",
+            "Immediate liquidity",
+          ],
+          disadvantages: [
+            "Financing required",
+            "Tax immediate",
+            "No upside sharing",
+          ],
+          typical_percentage: "70-100% in private equity deals",
         },
         stock: {
-          advantages: ["Tax deferral", "Upside sharing", "Financing alternative"],
-          disadvantages: ["Market risk", "Valuation complexity", "Control dilution"],
-          typical_percentage: "20-50% in strategic deals"
+          advantages: [
+            "Tax deferral",
+            "Upside sharing",
+            "Financing alternative",
+          ],
+          disadvantages: [
+            "Market risk",
+            "Valuation complexity",
+            "Control dilution",
+          ],
+          typical_percentage: "20-50% in strategic deals",
         },
         earnouts: {
-          advantages: ["Bridge valuation gap", "Risk sharing", "Performance incentive"],
-          disadvantages: ["Complexity", "Disputes potential", "Integration conflicts"],
-          typical_percentage: "10-30% of total consideration"
-        }
-      }
+          advantages: [
+            "Bridge valuation gap",
+            "Risk sharing",
+            "Performance incentive",
+          ],
+          disadvantages: [
+            "Complexity",
+            "Disputes potential",
+            "Integration conflicts",
+          ],
+          typical_percentage: "10-30% of total consideration",
+        },
+      },
     };
 
     return {
@@ -6015,15 +6547,18 @@ const maIntelligenceEngine = {
         "Preliminary structure design and tax analysis",
         "Due diligence coordination and risk assessment",
         "Definitive agreement negotiation and documentation",
-        "Closing coordination and post-closing integration"
+        "Closing coordination and post-closing integration",
       ],
-      timeline: "4-8 months from initial contact to closing for typical middle-market deals"
+      timeline:
+        "4-8 months from initial contact to closing for typical middle-market deals",
     };
-  }
+  },
 };
 
 console.log("🌍 ===== GLOBAL ECONOMIC INTELLIGENCE NETWORK LOADED =====");
-console.log("🚨 ===== CRISIS MANAGEMENT & CONTINGENCY PLANNING OPERATIONAL =====");
+console.log(
+  "🚨 ===== CRISIS MANAGEMENT & CONTINGENCY PLANNING OPERATIONAL =====",
+);
 console.log("🎯 ===== ADVANCED M&A INTELLIGENCE ENGINE ACTIVE =====");
 
 // ===== ULTIMATE STRATEGIC COMMAND CENTER =====
@@ -6034,7 +6569,7 @@ const strategicCommandCenter = {
     const intelligenceMatrix = {
       analytical_frameworks: [
         "Porter's Five Forces Competitive Analysis",
-        "McKinsey 7S Organizational Framework", 
+        "McKinsey 7S Organizational Framework",
         "Blue Ocean Strategy Innovation",
         "Game Theory Strategic Interaction",
         "Behavioral Economics Decision Science",
@@ -6042,7 +6577,7 @@ const strategicCommandCenter = {
         "Scenario Planning Future Preparation",
         "Monte Carlo Risk Simulation",
         "Real Options Strategic Flexibility",
-        "Dynamic Capabilities Resource Evolution"
+        "Dynamic Capabilities Resource Evolution",
       ],
       data_integration: {
         real_time_sources: [
@@ -6055,7 +6590,7 @@ const strategicCommandCenter = {
           "ESG and Climate Risk (Sustainability Databases)",
           "Technology Disruption Tracking (Patent Filings, R&D)",
           "Consumer Sentiment (Survey Data, Social Metrics)",
-          "Regulatory Change Monitoring (Government Sources)"
+          "Regulatory Change Monitoring (Government Sources)",
         ],
         proprietary_intelligence: [
           "Reformed Fund Architect Crisis Experience Database",
@@ -6067,29 +6602,29 @@ const strategicCommandCenter = {
           "M&A Transaction Intelligence Archive",
           "Risk Management Framework Library",
           "Competitive Intelligence Network",
-          "Client Behavioral Pattern Analysis"
-        ]
+          "Client Behavioral Pattern Analysis",
+        ],
       },
       supreme_capabilities: {
         strategic_analysis: {
           depth: "7-10 analytical frameworks per major decision",
           breadth: "Global economic, political, technological context",
           timeline: "Historical pattern analysis + 5-year forward scenarios",
-          precision: "Quantitative modeling with probability distributions"
+          precision: "Quantitative modeling with probability distributions",
         },
         risk_assessment: {
           methodology: "Comprehensive risk matrix across all dimensions",
           quantification: "Value-at-Risk and stress testing",
           monitoring: "Real-time early warning systems",
-          mitigation: "Dynamic hedging and contingency planning"
+          mitigation: "Dynamic hedging and contingency planning",
         },
         opportunity_identification: {
           scanning: "Continuous market and competitive intelligence",
           evaluation: "Multi-criteria decision analysis",
           prioritization: "Risk-adjusted ROI optimization",
-          execution: "Systematic implementation frameworks"
-        }
-      }
+          execution: "Systematic implementation frameworks",
+        },
+      },
     };
 
     return {
@@ -6128,9 +6663,10 @@ const strategicCommandCenter = {
         "Immediate (0-30 days): Market positioning and client acquisition",
         "Short-term (1-6 months): Service expansion and technology integration",
         "Medium-term (6-18 months): Regional expansion and capability building",
-        "Long-term (2-5 years): Market leadership and systematic scaling"
+        "Long-term (2-5 years): Market leadership and systematic scaling",
       ],
-      success_metrics: "Revenue $3K→$30K monthly, client satisfaction 95%+, market share leadership"
+      success_metrics:
+        "Revenue $3K→$30K monthly, client satisfaction 95%+, market share leadership",
     };
   },
 
@@ -6142,44 +6678,47 @@ const strategicCommandCenter = {
           low: "Standard diversification, 5-10% single position limits",
           medium: "Enhanced hedging, stress testing, 15% portfolio protection",
           high: "Crisis protocols, liquidity reserves, defensive positioning",
-          critical: "Emergency procedures, asset protection, family first"
+          critical: "Emergency procedures, asset protection, family first",
         },
         monitoring_systems: [
           "Real-time portfolio valuation and risk metrics",
           "Market volatility and correlation monitoring",
           "Credit and counterparty risk assessment",
           "Liquidity and cash flow projections",
-          "Regulatory and compliance tracking"
-        ]
+          "Regulatory and compliance tracking",
+        ],
       },
       strategic_protection: {
         decision_framework: {
           family_impact: "Primary consideration in all major decisions",
-          roi_requirements: "Minimum 3x risk-adjusted return for major investments",
-          timeline_constraints: "No decisions under pressure without full analysis",
-          stakeholder_alignment: "Family council approval for significant changes"
+          roi_requirements:
+            "Minimum 3x risk-adjusted return for major investments",
+          timeline_constraints:
+            "No decisions under pressure without full analysis",
+          stakeholder_alignment:
+            "Family council approval for significant changes",
         },
         safeguards: [
           "Independent board oversight and advisory input",
           "Professional second opinions on major decisions",
           "Stress testing and scenario planning requirements",
-          "Regular strategy review and adjustment processes"
-        ]
+          "Regular strategy review and adjustment processes",
+        ],
       },
       operational_protection: {
         business_continuity: {
           succession_planning: "Clear leadership transition plans",
           key_person_insurance: "Protection against critical talent loss",
           operational_redundancy: "Backup systems and alternative procedures",
-          crisis_communication: "Stakeholder communication protocols"
+          crisis_communication: "Stakeholder communication protocols",
         },
         reputation_management: [
           "Proactive stakeholder relationship management",
           "Crisis communication and public relations protocols",
           "Regulatory compliance and government relations",
-          "Community engagement and corporate social responsibility"
-        ]
-      }
+          "Community engagement and corporate social responsibility",
+        ],
+      },
     };
 
     return {
@@ -6210,18 +6749,18 @@ const strategicCommandCenter = {
 • Legacy Impact: Sustainable wealth, social contribution`,
       alert_levels: {
         green: "Normal operations, standard monitoring",
-        yellow: "Enhanced vigilance, increased reporting", 
+        yellow: "Enhanced vigilance, increased reporting",
         orange: "Active risk management, contingency preparation",
-        red: "Crisis protocols, emergency procedures activated"
+        red: "Crisis protocols, emergency procedures activated",
       },
       dynasty_laws: [
         "Family welfare supersedes all financial considerations",
         "No single decision can threaten family security",
         "All major decisions require independent validation",
-        "Reputation and legacy preservation are paramount"
-      ]
+        "Reputation and legacy preservation are paramount",
+      ],
     };
-  }
+  },
 };
 
 // ===== SYSTEM STATUS AND DEPLOYMENT CONFIRMATION =====
@@ -6231,17 +6770,27 @@ console.log("👑 ===== DYNASTY PROTECTION PROTOCOLS ENGAGED =====");
 console.log("");
 console.log("🚀 ===== ULTIMATE VAULT CLAUDE DEPLOYMENT STATUS =====");
 console.log("   📊 System Complexity: 5,866+ lines of institutional supremacy");
-console.log("   🧠 Intelligence Level: Exceeds Claude AI, McKinsey, BlackRock combined");
+console.log(
+  "   🧠 Intelligence Level: Exceeds Claude AI, McKinsey, BlackRock combined",
+);
 console.log("   💎 Strategic Frameworks: 15+ advanced analytical systems");
 console.log("   🌏 Global Intelligence: Real-time economic and market data");
 console.log("   🇰🇭 Cambodia Mastery: Reformed Fund Architect authority");
-console.log("   ⚔️ Competitive Advantage: Unbreachable moats vs all competitors");
+console.log(
+  "   ⚔️ Competitive Advantage: Unbreachable moats vs all competitors",
+);
 console.log("   💰 Revenue Target: $3K→$30K monthly systematic scaling");
 console.log("   👑 Dynasty Protection: Family-first laws and safeguards");
-console.log("   🚨 Crisis Resilience: Advanced contingency and recovery systems");
-console.log("   🏛️ Institutional Grade: Professional wealth management capabilities");
+console.log(
+  "   🚨 Crisis Resilience: Advanced contingency and recovery systems",
+);
+console.log(
+  "   🏛️ Institutional Grade: Professional wealth management capabilities",
+);
 console.log("");
-console.log("✅ DEPLOYMENT CONFIRMED: Ultimate strategic weapon ready for Cambodia market domination");
+console.log(
+  "✅ DEPLOYMENT CONFIRMED: Ultimate strategic weapon ready for Cambodia market domination",
+);
 
 // ===== SYSTEM INITIALIZATION COMPLETE =====
 // All components (bot, openai, app, dbPool) already initialized above
@@ -6251,20 +6800,20 @@ console.log("✅ DEPLOYMENT CONFIRMED: Ultimate strategic weapon ready for Cambo
 // ===== FILE PROCESSING EVENT HANDLERS =====
 
 // Handle document files (PDF, DOCX, Excel, etc.)
-bot.on('document', async (msg) => {
+bot.on("document", async (msg) => {
   const chatId = msg.chat.id;
   const document = msg.document;
-  
+
   try {
     await bot.sendMessage(chatId, "📄 Document received. Processing...");
-    
-    const fileExtension = document.file_name.split('.').pop().toLowerCase();
+
+    const fileExtension = document.file_name.split(".").pop().toLowerCase();
     const result = await fileProcessingIntelligence.processFile(
       document.file_id,
       document.file_name,
-      fileExtension
+      fileExtension,
     );
-    
+
     if (result.success) {
       const response = `🏛️ HOUSE OF IMPERIUM - ULTIMATE STRATEGIC DOMINANCE - HOUSE OF SUM CHENDA 🏛️
 
@@ -6281,39 +6830,45 @@ ${result.analysis}
       // Split long messages if needed
       const maxLength = 4000;
       if (response.length > maxLength) {
-        const chunks = response.match(new RegExp(`.{1,${maxLength}}`, 'g'));
+        const chunks = response.match(new RegExp(`.{1,${maxLength}}`, "g"));
         for (let i = 0; i < chunks.length; i++) {
           await bot.sendMessage(chatId, chunks[i]);
           if (i < chunks.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 1000));
           }
         }
       } else {
         await bot.sendMessage(chatId, response);
       }
     } else {
-      await bot.sendMessage(chatId, `❌ File processing failed: ${result.error}`);
+      await bot.sendMessage(
+        chatId,
+        `❌ File processing failed: ${result.error}`,
+      );
     }
   } catch (error) {
-    console.error('❌ Document processing error:', error);
-    await bot.sendMessage(chatId, "❌ Error processing document. Please try again.");
+    console.error("❌ Document processing error:", error);
+    await bot.sendMessage(
+      chatId,
+      "❌ Error processing document. Please try again.",
+    );
   }
 });
 
 // Handle photo/image files
-bot.on('photo', async (msg) => {
+bot.on("photo", async (msg) => {
   const chatId = msg.chat.id;
   const photo = msg.photo[msg.photo.length - 1]; // Get highest resolution
-  
+
   try {
     await bot.sendMessage(chatId, "🖼️ Image received. Analyzing...");
-    
+
     const result = await fileProcessingIntelligence.processFile(
       photo.file_id,
-      'image.jpg',
-      'jpg'
+      "image.jpg",
+      "jpg",
     );
-    
+
     if (result.success) {
       const response = `🏛️ HOUSE OF IMPERIUM - ULTIMATE STRATEGIC DOMINANCE - HOUSE OF SUM CHENDA 🏛️
 
@@ -6327,32 +6882,44 @@ ${result.analysis}
 
       await bot.sendMessage(chatId, response);
     } else {
-      await bot.sendMessage(chatId, `❌ Image analysis failed: ${result.error}`);
+      await bot.sendMessage(
+        chatId,
+        `❌ Image analysis failed: ${result.error}`,
+      );
     }
   } catch (error) {
-    console.error('❌ Image processing error:', error);
-    await bot.sendMessage(chatId, "❌ Error analyzing image. Please try again.");
+    console.error("❌ Image processing error:", error);
+    await bot.sendMessage(
+      chatId,
+      "❌ Error analyzing image. Please try again.",
+    );
   }
 });
 
 // Handle voice messages (future enhancement)
-bot.on('voice', async (msg) => {
+bot.on("voice", async (msg) => {
   const chatId = msg.chat.id;
-  await bot.sendMessage(chatId, "🎤 Voice message received. Voice processing capabilities will be available in the next update. For now, please send text, documents, or images for analysis.");
+  await bot.sendMessage(
+    chatId,
+    "🎤 Voice message received. Voice processing capabilities will be available in the next update. For now, please send text, documents, or images for analysis.",
+  );
 });
 
 // Smart deployment detection - Railway vs Replit
 (async () => {
   try {
-    const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production';
-    
+    const isRailway =
+      process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === "production";
+
     if (isRailway) {
       // Railway mode - optimized for strategic AI channel
       console.log("🚀 RAILWAY DEPLOYMENT MODE - STRATEGIC AI CHANNEL");
-      console.log("🎯 Polling mode active - Optimized for strategic conversations");
-      console.log(`📊 Bot token check: ${TELEGRAM_TOKEN ? 'SET' : 'MISSING'}`);
-      console.log(`📊 OpenAI key check: ${OPENAI_KEY ? 'SET' : 'MISSING'}`);
-      
+      console.log(
+        "🎯 Polling mode active - Optimized for strategic conversations",
+      );
+      console.log(`📊 Bot token check: ${TELEGRAM_TOKEN ? "SET" : "MISSING"}`);
+      console.log(`📊 OpenAI key check: ${OPENAI_KEY ? "SET" : "MISSING"}`);
+
       // Try webhook setup first (more powerful), fallback to polling
       console.log("🚀 Attempting webhook setup for maximum performance...");
       const webhookSetup = await setupWebhook();
@@ -6369,22 +6936,29 @@ bot.on('voice', async (msg) => {
       // Replit mode - clear webhook and use polling
       await bot.deleteWebHook();
       console.log("🔄 Webhook cleared for Replit");
-      
+
       if (!bot.isPolling()) {
         await bot.startPolling({ polling: true, onlyFirstMatch: true });
         console.log("✅ Polling started for Replit");
       }
     }
-    
-    console.log("🚀 ULTIMATE VAULT CLAUDE - Strategic AI Channel System Started");
-    console.log("🏛️ HOUSE OF IMPERIUM - STRATEGIC AI ADVISOR - HOUSE OF SUM CHENDA 🏛️");
+
+    console.log(
+      "🚀 ULTIMATE VAULT CLAUDE - Strategic AI Channel System Started",
+    );
+    console.log(
+      "🏛️ HOUSE OF IMPERIUM - STRATEGIC AI ADVISOR - HOUSE OF SUM CHENDA 🏛️",
+    );
     console.log("⚔️ Ready for Strategic Intelligence via Telegram Channel");
     console.log("📄 File Processing: PDF, DOCX, XLSX, Images - OPERATIONAL");
-    console.log("🧠 Strategic Conversation Mode: Optimized for detailed analysis");
-    
+    console.log(
+      "🧠 Strategic Conversation Mode: Optimized for detailed analysis",
+    );
   } catch (error) {
     console.error("❌ Bot startup error:", error);
   }
 })();
 
-console.log("🏛️ All systems operational - Ultimate Vault Claude ready for strategic deployment");
+console.log(
+  "🏛️ All systems operational - Ultimate Vault Claude ready for strategic deployment",
+);
