@@ -2699,23 +2699,16 @@ Proceeding with enhanced caution...`,
     // Generate ultimate context with all accumulated intelligence
     const ultimateContext = generateUltimateContext(userId);
 
-    const ultimateSystemPrompt = `${ultimateContext}`;
-
     const messages = [
-      {
-        role: "system",
-        content: ultimateSystemPrompt,
-      },
       ...conversation,
     ];
 
-    // OPTIONAL: Add real-time data if query needs current information
-    let realTimeContext = "";
-    if (needsRealTimeData(userMessage)) {
-      realTimeContext = await getRealTimeIntelligence(userMessage);
-      if (realTimeContext) {
-        messages[0].content += `\n\n🌐 **REAL-TIME INTELLIGENCE**:\n${realTimeContext}`;
-      }
+    // Add context directly to conversation if needed
+    if (ultimateContext) {
+      messages.unshift({
+        role: "system", 
+        content: ultimateContext
+      });
     }
 
     // ===== ULTIMATE GPT-4 DYNASTY CONFIGURATION =====
