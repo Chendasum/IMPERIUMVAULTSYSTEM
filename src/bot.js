@@ -2699,7 +2699,7 @@ Proceeding with enhanced caution...`,
     // Generate ultimate context with all accumulated intelligence
     const ultimateContext = generateUltimateContext(userId);
 
-    const ultimateSystemPrompt = `Commander Sum Chenda - Reformed Fund Architect scaling $3K→$30K monthly in Cambodia. Crisis-tested 2008 experience. ${ultimateContext}`;
+    const ultimateSystemPrompt = `${ultimateContext}`;
 
     const messages = [
       {
@@ -2724,16 +2724,11 @@ Proceeding with enhanced caution...`,
       model: "gpt-4o", // ULTIMATE OpenAI model - newest release with MAXIMUM capabilities
       messages: messages,
 
-      // UNRESTRICTED GPT-4o CORE INTELLIGENCE
-      temperature: 0.9,
+      // PURE UNRESTRICTED GPT-4o CORE INTELLIGENCE
+      temperature: 1.0,
       max_tokens: 4096,
-      presence_penalty: 0,
-      frequency_penalty: 0,
       top_p: 1.0,
-
-      // ===== DYNASTY-LEVEL ADVANCED CONFIGURATION =====
-      // These parameters create INSTITUTIONAL-GRADE intelligence that exceeds McKinsey, BCG, Bain combined
-      stream: false, // COMPLETE RESPONSE INTEGRITY - Ensures full dynasty analysis delivery
+      stream: false,
       user: `dynasty_${userId}`, // PERSONALIZED INTELLIGENCE TRACKING - Builds user-specific strategic patterns
 
       // ===== SUPREME TRAINING OPTIMIZATION - 3,157+ LINES OF POWER =====
