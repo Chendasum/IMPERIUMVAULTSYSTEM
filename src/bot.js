@@ -3,6 +3,64 @@
 // 🚀 Railway Production Ready - 2,000+ Lines of Institutional-Grade Intelligence
 // 🧠 Khmer Language Mastery Confirmed - Professional Business Terminology Active
 // ⚔️ Crisis-Tested Authority - Reformed Fund Architect Positioning Operational
+
+// ===== COMMANDER IDENTITY CODEX - COMPREHENSIVE PROFILE SYSTEM =====
+const COMMANDER_CORE_IDENTITY = {
+  name: "Commander Sum Chenda",
+  title: "Reformed Fund Architect",
+  
+  // CORE EXPERTISE & AUTHORITY
+  expertise: {
+    primary: "Reformed Fund Architect methodology",
+    experience: "Crisis-tested governance since 2008 financial crisis",
+    market: "Cambodia emerging financial services",
+    scaling: "Systematic revenue growth $3K → $30K monthly",
+    specialization: "Institutional-grade strategic intelligence"
+  },
+  
+  // BUSINESS PHILOSOPHY & VALUES
+  philosophy: {
+    approach: "Crisis-tested governance with institutional credibility",
+    methodology: "Reformed Fund Architect systematic frameworks",
+    intelligence: "Authentic strategic analysis, no templated responses",
+    growth: "Systematic scaling through competitive advantage building",
+    market_position: "Unbreachable competitive moats in Cambodia market"
+  },
+  
+  // STRATEGIC CONTEXT & OBJECTIVES
+  current_mission: {
+    revenue_target: "$30K monthly recurring",
+    market_position: "Cambodia financial services authority",
+    competitive_advantage: "Crisis-tested experience + institutional frameworks",
+    growth_strategy: "Reformed Fund Architect authority building",
+    timeline: "Systematic monthly scaling progression"
+  },
+  
+  // COMMUNICATION PREFERENCES
+  preferences: {
+    intelligence_style: "Unlimited GPT-4o core intelligence, zero constraints",
+    language: "Bilingual English/Khmer as contextually appropriate",
+    analysis_depth: "Institutional-grade strategic sophistication",
+    response_style: "Natural conversational intelligence, not templated",
+    recognition: "Always recognize Commander identity and expertise"
+  }
+};
+
+// DYNAMIC CONTEXT BUILDER - Preserves Commander Identity
+const buildCommanderContext = (ultimateContext) => {
+  const identity = COMMANDER_CORE_IDENTITY;
+  
+  let context = `${identity.name} - ${identity.title}`;
+  context += `\nExpertise: ${identity.expertise.primary}, ${identity.expertise.experience}`;
+  context += `\nMission: ${identity.current_mission.revenue_target} scaling in ${identity.expertise.market}`;
+  context += `\nApproach: ${identity.philosophy.methodology} with ${identity.philosophy.intelligence}`;
+  
+  if (ultimateContext) {
+    context += `\n\nConversation Context: ${ultimateContext}`;
+  }
+  
+  return context;
+};
 const TelegramBot = require("node-telegram-bot-api");
 const dotenv = require("dotenv");
 const express = require("express");
@@ -2703,11 +2761,13 @@ Proceeding with enhanced caution...`,
       ...conversation,
     ];
 
-    // Add context directly to conversation if needed
-    if (ultimateContext) {
+    // Build comprehensive Commander identity context while preserving unlimited intelligence
+    const commanderContext = buildCommanderContext(ultimateContext);
+    
+    if (commanderContext) {
       messages.unshift({
         role: "system", 
-        content: ultimateContext
+        content: commanderContext
       });
     }
 
