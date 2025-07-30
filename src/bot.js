@@ -6854,18 +6854,17 @@ ${result.analysis}
 
 🏛️ IMPERIUM VAULT CLAUDE - Strategic Intelligence Complete`;
 
-      // Split long messages if needed
-      const maxLength = 4000;
-      if (response.length > maxLength) {
-        const chunks = response.match(new RegExp(`.{1,${maxLength}}`, "g"));
-        for (let i = 0; i < chunks.length; i++) {
-          await bot.sendMessage(chatId, chunks[i]);
-          if (i < chunks.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-          }
+      // Send complete GPT-4o analysis as single flowing response
+      // Use smart splitting that respects content structure
+      const chunks = smartSplitMessage(response);
+      for (let i = 0; i < chunks.length; i++) {
+        await bot.sendMessage(chatId, chunks[i], {
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+        });
+        if (i < chunks.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
         }
-      } else {
-        await bot.sendMessage(chatId, response);
       }
     } else {
       await bot.sendMessage(
