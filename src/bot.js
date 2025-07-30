@@ -1253,50 +1253,7 @@ const updateRevenueAnalytics = (userMessage, aiResponse) => {
   }
 };
 
-// Enhanced analysis functions for superior intelligence
-const assessCambodiaRelevance = (message) => {
-  try {
-    const cambodiaTerms = [
-      "cambodia",
-      "khmer",
-      "phnom penh",
-      "siem reap",
-      "battambang",
-      "riel",
-      "cambodian",
-    ];
-    const msg = message.toLowerCase();
-    if (cambodiaTerms.some((term) => msg.includes(term)))
-      return "High - Direct Cambodia market focus";
-    if (msg.includes("asia") || msg.includes("southeast"))
-      return "Medium - Regional context applicable";
-    return "Universal - Global business principles";
-  } catch (error) {
-    return "Universal - Global business principles";
-  }
-};
-
-const assessBusinessImpact = (message) => {
-  try {
-    const highImpact = [
-      "revenue",
-      "scaling",
-      "fund",
-      "capital",
-      "client",
-      "competition",
-    ];
-    const mediumImpact = ["strategy", "process", "system", "framework"];
-    const msg = message.toLowerCase();
-    if (highImpact.some((term) => msg.includes(term)))
-      return "High - Direct revenue/growth impact";
-    if (mediumImpact.some((term) => msg.includes(term)))
-      return "Medium - Systematic improvement";
-    return "Low - Informational/conceptual";
-  } catch (error) {
-    return "Low - Informational/conceptual";
-  }
-};
+// Enhanced analysis functions for superior intelligence - using updated versions above
 
 // ===== ULTIMATE CONTEXT GENERATION =====
 const generateUltimateContext = (userId) => {
