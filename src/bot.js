@@ -120,6 +120,24 @@ try {
   process.exit(1);
 }
 
+// ===== DYNASTY STRATEGIC INTELLIGENCE MODULES =====
+const codexMemory = require('../attached_assets/codex_memory_1753858108828.js');
+const commandTriggers = require('../attached_assets/command_triggers_1753858108828.js');
+const strategicBrain = require('../attached_assets/strategic_brain_1753858108829.js');
+const memoryLog = require('../attached_assets/memory_log_1753858108829.js');
+const fallbackEnforcer = require('../attached_assets/fallback_enforcer_1753858108828.js');
+
+// Initialize Dynasty Intelligence System
+const dynastyMemoryLog = memoryLog.createMemoryLog();
+const dynastyEnforcer = fallbackEnforcer.createEnforcer(codexMemory, dynastyMemoryLog);
+
+console.log("🏛️ DYNASTY INTELLIGENCE MODULES LOADED:");
+console.log("   🧠 Codex Memory - Crisis-tested business laws");
+console.log("   ⚔️ Command Triggers - Strategic command system");
+console.log("   🎯 Strategic Brain - Capital Clarity engine");
+console.log("   📚 Memory Log - Permanent intelligence storage");
+console.log("   🛡️ Fallback Enforcer - Dynasty protection system");
+
 // ===== ULTIMATE MEMORY & LEARNING SYSTEM =====
 const conversations = new Map();
 const ultimateLearningDatabase = new Map();
@@ -2269,6 +2287,125 @@ Based on ${ultimateLearningDatabase.size} analyzed conversations and ${marketInt
   }
 });
 
+// ===== DYNASTY COMMAND PROCESSOR =====
+bot.on("message", async (msg) => {
+  try {
+    // Don't process our own messages or forwarded messages
+    if (msg.from.is_bot || msg.forward_from || !msg.text) return;
+
+    const chatId = msg.chat.id;
+    const messageText = msg.text || "";
+    const userId = msg.from.id;
+
+    console.log(`📨 DYNASTY AI: Message from ${msg.from.first_name} (${userId}): ${messageText}`);
+
+    // Check if this is a dynasty command
+    if (commandTriggers.isDynastyCommand(messageText)) {
+      console.log("⚔️ DYNASTY COMMAND DETECTED:", messageText);
+      
+      // Process dynasty command
+      const commandResponse = commandTriggers.processCommand(messageText);
+      
+      // Send initial command response
+      await bot.sendMessage(chatId, commandResponse);
+      
+      // Process through strategic brain for enhanced analysis
+      const parts = messageText.split(' ');
+      const command = parts[0].toLowerCase();
+      const parameters = parts.slice(1).join(' ');
+      
+      let strategicAnalysis = "";
+      
+      switch(command) {
+        case '/codex':
+          const relevantLaw = codexMemory.getLawForSituation(parameters);
+          strategicAnalysis = `🏛️ CODEX LAW ACTIVATED
+
+**${relevantLaw.law}**
+
+**Trigger:** ${relevantLaw.trigger}
+**Action Required:** ${relevantLaw.action}
+
+**Crisis-Tested Application:**
+Based on your 2008 experience, this law prevents dynasty destruction. Apply immediately.`;
+          break;
+          
+        case '/deal':
+          const dealAnalysis = strategicBrain.analyzeOpportunity(parameters);
+          strategicAnalysis = `⚔️ 5-DIMENSIONAL DEAL ANALYSIS
+
+**Opportunity:** ${parameters}
+**Dynasty Score:** ${dealAnalysis.score}/100
+**Strategic Rationale:** ${dealAnalysis.rationale}
+**Cambodia Fit:** ${dealAnalysis.cambodiaFit}
+
+**Framework Analysis:**
+${JSON.stringify(dealAnalysis.framework.dimensions, null, 2)}
+
+**Recommendation:** ${dealAnalysis.score > 80 ? 'PROCEED WITH CAUTION' : 'REQUIRE ADDITIONAL VALIDATION'}`;
+          break;
+          
+        case '/crisis':
+          const crisisProtocol = codexMemory.getEmergencyProtocol(parameters);
+          strategicAnalysis = `🚨 CRISIS PROTOCOL ACTIVATED
+
+**Crisis Type:** ${parameters}
+
+**IMMEDIATE ACTIONS (Next 24 hours):**
+${crisisProtocol.immediate.map(action => `• ${action}`).join('\n')}
+
+**WEEK 1 STRATEGY:**
+${crisisProtocol.week1.map(action => `• ${action}`).join('\n')}
+
+**MONTH 1 RECOVERY:**
+${crisisProtocol.month1.map(action => `• ${action}`).join('\n')}
+
+**2008 Experience:** Crisis = Opportunity. Activate relationship network and scan for distressed assets.`;
+          break;
+          
+        case '/scale':
+          const revenue = parseInt(parameters) || 0;
+          const scalingStrategy = strategicBrain.getScalingStrategy(revenue);
+          strategicAnalysis = `🚀 WEALTH SCALING PROTOCOL
+
+**Current Phase:** ${scalingStrategy.target}
+**Focus:** ${scalingStrategy.focus}
+**Timeline:** ${scalingStrategy.timeline}
+
+**Strategic Initiatives:**
+${scalingStrategy.strategies.map(strategy => `• ${strategy}`).join('\n')}
+
+**Key Metrics to Track:**
+${scalingStrategy.keyMetrics.map(metric => `• ${metric}`).join('\n')}
+
+**Cambodia Advantage:** Leverage low-cost advantage and relationship capital for accelerated scaling.`;
+          break;
+      }
+      
+      if (strategicAnalysis) {
+        await bot.sendMessage(chatId, strategicAnalysis);
+        
+        // Log strategic decision to memory
+        dynastyMemoryLog.logStrategicDecision({
+          description: messageText,
+          context: `User requested ${command} analysis`,
+          framework: command.replace('/', '').toUpperCase(),
+          expectedOutcome: 'Strategic guidance provided',
+          cambodiaFactors: { marketRelevance: true, culturalAdaptation: true }
+        });
+      }
+      
+      return; // Don't process dynasty commands through regular AI
+    }
+
+    // Regular message handling with dynasty protection
+    await handleUltimateMessage(bot, msg);
+  } catch (error) {
+    console.error("❌ Message handler error:", error.message);
+    await bot.sendMessage(chatId, "🏛️ Dynasty AI System processing...");
+  }
+});
+
 // ===== ULTIMATE MESSAGE HANDLER =====
 const handleUltimateMessage = async (bot, msg) => {
   if (!msg.text) return;
@@ -2279,6 +2416,46 @@ const handleUltimateMessage = async (bot, msg) => {
 
   try {
     await bot.sendChatAction(chatId, "typing");
+
+    // Dynasty protection check
+    const decision = {
+      id: Date.now().toString(),
+      description: userMessage,
+      value: 0,
+      timeframe: 'immediate',
+      expectedROI: null,
+      familyImpact: null
+    };
+
+    const dangerAnalysis = dynastyEnforcer.analyzeDanger(decision);
+    
+    if (dangerAnalysis.blocked) {
+      await bot.sendMessage(chatId, `🛡️ DYNASTY PROTECTION ACTIVATED
+
+${dangerAnalysis.blockReason}
+
+This decision has been blocked to protect your dynasty. Consider alternative approaches.`);
+      return;
+    }
+
+    if (dangerAnalysis.requiresApproval) {
+      await bot.sendMessage(chatId, `⚠️ DYNASTY REVIEW REQUIRED
+
+Risk Level: ${dangerAnalysis.riskLevel.toUpperCase()}
+Approval Type: ${dangerAnalysis.approvalType}
+
+Proceeding with enhanced caution...`);
+    }
+
+    // Log message to memory for intelligence building
+    dynastyMemoryLog.logConversation({
+      type: 'USER_QUERY',
+      query: userMessage,
+      timestamp: new Date().toISOString(),
+      userId: userId,
+      chatId: chatId
+    });
+    }
 
     // Get conversation context
     let conversation = conversations.get(userId) || [];
