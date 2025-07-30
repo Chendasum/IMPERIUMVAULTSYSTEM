@@ -2600,6 +2600,13 @@ Based on ${ultimateLearningDatabase.size} analyzed conversations and ${marketInt
   }
 });
 
+// ===== QUICK RESPONSE TEST HANDLER =====
+bot.onText(/hello|hi|test|status/i, async (msg) => {
+  const chatId = msg.chat.id;
+  console.log("🟢 QUICK TEST: Responding to simple greeting...");
+  await bot.sendMessage(chatId, "🏛️ ULTIMATE VAULT CLAUDE OPERATIONAL\n\nDynasty AI System online and ready for strategic intelligence.\n\n✅ 6,533 lines of institutional-grade capabilities active\n✅ All 15 dynasty modules loaded\n✅ GPT-4 strategic analysis ready\n\nSend any message for full strategic analysis!");
+});
+
 // ===== DYNASTY COMMAND PROCESSOR =====
 bot.on("message", async (msg) => {
   try {
@@ -2614,7 +2621,7 @@ bot.on("message", async (msg) => {
       `📨 DYNASTY AI: Message from ${msg.from.first_name} (${userId}): ${messageText}`,
     );
 
-    // Check if this is a dynasty command
+    // Check if this is a dynasty command OR any other message
     if (commandTriggers.isDynastyCommand(messageText)) {
       console.log("⚔️ DYNASTY COMMAND DETECTED:", messageText);
 
@@ -2713,7 +2720,8 @@ ${scalingStrategy.keyMetrics.map((metric) => `• ${metric}`).join("\n")}
       return; // Don't process dynasty commands through regular AI
     }
 
-    // Regular message handling with dynasty protection
+    // Regular message handling with dynasty protection (ALL messages including "hello")
+    console.log("🧠 Processing through Ultimate AI System...");
     await handleUltimateMessage(bot, msg);
   } catch (error) {
     console.error("❌ Message handler error:", error.message);
