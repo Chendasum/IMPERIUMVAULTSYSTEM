@@ -2309,7 +2309,12 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
 
 // Handle all messages with ultimate intelligence
 bot.on("message", async (msg) => {
-  if (msg.text && msg.text.startsWith("/")) return;
+  console.log("📨 Message received:", msg.text, "from user:", msg.from.id);
+  if (msg.text && msg.text.startsWith("/")) {
+    console.log("⚠️ Skipping command message");
+    return;
+  }
+  console.log("🧠 Processing message with ultimate intelligence...");
   await handleUltimateMessage(bot, msg);
 });
 
@@ -2357,27 +2362,16 @@ app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
   res.sendStatus(200);
 });
 
-// Set webhook for VaultClaude
-const initializeWebhook = async () => {
-  try {
-    // Railway deployment webhook URL
-    const webhookUrl = process.env.RAILWAY_PUBLIC_DOMAIN 
-      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/bot${TELEGRAM_TOKEN}`
-      : process.env.REPL_SLUG 
-      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/bot${TELEGRAM_TOKEN}`
-      : `http://localhost:${PORT}/bot${TELEGRAM_TOKEN}`;
-    
-    await bot.setWebHook(webhookUrl);
-    console.log(`🔗 VaultClaude webhook set to: ${webhookUrl}`);
-  } catch (error) {
-    console.log('📡 VaultClaude running in direct mode (webhook setup skipped)');
-  }
-};
+// WEBHOOK DISABLED - Using polling mode only for reliability
+// const initializeWebhook = async () => {
+//   // Webhook functionality disabled in favor of polling mode
+//   console.log('📡 Webhook mode disabled - using polling for guaranteed message reception');
+// };
 
-// Initialize webhook
-setTimeout(() => {
-  initializeWebhook();
-}, 2000);
+// Webhook initialization disabled - using polling mode only
+// setTimeout(() => {
+//   initializeWebhook();
+// }, 2000);
 
 app.get("/", (req, res) => {
   res.json({
@@ -2471,8 +2465,10 @@ app.listen(PORT, () => {
   console.log(`🌐 Ultimate health check server running on port ${PORT}`);
 });
 
-// Setup webhook for Railway deployment with retry logic
+// WEBHOOK SETUP DISABLED - Using polling mode for reliability
 const setupWebhook = async (retryCount = 0) => {
+  console.log("🚫 Webhook setup disabled - using polling mode only");
+  return false;
   try {
     // Get actual deployment domain - auto-detect from environment
     let domain;
@@ -2595,8 +2591,55 @@ const startUltimateSystem = async () => {
   }
 };
 
-// Add message handler to make bot respond
-bot.on('message', handleUltimateMessage);
+// Force polling mode for guaranteed message reception
+const initializePollingMode = async () => {
+  try {
+    console.log("📡 Initializing polling mode for guaranteed message reception");
+    
+    // Stop any existing polling first
+    try {
+      await bot.stopPolling();
+      console.log("🔄 Stopped previous polling instances");
+    } catch (error) {
+      console.log("⚠️ No previous polling to stop");
+    }
+    
+    // Clear webhook if set
+    try {
+      await bot.deleteWebHook();
+      console.log("🔄 Cleared webhook configuration");
+    } catch (error) {
+      console.log("⚠️ No webhook to clear");
+    }
+    
+    // Start fresh polling
+    await bot.startPolling({ polling: true });
+    console.log("✅ Polling mode active - VaultClaude ready to receive messages");
+    
+  } catch (error) {
+    console.error("❌ Polling initialization error:", error.message);
+  }
+};
 
-// Start the complete ultimate system
-startUltimateSystem();
+// Start the complete ultimate system with polling only
+(async () => {
+  await startUltimateSystem();
+  
+  // Force polling mode (disable all webhook attempts)
+  console.log("🔧 FORCING POLLING MODE - Disabling all webhook functionality");
+  try {
+    // Clear any existing webhook
+    await bot.deleteWebHook();
+    console.log("🔄 Webhook cleared");
+  } catch (error) {
+    console.log("⚠️ No webhook to clear");
+  }
+  
+  // Start polling with explicit options
+  await bot.startPolling({ 
+    polling: { interval: 300, autoStart: true },
+    onlyFirstMatch: false 
+  });
+  console.log("✅ POLLING MODE ACTIVE - VaultClaude receiving messages successfully");
+  
+})();
