@@ -2683,7 +2683,12 @@ bot.on("message", async (msg) => {
     await handleUltimateMessage(bot, msg);
   } catch (error) {
     console.error("❌ Message handler error:", error.message);
-    await bot.sendMessage(chatId, "🏛️ Dynasty AI System processing...");
+    // Log the full error and attempt direct response
+    try {
+      await bot.sendMessage(chatId, `Commander, there was a system error: ${error.message}. Please try again.`);
+    } catch (sendError) {
+      console.error("❌ Failed to send error message:", sendError.message);
+    }
   }
 });
 
@@ -2698,28 +2703,33 @@ const handleUltimateMessage = async (bot, msg) => {
   try {
     await bot.sendChatAction(chatId, "typing");
 
-    // Dynasty protection check
-    const decision = {
-      id: Date.now().toString(),
-      description: userMessage,
-      value: 0,
-      timeframe: "immediate",
-      expectedROI: null,
-      familyImpact: null,
-    };
+    // Skip dynasty protection for basic questions and conversation
+    const isBasicQuestion = /^(hello|hi|what|how|who|where|when|why|help|assist)/i.test(userMessage.toLowerCase());
+    
+    if (!isBasicQuestion) {
+      // Dynasty protection check only for decision-making queries
+      const decision = {
+        id: Date.now().toString(),
+        description: userMessage,
+        value: 0,
+        timeframe: "immediate",
+        expectedROI: null,
+        familyImpact: null,
+      };
 
-    const dangerAnalysis = dynastyEnforcer.analyzeDanger(decision);
+      const dangerAnalysis = dynastyEnforcer.analyzeDanger(decision);
 
-    if (dangerAnalysis.blocked) {
-      await bot.sendMessage(
-        chatId,
-        `🛡️ DYNASTY PROTECTION ACTIVATED
+      if (dangerAnalysis.blocked) {
+        await bot.sendMessage(
+          chatId,
+          `🛡️ DYNASTY PROTECTION ACTIVATED
 
 ${dangerAnalysis.blockReason}
 
 This decision has been blocked to protect your dynasty. Consider alternative approaches.`,
-      );
-      return;
+        );
+        return;
+      }
     }
 
     if (dangerAnalysis.requiresApproval) {
@@ -2855,11 +2865,14 @@ Proceeding with enhanced caution...`,
   } catch (error) {
     console.error("❌ Ultimate message handler error:", error.message);
 
-    const errorMessage = error.message.includes("insufficient_quota")
-      ? "🏛️ ULTIMATE VAULT SYSTEMS MAINTENANCE\n\nOpenAI quota exceeded. Your supreme strategic advisor will return with enhanced capabilities.\n\nប្រព័ន្ធ Vault ចុងក្រោយកំពុងថែទាំ។ ទីប្រឹក្សាយុទ្ធសាស្រ្តកំពូលរបស់អ្នកនឹងត្រលប់មកវិញជាមួយសមត្ថភាពកាន់តែប្រសើរ។"
-      : "🏛️ ULTIMATE SYSTEM ENHANCEMENT\n\nSupreme intelligence optimization in progress. Your ultimate strategic advisor will return momentarily.\n\nការធ្វើឲ្យប្រាជ្ញាកំពូលប្រសើរកំពុងដំណើរការ។ ទីប្រឹក្សាយុទ្ធសាស្រ្តចុងក្រោយរបស់អ្នកនឹងត្រលប់មកវិញ។";
-
-    await bot.sendMessage(chatId, errorMessage, { parse_mode: "HTML" });
+    // Direct error response from core intelligence - no templated fallbacks
+    try {
+      await bot.sendMessage(chatId, `Commander, I encountered a technical issue: ${error.message}. Let me know what you need help with and I'll address it directly.`, { 
+        disable_web_page_preview: true 
+      });
+    } catch (sendError) {
+      console.error("❌ Failed to send error message:", sendError.message);
+    }
   }
 };
 
