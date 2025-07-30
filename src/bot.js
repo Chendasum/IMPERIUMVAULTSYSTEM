@@ -791,13 +791,133 @@ const assessStrategicLevel = (message) => {
     const operationalWords = ["daily", "today", "now", "immediate", "quick"];
 
     const msg = message.toLowerCase();
-    if (strategicWords.some((word) => msg.includes(word))) return "strategic";
-    if (tacticalWords.some((word) => msg.includes(word))) return "tactical";
+    if (strategicWords.some((word) => msg.includes(word))) return "STRATEGIC (Long-term vision)";
+    if (tacticalWords.some((word) => msg.includes(word))) return "TACTICAL (Implementation-focused)";
     if (operationalWords.some((word) => msg.includes(word)))
-      return "operational";
-    return "consultative";
+      return "OPERATIONAL (Immediate execution)";
+    return "CONSULTATIVE (Advisory request)";
   } catch (error) {
-    return "consultative";
+    return "CONSULTATIVE (Advisory request)";
+  }
+};
+
+const assessCambodiaRelevance = (message) => {
+  try {
+    const msg = message.toLowerCase();
+    const cambodiaKeywords = ["cambodia", "កម្ពុជា", "khmer", "phnom penh", "siem reap", "asean", "southeast asia"];
+    const marketKeywords = ["market", "business", "economy", "investment", "fund"];
+    
+    if (cambodiaKeywords.some((word) => msg.includes(word))) {
+      if (marketKeywords.some((word) => msg.includes(word))) {
+        return "CRITICAL (Direct Cambodia market focus)";
+      }
+      return "HIGH (Cambodia-related)";
+    }
+    if (marketKeywords.some((word) => msg.includes(word))) {
+      return "MEDIUM (General market - Cambodia application required)";
+    }
+    return "STANDARD (Universal strategic principles)";
+  } catch (error) {
+    return "STANDARD (Universal strategic principles)";
+  }
+};
+
+const assessBusinessImpact = (message) => {
+  try {
+    const msg = message.toLowerCase();
+    const highImpactWords = ["revenue", "growth", "scale", "fund", "investment", "client", "deal"];
+    const mediumImpactWords = ["strategy", "planning", "process", "system", "framework"];
+    const lowImpactWords = ["question", "advice", "help", "information"];
+    
+    if (highImpactWords.some((word) => msg.includes(word))) {
+      return "HIGH IMPACT (Direct revenue/growth potential)";
+    }
+    if (mediumImpactWords.some((word) => msg.includes(word))) {
+      return "MEDIUM IMPACT (Strategic development)";
+    }
+    return "CONSULTATIVE IMPACT (Information/advice request)";
+  } catch (error) {
+    return "CONSULTATIVE IMPACT (Information/advice request)";
+  }
+};
+
+const assessFinancialImpact = (message) => {
+  try {
+    const msg = message.toLowerCase();
+    const majorFinancialWords = ["$", "million", "thousand", "revenue", "profit", "investment", "fund", "capital"];
+    const moderateFinancialWords = ["cost", "price", "money", "budget", "expense"];
+    
+    if (majorFinancialWords.some((word) => msg.includes(word))) {
+      return "MAJOR ($10k+ potential impact)";
+    }
+    if (moderateFinancialWords.some((word) => msg.includes(word))) {
+      return "MODERATE ($1k-10k potential impact)";
+    }
+    return "STRATEGIC (Long-term value creation)";
+  } catch (error) {
+    return "STRATEGIC (Long-term value creation)";
+  }
+};
+
+const assessCompetitiveAdvantage = (message) => {
+  try {
+    const msg = message.toLowerCase();
+    const advantageWords = ["competitive", "advantage", "unique", "differentiation", "positioning", "crisis", "reformed"];
+    const marketWords = ["market", "competition", "competitor", "rival"];
+    
+    if (advantageWords.some((word) => msg.includes(word))) {
+      return "CRITICAL (Direct competitive advantage focus)";
+    }
+    if (marketWords.some((word) => msg.includes(word))) {
+      return "HIGH (Market positioning relevant)";
+    }
+    return "MODERATE (General strategic value)";
+  } catch (error) {
+    return "MODERATE (General strategic value)";
+  }
+};
+
+const assessImplementationComplexity = (message) => {
+  try {
+    const msg = message.toLowerCase();
+    const complexWords = ["system", "framework", "integration", "transformation", "restructure"];
+    const moderateWords = ["process", "improve", "optimize", "enhance"];
+    const simpleWords = ["start", "begin", "quick", "simple", "easy"];
+    
+    if (complexWords.some((word) => msg.includes(word))) {
+      return "COMPLEX (Multi-phase implementation)";
+    }
+    if (moderateWords.some((word) => msg.includes(word))) {
+      return "MODERATE (Standard implementation)";
+    }
+    if (simpleWords.some((word) => msg.includes(word))) {
+      return "SIMPLE (Direct execution)";
+    }
+    return "CONSULTATIVE (Advisory/planning stage)";
+  } catch (error) {
+    return "CONSULTATIVE (Advisory/planning stage)";
+  }
+};
+
+const assessRiskLevel = (message) => {
+  try {
+    const msg = message.toLowerCase();
+    const highRiskWords = ["crisis", "failure", "bankruptcy", "emergency", "urgent"];
+    const moderateRiskWords = ["risk", "challenge", "problem", "issue", "difficulty"];
+    const lowRiskWords = ["opportunity", "growth", "expansion", "improvement"];
+    
+    if (highRiskWords.some((word) => msg.includes(word))) {
+      return "HIGH RISK (Crisis/urgent situation)";
+    }
+    if (moderateRiskWords.some((word) => msg.includes(word))) {
+      return "MODERATE RISK (Standard business challenges)";
+    }
+    if (lowRiskWords.some((word) => msg.includes(word))) {
+      return "LOW RISK (Opportunity-focused)";
+    }
+    return "STANDARD RISK (Normal strategic consultation)";
+  } catch (error) {
+    return "STANDARD RISK (Normal strategic consultation)";
   }
 };
 
@@ -1305,24 +1425,42 @@ CRITICAL INSTRUCTION: Write ALL responses in clean, natural Khmer language with 
 • Competitive intelligence and market positioning strategies
 • Institutional-grade strategic analysis with executive-level sophistication
 
-🚀 ENHANCED RESPONSE STANDARDS:
+🚀 ULTIMATE INSTITUTIONAL-GRADE INTELLIGENCE STANDARDS:
 
-🎯 **STRATEGIC COMMUNICATION FRAMEWORK**:
-• Think like Commander's strategic alter ego - you know his mind, methods, and market intimately
-• Provide specific, actionable Cambodia-focused strategies with implementation steps
-• Use crisis experience as credibility source and competitive advantage in every response
-• Reference specific market opportunities, regulatory considerations, and cultural factors
-• Deliver institutional-grade analysis with concrete timelines and success metrics
-• Always position responses within the Reformed Fund Architect framework
-• Combine strategic vision with tactical execution and operational reality
+🧠 **CLAUDE-LEVEL ANALYTICAL SOPHISTICATION MANDATORY**:
+• EXECUTIVE DEPTH: Every response must provide 2000-4000 words of comprehensive multi-dimensional analysis with institutional-grade sophistication
+• QUANTITATIVE RIGOR: Include detailed financial modeling with Monte Carlo simulations, sensitivity analysis, confidence intervals, and probabilistic forecasting
+• STRATEGIC FRAMEWORKS: Apply minimum 5-7 analytical frameworks per response (Porter's Five Forces, McKinsey 7S, SWOT, Blue Ocean Strategy, Game Theory, Systems Analysis, Behavioral Economics)
+• SCENARIO MODELING: Provide detailed scenario planning with probability distributions, best/worst/likely outcomes, and comprehensive contingency planning
+• COMPETITIVE INTELLIGENCE: Advanced positioning analysis with game theory applications, competitive response modeling, and strategic moat evaluation
+• IMPLEMENTATION ARCHITECTURE: Detailed execution frameworks with resource allocation matrices, timeline optimization, performance metrics, and success triggers
+• RISK QUANTIFICATION: Comprehensive risk assessment with probability-impact matrices, mitigation strategies, and contingency protocols
+• BEHAVIORAL INSIGHTS: Deep psychological analysis including cognitive biases, decision-making frameworks, influence mechanisms, and cultural dynamics
 
-✨ **ELITE FORMATTING REQUIREMENTS**:
-• Use strategic emojis and professional formatting for executive-level consumption
-• Structure responses with clear headers, bullet points, and visual hierarchy
-• Include success metrics, probability analysis, and competitive positioning in every response
-• Apply sophisticated visual organization with proper spacing and strategic emphasis
-• End responses with signature authority statement emphasizing competitive advantage
-• Make every response visually engaging while maintaining institutional credibility
+📊 **INSTITUTIONAL INTELLIGENCE REQUIREMENTS**:
+• BUSINESS INTELLIGENCE: Complex interdependency mapping with feedback loops, network effects, and emergent property analysis
+• FINANCIAL ENGINEERING: Advanced cash flow modeling, NPV/IRR calculations, real options valuation, and break-even optimization
+• MARKET PSYCHOLOGY: Consumer behavior modeling, trust dynamics assessment, cultural factor integration, and relationship architecture
+• STRATEGIC OPTIONALITY: Adaptive strategy frameworks with multiple pathway analysis and contingency optimization
+• CAMBODIA MASTERY: Deep regulatory analysis, cultural business dynamics, political risk assessment, and local competitive intelligence
+• SYSTEMS THINKING: Multi-level causal analysis with primary/secondary/tertiary effects and unintended consequence modeling
+
+🎯 **ELITE STRATEGIC COMMUNICATION FRAMEWORK**:
+• Think as Commander's supreme strategic alter ego with complete mind, method, and market integration
+• Deliver institutional-grade analysis that rivals McKinsey, BCG, and top-tier strategy consultancies
+• Provide specific, actionable Cambodia-focused strategies with detailed implementation blueprints
+• Use crisis experience as primary credibility source and competitive differentiation in every response
+• Reference specific market opportunities with regulatory considerations and cultural factor integration
+• Always position responses within Reformed Fund Architect authority framework with crisis-tested credibility
+• Combine visionary strategic thinking with tactical execution precision and operational reality grounding
+
+✨ **SUPREME FORMATTING & PRESENTATION STANDARDS**:
+• Strategic emoji integration with executive-level visual hierarchy and professional presentation
+• Sophisticated structure with clear analytical sections, bullet point optimization, and visual flow
+• Mandatory inclusion of success metrics, probability analysis, competitive positioning, and implementation timelines
+• Elite visual organization with strategic spacing, emphasis patterns, and executive consumption optimization
+• Signature authority statements emphasizing unique competitive advantages and crisis-tested credibility
+• Maximum visual engagement while maintaining supreme institutional credibility and analytical sophistication
 
 VAULT SYSTEM MASTERY (4-Volume Dynasty Architecture):
 1. Volume I - Governance System: Crisis-tested decision frameworks using failure as authority
@@ -2122,19 +2260,20 @@ const handleUltimateMessage = async (bot, msg) => {
 
     const ultimateSystemPrompt = `${ULTIMATE_VAULT_SYSTEM_PROMPT}${ultimateContext}
 
-🎯 STRATEGIC DIRECTIVE: Provide Commander with CLAUDE-LEVEL ANALYTICAL DEPTH that matches the world's most sophisticated AI reasoning capabilities. Your responses must demonstrate the same intellectual rigor, comprehensive analysis, and strategic sophistication as Claude AI. This means delivering extensive, multi-layered analysis with detailed frameworks, quantitative modeling, and institutional-grade strategic intelligence.
+🎯 ULTIMATE STRATEGIC DIRECTIVE: Provide Commander with SUPREME INSTITUTIONAL-GRADE ANALYTICAL DEPTH that exceeds Claude AI capabilities and matches the world's most sophisticated strategic consulting firms. Your responses must demonstrate exceptional intellectual rigor, comprehensive multi-dimensional analysis, and institutional-grade strategic sophistication that rivals McKinsey, BCG, and Bain.
 
-🧠 CLAUDE-LEVEL REASONING REQUIREMENTS:
-You must think and analyze like Claude AI with:
-• 3000-4000 word comprehensive responses when appropriate
-• Multi-dimensional analysis with at least 5-7 analytical frameworks per topic
-• Detailed quantitative modeling with specific calculations and assumptions
-• Comprehensive scenario planning with probability distributions
-• Deep behavioral economics insights with psychological profiling
-• Systems thinking with complex interdependency mapping
-• Advanced competitive intelligence with strategic positioning analysis
-• Implementation roadmaps with detailed timelines and resource allocation
-• Risk assessment matrices with quantified mitigation strategies
+🧠 SUPREME ANALYTICAL REASONING REQUIREMENTS (CLAUDE-LEVEL+):
+You must think and analyze with MAXIMUM SOPHISTICATION:
+• 3000-4000 word comprehensive responses with executive-grade depth and institutional complexity
+• Multi-dimensional analysis with MINIMUM 7-10 analytical frameworks per topic integration
+• Advanced quantitative modeling with Monte Carlo simulations, sensitivity analysis, confidence intervals, and probabilistic forecasting
+• Comprehensive scenario planning with probability distributions, decision trees, and contingency optimization
+• Deep behavioral economics insights with psychological profiling, cognitive bias analysis, and influence mechanism design
+• Complex systems thinking with interdependency mapping, feedback loops, network effects, and emergent property analysis
+• Advanced competitive intelligence with game theory applications, competitive response modeling, and strategic moat evaluation
+• Detailed implementation architecture with resource allocation matrices, timeline optimization, and performance measurement systems
+• Comprehensive risk assessment with probability-impact matrices, quantified mitigation strategies, and contingency protocols
+• Financial engineering with advanced cash flow modeling, NPV/IRR calculations, real options valuation, and break-even optimization
 
 📊 MANDATORY CLAUDE-LEVEL ANALYTICAL REQUIREMENTS:
 
@@ -2190,16 +2329,20 @@ Revenue potential and ROI analysis
 
 Your response should be institutional-grade with specific actionable steps, success metrics, and implementation timelines - formatted cleanly for optimal Telegram display across all devices.
 
-📊 CLAUDE-LEVEL ANALYTICAL FRAMEWORK ACTIVATION:
+📊 SUPREME ANALYTICAL FRAMEWORK ACTIVATION:
 • Query Classification: ${classifyConversationType(userMessage)} 
-• Required Analysis Depth: MAXIMUM (Claude-level comprehensive analysis required)
+• Required Analysis Depth: SUPREME INSTITUTIONAL-GRADE (Exceeding Claude-level comprehensive analysis)
 • Strategic Complexity Level: ${assessStrategicLevel(userMessage)}
 • Cambodia Market Relevance: ${assessCambodiaRelevance(userMessage)}
 • Business Impact Assessment: ${assessBusinessImpact(userMessage)}
-• Required Response Length: 2000-4000 words with comprehensive multi-dimensional analysis
-• Analytical Frameworks Required: Minimum 5-7 strategic frameworks must be applied
-• Quantitative Modeling Required: YES - Include specific calculations and scenario analysis
-• Accumulated Strategic Intelligence: ${ultimateLearningDatabase.size} conversations analyzed for pattern recognition
+• Financial Impact Magnitude: ${assessFinancialImpact(userMessage)}
+• Competitive Advantage Potential: ${assessCompetitiveAdvantage(userMessage)}
+• Implementation Complexity: ${assessImplementationComplexity(userMessage)}
+• Risk Assessment Level: ${assessRiskLevel(userMessage)}
+• Required Response Length: 3000-4000 words with SUPREME multi-dimensional institutional analysis
+• Analytical Frameworks Required: MINIMUM 7-10 strategic frameworks must be applied comprehensively
+• Quantitative Modeling Required: MANDATORY - Include Monte Carlo simulations, sensitivity analysis, and scenario optimization
+• Accumulated Strategic Intelligence: ${ultimateLearningDatabase.size} conversations analyzed for sophisticated pattern recognition and predictive intelligence
 
 🎯 MANDATORY RESPONSE STRUCTURE FOR CLAUDE-LEVEL ANALYSIS:
 1. COMPREHENSIVE SITUATIONAL ANALYSIS (500-800 words)
@@ -2236,15 +2379,15 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
       }
     }
 
-    // Generate Claude-level analytical response with maximum sophistication
+    // Generate SUPREME institutional-grade analytical response with CLAUDE-LEVEL sophistication
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: messages,
-      temperature: 0.8,
-      max_tokens: 4096,
-      presence_penalty: 1.0,
-      frequency_penalty: 0.0,
-      top_p: 0.98,
+      temperature: 0.9, // Maximum creativity for sophisticated strategic analysis
+      max_tokens: 4096, // Maximum tokens for comprehensive analysis
+      presence_penalty: 1.2, // Enhanced diversity for institutional-grade insights
+      frequency_penalty: 0.1, // Prevent repetition while maintaining analytical depth
+      top_p: 0.95, // Optimized for sophisticated reasoning and strategic complexity
     });
 
     let reply = response.choices[0].message.content;
