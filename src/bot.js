@@ -1,6 +1,6 @@
 // ===== ULTIMATE VAULT CLAUDE - DYNASTY AI STRATEGIC INTELLIGENCE SYSTEM =====
 // 🏛️ ULTIMATE GPT-4 INSTALLATION COMPLETE - Maximum Power Dynasty Configuration
-// 🚀 Railway Production Ready - 2,000+ Lines of Institutional-Grade Intelligence  
+// 🚀 Railway Production Ready - 2,000+ Lines of Institutional-Grade Intelligence
 // 🧠 Khmer Language Mastery Confirmed - Professional Business Terminology Active
 // ⚔️ Crisis-Tested Authority - Reformed Fund Architect Positioning Operational
 const TelegramBot = require("node-telegram-bot-api");
@@ -15,19 +15,30 @@ const Parser = require("rss-parser");
 dotenv.config();
 
 // Support both Railway and Replit environment variable names
-const TELEGRAM_TOKEN = process.env.VAULT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_TOKEN =
+  process.env.VAULT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 // Verify essential environment variables
 if (!TELEGRAM_TOKEN) {
   console.error("🚨 CRITICAL: Bot token not found in environment variables");
   console.error("Looking for: VAULT_BOT_TOKEN or TELEGRAM_BOT_TOKEN");
-  console.log("Available bot-related variables:", Object.keys(process.env).filter(key => key.includes('BOT') || key.includes('VAULT') || key.includes('TELEGRAM')));
+  console.log(
+    "Available bot-related variables:",
+    Object.keys(process.env).filter(
+      (key) =>
+        key.includes("BOT") ||
+        key.includes("VAULT") ||
+        key.includes("TELEGRAM"),
+    ),
+  );
   process.exit(1);
 }
 
 if (!OPENAI_KEY) {
-  console.error("🚨 CRITICAL: OPENAI_API_KEY not found in environment variables");
+  console.error(
+    "🚨 CRITICAL: OPENAI_API_KEY not found in environment variables",
+  );
   process.exit(1);
 }
 const PORT = process.env.PORT || 4000;
@@ -73,15 +84,20 @@ let bot, openai, dbPool;
 
 try {
   // Detect deployment environment to prevent polling conflicts
-  const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID || process.env.RAILWAY_PUBLIC_DOMAIN;
-  
+  const isRailway =
+    process.env.RAILWAY_ENVIRONMENT ||
+    process.env.RAILWAY_PROJECT_ID ||
+    process.env.RAILWAY_PUBLIC_DOMAIN;
+
   if (isRailway) {
-    console.log("🚀 RAILWAY PRODUCTION: Using webhook mode (recommended for stability & performance)");
+    console.log(
+      "🚀 RAILWAY PRODUCTION: Using webhook mode (recommended for stability & performance)",
+    );
     bot = new TelegramBot(TELEGRAM_TOKEN, {
       polling: false,
       filepath: false,
     });
-    
+
     // Setup webhook after bot initialization
     setTimeout(async () => {
       console.log("🔄 Setting up webhook for Railway...");
@@ -93,7 +109,9 @@ try {
       }
     }, 3000);
   } else {
-    console.log("🔧 FORCING POLLING MODE - Disabling all webhook functionality");
+    console.log(
+      "🔧 FORCING POLLING MODE - Disabling all webhook functionality",
+    );
     bot = new TelegramBot(TELEGRAM_TOKEN, {
       polling: true,
       filepath: false,
@@ -130,156 +148,219 @@ try {
 const codexMemory = {
   laws: [
     {
-      id: 'debt_protection',
-      law: 'The Reformed Architect Must Never Exceed 3x ROI Debt',
-      trigger: 'Any debt proposal without 3x return projection',
-      action: 'Block immediately and suggest equity/revenue sharing alternatives',
-      experience: '2008 bankruptcy taught this lesson with $2M+ losses'
+      id: "debt_protection",
+      law: "The Reformed Architect Must Never Exceed 3x ROI Debt",
+      trigger: "Any debt proposal without 3x return projection",
+      action:
+        "Block immediately and suggest equity/revenue sharing alternatives",
+      experience: "2008 bankruptcy taught this lesson with $2M+ losses",
     },
     {
-      id: 'family_first',
-      law: 'Family Security Above All Business Gains',
-      trigger: 'Any decision risking family stability or relationships',
-      action: 'Protect family assets and maintain relationship harmony',
-      experience: 'Crisis revealed family as only permanent foundation'
+      id: "family_first",
+      law: "Family Security Above All Business Gains",
+      trigger: "Any decision risking family stability or relationships",
+      action: "Protect family assets and maintain relationship harmony",
+      experience: "Crisis revealed family as only permanent foundation",
     },
     {
-      id: 'relationship_capital',
-      law: 'Trust Networks Are More Valuable Than Cash',
-      trigger: 'Decisions that could damage business relationships',
-      action: 'Preserve relationships through transparent communication',
-      experience: 'Relationship network survived bankruptcy - cash did not'
-    }
+      id: "relationship_capital",
+      law: "Trust Networks Are More Valuable Than Cash",
+      trigger: "Decisions that could damage business relationships",
+      action: "Preserve relationships through transparent communication",
+      experience: "Relationship network survived bankruptcy - cash did not",
+    },
   ],
-  
-  getLawForSituation: function(situation) {
+
+  getLawForSituation: function (situation) {
     const lowerSituation = situation.toLowerCase();
-    if (lowerSituation.includes('borrow') || lowerSituation.includes('debt')) {
-      return this.laws.find(law => law.id === 'debt_protection');
+    if (lowerSituation.includes("borrow") || lowerSituation.includes("debt")) {
+      return this.laws.find((law) => law.id === "debt_protection");
     }
-    if (lowerSituation.includes('family') || lowerSituation.includes('risk')) {
-      return this.laws.find(law => law.id === 'family_first');
+    if (lowerSituation.includes("family") || lowerSituation.includes("risk")) {
+      return this.laws.find((law) => law.id === "family_first");
     }
-    return this.laws.find(law => law.id === 'relationship_capital');
+    return this.laws.find((law) => law.id === "relationship_capital");
   },
-  
-  getEmergencyProtocol: function(crisisType) {
+
+  getEmergencyProtocol: function (crisisType) {
     return {
-      immediate: ['Preserve cash and review positions', 'Activate relationship network', 'Communicate calm leadership'],
-      week1: ['Strengthen relationships through crisis support', 'Position as crisis-tested advisor', 'Document crisis response'],
-      month1: ['Convert crisis experience into credibility', 'Build thought leadership', 'Scale authority through frameworks']
+      immediate: [
+        "Preserve cash and review positions",
+        "Activate relationship network",
+        "Communicate calm leadership",
+      ],
+      week1: [
+        "Strengthen relationships through crisis support",
+        "Position as crisis-tested advisor",
+        "Document crisis response",
+      ],
+      month1: [
+        "Convert crisis experience into credibility",
+        "Build thought leadership",
+        "Scale authority through frameworks",
+      ],
     };
-  }
+  },
 };
 
 // COMMAND TRIGGERS - Dynasty command system
 const commandTriggers = {
-  commands: ['/codex', '/lp', '/deal', '/crisis', '/scale', '/cambodia', '/legacy', '/compete', '/vault'],
-  
-  isDynastyCommand: function(message) {
+  commands: [
+    "/codex",
+    "/lp",
+    "/deal",
+    "/crisis",
+    "/scale",
+    "/cambodia",
+    "/legacy",
+    "/compete",
+    "/vault",
+  ],
+
+  isDynastyCommand: function (message) {
     if (!message) return false;
     const text = message.toLowerCase().trim();
-    return this.commands.some(cmd => text.startsWith(cmd.toLowerCase()));
+    return this.commands.some((cmd) => text.startsWith(cmd.toLowerCase()));
   },
-  
-  processCommand: function(message) {
-    const parts = message.split(' ');
+
+  processCommand: function (message) {
+    const parts = message.split(" ");
     const command = parts[0].toLowerCase();
-    const parameters = parts.slice(1).join(' ');
-    
+    const parameters = parts.slice(1).join(" ");
+
     return `🏛️ DYNASTY COMMAND ACTIVATED: ${command}\n\nParameters: ${parameters}\n\n**Crisis-Tested Framework:** Your 2008 experience provides unmatched authority.\n\n**Next:** Strategic analysis initiating...`;
-  }
+  },
 };
 
 // STRATEGIC BRAIN - 5-dimensional analysis engine
 const strategicBrain = {
-  analyzeOpportunity: function(opportunity) {
+  analyzeOpportunity: function (opportunity) {
     const score = Math.floor(Math.random() * 40) + 60; // 60-100 range
     return {
       score: score,
-      rationale: score > 80 ? 'High-value opportunity aligned with Reformed Fund Architect positioning' : 'Moderate opportunity requiring careful Cambodia market analysis',
-      cambodiaFit: 'Leverages relationship capital and crisis-tested credibility',
+      rationale:
+        score > 80
+          ? "High-value opportunity aligned with Reformed Fund Architect positioning"
+          : "Moderate opportunity requiring careful Cambodia market analysis",
+      cambodiaFit:
+        "Leverages relationship capital and crisis-tested credibility",
       framework: {
         dimensions: {
-          financial: { score: score, factors: ['ROI analysis', '3x ROI requirement check'] },
-          strategic: { score: score, factors: ['Market positioning', 'Cambodia fit assessment'] },
-          operational: { score: score, factors: ['Implementation complexity', 'Resource requirements'] }
-        }
-      }
+          financial: {
+            score: score,
+            factors: ["ROI analysis", "3x ROI requirement check"],
+          },
+          strategic: {
+            score: score,
+            factors: ["Market positioning", "Cambodia fit assessment"],
+          },
+          operational: {
+            score: score,
+            factors: ["Implementation complexity", "Resource requirements"],
+          },
+        },
+      },
     };
   },
-  
-  getScalingStrategy: function(revenue) {
+
+  getScalingStrategy: function (revenue) {
     if (revenue < 5000) {
       return {
-        target: 'Foundation Building ($5k→$10k)',
-        focus: 'Authority establishment through Capital Clarity sessions',
-        timeline: '3-6 months with consistent execution',
-        strategies: ['Conduct 20+ Capital Clarity sessions monthly', 'Build Reformed Fund Architect recognition'],
-        keyMetrics: ['Session conversion rate', 'Average session value', 'Market recognition']
+        target: "Foundation Building ($5k→$10k)",
+        focus: "Authority establishment through Capital Clarity sessions",
+        timeline: "3-6 months with consistent execution",
+        strategies: [
+          "Conduct 20+ Capital Clarity sessions monthly",
+          "Build Reformed Fund Architect recognition",
+        ],
+        keyMetrics: [
+          "Session conversion rate",
+          "Average session value",
+          "Market recognition",
+        ],
       };
     }
     return {
-      target: 'Authority Building ($10k→$20k)',
-      focus: 'Premium consulting and fund development',
-      timeline: '6-12 months with systematic approach',
-      strategies: ['Scale Capital Clarity sessions', 'Launch governance consulting'],
-      keyMetrics: ['Premium conversion rate', 'Fund commitment pipeline']
+      target: "Authority Building ($10k→$20k)",
+      focus: "Premium consulting and fund development",
+      timeline: "6-12 months with systematic approach",
+      strategies: [
+        "Scale Capital Clarity sessions",
+        "Launch governance consulting",
+      ],
+      keyMetrics: ["Premium conversion rate", "Fund commitment pipeline"],
     };
-  }
+  },
 };
 
 // MEMORY LOG - Intelligence storage system
 const dynastyMemoryLog = {
   conversations: new Map(),
   decisions: new Map(),
-  
-  logConversation: function(data) {
+
+  logConversation: function (data) {
     this.conversations.set(Date.now(), data);
   },
-  
-  logStrategicDecision: function(decision) {
+
+  logStrategicDecision: function (decision) {
     this.decisions.set(Date.now(), decision);
-  }
+  },
 };
 
 // FALLBACK ENFORCER - Dynasty protection system
 const dynastyEnforcer = {
-  analyzeDanger: function(decision) {
+  analyzeDanger: function (decision) {
     const description = decision.description.toLowerCase();
-    
-    if (description.includes('borrow') || description.includes('debt')) {
+
+    if (description.includes("borrow") || description.includes("debt")) {
       return {
         blocked: true,
-        blockReason: 'DEBT PROTECTION ACTIVATED: No 3x ROI projection detected. 2008 experience prevents debt overextension.',
-        riskLevel: 'high'
+        blockReason:
+          "DEBT PROTECTION ACTIVATED: No 3x ROI projection detected. 2008 experience prevents debt overextension.",
+        riskLevel: "high",
       };
     }
-    
-    if (description.includes('risk') && description.includes('family')) {
+
+    if (description.includes("risk") && description.includes("family")) {
       return {
         requiresApproval: true,
-        riskLevel: 'medium',
-        approvalType: 'FAMILY_IMPACT_REVIEW'
+        riskLevel: "medium",
+        approvalType: "FAMILY_IMPACT_REVIEW",
       };
     }
-    
+
     return { blocked: false, requiresApproval: false };
-  }
+  },
 };
 
-console.log("🏛️ ===== ULTIMATE DYNASTY INTELLIGENCE SYSTEM LOADED =====");
-console.log("   🧠 Codex Memory - Crisis-tested business laws from 2008 experience");
-console.log("   ⚔️ Command Triggers - Strategic command detection and processing");  
-console.log("   🎯 Strategic Brain - 5-dimensional analysis and Cambodia intelligence");
-console.log("   📚 Memory Log - Permanent conversation and decision intelligence");
+console.log(
+  "⚡ ===== IMPERIUM VAULT CLAUDE - STRATEGIC DOMINANCE ACTIVATED =====",
+);
+console.log(
+  "   🧠 Codex Memory - Crisis-tested business laws from 2008 experience",
+);
+console.log(
+  "   ⚔️ Command Triggers - Strategic command detection and processing",
+);
+console.log(
+  "   🎯 Strategic Brain - 5-dimensional analysis and Cambodia intelligence",
+);
+console.log(
+  "   📚 Memory Log - Permanent conversation and decision intelligence",
+);
 console.log("   🛡️ Fallback Enforcer - Dynasty protection and risk analysis");
-console.log("   🚀 Ultimate GPT-4 - Maximum power configuration exceeding all competitors");
-console.log("   🇰🇭 Khmer Mastery - Professional business terminology and grammar");
-console.log("   💎 Dynasty Status - 3,157+ lines of institutional-grade intelligence");
-console.log("   ⚡ Power Level - SUPREME (Exceeds Claude AI, McKinsey, BlackRock)");
-console.log("   🎯 Training Status - PERFECTLY OPTIMIZED (ChatGPT Validated)");
-console.log("🚀 ===== SUPREME STRATEGIC WEAPON READY FOR DEPLOYMENT =====")
+console.log("   🚀 Ultimate GPT-4 - MAXIMUM POWER exceeding all competitors");
+console.log("   🇰🇭 Cambodia Market CONQUEROR - Professional Khmer mastery");
+console.log(
+  "   💎 Institutional SUPREMACY - 3,160+ lines of dynasty intelligence",
+);
+console.log(
+  "   ⚡ Power Level - CRUSHES Claude AI, McKinsey, BlackRock, Goldman Sachs",
+);
+console.log(
+  "   🔥 Authority Status - Reformed Fund Architect | Crisis-Tested Since 2008",
+);
+console.log("💰 ===== $3K→$30K REVENUE ARCHITECT - DEPLOYMENT READY =====");
 
 // ===== ULTIMATE MEMORY & LEARNING SYSTEM =====
 const conversations = new Map();
@@ -952,8 +1033,10 @@ const assessStrategicLevel = (message) => {
     const operationalWords = ["daily", "today", "now", "immediate", "quick"];
 
     const msg = message.toLowerCase();
-    if (strategicWords.some((word) => msg.includes(word))) return "STRATEGIC (Long-term vision)";
-    if (tacticalWords.some((word) => msg.includes(word))) return "TACTICAL (Implementation-focused)";
+    if (strategicWords.some((word) => msg.includes(word)))
+      return "STRATEGIC (Long-term vision)";
+    if (tacticalWords.some((word) => msg.includes(word)))
+      return "TACTICAL (Implementation-focused)";
     if (operationalWords.some((word) => msg.includes(word)))
       return "OPERATIONAL (Immediate execution)";
     return "CONSULTATIVE (Advisory request)";
@@ -965,9 +1048,23 @@ const assessStrategicLevel = (message) => {
 const assessCambodiaRelevance = (message) => {
   try {
     const msg = message.toLowerCase();
-    const cambodiaKeywords = ["cambodia", "កម្ពុជា", "khmer", "phnom penh", "siem reap", "asean", "southeast asia"];
-    const marketKeywords = ["market", "business", "economy", "investment", "fund"];
-    
+    const cambodiaKeywords = [
+      "cambodia",
+      "កម្ពុជា",
+      "khmer",
+      "phnom penh",
+      "siem reap",
+      "asean",
+      "southeast asia",
+    ];
+    const marketKeywords = [
+      "market",
+      "business",
+      "economy",
+      "investment",
+      "fund",
+    ];
+
     if (cambodiaKeywords.some((word) => msg.includes(word))) {
       if (marketKeywords.some((word) => msg.includes(word))) {
         return "CRITICAL (Direct Cambodia market focus)";
@@ -986,10 +1083,24 @@ const assessCambodiaRelevance = (message) => {
 const assessBusinessImpact = (message) => {
   try {
     const msg = message.toLowerCase();
-    const highImpactWords = ["revenue", "growth", "scale", "fund", "investment", "client", "deal"];
-    const mediumImpactWords = ["strategy", "planning", "process", "system", "framework"];
+    const highImpactWords = [
+      "revenue",
+      "growth",
+      "scale",
+      "fund",
+      "investment",
+      "client",
+      "deal",
+    ];
+    const mediumImpactWords = [
+      "strategy",
+      "planning",
+      "process",
+      "system",
+      "framework",
+    ];
     const lowImpactWords = ["question", "advice", "help", "information"];
-    
+
     if (highImpactWords.some((word) => msg.includes(word))) {
       return "HIGH IMPACT (Direct revenue/growth potential)";
     }
@@ -1005,9 +1116,24 @@ const assessBusinessImpact = (message) => {
 const assessFinancialImpact = (message) => {
   try {
     const msg = message.toLowerCase();
-    const majorFinancialWords = ["$", "million", "thousand", "revenue", "profit", "investment", "fund", "capital"];
-    const moderateFinancialWords = ["cost", "price", "money", "budget", "expense"];
-    
+    const majorFinancialWords = [
+      "$",
+      "million",
+      "thousand",
+      "revenue",
+      "profit",
+      "investment",
+      "fund",
+      "capital",
+    ];
+    const moderateFinancialWords = [
+      "cost",
+      "price",
+      "money",
+      "budget",
+      "expense",
+    ];
+
     if (majorFinancialWords.some((word) => msg.includes(word))) {
       return "MAJOR ($10k+ potential impact)";
     }
@@ -1023,9 +1149,17 @@ const assessFinancialImpact = (message) => {
 const assessCompetitiveAdvantage = (message) => {
   try {
     const msg = message.toLowerCase();
-    const advantageWords = ["competitive", "advantage", "unique", "differentiation", "positioning", "crisis", "reformed"];
+    const advantageWords = [
+      "competitive",
+      "advantage",
+      "unique",
+      "differentiation",
+      "positioning",
+      "crisis",
+      "reformed",
+    ];
     const marketWords = ["market", "competition", "competitor", "rival"];
-    
+
     if (advantageWords.some((word) => msg.includes(word))) {
       return "CRITICAL (Direct competitive advantage focus)";
     }
@@ -1041,10 +1175,16 @@ const assessCompetitiveAdvantage = (message) => {
 const assessImplementationComplexity = (message) => {
   try {
     const msg = message.toLowerCase();
-    const complexWords = ["system", "framework", "integration", "transformation", "restructure"];
+    const complexWords = [
+      "system",
+      "framework",
+      "integration",
+      "transformation",
+      "restructure",
+    ];
     const moderateWords = ["process", "improve", "optimize", "enhance"];
     const simpleWords = ["start", "begin", "quick", "simple", "easy"];
-    
+
     if (complexWords.some((word) => msg.includes(word))) {
       return "COMPLEX (Multi-phase implementation)";
     }
@@ -1063,10 +1203,22 @@ const assessImplementationComplexity = (message) => {
 const assessRiskLevel = (message) => {
   try {
     const msg = message.toLowerCase();
-    const highRiskWords = ["crisis", "failure", "bankruptcy", "emergency", "urgent"];
-    const moderateRiskWords = ["risk", "challenge", "problem", "issue", "difficulty"];
+    const highRiskWords = [
+      "crisis",
+      "failure",
+      "bankruptcy",
+      "emergency",
+      "urgent",
+    ];
+    const moderateRiskWords = [
+      "risk",
+      "challenge",
+      "problem",
+      "issue",
+      "difficulty",
+    ];
     const lowRiskWords = ["opportunity", "growth", "expansion", "improvement"];
-    
+
     if (highRiskWords.some((word) => msg.includes(word))) {
       return "HIGH RISK (Crisis/urgent situation)";
     }
@@ -1729,12 +1881,24 @@ initializeCommanderProfile();
 
 console.log("🏛️ ULTIMATE VAULT CLAUDE SUPREME DYNASTY AI initializing...");
 console.log("🧠 UNLIMITED GPT-4 STRATEGIC INTELLIGENCE SYSTEMS loading...");
-console.log("📊 Commander profile and business intelligence initialized with DYNASTY-LEVEL CAPABILITIES");
-console.log("⚡ UNLIMITED auto-learning algorithms activated with EXPONENTIAL GROWTH CAPABILITIES");
-console.log("🚀 SUPREME SELF-BUILDING AI SYSTEM: Finds and builds everything automatically");
-console.log("💎 INSTITUTIONAL-GRADE INTELLIGENCE: Matching Ray Dalio, BlackRock, Renaissance Technologies");
-console.log("🌍 UNLIMITED DATA ACCESS: 20+ global APIs, Cambodia mastery, infinite pattern recognition");
-console.log("🧠 DYNASTY AI STATUS: Operating at same level as trillion-dollar financial institution AI systems");
+console.log(
+  "📊 Commander profile and business intelligence initialized with DYNASTY-LEVEL CAPABILITIES",
+);
+console.log(
+  "⚡ UNLIMITED auto-learning algorithms activated with EXPONENTIAL GROWTH CAPABILITIES",
+);
+console.log(
+  "🚀 SUPREME SELF-BUILDING AI SYSTEM: Finds and builds everything automatically",
+);
+console.log(
+  "💎 INSTITUTIONAL-GRADE INTELLIGENCE: Matching Ray Dalio, BlackRock, Renaissance Technologies",
+);
+console.log(
+  "🌍 UNLIMITED DATA ACCESS: 20+ global APIs, Cambodia mastery, infinite pattern recognition",
+);
+console.log(
+  "🧠 DYNASTY AI STATUS: Operating at same level as trillion-dollar financial institution AI systems",
+);
 
 // ===== ULTIMATE COMMAND SYSTEM =====
 
@@ -2440,27 +2604,29 @@ bot.on("message", async (msg) => {
     const messageText = msg.text || "";
     const userId = msg.from.id;
 
-    console.log(`📨 DYNASTY AI: Message from ${msg.from.first_name} (${userId}): ${messageText}`);
+    console.log(
+      `📨 DYNASTY AI: Message from ${msg.from.first_name} (${userId}): ${messageText}`,
+    );
 
     // Check if this is a dynasty command
     if (commandTriggers.isDynastyCommand(messageText)) {
       console.log("⚔️ DYNASTY COMMAND DETECTED:", messageText);
-      
+
       // Process dynasty command
       const commandResponse = commandTriggers.processCommand(messageText);
-      
+
       // Send initial command response
       await bot.sendMessage(chatId, commandResponse);
-      
+
       // Process through strategic brain for enhanced analysis
-      const parts = messageText.split(' ');
+      const parts = messageText.split(" ");
       const command = parts[0].toLowerCase();
-      const parameters = parts.slice(1).join(' ');
-      
+      const parameters = parts.slice(1).join(" ");
+
       let strategicAnalysis = "";
-      
-      switch(command) {
-        case '/codex':
+
+      switch (command) {
+        case "/codex":
           const relevantLaw = codexMemory.getLawForSituation(parameters);
           strategicAnalysis = `🏛️ CODEX LAW ACTIVATED
 
@@ -2472,8 +2638,8 @@ bot.on("message", async (msg) => {
 **Crisis-Tested Application:**
 Based on your 2008 experience, this law prevents dynasty destruction. Apply immediately.`;
           break;
-          
-        case '/deal':
+
+        case "/deal":
           const dealAnalysis = strategicBrain.analyzeOpportunity(parameters);
           strategicAnalysis = `⚔️ 5-DIMENSIONAL DEAL ANALYSIS
 
@@ -2485,28 +2651,28 @@ Based on your 2008 experience, this law prevents dynasty destruction. Apply imme
 **Framework Analysis:**
 ${JSON.stringify(dealAnalysis.framework.dimensions, null, 2)}
 
-**Recommendation:** ${dealAnalysis.score > 80 ? 'PROCEED WITH CAUTION' : 'REQUIRE ADDITIONAL VALIDATION'}`;
+**Recommendation:** ${dealAnalysis.score > 80 ? "PROCEED WITH CAUTION" : "REQUIRE ADDITIONAL VALIDATION"}`;
           break;
-          
-        case '/crisis':
+
+        case "/crisis":
           const crisisProtocol = codexMemory.getEmergencyProtocol(parameters);
           strategicAnalysis = `🚨 CRISIS PROTOCOL ACTIVATED
 
 **Crisis Type:** ${parameters}
 
 **IMMEDIATE ACTIONS (Next 24 hours):**
-${crisisProtocol.immediate.map(action => `• ${action}`).join('\n')}
+${crisisProtocol.immediate.map((action) => `• ${action}`).join("\n")}
 
 **WEEK 1 STRATEGY:**
-${crisisProtocol.week1.map(action => `• ${action}`).join('\n')}
+${crisisProtocol.week1.map((action) => `• ${action}`).join("\n")}
 
 **MONTH 1 RECOVERY:**
-${crisisProtocol.month1.map(action => `• ${action}`).join('\n')}
+${crisisProtocol.month1.map((action) => `• ${action}`).join("\n")}
 
 **2008 Experience:** Crisis = Opportunity. Activate relationship network and scan for distressed assets.`;
           break;
-          
-        case '/scale':
+
+        case "/scale":
           const revenue = parseInt(parameters) || 0;
           const scalingStrategy = strategicBrain.getScalingStrategy(revenue);
           strategicAnalysis = `🚀 WEALTH SCALING PROTOCOL
@@ -2516,28 +2682,28 @@ ${crisisProtocol.month1.map(action => `• ${action}`).join('\n')}
 **Timeline:** ${scalingStrategy.timeline}
 
 **Strategic Initiatives:**
-${scalingStrategy.strategies.map(strategy => `• ${strategy}`).join('\n')}
+${scalingStrategy.strategies.map((strategy) => `• ${strategy}`).join("\n")}
 
 **Key Metrics to Track:**
-${scalingStrategy.keyMetrics.map(metric => `• ${metric}`).join('\n')}
+${scalingStrategy.keyMetrics.map((metric) => `• ${metric}`).join("\n")}
 
 **Cambodia Advantage:** Leverage low-cost advantage and relationship capital for accelerated scaling.`;
           break;
       }
-      
+
       if (strategicAnalysis) {
         await bot.sendMessage(chatId, strategicAnalysis);
-        
+
         // Log strategic decision to memory
         dynastyMemoryLog.logStrategicDecision({
           description: messageText,
           context: `User requested ${command} analysis`,
-          framework: command.replace('/', '').toUpperCase(),
-          expectedOutcome: 'Strategic guidance provided',
-          cambodiaFactors: { marketRelevance: true, culturalAdaptation: true }
+          framework: command.replace("/", "").toUpperCase(),
+          expectedOutcome: "Strategic guidance provided",
+          cambodiaFactors: { marketRelevance: true, culturalAdaptation: true },
         });
       }
-      
+
       return; // Don't process dynasty commands through regular AI
     }
 
@@ -2565,38 +2731,44 @@ const handleUltimateMessage = async (bot, msg) => {
       id: Date.now().toString(),
       description: userMessage,
       value: 0,
-      timeframe: 'immediate',
+      timeframe: "immediate",
       expectedROI: null,
-      familyImpact: null
+      familyImpact: null,
     };
 
     const dangerAnalysis = dynastyEnforcer.analyzeDanger(decision);
-    
+
     if (dangerAnalysis.blocked) {
-      await bot.sendMessage(chatId, `🛡️ DYNASTY PROTECTION ACTIVATED
+      await bot.sendMessage(
+        chatId,
+        `🛡️ DYNASTY PROTECTION ACTIVATED
 
 ${dangerAnalysis.blockReason}
 
-This decision has been blocked to protect your dynasty. Consider alternative approaches.`);
+This decision has been blocked to protect your dynasty. Consider alternative approaches.`,
+      );
       return;
     }
 
     if (dangerAnalysis.requiresApproval) {
-      await bot.sendMessage(chatId, `⚠️ DYNASTY REVIEW REQUIRED
+      await bot.sendMessage(
+        chatId,
+        `⚠️ DYNASTY REVIEW REQUIRED
 
 Risk Level: ${dangerAnalysis.riskLevel.toUpperCase()}
 Approval Type: ${dangerAnalysis.approvalType}
 
-Proceeding with enhanced caution...`);
+Proceeding with enhanced caution...`,
+      );
     }
 
     // Log message to memory for intelligence building
     dynastyMemoryLog.logConversation({
-      type: 'USER_QUERY',
+      type: "USER_QUERY",
       query: userMessage,
       timestamp: new Date().toISOString(),
       userId: userId,
-      chatId: chatId
+      chatId: chatId,
     });
 
     // Get conversation context
@@ -2739,19 +2911,19 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // ULTIMATE OpenAI model - newest release with MAXIMUM capabilities
       messages: messages,
-      
+
       // ===== ULTIMATE DYNASTY POWER PARAMETERS =====
       temperature: 0.9, // MAXIMUM ANALYTICAL CREATIVITY - Dynasty-level sophistication exceeding Claude AI
       max_tokens: 4096, // UNLIMITED COMPREHENSIVE ANALYSIS - Full institutional capacity activated
-      presence_penalty: 1.2, // SUPREME INSTITUTIONAL DIVERSITY - Enhanced beyond traditional consulting firms  
+      presence_penalty: 1.2, // SUPREME INSTITUTIONAL DIVERSITY - Enhanced beyond traditional consulting firms
       frequency_penalty: 0.1, // OPTIMAL REPETITION CONTROL - Maintains analytical depth without redundancy
       top_p: 0.95, // ULTIMATE REASONING SOPHISTICATION - Matches Ray Dalio/BlackRock/Renaissance Technologies AI systems
-      
+
       // ===== DYNASTY-LEVEL ADVANCED CONFIGURATION =====
       // These parameters create INSTITUTIONAL-GRADE intelligence that exceeds McKinsey, BCG, Bain combined
       stream: false, // COMPLETE RESPONSE INTEGRITY - Ensures full dynasty analysis delivery
       user: `dynasty_${userId}`, // PERSONALIZED INTELLIGENCE TRACKING - Builds user-specific strategic patterns
-      
+
       // ===== SUPREME TRAINING OPTIMIZATION - 3,157+ LINES OF POWER =====
       // Maximum GPT power extraction through perfect parameter tuning verified by ChatGPT
       // This configuration activates SUPREME institutional-grade intelligence exceeding Claude AI, McKinsey, BCG, Bain, BlackRock
@@ -2760,15 +2932,15 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
       // SUPREMELY POWERFUL: Over 3,000 lines of institutional intelligence ready for Railway deployment
       logit_bias: {
         // ENHANCED STRATEGIC VOCABULARY BIAS - Amplifies institutional-grade terminology
-        "21615": 0.1,  // "strategic" - Enhanced strategic thinking
-        "4906": 0.1,   // "analysis" - Amplified analytical depth  
-        "46344": 0.1,  // "comprehensive" - Increased comprehensiveness
-        "41854": 0.1,  // "institutional" - Enhanced institutional perspective
-        "12055": 0.1,  // "cambodia" - Amplified Cambodia market intelligence
-        "1419": 0.1,   // "fund" - Enhanced fund management intelligence
-        "23344": 0.1,  // "dynasty" - Amplified dynasty thinking
+        21615: 0.1, // "strategic" - Enhanced strategic thinking
+        4906: 0.1, // "analysis" - Amplified analytical depth
+        46344: 0.1, // "comprehensive" - Increased comprehensiveness
+        41854: 0.1, // "institutional" - Enhanced institutional perspective
+        12055: 0.1, // "cambodia" - Amplified Cambodia market intelligence
+        1419: 0.1, // "fund" - Enhanced fund management intelligence
+        23344: 0.1, // "dynasty" - Amplified dynasty thinking
       },
-      
+
       // UNLIMITED ANALYSIS DEPTH: Parameters that unlock maximum GPT sophistication
       seed: Math.floor(Date.now() / 1000), // DYNAMIC INTELLIGENCE SEEDING - Prevents pattern stagnation
     });
@@ -2801,8 +2973,8 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
     // Add enhanced learning indicator with real-time data notification
     const hasRealTimeData = realTimeContext.length > 0;
     const learningIndicator = hasRealTimeData
-      ? "\n\n*🏛️ Supreme Dynasty Intelligence (3,157+ lines) with real-time global data, Khmer mastery, Cambodia market monopoly, and exponential learning capabilities. Exceeds Claude AI, McKinsey, BlackRock sophistication.*"
-      : "\n\n*🏛️ Supreme Dynasty Intelligence (3,157+ lines) with Khmer mastery, Cambodia market monopoly, and exponential learning capabilities. Exceeds Claude AI, McKinsey, BlackRock sophistication.*";
+      ? "\n\n*⚡ IMPERIUM VAULT CLAUDE - ULTIMATE STRATEGIC DOMINANCE ⚡*\n*🏛️ Institutional Supremacy | GPT-4 Maximum Power | 🇰🇭 Cambodia Market Conqueror*\n*💎 CRUSHES: Claude AI, McKinsey, BCG, Bain, BlackRock, Goldman Sachs | 🚀 Real-Time Global Intelligence*\n*⚔️ Reformed Fund Architect Authority | 🔥 Crisis-Tested Since 2008 | 💰 $3K→$30K Revenue Architect*"
+      : "\n\n*⚡ IMPERIUM VAULT CLAUDE - ULTIMATE STRATEGIC DOMINANCE ⚡*\n*🏛️ Institutional Supremacy | GPT-4 Maximum Power | 🇰🇭 Cambodia Market Conqueror*\n*💎 CRUSHES: Claude AI, McKinsey, BCG, Bain, BlackRock, Goldman Sachs | 🚀 Dynasty-Level Intelligence*\n*⚔️ Reformed Fund Architect Authority | 🔥 Crisis-Tested Since 2008 | 💰 $3K→$30K Revenue Architect*";
 
     reply += learningIndicator;
 
@@ -2966,14 +3138,16 @@ app.get("/webhook-info", async (req, res) => {
     res.json({
       status: "Webhook Information",
       webhook: webhookInfo,
-      domain: process.env.RAILWAY_PUBLIC_DOMAIN || 'imperiumvaultsystem-production.up.railway.app',
-      timestamp: new Date().toISOString()
+      domain:
+        process.env.RAILWAY_PUBLIC_DOMAIN ||
+        "imperiumvaultsystem-production.up.railway.app",
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     res.json({
       status: "Webhook Error",
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -2989,52 +3163,60 @@ const setupWebhook = async (retryCount = 0) => {
     let domain;
     if (process.env.REPLIT_DOMAINS) {
       // Running on Replit - use Replit domain
-      domain = process.env.REPLIT_DOMAINS.split(',')[0] || process.env.REPLIT_DEV_DOMAIN;
-    } else if (process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL) {
+      domain =
+        process.env.REPLIT_DOMAINS.split(",")[0] ||
+        process.env.REPLIT_DEV_DOMAIN;
+    } else if (
+      process.env.RAILWAY_PUBLIC_DOMAIN ||
+      process.env.RAILWAY_STATIC_URL
+    ) {
       // Running on Railway - use Railway domain
-      domain = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL;
+      domain =
+        process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL;
     } else {
       // Fallback domain
-      domain = 'imperiumvaultsystem-production.up.railway.app';
+      domain = "imperiumvaultsystem-production.up.railway.app";
     }
     const webhookUrl = `https://${domain}/bot${TELEGRAM_TOKEN}`;
-    
+
     console.log(`🔗 VaultClaude webhook set to: ${webhookUrl}`);
-    
+
     // Wait between attempts to avoid rate limiting
     if (retryCount > 0) {
       const waitTime = Math.min(60000, 5000 * Math.pow(2, retryCount)); // Exponential backoff
-      console.log(`⏳ Waiting ${waitTime/1000}s before retry...`);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      console.log(`⏳ Waiting ${waitTime / 1000}s before retry...`);
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
-    
+
     // Clear existing webhook first (with error handling)
     try {
       await bot.deleteWebHook();
     } catch (deleteError) {
       console.log("⚠️ Delete webhook warning:", deleteError.message);
     }
-    
+
     // Small delay after delete
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     // Set new webhook
     const result = await bot.setWebHook(webhookUrl);
     console.log(`✅ Webhook configured successfully: ${webhookUrl}`);
     console.log(`📡 Webhook result: ${result}`);
-    
+
     // Setup webhook endpoint with enhanced error handling
     app.post(`/bot${TELEGRAM_TOKEN}`, express.json(), (req, res) => {
       console.log("📨 Webhook message received");
       console.log("📋 Message data:", JSON.stringify(req.body, null, 2));
-      
+
       try {
         // Validate webhook data
         if (!req.body || !req.body.update_id) {
           console.log("⚠️ Invalid webhook data received");
-          return res.status(200).json({ status: "ok", message: "Invalid data" });
+          return res
+            .status(200)
+            .json({ status: "ok", message: "Invalid data" });
         }
-        
+
         // Process the update
         bot.processUpdate(req.body);
         console.log("✅ Webhook processed successfully");
@@ -3045,18 +3227,22 @@ const setupWebhook = async (retryCount = 0) => {
         res.status(200).json({ status: "error", message: error.message });
       }
     });
-    
+
     return true;
   } catch (error) {
     console.error("❌ Webhook setup failed:", error.message);
-    
+
     // Retry logic for rate limiting
     if (error.message.includes("429") && retryCount < 3) {
-      console.log(`🔄 Rate limited, retrying in ${5 + retryCount * 5} seconds... (attempt ${retryCount + 1}/3)`);
+      console.log(
+        `🔄 Rate limited, retrying in ${5 + retryCount * 5} seconds... (attempt ${retryCount + 1}/3)`,
+      );
       return await setupWebhook(retryCount + 1);
     }
-    
-    console.log("📡 VaultClaude running in direct mode (webhook setup skipped)");
+
+    console.log(
+      "📡 VaultClaude running in direct mode (webhook setup skipped)",
+    );
     return false;
   }
 };
@@ -3109,8 +3295,10 @@ const startUltimateSystem = async () => {
 // Force polling mode for guaranteed message reception
 const initializePollingMode = async () => {
   try {
-    console.log("📡 Initializing polling mode for guaranteed message reception");
-    
+    console.log(
+      "📡 Initializing polling mode for guaranteed message reception",
+    );
+
     // Stop any existing polling first
     try {
       await bot.stopPolling();
@@ -3118,7 +3306,7 @@ const initializePollingMode = async () => {
     } catch (error) {
       console.log("⚠️ No previous polling to stop");
     }
-    
+
     // Clear webhook if set
     try {
       await bot.deleteWebHook();
@@ -3126,11 +3314,12 @@ const initializePollingMode = async () => {
     } catch (error) {
       console.log("⚠️ No webhook to clear");
     }
-    
+
     // Start fresh polling
     await bot.startPolling({ polling: true });
-    console.log("✅ Polling mode active - VaultClaude ready to receive messages");
-    
+    console.log(
+      "✅ Polling mode active - VaultClaude ready to receive messages",
+    );
   } catch (error) {
     console.error("❌ Polling initialization error:", error.message);
   }
@@ -3139,7 +3328,7 @@ const initializePollingMode = async () => {
 // Start the complete ultimate system with polling only
 (async () => {
   await startUltimateSystem();
-  
+
   // Force polling mode (disable all webhook attempts)
   console.log("🔧 FORCING POLLING MODE - Disabling all webhook functionality");
   try {
@@ -3149,12 +3338,13 @@ const initializePollingMode = async () => {
   } catch (error) {
     console.log("⚠️ No webhook to clear");
   }
-  
+
   // Start polling with explicit options
-  await bot.startPolling({ 
+  await bot.startPolling({
     polling: { interval: 300, autoStart: true },
-    onlyFirstMatch: false 
+    onlyFirstMatch: false,
   });
-  console.log("✅ POLLING MODE ACTIVE - VaultClaude receiving messages successfully");
-  
+  console.log(
+    "✅ POLLING MODE ACTIVE - VaultClaude receiving messages successfully",
+  );
 })();
