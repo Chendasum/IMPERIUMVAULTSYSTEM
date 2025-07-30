@@ -1,12 +1,11 @@
 {
-  "name": "imperium-vault-claude",
+  "name": "imperiumvaultsystem",
   "version": "4.0.0",
-  "description": "Ultimate Vault Claude - Elite Dynasty Strategic Intelligence System",
-  "main": "bot.js",
+  "description": "Ultimate Vault Claude - Supreme Strategic Intelligence System for Reformed Fund Architect Dynasty Building",
+  "main": "index.js",
   "scripts": {
-    "start": "node bot.js",
-    "dev": "node bot.js",
-    "deploy": "node bot.js"
+    "start": "node index.js",
+    "dev": "node index.js"
   },
   "keywords": [
     "telegram-bot",
