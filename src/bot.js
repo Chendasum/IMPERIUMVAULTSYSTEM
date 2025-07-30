@@ -77,6 +77,17 @@ try {
       polling: false,
       filepath: false,
     });
+    
+    // Setup webhook after bot initialization
+    setTimeout(async () => {
+      console.log("🔄 Setting up webhook for Railway...");
+      const webhookSuccess = await setupWebhook();
+      if (webhookSuccess) {
+        console.log("✅ Webhook setup completed successfully!");
+      } else {
+        console.log("❌ Webhook setup failed - check Railway domain");
+      }
+    }, 3000);
   } else {
     console.log("⚙️ DEVELOPMENT MODE: Using polling for testing purposes");
     bot = new TelegramBot(TELEGRAM_TOKEN, {
@@ -2437,24 +2448,79 @@ app.get("/ultimate-stats", (req, res) => {
   });
 });
 
+// Webhook info endpoint for debugging
+app.get("/webhook-info", async (req, res) => {
+  try {
+    const webhookInfo = await bot.getWebHookInfo();
+    res.json({
+      status: "Webhook Information",
+      webhook: webhookInfo,
+      domain: process.env.RAILWAY_PUBLIC_DOMAIN || 'imperiumvaultsystem-production.up.railway.app',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.json({
+      status: "Webhook Error",
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🌐 Ultimate health check server running on port ${PORT}`);
 });
 
-// Setup webhook for Railway deployment
-const setupWebhook = async () => {
+// Setup webhook for Railway deployment with retry logic
+const setupWebhook = async (retryCount = 0) => {
   try {
-    const webhookUrl = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/bot${TELEGRAM_TOKEN}`;
-    await bot.setWebHook(webhookUrl);
-    console.log(`📡 Webhook configured: ${webhookUrl}`);
+    // Get Railway domain from environment or use default
+    const domain = process.env.RAILWAY_PUBLIC_DOMAIN || 'imperiumvaultsystem-production.up.railway.app';
+    const webhookUrl = `https://${domain}/bot${TELEGRAM_TOKEN}`;
+    
+    console.log(`🔗 VaultClaude webhook set to: ${webhookUrl}`);
+    
+    // Wait between attempts to avoid rate limiting
+    if (retryCount > 0) {
+      const waitTime = Math.min(60000, 5000 * Math.pow(2, retryCount)); // Exponential backoff
+      console.log(`⏳ Waiting ${waitTime/1000}s before retry...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    
+    // Clear existing webhook first (with error handling)
+    try {
+      await bot.deleteWebHook();
+    } catch (deleteError) {
+      console.log("⚠️ Delete webhook warning:", deleteError.message);
+    }
+    
+    // Small delay after delete
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Set new webhook
+    const result = await bot.setWebHook(webhookUrl);
+    console.log(`✅ Webhook configured successfully: ${webhookUrl}`);
+    console.log(`📡 Webhook result: ${result}`);
     
     // Setup webhook endpoint
     app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
+      console.log("📨 Webhook message received");
       bot.processUpdate(req.body);
       res.sendStatus(200);
     });
+    
+    return true;
   } catch (error) {
+    console.error("❌ Webhook setup failed:", error.message);
+    
+    // Retry logic for rate limiting
+    if (error.message.includes("429") && retryCount < 3) {
+      console.log(`🔄 Rate limited, retrying in ${5 + retryCount * 5} seconds... (attempt ${retryCount + 1}/3)`);
+      return await setupWebhook(retryCount + 1);
+    }
+    
     console.log("📡 VaultClaude running in direct mode (webhook setup skipped)");
+    return false;
   }
 };
 
