@@ -2796,10 +2796,10 @@ const handleUltimateMessage = async (bot, msg) => {
       model: "gpt-4o", // ULTIMATE OpenAI model - newest release with MAXIMUM capabilities
       messages: messages,
 
-      // PURE UNRESTRICTED GPT-4o CORE INTELLIGENCE
-      temperature: 1.0,
-      max_tokens: 4096,
-      top_p: 1.0,
+      // PURE UNRESTRICTED GPT-4o CORE INTELLIGENCE - UNLIMITED CONFIGURATION
+      temperature: 1.0, // Maximum creativity and natural intelligence
+      max_tokens: 4096, // Full response length capability
+      top_p: 1.0, // Complete vocabulary access
       stream: false,
       user: `dynasty_${userId}`, // PERSONALIZED INTELLIGENCE TRACKING - Builds user-specific strategic patterns
 
