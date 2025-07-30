@@ -46,7 +46,7 @@ if (!OPENAI_KEY) {
   );
   process.exit(1);
 }
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
 
 // ELITE DYNASTY FINANCIAL INTELLIGENCE - GLOBAL DATA SOURCES
