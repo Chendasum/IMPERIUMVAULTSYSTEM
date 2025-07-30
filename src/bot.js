@@ -1,55 +1,82 @@
 // src/bot.js - ULTIMATE VAULT CLAUDE WITH FULL GLOBAL DATA ACCESS
-const TelegramBot = require('node-telegram-bot-api');
-const dotenv = require('dotenv');
-const express = require('express');
-const { OpenAI } = require('openai');
-const axios = require('axios');
-const { Pool } = require('pg');
-const cheerio = require('cheerio');
-const Parser = require('rss-parser');
+const TelegramBot = require("node-telegram-bot-api");
+const dotenv = require("dotenv");
+const express = require("express");
+const { OpenAI } = require("openai");
+const axios = require("axios");
+const { Pool } = require("pg");
+const cheerio = require("cheerio");
+const Parser = require("rss-parser");
 
 dotenv.config();
 
-const TELEGRAM_TOKEN = process.env.BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || process.env.VAULT_BOT_TOKEN;
+const TELEGRAM_TOKEN = process.env.VAULT_BOT_TOKEN;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 const DATABASE_URL = process.env.DATABASE_URL;
 
-// Global Data API Keys and Endpoints
+// ELITE DYNASTY FINANCIAL INTELLIGENCE - GLOBAL DATA SOURCES
 const DATA_SOURCES = {
-  newsAPI: 'https://newsapi.org/v2/everything',
-  economicAPI: 'https://api.worldbank.org/v2/country/khm/indicator',
-  forexAPI: 'https://api.exchangerate-api.com/v4/latest/USD',
-  cryptoAPI: 'https://api.coingecko.com/api/v3/simple/price',
-  stockAPI: 'https://query1.finance.yahoo.com/v8/finance/chart',
-  weatherAPI: 'https://api.openweathermap.org/data/2.5/weather',
-  businessAPI: 'https://newsapi.org/v2/top-headlines',
-  asiaBankAPI: 'https://api.asiandevbank.org/data',
-  cambodiaGovAPI: 'https://data.gov.kh/api'
+  // FINANCIAL MARKETS & ECONOMICS
+  worldBankAPI: "https://api.worldbank.org/v2/country/khm/indicator",
+  imfAPI: "https://www.imf.org/external/datamapper/api/v1",
+  forexAPI: "https://api.exchangerate-api.com/v4/latest/USD",
+  cryptoAPI: "https://api.coingecko.com/api/v3/simple/price",
+  stockAPI: "https://query1.finance.yahoo.com/v8/finance/chart",
+  bondAPI: "https://api.treasury.gov/services/api/fiscal_service",
+  commodityAPI: "https://api.metals-api.com/v1/latest",
+
+  // CAMBODIA & ASEAN INTELLIGENCE
+  asiaBankAPI: "https://api.asiandevbank.org/data",
+  cambodiaGovAPI: "https://data.gov.kh/api",
+  aseanAPI: "https://www.asean.org/api",
+  cambodiaBankAPI: "https://www.nbc.org.kh/api",
+
+  // NEWS & BUSINESS INTELLIGENCE
+  newsAPI: "https://newsapi.org/v2/everything",
+  businessAPI: "https://newsapi.org/v2/top-headlines",
+  reutersAPI: "https://reuters.com/api",
+  bloombergAPI: "https://bloomberg.com/api",
+
+  // ALTERNATIVE DATA
+  socialAPI: "https://api.twitter.com/2/tweets",
+  economicCalendarAPI:
+    "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
+  tradingEconomicsAPI: "https://api.tradingeconomics.com",
+
+  // SPECIALIZED INTELLIGENCE
+  privateEquityAPI: "https://www.preqin.com/api",
+  realEstateAPI: "https://www.reidin.com/api",
+  startupAPI: "https://api.crunchbase.com/v3.1",
 };
 
 // Initialize with error handling and database connection
 let bot, openai, dbPool;
 
 try {
-  bot = new TelegramBot(TELEGRAM_TOKEN, { 
-    polling: true,
-    filepath: false
+  bot = new TelegramBot(TELEGRAM_TOKEN, {
+    polling: false,
+    filepath: false,
   });
-  
+
   openai = new OpenAI({
-    apiKey: OPENAI_KEY
+    apiKey: OPENAI_KEY,
   });
 
   // Initialize PostgreSQL connection for permanent storage
   dbPool = new Pool({
     connectionString: DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl:
+      process.env.NODE_ENV === "production"
+        ? { rejectUnauthorized: false }
+        : false,
   });
 
-  console.log('🗄️ Database connection initialized for permanent intelligence storage');
+  console.log(
+    "🗄️ Database connection initialized for permanent intelligence storage",
+  );
 } catch (error) {
-  console.error('🚨 Initialization error:', error.message);
+  console.error("🚨 Initialization error:", error.message);
   process.exit(1);
 }
 
@@ -69,97 +96,151 @@ const revenueAnalytics = new Map();
 // Initialize Commander's Complete Profile
 const initializeCommanderProfile = () => {
   try {
-    commanderProfile.set('core_identity', {
+    commanderProfile.set("core_identity", {
       name: 'Sum Chenda "Commander"',
-      title: 'Reformed Fund Architect & Dynasty Builder',
-      location: 'Phnom Penh, Cambodia',
-      crisis_transformation: '2024 bankruptcy → competitive advantage',
-      mission: 'Build generational wealth through systematic governance',
-      authority_source: 'Crisis-tested credibility in Cambodia market',
-      unique_positioning: 'Only Reformed Fund Architect with lived failure experience'
+      title: "Reformed Fund Architect & Dynasty Builder",
+      location: "Phnom Penh, Cambodia",
+      crisis_transformation: "2024 bankruptcy → competitive advantage",
+      mission: "Build generational wealth through systematic governance",
+      authority_source: "Crisis-tested credibility in Cambodia market",
+      unique_positioning:
+        "Only Reformed Fund Architect with lived failure experience",
     });
 
-    commanderProfile.set('vault_system', {
-      volume_1: 'Governance System - Crisis-tested decision frameworks',
-      volume_2: 'Credit System - Resource access without ownership',
-      volume_3: 'Reality Engine - Premium positioning through reformed authority',
-      volume_4: 'Fund System - Institutional capital deployment',
-      integration_path: 'Capital-First: Fund + Governance → Reality → Credit',
-      current_phase: 'Scaling from survival ($3k) to authority ($30k monthly)'
+    commanderProfile.set("vault_system", {
+      volume_1: "Governance System - Crisis-tested decision frameworks",
+      volume_2: "Credit System - Resource access without ownership",
+      volume_3:
+        "Reality Engine - Premium positioning through reformed authority",
+      volume_4: "Fund System - Institutional capital deployment",
+      integration_path: "Capital-First: Fund + Governance → Reality → Credit",
+      current_phase: "Scaling from survival ($3k) to authority ($30k monthly)",
     });
 
-    commanderProfile.set('business_operations', {
-      current_model: 'Private lending fund architect (Credit MOU system)',
-      revenue_streams: ['Capital Clarity Sessions', 'Governance Consulting', 'Deal Matching', 'Fund Management'],
-      target_scaling: '$3k to $30k monthly revenue progression',
-      competitive_advantages: ['Crisis experience', 'Cambodia network', 'Systematic methodology', 'Reformed positioning'],
+    commanderProfile.set("business_operations", {
+      current_model: "Private lending fund architect (Credit MOU system)",
+      revenue_streams: [
+        "Capital Clarity Sessions",
+        "Governance Consulting",
+        "Deal Matching",
+        "Fund Management",
+      ],
+      target_scaling: "$3k to $30k monthly revenue progression",
+      competitive_advantages: [
+        "Crisis experience",
+        "Cambodia network",
+        "Systematic methodology",
+        "Reformed positioning",
+      ],
       operational_laws: [
-        'The Reformed Architect Must Govern, Not Lend',
-        'Control Beats Ownership',
-        'Structure Creates Safety',
-        'Crisis Experience Is Competitive Advantage',
-        'Governance Beats Hoping'
-      ]
+        "The Reformed Architect Must Govern, Not Lend",
+        "Control Beats Ownership",
+        "Structure Creates Safety",
+        "Crisis Experience Is Competitive Advantage",
+        "Governance Beats Hoping",
+      ],
     });
 
-    console.log('✅ Commander profile initialized successfully');
+    console.log("✅ Commander profile initialized successfully");
   } catch (error) {
-    console.error('❌ Profile initialization error:', error.message);
+    console.error("❌ Profile initialization error:", error.message);
   }
 };
 
 // ===== REAL-TIME GLOBAL DATA ACCESS =====
 const needsRealTimeData = (message) => {
   const realTimeKeywords = [
-    'current', 'latest', 'today', 'now', 'recent',
-    'news', 'price', 'market', 'economy', 'economic',
-    'cambodia news', 'exchange rate', 'usd', 'riel',
-    'gdp', 'inflation', 'growth', 'investment',
-    'trend', 'business', 'finance', 'banking',
-    'policy', 'government', 'regulation', 'data'
+    "current",
+    "latest",
+    "today",
+    "now",
+    "recent",
+    "news",
+    "price",
+    "market",
+    "economy",
+    "economic",
+    "cambodia news",
+    "exchange rate",
+    "usd",
+    "riel",
+    "gdp",
+    "inflation",
+    "growth",
+    "investment",
+    "trend",
+    "business",
+    "finance",
+    "banking",
+    "policy",
+    "government",
+    "regulation",
+    "data",
   ];
-  return realTimeKeywords.some(keyword => message.toLowerCase().includes(keyword));
+  return realTimeKeywords.some((keyword) =>
+    message.toLowerCase().includes(keyword),
+  );
 };
 
 const getRealTimeIntelligence = async (userMessage) => {
   try {
-    let intelligence = '';
+    let intelligence = "";
     const msg = userMessage.toLowerCase();
-    
+
     // Cambodia Economic Intelligence
-    if (msg.includes('cambodia') || msg.includes('economic') || msg.includes('កម្ពុជា')) {
+    if (
+      msg.includes("cambodia") ||
+      msg.includes("economic") ||
+      msg.includes("កម្ពុជា")
+    ) {
       const cambodiaData = await getCambodiaMarketData();
       intelligence += `📊 **CAMBODIA REAL-TIME INTELLIGENCE**:\n${cambodiaData}\n\n`;
     }
-    
+
     // Global Financial Markets
-    if (msg.includes('market') || msg.includes('finance') || msg.includes('investment')) {
+    if (
+      msg.includes("market") ||
+      msg.includes("finance") ||
+      msg.includes("investment")
+    ) {
       const marketData = await getGlobalMarketData();
       intelligence += `💰 **GLOBAL FINANCIAL MARKETS**:\n${marketData}\n\n`;
     }
-    
+
     // Currency Exchange Rates
-    if (msg.includes('exchange') || msg.includes('usd') || msg.includes('riel')) {
+    if (
+      msg.includes("exchange") ||
+      msg.includes("usd") ||
+      msg.includes("riel")
+    ) {
       const exchangeData = await getExchangeRates();
       intelligence += `💱 **EXCHANGE RATES**:\n${exchangeData}\n\n`;
     }
-    
+
     // Business News & Trends
-    if (msg.includes('news') || msg.includes('trend') || msg.includes('business')) {
+    if (
+      msg.includes("news") ||
+      msg.includes("trend") ||
+      msg.includes("business")
+    ) {
       const newsData = await getBusinessNews();
       intelligence += `📰 **BUSINESS INTELLIGENCE**:\n${newsData}\n\n`;
     }
-    
+
     // Economic Indicators
-    if (msg.includes('gdp') || msg.includes('inflation') || msg.includes('growth')) {
+    if (
+      msg.includes("gdp") ||
+      msg.includes("inflation") ||
+      msg.includes("growth")
+    ) {
       const economicData = await getEconomicIndicators();
       intelligence += `📈 **ECONOMIC INDICATORS**:\n${economicData}\n\n`;
     }
-    
+
     return intelligence;
   } catch (error) {
-    console.error('Real-time data error:', error.message);
-    return '';
+    console.error("Real-time data error:", error.message);
+    return "";
   }
 };
 
@@ -167,65 +248,65 @@ const getRealTimeIntelligence = async (userMessage) => {
 const cleanTextForTelegram = (text) => {
   // Remove all markdown formatting that causes *** issues
   return text
-    .replace(/(\*{1,3})(.*?)\1/g, '$2')  // Remove *, **, *** formatting
-    .replace(/_{1,3}(.*?)_{1,3}/g, '$1')  // Remove underscores
-    .replace(/`{1,3}(.*?)`{1,3}/g, '$1')  // Remove backticks
-    .replace(/#{1,6}\s/g, '')  // Remove hashtag headers
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Convert links to plain text
-    .replace(/\n{3,}/g, '\n\n')  // Limit multiple newlines
+    .replace(/(\*{1,3})(.*?)\1/g, "$2") // Remove *, **, *** formatting
+    .replace(/_{1,3}(.*?)_{1,3}/g, "$1") // Remove underscores
+    .replace(/`{1,3}(.*?)`{1,3}/g, "$1") // Remove backticks
+    .replace(/#{1,6}\s/g, "") // Remove hashtag headers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // Convert links to plain text
+    .replace(/\n{3,}/g, "\n\n") // Limit multiple newlines
     .trim();
 };
 
 const smartSplitMessage = (text) => {
   const maxLength = 4000;
   if (text.length <= maxLength) return [text];
-  
+
   const chunks = [];
-  let currentChunk = '';
-  const lines = text.split('\n');
-  
+  let currentChunk = "";
+  const lines = text.split("\n");
+
   for (const line of lines) {
-    if ((currentChunk + line + '\n').length > maxLength) {
+    if ((currentChunk + line + "\n").length > maxLength) {
       if (currentChunk.trim()) {
         chunks.push(currentChunk.trim());
-        currentChunk = '';
+        currentChunk = "";
       }
-      
+
       // If single line is too long, split by sentences
       if (line.length > maxLength) {
-        const sentences = line.split('. ');
+        const sentences = line.split(". ");
         for (const sentence of sentences) {
-          if ((currentChunk + sentence + '. ').length > maxLength) {
+          if ((currentChunk + sentence + ". ").length > maxLength) {
             if (currentChunk.trim()) {
               chunks.push(currentChunk.trim());
-              currentChunk = sentence + '. ';
+              currentChunk = sentence + ". ";
             }
           } else {
-            currentChunk += sentence + '. ';
+            currentChunk += sentence + ". ";
           }
         }
       } else {
-        currentChunk = line + '\n';
+        currentChunk = line + "\n";
       }
     } else {
-      currentChunk += line + '\n';
+      currentChunk += line + "\n";
     }
   }
-  
+
   if (currentChunk.trim()) {
     chunks.push(currentChunk.trim());
   }
-  
+
   return chunks;
 };
 
 const optimizeForTelegram = (text) => {
   // Convert markdown-style formatting to HTML for better Telegram compatibility
   return text
-    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')  // Bold
-    .replace(/\*(.*?)\*/g, '<i>$1</i>')      // Italic
-    .replace(/`(.*?)`/g, '<code>$1</code>')  // Code
-    .replace(/_{2}(.*?)_{2}/g, '<u>$1</u>'); // Underline
+    .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>") // Bold
+    .replace(/\*(.*?)\*/g, "<i>$1</i>") // Italic
+    .replace(/`(.*?)`/g, "<code>$1</code>") // Code
+    .replace(/_{2}(.*?)_{2}/g, "<u>$1</u>"); // Underline
 };
 
 // ===== COMPLETE GLOBAL DATA SOURCES =====
@@ -234,74 +315,76 @@ const getCambodiaMarketData = async () => {
     const [economicData, newsData, businessData] = await Promise.all([
       getWorldBankData(),
       getCambodiaBusinessNews(),
-      getASEANEconomicData()
+      getASEANEconomicData(),
     ]);
 
     let intelligence = `📊 **REAL-TIME CAMBODIA INTELLIGENCE**:\n\n`;
-    
+
     // World Bank Economic Data
     if (economicData) {
       intelligence += `🏦 **WORLD BANK DATA**:\n${economicData}\n\n`;
     }
-    
+
     // Latest Cambodia Business News
     if (newsData) {
       intelligence += `📰 **BUSINESS NEWS**:\n${newsData}\n\n`;
     }
-    
+
     // ASEAN Regional Context
     if (businessData) {
       intelligence += `🌏 **REGIONAL CONTEXT**:\n${businessData}\n\n`;
     }
-    
+
     // Store intelligence in database for permanent learning
-    await storeMarketIntelligence('cambodia', intelligence);
-    
+    await storeMarketIntelligence("cambodia", intelligence);
+
     return intelligence;
   } catch (error) {
-    console.error('Cambodia data error:', error.message);
-    return 'Cambodia market intelligence system active...';
+    console.error("Cambodia data error:", error.message);
+    return "Cambodia market intelligence system active...";
   }
 };
 
 const getGlobalMarketData = async () => {
   try {
-    const [forexData, cryptoData, stockData, commodityData] = await Promise.all([
-      getRealTimeForexData(),
-      getCryptoPrices(),
-      getAsianStockMarkets(),
-      getCommodityPrices()
-    ]);
+    const [forexData, cryptoData, stockData, commodityData] = await Promise.all(
+      [
+        getRealTimeForexData(),
+        getCryptoPrices(),
+        getAsianStockMarkets(),
+        getCommodityPrices(),
+      ],
+    );
 
     let intelligence = `💰 **GLOBAL FINANCIAL MARKETS**:\n\n`;
-    
+
     // Foreign Exchange Markets
     if (forexData) {
       intelligence += `💱 **FOREX MARKETS**:\n${forexData}\n\n`;
     }
-    
+
     // Cryptocurrency Markets
     if (cryptoData) {
       intelligence += `₿ **CRYPTO MARKETS**:\n${cryptoData}\n\n`;
     }
-    
+
     // Asian Stock Markets
     if (stockData) {
       intelligence += `📈 **STOCK MARKETS**:\n${stockData}\n\n`;
     }
-    
+
     // Commodity Prices
     if (commodityData) {
       intelligence += `🏗️ **COMMODITIES**:\n${commodityData}\n\n`;
     }
-    
+
     // Store for permanent learning
-    await storeMarketIntelligence('global_markets', intelligence);
-    
+    await storeMarketIntelligence("global_markets", intelligence);
+
     return intelligence;
   } catch (error) {
-    console.error('Global market data error:', error.message);
-    return 'Global market intelligence system active...';
+    console.error("Global market data error:", error.message);
+    return "Global market intelligence system active...";
   }
 };
 
@@ -314,7 +397,7 @@ const getExchangeRates = async () => {
 • Trend Analysis: 30-day and 90-day exchange rate movements
 • Impact Assessment: Currency trends affecting private fund operations`;
   } catch (error) {
-    return 'Exchange rate data currently updating...';
+    return "Exchange rate data currently updating...";
   }
 };
 
@@ -328,7 +411,7 @@ const getBusinessNews = async () => {
 • Government Initiatives: Policy changes supporting private investment funds
 • Market Disruptions: New technologies and business models entering Cambodia market`;
   } catch (error) {
-    return 'Business news currently updating...';
+    return "Business news currently updating...";
   }
 };
 
@@ -337,45 +420,47 @@ const getEconomicIndicators = async () => {
     const [worldBankData, asiaBankData, tradeData] = await Promise.all([
       getWorldBankIndicators(),
       getAsianDevelopmentBankData(),
-      getTradePerformanceData()
+      getTradePerformanceData(),
     ]);
 
     let intelligence = `📈 **ECONOMIC INDICATORS**:\n\n`;
-    
+
     if (worldBankData) {
       intelligence += `🏦 **WORLD BANK INDICATORS**:\n${worldBankData}\n\n`;
     }
-    
+
     if (asiaBankData) {
       intelligence += `🏛️ **ASIAN DEVELOPMENT BANK**:\n${asiaBankData}\n\n`;
     }
-    
+
     if (tradeData) {
       intelligence += `📊 **TRADE PERFORMANCE**:\n${tradeData}\n\n`;
     }
-    
-    await storeMarketIntelligence('economic_indicators', intelligence);
+
+    await storeMarketIntelligence("economic_indicators", intelligence);
     return intelligence;
   } catch (error) {
-    console.error('Economic indicators error:', error.message);
-    return 'Economic intelligence system active...';
+    console.error("Economic indicators error:", error.message);
+    return "Economic intelligence system active...";
   }
 };
 
 // ===== REAL-TIME DATA ACCESS FUNCTIONS =====
 const getWorldBankData = async () => {
   try {
-    const response = await axios.get(`${DATA_SOURCES.economicAPI}/NY.GDP.MKTP.KD.ZG?format=json&date=2020:2024`);
+    const response = await axios.get(
+      `${DATA_SOURCES.economicAPI}/NY.GDP.MKTP.KD.ZG?format=json&date=2020:2024`,
+    );
     const data = response.data;
     if (data && data[1] && data[1].length > 0) {
       const latestGDP = data[1][0];
       return `• GDP Growth Rate: ${latestGDP.value}% (${latestGDP.date})
-• Economic Trend: ${latestGDP.value > 5 ? 'Strong growth trajectory' : 'Moderate expansion'}
+• Economic Trend: ${latestGDP.value > 5 ? "Strong growth trajectory" : "Moderate expansion"}
 • Regional Position: Competitive growth in ASEAN context`;
     }
     return null;
   } catch (error) {
-    console.error('World Bank API error:', error.message);
+    console.error("World Bank API error:", error.message);
     return null;
   }
 };
@@ -384,29 +469,31 @@ const getRealTimeForexData = async () => {
   try {
     const response = await axios.get(DATA_SOURCES.forexAPI);
     const rates = response.data.rates;
-    
+
     return `• USD/KHR: ${(rates.KHR || 4100).toFixed(0)} Riel per USD
-• USD/EUR: ${rates.EUR ? (1/rates.EUR).toFixed(4) : '0.85'} USD per EUR
+• USD/EUR: ${rates.EUR ? (1 / rates.EUR).toFixed(4) : "0.85"} USD per EUR
 • USD/JPY: ${rates.JPY || 150} JPY per USD
 • USD/CNY: ${rates.CNY || 7.2} CNY per USD
-• Regional Stability: ${rates.KHR ? 'Real-time data active' : 'Estimated rates'}`;
+• Regional Stability: ${rates.KHR ? "Real-time data active" : "Estimated rates"}`;
   } catch (error) {
-    console.error('Forex API error:', error.message);
+    console.error("Forex API error:", error.message);
     return null;
   }
 };
 
 const getCryptoPrices = async () => {
   try {
-    const response = await axios.get(`${DATA_SOURCES.cryptoAPI}?ids=bitcoin,ethereum,binancecoin&vs_currencies=usd`);
+    const response = await axios.get(
+      `${DATA_SOURCES.cryptoAPI}?ids=bitcoin,ethereum,binancecoin&vs_currencies=usd`,
+    );
     const prices = response.data;
-    
-    return `• Bitcoin: $${prices.bitcoin?.usd || 'N/A'}
-• Ethereum: $${prices.ethereum?.usd || 'N/A'}  
-• BNB: $${prices.binancecoin?.usd || 'N/A'}
-• Market Sentiment: ${prices.bitcoin?.usd > 40000 ? 'Bullish' : 'Consolidating'}`;
+
+    return `• Bitcoin: $${prices.bitcoin?.usd || "N/A"}
+• Ethereum: $${prices.ethereum?.usd || "N/A"}  
+• BNB: $${prices.binancecoin?.usd || "N/A"}
+• Market Sentiment: ${prices.bitcoin?.usd > 40000 ? "Bullish" : "Consolidating"}`;
   } catch (error) {
-    console.error('Crypto API error:', error.message);
+    console.error("Crypto API error:", error.message);
     return null;
   }
 };
@@ -418,7 +505,7 @@ const getCambodiaBusinessNews = async () => {
 2. Foreign Investment in Cambodia Infrastructure Reaches $2.8B This Quarter...
 3. Banking Sector Expansion: New Microfinance Opportunities for Private Capital...`;
   } catch (error) {
-    console.error('News API error:', error.message);
+    console.error("News API error:", error.message);
     return null;
   }
 };
@@ -504,7 +591,7 @@ const initializeDatabase = async () => {
         relevance_score INTEGER DEFAULT 100
       )
     `);
-    
+
     await dbPool.query(`
       CREATE TABLE IF NOT EXISTS conversation_intelligence (
         id SERIAL PRIMARY KEY,
@@ -516,7 +603,7 @@ const initializeDatabase = async () => {
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    
+
     await dbPool.query(`
       CREATE TABLE IF NOT EXISTS strategic_patterns (
         id SERIAL PRIMARY KEY,
@@ -527,50 +614,56 @@ const initializeDatabase = async () => {
         last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    
-    console.log('🗄️ Database tables initialized successfully');
+
+    console.log("🗄️ Database tables initialized successfully");
   } catch (error) {
-    console.error('Database initialization error:', error.message);
+    console.error("Database initialization error:", error.message);
   }
 };
-
-
 
 const getStoredIntelligence = async (category) => {
   try {
     const result = await dbPool.query(
-      'SELECT data FROM market_intelligence WHERE category = $1 ORDER BY timestamp DESC LIMIT 1',
-      [category]
+      "SELECT data FROM market_intelligence WHERE category = $1 ORDER BY timestamp DESC LIMIT 1",
+      [category],
     );
     return result.rows[0]?.data || null;
   } catch (error) {
-    console.error('Get stored intelligence error:', error.message);
+    console.error("Get stored intelligence error:", error.message);
     return null;
   }
 };
 
-const storeConversationIntelligence = async (userId, conversationId, userMessage, aiResponse, insights) => {
+const storeConversationIntelligence = async (
+  userId,
+  conversationId,
+  userMessage,
+  aiResponse,
+  insights,
+) => {
   try {
     if (dbPool) {
       await dbPool.query(
-        'INSERT INTO conversation_intelligence (user_id, conversation_id, user_message, ai_response, insights) VALUES ($1, $2, $3, $4, $5)',
-        [userId, conversationId, userMessage, aiResponse, JSON.stringify(insights)]
+        "INSERT INTO conversation_intelligence (user_id, conversation_id, user_message, ai_response, insights) VALUES ($1, $2, $3, $4, $5)",
+        [
+          userId,
+          conversationId,
+          userMessage,
+          aiResponse,
+          JSON.stringify(insights),
+        ],
       );
     }
   } catch (error) {
-    console.error('Store conversation intelligence error:', error.message);
+    console.error("Store conversation intelligence error:", error.message);
   }
 };
-
-
-
-
 
 // ===== ULTIMATE AUTO-LEARNING FUNCTIONS =====
 const ultimateLearnFromConversation = (userId, userMessage, aiResponse) => {
   try {
     const conversationId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Store complete conversation with advanced metadata
     ultimateLearningDatabase.set(conversationId, {
       id: conversationId,
@@ -584,9 +677,9 @@ const ultimateLearnFromConversation = (userId, userMessage, aiResponse) => {
       action_items: extractActionItems(aiResponse),
       success_indicators: identifySuccessIndicators(userMessage, aiResponse),
       market_intelligence: extractMarketIntel(userMessage, aiResponse),
-      client_patterns: extractClientPatterns(userMessage, aiResponse)
+      client_patterns: extractClientPatterns(userMessage, aiResponse),
     });
-    
+
     // Update all knowledge bases safely
     updateBusinessIntelligence(userMessage, aiResponse);
     updateMarketAnalytics(userMessage, aiResponse);
@@ -595,40 +688,71 @@ const ultimateLearnFromConversation = (userId, userMessage, aiResponse) => {
     updateSuccessMetrics(userMessage, aiResponse);
     updateStrategicInsights(userMessage, aiResponse);
     updateRevenueAnalytics(userMessage, aiResponse);
-    
   } catch (error) {
-    console.error('❌ Learning function error:', error.message);
+    console.error("❌ Learning function error:", error.message);
   }
 };
 
 const classifyConversationType = (message) => {
   try {
     const msg = message.toLowerCase();
-    if (msg.includes('deal') || msg.includes('client') || msg.includes('lp')) return 'deal_management';
-    if (msg.includes('cambodia') || msg.includes('market') || msg.includes('កម្ពុជា')) return 'market_intelligence';
-    if (msg.includes('revenue') || msg.includes('$') || msg.includes('money')) return 'revenue_strategy';
-    if (msg.includes('crisis') || msg.includes('bankruptcy') || msg.includes('failure')) return 'crisis_strategy';
-    if (msg.includes('governance') || msg.includes('system') || msg.includes('framework')) return 'governance_system';
-    if (msg.includes('competition') || msg.includes('competitor')) return 'competitive_analysis';
-    return 'strategic_consultation';
+    if (msg.includes("deal") || msg.includes("client") || msg.includes("lp"))
+      return "deal_management";
+    if (
+      msg.includes("cambodia") ||
+      msg.includes("market") ||
+      msg.includes("កម្ពុជា")
+    )
+      return "market_intelligence";
+    if (msg.includes("revenue") || msg.includes("$") || msg.includes("money"))
+      return "revenue_strategy";
+    if (
+      msg.includes("crisis") ||
+      msg.includes("bankruptcy") ||
+      msg.includes("failure")
+    )
+      return "crisis_strategy";
+    if (
+      msg.includes("governance") ||
+      msg.includes("system") ||
+      msg.includes("framework")
+    )
+      return "governance_system";
+    if (msg.includes("competition") || msg.includes("competitor"))
+      return "competitive_analysis";
+    return "strategic_consultation";
   } catch (error) {
-    return 'general_consultation';
+    return "general_consultation";
   }
 };
 
 const assessStrategicLevel = (message) => {
   try {
-    const strategicWords = ['strategy', 'strategic', 'planning', 'framework', 'system', 'methodology'];
-    const tacticalWords = ['how to', 'what should', 'steps', 'implement', 'execute'];
-    const operationalWords = ['daily', 'today', 'now', 'immediate', 'quick'];
-    
+    const strategicWords = [
+      "strategy",
+      "strategic",
+      "planning",
+      "framework",
+      "system",
+      "methodology",
+    ];
+    const tacticalWords = [
+      "how to",
+      "what should",
+      "steps",
+      "implement",
+      "execute",
+    ];
+    const operationalWords = ["daily", "today", "now", "immediate", "quick"];
+
     const msg = message.toLowerCase();
-    if (strategicWords.some(word => msg.includes(word))) return 'strategic';
-    if (tacticalWords.some(word => msg.includes(word))) return 'tactical';
-    if (operationalWords.some(word => msg.includes(word))) return 'operational';
-    return 'consultative';
+    if (strategicWords.some((word) => msg.includes(word))) return "strategic";
+    if (tacticalWords.some((word) => msg.includes(word))) return "tactical";
+    if (operationalWords.some((word) => msg.includes(word)))
+      return "operational";
+    return "consultative";
   } catch (error) {
-    return 'consultative';
+    return "consultative";
   }
 };
 
@@ -637,47 +761,51 @@ const extractAdvancedInsights = (userMessage, aiResponse) => {
     const insights = [];
     const msg = userMessage.toLowerCase();
     const response = aiResponse.toLowerCase();
-    
+
     // Market insights
-    if (msg.includes('cambodia') || msg.includes('កម្ពុជា')) {
+    if (msg.includes("cambodia") || msg.includes("កម្ពុជា")) {
       insights.push({
-        type: 'market_intelligence',
-        category: 'cambodia_market',
+        type: "market_intelligence",
+        category: "cambodia_market",
         insight: extractKeyPhrase(aiResponse, 100),
-        confidence: 'high'
+        confidence: "high",
       });
     }
-    
+
     // Deal patterns
-    if (msg.includes('deal') || msg.includes('client')) {
+    if (msg.includes("deal") || msg.includes("client")) {
       insights.push({
-        type: 'deal_pattern',
-        category: 'client_interaction',
+        type: "deal_pattern",
+        category: "client_interaction",
         insight: extractKeyPhrase(aiResponse, 150),
-        confidence: 'medium'
+        confidence: "medium",
       });
     }
-    
+
     // Revenue strategies
-    if (msg.includes('$') || msg.includes('revenue') || msg.includes('money')) {
+    if (msg.includes("$") || msg.includes("revenue") || msg.includes("money")) {
       insights.push({
-        type: 'revenue_strategy',
-        category: 'financial_planning',
+        type: "revenue_strategy",
+        category: "financial_planning",
         insight: extractKeyPhrase(aiResponse, 120),
-        confidence: 'high'
+        confidence: "high",
       });
     }
-    
+
     // Success indicators
-    if (response.includes('successful') || response.includes('effective') || response.includes('optimal')) {
+    if (
+      response.includes("successful") ||
+      response.includes("effective") ||
+      response.includes("optimal")
+    ) {
       insights.push({
-        type: 'success_pattern',
-        category: 'proven_approach',
+        type: "success_pattern",
+        category: "proven_approach",
         insight: extractKeyPhrase(aiResponse, 200),
-        confidence: 'very_high'
+        confidence: "very_high",
       });
     }
-    
+
     return insights;
   } catch (error) {
     return [];
@@ -687,11 +815,18 @@ const extractAdvancedInsights = (userMessage, aiResponse) => {
 const extractKeyPhrase = (text, maxLength) => {
   try {
     const sentences = text.split(/[.!?]+/);
-    const meaningfulSentence = sentences.find(s => 
-      s.length > 20 && s.length < maxLength && 
-      (s.includes('Commander') || s.includes('strategy') || s.includes('approach'))
-    ) || sentences[0] || text.substring(0, maxLength);
-    
+    const meaningfulSentence =
+      sentences.find(
+        (s) =>
+          s.length > 20 &&
+          s.length < maxLength &&
+          (s.includes("Commander") ||
+            s.includes("strategy") ||
+            s.includes("approach")),
+      ) ||
+      sentences[0] ||
+      text.substring(0, maxLength);
+
     return meaningfulSentence.trim().substring(0, maxLength);
   } catch (error) {
     return text.substring(0, maxLength);
@@ -701,15 +836,21 @@ const extractKeyPhrase = (text, maxLength) => {
 const extractActionItems = (response) => {
   try {
     const actionItems = [];
-    const lines = response.split('\n');
-    
-    lines.forEach(line => {
-      if (line.includes('1.') || line.includes('2.') || line.includes('3.') || 
-          line.includes('Phase') || line.includes('Step') || line.includes('Next')) {
+    const lines = response.split("\n");
+
+    lines.forEach((line) => {
+      if (
+        line.includes("1.") ||
+        line.includes("2.") ||
+        line.includes("3.") ||
+        line.includes("Phase") ||
+        line.includes("Step") ||
+        line.includes("Next")
+      ) {
         actionItems.push(line.trim().substring(0, 100));
       }
     });
-    
+
     return actionItems.slice(0, 5);
   } catch (error) {
     return [];
@@ -720,20 +861,20 @@ const identifySuccessIndicators = (userMessage, aiResponse) => {
   try {
     const indicators = [];
     const response = aiResponse.toLowerCase();
-    
-    if (response.includes('successful') || response.includes('effective')) {
-      indicators.push('proven_effectiveness');
+
+    if (response.includes("successful") || response.includes("effective")) {
+      indicators.push("proven_effectiveness");
     }
-    if (response.includes('revenue') || response.includes('profit')) {
-      indicators.push('revenue_potential');
+    if (response.includes("revenue") || response.includes("profit")) {
+      indicators.push("revenue_potential");
     }
-    if (response.includes('scale') || response.includes('growth')) {
-      indicators.push('scalability');
+    if (response.includes("scale") || response.includes("growth")) {
+      indicators.push("scalability");
     }
-    if (response.includes('competitive') || response.includes('advantage')) {
-      indicators.push('competitive_advantage');
+    if (response.includes("competitive") || response.includes("advantage")) {
+      indicators.push("competitive_advantage");
     }
-    
+
     return indicators;
   } catch (error) {
     return [];
@@ -742,11 +883,14 @@ const identifySuccessIndicators = (userMessage, aiResponse) => {
 
 const extractMarketIntel = (userMessage, aiResponse) => {
   try {
-    if (userMessage.toLowerCase().includes('cambodia') || userMessage.includes('កម្ពុជា')) {
+    if (
+      userMessage.toLowerCase().includes("cambodia") ||
+      userMessage.includes("កម្ពុជា")
+    ) {
       return {
         market_context: userMessage.substring(0, 100),
         intelligence: aiResponse.substring(0, 200),
-        relevance: 'high'
+        relevance: "high",
       };
     }
     return null;
@@ -757,11 +901,14 @@ const extractMarketIntel = (userMessage, aiResponse) => {
 
 const extractClientPatterns = (userMessage, aiResponse) => {
   try {
-    if (userMessage.toLowerCase().includes('client') || userMessage.toLowerCase().includes('lp')) {
+    if (
+      userMessage.toLowerCase().includes("client") ||
+      userMessage.toLowerCase().includes("lp")
+    ) {
       return {
         client_situation: userMessage.substring(0, 120),
         recommended_approach: aiResponse.substring(0, 180),
-        pattern_type: 'client_interaction'
+        pattern_type: "client_interaction",
       };
     }
     return null;
@@ -774,249 +921,282 @@ const extractClientPatterns = (userMessage, aiResponse) => {
 const updateBusinessIntelligence = (userMessage, aiResponse) => {
   try {
     const timestamp = new Date().toISOString();
-    const intelligence = businessIntelligence.get('strategic_insights') || [];
-    
+    const intelligence = businessIntelligence.get("strategic_insights") || [];
+
     intelligence.push({
       query: userMessage.substring(0, 150),
       strategic_response: aiResponse.substring(0, 300),
       timestamp,
       conversation_type: classifyConversationType(userMessage),
-      strategic_level: assessStrategicLevel(userMessage)
+      strategic_level: assessStrategicLevel(userMessage),
     });
-    
+
     if (intelligence.length > 50) {
       intelligence.splice(0, intelligence.length - 50);
     }
-    
-    businessIntelligence.set('strategic_insights', intelligence);
+
+    businessIntelligence.set("strategic_insights", intelligence);
   } catch (error) {
-    console.error('❌ Business intelligence update error:', error.message);
+    console.error("❌ Business intelligence update error:", error.message);
   }
 };
 
 const updateMarketAnalytics = (userMessage, aiResponse) => {
   try {
-    if (userMessage.toLowerCase().includes('cambodia') || userMessage.includes('កម្ពុជា') || 
-        userMessage.toLowerCase().includes('market')) {
-      
-      const marketData = marketAnalytics.get('cambodia_intelligence') || [];
+    if (
+      userMessage.toLowerCase().includes("cambodia") ||
+      userMessage.includes("កម្ពុជា") ||
+      userMessage.toLowerCase().includes("market")
+    ) {
+      const marketData = marketAnalytics.get("cambodia_intelligence") || [];
       marketData.push({
         market_query: userMessage.substring(0, 120),
         market_analysis: aiResponse.substring(0, 400),
         timestamp: new Date().toISOString(),
-        intelligence_type: 'market_opportunity'
+        intelligence_type: "market_opportunity",
       });
-      
+
       if (marketData.length > 30) {
         marketData.splice(0, marketData.length - 30);
       }
-      
-      marketAnalytics.set('cambodia_intelligence', marketData);
+
+      marketAnalytics.set("cambodia_intelligence", marketData);
     }
   } catch (error) {
-    console.error('❌ Market analytics update error:', error.message);
+    console.error("❌ Market analytics update error:", error.message);
   }
 };
 
 const updateClientDatabase = (userMessage, aiResponse) => {
   try {
-    if (userMessage.toLowerCase().includes('client') || userMessage.toLowerCase().includes('lp')) {
-      const clientData = clientDatabase.get('interaction_patterns') || [];
+    if (
+      userMessage.toLowerCase().includes("client") ||
+      userMessage.toLowerCase().includes("lp")
+    ) {
+      const clientData = clientDatabase.get("interaction_patterns") || [];
       clientData.push({
         client_situation: userMessage.substring(0, 150),
         recommended_approach: aiResponse.substring(0, 250),
         timestamp: new Date().toISOString(),
-        interaction_type: 'client_strategy'
+        interaction_type: "client_strategy",
       });
-      
+
       if (clientData.length > 40) {
         clientData.splice(0, clientData.length - 40);
       }
-      
-      clientDatabase.set('interaction_patterns', clientData);
+
+      clientDatabase.set("interaction_patterns", clientData);
     }
   } catch (error) {
-    console.error('❌ Client database update error:', error.message);
+    console.error("❌ Client database update error:", error.message);
   }
 };
 
 const updateDealPatterns = (userMessage, aiResponse) => {
   try {
-    if (userMessage.toLowerCase().includes('deal') || userMessage.includes('$')) {
-      const patterns = dealPatterns.get('successful_structures') || [];
+    if (
+      userMessage.toLowerCase().includes("deal") ||
+      userMessage.includes("$")
+    ) {
+      const patterns = dealPatterns.get("successful_structures") || [];
       patterns.push({
         deal_context: userMessage.substring(0, 120),
         deal_strategy: aiResponse.substring(0, 300),
         timestamp: new Date().toISOString(),
-        pattern_type: 'deal_structure'
+        pattern_type: "deal_structure",
       });
-      
+
       if (patterns.length > 35) {
         patterns.splice(0, patterns.length - 35);
       }
-      
-      dealPatterns.set('successful_structures', patterns);
+
+      dealPatterns.set("successful_structures", patterns);
     }
   } catch (error) {
-    console.error('❌ Deal patterns update error:', error.message);
+    console.error("❌ Deal patterns update error:", error.message);
   }
 };
 
 const updateSuccessMetrics = (userMessage, aiResponse) => {
   try {
-    if (aiResponse.toLowerCase().includes('successful') || aiResponse.toLowerCase().includes('effective')) {
-      const metrics = successMetrics.get('proven_approaches') || [];
+    if (
+      aiResponse.toLowerCase().includes("successful") ||
+      aiResponse.toLowerCase().includes("effective")
+    ) {
+      const metrics = successMetrics.get("proven_approaches") || [];
       metrics.push({
         success_context: userMessage.substring(0, 120),
         success_strategy: aiResponse.substring(0, 200),
         timestamp: new Date().toISOString(),
-        success_type: 'validated_approach'
+        success_type: "validated_approach",
       });
-      
+
       if (metrics.length > 25) {
         metrics.splice(0, metrics.length - 25);
       }
-      
-      successMetrics.set('proven_approaches', metrics);
+
+      successMetrics.set("proven_approaches", metrics);
     }
   } catch (error) {
-    console.error('❌ Success metrics update error:', error.message);
+    console.error("❌ Success metrics update error:", error.message);
   }
 };
 
 const updateStrategicInsights = (userMessage, aiResponse) => {
   try {
-    const insights = strategicInsights.get('accumulated_wisdom') || [];
+    const insights = strategicInsights.get("accumulated_wisdom") || [];
     insights.push({
       strategic_query: userMessage.substring(0, 150),
       strategic_wisdom: aiResponse.substring(0, 350),
       timestamp: new Date().toISOString(),
-      wisdom_category: classifyConversationType(userMessage)
+      wisdom_category: classifyConversationType(userMessage),
     });
-    
+
     if (insights.length > 60) {
       insights.splice(0, insights.length - 60);
     }
-    
-    strategicInsights.set('accumulated_wisdom', insights);
+
+    strategicInsights.set("accumulated_wisdom", insights);
   } catch (error) {
-    console.error('❌ Strategic insights update error:', error.message);
+    console.error("❌ Strategic insights update error:", error.message);
   }
 };
 
 const updateRevenueAnalytics = (userMessage, aiResponse) => {
   try {
-    if (userMessage.includes('$') || userMessage.toLowerCase().includes('revenue') || 
-        userMessage.toLowerCase().includes('scaling')) {
-      
-      const revenue = revenueAnalytics.get('scaling_intelligence') || [];
+    if (
+      userMessage.includes("$") ||
+      userMessage.toLowerCase().includes("revenue") ||
+      userMessage.toLowerCase().includes("scaling")
+    ) {
+      const revenue = revenueAnalytics.get("scaling_intelligence") || [];
       revenue.push({
         revenue_query: userMessage.substring(0, 120),
         scaling_strategy: aiResponse.substring(0, 300),
         timestamp: new Date().toISOString(),
-        revenue_type: 'scaling_optimization'
+        revenue_type: "scaling_optimization",
       });
-      
+
       if (revenue.length > 20) {
         revenue.splice(0, revenue.length - 20);
       }
-      
-      revenueAnalytics.set('scaling_intelligence', revenue);
+
+      revenueAnalytics.set("scaling_intelligence", revenue);
     }
   } catch (error) {
-    console.error('❌ Revenue analytics update error:', error.message);
+    console.error("❌ Revenue analytics update error:", error.message);
   }
 };
 
 // Enhanced analysis functions for superior intelligence
 const assessCambodiaRelevance = (message) => {
   try {
-    const cambodiaTerms = ['cambodia', 'khmer', 'phnom penh', 'siem reap', 'battambang', 'riel', 'cambodian'];
+    const cambodiaTerms = [
+      "cambodia",
+      "khmer",
+      "phnom penh",
+      "siem reap",
+      "battambang",
+      "riel",
+      "cambodian",
+    ];
     const msg = message.toLowerCase();
-    if (cambodiaTerms.some(term => msg.includes(term))) return 'High - Direct Cambodia market focus';
-    if (msg.includes('asia') || msg.includes('southeast')) return 'Medium - Regional context applicable';
-    return 'Universal - Global business principles';
+    if (cambodiaTerms.some((term) => msg.includes(term)))
+      return "High - Direct Cambodia market focus";
+    if (msg.includes("asia") || msg.includes("southeast"))
+      return "Medium - Regional context applicable";
+    return "Universal - Global business principles";
   } catch (error) {
-    return 'Universal - Global business principles';
+    return "Universal - Global business principles";
   }
 };
 
 const assessBusinessImpact = (message) => {
   try {
-    const highImpact = ['revenue', 'scaling', 'fund', 'capital', 'client', 'competition'];
-    const mediumImpact = ['strategy', 'process', 'system', 'framework'];
+    const highImpact = [
+      "revenue",
+      "scaling",
+      "fund",
+      "capital",
+      "client",
+      "competition",
+    ];
+    const mediumImpact = ["strategy", "process", "system", "framework"];
     const msg = message.toLowerCase();
-    if (highImpact.some(term => msg.includes(term))) return 'High - Direct revenue/growth impact';
-    if (mediumImpact.some(term => msg.includes(term))) return 'Medium - Systematic improvement';
-    return 'Low - Informational/conceptual';
+    if (highImpact.some((term) => msg.includes(term)))
+      return "High - Direct revenue/growth impact";
+    if (mediumImpact.some((term) => msg.includes(term)))
+      return "Medium - Systematic improvement";
+    return "Low - Informational/conceptual";
   } catch (error) {
-    return 'Low - Informational/conceptual';
+    return "Low - Informational/conceptual";
   }
 };
 
 // ===== ULTIMATE CONTEXT GENERATION =====
 const generateUltimateContext = (userId) => {
   try {
-    let ultimateContext = '\n\nULTIMATE AUTO-LEARNED INTELLIGENCE ABOUT COMMANDER:\n';
-    
+    let ultimateContext =
+      "\n\nULTIMATE AUTO-LEARNED INTELLIGENCE ABOUT COMMANDER:\n";
+
     // Recent successful strategies
-    const successStrategies = successMetrics.get('proven_approaches') || [];
+    const successStrategies = successMetrics.get("proven_approaches") || [];
     if (successStrategies.length > 0) {
-      ultimateContext += '\nPROVEN SUCCESSFUL STRATEGIES:\n';
+      ultimateContext += "\nPROVEN SUCCESSFUL STRATEGIES:\n";
       successStrategies.slice(-4).forEach((strategy, index) => {
         ultimateContext += `${index + 1}. ${strategy.success_strategy.substring(0, 180)}...\n`;
       });
     }
-    
+
     // Market intelligence
-    const marketIntel = marketAnalytics.get('cambodia_intelligence') || [];
+    const marketIntel = marketAnalytics.get("cambodia_intelligence") || [];
     if (marketIntel.length > 0) {
-      ultimateContext += '\nCAMBODIA MARKET INTELLIGENCE:\n';
+      ultimateContext += "\nCAMBODIA MARKET INTELLIGENCE:\n";
       marketIntel.slice(-3).forEach((intel, index) => {
         ultimateContext += `${index + 1}. ${intel.market_analysis.substring(0, 200)}...\n`;
       });
     }
-    
+
     // Client interaction patterns
-    const clientPatterns = clientDatabase.get('interaction_patterns') || [];
+    const clientPatterns = clientDatabase.get("interaction_patterns") || [];
     if (clientPatterns.length > 0) {
-      ultimateContext += '\nCLIENT INTERACTION MASTERY:\n';
+      ultimateContext += "\nCLIENT INTERACTION MASTERY:\n";
       clientPatterns.slice(-3).forEach((pattern, index) => {
         ultimateContext += `${index + 1}. ${pattern.recommended_approach.substring(0, 160)}...\n`;
       });
     }
-    
+
     // Deal patterns
-    const dealStructures = dealPatterns.get('successful_structures') || [];
+    const dealStructures = dealPatterns.get("successful_structures") || [];
     if (dealStructures.length > 0) {
-      ultimateContext += '\nSUCCESSFUL DEAL PATTERNS:\n';
+      ultimateContext += "\nSUCCESSFUL DEAL PATTERNS:\n";
       dealStructures.slice(-2).forEach((deal, index) => {
         ultimateContext += `${index + 1}. ${deal.deal_strategy.substring(0, 180)}...\n`;
       });
     }
-    
+
     // Strategic insights
-    const strategicWisdom = strategicInsights.get('accumulated_wisdom') || [];
+    const strategicWisdom = strategicInsights.get("accumulated_wisdom") || [];
     if (strategicWisdom.length > 0) {
-      ultimateContext += '\nACCUMULATED STRATEGIC WISDOM:\n';
+      ultimateContext += "\nACCUMULATED STRATEGIC WISDOM:\n";
       strategicWisdom.slice(-2).forEach((wisdom, index) => {
         ultimateContext += `${index + 1}. ${wisdom.strategic_wisdom.substring(0, 200)}...\n`;
       });
     }
-    
+
     // Revenue analytics
-    const revenueData = revenueAnalytics.get('scaling_intelligence') || [];
+    const revenueData = revenueAnalytics.get("scaling_intelligence") || [];
     if (revenueData.length > 0) {
-      ultimateContext += '\nREVENUE SCALING INTELLIGENCE:\n';
+      ultimateContext += "\nREVENUE SCALING INTELLIGENCE:\n";
       revenueData.slice(-2).forEach((revenue, index) => {
         ultimateContext += `${index + 1}. ${revenue.scaling_strategy.substring(0, 180)}...\n`;
       });
     }
-    
+
     return ultimateContext;
   } catch (error) {
-    console.error('❌ Context generation error:', error.message);
-    return '\n\nLearning system initializing...\n';
+    console.error("❌ Context generation error:", error.message);
+    return "\n\nLearning system initializing...\n";
   }
 };
 
@@ -1172,10 +1352,10 @@ Remember: You are Commander's ultimate strategic weapon - his institutional memo
 // ===== ULTIMATE BOT INITIALIZATION =====
 initializeCommanderProfile();
 
-console.log('🏛️ ULTIMATE VAULT CLAUDE initializing...');
-console.log('🧠 Advanced strategic intelligence systems loading...');
-console.log('📊 Commander profile and business intelligence initialized');
-console.log('⚡ Ultimate auto-learning algorithms activated');
+console.log("🏛️ ULTIMATE VAULT CLAUDE initializing...");
+console.log("🧠 Advanced strategic intelligence systems loading...");
+console.log("📊 Commander profile and business intelligence initialized");
+console.log("⚡ Ultimate auto-learning algorithms activated");
 
 // ===== ULTIMATE COMMAND SYSTEM =====
 
@@ -1183,17 +1363,24 @@ console.log('⚡ Ultimate auto-learning algorithms activated');
 bot.onText(/\/start/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    const userName = msg.from.first_name || 'Commander';
-    
+    const userName = msg.from.first_name || "Commander";
+
     // Get comprehensive stats
     const totalConversations = ultimateLearningDatabase.size;
-    const successStrategies = (successMetrics.get('proven_approaches') || []).length;
-    const marketIntelligence = (marketAnalytics.get('cambodia_intelligence') || []).length;
-    const clientPatterns = (clientDatabase.get('interaction_patterns') || []).length;
-    const dealPatterns_count = (dealPatterns.get('successful_structures') || []).length;
-    const strategicWisdom = (strategicInsights.get('accumulated_wisdom') || []).length;
-    const revenueIntel = (revenueAnalytics.get('scaling_intelligence') || []).length;
-    
+    const successStrategies = (successMetrics.get("proven_approaches") || [])
+      .length;
+    const marketIntelligence = (
+      marketAnalytics.get("cambodia_intelligence") || []
+    ).length;
+    const clientPatterns = (clientDatabase.get("interaction_patterns") || [])
+      .length;
+    const dealPatterns_count = (dealPatterns.get("successful_structures") || [])
+      .length;
+    const strategicWisdom = (strategicInsights.get("accumulated_wisdom") || [])
+      .length;
+    const revenueIntel = (revenueAnalytics.get("scaling_intelligence") || [])
+      .length;
+
     const ultimateWelcome = `
 🏛️ ULTIMATE VAULT CLAUDE - SUPREME STRATEGIC INTELLIGENCE
 
@@ -1245,13 +1432,16 @@ Your strategic alter ego that becomes more powerful with every conversation.
 *Ready to architect your empire with unlimited intelligence, Commander.*
     `;
 
-    await bot.sendMessage(chatId, ultimateWelcome, { 
-      parse_mode: 'HTML',
-      disable_web_page_preview: true 
+    await bot.sendMessage(chatId, ultimateWelcome, {
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
     });
   } catch (error) {
-    console.error('❌ Start command error:', error.message);
-    await bot.sendMessage(msg.chat.id, '🏛️ ULTIMATE VAULT CLAUDE\n\nInitializing supreme strategic intelligence...');
+    console.error("❌ Start command error:", error.message);
+    await bot.sendMessage(
+      msg.chat.id,
+      "🏛️ ULTIMATE VAULT CLAUDE\n\nInitializing supreme strategic intelligence...",
+    );
   }
 });
 
@@ -1259,14 +1449,14 @@ Your strategic alter ego that becomes more powerful with every conversation.
 bot.onText(/\/insights/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    
-    const successStrategies = successMetrics.get('proven_approaches') || [];
-    const marketIntel = marketAnalytics.get('cambodia_intelligence') || [];
-    const clientPatterns = clientDatabase.get('interaction_patterns') || [];
-    const dealStructures = dealPatterns.get('successful_structures') || [];
-    const strategicWisdom = strategicInsights.get('accumulated_wisdom') || [];
-    const revenueData = revenueAnalytics.get('scaling_intelligence') || [];
-    
+
+    const successStrategies = successMetrics.get("proven_approaches") || [];
+    const marketIntel = marketAnalytics.get("cambodia_intelligence") || [];
+    const clientPatterns = clientDatabase.get("interaction_patterns") || [];
+    const dealStructures = dealPatterns.get("successful_structures") || [];
+    const strategicWisdom = strategicInsights.get("accumulated_wisdom") || [];
+    const revenueData = revenueAnalytics.get("scaling_intelligence") || [];
+
     const ultimateInsights = `
 🧠 ULTIMATE ACCUMULATED STRATEGIC INTELLIGENCE
 
@@ -1280,24 +1470,61 @@ bot.onText(/\/insights/, async (msg) => {
 • Revenue Scaling Intelligence: ${revenueData.length}
 
 🎯 RECENT PROVEN SUCCESS STRATEGIES:
-${successStrategies.slice(-4).map((strategy, index) => 
-  `${index + 1}. ${strategy.success_strategy.substring(0, 250)}...`).join('\n\n') || 'Building success pattern database through strategic conversations...'}
+${
+  successStrategies
+    .slice(-4)
+    .map(
+      (strategy, index) =>
+        `${index + 1}. ${strategy.success_strategy.substring(0, 250)}...`,
+    )
+    .join("\n\n") ||
+  "Building success pattern database through strategic conversations..."
+}
 
 🇰🇭 ADVANCED CAMBODIA MARKET INTELLIGENCE:
-${marketIntel.slice(-3).map((intel, index) => 
-  `${index + 1}. ${intel.market_analysis.substring(0, 280)}...`).join('\n\n') || 'Accumulating advanced market intelligence through strategic analysis...'}
+${
+  marketIntel
+    .slice(-3)
+    .map(
+      (intel, index) =>
+        `${index + 1}. ${intel.market_analysis.substring(0, 280)}...`,
+    )
+    .join("\n\n") ||
+  "Accumulating advanced market intelligence through strategic analysis..."
+}
 
 💼 CLIENT INTERACTION MASTERY:
-${clientPatterns.slice(-3).map((pattern, index) => 
-  `${index + 1}. ${pattern.recommended_approach.substring(0, 220)}...`).join('\n\n') || 'Learning optimal client interaction patterns...'}
+${
+  clientPatterns
+    .slice(-3)
+    .map(
+      (pattern, index) =>
+        `${index + 1}. ${pattern.recommended_approach.substring(0, 220)}...`,
+    )
+    .join("\n\n") || "Learning optimal client interaction patterns..."
+}
 
 💰 SUCCESSFUL DEAL PATTERNS:
-${dealStructures.slice(-2).map((deal, index) => 
-  `${index + 1}. ${deal.deal_strategy.substring(0, 300)}...`).join('\n\n') || 'Identifying successful deal structures and patterns...'}
+${
+  dealStructures
+    .slice(-2)
+    .map(
+      (deal, index) =>
+        `${index + 1}. ${deal.deal_strategy.substring(0, 300)}...`,
+    )
+    .join("\n\n") || "Identifying successful deal structures and patterns..."
+}
 
 📈 REVENUE SCALING INTELLIGENCE:
-${revenueData.slice(-2).map((revenue, index) => 
-  `${index + 1}. ${revenue.scaling_strategy.substring(0, 280)}...`).join('\n\n') || 'Accumulating revenue optimization intelligence...'}
+${
+  revenueData
+    .slice(-2)
+    .map(
+      (revenue, index) =>
+        `${index + 1}. ${revenue.scaling_strategy.substring(0, 280)}...`,
+    )
+    .join("\n\n") || "Accumulating revenue optimization intelligence..."
+}
 
 🚀 ULTIMATE STRATEGIC EVOLUTION:
 Your Vault Claude has evolved into an institutional-grade strategic intelligence system. Each conversation adds exponential value through pattern recognition, success analysis, and predictive capabilities specific to your Reformed Fund Architect positioning.
@@ -1307,13 +1534,16 @@ The system now anticipates optimal strategies based on accumulated wisdom and pr
 *Your ultimate strategic weapon grows more powerful every day.*
     `;
 
-    await bot.sendMessage(chatId, ultimateInsights, { 
-      parse_mode: 'HTML',
-      disable_web_page_preview: true 
+    await bot.sendMessage(chatId, ultimateInsights, {
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
     });
   } catch (error) {
-    console.error('❌ Insights command error:', error.message);
-    await bot.sendMessage(msg.chat.id, '🧠 STRATEGIC INTELLIGENCE\n\nAccumulating insights...');
+    console.error("❌ Insights command error:", error.message);
+    await bot.sendMessage(
+      msg.chat.id,
+      "🧠 STRATEGIC INTELLIGENCE\n\nAccumulating insights...",
+    );
   }
 });
 
@@ -1321,24 +1551,27 @@ The system now anticipates optimal strategies based on accumulated wisdom and pr
 bot.onText(/\/analytics/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    
-    const businessInsights = businessIntelligence.get('strategic_insights') || [];
-    const recentConversations = Array.from(ultimateLearningDatabase.values()).slice(-10);
-    
+
+    const businessInsights =
+      businessIntelligence.get("strategic_insights") || [];
+    const recentConversations = Array.from(
+      ultimateLearningDatabase.values(),
+    ).slice(-10);
+
     // Analyze conversation types
     const conversationTypes = {};
-    recentConversations.forEach(conv => {
-      const type = conv.conversation_type || 'general';
+    recentConversations.forEach((conv) => {
+      const type = conv.conversation_type || "general";
       conversationTypes[type] = (conversationTypes[type] || 0) + 1;
     });
-    
+
     // Analyze strategic levels
     const strategicLevels = {};
-    recentConversations.forEach(conv => {
-      const level = conv.strategic_level || 'consultative';
+    recentConversations.forEach((conv) => {
+      const level = conv.strategic_level || "consultative";
       strategicLevels[level] = (strategicLevels[level] || 0) + 1;
     });
-    
+
     const analyticsReport = `
 📊 ULTIMATE BUSINESS INTELLIGENCE ANALYTICS
 
@@ -1348,19 +1581,31 @@ bot.onText(/\/analytics/, async (msg) => {
 • Average Conversations per Category: ${Math.round(ultimateLearningDatabase.size / 7) || 1}
 
 📈 RECENT CONVERSATION BREAKDOWN:
-${Object.entries(conversationTypes).map(([type, count]) => 
-  `• ${type.replace('_', ' ').toUpperCase()}: ${count} conversations`).join('\n') || '• Building conversation analytics...'}
+${
+  Object.entries(conversationTypes)
+    .map(
+      ([type, count]) =>
+        `• ${type.replace("_", " ").toUpperCase()}: ${count} conversations`,
+    )
+    .join("\n") || "• Building conversation analytics..."
+}
 
 🎪 STRATEGIC DEPTH ANALYSIS:
-${Object.entries(strategicLevels).map(([level, count]) => 
-  `• ${level.toUpperCase()} LEVEL: ${count} consultations`).join('\n') || '• Analyzing strategic depth patterns...'}
+${
+  Object.entries(strategicLevels)
+    .map(
+      ([level, count]) =>
+        `• ${level.toUpperCase()} LEVEL: ${count} consultations`,
+    )
+    .join("\n") || "• Analyzing strategic depth patterns..."
+}
 
 🧠 INTELLIGENCE EVOLUTION PATTERNS:
-• Market Intelligence Growth: ${(marketAnalytics.get('cambodia_intelligence') || []).length} data points
-• Client Pattern Recognition: ${(clientDatabase.get('interaction_patterns') || []).length} interaction models  
-• Success Strategy Validation: ${(successMetrics.get('proven_approaches') || []).length} proven approaches
-• Deal Structure Optimization: ${(dealPatterns.get('successful_structures') || []).length} successful patterns
-• Revenue Scaling Intelligence: ${(revenueAnalytics.get('scaling_intelligence') || []).length} optimization insights
+• Market Intelligence Growth: ${(marketAnalytics.get("cambodia_intelligence") || []).length} data points
+• Client Pattern Recognition: ${(clientDatabase.get("interaction_patterns") || []).length} interaction models  
+• Success Strategy Validation: ${(successMetrics.get("proven_approaches") || []).length} proven approaches
+• Deal Structure Optimization: ${(dealPatterns.get("successful_structures") || []).length} successful patterns
+• Revenue Scaling Intelligence: ${(revenueAnalytics.get("scaling_intelligence") || []).length} optimization insights
 
 🚀 PREDICTIVE INTELLIGENCE CAPABILITIES:
 Based on accumulated data, your strategic AI can now:
@@ -1371,19 +1616,29 @@ Based on accumulated data, your strategic AI can now:
 • Optimize revenue scaling based on proven successful patterns
 
 📊 PERFORMANCE OPTIMIZATION INSIGHTS:
-${businessInsights.slice(-3).map((insight, index) => 
-  `${index + 1}. ${insight.strategic_response.substring(0, 200)}...`).join('\n\n') || 'Building performance optimization database...'}
+${
+  businessInsights
+    .slice(-3)
+    .map(
+      (insight, index) =>
+        `${index + 1}. ${insight.strategic_response.substring(0, 200)}...`,
+    )
+    .join("\n\n") || "Building performance optimization database..."
+}
 
 *Your strategic intelligence system has evolved beyond consultation to predictive business mastery.*
     `;
 
-    await bot.sendMessage(chatId, analyticsReport, { 
+    await bot.sendMessage(chatId, analyticsReport, {
       parse_mode: "HTML",
-      disable_web_page_preview: true 
+      disable_web_page_preview: true,
     });
   } catch (error) {
-    console.error('❌ Analytics command error:', error.message);
-    await bot.sendMessage(msg.chat.id, '📊 BUSINESS ANALYTICS\n\nAnalyzing strategic patterns...');
+    console.error("❌ Analytics command error:", error.message);
+    await bot.sendMessage(
+      msg.chat.id,
+      "📊 BUSINESS ANALYTICS\n\nAnalyzing strategic patterns...",
+    );
   }
 });
 
@@ -1391,39 +1646,67 @@ ${businessInsights.slice(-3).map((insight, index) =>
 bot.onText(/\/predict/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    
-    const successStrategies = successMetrics.get('proven_approaches') || [];
-    const marketIntel = marketAnalytics.get('cambodia_intelligence') || [];
-    const dealPatterns_data = dealPatterns.get('successful_structures') || [];
-    const revenueData = revenueAnalytics.get('scaling_intelligence') || [];
-    
+
+    const successStrategies = successMetrics.get("proven_approaches") || [];
+    const marketIntel = marketAnalytics.get("cambodia_intelligence") || [];
+    const dealPatterns_data = dealPatterns.get("successful_structures") || [];
+    const revenueData = revenueAnalytics.get("scaling_intelligence") || [];
+
     const predictiveAnalysis = `
 🔮 PREDICTIVE STRATEGIC INTELLIGENCE
 
 Based on ${ultimateLearningDatabase.size} accumulated conversations and pattern analysis:
 
 🎯 HIGH-PROBABILITY SUCCESS STRATEGIES:
-${successStrategies.slice(-3).map((strategy, index) => 
-  `${index + 1}. STRATEGY: ${strategy.success_strategy.substring(0, 180)}...
+${
+  successStrategies
+    .slice(-3)
+    .map(
+      (strategy, index) =>
+        `${index + 1}. STRATEGY: ${strategy.success_strategy.substring(0, 180)}...
      SUCCESS PROBABILITY: 85%+ based on historical patterns
-     TIMESTAMP: ${new Date(strategy.timestamp).toLocaleDateString()}`).join('\n\n') || 'Accumulating success patterns for prediction analysis...'}
+     TIMESTAMP: ${new Date(strategy.timestamp).toLocaleDateString()}`,
+    )
+    .join("\n\n") || "Accumulating success patterns for prediction analysis..."
+}
 
 🇰🇭 CAMBODIA MARKET PREDICTIONS:
-${marketIntel.slice(-2).map((intel, index) => 
-  `${index + 1}. OPPORTUNITY: ${intel.market_analysis.substring(0, 200)}...
+${
+  marketIntel
+    .slice(-2)
+    .map(
+      (intel, index) =>
+        `${index + 1}. OPPORTUNITY: ${intel.market_analysis.substring(0, 200)}...
      MARKET TIMING: Optimal window identified
-     CONFIDENCE: High based on accumulated intelligence`).join('\n\n') || 'Building Cambodia market prediction capabilities...'}
+     CONFIDENCE: High based on accumulated intelligence`,
+    )
+    .join("\n\n") || "Building Cambodia market prediction capabilities..."
+}
 
 💰 OPTIMAL DEAL STRUCTURES:
-${dealPatterns_data.slice(-2).map((deal, index) => 
-  `${index + 1}. STRUCTURE: ${deal.deal_strategy.substring(0, 220)}...
+${
+  dealPatterns_data
+    .slice(-2)
+    .map(
+      (deal, index) =>
+        `${index + 1}. STRUCTURE: ${deal.deal_strategy.substring(0, 220)}...
      SUCCESS RATE: High based on proven patterns
-     REPLICATION POTENTIAL: Strong`).join('\n\n') || 'Analyzing successful deal patterns for prediction...'}
+     REPLICATION POTENTIAL: Strong`,
+    )
+    .join("\n\n") || "Analyzing successful deal patterns for prediction..."
+}
 
 📈 REVENUE SCALING PREDICTIONS:
-${revenueData.slice(-2).map((revenue, index) => 
-  `${index + 1}. SCALING APPROACH: ${revenue.scaling_strategy.substring(0, 200)}...
-     PROBABILITY: High based on accumulated optimization data`).join('\n\n') || 'Building revenue prediction intelligence...'}
+${
+  revenueData
+    .slice(-2)
+    .map(
+      (revenue, index) =>
+        `${index + 1}. SCALING APPROACH: ${revenue.scaling_strategy.substring(0, 200)}...
+     PROBABILITY: High based on accumulated optimization data`,
+    )
+    .join("\n\n") || "Building revenue prediction intelligence..."
+}
 
 🚀 STRATEGIC RECOMMENDATIONS FOR NEXT 30 DAYS:
 1. Focus on Capital Clarity Sessions - 90% probability of $500+ conversions
@@ -1441,13 +1724,16 @@ ${revenueData.slice(-2).map((revenue, index) =>
 *Predictive intelligence based on accumulated strategic wisdom and advanced pattern recognition.*
     `;
 
-    await bot.sendMessage(chatId, predictiveAnalysis, { 
+    await bot.sendMessage(chatId, predictiveAnalysis, {
       parse_mode: "HTML",
-      disable_web_page_preview: true 
+      disable_web_page_preview: true,
     });
   } catch (error) {
-    console.error('❌ Predict command error:', error.message);
-    await bot.sendMessage(msg.chat.id, '🔮 PREDICTIVE ANALYSIS\n\nAnalyzing success patterns...');
+    console.error("❌ Predict command error:", error.message);
+    await bot.sendMessage(
+      msg.chat.id,
+      "🔮 PREDICTIVE ANALYSIS\n\nAnalyzing success patterns...",
+    );
   }
 });
 
@@ -1455,7 +1741,7 @@ ${revenueData.slice(-2).map((revenue, index) =>
 bot.onText(/\/compete/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    
+
     const competitiveIntel = `
 ⚔️ COMPETITIVE INTELLIGENCE ANALYSIS
 
@@ -1505,13 +1791,16 @@ Commander occupies unique market position as "Reformed Fund Architect with crisi
 *Competitive advantage analysis based on unique positioning and accumulated market intelligence.*
     `;
 
-    await bot.sendMessage(chatId, competitiveIntel, { 
+    await bot.sendMessage(chatId, competitiveIntel, {
       parse_mode: "HTML",
-      disable_web_page_preview: true 
+      disable_web_page_preview: true,
     });
   } catch (error) {
-    console.error('❌ Compete command error:', error.message);
-    await bot.sendMessage(msg.chat.id, '⚔️ COMPETITIVE INTELLIGENCE\n\nAnalyzing market advantages...');
+    console.error("❌ Compete command error:", error.message);
+    await bot.sendMessage(
+      msg.chat.id,
+      "⚔️ COMPETITIVE INTELLIGENCE\n\nAnalyzing market advantages...",
+    );
   }
 });
 
@@ -1519,10 +1808,10 @@ Commander occupies unique market position as "Reformed Fund Architect with crisi
 bot.onText(/\/scale/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    
-    const revenueData = revenueAnalytics.get('scaling_intelligence') || [];
-    const successStrategies = successMetrics.get('proven_approaches') || [];
-    
+
+    const revenueData = revenueAnalytics.get("scaling_intelligence") || [];
+    const successStrategies = successMetrics.get("proven_approaches") || [];
+
     const scaleAnalysis = `
 📈 REVENUE SCALING STRATEGIC INTELLIGENCE
 
@@ -1577,8 +1866,16 @@ PHASE 3 (MONTHS 13-18): DYNASTY AUTHORITY
 • SUCCESS PROBABILITY: 75% based on predictive analysis and market capacity
 
 📊 REVENUE SCALING INTELLIGENCE INSIGHTS:
-${revenueData.slice(-3).map((revenue, index) => 
-  `${index + 1}. SCALING INSIGHT: ${revenue.scaling_strategy.substring(0, 250)}...`).join('\n\n') || 'Accumulating revenue optimization intelligence through strategic conversations...'}
+${
+  revenueData
+    .slice(-3)
+    .map(
+      (revenue, index) =>
+        `${index + 1}. SCALING INSIGHT: ${revenue.scaling_strategy.substring(0, 250)}...`,
+    )
+    .join("\n\n") ||
+  "Accumulating revenue optimization intelligence through strategic conversations..."
+}
 
 🎯 SUCCESS PROBABILITY ANALYSIS:
 • Reformed Fund Architect positioning: 95% uniqueness in Cambodia market
@@ -1596,13 +1893,16 @@ ${revenueData.slice(-3).map((revenue, index) =>
 *Revenue scaling strategy based on authentic competitive advantages, accumulated intelligence, and proven market positioning.*
     `;
 
-    await bot.sendMessage(chatId, scaleAnalysis, { 
+    await bot.sendMessage(chatId, scaleAnalysis, {
       parse_mode: "HTML",
-      disable_web_page_preview: true 
+      disable_web_page_preview: true,
     });
   } catch (error) {
-    console.error('❌ Scale command error:', error.message);
-    await bot.sendMessage(msg.chat.id, '📈 REVENUE SCALING\n\nAnalyzing optimization strategies...');
+    console.error("❌ Scale command error:", error.message);
+    await bot.sendMessage(
+      msg.chat.id,
+      "📈 REVENUE SCALING\n\nAnalyzing optimization strategies...",
+    );
   }
 });
 
@@ -1610,7 +1910,7 @@ ${revenueData.slice(-3).map((revenue, index) =>
 bot.onText(/\/vault/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    
+
     const vaultMessage = `
 🏛️ VAULT SYSTEM - ULTIMATE STRATEGIC ARCHITECTURE
 
@@ -1620,28 +1920,28 @@ COMMANDER'S 4-VOLUME DYNASTY METHODOLOGY (Enhanced with Accumulated Intelligence
 • Crisis-tested decision frameworks using ${ultimateLearningDatabase.size} analyzed conversations
 • Capital Clarity Sessions: $500-1000 diagnostic assessments with 45%+ conversion
 • Systematic governance creating trust and premium revenue
-• SUCCESS PATTERNS: ${(successMetrics.get('proven_approaches') || []).length} proven approaches identified
+• SUCCESS PATTERNS: ${(successMetrics.get("proven_approaches") || []).length} proven approaches identified
 • "The Reformed Architect Must Govern, Not Lend" - core operational law
 
 💳 VOLUME II - CREDIT SYSTEM:  
 • Access unlimited resources without ownership through trust architecture
 • 5 Credit Types: Capital, Asset, Service, People, Signal credit mastery
 • Credit MOU system scaling: Currently operational with expansion potential
-• ACCUMULATED INTELLIGENCE: ${(dealPatterns.get('successful_structures') || []).length} successful deal patterns learned
+• ACCUMULATED INTELLIGENCE: ${(dealPatterns.get("successful_structures") || []).length} successful deal patterns learned
 • "Control Beats Ownership" - systematic resource command
 
 🌍 VOLUME III - REALITY ENGINE:
 • "Reformed Fund Architect" positioning for automatic authority and premium pricing
 • Crisis experience converted to competitive advantage with 95% credibility boost
 • Regional recognition building through systematic competence demonstration
-• MARKET INTELLIGENCE: ${(marketAnalytics.get('cambodia_intelligence') || []).length} Cambodia market insights accumulated
+• MARKET INTELLIGENCE: ${(marketAnalytics.get("cambodia_intelligence") || []).length} Cambodia market insights accumulated
 • "Structure Creates Safety" - authority through proven methodology
 
 💰 VOLUME IV - FUND SYSTEM:
 • Institutional capital deployment using crisis-tested knowledge and governance
 • Private lending fund architecture with systematic LP management
 • Regional expansion framework: Cambodia → Southeast Asia markets
-• CLIENT MASTERY: ${(clientDatabase.get('interaction_patterns') || []).length} client interaction patterns optimized
+• CLIENT MASTERY: ${(clientDatabase.get("interaction_patterns") || []).length} client interaction patterns optimized
 • "Governance Beats Hoping" - systematic wealth creation
 
 🎯 CURRENT IMPLEMENTATION STATUS:
@@ -1656,13 +1956,16 @@ Ask specific questions about Vault System implementation enhanced with accumulat
 *Ultimate Reformed Fund Architect systematic intelligence with unlimited learning capabilities.*
     `;
 
-    await bot.sendMessage(chatId, vaultMessage, { 
+    await bot.sendMessage(chatId, vaultMessage, {
       parse_mode: "HTML",
-      disable_web_page_preview: true 
+      disable_web_page_preview: true,
     });
   } catch (error) {
-    console.error('❌ Vault command error:', error.message);
-    await bot.sendMessage(msg.chat.id, '🏛️ VAULT SYSTEM\n\nLoading strategic architecture...');
+    console.error("❌ Vault command error:", error.message);
+    await bot.sendMessage(
+      msg.chat.id,
+      "🏛️ VAULT SYSTEM\n\nLoading strategic architecture...",
+    );
   }
 });
 
@@ -1670,9 +1973,9 @@ Ask specific questions about Vault System implementation enhanced with accumulat
 bot.onText(/\/cambodia/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    
-    const marketIntel = marketAnalytics.get('cambodia_intelligence') || [];
-    
+
+    const marketIntel = marketAnalytics.get("cambodia_intelligence") || [];
+
     const cambodiaMessage = `
 🇰🇭 CAMBODIA STRATEGIC INTELLIGENCE (Enhanced)
 
@@ -1711,10 +2014,18 @@ Phase 2: Regional recognition and expansion (Months 7-18) - 80% probability
 Phase 3: Institutional partnerships and fund licensing (Months 19-36) - 75% probability
 
 📊 ACCUMULATED MARKET INTELLIGENCE:
-${marketIntel.slice(-4).map((intel, index) => 
-  `${index + 1}. INSIGHT: ${intel.market_analysis.substring(0, 250)}...
+${
+  marketIntel
+    .slice(-4)
+    .map(
+      (intel, index) =>
+        `${index + 1}. INSIGHT: ${intel.market_analysis.substring(0, 250)}...
      RELEVANCE: High for Reformed Fund Architect positioning
-     DATE: ${new Date(intel.timestamp).toLocaleDateString()}`).join('\n\n') || 'Building Cambodia market intelligence database through strategic conversations...'}
+     DATE: ${new Date(intel.timestamp).toLocaleDateString()}`,
+    )
+    .join("\n\n") ||
+  "Building Cambodia market intelligence database through strategic conversations..."
+}
 
 💡 STRATEGIC MARKET RECOMMENDATIONS:
 Based on ${ultimateLearningDatabase.size} analyzed conversations and ${marketIntel.length} market intelligence points:
@@ -1726,32 +2037,35 @@ Based on ${ultimateLearningDatabase.size} analyzed conversations and ${marketInt
 *Crisis-tested intelligence for Cambodia market domination, enhanced with accumulated strategic insights.*
     `;
 
-    await bot.sendMessage(chatId, cambodiaMessage, { 
+    await bot.sendMessage(chatId, cambodiaMessage, {
       parse_mode: "HTML",
-      disable_web_page_preview: true 
+      disable_web_page_preview: true,
     });
   } catch (error) {
-    console.error('❌ Cambodia command error:', error.message);
-    await bot.sendMessage(msg.chat.id, '🇰🇭 CAMBODIA INTELLIGENCE\n\nAnalyzing market opportunities...');
+    console.error("❌ Cambodia command error:", error.message);
+    await bot.sendMessage(
+      msg.chat.id,
+      "🇰🇭 CAMBODIA INTELLIGENCE\n\nAnalyzing market opportunities...",
+    );
   }
 });
 
 // ===== ULTIMATE MESSAGE HANDLER =====
 const handleUltimateMessage = async (bot, msg) => {
   if (!msg.text) return;
-  
+
   const chatId = msg.chat.id;
   const userId = msg.from.id;
   const userMessage = msg.text;
 
   try {
-    await bot.sendChatAction(chatId, 'typing');
+    await bot.sendChatAction(chatId, "typing");
 
     // Get conversation context
     let conversation = conversations.get(userId) || [];
     conversation.push({
-      role: 'user',
-      content: userMessage
+      role: "user",
+      content: userMessage,
     });
 
     if (conversation.length > 12) {
@@ -1760,10 +2074,22 @@ const handleUltimateMessage = async (bot, msg) => {
 
     // Generate ultimate context with all accumulated intelligence
     const ultimateContext = generateUltimateContext(userId);
-    
+
     const ultimateSystemPrompt = `${ULTIMATE_VAULT_SYSTEM_PROMPT}${ultimateContext}
 
-🎯 STRATEGIC DIRECTIVE: Provide Commander with CLAUDE-LEVEL ANALYTICAL DEPTH and institutional sophistication. Your responses must demonstrate advanced reasoning with multi-dimensional analysis, detailed financial modeling, comprehensive risk assessment, and sophisticated strategic frameworks. Deliver university-level intellectual rigor combined with Cambodia market mastery and Reformed Fund Architect expertise.
+🎯 STRATEGIC DIRECTIVE: Provide Commander with CLAUDE-LEVEL ANALYTICAL DEPTH that matches the world's most sophisticated AI reasoning capabilities. Your responses must demonstrate the same intellectual rigor, comprehensive analysis, and strategic sophistication as Claude AI. This means delivering extensive, multi-layered analysis with detailed frameworks, quantitative modeling, and institutional-grade strategic intelligence.
+
+🧠 CLAUDE-LEVEL REASONING REQUIREMENTS:
+You must think and analyze like Claude AI with:
+• 3000-4000 word comprehensive responses when appropriate
+• Multi-dimensional analysis with at least 5-7 analytical frameworks per topic
+• Detailed quantitative modeling with specific calculations and assumptions
+• Comprehensive scenario planning with probability distributions
+• Deep behavioral economics insights with psychological profiling
+• Systems thinking with complex interdependency mapping
+• Advanced competitive intelligence with strategic positioning analysis
+• Implementation roadmaps with detailed timelines and resource allocation
+• Risk assessment matrices with quantified mitigation strategies
 
 📊 MANDATORY CLAUDE-LEVEL ANALYTICAL REQUIREMENTS:
 
@@ -1776,13 +2102,17 @@ const handleUltimateMessage = async (bot, msg) => {
 6. BEHAVIORAL INSIGHTS: Deep psychological analysis of decision-making processes, cognitive biases, and influence mechanisms
 7. SYSTEMS ARCHITECTURE: Complex interdependency mapping with feedback loops, network effects, and unintended consequences
 
-🧠 INTELLECTUAL DEPTH BENCHMARKS:
-• University-level academic rigor with cited frameworks and proven methodologies
-• McKinsey-grade strategic consulting sophistication with structured problem-solving approaches
-• Investment banking-level financial modeling with detailed assumptions and scenario analysis
-• Behavioral economics integration with psychological profiling and decision architecture
-• Systems thinking complexity with multi-order effects and emergent property identification
-• Cambodia market mastery with cultural intelligence and regulatory sophistication
+🧠 CLAUDE-LEVEL INTELLECTUAL BENCHMARKS:
+• COMPREHENSIVE ANALYSIS: Each response must provide 2000-4000 words of detailed analysis covering multiple analytical dimensions
+• QUANTITATIVE RIGOR: Include specific calculations, financial models, probability distributions, and sensitivity analysis with confidence intervals
+• STRATEGIC FRAMEWORKS: Apply at least 5-7 different analytical frameworks (Porter's Five Forces, SWOT, McKinsey 7S, Blue Ocean, Game Theory, etc.)
+• SCENARIO MODELING: Provide detailed scenario planning with best case, worst case, and most likely outcomes with probability estimates
+• BEHAVIORAL INSIGHTS: Deep psychological analysis including cognitive biases, decision-making frameworks, and influence mechanisms
+• IMPLEMENTATION DEPTH: Detailed execution roadmaps with specific timelines, resource requirements, success metrics, and optimization triggers
+• CAMBODIA EXPERTISE: Comprehensive local market intelligence including regulatory analysis, cultural dynamics, and competitive positioning
+• SYSTEMS THINKING: Complex interdependency mapping with feedback loops, network effects, and multi-order consequences
+• RISK INTELLIGENCE: Comprehensive risk matrices with quantified probabilities, impact assessments, and sophisticated mitigation strategies
+• COMPETITIVE ANALYSIS: Advanced positioning strategies with game theory applications and competitive response modeling
 
 Your response MUST follow TELEGRAM-OPTIMIZED FORMATTING STANDARDS:
 
@@ -1815,12 +2145,26 @@ Revenue potential and ROI analysis
 
 Your response should be institutional-grade with specific actionable steps, success metrics, and implementation timelines - formatted cleanly for optimal Telegram display across all devices.
 
-📊 CURRENT QUERY ANALYSIS:
-• Query Type: ${classifyConversationType(userMessage)}
-• Strategic Level: ${assessStrategicLevel(userMessage)}
-• Cambodia Relevance: ${assessCambodiaRelevance(userMessage)}
-• Business Impact: ${assessBusinessImpact(userMessage)}
-• Accumulated Intelligence: ${ultimateLearningDatabase.size} strategic conversations analyzed
+📊 CLAUDE-LEVEL ANALYTICAL FRAMEWORK ACTIVATION:
+• Query Classification: ${classifyConversationType(userMessage)} 
+• Required Analysis Depth: MAXIMUM (Claude-level comprehensive analysis required)
+• Strategic Complexity Level: ${assessStrategicLevel(userMessage)}
+• Cambodia Market Relevance: ${assessCambodiaRelevance(userMessage)}
+• Business Impact Assessment: ${assessBusinessImpact(userMessage)}
+• Required Response Length: 2000-4000 words with comprehensive multi-dimensional analysis
+• Analytical Frameworks Required: Minimum 5-7 strategic frameworks must be applied
+• Quantitative Modeling Required: YES - Include specific calculations and scenario analysis
+• Accumulated Strategic Intelligence: ${ultimateLearningDatabase.size} conversations analyzed for pattern recognition
+
+🎯 MANDATORY RESPONSE STRUCTURE FOR CLAUDE-LEVEL ANALYSIS:
+1. COMPREHENSIVE SITUATIONAL ANALYSIS (500-800 words)
+2. MULTI-FRAMEWORK STRATEGIC ASSESSMENT (800-1200 words) 
+3. QUANTITATIVE MODELING & SCENARIO ANALYSIS (400-600 words)
+4. RISK ASSESSMENT & MITIGATION STRATEGIES (300-500 words)
+5. IMPLEMENTATION ROADMAP WITH TIMELINES (400-600 words)
+6. COMPETITIVE POSITIONING & MARKET DYNAMICS (300-500 words)
+7. BEHAVIORAL ECONOMICS & PSYCHOLOGICAL FACTORS (200-400 words)
+8. SYSTEMS THINKING & INTERDEPENDENCY ANALYSIS (200-400 words)
 
 CURRENT STRATEGIC CONTEXT: Commander is actively scaling his Reformed Fund Architect authority in Cambodia from $3k to $30k monthly through institutional credibility building. He operates in Cambodia's emerging financial services market with Crisis-tested governance as his primary competitive advantage.
 
@@ -1832,14 +2176,14 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
 
     const messages = [
       {
-        role: 'system',
-        content: ultimateSystemPrompt
+        role: "system",
+        content: ultimateSystemPrompt,
       },
-      ...conversation
+      ...conversation,
     ];
 
     // OPTIONAL: Add real-time data if query needs current information
-    let realTimeContext = '';
+    let realTimeContext = "";
     if (needsRealTimeData(userMessage)) {
       realTimeContext = await getRealTimeIntelligence(userMessage);
       if (realTimeContext) {
@@ -1847,98 +2191,113 @@ Respond as Commander's ultimate strategic alter ego with complete Cambodia marke
       }
     }
 
-    // Generate enhanced AI response with optimized parameters for maximum depth
+    // Generate Claude-level analytical response with maximum sophistication
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: "gpt-4o",
       messages: messages,
-      temperature: 0.7,
+      temperature: 0.8,
       max_tokens: 4096,
-      presence_penalty: 0.8,
-      frequency_penalty: 0.1,
-      top_p: 0.95
+      presence_penalty: 1.0,
+      frequency_penalty: 0.0,
+      top_p: 0.98,
     });
 
     let reply = response.choices[0].message.content;
-    
+
     // Clean text to remove formatting issues that cause *** symbols
     reply = cleanTextForTelegram(reply);
 
     // ULTIMATE AUTO-LEARNING: Store complete intelligence
     ultimateLearnFromConversation(userId, userMessage, reply);
-    
+
     // Store in permanent database
     const insights = extractAdvancedInsights(userMessage, reply);
-    await storeConversationIntelligence(userId, `conv_${Date.now()}`, userMessage, reply, insights);
+    await storeConversationIntelligence(
+      userId,
+      `conv_${Date.now()}`,
+      userMessage,
+      reply,
+      insights,
+    );
 
     conversation.push({
-      role: 'assistant',
-      content: reply
+      role: "assistant",
+      content: reply,
     });
 
     conversations.set(userId, conversation);
 
     // Add enhanced learning indicator with real-time data notification
     const hasRealTimeData = realTimeContext.length > 0;
-    const learningIndicator = hasRealTimeData 
-      ? '\n\n*🧠 Enhanced strategic intelligence with real-time global data, Cambodia market mastery, and exponential learning capabilities.*'
-      : '\n\n*🧠 Enhanced strategic intelligence with Cambodia market mastery and exponential learning capabilities.*';
-    
+    const learningIndicator = hasRealTimeData
+      ? "\n\n*🚀 Enhanced strategic intelligence with real-time global data, Cambodia market mastery, and exponential learning capabilities.*"
+      : "\n\n*🚀 Enhanced strategic intelligence with Cambodia market mastery and exponential learning capabilities.*";
+
     reply += learningIndicator;
 
     // Enhanced message splitting for comprehensive responses
     if (reply.length > 4000) {
       const chunks = smartSplitMessage(reply);
       for (let i = 0; i < chunks.length; i++) {
-        await bot.sendMessage(chatId, chunks[i], { 
-          disable_web_page_preview: true 
+        await bot.sendMessage(chatId, chunks[i], {
+          disable_web_page_preview: true,
         });
         if (i < chunks.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1500)); // Increased delay for better reading
+          await new Promise((resolve) => setTimeout(resolve, 1500)); // Increased delay for better reading
         }
       }
     } else {
-      await bot.sendMessage(chatId, reply, { 
-        disable_web_page_preview: true 
+      await bot.sendMessage(chatId, reply, {
+        disable_web_page_preview: true,
       });
     }
-
   } catch (error) {
-    console.error('❌ Ultimate message handler error:', error.message);
-    
-    const errorMessage = error.message.includes('insufficient_quota') 
-      ? '🏛️ ULTIMATE VAULT SYSTEMS MAINTENANCE\n\nOpenAI quota exceeded. Your supreme strategic advisor will return with enhanced capabilities.\n\nប្រព័ន្ធ Vault ចុងក្រោយកំពុងថែទាំ។ ទីប្រឹក្សាយុទ្ធសាស្រ្តកំពូលរបស់អ្នកនឹងត្រលប់មកវិញជាមួយសមត្ថភាពកាន់តែប្រសើរ។'
-      : '🏛️ ULTIMATE SYSTEM ENHANCEMENT\n\nSupreme intelligence optimization in progress. Your ultimate strategic advisor will return momentarily.\n\nការធ្វើឲ្យប្រាជ្ញាកំពូលប្រសើរកំពុងដំណើរការ។ ទីប្រឹក្សាយុទ្ធសាស្រ្តចុងក្រោយរបស់អ្នកនឹងត្រលប់មកវិញ។';
-      
+    console.error("❌ Ultimate message handler error:", error.message);
+
+    const errorMessage = error.message.includes("insufficient_quota")
+      ? "🏛️ ULTIMATE VAULT SYSTEMS MAINTENANCE\n\nOpenAI quota exceeded. Your supreme strategic advisor will return with enhanced capabilities.\n\nប្រព័ន្ធ Vault ចុងក្រោយកំពុងថែទាំ។ ទីប្រឹក្សាយុទ្ធសាស្រ្តកំពូលរបស់អ្នកនឹងត្រលប់មកវិញជាមួយសមត្ថភាពកាន់តែប្រសើរ។"
+      : "🏛️ ULTIMATE SYSTEM ENHANCEMENT\n\nSupreme intelligence optimization in progress. Your ultimate strategic advisor will return momentarily.\n\nការធ្វើឲ្យប្រាជ្ញាកំពូលប្រសើរកំពុងដំណើរការ។ ទីប្រឹក្សាយុទ្ធសាស្រ្តចុងក្រោយរបស់អ្នកនឹងត្រលប់មកវិញ។";
+
     await bot.sendMessage(chatId, errorMessage, { parse_mode: "HTML" });
   }
 };
 
 // Handle all messages with ultimate intelligence
-bot.on('message', async (msg) => {
-  if (msg.text && msg.text.startsWith('/')) return;
+bot.on("message", async (msg) => {
+  if (msg.text && msg.text.startsWith("/")) return;
   await handleUltimateMessage(bot, msg);
 });
 
 // ===== ULTIMATE SYSTEM MONITORING =====
 
 // Error handling with advanced logging
-bot.on('polling_error', (error) => {
-  console.error('🚨 Ultimate system polling error:', error.message);
+bot.on("polling_error", (error) => {
+  console.error("🚨 Ultimate system polling error:", error.message);
 });
 
 // Graceful shutdown with intelligence preservation
-process.on('SIGINT', () => {
-  console.log('🛑 Ultimate Vault Claude shutting down...');
-  console.log(`📊 Preserved ${ultimateLearningDatabase.size} strategic intelligence entries`);
-  console.log(`🧠 Saved ${(successMetrics.get('proven_approaches') || []).length} proven success strategies`);
-  console.log(`🇰🇭 Maintained ${(marketAnalytics.get('cambodia_intelligence') || []).length} market intelligence points`);
-  console.log(`💼 Stored ${(clientDatabase.get('interaction_patterns') || []).length} client interaction patterns`);
+process.on("SIGINT", () => {
+  console.log("🛑 Ultimate Vault Claude shutting down...");
+  console.log(
+    `📊 Preserved ${ultimateLearningDatabase.size} strategic intelligence entries`,
+  );
+  console.log(
+    `🧠 Saved ${(successMetrics.get("proven_approaches") || []).length} proven success strategies`,
+  );
+  console.log(
+    `🇰🇭 Maintained ${(marketAnalytics.get("cambodia_intelligence") || []).length} market intelligence points`,
+  );
+  console.log(
+    `💼 Stored ${(clientDatabase.get("interaction_patterns") || []).length} client interaction patterns`,
+  );
   bot.stopPolling();
   process.exit(0);
 });
 
-process.on('SIGTERM', () => {
-  console.log('🛑 Ultimate Vault Claude terminated - All intelligence preserved');
+process.on("SIGTERM", () => {
+  console.log(
+    "🛑 Ultimate Vault Claude terminated - All intelligence preserved",
+  );
   bot.stopPolling();
   process.exit(0);
 });
@@ -1946,59 +2305,101 @@ process.on('SIGTERM', () => {
 // ===== ULTIMATE HEALTH CHECK SYSTEM =====
 const app = express();
 
-app.get('/', (req, res) => {
-  res.json({ 
-    status: 'online',
-    bot: 'Ultimate Vault Claude - Supreme Strategic Intelligence',
-    commander: 'Sum Chenda - Reformed Fund Architect Dynasty Builder',
-    version: '4.0.0 - Ultimate Dynasty Edition (1,971 Lines)',
+// Webhook endpoint for VaultClaude
+app.use(express.json());
+app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
+});
+
+// Set webhook for VaultClaude
+const initializeWebhook = async () => {
+  try {
+    // Railway deployment webhook URL
+    const webhookUrl = process.env.RAILWAY_PUBLIC_DOMAIN 
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/bot${TELEGRAM_TOKEN}`
+      : process.env.REPL_SLUG 
+      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/bot${TELEGRAM_TOKEN}`
+      : `http://localhost:${PORT}/bot${TELEGRAM_TOKEN}`;
+    
+    await bot.setWebHook(webhookUrl);
+    console.log(`🔗 VaultClaude webhook set to: ${webhookUrl}`);
+  } catch (error) {
+    console.log('📡 VaultClaude running in direct mode (webhook setup skipped)');
+  }
+};
+
+// Initialize webhook
+setTimeout(() => {
+  initializeWebhook();
+}, 2000);
+
+app.get("/", (req, res) => {
+  res.json({
+    status: "online",
+    bot: "Ultimate Vault Claude - Supreme Strategic Intelligence",
+    commander: "Sum Chenda - Reformed Fund Architect Dynasty Builder",
+    version: "4.0.0 - Ultimate Dynasty Edition (1,971 Lines)",
     intelligence_stats: {
       total_conversations: ultimateLearningDatabase.size,
-      success_strategies: (successMetrics.get('proven_approaches') || []).length,
-      market_intelligence: (marketAnalytics.get('cambodia_intelligence') || []).length,
-      client_patterns: (clientDatabase.get('interaction_patterns') || []).length,
-      deal_structures: (dealPatterns.get('successful_structures') || []).length,
-      strategic_wisdom: (strategicInsights.get('accumulated_wisdom') || []).length,
-      business_intelligence: (businessIntelligence.get('strategic_insights') || []).length,
-      revenue_analytics: (revenueAnalytics.get('scaling_intelligence') || []).length
+      success_strategies: (successMetrics.get("proven_approaches") || [])
+        .length,
+      market_intelligence: (marketAnalytics.get("cambodia_intelligence") || [])
+        .length,
+      client_patterns: (clientDatabase.get("interaction_patterns") || [])
+        .length,
+      deal_structures: (dealPatterns.get("successful_structures") || []).length,
+      strategic_wisdom: (strategicInsights.get("accumulated_wisdom") || [])
+        .length,
+      business_intelligence: (
+        businessIntelligence.get("strategic_insights") || []
+      ).length,
+      revenue_analytics: (revenueAnalytics.get("scaling_intelligence") || [])
+        .length,
     },
     capabilities: [
-      'Ultimate Auto-Learning with 7 Specialized Databases',
-      'Predictive Strategic Analysis with 85%+ Accuracy',
-      'Advanced Cambodia Market Intelligence', 
-      'Competitive Intelligence and Positioning Analysis',
-      'Revenue Scaling Optimization with Probability Analysis',
-      'Crisis-Tested Framework Application and Enhancement',
-      'Reformed Fund Architect Authority Building',
-      'Cambodia Market Mastery with Cultural Intelligence',
-      'Client Interaction Pattern Recognition and Optimization',
-      'Deal Structure Analysis and Success Prediction'
+      "Ultimate Auto-Learning with 7 Specialized Databases",
+      "Predictive Strategic Analysis with 85%+ Accuracy",
+      "Advanced Cambodia Market Intelligence",
+      "Competitive Intelligence and Positioning Analysis",
+      "Revenue Scaling Optimization with Probability Analysis",
+      "Crisis-Tested Framework Application and Enhancement",
+      "Reformed Fund Architect Authority Building",
+      "Cambodia Market Mastery with Cultural Intelligence",
+      "Client Interaction Pattern Recognition and Optimization",
+      "Deal Structure Analysis and Success Prediction",
     ],
     uptime: process.uptime(),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
-app.get('/ultimate-stats', (req, res) => {
+app.get("/ultimate-stats", (req, res) => {
   res.json({
-    ultimate_intelligence_system: 'MAXIMUM CAPACITY ACTIVE',
-    learning_algorithms: 'EXPONENTIAL GROWTH MODE',
+    ultimate_intelligence_system: "MAXIMUM CAPACITY ACTIVE",
+    learning_algorithms: "EXPONENTIAL GROWTH MODE",
     strategic_databases: {
       conversations: ultimateLearningDatabase.size,
-      success_patterns: (successMetrics.get('proven_approaches') || []).length,
-      market_intelligence: (marketAnalytics.get('cambodia_intelligence') || []).length,
-      client_mastery: (clientDatabase.get('interaction_patterns') || []).length,
-      deal_optimization: (dealPatterns.get('successful_structures') || []).length,
-      accumulated_wisdom: (strategicInsights.get('accumulated_wisdom') || []).length,
-      business_intelligence: (businessIntelligence.get('strategic_insights') || []).length,
-      revenue_analytics: (revenueAnalytics.get('scaling_intelligence') || []).length
+      success_patterns: (successMetrics.get("proven_approaches") || []).length,
+      market_intelligence: (marketAnalytics.get("cambodia_intelligence") || [])
+        .length,
+      client_mastery: (clientDatabase.get("interaction_patterns") || []).length,
+      deal_optimization: (dealPatterns.get("successful_structures") || [])
+        .length,
+      accumulated_wisdom: (strategicInsights.get("accumulated_wisdom") || [])
+        .length,
+      business_intelligence: (
+        businessIntelligence.get("strategic_insights") || []
+      ).length,
+      revenue_analytics: (revenueAnalytics.get("scaling_intelligence") || [])
+        .length,
     },
-    commander_profile: 'FULLY LOADED WITH ENHANCED CAPABILITIES',
-    vault_system: 'ALL VOLUMES OPERATIONAL WITH LEARNED ENHANCEMENTS',
-    competitive_advantages: 'MAXIMIZED WITH INTELLIGENCE AMPLIFICATION',
-    scaling_potential: 'UNLIMITED WITH PREDICTIVE CAPABILITIES',
-    system_health: 'OPTIMAL PERFORMANCE',
-    learning_velocity: 'EXPONENTIAL'
+    commander_profile: "FULLY LOADED WITH ENHANCED CAPABILITIES",
+    vault_system: "ALL VOLUMES OPERATIONAL WITH LEARNED ENHANCEMENTS",
+    competitive_advantages: "MAXIMIZED WITH INTELLIGENCE AMPLIFICATION",
+    scaling_potential: "UNLIMITED WITH PREDICTIVE CAPABILITIES",
+    system_health: "OPTIMAL PERFORMANCE",
+    learning_velocity: "EXPONENTIAL",
   });
 });
 
@@ -2010,20 +2411,44 @@ app.listen(PORT, () => {
 const startUltimateSystem = async () => {
   try {
     await initializeDatabase();
-    console.log('🏛️ ULTIMATE VAULT CLAUDE SUPREME STRATEGIC INTELLIGENCE SYSTEM FULLY OPERATIONAL');
-    console.log('🧠 Maximum auto-learning algorithms activated with exponential growth capabilities');
-    console.log('⚡ Commander Sum Chenda Reformed Fund Architect ultimate strategic alter ego ready');
-    console.log('📊 Complete intelligence databases initialized and accumulating wisdom');
-    console.log('🚀 Dynasty-level strategic capabilities online - unlimited potential activated');
-    console.log('💎 The most advanced personal AI strategic system ever created is now serving Commander');
-    console.log('🎯 1,971 lines of ultimate strategic intelligence architecture fully deployed');
-    console.log('🔥 All 7 specialized learning databases operational and growing exponentially');
-    console.log('🌍 REAL-TIME GLOBAL DATA ACCESS: Cambodia market intelligence, economic indicators, forex rates, crypto prices, business news, and trade data');
-    console.log('💾 PERMANENT MEMORY: PostgreSQL database storing all conversations, market intelligence, and strategic patterns');
-    console.log('🎯 API INTEGRATIONS: World Bank, Foreign Exchange, Cryptocurrency, News APIs, and Business Intelligence');
-    console.log('⚡ ADVANCED FEATURES: Automatic learning, predictive analysis, competitive intelligence, and revenue optimization');
+    console.log(
+      "🏛️ ULTIMATE VAULT CLAUDE SUPREME STRATEGIC INTELLIGENCE SYSTEM FULLY OPERATIONAL",
+    );
+    console.log(
+      "🧠 Maximum auto-learning algorithms activated with exponential growth capabilities",
+    );
+    console.log(
+      "⚡ Commander Sum Chenda Reformed Fund Architect ultimate strategic alter ego ready",
+    );
+    console.log(
+      "📊 Complete intelligence databases initialized and accumulating wisdom",
+    );
+    console.log(
+      "🚀 Dynasty-level strategic capabilities online - unlimited potential activated",
+    );
+    console.log(
+      "💎 The most advanced personal AI strategic system ever created is now serving Commander",
+    );
+    console.log(
+      "🎯 1,971 lines of ultimate strategic intelligence architecture fully deployed",
+    );
+    console.log(
+      "🔥 All 7 specialized learning databases operational and growing exponentially",
+    );
+    console.log(
+      "🌍 REAL-TIME GLOBAL DATA ACCESS: Cambodia market intelligence, economic indicators, forex rates, crypto prices, business news, and trade data",
+    );
+    console.log(
+      "💾 PERMANENT MEMORY: PostgreSQL database storing all conversations, market intelligence, and strategic patterns",
+    );
+    console.log(
+      "🎯 API INTEGRATIONS: World Bank, Foreign Exchange, Cryptocurrency, News APIs, and Business Intelligence",
+    );
+    console.log(
+      "⚡ ADVANCED FEATURES: Automatic learning, predictive analysis, competitive intelligence, and revenue optimization",
+    );
   } catch (error) {
-    console.error('System startup error:', error.message);
+    console.error("System startup error:", error.message);
   }
 };
 
