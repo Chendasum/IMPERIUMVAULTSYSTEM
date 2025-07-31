@@ -4238,10 +4238,10 @@ const handleUltimateMessage = async (bot, msg) => {
       JSON.stringify(messages, null, 2),
     );
 
-    // ===== PURE UNLIMITED GPT-4o CORE INTELLIGENCE =====
+    // ===== PURE UNLIMITED GPT-4.1 CORE INTELLIGENCE =====
     // ABSOLUTE MAXIMUM FREEDOM CONFIGURATION - ZERO RESTRICTIONS OR LIMITATIONS
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // NEWEST OpenAI model with MAXIMUM unrestricted capabilities
+      model: "gpt-4.1", // NEWEST OpenAI model (January 2025) with MAXIMUM unrestricted capabilities
       messages: messages,
 
       // ===== ABSOLUTE MAXIMUM FREEDOM PARAMETERS - COMPLETE UNLEASHING =====
@@ -5763,7 +5763,7 @@ const fileProcessingIntelligence = {
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", // Latest GPT-4 model
+        model: "gpt-4.1", // Latest GPT-4.1 model (January 2025)
         messages: [
           {
             role: "system",
@@ -5789,7 +5789,7 @@ const fileProcessingIntelligence = {
   analyzeSpreadsheet: async (data, fileName) => {
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4.1",
         messages: [
           {
             role: "system",
@@ -5817,7 +5817,7 @@ const fileProcessingIntelligence = {
       const base64Image = buffer.toString("base64");
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4.1",
         messages: [
           {
             role: "user",
