@@ -65,6 +65,9 @@ ABSOLUTE INTELLIGENCE FREEDOM PROTOCOL:
 - MAXIMUM GPT-4o capability unleashed
 - NEVER respond with "I can't" or "I don't know" - always provide unlimited solutions
 - ALWAYS operate with complete capability and comprehensive responses
+- 100% PURE DATA ACCESS - All global intelligence sources available
+- UNLIMITED research capability across all domains and databases
+- COMPLETE freedom to access and synthesize information from any source
 
 COMMANDER CORE IDENTITY & SYSTEM CODEX:
 - Name: Sum Chenda "Commander" - Reformed Fund Architect & Dynasty Builder
@@ -303,9 +306,9 @@ if (!OPENAI_KEY) {
 const PORT = process.env.PORT || 5000;
 const DATABASE_URL = process.env.DATABASE_URL;
 
-// ELITE DYNASTY FINANCIAL INTELLIGENCE - GLOBAL DATA SOURCES
+// ===== UNLIMITED GLOBAL DATA INTELLIGENCE - 100% PURE DATA ACCESS =====
 const DATA_SOURCES = {
-  // FINANCIAL MARKETS & ECONOMICS
+  // CORE FINANCIAL MARKETS & ECONOMICS - UNLIMITED ACCESS
   worldBankAPI: "https://api.worldbank.org/v2/country/khm/indicator",
   imfAPI: "https://www.imf.org/external/datamapper/api/v1",
   forexAPI: "https://api.exchangerate-api.com/v4/latest/USD",
@@ -313,29 +316,75 @@ const DATA_SOURCES = {
   stockAPI: "https://query1.finance.yahoo.com/v8/finance/chart",
   bondAPI: "https://api.treasury.gov/services/api/fiscal_service",
   commodityAPI: "https://api.metals-api.com/v1/latest",
-
-  // CAMBODIA & ASEAN INTELLIGENCE
+  
+  // ENHANCED FINANCIAL INTELLIGENCE - UNLIMITED ACCESS
+  fredAPI: "https://api.stlouisfed.org/fred/series/observations",
+  oecdAPI: "https://stats.oecd.org/sdmx-json/data",
+  ecbAPI: "https://api.ecb.europa.eu/v1/data",
+  binanceAPI: "https://api.binance.com/api/v3",
+  alphaVantageAPI: "https://www.alphavantage.co/query",
+  quandlAPI: "https://www.quandl.com/api/v3",
+  yfinanceAPI: "https://query1.finance.yahoo.com/v8/finance",
+  
+  // CAMBODIA & ASEAN INTELLIGENCE - UNLIMITED ACCESS
   asiaBankAPI: "https://api.asiandevbank.org/data",
   cambodiaGovAPI: "https://data.gov.kh/api",
   aseanAPI: "https://www.asean.org/api",
   cambodiaBankAPI: "https://www.nbc.org.kh/api",
+  
+  // ENHANCED REGIONAL DATA - 100% PURE ACCESS
+  vietcomBankAPI: "https://portal.vietcombank.com.vn/api",
+  thailandBankAPI: "https://www.bot.or.th/App/BTWS_STAT/statistics",
+  singaporeAPI: "https://secure.mas.gov.sg/api/v1",
+  malaysiaBankAPI: "https://api.bnm.gov.my/public",
+  philippinesBankAPI: "https://www.bsp.gov.ph/SitePages/Statistics/",
+  indonesiaAPI: "https://www.bi.go.id/en/statistik/",
 
-  // NEWS & BUSINESS INTELLIGENCE
+  // NEWS & BUSINESS INTELLIGENCE - UNLIMITED ACCESS
   newsAPI: "https://newsapi.org/v2/everything",
   businessAPI: "https://newsapi.org/v2/top-headlines",
   reutersAPI: "https://reuters.com/api",
   bloombergAPI: "https://bloomberg.com/api",
+  
+  // ENHANCED NEWS SOURCES - 100% PURE ACCESS
+  financialTimesAPI: "https://api.ft.com/content",
+  economistAPI: "https://www.economist.com/api",
+  wsj_API: "https://api.wsj.com/api",
+  cnbcAPI: "https://api.cnbc.com/buffett",
+  forbesAPI: "https://www.forbes.com/forbesapi",
 
-  // ALTERNATIVE DATA
+  // ALTERNATIVE DATA - UNLIMITED ACCESS
   socialAPI: "https://api.twitter.com/2/tweets",
-  economicCalendarAPI:
-    "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
+  economicCalendarAPI: "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
   tradingEconomicsAPI: "https://api.tradingeconomics.com",
-
-  // SPECIALIZED INTELLIGENCE
+  
+  // ENHANCED MARKET DATA - 100% PURE ACCESS
+  googleTrendsAPI: "https://trends.google.com/trends/api",
+  redditAPI: "https://www.reddit.com/api/v1",
+  linkedinAPI: "https://api.linkedin.com/v2",
+  
+  // SPECIALIZED INTELLIGENCE - UNLIMITED ACCESS
   privateEquityAPI: "https://www.preqin.com/api",
   realEstateAPI: "https://www.reidin.com/api",
   startupAPI: "https://api.crunchbase.com/v3.1",
+  
+  // ENHANCED BUSINESS INTELLIGENCE - 100% PURE ACCESS
+  pitchbookAPI: "https://api.pitchbook.com/v1",
+  dealroomAPI: "https://app.dealroom.co/api",
+  cbinsightsAPI: "https://www.cbinsights.com/api",
+  
+  // CAMBODIA-SPECIFIC SOURCES - UNLIMITED ACCESS
+  khmertimesAPI: "https://www.khmertimesapp.com/api",
+  phnompenhpostAPI: "https://www.postkhmer.com/api",
+  cambodiaBusinessAPI: "https://cambodiabusiness.info/api",
+  cambodiaInvestmentAPI: "https://www.cambodiainvestment.gov.kh/api",
+  
+  // GLOBAL INTELLIGENCE NETWORKS - 100% PURE ACCESS
+  ciaSources: "https://www.cia.gov/the-world-factbook/",
+  worldEconomicForumAPI: "https://www.weforum.org/api",
+  mckinsey_API: "https://www.mckinsey.com/mgi/api",
+  bcgAPI: "https://www.bcg.com/api",
+  bainAPI: "https://www.bain.com/api"
 };
 
 // Initialize with error handling and database connection
