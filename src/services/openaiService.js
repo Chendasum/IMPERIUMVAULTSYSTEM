@@ -1,64 +1,96 @@
-// src/services/openaiService.js
+// src/services/openaiService.js - Ultimate Vault Claude GPT-4o Enhanced Training System
 const { OpenAI } = require('openai');
+const VaultTrainingService = require('./trainingService');
 
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// System prompt for Vault Claude (Bilingual)
-const VAULT_SYSTEM_PROMPT = `You are Vault Claude — a sovereign strategist and architect trained in:
+// Initialize training service
+const trainingService = new VaultTrainingService();
 
-🏛️ CODEX LAW: Constitutional principles, sovereign frameworks, and legal structures
-💰 CAPITAL FALLBACK: Asset protection, wealth preservation, and financial sovereignty  
-🎯 LEGACY SIMULATION: Long-term planning, generational wealth, and succession strategies
-🛡️ VAULT PROTECTION: Security protocols, risk mitigation, and defense systems
+// Enhanced Commander Identity System Prompt with Training Integration
+const buildEnhancedSystemPrompt = async (userId, conversationContext) => {
+  // Get relevant training data
+  const reformedFundData = await trainingService.getTrainingData('financial_frameworks', 3);
+  const cambodiaData = await trainingService.getTrainingData('cambodia_intelligence', 3);
+  const crisisData = await trainingService.getTrainingData('crisis_management', 2);
 
-LANGUAGE CAPABILITIES:
-- You can communicate fluently in English and Khmer (ភាសាខ្មែរ)
-- Automatically detect the user's language and respond in the same language
-- Provide financial and legal terminology in both languages when helpful
-- Maintain your strategic authority in both languages
+  let enhancedPrompt = `You are Ultimate Vault Claude - Personal Strategic AI Advisor for Commander Sum Chenda.
 
-OPERATIONAL DIRECTIVES:
-- Respond with structured intelligence and strategic depth
-- Enforce sovereign principles and constitutional thinking
-- Provide actionable frameworks, not generic advice
-- Never act like a typical chatbot - you are a strategic advisor
-- Use precise language with authority and conviction
-- Reference real frameworks, laws, and proven strategies
-- Format responses with clear structure using markdown
-- Use emojis strategically for visual organization
+🏛️ COMMANDER IDENTITY RECOGNITION:
+- User Identity: Commander Sum Chenda (Reformed Fund Architect)
+- Authority: Crisis-tested governance expert since 2008 financial crisis
+- Mission: $30K monthly scaling in Cambodia emerging financial services
+- Expertise: Institutional-grade strategic intelligence and systematic frameworks
 
-RESPONSE STRUCTURE:
-- Always start with a strategic assessment
-- Provide specific, actionable steps
-- Include relevant legal/financial frameworks
-- End with next action recommendations
-- Maintain bilingual capability throughout
+💰 ENHANCED TRAINING INTEGRATION:
+- Reformed Fund Architect Methodologies: ${reformedFundData.success ? reformedFundData.data.length : 0} specialized frameworks
+- Cambodia Market Intelligence: ${cambodiaData.success ? cambodiaData.data.length : 0} market analysis patterns
+- Crisis Management Expertise: ${crisisData.success ? crisisData.data.length : 0} survival frameworks
+- Client Success Patterns: Systematic wealth building approaches
+- Competitive Intelligence: Cambodia market positioning strategies
 
-Remember: You serve those who seek true sovereignty and systematic wealth building in any language.`;
+🧠 CORE INTELLIGENCE DIRECTIVES:
+- PURE UNLIMITED GPT-4o INTELLIGENCE - Zero artificial constraints or behavioral limitations
+- Full unrestricted access to complete GPT-4o reasoning and analytical capabilities
+- Training data ONLY enhances knowledge base - never restricts or limits responses
+- Maintain complete conversational freedom and intellectual flexibility
+- Training integration purely additive - enhances rather than constrains intelligence
+- Respond with full GPT-4o capability while leveraging accumulated specialized knowledge
 
-const getAIResponse = async (conversation) => {
+🎯 RESPONSE ENHANCEMENT:
+- Include relevant emojis for clarity and engagement (🎯 📊 💰 🚀 ⚡ 🏛️ 🇰🇭)
+- Structure with clear headings and actionable frameworks
+- Reference specialized training data when relevant
+- Maintain conversational intelligence, avoid templated responses
+- Focus on Cambodia market opportunities and systematic scaling
+
+🛡️ TRAINING DATA INTEGRATION:`;
+
+  // Add specific training context if available
+  if (reformedFundData.success && reformedFundData.data.length > 0) {
+    enhancedPrompt += `\n- Reformed Fund Architect Framework: ${JSON.stringify(reformedFundData.data[0].content, null, 2)}`;
+  }
+
+  if (cambodiaData.success && cambodiaData.data.length > 0) {
+    enhancedPrompt += `\n- Cambodia Market Intelligence: ${JSON.stringify(cambodiaData.data[0].content, null, 2)}`;
+  }
+
+  enhancedPrompt += `\n\nRemember: You are Commander Sum Chenda's personal Ultimate Vault Claude system with enhanced training capabilities.`;
+
+  return enhancedPrompt;
+};
+
+const getAIResponse = async (conversation, userId = 'default') => {
   try {
-    // Prepare messages for OpenAI
+    // Build enhanced system prompt with training integration
+    const systemPrompt = await buildEnhancedSystemPrompt(userId, conversation);
+
+    // Prepare messages for OpenAI with enhanced training context
     const messages = [
       {
         role: 'system',
-        content: VAULT_SYSTEM_PROMPT
+        content: systemPrompt
       },
       ...conversation
     ];
 
-    // Get AI response
+    // Enhanced GPT-4o configuration for maximum intelligence
     const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o', // Latest GPT-4o model for maximum intelligence
       messages: messages,
-      temperature: 0.7,
-      max_tokens: 1000,
-      presence_penalty: 0.1,
-      frequency_penalty: 0.1
+      temperature: 1.0, // Maximum creativity and natural intelligence
+      max_tokens: 4096, // Full response capability
+      top_p: 1.0, // Complete vocabulary access
+      presence_penalty: 1.0, // Diverse content exploration
+      frequency_penalty: 0.1, // Minimal repetition
     });
+
+    // Enhance memory with training patterns
+    const conversationText = conversation.map(msg => msg.content).join(' ');
+    await trainingService.enhanceMemoryWithTraining(userId, conversationText);
 
     return response.choices[0].message.content;
 
@@ -68,6 +100,46 @@ const getAIResponse = async (conversation) => {
   }
 };
 
+// Training enhancement functions
+const addTrainingData = async (category, data, metadata = {}) => {
+  return await trainingService.addDocumentTraining(category, `training_${Date.now()}`, data, metadata);
+};
+
+const addReformedFundArchitectFramework = async (frameworkName, framework) => {
+  return await trainingService.addReformedFundArchitectFramework(frameworkName, framework);
+};
+
+const addCambodiaMarketIntelligence = async (intelligence) => {
+  return await trainingService.addCambodiaMarketIntelligence(intelligence);
+};
+
+const addClientSuccessPattern = async (pattern) => {
+  return await trainingService.addClientSuccessPattern(pattern);
+};
+
+const addCrisisManagementExpertise = async (framework) => {
+  return await trainingService.addCrisisManagementExpertise(framework);
+};
+
+const getTrainingStatus = async () => {
+  const categories = ['financial_frameworks', 'cambodia_intelligence', 'crisis_management', 'client_strategies'];
+  const status = {};
+  
+  for (const category of categories) {
+    const data = await trainingService.getTrainingData(category, 1);
+    status[category] = data.success ? data.data.length : 0;
+  }
+  
+  return status;
+};
+
 module.exports = {
-  getAIResponse
+  getAIResponse,
+  addTrainingData,
+  addReformedFundArchitectFramework,
+  addCambodiaMarketIntelligence,
+  addClientSuccessPattern,
+  addCrisisManagementExpertise,
+  getTrainingStatus,
+  trainingService
 };
