@@ -11,7 +11,7 @@
 // ===== DYNASTY PROTECTION SYSTEM - COMMANDER-ONLY ACCESS =====
 const AUTHORIZED_COMMANDERS = {
   // Commander Sum Chenda - Primary Dynasty Authority
-  primary: process.env.ADMIN_CHAT_ID, // Your Telegram ID
+  primary: process.env.ADMIN_CHAT_ID || "484389665", // Your Telegram ID from debug
   
   // Add additional authorized users here if needed
   // secondary: "123456789", // Example: Trusted advisor ID
@@ -2628,12 +2628,6 @@ console.log(
 const dynastyProtection = (msg) => {
   const userId = msg.from.id;
   
-  // DEBUG: Log current user ID and stored admin ID for troubleshooting
-  console.log(`🔍 Dynasty Protection Check:`);
-  console.log(`User ID: ${userId}`);
-  console.log(`Stored ADMIN_CHAT_ID: ${process.env.ADMIN_CHAT_ID}`);
-  console.log(`Authorized Commanders:`, Object.values(AUTHORIZED_COMMANDERS));
-  
   if (!isAuthorizedCommander(userId)) {
     bot.sendMessage(msg.chat.id, `🛡️ DYNASTY PROTECTION ACTIVE
     
@@ -2642,12 +2636,7 @@ This is Commander Sum Chenda's private strategic AI system.
 
 Access restricted to authorized personnel only.
 
-🏛️ House of Imperium - Strategic Intelligence Division
-
-🔍 Debug Info (TEMPORARY):
-Your ID: ${userId}
-Admin ID: ${process.env.ADMIN_CHAT_ID || 'NOT SET'}
-Match Check: ${Object.values(AUTHORIZED_COMMANDERS).includes(userId.toString())}`);
+🏛️ House of Imperium - Strategic Intelligence Division`);
     return false;
   }
   return true;
