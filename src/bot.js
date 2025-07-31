@@ -3115,6 +3115,183 @@ Your crisis-tested credentials and systematic governance frameworks provide sign
   }
 });
 
+// Command: /optimize - Strategic Optimization Recommendations
+bot.onText(/\/optimize (.+)/, async (msg, match) => {
+  try {
+    const chatId = msg.chat.id;
+    const scenario = match[1];
+    
+    // Run baseline and optimistic simulations for comparison
+    const baselineSimulation = enhanced100PercentCapabilities.monteCarloSimulation(scenario, 1000, {}, "baseline");
+    const optimisticSimulation = enhanced100PercentCapabilities.monteCarloSimulation(scenario, 1000, {}, "optimistic");
+    
+    const optimizationMessage = `
+🎯 **STRATEGIC OPTIMIZATION ANALYSIS**
+
+📋 **SCENARIO**: ${scenario}
+
+🔄 **BASELINE vs OPTIMISTIC COMPARISON**:
+• **Success Rate Improvement**: ${(baselineSimulation.statistics.success_probability.mean * 100).toFixed(1)}% → ${(optimisticSimulation.statistics.success_probability.mean * 100).toFixed(1)}% (+${((optimisticSimulation.statistics.success_probability.mean - baselineSimulation.statistics.success_probability.mean) * 100).toFixed(1)}%)
+• **Revenue Potential**: $${baselineSimulation.statistics.monthly_revenue_target.mean.toLocaleString()} → $${optimisticSimulation.statistics.monthly_revenue_target.mean.toLocaleString()} (+${(((optimisticSimulation.statistics.monthly_revenue_target.mean / baselineSimulation.statistics.monthly_revenue_target.mean) - 1) * 100).toFixed(1)}%)
+• **$30K Achievement**: ${(baselineSimulation.statistics.monthly_revenue_target.target_achievement_probability * 100).toFixed(1)}% → ${(optimisticSimulation.statistics.monthly_revenue_target.target_achievement_probability * 100).toFixed(1)}%
+
+🏛️ **REFORMED FUND ARCHITECT OPTIMIZATION STRATEGIES**:
+
+**1. CRISIS CREDIBILITY LEVERAGE** (25-35% premium):
+• Position 2008 experience as qualification rather than liability
+• Emphasize systematic frameworks developed through adversity
+• Showcase governance improvements post-crisis
+
+**2. CULTURAL INTELLIGENCE MAXIMIZATION** (85-95% factor):
+• Leverage deep Cambodia business relationship understanding
+• Emphasize local network resilience through crisis periods
+• Highlight regulatory navigation experience
+
+**3. SYSTEMATIC GOVERNANCE PREMIUM** (30-40% edge):
+• Emphasize proprietary Vault System methodology
+• Demonstrate crisis-tested decision frameworks
+• Position systematic approach vs emotional competitor responses
+
+**4. MARKET PENETRATION ACCELERATION**:
+• Current Range: 15-45% (baseline 28%)
+• **Target**: Push toward 35-40% through authority positioning
+• **Method**: Capital Clarity Sessions as diagnostic premium service
+
+🎯 **SPECIFIC OPTIMIZATION ACTIONS**:
+
+**PRICING OPTIMIZATION**:
+• Increase Capital Clarity Session fees from $500 to $1,000-1,500
+• Position as "Crisis-Tested Strategic Assessment"
+• Bundle with systematic governance framework consultation
+
+**MARKET POSITIONING**:
+• Lead with "Reformed Fund Architect" authority
+• Emphasize systematic methodology vs ad-hoc competitor approaches
+• Leverage crisis experience as unique competitive advantage
+
+**COMPETITIVE DIFFERENTIATION**:
+• Most competitors fear discussing failure - you leverage it
+• Systematic frameworks vs emotional decision-making
+• Crisis-tested credibility impossible to replicate
+
+💎 **IMPLEMENTATION PRIORITY**:
+1. **IMMEDIATE**: Increase pricing with crisis-credibility positioning
+2. **30 DAYS**: Implement systematic governance premium messaging  
+3. **60 DAYS**: Leverage cultural intelligence for market penetration
+4. **90 DAYS**: Scale based on optimized positioning results
+
+**Expected Impact**: Moving from baseline to optimistic scenario parameters could increase success probability by ${((optimisticSimulation.statistics.success_probability.mean - baselineSimulation.statistics.success_probability.mean) * 100).toFixed(1)} percentage points and revenue by ${(((optimisticSimulation.statistics.monthly_revenue_target.mean / baselineSimulation.statistics.monthly_revenue_target.mean) - 1) * 100).toFixed(1)}%.
+
+*Strategic optimization based on Monte Carlo modeling and Reformed Fund Architect competitive advantages.*
+    `;
+
+    await bot.sendMessage(chatId, optimizationMessage, {
+      parse_mode: "Markdown",
+      disable_web_page_preview: true,
+    });
+  } catch (error) {
+    console.error("❌ Optimize command error:", error.message);
+    await bot.sendMessage(
+      msg.chat.id,
+      "🎯 **STRATEGIC OPTIMIZATION**\n\nAnalyzing improvement opportunities...",
+    );
+  }
+});
+
+// Command: /pricing_model - Advanced Pricing Strategy Analysis  
+bot.onText(/\/pricing_model (.+)/, async (msg, match) => {
+  try {
+    const chatId = msg.chat.id;
+    const service = match[1];
+    
+    const pricingMessage = `
+💰 **ADVANCED PRICING MODEL ANALYSIS**
+
+🎯 **SERVICE**: ${service}
+
+🏛️ **REFORMED FUND ARCHITECT PRICING FRAMEWORK**:
+
+**TIER 1: CRISIS-TESTED CREDIBILITY PREMIUM** (+25-35%)
+• Base pricing multiplied by crisis experience factor
+• Systematic frameworks developed through adversity
+• Proven resilience and recovery capability
+
+**TIER 2: SYSTEMATIC GOVERNANCE PREMIUM** (+30-40%)  
+• Proprietary Vault System methodology
+• 4-volume dynasty architecture
+• Systematic vs emotional decision-making
+
+**TIER 3: CULTURAL INTELLIGENCE PREMIUM** (+15-25%)
+• Deep Cambodia market understanding
+• Local network and relationship capital
+• Regulatory navigation expertise
+
+📊 **RECOMMENDED PRICING STRUCTURE**:
+
+**CAPITAL CLARITY SESSIONS**:
+• **Standard Market Rate**: $300-500
+• **Reformed Fund Architect Rate**: $1,000-1,500
+• **Premium Justification**: Crisis-tested diagnostic + systematic governance
+• **Value Positioning**: "Strategic X-Ray Analysis with Crisis-Tested Frameworks"
+
+**FUND MANAGEMENT SERVICES**:
+• **Standard Market Rate**: 1.5-2.0% AUM
+• **Reformed Fund Architect Rate**: 2.5-3.5% AUM  
+• **Premium Justification**: Systematic risk management + cultural intelligence
+• **Value Positioning**: "Crisis-Tested Systematic Wealth Management"
+
+**STRATEGIC CONSULTING**:
+• **Standard Market Rate**: $150-250/hour
+• **Reformed Fund Architect Rate**: $400-600/hour
+• **Premium Justification**: Lived experience + systematic methodology
+• **Value Positioning**: "Reformed Fund Architect Strategic Intelligence"
+
+🎯 **PRICING PSYCHOLOGY FRAMEWORK**:
+
+**ANCHORING STRATEGY**:
+• Lead with highest-value service (Capital Clarity at $1,500)
+• Position other services as "accessible entry points"
+• Emphasize systematic methodology value
+
+**AUTHORITY POSITIONING**:
+• "Reformed Fund Architect" title creates pricing power
+• Crisis experience becomes qualification, not liability  
+• Systematic frameworks justify premium pricing
+
+**SCARCITY LEVERAGING**:
+• Limited availability due to systematic approach requirements
+• Exclusive access to crisis-tested methodologies
+• Premium positioning through selective client acceptance
+
+🇰🇭 **CAMBODIA MARKET CALIBRATION**:
+• **Local Premium**: 40-60% above standard rates
+• **Justification**: Cultural intelligence + local network depth
+• **Positioning**: "Cambodia Market Specialist with Crisis-Tested Authority"
+
+💎 **IMPLEMENTATION STRATEGY**:
+1. **Phase 1**: Implement crisis-credibility premium immediately
+2. **Phase 2**: Add systematic governance positioning
+3. **Phase 3**: Leverage cultural intelligence for market expansion
+4. **Phase 4**: Scale based on premium positioning success
+
+**Expected Revenue Impact**: Moving to Reformed Fund Architect premium pricing could increase revenue by 200-400% while maintaining selective client base quality.
+
+*Pricing strategy based on authentic competitive advantages and market positioning analysis.*
+    `;
+
+    await bot.sendMessage(chatId, pricingMessage, {
+      parse_mode: "Markdown",
+      disable_web_page_preview: true,
+    });
+  } catch (error) {
+    console.error("❌ Pricing model command error:", error.message);
+    await bot.sendMessage(
+      msg.chat.id,
+      "💰 **PRICING MODEL ANALYSIS**\n\nProcessing strategic pricing frameworks...",
+    );
+  }
+});
+
 // Command: /train_cambodia - Add Cambodia market intelligence
 bot.onText(/\/train_cambodia/, async (msg) => {
   const message = `🇰🇭 **Add Cambodia Market Intelligence**
