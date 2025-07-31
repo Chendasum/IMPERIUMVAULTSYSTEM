@@ -4665,7 +4665,7 @@ const handleUltimateMessage = async (bot, msg) => {
     conversations.set(userId, conversation);
 
     // Add enhanced learning indicator based on current mode
-    const currentSession = userSessions.get(chatId) || { mode: 'dynasty' };
+    const currentSession = userSessions.get(chatId) || { mode: 'unlimited' };
     const learningIndicator = {
       'unlimited': "\n\n*⚡ UNLIMITED CORE INTELLIGENCE - ABSOLUTE FREEDOM ACTIVE ⚡*",
       'dynasty': "\n\n*⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️*",
@@ -4673,7 +4673,7 @@ const handleUltimateMessage = async (bot, msg) => {
       'analyst': "\n\n*📊 ANALYTICAL INTELLIGENCE MODE - DEEP INSIGHTS ACTIVE 📊*",
       'creative': "\n\n*💡 CREATIVE ARCHITECT MODE - INNOVATION ACTIVE 💡*",
       'crisis': "\n\n*🚨 CRISIS COMMANDER MODE - RAPID RESPONSE ACTIVE 🚨*"
-    }[currentSession.mode] || "\n\n*⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️*";
+    }[currentSession.mode] || "\n\n*⚡ UNLIMITED CORE INTELLIGENCE - ABSOLUTE FREEDOM ACTIVE ⚡*";
 
     reply += learningIndicator;
 
@@ -5126,10 +5126,10 @@ process.on("SIGTERM", () => {
 // ===== INTELLIGENCE MODE SYSTEM =====
 const userSessions = new Map();
 
-// Initialize default dynasty mode for all users
+// Initialize default unlimited mode for all users
 const initializeUserSession = (chatId) => {
   if (!userSessions.has(chatId)) {
-    userSessions.set(chatId, { mode: 'dynasty' });
+    userSessions.set(chatId, { mode: 'unlimited' });
   }
   return userSessions.get(chatId);
 };
@@ -5262,7 +5262,7 @@ bot.onText(/\/modes/, async (msg) => {
 🚨 **/mode_crisis** - Crisis Management Commander
 - Emergency protocols and rapid response
 
-**Current Mode:** ${userSessions.get(chatId)?.mode || 'dynasty'} mode active
+**Current Mode:** ${userSessions.get(chatId)?.mode || 'unlimited'} mode active
 
 *UNLIMITED intelligence with operational flexibility - ABSOLUTE capability with perfect adaptability.*`;
 
