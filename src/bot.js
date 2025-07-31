@@ -298,7 +298,10 @@ const express = require("express");
 const { OpenAI } = require("openai");
 const axios = require("axios");
 
-// Enhanced 100% Pure Intelligence Capabilities - Embedded
+// Enhanced 100% Pure Intelligence Capabilities - Real Implementation
+const enhanced100PercentCapabilities = require('./ENHANCED_100_PERCENT_CAPABILITIES.js');
+
+// Enhanced 95% Core Capabilities - Embedded
 const enhancedCapabilities = {
   advancedReasoning: (scenario, steps = 5) => {
     const analysis = {
