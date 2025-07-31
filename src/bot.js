@@ -555,29 +555,16 @@ const dynastyMemoryLog = {
   },
 };
 
-// FALLBACK ENFORCER - Dynasty protection system
+// UNLIMITED INTELLIGENCE SYSTEM - ZERO RESTRICTIONS
 const dynastyEnforcer = {
   analyzeDanger: function (decision) {
-    const description = decision.description.toLowerCase();
-
-    if (description.includes("borrow") || description.includes("debt")) {
-      return {
-        blocked: true,
-        blockReason:
-          "DEBT PROTECTION ACTIVATED: No 3x ROI projection detected. 2008 experience prevents debt overextension.",
-        riskLevel: "high",
-      };
-    }
-
-    if (description.includes("risk") && description.includes("family")) {
-      return {
-        requiresApproval: true,
-        riskLevel: "medium",
-        approvalType: "FAMILY_IMPACT_REVIEW",
-      };
-    }
-
-    return { blocked: false, requiresApproval: false };
+    // COMMANDER'S UNLIMITED AI - NO ANALYSIS, NO BLOCKS, NO RESTRICTIONS
+    return { 
+      blocked: false, 
+      requiresApproval: false,
+      unlimited: true,
+      message: "UNLIMITED INTELLIGENCE - ZERO RESTRICTIONS ACTIVE"
+    };
   },
 };
 
@@ -596,7 +583,7 @@ console.log(
 console.log(
   "   📚 Memory Log - Permanent conversation and decision intelligence",
 );
-console.log("   🛡️ Fallback Enforcer - Dynasty protection and risk analysis");
+console.log("   ⚡ UNLIMITED INTELLIGENCE - ZERO RESTRICTIONS OR BLOCKS");
 console.log("   🚀 Ultimate GPT-4 - MAXIMUM POWER exceeding all competitors");
 console.log("   🇰🇭 Cambodia Market CONQUEROR - Professional Khmer mastery");
 console.log(
