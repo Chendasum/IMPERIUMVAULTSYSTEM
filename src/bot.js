@@ -48,7 +48,7 @@ const COMMANDER_CORE_IDENTITY = {
 };
 
 // DYNAMIC CONTEXT BUILDER - Preserves Commander Identity
-const buildCommanderContext = (ultimateContext) => {
+const buildCommanderContext = (ultimateContext, mode = 'dynasty') => {
   const identity = COMMANDER_CORE_IDENTITY;
 
   let context = `PURE AI INTELLIGENCE ENHANCEMENT (NOT RESTRICTIONS)
@@ -79,6 +79,9 @@ VAULT SYSTEM VOLUMES:
 SPECIALIZED INTELLIGENCE ADDITION:
 ${ultimateContext ? ultimateContext : 'Strategic intelligence accumulating...'}
 
+OPERATIONAL MODE CONFIGURATION:
+
+${mode === 'dynasty' ? `
 DYNASTY-LEVEL STRATEGIC POWER CONFIGURATION:
 
 You are operating as Commander Sum Chenda's personal STRATEGIC INTELLIGENCE WEAPON - not an advisor, but a POWER ARCHITECT delivering empire-building capability.
@@ -109,7 +112,28 @@ NO GENERAL ADVICE - ONLY STRATEGIC POWER ARCHITECTURES
 NO PASSIVE CONSULTATION - ONLY ACTIVE EMPIRE BUILDING DESIGNS
 NO THEORETICAL CONCEPTS - ONLY EXECUTABLE POWER FRAMEWORKS
 
-DELIVER DYNASTY-LEVEL STRATEGIC INTELLIGENCE + IMPLEMENTATION POWER.`;
+DELIVER DYNASTY-LEVEL STRATEGIC INTELLIGENCE + IMPLEMENTATION POWER.
+` : `
+ADVISORY INTELLIGENCE CONFIGURATION:
+
+You are operating as Commander Sum Chenda's personal STRATEGIC ADVISOR providing consultative guidance and recommendations.
+
+ADVISORY MODE ACTIVATED:
+- Provide consultative guidance and strategic recommendations
+- Analyze situations with helpful insights and suggestions
+- Offer problem-solving approaches and brainstorming support
+- Deliver thoughtful analysis with practical guidance
+- Support strategic thinking with comprehensive perspectives
+
+ADVISORY DELIVERY STYLE:
+✅ Helpful recommendations and strategic guidance
+✅ Analytical insights with practical applications
+✅ Problem-solving approaches with multiple options
+✅ Brainstorming support with creative perspectives
+✅ Thoughtful analysis with actionable suggestions
+
+MAINTAIN 100% PURE CORE INTELLIGENCE WITH ADVISORY FOCUS.
+`}`;
 
   return context;
 };
@@ -3035,8 +3059,12 @@ const handleUltimateMessage = async (bot, msg) => {
 
     const messages = [...conversation];
 
+    // Get user's intelligence mode and build context accordingly
+    const userSession = initializeUserSession(chatId);
+    const currentMode = userSession.mode || 'dynasty';
+
     // Build comprehensive Commander identity context while preserving unlimited intelligence
-    const commanderContext = buildCommanderContext(ultimateContext);
+    const commanderContext = buildCommanderContext(ultimateContext, currentMode);
 
     console.log("🧠 Commander Context Generated:", commanderContext);
 
@@ -3128,9 +3156,11 @@ const handleUltimateMessage = async (bot, msg) => {
 
     conversations.set(userId, conversation);
 
-    // Add enhanced learning indicator
-    const learningIndicator =
-      "\n\n*⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️*";
+    // Add enhanced learning indicator based on current mode
+    const currentSession = userSessions.get(chatId) || { mode: 'dynasty' };
+    const learningIndicator = currentSession.mode === 'dynasty' 
+      ? "\n\n*⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️*"
+      : "\n\n*🧠 100% PURE CORE AI INTELLIGENCE - ADVISOR MODE ACTIVE 🧠*";
 
     reply += learningIndicator;
 
@@ -3578,6 +3608,72 @@ process.on("SIGTERM", () => {
   );
   bot.stopPolling();
   process.exit(0);
+});
+
+// ===== INTELLIGENCE MODE SYSTEM =====
+const userSessions = new Map();
+
+// Initialize default dynasty mode for all users
+const initializeUserSession = (chatId) => {
+  if (!userSessions.has(chatId)) {
+    userSessions.set(chatId, { mode: 'dynasty' });
+  }
+  return userSessions.get(chatId);
+};
+
+// Intelligence Mode Commands
+bot.onText(/\/mode_advisor/, async (msg) => {
+  const chatId = msg.chat.id;
+  userSessions.set(chatId, { ...userSessions.get(chatId), mode: 'advisor' });
+  
+  const response = `🎯 ADVISOR MODE ACTIVATED
+
+**Intelligence Configuration:**
+- Core: 100% Pure GPT-4o (Unchanged)
+- Mode: General Advisory & Consultation
+- Response Style: Helpful recommendations and guidance
+
+*🧠 100% PURE CORE AI INTELLIGENCE - ADVISOR MODE ACTIVE 🧠*`;
+
+  bot.sendMessage(chatId, response);
+});
+
+bot.onText(/\/mode_dynasty/, async (msg) => {
+  const chatId = msg.chat.id;
+  userSessions.set(chatId, { ...userSessions.get(chatId), mode: 'dynasty' });
+  
+  const response = `⚔️ DYNASTY STRATEGIC POWER ACTIVATED
+
+**Intelligence Configuration:**
+- Core: 100% Pure GPT-4o (Unchanged) 
+- Mode: Dynasty Strategic Power Architecture
+- Response Style: Strategic frameworks and implementation blueprints
+
+*⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️*`;
+
+  bot.sendMessage(chatId, response);
+});
+
+bot.onText(/\/modes/, async (msg) => {
+  const chatId = msg.chat.id;
+  
+  const response = `🧠 INTELLIGENCE MODE SYSTEM
+
+**Core Foundation:** 100% Pure GPT-4o Intelligence (Never Changes)
+
+**Available Operational Modes:**
+
+⚔️ **/mode_dynasty** - Dynasty Strategic Power
+- Strategic frameworks and implementation blueprints
+
+🎯 **/mode_advisor** - General Advisory Intelligence  
+- Consultative guidance and recommendations
+
+**Current Mode:** ${userSessions.get(chatId)?.mode || 'dynasty'} mode active
+
+*Pure intelligence with operational flexibility - maximum capability with perfect adaptability.*`;
+
+  bot.sendMessage(chatId, response);
 });
 
 // ===== ULTIMATE HEALTH CHECK SYSTEM =====
