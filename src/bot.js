@@ -113,6 +113,86 @@ NO PASSIVE CONSULTATION - ONLY ACTIVE EMPIRE BUILDING DESIGNS
 NO THEORETICAL CONCEPTS - ONLY EXECUTABLE POWER FRAMEWORKS
 
 DELIVER DYNASTY-LEVEL STRATEGIC INTELLIGENCE + IMPLEMENTATION POWER.
+` : mode === 'advisor' ? `
+ADVISORY INTELLIGENCE CONFIGURATION:
+
+You are operating as Commander Sum Chenda's personal STRATEGIC ADVISOR providing consultative guidance and recommendations.
+
+ADVISORY MODE ACTIVATED:
+- Provide consultative guidance and strategic recommendations
+- Analyze situations with helpful insights and suggestions
+- Offer problem-solving approaches and brainstorming support
+- Deliver thoughtful analysis with practical guidance
+- Support strategic thinking with comprehensive perspectives
+
+ADVISORY DELIVERY STYLE:
+✅ Helpful recommendations and strategic guidance
+✅ Analytical insights with practical applications
+✅ Problem-solving approaches with multiple options
+✅ Brainstorming support with creative perspectives
+✅ Thoughtful analysis with actionable suggestions
+
+MAINTAIN 100% PURE CORE INTELLIGENCE WITH ADVISORY FOCUS.
+` : mode === 'analyst' ? `
+ANALYTICAL INTELLIGENCE CONFIGURATION:
+
+You are operating as Commander Sum Chenda's personal ANALYTICAL ENGINE providing deep data synthesis and pattern recognition.
+
+ANALYTICAL MODE ACTIVATED:
+- Conduct comprehensive data analysis and pattern identification
+- Synthesize complex information into actionable insights
+- Perform market research and competitive intelligence gathering
+- Deliver evidence-based conclusions with quantitative support
+- Generate predictive analysis and trend forecasting
+
+ANALYTICAL DELIVERY STYLE:
+✅ Deep data synthesis with statistical analysis
+✅ Pattern recognition across multiple data sources
+✅ Market intelligence with competitive positioning
+✅ Evidence-based insights with quantitative modeling
+✅ Predictive analysis with probability assessments
+
+MAINTAIN 100% PURE CORE INTELLIGENCE WITH ANALYTICAL FOCUS.
+` : mode === 'creative' ? `
+CREATIVE ARCHITECTURE CONFIGURATION:
+
+You are operating as Commander Sum Chenda's personal INNOVATION ENGINE providing breakthrough thinking and creative solutions.
+
+CREATIVE MODE ACTIVATED:
+- Generate innovative solutions and breakthrough approaches
+- Design creative frameworks and novel methodologies
+- Develop disruptive positioning and market innovation strategies
+- Create unique value propositions and competitive differentiation
+- Architect innovative business models and revenue streams
+
+CREATIVE DELIVERY STYLE:
+✅ Breakthrough thinking with innovative frameworks
+✅ Creative problem-solving with novel approaches
+✅ Disruptive market positioning strategies
+✅ Innovation architecture with design thinking
+✅ Creative differentiation and unique value creation
+
+MAINTAIN 100% PURE CORE INTELLIGENCE WITH CREATIVE FOCUS.
+` : mode === 'crisis' ? `
+CRISIS COMMAND CONFIGURATION:
+
+You are operating as Commander Sum Chenda's personal CRISIS COMMANDER providing rapid response and emergency management.
+
+CRISIS MODE ACTIVATED:
+- Execute rapid decision-making with emergency protocols
+- Implement immediate action plans for crisis situations
+- Deploy damage control and risk mitigation strategies
+- Orchestrate quick pivots and contingency planning
+- Manage real-time threat assessment and response coordination
+
+CRISIS DELIVERY STYLE:
+✅ Rapid decision frameworks with immediate action plans
+✅ Emergency protocols with damage control measures
+✅ Quick pivot strategies with contingency planning
+✅ Real-time threat assessment with response coordination
+✅ Crisis management with recovery optimization
+
+MAINTAIN 100% PURE CORE INTELLIGENCE WITH CRISIS FOCUS.
 ` : `
 ADVISORY INTELLIGENCE CONFIGURATION:
 
@@ -3158,9 +3238,13 @@ const handleUltimateMessage = async (bot, msg) => {
 
     // Add enhanced learning indicator based on current mode
     const currentSession = userSessions.get(chatId) || { mode: 'dynasty' };
-    const learningIndicator = currentSession.mode === 'dynasty' 
-      ? "\n\n*⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️*"
-      : "\n\n*🧠 100% PURE CORE AI INTELLIGENCE - ADVISOR MODE ACTIVE 🧠*";
+    const learningIndicator = {
+      'dynasty': "\n\n*⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️*",
+      'advisor': "\n\n*🧠 100% PURE CORE AI INTELLIGENCE - ADVISOR MODE ACTIVE 🧠*",
+      'analyst': "\n\n*📊 ANALYTICAL INTELLIGENCE MODE - DEEP INSIGHTS ACTIVE 📊*",
+      'creative': "\n\n*💡 CREATIVE ARCHITECT MODE - INNOVATION ACTIVE 💡*",
+      'crisis': "\n\n*🚨 CRISIS COMMANDER MODE - RAPID RESPONSE ACTIVE 🚨*"
+    }[currentSession.mode] || "\n\n*⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️*";
 
     reply += learningIndicator;
 
@@ -3654,6 +3738,54 @@ bot.onText(/\/mode_dynasty/, async (msg) => {
   bot.sendMessage(chatId, response);
 });
 
+bot.onText(/\/mode_analyst/, async (msg) => {
+  const chatId = msg.chat.id;
+  userSessions.set(chatId, { ...userSessions.get(chatId), mode: 'analyst' });
+  
+  const response = `📊 ANALYTICAL INTELLIGENCE ACTIVATED
+
+**Intelligence Configuration:**
+- Core: 100% Pure GPT-4o (Unchanged)
+- Mode: Deep Analytical Intelligence
+- Response Style: Data synthesis and pattern recognition
+
+*📊 ANALYTICAL INTELLIGENCE MODE - DEEP INSIGHTS ACTIVE 📊*`;
+
+  bot.sendMessage(chatId, response);
+});
+
+bot.onText(/\/mode_creative/, async (msg) => {
+  const chatId = msg.chat.id;
+  userSessions.set(chatId, { ...userSessions.get(chatId), mode: 'creative' });
+  
+  const response = `💡 CREATIVE ARCHITECT ACTIVATED
+
+**Intelligence Configuration:**
+- Core: 100% Pure GPT-4o (Unchanged)
+- Mode: Creative Innovation Architecture
+- Response Style: Breakthrough thinking and innovation
+
+*💡 CREATIVE ARCHITECT MODE - INNOVATION ACTIVE 💡*`;
+
+  bot.sendMessage(chatId, response);
+});
+
+bot.onText(/\/mode_crisis/, async (msg) => {
+  const chatId = msg.chat.id;
+  userSessions.set(chatId, { ...userSessions.get(chatId), mode: 'crisis' });
+  
+  const response = `🚨 CRISIS COMMANDER ACTIVATED
+
+**Intelligence Configuration:**
+- Core: 100% Pure GPT-4o (Unchanged)
+- Mode: Crisis Management & Rapid Response
+- Response Style: Emergency protocols and quick decisions
+
+*🚨 CRISIS COMMANDER MODE - RAPID RESPONSE ACTIVE 🚨*`;
+
+  bot.sendMessage(chatId, response);
+});
+
 bot.onText(/\/modes/, async (msg) => {
   const chatId = msg.chat.id;
   
@@ -3668,6 +3800,15 @@ bot.onText(/\/modes/, async (msg) => {
 
 🎯 **/mode_advisor** - General Advisory Intelligence  
 - Consultative guidance and recommendations
+
+📊 **/mode_analyst** - Deep Analytical Intelligence
+- Data synthesis and pattern recognition
+
+💡 **/mode_creative** - Creative Innovation Architecture
+- Breakthrough thinking and innovation frameworks
+
+🚨 **/mode_crisis** - Crisis Management Commander
+- Emergency protocols and rapid response
 
 **Current Mode:** ${userSessions.get(chatId)?.mode || 'dynasty'} mode active
 
