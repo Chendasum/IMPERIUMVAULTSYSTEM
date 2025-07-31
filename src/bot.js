@@ -6,6 +6,22 @@
 // 📊 MONTE CARLO OPTIMIZATION - Strategic optimization commands deployed for revenue scaling
 // 🎯 DATABASE CONNECTION FIXED - PostgreSQL permanent memory now operational
 // ⚡ ENHANCED CAPABILITIES - Scenario builder and competitive analysis frameworks active
+// 🛡️ DYNASTY PROTECTION ACTIVE - Commander-only access control implemented
+
+// ===== DYNASTY PROTECTION SYSTEM - COMMANDER-ONLY ACCESS =====
+const AUTHORIZED_COMMANDERS = {
+  // Commander Sum Chenda - Primary Dynasty Authority
+  primary: process.env.ADMIN_CHAT_ID, // Your Telegram ID
+  
+  // Add additional authorized users here if needed
+  // secondary: "123456789", // Example: Trusted advisor ID
+};
+
+// Security validation function
+const isAuthorizedCommander = (userId) => {
+  const userIdStr = userId.toString();
+  return Object.values(AUTHORIZED_COMMANDERS).includes(userIdStr);
+};
 
 // ===== COMMANDER IDENTITY CODEX - COMPREHENSIVE PROFILE SYSTEM =====
 const COMMANDER_CORE_IDENTITY = {
@@ -2607,7 +2623,28 @@ console.log(
 // ===== ULTIMATE COMMAND SYSTEM =====
 
 // Command: /start - Ultimate welcome experience
+// ===== DYNASTY PROTECTION MIDDLEWARE =====
+// Security check for all incoming messages
+const dynastyProtection = (msg) => {
+  const userId = msg.from.id;
+  
+  if (!isAuthorizedCommander(userId)) {
+    bot.sendMessage(msg.chat.id, `🛡️ DYNASTY PROTECTION ACTIVE
+    
+⚔️ UNAUTHORIZED ACCESS DETECTED
+This is Commander Sum Chenda's private strategic AI system.
+
+Access restricted to authorized personnel only.
+
+🏛️ House of Imperium - Strategic Intelligence Division`);
+    return false;
+  }
+  return true;
+};
+
 bot.onText(/\/start/, async (msg) => {
+  // Dynasty Protection Check
+  if (!dynastyProtection(msg)) return;
   try {
     const chatId = msg.chat.id;
     const userName = msg.from.first_name || "Commander";
@@ -2695,6 +2732,8 @@ Your unlimited strategic alter ego that finds and builds everything automaticall
 
 // Command: /insights - Ultimate intelligence dashboard
 bot.onText(/\/insights/, async (msg) => {
+  // Dynasty Protection Check
+  if (!dynastyProtection(msg)) return;
   try {
     const chatId = msg.chat.id;
 
@@ -2797,6 +2836,8 @@ The system now anticipates optimal strategies based on accumulated wisdom and pr
 
 // Command: /analytics - Advanced business intelligence
 bot.onText(/\/analytics/, async (msg) => {
+  // Dynasty Protection Check
+  if (!dynastyProtection(msg)) return;
   try {
     const chatId = msg.chat.id;
 
@@ -3059,6 +3100,8 @@ bot.onText(/\/warfare (.+)/, async (msg, match) => {
 
 // Command: /monte_carlo - Enhanced Strategic Monte Carlo Analysis
 bot.onText(/\/monte_carlo (.+)/, async (msg, match) => {
+  // Dynasty Protection Check
+  if (!dynastyProtection(msg)) return;
   try {
     const chatId = msg.chat.id;
     const input = match[1].split('|');
@@ -3137,6 +3180,8 @@ Your crisis-tested credentials and systematic governance frameworks provide sign
 
 // Command: /optimize - Strategic Optimization Recommendations
 bot.onText(/\/optimize (.+)/, async (msg, match) => {
+  // Dynasty Protection Check
+  if (!dynastyProtection(msg)) return;
   try {
     const chatId = msg.chat.id;
     const scenario = match[1];
@@ -3997,6 +4042,9 @@ bot.on("message", async (msg) => {
   try {
     // Don't process our own messages or forwarded messages
     if (msg.from.is_bot || msg.forward_from) return;
+    
+    // Dynasty Protection Check
+    if (!dynastyProtection(msg)) return;
     
     // Handle voice messages
     if (msg.voice) {
@@ -8782,6 +8830,8 @@ console.log(
 
 // Handle document files (PDF, DOCX, Excel, etc.)
 bot.on("document", async (msg) => {
+  // Dynasty Protection Check
+  if (!dynastyProtection(msg)) return;
   const chatId = msg.chat.id;
   const document = msg.document;
 
@@ -8837,6 +8887,8 @@ ${result.analysis}
 
 // Handle photo/image files
 bot.on("photo", async (msg) => {
+  // Dynasty Protection Check
+  if (!dynastyProtection(msg)) return;
   const chatId = msg.chat.id;
   const photo = msg.photo[msg.photo.length - 1]; // Get highest resolution
 
@@ -8878,6 +8930,8 @@ ${result.analysis}
 
 // Handle voice messages (future enhancement)
 bot.on("voice", async (msg) => {
+  // Dynasty Protection Check
+  if (!dynastyProtection(msg)) return;
   const chatId = msg.chat.id;
   await bot.sendMessage(
     chatId,
