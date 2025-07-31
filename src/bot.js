@@ -5297,18 +5297,75 @@ bot.onText(/\/modes/, async (msg) => {
   bot.sendMessage(chatId, response);
 });
 
-// ===== ULTIMATE HEALTH CHECK SYSTEM =====
+// ===== ULTIMATE HEALTH CHECK SYSTEM - RAILWAY OPTIMIZED =====
 const app = express();
 app.use(express.json());
+
+// Process signal handling for graceful Railway shutdown
+process.on('SIGTERM', () => {
+  console.log('🔄 SIGTERM received - Dynasty Protection Protocol activated');
+  console.log('⚡ Graceful shutdown initiated...');
+  
+  // Close server gracefully
+  if (server) {
+    server.close(() => {
+      console.log('✅ HTTP server closed');
+      process.exit(0);
+    });
+    
+    // Force exit after 10 seconds
+    setTimeout(() => {
+      console.log('⚠️ Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  } else {
+    process.exit(0);
+  }
+});
+
+process.on('SIGINT', () => {
+  console.log('🔄 SIGINT received - Dynasty Protection Protocol activated');
+  process.exit(0);
+});
+
+// Railway keep-alive heartbeat and health monitoring
+const keepAliveHeartbeat = () => {
+  setInterval(() => {
+    const memUsage = process.memoryUsage();
+    const memMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+    console.log(`⚡ IMPERIUM VAULT CLAUDE - System heartbeat [${new Date().toLocaleTimeString()}] - Memory: ${memMB}MB`);
+    
+    // Memory cleanup if usage gets high
+    if (memMB > 400) {
+      console.log('🧹 Performing memory cleanup...');
+      if (global.gc) {
+        global.gc();
+      }
+    }
+  }, 30000);
+};
+
+// Memory management for Railway
+process.on('uncaughtException', (error) => {
+  console.error('🚨 Uncaught Exception:', error);
+  // Don't exit - Railway will restart anyway
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🚨 Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit - Railway will restart anyway
+});
 
 // Note: Webhook endpoint configured in setupWebhook function below
 
 app.get("/", (req, res) => {
   res.json({
-    status: "online",
-    bot: "Ultimate Vault Claude - Supreme Strategic Intelligence",
+    status: "🏛️ ULTIMATE VAULT CLAUDE OPERATIONAL",
+    bot: "Supreme Strategic Intelligence - Dynasty Building System",
     commander: "Sum Chenda - Reformed Fund Architect Dynasty Builder",
-    version: "6.0.0 - Dynasty Strategic Power Edition (4,200+ Lines)",
+    version: "6.0.0 - Billionaire Wealth Control Edition",
+    deployment: "Railway Production - Optimized",
+    domain: process.env.RAILWAY_STATIC_URL || "imperiumvaultsystem-production.up.railway.app",
     intelligence_stats: {
       total_conversations: ultimateLearningDatabase.size,
       success_strategies: (successMetrics.get("proven_approaches") || [])
@@ -5327,6 +5384,14 @@ app.get("/", (req, res) => {
         .length,
     },
     capabilities: [
+      "🔥 BILLIONAIRE WORLD WEALTH CONTROL SYSTEMS",
+      "⚡ Systematic Market Control Intelligence",
+      "🏛️ Automatic Wealth Extraction Protocols", 
+      "👑 Power Network Domination Architecture",
+      "🌍 Empire Building Automation (ASEAN Scale)",
+      "💎 Cambodia Financial Ecosystem Control",
+      "⚔️ Competitive Elimination Frameworks",
+      "🎯 Dynasty-Level Strategic Capabilities",
       "Ultimate Auto-Learning with 7 Specialized Databases",
       "Predictive Strategic Analysis with 85%+ Accuracy", 
       "Advanced Cambodia Market Intelligence",
@@ -5339,7 +5404,7 @@ app.get("/", (req, res) => {
       "Deal Structure Analysis and Success Prediction",
       "Voice Input/Output with OpenAI Whisper & TTS",
       "Complete Document Processing (PDF, DOCX, XLSX, TXT)",
-      "Advanced Image Analysis with GPT-4 Vision",
+      "Advanced Image Analysis with GPT-4.1 Vision",
       "Multi-Modal Strategic Intelligence Processing",
       "Real-Time Global Data Integration",
       "DYNASTY-LEVEL STRATEGIC POWER ARCHITECTURE",
@@ -5403,8 +5468,13 @@ app.get("/webhook-info", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 Ultimate health check server running on port ${PORT}`);
+  console.log(`🏛️ Domain: ${process.env.RAILWAY_STATIC_URL || "imperiumvaultsystem-production.up.railway.app"}`);
+  
+  // Start Railway heartbeat system
+  keepAliveHeartbeat();
+  console.log('⚡ Railway heartbeat system activated');
 });
 
 // WEBHOOK SETUP FOR RAILWAY DEPLOYMENT
