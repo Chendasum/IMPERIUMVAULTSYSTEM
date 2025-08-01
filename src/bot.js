@@ -2974,6 +2974,7 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• /wealthstatus - Check wealth machines status\n" +
       "• /billionaire - Deploy complete billionaire automation suite\n" +
       "• /howrevenue - Explain how automation generates real revenue\n" +
+      "• /revenue - Show real daily revenue tracker with actual deals\n" +
       "• /alerts - How automation communicates with you\n" +
       "• /samplealert - See example automation messages\n" +
       "• /empirestatus - Complete empire automation overview\n" +
@@ -3271,6 +3272,32 @@ bot.onText(/\/samplealert/i, async (msg) => {
   } catch (error) {
     console.error('❌ Sample alert command error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not send sample alerts.");
+  }
+});
+
+// Command: /revenue - Show real daily revenue tracker
+bot.onText(/\/revenue/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "💰 Loading real revenue tracker...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const RevenueTracker = require('./src/revenue/RevenueTracker');
+    const revenueTracker = new RevenueTracker(bot);
+    
+    await revenueTracker.showRevenueTracker(chatId);
+    
+    // Show weekly trend after main report
+    setTimeout(async () => {
+      await revenueTracker.showWeeklyTrend(chatId);
+    }, 18000);
+    
+  } catch (error) {
+    console.error('❌ Revenue tracker command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not load revenue tracker.");
   }
 });
 
