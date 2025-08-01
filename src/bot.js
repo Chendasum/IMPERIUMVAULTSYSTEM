@@ -421,17 +421,23 @@ try {
       global.realEstateBot = new RealEstateAutomation(bot);
       global.propertyBot = new CambodiaPropertyBot(bot);
       
+      // Initialize Market APIs Bot
+      const MarketApisBot = require(path.join(__dirname, 'automation', 'MarketApisBot'));
+      global.marketApisBot = new MarketApisBot(bot);
+      
       console.log('🤖 AI TRADING BOT - INITIALIZED (Delayed)');
       console.log('🏦 CAMBODIA BANKING BOT - INITIALIZED');
       console.log('🏛️ BUSINESS BANKING INTEGRATION - INITIALIZED');
       console.log('🏠 REAL ESTATE AUTOMATION - INITIALIZED');
       console.log('🏠 CAMBODIA PROPERTY BOT - INITIALIZED');
+      console.log('📊 MARKET APIS BOT - INITIALIZED');
       
       // Initialize banking and property automation
       global.bankingBot.initialize();
       global.businessBankingBot.initializeBusinessAPIs();
       global.realEstateBot.initializeRealEstateAPIs();
       global.propertyBot.initialize();
+      global.marketApisBot.initialize();
       
       // Initialize wealth generation coordinator
       const WealthGenerationCoordinator = require(path.join(__dirname, 'automation', 'WealthGenerationCoordinator'));
@@ -3599,10 +3605,13 @@ Welcome, Commander. I am your UNLIMITED GPT-4.1 DYNASTY AI SYSTEM - your supreme
 
 🔥 ULTIMATE COMMAND ARSENAL:
 /autotrading - Start AI forex trading automation
+/start_market_analysis - Start comprehensive market analysis
 /start_business_automation - Enterprise banking optimization
 /start_property_automation - Real estate investment scanning
 /forex_status - Trading account status and performance
 /banking_status - Personal banking optimization status
+/market_status - Market analysis status and opportunities
+/market_report - Detailed market intelligence report
 /business_integration_status - Enterprise API connections
 /property_integration_status - Real estate platform connections
 
@@ -11970,6 +11979,149 @@ Real-time data from institutional trading APIs`;
     await bot.sendMessage(msg.chat.id, "📊 MARKET DATA\n\nFetching real-time data...");
   }
 });
+
+// ===== MARKET APIS AUTOMATION COMMANDS =====
+
+// Command: /start_market_analysis - Start comprehensive market analysis
+bot.onText(/\/start_market_analysis/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.marketApisBot) {
+      await bot.sendMessage(chatId, "⚠️ Market APIs system not initialized. Please restart the system.");
+      return;
+    }
+
+    await bot.sendMessage(chatId, "🌍 Starting comprehensive market analysis across all asset classes...");
+    
+    const result = await global.marketApisBot.startMarketAnalysis();
+    
+    if (result.success) {
+      await bot.sendMessage(chatId, 
+        `✅ Market Analysis Active!\n\n` +
+        `📊 Monitoring: Stocks, Forex, Commodities, Crypto\n` +
+        `⏰ Scan Interval: ${result.interval}\n` +
+        `🎯 AI Screening: High-confidence opportunities\n` +
+        `📱 Use /market_status for real-time overview`
+      );
+    } else {
+      await bot.sendMessage(chatId, `❌ Failed to start market analysis: ${result.message}`);
+    }
+
+  } catch (error) {
+    console.error('❌ Market analysis start error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Failed to start market analysis. Please try again.");
+  }
+});
+
+// Command: /market_status - Get current market analysis status
+bot.onText(/\/market_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.marketApisBot) {
+      await bot.sendMessage(chatId, "⚠️ Market APIs system not available.");
+      return;
+    }
+
+    const status = await global.marketApisBot.getMarketStatus();
+    
+    let statusMessage = `📊 MARKET ANALYSIS STATUS\n\n`;
+    
+    if (status.isRunning) {
+      statusMessage += `✅ Status: ACTIVE\n`;
+      statusMessage += `⏰ Last Scan: ${status.lastScan ? new Date(status.lastScan).toLocaleString() : 'N/A'}\n\n`;
+      statusMessage += `📈 Monitored Assets:\n`;
+      statusMessage += `• Stocks: ${status.assets.stocks}\n`;
+      statusMessage += `• Forex: ${status.assets.forex}\n`;
+      statusMessage += `• Commodities: ${status.assets.commodities}\n`;
+      statusMessage += `• Crypto: ${status.assets.crypto}\n\n`;
+      statusMessage += `🎯 Opportunities Found:\n`;
+      statusMessage += `• High Confidence: ${status.opportunities.high}\n`;
+      statusMessage += `• Medium Confidence: ${status.opportunities.medium}\n`;
+      statusMessage += `• Total: ${status.opportunities.total}\n\n`;
+      statusMessage += `📱 Commands:\n`;
+      statusMessage += `/market_report - Detailed analysis\n`;
+      statusMessage += `/stop_market_analysis - Stop monitoring`;
+    } else {
+      statusMessage += `⏸️ Status: STOPPED\n`;
+      statusMessage += `📱 Use /start_market_analysis to begin monitoring`;
+    }
+
+    await bot.sendMessage(chatId, statusMessage);
+
+  } catch (error) {
+    console.error('❌ Market status error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not get market status.");
+  }
+});
+
+// Command: /market_report - Get detailed market intelligence report
+bot.onText(/\/market_report/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.marketApisBot) {
+      await bot.sendMessage(chatId, "⚠️ Market APIs system not available.");
+      return;
+    }
+
+    await bot.sendMessage(chatId, "📊 Generating comprehensive market intelligence report...");
+    
+    const report = await global.marketApisBot.getDetailedMarketReport();
+    
+    // Split long messages
+    if (report.length > 4000) {
+      const chunks = report.match(/[\s\S]{1,4000}/g) || [report];
+      for (let i = 0; i < chunks.length; i++) {
+        await bot.sendMessage(chatId, chunks[i], { disable_web_page_preview: true });
+        if (i < chunks.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Delay between messages
+        }
+      }
+    } else {
+      await bot.sendMessage(chatId, report, { disable_web_page_preview: true });
+    }
+
+  } catch (error) {
+    console.error('❌ Market report error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not generate market report.");
+  }
+});
+
+// Command: /stop_market_analysis - Stop market analysis
+bot.onText(/\/stop_market_analysis/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.marketApisBot) {
+      await bot.sendMessage(chatId, "⚠️ Market APIs system not available.");
+      return;
+    }
+
+    const result = await global.marketApisBot.stopMarketAnalysis();
+    
+    if (result.success) {
+      await bot.sendMessage(chatId, "⏹️ Market analysis stopped successfully.");
+    } else {
+      await bot.sendMessage(chatId, `❌ ${result.message}`);
+    }
+
+  } catch (error) {
+    console.error('❌ Market analysis stop error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Failed to stop market analysis.");
+  }
+});
+
+// ===== BUSINESS BANKING AUTOMATION COMMANDS =====
 
 // Command: /start_business_automation - Start business/corporate banking automation
 bot.onText(/\/start_business_automation/i, async (msg) => {
