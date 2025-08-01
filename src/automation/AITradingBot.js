@@ -24,7 +24,7 @@ class AITradingBot {
     }
 
     this.isRunning = true;
-    this.commanderChatId = chatId;
+    this.userChatId = chatId;
     
     await this.bot.sendMessage(chatId, 
       "🤖 **FULL AI AUTO-TRADING ACTIVATED**\n\n" +
@@ -115,8 +115,8 @@ class AITradingBot {
     } catch (error) {
       console.error('❌ Automatic trading error:', error.message);
       
-      if (this.commanderChatId) {
-        await this.bot.sendMessage(this.commanderChatId,
+      if (this.userChatId) {
+        await this.bot.sendMessage(this.userChatId,
           `⚠️ **AI TRADING ERROR**\n\n${error.message}\n\nContinuing automatic analysis...`
         );
       }
@@ -186,8 +186,8 @@ class AITradingBot {
       this.activeTrades.set(tradeInfo.id, tradeInfo);
       this.tradingHistory.push(tradeInfo);
 
-      // Notify commander
-      if (this.commanderChatId) {
+      // Notify user
+      if (this.userChatId) {
         const notification = 
           `🤖 **AI AUTOMATIC TRADE EXECUTED**\n\n` +
           `📊 Symbol: ${decision.symbol}\n` +
@@ -200,7 +200,7 @@ class AITradingBot {
           `💵 Risk: $${this.maxRiskPerTrade}\n\n` +
           `⚡ Trade ${this.dailyTradeCount}/${this.maxDailyTrades} today`;
 
-        await this.bot.sendMessage(this.commanderChatId, notification);
+        await this.bot.sendMessage(this.userChatId, notification);
       }
 
       console.log(`✅ Automatic trade executed: ${decision.action} ${decision.symbol}`);
@@ -208,8 +208,8 @@ class AITradingBot {
     } catch (error) {
       console.error('❌ Automatic trade execution failed:', error.message);
       
-      if (this.commanderChatId) {
-        await this.bot.sendMessage(this.commanderChatId,
+      if (this.userChatId) {
+        await this.bot.sendMessage(this.userChatId,
           `❌ **AI TRADE FAILED**\n\n` +
           `Symbol: ${decision.symbol}\n` +
           `Action: ${decision.action}\n` +
@@ -247,7 +247,7 @@ class AITradingBot {
 
   // AUTOMATION STATUS
   async sendAutomationStatus() {
-    if (!this.commanderChatId) return;
+    if (!this.userChatId) return;
 
     const statusMessage = 
       `🤖 **AI AUTO-TRADING STATUS**\n\n` +
@@ -260,7 +260,7 @@ class AITradingBot {
     // Send status every hour only
     const now = new Date();
     if (now.getMinutes() === 0) {
-      await this.bot.sendMessage(this.commanderChatId, statusMessage);
+      await this.bot.sendMessage(this.userChatId, statusMessage);
     }
   }
 
