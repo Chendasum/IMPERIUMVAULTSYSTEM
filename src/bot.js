@@ -2973,6 +2973,7 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• /wealthmachines - Deploy automated wealth systems\n" +
       "• /wealthstatus - Check wealth machines status\n" +
       "• /billionaire - Deploy complete billionaire automation suite\n" +
+      "• /howrevenue - Explain how automation generates real revenue\n" +
       "• /empirestatus - Complete empire automation overview\n" +
       "• /empire_status - Legacy automation overview\n" +
       "• /stop_automation - Pause automated systems\n\n" +
@@ -3200,6 +3201,27 @@ bot.onText(/\/billionaire/i, async (msg) => {
   } catch (error) {
     console.error('❌ Billionaire automation command error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not deploy billionaire automation systems.");
+  }
+});
+
+// Command: /howrevenue - Explain how automation generates real revenue
+bot.onText(/\/howrevenue/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "💰 Explaining exactly how automation generates revenue...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const RevenueGenerationMechanisms = require('./src/intelligence/RevenueGenerationMechanisms');
+    const revenueExplainer = new RevenueGenerationMechanisms(bot);
+    
+    await revenueExplainer.explainRevenueGeneration(chatId);
+    
+  } catch (error) {
+    console.error('❌ Revenue explanation command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not explain revenue generation.");
   }
 });
 
