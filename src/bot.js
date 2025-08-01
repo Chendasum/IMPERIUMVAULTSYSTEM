@@ -2964,26 +2964,37 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• Platform transaction fees: $6-48M annually\n" +
       "• Combined potential: $9-56M annually\n\n" +
       
-      "🎯 COMMANDS:\n" +
+      "🚀 MAIN MENU & GETTING STARTED:\n" +
+      "• /menu - Complete AI GPT superpower menu (START HERE)\n" +
+      "• /practical - How to start making money from $0 today\n" +
+      "• /setup - Connect AI systems to real trading accounts\n\n" +
+      
+      "💰 IMMEDIATE INCOME (Use Your AI GPT):\n" +
+      "• /consulting - Offer AI-powered business consulting\n" +
+      "• /content - Create and sell digital products with AI\n" +
+      "• /analysis - Market analysis and research services\n\n" +
+      
+      "🤖 AUTOMATED SYSTEMS (Scale Income):\n" +
+      "• /aitrading - AI trading empire (global markets)\n" +
+      "• /globalcapital - Global capital movement systems\n" +
+      "• /unlimited - Unlimited intelligence engine (1000+ systems)\n\n" +
+      
+      "🏛️ WEALTH BUILDING (Long-term):\n" +
+      "• /billionaire - Complete billionaire automation suite\n" +
+      "• /wealthmachines - Automated wealth systems deployment\n" +
+      "• /superwealth - Learn billionaire wealth strategies\n\n" +
+      
+      "📊 TRACKING & STATUS:\n" +
+      "• /revenue - Real daily revenue tracker with actual deals\n" +
+      "• /alerts - How automation communicates opportunities\n" +
+      "• /wealthstatus - Check all wealth machines status\n" +
+      "• /howrevenue - Explain how systems generate revenue\n" +
       "• /prospects - View latest prospect intelligence\n" +
       "• /contracts - View major contract opportunities\n" +
       "• /lending - View daily lending activity\n" +
       "• /mous - Active Credit MOUs status\n" +
-      "• /superwealth - Learn billionaire wealth strategies\n" +
-      "• /wealthmachines - Deploy automated wealth systems\n" +
-      "• /wealthstatus - Check wealth machines status\n" +
-      "• /billionaire - Deploy complete billionaire automation suite\n" +
-      "• /unlimited - Deploy unlimited intelligence engine (no limits)\n" +
-      "• /aitrading - Deploy AI trading empire (global markets)\n" +
-      "• /globalcapital - Deploy global capital movement systems\n" +
-      "• /setup - How to connect AI systems to real accounts\n" +
-      "• /practical - How to actually start making money from $0\n" +
-      "• /howrevenue - Explain how automation generates real revenue\n" +
-      "• /revenue - Show real daily revenue tracker with actual deals\n" +
-      "• /alerts - How automation communicates with you\n" +
       "• /samplealert - See example automation messages\n" +
       "• /empirestatus - Complete empire automation overview\n" +
-      "• /empire_status - Legacy automation overview\n" +
       "• /stop_automation - Pause automated systems\n\n" +
       
       "⚡ AUTOMATED PRIVATE LENDING EMPIRE ONLINE\n\n" +
@@ -3408,6 +3419,48 @@ bot.onText(/\/practical/i, async (msg) => {
   } catch (error) {
     console.error('❌ Practical guide error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not load practical guide.");
+  }
+});
+
+// Command: /menu - Complete superpower menu system
+bot.onText(/\/menu/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "🚀 Loading complete AI GPT superpower menu...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const SuperpowerMenu = require('./src/interface/SuperpowerMenu');
+    const superpowerMenu = new SuperpowerMenu(bot);
+    
+    await superpowerMenu.showSuperpowerMenu(chatId);
+    
+  } catch (error) {
+    console.error('❌ Superpower menu error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not load superpower menu.");
+  }
+});
+
+// Command: /consulting - AI-powered business consulting services
+bot.onText(/\/consulting/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "💼 Loading AI-powered consulting services setup...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const ConsultingService = require('./src/services/ConsultingService');
+    const consultingService = new ConsultingService(bot);
+    
+    await consultingService.showConsultingSetup(chatId);
+    
+  } catch (error) {
+    console.error('❌ Consulting service error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not load consulting services.");
   }
 });
 
