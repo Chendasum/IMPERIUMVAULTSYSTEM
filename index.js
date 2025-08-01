@@ -4,17 +4,17 @@
 console.log('🏛️ Starting IMPERIUM VAULT SYSTEM...');
 console.log('⚡ Initializing Ultimate Vault Claude Strategic AI...');
 
-// Force use main bot.js file directly - no fallbacks
+// Railway deployment - use src structure since main bot.js not deployed
 const fs = require('fs');
 const path = require('path');
 
-let botPath = './bot.js';  // Direct path to main bot.js
+let botPath = './src/bot.js';  // Use src/bot.js in Railway deployment
 
-console.log('🔍 Loading main bot.js file with complete autotrading...');
+console.log('🔍 Loading bot.js from src directory...');
 
-// Verify main bot.js exists
+// Verify src/bot.js exists
 if (!fs.existsSync(botPath)) {
-  console.error('🚨 CRITICAL ERROR: Main bot.js file not found!');
+  console.error('🚨 CRITICAL ERROR: src/bot.js file not found!');
   console.log('📁 Current directory contents:');
   try {
     const files = fs.readdirSync('.');
@@ -25,7 +25,7 @@ if (!fs.existsSync(botPath)) {
   process.exit(1);
 }
 
-console.log(`✅ Using main bot.js file: ${botPath}`);
+console.log(`✅ Using Railway deployment bot file: ${botPath}`);
 
 // Load the main bot application
 console.log(`🚀 Loading Ultimate Vault Claude from: ${botPath}`);
