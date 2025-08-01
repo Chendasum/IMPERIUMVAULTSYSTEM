@@ -336,7 +336,7 @@ const axios = require("axios");
 
 // Forex Trading Integration - MetaApi Connection
 const path = require('path');
-const ForexApiIntegration = require(path.join(__dirname, '..', 'services', 'forex-api-integration'));
+const ForexApiIntegration = require('./services/forex-api-integration');
 
 // ===== STRATEGIC POWER MULTIPLIER SYSTEMS INTEGRATION =====
 let MarketIntelligenceEngine, ClientAcquisitionEngine, RevenueOptimizationEngine;
@@ -434,7 +434,7 @@ try {
   
   // Initialize Forex API even if automation modules fail
   try {
-    const ForexApiIntegration = require(path.join(__dirname, '..', 'services', 'forex-api-integration'));
+    const ForexApiIntegration = require('./services/forex-api-integration');
     global.forexApi = new ForexApiIntegration();
     console.log('📈 FOREX API INTEGRATION - READY (Fallback Mode)');
   } catch (forexError) {
