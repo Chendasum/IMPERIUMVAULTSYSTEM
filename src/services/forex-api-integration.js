@@ -306,6 +306,38 @@ class ForexApiIntegration {
     }
   }
 
+  // Advanced AI trading analysis for automated trading bot
+  async getAdvancedAnalysis(symbol) {
+    try {
+      // Use the existing comprehensive analysis function
+      return await this.getComprehensiveAnalysis(symbol);
+    } catch (error) {
+      console.error(`❌ Advanced analysis failed for ${symbol}:`, error.message);
+      
+      // Return fallback analysis to keep trading bot operational
+      return {
+        symbol: symbol,
+        currentPrice: 'N/A',
+        signal: 'hold',
+        trend: 'neutral',
+        confidence: 0.0,
+        spreadPercent: '0.000',
+        recommendation: {
+          entry: '0.00000',
+          stopLoss: '0.00000',
+          takeProfit: '0.00000',
+          lotSize: 0.01,
+          riskAmount: '$1.00'
+        },
+        analysis: {
+          marketCondition: 'unknown',
+          volatility: 'unknown',
+          recommendation: 'Market data unavailable - holding position'
+        }
+      };
+    }
+  }
+
   // Get trading status summary
   async getTradingStatus() {
     try {
