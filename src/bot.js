@@ -2972,13 +2972,16 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• /superwealth - Learn billionaire wealth strategies\n" +
       "• /wealthmachines - Deploy automated wealth systems\n" +
       "• /wealthstatus - Check wealth machines status\n" +
-      "• /empire_status - Complete automation overview\n" +
+      "• /billionaire - Deploy complete billionaire automation suite\n" +
+      "• /empirestatus - Complete empire automation overview\n" +
+      "• /empire_status - Legacy automation overview\n" +
       "• /stop_automation - Pause automated systems\n\n" +
       
       "⚡ AUTOMATED PRIVATE LENDING EMPIRE ONLINE\n\n" +
-      "🚀 READY FOR WEALTH MULTIPLICATION:\n" +
-      "Use /wealthmachines to deploy automated wealth systems\n" +
-      "that generate $9-56M annually using billionaire strategies";
+      "🚀 READY FOR ULTIMATE WEALTH AUTOMATION:\n" +
+      "• /wealthmachines - Deploy $9-56M wealth systems\n" +
+      "• /billionaire - Deploy complete $500M-165B automation suite\n" +
+      "Access the same automated systems billionaires use daily";
     
     await bot.sendMessage(chatId, systemStatus);
     
@@ -2993,6 +2996,7 @@ bot.onText(/\/autopilot/i, async (msg) => {
 
     // Initialize wealth multiplication engine for future use
     global.wealthEngine = null;
+    global.billionaireEngine = null;
     
   } catch (error) {
     console.error('❌ Autopilot error:', error.message);
@@ -3175,6 +3179,108 @@ bot.onText(/\/wealthstatus/i, async (msg) => {
   }
 });
 
+// Command: /billionaire - Deploy complete billionaire automation suite
+bot.onText(/\/billionaire/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "🏛️ Deploying complete billionaire automation suite...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const BillionaireAutomationEngine = require('./src/automation/BillionaireAutomationEngine');
+    const billionaireEngine = new BillionaireAutomationEngine(bot);
+    
+    await billionaireEngine.deployBillionaireAutomation(chatId);
+    
+    // Store billionaire engine globally
+    global.billionaireEngine = billionaireEngine;
+    
+  } catch (error) {
+    console.error('❌ Billionaire automation command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not deploy billionaire automation systems.");
+  }
+});
+
+// Command: /empirestatus - Complete empire automation status
+bot.onText(/\/empirestatus/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    let report = `🏛️ COMPLETE AUTOMATION EMPIRE STATUS\n\n`;
+    
+    // Private Lending Status
+    if (global.automationSystems && global.automationSystems.isActive) {
+      report += `🏦 PRIVATE LENDING EMPIRE: ✅ ACTIVE\n`;
+      report += `• Prospect Hunter: ${global.automationSystems.prospectHunter ? '✅' : '❌'}\n`;
+      report += `• Contract Tracker: ${global.automationSystems.contractTracker ? '✅' : '❌'}\n`;
+      report += `• Lending Engine: ${global.automationSystems.lendingEngine ? '✅' : '❌'}\n`;
+      report += `• Potential: $15-150M monthly deployment\n\n`;
+    } else {
+      report += `🏦 PRIVATE LENDING EMPIRE: ❌ NOT ACTIVE\n`;
+      report += `Use /autopilot to activate private lending systems\n\n`;
+    }
+    
+    // Wealth Machines Status
+    if (global.wealthEngine) {
+      const wealthStatus = global.wealthEngine.getWealthMachinesStatus();
+      report += `🤖 WEALTH MULTIPLICATION MACHINES: ✅ ACTIVE\n`;
+      report += `• Total machines: ${wealthStatus.total_machines}\n`;
+      report += `• Automation level: ${wealthStatus.automation_level}\n`;
+      report += `• Potential: $${(wealthStatus.total_potential_income / 1000000).toFixed(1)}M annually\n\n`;
+    } else {
+      report += `🤖 WEALTH MULTIPLICATION MACHINES: ❌ NOT DEPLOYED\n`;
+      report += `Use /wealthmachines to activate wealth systems\n\n`;
+    }
+    
+    // Billionaire Automation Status
+    if (global.billionaireEngine) {
+      const billionaireStatus = global.billionaireEngine.getBillionaireAutomationStatus();
+      report += `🏛️ BILLIONAIRE AUTOMATION SUITE: ✅ ACTIVE\n`;
+      report += `• Total systems: ${billionaireStatus.total_systems}/10\n`;
+      report += `• Active systems: ${billionaireStatus.active_systems}\n`;
+      report += `• Automation level: ${billionaireStatus.automation_level}\n`;
+      report += `• Potential: $${(billionaireStatus.total_potential_income / 1000000000).toFixed(1)}B annually\n\n`;
+    } else {
+      report += `🏛️ BILLIONAIRE AUTOMATION SUITE: ❌ NOT DEPLOYED\n`;
+      report += `Use /billionaire to activate complete billionaire systems\n\n`;
+    }
+    
+    // Combined Empire Potential
+    let totalPotential = 0;
+    if (global.wealthEngine) {
+      const wealthStatus = global.wealthEngine.getWealthMachinesStatus();
+      totalPotential += wealthStatus.total_potential_income;
+    }
+    if (global.billionaireEngine) {
+      const billionaireStatus = global.billionaireEngine.getBillionaireAutomationStatus();
+      totalPotential += billionaireStatus.total_potential_income;
+    }
+    
+    report += `💎 TOTAL EMPIRE POTENTIAL:\n`;
+    if (totalPotential > 0) {
+      if (totalPotential >= 1000000000) {
+        report += `$${(totalPotential / 1000000000).toFixed(1)}B ANNUALLY\n`;
+      } else {
+        report += `$${(totalPotential / 1000000).toFixed(1)}M ANNUALLY\n`;
+      }
+    } else {
+      report += `Deploy automation systems to see potential\n`;
+    }
+    
+    report += `\n⚡ AUTOMATED WEALTH EMPIRE OVERVIEW COMPLETE`;
+    
+    await bot.sendMessage(chatId, report);
+    
+  } catch (error) {
+    console.error('❌ Empire status command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not retrieve empire status.");
+  }
+});
+
 // Command: /mous - View active Credit MOUs
 bot.onText(/\/mous/i, async (msg) => {
   try {
@@ -3326,6 +3432,11 @@ bot.onText(/\/stop_automation/i, async (msg) => {
     if (global.wealthEngine) {
       // Wealth engine stop functionality would go here
       global.wealthEngine = null;
+    }
+    
+    // Stop billionaire automation if active
+    if (global.billionaireEngine) {
+      global.billionaireEngine = null;
     }
 
     await bot.sendMessage(chatId,
