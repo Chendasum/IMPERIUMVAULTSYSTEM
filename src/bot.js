@@ -3288,6 +3288,7 @@ bot.onText(/\/forex_status/i, async (msg) => {
       "⚡ AVAILABLE COMMANDS:\n" +
       "• /forex_signals - AI-powered trading signals\n" +
       "• /autotrading - START full AI automation (no manual commands)\n" +
+      "• /start_monitoring - Monitor ABA/ACLEDA apps for optimal rates\n" +
       "• /forex_trade SYMBOL BUY/SELL LOTSIZE - Manual trade execution\n" +
       "• /forex_performance - View trading performance\n" +
       "• /forex_setup - Configuration and help\n\n" +
@@ -3506,6 +3507,85 @@ bot.onText(/\/trading_status/i, async (msg) => {
   } catch (error) {
     console.error('❌ Trading status error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not get trading status.");
+  }
+});
+
+// ===== APP MONITORING COMMANDS - NO API NEEDED =====
+
+// Command: /start_monitoring - Start ABA/ACLEDA app monitoring
+bot.onText(/\/start_monitoring/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.appMonitoringBot) {
+      const AppMonitoringBot = require('./automation/AppMonitoringBot');
+      global.appMonitoringBot = new AppMonitoringBot(bot);
+    }
+
+    const result = await global.appMonitoringBot.startMonitoring();
+    console.log('📱 App monitoring started:', result.status);
+    
+  } catch (error) {
+    console.error('❌ App monitoring start error:', error.message);
+    await bot.sendMessage(msg.chat.id, '⚠️ Failed to start app monitoring. Please try again.');
+  }
+});
+
+// Command: /stop_monitoring - Stop app monitoring
+bot.onText(/\/stop_monitoring/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (global.appMonitoringBot) {
+      const result = await global.appMonitoringBot.stopMonitoring();
+      console.log('📱 App monitoring stopped:', result.status);
+    } else {
+      await bot.sendMessage(chatId, '📱 App monitoring is not currently active.');
+    }
+    
+  } catch (error) {
+    console.error('❌ App monitoring stop error:', error.message);
+    await bot.sendMessage(msg.chat.id, '⚠️ Failed to stop app monitoring.');
+  }
+});
+
+// Command: /monitoring_status - Check app monitoring status
+bot.onText(/\/monitoring_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.appMonitoringBot) {
+      const AppMonitoringBot = require('./automation/AppMonitoringBot');
+      global.appMonitoringBot = new AppMonitoringBot(bot);
+    }
+
+    await global.appMonitoringBot.getMonitoringStatus();
+    
+  } catch (error) {
+    console.error('❌ Monitoring status error:', error.message);
+    await bot.sendMessage(msg.chat.id, '⚠️ Failed to get monitoring status.');
+  }
+});
+
+// Handle exchange completion confirmations
+bot.onText(/done \$?(\d+)/i, async (msg, match) => {
+  const chatId = msg.chat.id;
+  if (!dynastyProtection(msg)) return;
+
+  try {
+    const amount = parseFloat(match[1]);
+    if (global.appMonitoringBot && amount > 0) {
+      // Record the exchange completion with current rate
+      await global.appMonitoringBot.recordExchangeCompletion(amount, 'USD', 'KHR', 4115);
+    }
+  } catch (error) {
+    console.log('Exchange confirmation error:', error.message);
   }
 });
 
