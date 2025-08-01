@@ -411,18 +411,26 @@ try {
     try {
       const AITradingBot = require(path.join(__dirname, 'automation', 'AITradingBot'));
       const CambodiaBankingBot = require(path.join(__dirname, 'automation', 'CambodiaBankingBot'));
+      const BusinessBankingIntegration = require(path.join(__dirname, 'automation', 'BusinessBankingIntegration'));
+      const RealEstateAutomation = require(path.join(__dirname, 'automation', 'RealEstateAutomation'));
       const CambodiaPropertyBot = require(path.join(__dirname, 'automation', 'CambodiaPropertyBot'));
       
       global.aiTradingBot = new AITradingBot(global.forexApi, bot);
       global.bankingBot = new CambodiaBankingBot(bot);
+      global.businessBankingBot = new BusinessBankingIntegration(bot);
+      global.realEstateBot = new RealEstateAutomation(bot);
       global.propertyBot = new CambodiaPropertyBot(bot);
       
       console.log('🤖 AI TRADING BOT - INITIALIZED (Delayed)');
       console.log('🏦 CAMBODIA BANKING BOT - INITIALIZED');
+      console.log('🏛️ BUSINESS BANKING INTEGRATION - INITIALIZED');
+      console.log('🏠 REAL ESTATE AUTOMATION - INITIALIZED');
       console.log('🏠 CAMBODIA PROPERTY BOT - INITIALIZED');
       
       // Initialize banking and property automation
       global.bankingBot.initialize();
+      global.businessBankingBot.initializeBusinessAPIs();
+      global.realEstateBot.initializeRealEstateAPIs();
       global.propertyBot.initialize();
       
       // Initialize wealth generation coordinator
@@ -11858,5 +11866,99 @@ Real-time data from institutional trading APIs`;
   } catch (error) {
     console.error("❌ Market data error:", error.message);
     await bot.sendMessage(msg.chat.id, "📊 MARKET DATA\n\nFetching real-time data...");
+  }
+});
+
+// Command: /start_business_automation - Start business/corporate banking automation
+bot.onText(/\/start_business_automation/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    await bot.sendMessage(chatId, "🏛️ Initializing business banking automation...");
+    
+    if (!global.businessBankingBot) {
+      await bot.sendMessage(chatId, "⚠️ Business banking system not initialized. Run /start first.");
+      return;
+    }
+
+    const result = await global.businessBankingBot.startBusinessAutomation();
+    
+    if (result.success) {
+      await bot.sendMessage(chatId, "✅ Business banking automation activated successfully!");
+    } else {
+      await bot.sendMessage(chatId, `❌ Business automation failed: ${result.message}`);
+    }
+
+  } catch (error) {
+    console.error('❌ Business automation error:', error.message);
+    await bot.sendMessage(msg.chat.id, `❌ Business automation failed: ${error.message}`);
+  }
+});
+
+// Command: /business_integration_status - Check business API connections
+bot.onText(/\/business_integration_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.businessBankingBot) {
+      await bot.sendMessage(chatId, "⚠️ Business banking system not initialized. Run /start first.");
+      return;
+    }
+
+    await global.businessBankingBot.sendBusinessIntegrationReport();
+
+  } catch (error) {
+    console.error('❌ Business integration status error:', error.message);
+    await bot.sendMessage(msg.chat.id, `❌ Status check failed: ${error.message}`);
+  }
+});
+
+// Command: /start_property_automation - Start real estate automation
+bot.onText(/\/start_property_automation/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    await bot.sendMessage(chatId, "🏠 Initializing real estate automation...");
+    
+    if (!global.realEstateBot) {
+      await bot.sendMessage(chatId, "⚠️ Real estate system not initialized. Run /start first.");
+      return;
+    }
+
+    const result = await global.realEstateBot.startRealEstateAutomation();
+    
+    if (result.success) {
+      await bot.sendMessage(chatId, "✅ Real estate automation activated successfully!");
+    } else {
+      await bot.sendMessage(chatId, `❌ Property automation failed: ${result.message}`);
+    }
+
+  } catch (error) {
+    console.error('❌ Property automation error:', error.message);
+    await bot.sendMessage(msg.chat.id, `❌ Property automation failed: ${error.message}`);
+  }
+});
+
+// Command: /property_integration_status - Check property API connections
+bot.onText(/\/property_integration_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.realEstateBot) {
+      await bot.sendMessage(chatId, "⚠️ Real estate system not initialized. Run /start first.");
+      return;
+    }
+
+    await global.realEstateBot.sendRealEstateIntegrationReport();
+
+  } catch (error) {
+    console.error('❌ Property integration status error:', error.message);
+    await bot.sendMessage(msg.chat.id, `❌ Status check failed: ${error.message}`);
   }
 });
