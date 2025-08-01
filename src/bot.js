@@ -425,7 +425,7 @@ try {
       const MarketApisBot = require(path.join(__dirname, 'automation', 'MarketApisBot'));
       global.marketApisBot = new MarketApisBot(bot);
       
-      // Initialize Crypto Trading Bot
+      // Initialize Crypto Trading Bot with Railway environment support
       const CryptoTradingBot = require(path.join(__dirname, 'automation', 'CryptoTradingBot'));
       global.cryptoTradingBot = new CryptoTradingBot(bot);
       
@@ -433,13 +433,20 @@ try {
       const BusinessBankingBot = require(path.join(__dirname, 'automation', 'BusinessBankingBot'));
       global.businessBankingBotNew = new BusinessBankingBot(bot);
       
+      // Check Binance API keys configuration
+      if (process.env.BINANCE_API_KEY && process.env.BINANCE_SECRET_KEY) {
+        console.log('✅ BINANCE API KEYS - Environment variables detected');
+      } else {
+        console.log('⚠️ BINANCE API KEYS - Add to Railway environment variables for live trading');
+      }
+      
       console.log('🤖 AI TRADING BOT - INITIALIZED (Delayed)');
       console.log('🏦 CAMBODIA BANKING BOT - INITIALIZED');
       console.log('🏛️ BUSINESS BANKING INTEGRATION - INITIALIZED');
       console.log('🏠 REAL ESTATE AUTOMATION - INITIALIZED');
       console.log('🏠 CAMBODIA PROPERTY BOT - INITIALIZED');
       console.log('📊 MARKET APIS BOT - INITIALIZED');
-      console.log('🔥 CRYPTO TRADING BOT - INITIALIZED');
+      console.log('🔥 CRYPTO TRADING BOT - INITIALIZED (Binance API Ready)');
       console.log('💎 BUSINESS BANKING BOT - INITIALIZED');
       
       // Initialize banking and property automation
@@ -2920,6 +2927,13 @@ Welcome, ${userName}. I am your UNLIMITED GPT-4.1 DYNASTY AI SYSTEM - your supre
 /power_multipliers - Deploy all 6 strategic automation engines simultaneously
 /dynasty_implementation - Dynasty Power Multiplier implementation blueprint and phased strategy
 
+🔥 BILLIONAIRE AUTOMATION COMMANDS:
+/start_all_automation - Launch complete billionaire wealth automation empire
+/start_crypto_trading - Activate 24/7 crypto trading with Binance integration
+/crypto_status - Check crypto trading performance and positions
+/start_banking_optimization - Launch business banking optimization system
+/banking_status - Monitor multi-bank portfolio optimization results
+
 🚀 UNLIMITED DYNASTY AI STATUS:
 UNLIMITED GPT-4.1 POWER SYSTEMS ONLINE. Smart self-building capabilities active. Supreme learning algorithms operating exponentially. Institutional-grade intelligence exceeding Ray Dalio/BlackRock AI systems.
 
@@ -3013,6 +3027,84 @@ bot.onText(/\/realdata/i, async (msg) => {
       `• Get API keys for premium data\n` +
       `• Try manual research for sensitive data`
     );
+  }
+});
+
+// Command: /start_all_automation - Master automation control
+bot.onText(/\/start_all_automation/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+
+    const automationMaster = require('./src/commands/automationMaster');
+    await automationMaster.start_all_automation.handler(bot, msg);
+  } catch (error) {
+    console.error('Error in start_all_automation command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error starting automation systems');
+  }
+});
+
+// Command: /automation_status - Check automation status
+bot.onText(/\/automation_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+
+    const automationMaster = require('./src/commands/automationMaster');
+    await automationMaster.automation_status.handler(bot, msg);
+  } catch (error) {
+    console.error('Error in automation_status command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error retrieving automation status');
+  }
+});
+
+// Command: /start_crypto_trading - Start crypto trading
+bot.onText(/\/start_crypto_trading/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+
+    const cryptoTrading = require('./src/commands/cryptoTrading');
+    await cryptoTrading.start_crypto_trading.handler(bot, msg);
+  } catch (error) {
+    console.error('Error in start_crypto_trading command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error starting crypto trading');
+  }
+});
+
+// Command: /crypto_status - Check crypto trading status
+bot.onText(/\/crypto_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+
+    const cryptoTrading = require('./src/commands/cryptoTrading');
+    await cryptoTrading.crypto_status.handler(bot, msg);
+  } catch (error) {
+    console.error('Error in crypto_status command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error retrieving crypto status');
+  }
+});
+
+// Command: /start_banking_optimization - Start business banking
+bot.onText(/\/start_banking_optimization/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+
+    const businessBanking = require('./src/commands/businessBanking');
+    await businessBanking.start_banking_optimization.handler(bot, msg);
+  } catch (error) {
+    console.error('Error in start_banking_optimization command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error starting banking optimization');
+  }
+});
+
+// Command: /banking_status - Check business banking status
+bot.onText(/\/banking_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+
+    const businessBanking = require('./src/commands/businessBanking');
+    await businessBanking.banking_status.handler(bot, msg);
+  } catch (error) {
+    console.error('Error in banking_status command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error retrieving banking status');
   }
 });
 
