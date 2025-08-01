@@ -408,7 +408,7 @@ try {
   // Initialize AI Trading Bot after bot is defined
   setTimeout(() => {
     try {
-      const AITradingBot = require('./src/automation/AITradingBot');
+      const AITradingBot = require(__dirname + '/src/automation/AITradingBot');
       global.aiTradingBot = new AITradingBot(global.forexApi, bot);
       console.log('🤖 AI TRADING BOT - INITIALIZED (Delayed)');
     } catch (error) {
@@ -3414,7 +3414,7 @@ bot.onText(/\/autotrading/i, async (msg) => {
     if (!global.aiTradingBot) {
       // Try to initialize AI Trading Bot now
       try {
-        const AITradingBot = require('./src/automation/AITradingBot');
+        const AITradingBot = require(__dirname + '/src/automation/AITradingBot');
         global.aiTradingBot = new AITradingBot(global.forexApi, bot);
         console.log('🤖 AI Trading Bot initialized on demand');
       } catch (error) {
