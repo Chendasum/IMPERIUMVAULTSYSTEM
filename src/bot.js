@@ -375,13 +375,32 @@ try {
   global.forexApi = new ForexApiIntegration();
   console.log('📈 FOREX API INTEGRATION - READY (MetaApi Connection)');
   
-  // Initialize Forex Trading Integration
-  global.forexApi = new ForexApiIntegration();
-  console.log('📈 FOREX API INTEGRATION - READY (MetaApi Connection)');
+  // Test MetaApi connection on startup
+  setTimeout(async () => {
+    try {
+      const isConnected = await global.forexApi.initialize();
+      if (isConnected) {
+        console.log('✅ METAAPI CONNECTION VERIFIED - XM Account 68920491 Ready');
+      } else {
+        console.log('⚠️ METAAPI CONNECTION PENDING - Token verification needed');
+      }
+    } catch (error) {
+      console.log('ℹ️ METAAPI STATUS - Will connect when token is provided');
+    }
+  }, 5000);
 } catch (error) {
   console.log('⚠️ Automation modules not found - running in basic mode');
   console.log('📁 Make sure src/automation/ directory exists with all 6 modules');
   console.log('🔧 Error details:', error.message);
+  
+  // Initialize Forex API even if automation modules fail
+  try {
+    const ForexApiIntegration = require('./services/forex-api-integration');
+    global.forexApi = new ForexApiIntegration();
+    console.log('📈 FOREX API INTEGRATION - READY (Fallback Mode)');
+  } catch (forexError) {
+    console.log('⚠️ Forex integration failed:', forexError.message);
+  }
 }
 
 // Enhanced 100% Pure Intelligence Capabilities - Embedded Implementation
@@ -3180,7 +3199,9 @@ bot.onText(/\/forex_status/i, async (msg) => {
         "❌ METAAPI CONNECTION FAILED\n\n" +
         "• Check METAAPI_TOKEN environment variable\n" +
         "• Verify MetaApi account is active\n" +
-        "• Contact support if issues persist"
+        "• Ensure XM Account 68920491 is properly connected\n" +
+        "• Try /forex_setup for complete setup guide\n\n" +
+        "🔧 Connection will retry automatically when token is valid"
       );
       return;
     }
@@ -3208,10 +3229,12 @@ bot.onText(/\/forex_status/i, async (msg) => {
       `🕐 Last Updated: ${new Date(status.timestamp).toLocaleString()}\n\n` +
       
       "⚡ AVAILABLE COMMANDS:\n" +
-      "• /forex_signals - View trading opportunities\n" +
-      "• /forex_trade - Place new trade\n" +
-      "• /forex_close - Close position\n" +
-      "• /forex_performance - View trading results";
+      "• /forex_signals - AI-powered trading signals\n" +
+      "• /forex_trade SYMBOL BUY/SELL LOTSIZE - Execute trades\n" +
+      "• /forex_performance - View trading performance\n" +
+      "• /forex_setup - Configuration and help\n\n" +
+      "🤖 ULTIMATE VAULT CLAUDE AI TRADING ACTIVE\n" +
+      "📊 Professional MetaApi Infrastructure Operational";
 
     await bot.sendMessage(chatId, statusMessage);
 
@@ -3262,8 +3285,10 @@ bot.onText(/\/forex_signals/i, async (msg) => {
 
     signalsMessage += 
       "⚡ AI ANALYSIS POWERED BY ULTIMATE VAULT CLAUDE\n" +
-      "🎯 Use /forex_trade to execute recommended trades\n" +
-      "📊 Risk Management: Maximum 2% per trade";
+      "🎯 Execute: /forex_trade SYMBOL BUY/SELL LOTSIZE\n" +
+      "📊 Risk Management: Maximum 2% per trade\n" +
+      "🤖 Example: /forex_trade EURUSD BUY 0.01\n\n" +
+      `🕐 Analysis Time: ${new Date().toLocaleString()}`;
 
     await bot.sendMessage(chatId, signalsMessage);
 
@@ -3412,11 +3437,15 @@ bot.onText(/\/forex_setup/i, async (msg) => {
       "✅ Account ID: 4047c1bf-841e-4e9f-8513-b...\n" +
       "✅ Server: XMGlobal-MT5 2\n\n" +
       
-      "🔑 REQUIRED: API TOKEN\n" +
-      "1. Go to MetaApi dashboard\n" +
-      "2. Click 'API Access' in sidebar\n" +
-      "3. Generate new token named 'Ultimate Vault Claude'\n" +
-      "4. Add METAAPI_TOKEN to environment variables\n\n" +
+      "🔑 API TOKEN STATUS:\n" +
+      (process.env.METAAPI_TOKEN ? "✅ Token configured" : "❌ Token missing") + "\n\n" +
+      
+      "📋 SETUP INSTRUCTIONS:\n" +
+      "1. Go to MetaApi dashboard (metaapi.cloud)\n" +
+      "2. Click 'API Access' in left sidebar\n" +
+      "3. Generate token: 'Ultimate Vault Claude'\n" +
+      "4. Add token to Replit Secrets as METAAPI_TOKEN\n" +
+      "5. Restart the bot to activate trading\n\n" +
       
       "💰 COST: $0.015/hour (~$11/month)\n" +
       "📈 FEATURES: Professional automated trading\n" +
