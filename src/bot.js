@@ -2975,6 +2975,7 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• /billionaire - Deploy complete billionaire automation suite\n" +
       "• /aitrading - Deploy AI trading empire (global markets)\n" +
       "• /globalcapital - Deploy global capital movement systems\n" +
+      "• /setup - How to connect AI systems to real accounts\n" +
       "• /howrevenue - Explain how automation generates real revenue\n" +
       "• /revenue - Show real daily revenue tracker with actual deals\n" +
       "• /alerts - How automation communicates with you\n" +
@@ -3342,6 +3343,27 @@ bot.onText(/\/globalcapital/i, async (msg) => {
   } catch (error) {
     console.error('❌ Global capital deployment error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not deploy global capital systems.");
+  }
+});
+
+// Command: /setup - How to connect AI systems to real accounts
+bot.onText(/\/setup/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "📋 Loading real account setup guide...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const RealAccountConnector = require('./src/integration/RealAccountConnector');
+    const accountSetup = new RealAccountConnector(bot);
+    
+    await accountSetup.showImplementationGuide(chatId);
+    
+  } catch (error) {
+    console.error('❌ Setup guide error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not load setup guide.");
   }
 });
 
