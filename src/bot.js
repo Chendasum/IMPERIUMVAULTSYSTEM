@@ -410,8 +410,27 @@ try {
   setTimeout(() => {
     try {
       const AITradingBot = require(path.join(__dirname, 'automation', 'AITradingBot'));
+      const CambodiaBankingBot = require(path.join(__dirname, 'automation', 'CambodiaBankingBot'));
+      const CambodiaPropertyBot = require(path.join(__dirname, 'automation', 'CambodiaPropertyBot'));
+      
       global.aiTradingBot = new AITradingBot(global.forexApi, bot);
+      global.bankingBot = new CambodiaBankingBot(bot);
+      global.propertyBot = new CambodiaPropertyBot(bot);
+      
       console.log('🤖 AI TRADING BOT - INITIALIZED (Delayed)');
+      console.log('🏦 CAMBODIA BANKING BOT - INITIALIZED');
+      console.log('🏠 CAMBODIA PROPERTY BOT - INITIALIZED');
+      
+      // Initialize banking and property automation
+      global.bankingBot.initialize();
+      global.propertyBot.initialize();
+      
+      // Initialize wealth generation coordinator
+      const WealthGenerationCoordinator = require(path.join(__dirname, 'automation', 'WealthGenerationCoordinator'));
+      global.wealthCoordinator = new WealthGenerationCoordinator(bot);
+      global.wealthCoordinator.initialize();
+      console.log('💎 WEALTH GENERATION COORDINATOR - INITIALIZED');
+      
     } catch (error) {
       console.log('⚠️ AI Trading Bot initialization failed:', error.message);
     }
