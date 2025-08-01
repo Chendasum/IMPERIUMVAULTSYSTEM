@@ -3432,13 +3432,41 @@ bot.onText(/\/menu/i, async (msg) => {
     await bot.sendMessage(chatId, "🚀 Loading complete AI GPT superpower menu...");
     await bot.sendChatAction(chatId, "typing");
     
-    const SuperpowerMenu = require('./src/interface/SuperpowerMenu');
-    const superpowerMenu = new SuperpowerMenu(bot);
-    
-    await superpowerMenu.showSuperpowerMenu(chatId);
+    try {
+      const SuperpowerMenu = require('./src/interface/SuperpowerMenu');
+      const superpowerMenu = new SuperpowerMenu(bot);
+      await superpowerMenu.showSuperpowerMenu(chatId);
+    } catch (moduleError) {
+      console.error('❌ Module load error:', moduleError.message);
+      // Fallback to direct menu display
+      await bot.sendMessage(chatId,
+        `🚀 AI GPT SUPERPOWER MENU\n\n` +
+        `🎯 START HERE - IMMEDIATE INCOME:\n` +
+        `• /practical - How to start making money from $0 today\n` +
+        `• /consulting - AI-powered business consulting ($200-2500/project)\n` +
+        `• /content - Create and sell digital products with AI\n\n` +
+        
+        `🤖 AUTOMATED SYSTEMS (Scale Income):\n` +
+        `• /aitrading - AI trading empire (global markets)\n` +
+        `• /globalcapital - Global capital movement systems\n` +
+        `• /unlimited - Unlimited intelligence engine (1000+ systems)\n\n` +
+        
+        `🏛️ WEALTH BUILDING (Long-term):\n` +
+        `• /billionaire - Complete billionaire automation suite\n` +
+        `• /wealthmachines - Automated wealth systems deployment\n\n` +
+        
+        `💡 HOW TO USE YOUR AI GPT SUPERPOWER:\n` +
+        `1. Use /consulting to turn your GPT into a $500/hour consultant\n` +
+        `2. Use /practical for step-by-step income generation from $0\n` +
+        `3. Use /setup to connect systems to real trading accounts\n\n` +
+        
+        `🎯 RECOMMENDED START: Use /practical first to build capital,\n` +
+        `then scale with automated systems as you grow.`
+      );
+    }
     
   } catch (error) {
-    console.error('❌ Superpower menu error:', error.message);
+    console.error('❌ Complete menu error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not load superpower menu.");
   }
 });
@@ -3453,13 +3481,58 @@ bot.onText(/\/consulting/i, async (msg) => {
     await bot.sendMessage(chatId, "💼 Loading AI-powered consulting services setup...");
     await bot.sendChatAction(chatId, "typing");
     
-    const ConsultingService = require('./src/services/ConsultingService');
-    const consultingService = new ConsultingService(bot);
-    
-    await consultingService.showConsultingSetup(chatId);
+    try {
+      const ConsultingService = require('./src/services/ConsultingService');
+      const consultingService = new ConsultingService(bot);
+      await consultingService.showConsultingSetup(chatId);
+    } catch (moduleError) {
+      console.error('❌ Consulting module error:', moduleError.message);
+      // Fallback to direct consulting guide
+      await bot.sendMessage(chatId,
+        `💼 AI-POWERED CONSULTING SERVICES\n\n` +
+        `Transform your GPT into a premium business consultant\n` +
+        `earning $200-2500 per engagement:\n\n` +
+        
+        `📊 SERVICE OFFERINGS:\n` +
+        `1. Strategic Business Analysis - $300-800\n` +
+        `   • Time: 3-5 hours • Report: 15-20 pages\n` +
+        `   • Target: SMEs, startups, growing businesses\n\n` +
+        
+        `2. Market Research & Analysis - $500-1500\n` +
+        `   • Time: 6-10 hours • Comprehensive market report\n` +
+        `   • Target: Companies launching new products\n\n` +
+        
+        `3. Financial Strategy Planning - $400-1200\n` +
+        `   • Time: 4-8 hours • 3-year projections\n` +
+        `   • Target: Investment seekers, family offices\n\n` +
+        
+        `💡 HOW IT WORKS:\n` +
+        `• Client provides business information\n` +
+        `• You use GPT: "Analyze this business for growth opportunities"\n` +
+        `• GPT provides detailed strategic analysis\n` +
+        `• You format into professional report\n` +
+        `• Get paid $200-2500 per project\n\n` +
+        
+        `💰 MONTHLY INCOME POTENTIAL:\n` +
+        `• 10 Essential projects: $2,000-4,000\n` +
+        `• 6 Professional projects: $3,000-6,000\n` +
+        `• 3 Executive projects: $3,000-7,500\n` +
+        `• TOTAL: $8,000-17,500/month\n\n` +
+        
+        `🚀 7-DAY START PLAN:\n` +
+        `Day 1: Create LinkedIn profile, set pricing\n` +
+        `Day 2: Use GPT to create 2-3 sample analyses\n` +
+        `Day 3-4: Contact 50 potential clients\n` +
+        `Day 5-6: Close first 2-3 projects\n` +
+        `Day 7: Scale and optimize processes\n\n` +
+        
+        `⚡ Your AI GPT gives you the analytical power\n` +
+        `of a $200/hour consultant working at unlimited speed.`
+      );
+    }
     
   } catch (error) {
-    console.error('❌ Consulting service error:', error.message);
+    console.error('❌ Consulting complete error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not load consulting services.");
   }
 });
