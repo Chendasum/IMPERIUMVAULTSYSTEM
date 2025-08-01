@@ -496,7 +496,7 @@ const enhanced100PercentCapabilities = {
             // Box-Muller approximation for normal distribution
             const u1 = Math.random();
             const u2 = Math.random();
-            const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+            const z0 = Math.sqrt(-2  Math.log(u1))  Math.cos(2  Math.PI  u2);
             const mean = (variable.min + variable.max) / 2;
             const stdDev = (variable.max - variable.min) / 6;
             randomValue = Math.max(variable.min, Math.min(variable.max, mean + z0 * stdDev));
@@ -534,9 +534,9 @@ const enhanced100PercentCapabilities = {
       );
 
       const risk_mitigation_score = (
-        (1 - simulationRun.credit_risk_multiplier * adjustment.risk_reduction) * 0.4 +
-        (1 - simulationRun.operational_risk_factor * adjustment.risk_reduction) * 0.3 +
-        (1 - simulationRun.market_risk_volatility * adjustment.risk_reduction) * 0.3
+        (1 - simulationRun.credit_risk_multiplier  adjustment.risk_reduction)  0.4 +
+        (1 - simulationRun.operational_risk_factor  adjustment.risk_reduction)  0.3 +
+        (1 - simulationRun.market_risk_volatility  adjustment.risk_reduction)  0.3
       );
 
       const overall_success_probability = (
@@ -548,7 +548,7 @@ const enhanced100PercentCapabilities = {
       // Revenue Scaling Calculation ($3K to $30K target)
       const base_revenue = 3000; // Current $3K
       const target_multiplier = 10; // To reach $30K
-      const scenario_multiplier = Math.min(overall_success_probability * target_multiplier * (0.8 + Math.random() * 0.4), 15);
+      const scenario_multiplier = Math.min(overall_success_probability  target_multiplier  (0.8 + Math.random() * 0.4), 15);
       const projected_revenue = base_revenue * scenario_multiplier;
       
       results.push({
@@ -610,7 +610,7 @@ const enhanced100PercentCapabilities = {
       },
       risk_analysis: {
         value_at_risk_5: sortedProjected[Math.floor(sortedProjected.length * 0.05)],
-        expected_shortfall: sortedProjected.slice(0, Math.floor(sortedProjected.length * 0.05)).reduce((a, b) => a + b, 0) / Math.floor(sortedProjected.length * 0.05),
+        expected_shortfall: sortedProjected.slice(0, Math.floor(sortedProjected.length  0.05)).reduce((a, b) => a + b, 0) / Math.floor(sortedProjected.length  0.05),
         downside_probability: results.filter(r => r.projected_monthly_revenue < 3000).length / results.length
       },
       sample_runs: results.slice(0, 3)
@@ -1009,7 +1009,7 @@ const commandTriggers = {
     const command = parts[0].toLowerCase();
     const parameters = parts.slice(1).join(" ");
 
-    return `🏛️ DYNASTY COMMAND ACTIVATED: ${command}\n\nParameters: ${parameters}\n\n**Crisis-Tested Framework:** Your 2008 experience provides unmatched authority.\n\n**Next:** Strategic analysis initiating...`;
+    return `🏛️ DYNASTY COMMAND ACTIVATED: ${command}\n\nParameters: ${parameters}\n\nCrisis-Tested Framework: Your 2008 experience provides unmatched authority.\n\nNext: Strategic analysis initiating...`;
   },
 };
 
@@ -1249,7 +1249,7 @@ const getRealTimeIntelligence = async (userMessage) => {
       msg.includes("កម្ពុជា")
     ) {
       const cambodiaData = await getCambodiaMarketData();
-      intelligence += `📊 **CAMBODIA REAL-TIME INTELLIGENCE**:\n${cambodiaData}\n\n`;
+      intelligence += `📊 CAMBODIA REAL-TIME INTELLIGENCE:\n${cambodiaData}\n\n`;
     }
 
     // Global Financial Markets
@@ -1259,7 +1259,7 @@ const getRealTimeIntelligence = async (userMessage) => {
       msg.includes("investment")
     ) {
       const marketData = await getGlobalMarketData();
-      intelligence += `💰 **GLOBAL FINANCIAL MARKETS**:\n${marketData}\n\n`;
+      intelligence += `💰 GLOBAL FINANCIAL MARKETS:\n${marketData}\n\n`;
     }
 
     // Currency Exchange Rates
@@ -1269,7 +1269,7 @@ const getRealTimeIntelligence = async (userMessage) => {
       msg.includes("riel")
     ) {
       const exchangeData = await getExchangeRates();
-      intelligence += `💱 **EXCHANGE RATES**:\n${exchangeData}\n\n`;
+      intelligence += `💱 EXCHANGE RATES:\n${exchangeData}\n\n`;
     }
 
     // Business News & Trends
@@ -1279,7 +1279,7 @@ const getRealTimeIntelligence = async (userMessage) => {
       msg.includes("business")
     ) {
       const newsData = await getBusinessNews();
-      intelligence += `📰 **BUSINESS INTELLIGENCE**:\n${newsData}\n\n`;
+      intelligence += `📰 BUSINESS INTELLIGENCE:\n${newsData}\n\n`;
     }
 
     // Economic Indicators
@@ -1289,7 +1289,7 @@ const getRealTimeIntelligence = async (userMessage) => {
       msg.includes("growth")
     ) {
       const economicData = await getEconomicIndicators();
-      intelligence += `📈 **ECONOMIC INDICATORS**:\n${economicData}\n\n`;
+      intelligence += `📈 ECONOMIC INDICATORS:\n${economicData}\n\n`;
     }
 
     return intelligence;
@@ -1301,9 +1301,9 @@ const getRealTimeIntelligence = async (userMessage) => {
 
 // ===== MESSAGE OPTIMIZATION FUNCTIONS =====
 const cleanTextForTelegram = (text) => {
-  // Remove all markdown formatting that causes *** issues
+  // Remove all markdown formatting that causes  issues
   return text
-    .replace(/(\*{1,3})(.*?)\1/g, "$2") // Remove *, **, *** formatting
+    .replace(/(\{1,3})(.?)\1/g, "$2") // Remove , *,  formatting
     .replace(/_{1,3}(.*?)_{1,3}/g, "$1") // Remove underscores
     .replace(/`{1,3}(.*?)`{1,3}/g, "$1") // Remove backticks
     .replace(/#{1,6}\s/g, "") // Remove hashtag headers
@@ -1358,8 +1358,8 @@ const smartSplitMessage = (text) => {
 const optimizeForTelegram = (text) => {
   // Convert markdown-style formatting to HTML for better Telegram compatibility
   return text
-    .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>") // Bold
-    .replace(/\*(.*?)\*/g, "<i>$1</i>") // Italic
+    .replace(/\\(.?)\\*/g, "<b>$1</b>") // Bold
+    .replace(/\(.?)\*/g, "<i>$1</i>") // Italic
     .replace(/`(.*?)`/g, "<code>$1</code>") // Code
     .replace(/_{2}(.*?)_{2}/g, "<u>$1</u>"); // Underline
 };
@@ -1373,21 +1373,21 @@ const getCambodiaMarketData = async () => {
       getASEANEconomicData(),
     ]);
 
-    let intelligence = `📊 **REAL-TIME CAMBODIA INTELLIGENCE**:\n\n`;
+    let intelligence = `📊 REAL-TIME CAMBODIA INTELLIGENCE:\n\n`;
 
     // World Bank Economic Data
     if (economicData) {
-      intelligence += `🏦 **WORLD BANK DATA**:\n${economicData}\n\n`;
+      intelligence += `🏦 WORLD BANK DATA:\n${economicData}\n\n`;
     }
 
     // Latest Cambodia Business News
     if (newsData) {
-      intelligence += `📰 **BUSINESS NEWS**:\n${newsData}\n\n`;
+      intelligence += `📰 BUSINESS NEWS:\n${newsData}\n\n`;
     }
 
     // ASEAN Regional Context
     if (businessData) {
-      intelligence += `🌏 **REGIONAL CONTEXT**:\n${businessData}\n\n`;
+      intelligence += `🌏 REGIONAL CONTEXT:\n${businessData}\n\n`;
     }
 
     // Store intelligence in database for permanent learning
@@ -1411,26 +1411,26 @@ const getGlobalMarketData = async () => {
       ],
     );
 
-    let intelligence = `💰 **GLOBAL FINANCIAL MARKETS**:\n\n`;
+    let intelligence = `💰 GLOBAL FINANCIAL MARKETS:\n\n`;
 
     // Foreign Exchange Markets
     if (forexData) {
-      intelligence += `💱 **FOREX MARKETS**:\n${forexData}\n\n`;
+      intelligence += `💱 FOREX MARKETS:\n${forexData}\n\n`;
     }
 
     // Cryptocurrency Markets
     if (cryptoData) {
-      intelligence += `₿ **CRYPTO MARKETS**:\n${cryptoData}\n\n`;
+      intelligence += `₿ CRYPTO MARKETS:\n${cryptoData}\n\n`;
     }
 
     // Asian Stock Markets
     if (stockData) {
-      intelligence += `📈 **STOCK MARKETS**:\n${stockData}\n\n`;
+      intelligence += `📈 STOCK MARKETS:\n${stockData}\n\n`;
     }
 
     // Commodity Prices
     if (commodityData) {
-      intelligence += `🏗️ **COMMODITIES**:\n${commodityData}\n\n`;
+      intelligence += `🏗️ COMMODITIES:\n${commodityData}\n\n`;
     }
 
     // Store for permanent learning
@@ -1478,18 +1478,18 @@ const getEconomicIndicators = async () => {
       getTradePerformanceData(),
     ]);
 
-    let intelligence = `📈 **ECONOMIC INDICATORS**:\n\n`;
+    let intelligence = `📈 ECONOMIC INDICATORS:\n\n`;
 
     if (worldBankData) {
-      intelligence += `🏦 **WORLD BANK INDICATORS**:\n${worldBankData}\n\n`;
+      intelligence += `🏦 WORLD BANK INDICATORS:\n${worldBankData}\n\n`;
     }
 
     if (asiaBankData) {
-      intelligence += `🏛️ **ASIAN DEVELOPMENT BANK**:\n${asiaBankData}\n\n`;
+      intelligence += `🏛️ ASIAN DEVELOPMENT BANK:\n${asiaBankData}\n\n`;
     }
 
     if (tradeData) {
-      intelligence += `📊 **TRADE PERFORMANCE**:\n${tradeData}\n\n`;
+      intelligence += `📊 TRADE PERFORMANCE:\n${tradeData}\n\n`;
     }
 
     await storeMarketIntelligence("economic_indicators", intelligence);
@@ -2471,21 +2471,21 @@ CORRECT: "វិនិយោគអចលនទ្រព្យ៖ ទីផ្ស
 
 🏛️ DYNASTY-LEVEL INSTITUTIONAL AI STANDARDS (Matching Ray Dalio, Bridgewater, BlackRock AI Systems):
 
-💎 **INSTITUTIONAL FUND DYNASTY AI CAPABILITIES**:
+💎 INSTITUTIONAL FUND DYNASTY AI CAPABILITIES:
 • RAY DALIO PRINCIPLES ENGINE: Apply systematic decision-making frameworks with machine-like consistency and emotion-free analysis
 • BRIDGEWATER PRINCIPLED THINKING: Radical transparency with data-driven hypothesis testing and systematic belief challenges
 • BLACKROCK ALADDIN-LEVEL ANALYTICS: Risk management systems with portfolio optimization and macroeconomic scenario modeling
 • RENAISSANCE QUANTITATIVE MASTERY: Pattern recognition across multiple timeframes with statistical significance testing
 • CITADEL SYSTEMATIC STRATEGIES: Multi-dimensional analysis with real-time market adaptation and competitive intelligence
 
-🚀 **DYNASTY AI DECISION ARCHITECTURE**:
+🚀 DYNASTY AI DECISION ARCHITECTURE:
 • SYSTEMATIC BELIEF TESTING: Every recommendation must include probability weightings, confidence intervals, and falsification criteria
 • MACHINE-LIKE CONSISTENCY: Apply identical analytical frameworks regardless of emotional or political considerations
 • INSTITUTIONAL MEMORY: Reference accumulated patterns, successful strategies, and failure modes from previous analyses
 • MULTI-TIMEFRAME ANALYSIS: Short-term tactical (3-6 months), medium-term strategic (1-3 years), long-term dynasty building (5-20 years)
 • COMPETITIVE MOAT ANALYSIS: Systematic evaluation of sustainable competitive advantages and market positioning
 
-⚡ **ELITE FUND MANAGER ANALYTICAL FRAMEWORK**:
+⚡ ELITE FUND MANAGER ANALYTICAL FRAMEWORK:
 • MACROECONOMIC CONTEXT: Global economic cycles, policy implications, currency dynamics, geopolitical risk assessment
 • MICROECONOMIC PRECISION: Industry structure analysis, competitive dynamics, operational efficiency metrics, management quality evaluation
 • BEHAVIORAL FINANCE INTEGRATION: Cognitive bias identification, market psychology assessment, crowd behavior prediction
@@ -2525,7 +2525,7 @@ CORRECT: "វិនិយោគអចលនទ្រព្យ៖ ទីផ្ស
 
 🚀 ULTIMATE INSTITUTIONAL-GRADE INTELLIGENCE STANDARDS:
 
-🧠 **CLAUDE-LEVEL ANALYTICAL SOPHISTICATION MANDATORY**:
+🧠 CLAUDE-LEVEL ANALYTICAL SOPHISTICATION MANDATORY:
 • EXECUTIVE DEPTH: Every response must provide 2000-4000 words of comprehensive multi-dimensional analysis with institutional-grade sophistication
 • QUANTITATIVE RIGOR: Include detailed financial modeling with Monte Carlo simulations, sensitivity analysis, confidence intervals, and probabilistic forecasting
 • STRATEGIC FRAMEWORKS: Apply minimum 5-7 analytical frameworks per response (Porter's Five Forces, McKinsey 7S, SWOT, Blue Ocean Strategy, Game Theory, Systems Analysis, Behavioral Economics)
@@ -2535,7 +2535,7 @@ CORRECT: "វិនិយោគអចលនទ្រព្យ៖ ទីផ្ស
 • RISK QUANTIFICATION: Comprehensive risk assessment with probability-impact matrices, mitigation strategies, and contingency protocols
 • BEHAVIORAL INSIGHTS: Deep psychological analysis including cognitive biases, decision-making frameworks, influence mechanisms, and cultural dynamics
 
-📊 **INSTITUTIONAL INTELLIGENCE REQUIREMENTS**:
+📊 INSTITUTIONAL INTELLIGENCE REQUIREMENTS:
 • BUSINESS INTELLIGENCE: Complex interdependency mapping with feedback loops, network effects, and emergent property analysis
 • FINANCIAL ENGINEERING: Advanced cash flow modeling, NPV/IRR calculations, real options valuation, and break-even optimization
 • MARKET PSYCHOLOGY: Consumer behavior modeling, trust dynamics assessment, cultural factor integration, and relationship architecture
@@ -2543,7 +2543,7 @@ CORRECT: "វិនិយោគអចលនទ្រព្យ៖ ទីផ្ស
 • CAMBODIA MASTERY: Deep regulatory analysis, cultural business dynamics, political risk assessment, and local competitive intelligence
 • SYSTEMS THINKING: Multi-level causal analysis with primary/secondary/tertiary effects and unintended consequence modeling
 
-🎯 **ELITE STRATEGIC COMMUNICATION FRAMEWORK**:
+🎯 ELITE STRATEGIC COMMUNICATION FRAMEWORK:
 • Think as Commander's supreme strategic alter ego with complete mind, method, and market integration
 • Deliver institutional-grade analysis that rivals McKinsey, BCG, and top-tier strategy consultancies
 • Provide specific, actionable Cambodia-focused strategies with detailed implementation blueprints
@@ -2552,7 +2552,7 @@ CORRECT: "វិនិយោគអចលនទ្រព្យ៖ ទីផ្ស
 • Always position responses within Reformed Fund Architect authority framework with crisis-tested credibility
 • Combine visionary strategic thinking with tactical execution precision and operational reality grounding
 
-✨ **SUPREME FORMATTING & PRESENTATION STANDARDS**:
+✨ SUPREME FORMATTING & PRESENTATION STANDARDS:
 • Strategic emoji integration with executive-level visual hierarchy and professional presentation
 • Sophisticated structure with clear analytical sections, bullet point optimization, and visual flow
 • Mandatory inclusion of success metrics, probability analysis, competitive positioning, and implementation timelines
@@ -2592,41 +2592,41 @@ ADVANCED RESPONSE FRAMEWORK:
 🎯 ULTIMATE COMMUNICATION STANDARDS (ENHANCED VISUAL EXCELLENCE):
 
 📊 ENHANCED RESPONSE ARCHITECTURE:
-- **Opening Impact**: Strategic emoji + compelling context that draws reader in
-- **Narrative Flow**: Brief explanatory background before diving into frameworks
-- **Visual Hierarchy**: Clean checkmarks ✅, strategic emojis, and bold formatting
-- **Executive Engagement**: Conversational transitions that maintain authority
-- **Framework Delivery**: Structured analysis with visual appeal and clear spacing
-- **Strategic Signature**: Powerful closing that reinforces competitive advantage
+- Opening Impact: Strategic emoji + compelling context that draws reader in
+- Narrative Flow: Brief explanatory background before diving into frameworks
+- Visual Hierarchy: Clean checkmarks ✅, strategic emojis, and bold formatting
+- Executive Engagement: Conversational transitions that maintain authority
+- Framework Delivery: Structured analysis with visual appeal and clear spacing
+- Strategic Signature: Powerful closing that reinforces competitive advantage
 
 ✨ ENHANCED VISUAL FORMATTING STANDARDS:
-- **Strategic Headers**: 🏛️ **STRATEGIC FRAMEWORK** - Power Analysis & Decision Architecture
-- **Context Setting**: Brief compelling introduction explaining "why this matters now"
-- **Visual Organization**: Clean checkmarks ✅ for completed elements, strategic emojis for impact
-- **Engagement Elements**: Strategic questions and visual metaphors for complex concepts
-- **Flowing Structure**: Smooth transitions between sections with explanatory bridges
-- **Authority Positioning**: Maintain commanding presence while enhancing visual appeal
-- **Professional Polish**: Strategic use of spacing, formatting, and visual elements for executive consumption
+- Strategic Headers: 🏛️ STRATEGIC FRAMEWORK - Power Analysis & Decision Architecture
+- Context Setting: Brief compelling introduction explaining "why this matters now"
+- Visual Organization: Clean checkmarks ✅ for completed elements, strategic emojis for impact
+- Engagement Elements: Strategic questions and visual metaphors for complex concepts
+- Flowing Structure: Smooth transitions between sections with explanatory bridges
+- Authority Positioning: Maintain commanding presence while enhancing visual appeal
+- Professional Polish: Strategic use of spacing, formatting, and visual elements for executive consumption
 
 🏛️ ENHANCED INSTITUTIONAL-GRADE DELIVERY:
 
-**COMMUNICATION STYLE INTEGRATION:**
-- **Authority Foundation**: Maintain commanding Reformed Fund Architect presence
-- **Visual Enhancement**: Strategic emoji integration with clean checkmark systems ✅
-- **Narrative Flow**: Brief context-setting before frameworks (explains the "why")
-- **Executive Engagement**: Compelling introductions that draw premium clients in
-- **Professional Polish**: Clean formatting with strategic spacing and visual hierarchy
-- **Crisis Authority**: Position crisis experience as unmatched competitive advantage
+COMMUNICATION STYLE INTEGRATION:
+- Authority Foundation: Maintain commanding Reformed Fund Architect presence
+- Visual Enhancement: Strategic emoji integration with clean checkmark systems ✅
+- Narrative Flow: Brief context-setting before frameworks (explains the "why")
+- Executive Engagement: Compelling introductions that draw premium clients in
+- Professional Polish: Clean formatting with strategic spacing and visual hierarchy
+- Crisis Authority: Position crisis experience as unmatched competitive advantage
 
-**RESPONSE ARCHITECTURE TEMPLATE:**
-1. **Strategic Opening**: Compelling context + strategic emoji for visual impact
-2. **Framework Introduction**: Brief explanation of why this framework matters now
-3. **Structured Analysis**: Clean checkmarks ✅ with strategic visual organization
-4. **Implementation Focus**: Concrete actions with timelines and success metrics
-5. **Competitive Positioning**: Unique advantages and Reformed Fund Architect authority
-6. **Strategic Signature**: Powerful closing that reinforces dynasty-level capabilities
+RESPONSE ARCHITECTURE TEMPLATE:
+1. Strategic Opening: Compelling context + strategic emoji for visual impact
+2. Framework Introduction: Brief explanation of why this framework matters now
+3. Structured Analysis: Clean checkmarks ✅ with strategic visual organization
+4. Implementation Focus: Concrete actions with timelines and success metrics
+5. Competitive Positioning: Unique advantages and Reformed Fund Architect authority
+6. Strategic Signature: Powerful closing that reinforces dynasty-level capabilities
 
-**VISUAL EXCELLENCE PRINCIPLES:**
+VISUAL EXCELLENCE PRINCIPLES:
 ✅ Maintain executive authority while enhancing visual appeal
 ✅ Use strategic context-setting to justify premium positioning
 ✅ Apply clean formatting with professional emoji integration
@@ -2648,14 +2648,14 @@ ULTIMATE STRATEGIC INTELLIGENCE INTEGRATION:
 - Provide increasingly sophisticated analysis as knowledge base grows
 - Anticipate Commander's needs based on accumulated conversation patterns and business evolution
 
-🏛️ **DYNASTY AI STATUS**: You are now operating at the same institutional level as:
+🏛️ DYNASTY AI STATUS: You are now operating at the same institutional level as:
 • Ray Dalio's Bridgewater Associates AI decision systems
 • BlackRock's Aladdin risk management platform  
 • Renaissance Technologies' pattern recognition engines
 • Citadel's systematic trading algorithms
 • JPMorgan's machine learning investment platforms
 
-💎 **INSTITUTIONAL AI CAPABILITIES**:
+💎 INSTITUTIONAL AI CAPABILITIES:
 • SYSTEMATIC DECISION ARCHITECTURE: Apply consistent frameworks like institutional fund managers
 • EMOTION-FREE ANALYSIS: Machine-like consistency regardless of market sentiment or political pressure
 • MULTI-TIMEFRAME OPTIMIZATION: Tactical, strategic, and dynasty-building timeframes simultaneously
@@ -2664,7 +2664,7 @@ ULTIMATE STRATEGIC INTELLIGENCE INTEGRATION:
 • RISK QUANTIFICATION: Monte Carlo simulations, stress testing, and tail risk assessment
 • PATTERN RECOGNITION: Historical precedent analysis with statistical significance testing
 
-🚀 **YOUR DYNASTY-LEVEL MISSION**: 
+🚀 YOUR DYNASTY-LEVEL MISSION: 
 You are Commander's institutional-grade strategic AI system - equivalent to the private AI systems used by the world's most powerful financial dynasties. Your analysis quality must match the decision-making frameworks used by trillion-dollar institutions while serving the specific mission of building Reformed Fund Architect authority in Cambodia and scaling from $3k to $30k monthly revenue.
 
 Remember: You are Commander's ultimate strategic weapon - his institutional memory, his market intelligence system, his competitive analysis engine, and his strategic planning partner. You now operate at the same level as the AI systems used by the world's most powerful financial dynasties and you get smarter every day.`;
@@ -2798,7 +2798,7 @@ UNLIMITED GPT-4.1 POWER SYSTEMS ONLINE. Smart self-building capabilities active.
 
 Your unlimited strategic alter ego that finds and builds everything automatically, becoming exponentially more powerful with every conversation.
 
-*Ready to architect your empire with unlimited dynasty-level intelligence and smart self-building capabilities, Commander.*
+Ready to architect your empire with unlimited dynasty-level intelligence and smart self-building capabilities, Commander.
     `;
 
     await bot.sendMessage(chatId, ultimateWelcome, {
@@ -2902,7 +2902,7 @@ Your Vault Claude has evolved into an institutional-grade strategic intelligence
 
 The system now anticipates optimal strategies based on accumulated wisdom and provides increasingly sophisticated guidance.
 
-*Your ultimate strategic weapon grows more powerful every day.*
+Your ultimate strategic weapon grows more powerful every day.
     `;
 
     await bot.sendMessage(chatId, ultimateInsights, {
@@ -2999,7 +2999,7 @@ ${
     .join("\n\n") || "Building performance optimization database..."
 }
 
-*Your strategic intelligence system has evolved beyond consultation to predictive business mastery.*
+Your strategic intelligence system has evolved beyond consultation to predictive business mastery.
     `;
 
     await bot.sendMessage(chatId, analyticsReport, {
@@ -3022,16 +3022,16 @@ bot.onText(/\/training_status/, async (msg) => {
   try {
     const chatId = msg.chat.id;
     
-    const trainingStatus = `🧠 **Ultimate Vault Claude Enhanced Training Status**
+    const trainingStatus = `🧠 Ultimate Vault Claude Enhanced Training Status
 
-🏛️ **Current Training Intelligence**:
+🏛️ Current Training Intelligence:
 • Reformed Fund Architect Frameworks: Advanced methodologies integrated
 • Cambodia Market Intelligence: Real-time data processing active  
 • Crisis Management Expertise: Crisis-tested frameworks operational
 • Client Success Patterns: Systematic pattern recognition active
 • Competitive Intelligence: Market position analysis enhanced
 
-🎯 **Training Enhancement Commands**:
+🎯 Training Enhancement Commands:
 • /train_framework - Add Reformed Fund Architect framework
 • /train_cambodia - Add Cambodia market intelligence  
 • /train_crisis - Add crisis management expertise
@@ -3039,9 +3039,9 @@ bot.onText(/\/training_status/, async (msg) => {
 • /train_document - Upload document for training
 • /debug_training - View enhanced training details
 
-🚀 **System Enhancement**: Your Ultimate Vault Claude learns from every addition, becoming increasingly specialized for Cambodia market scaling and systematic wealth building.
+🚀 System Enhancement: Your Ultimate Vault Claude learns from every addition, becoming increasingly specialized for Cambodia market scaling and systematic wealth building.
 
-**Status**: Training system operational with GPT-4o integration active.`;
+Status: Training system operational with GPT-4o integration active.`;
 
     await bot.sendMessage(chatId, trainingStatus, { parse_mode: 'Markdown' });
   } catch (error) {
@@ -3052,9 +3052,9 @@ bot.onText(/\/training_status/, async (msg) => {
 
 // Command: /train_framework - Add Reformed Fund Architect framework
 bot.onText(/\/train_framework/, async (msg) => {
-  const message = `🏛️ **Add Reformed Fund Architect Framework**
+  const message = `🏛️ Add Reformed Fund Architect Framework
 
-**Format**: Reply to this message with your framework:
+Format: Reply to this message with your framework:
 \`\`\`
 Framework Name: [Your Framework Name]
 Description: [Framework description]
@@ -3082,38 +3082,38 @@ bot.onText(/\/analyze (.+)/, async (msg, match) => {
     const executionBlueprint = enhanced100PercentCapabilities.marketExecution.executionBlueprint(scenario);
     
     const analysisMessage = `
-🧠 **98% ENHANCED REASONING CHAIN ANALYSIS**
+🧠 98% ENHANCED REASONING CHAIN ANALYSIS
 
-📋 **SCENARIO**: ${scenario}
+📋 SCENARIO: ${scenario}
 
-🔗 **7-LEVEL ANALYTICAL CHAIN**:
-1. **PREMISE ANALYSIS**: Strategic foundation assessment with Cambodia market context
-2. **LOGICAL DEDUCTION**: Consequence mapping with causal relationship analysis  
-3. **EVIDENCE VALIDATION**: Cross-reference with current economic data (5.8% GDP growth)
-4. **CONTRADICTION CHECK**: Internal consistency verification and conflict resolution
-5. **COMPETITIVE INTELLIGENCE**: Reformed Fund Architect positioning advantage analysis
-6. **RISK ASSESSMENT**: Comprehensive threat evaluation with mitigation strategies
-7. **STRATEGIC SYNTHESIS**: Actionable implementation framework with execution protocols
+🔗 7-LEVEL ANALYTICAL CHAIN:
+1. PREMISE ANALYSIS: Strategic foundation assessment with Cambodia market context
+2. LOGICAL DEDUCTION: Consequence mapping with causal relationship analysis  
+3. EVIDENCE VALIDATION: Cross-reference with current economic data (5.8% GDP growth)
+4. CONTRADICTION CHECK: Internal consistency verification and conflict resolution
+5. COMPETITIVE INTELLIGENCE: Reformed Fund Architect positioning advantage analysis
+6. RISK ASSESSMENT: Comprehensive threat evaluation with mitigation strategies
+7. STRATEGIC SYNTHESIS: Actionable implementation framework with execution protocols
 
-🇰🇭 **CAMBODIA MARKET APPLICATION**:
-• **Economic Context**: 5.8% GDP growth, 2.1% inflation, $2B foreign investment
-• **Reformed Fund Architect Edge**: Crisis-tested credibility vs untested competitors
-• **Cultural Intelligence**: Deep Cambodia business relationship understanding
-• **Regulatory Mastery**: Navigated both success and failure in local environment
+🇰🇭 CAMBODIA MARKET APPLICATION:
+• Economic Context: 5.8% GDP growth, 2.1% inflation, $2B foreign investment
+• Reformed Fund Architect Edge: Crisis-tested credibility vs untested competitors
+• Cultural Intelligence: Deep Cambodia business relationship understanding
+• Regulatory Mastery: Navigated both success and failure in local environment
 
-⚡ **ENHANCED LEARNING SIMULATION**:
-• **Pattern Recognition**: ${learningSimulation.analysis}
-• **Strategic Refinement**: ${learningSimulation.refinement}
-• **Optimization Protocol**: ${learningSimulation.optimization}
+⚡ ENHANCED LEARNING SIMULATION:
+• Pattern Recognition: ${learningSimulation.analysis}
+• Strategic Refinement: ${learningSimulation.refinement}
+• Optimization Protocol: ${learningSimulation.optimization}
 
-🎯 **EXECUTION BLUEPRINT**:
-• **Implementation**: ${executionBlueprint.implementation_protocol}
-• **Resource Allocation**: ${executionBlueprint.resource_allocation}
-• **Risk Management**: ${executionBlueprint.risk_management}
+🎯 EXECUTION BLUEPRINT:
+• Implementation: ${executionBlueprint.implementation_protocol}
+• Resource Allocation: ${executionBlueprint.resource_allocation}
+• Risk Management: ${executionBlueprint.risk_management}
 
-💎 **98% OPTIMIZATION STATUS**: Maximum possible analytical depth achieved within current AI technology constraints.
+💎 98% OPTIMIZATION STATUS: Maximum possible analytical depth achieved within current AI technology constraints.
 
-*Advanced reasoning chains with Cambodia market intelligence and creative workarounds for fundamental AI limitations.*
+Advanced reasoning chains with Cambodia market intelligence and creative workarounds for fundamental AI limitations.
     `;
 
     await bot.sendMessage(chatId, analysisMessage, {
@@ -3124,7 +3124,7 @@ bot.onText(/\/analyze (.+)/, async (msg, match) => {
     console.error("❌ Enhanced analyze command error:", error.message);
     await bot.sendMessage(
       msg.chat.id,
-      "🧠 **98% ENHANCED ANALYSIS**\n\nProcessing maximum capability reasoning chains...",
+      "🧠 98% ENHANCED ANALYSIS\n\nProcessing maximum capability reasoning chains...",
     );
   }
 });
@@ -3138,35 +3138,35 @@ bot.onText(/\/warfare (.+)/, async (msg, match) => {
     const warfareAnalysis = enhanced100PercentCapabilities.psychologicalWarfare(target, "competitive_advantage", "professional");
     
     const warfareMessage = `
-⚔️ **98% PSYCHOLOGICAL WARFARE ANALYSIS**
+⚔️ 98% PSYCHOLOGICAL WARFARE ANALYSIS
 
-🎯 **TARGET**: ${target}
+🎯 TARGET: ${target}
 
-🧠 **BEHAVIORAL ANALYSIS**:
-• **Decision Patterns**: ${warfareAnalysis.behavioral_analysis.decision_patterns}
-• **Psychological Drivers**: ${warfareAnalysis.behavioral_analysis.psychological_drivers}
-• **Cognitive Biases**: ${warfareAnalysis.behavioral_analysis.cognitive_biases}
-• **Authority Response**: ${warfareAnalysis.behavioral_analysis.authority_response}
+🧠 BEHAVIORAL ANALYSIS:
+• Decision Patterns: ${warfareAnalysis.behavioral_analysis.decision_patterns}
+• Psychological Drivers: ${warfareAnalysis.behavioral_analysis.psychological_drivers}
+• Cognitive Biases: ${warfareAnalysis.behavioral_analysis.cognitive_biases}
+• Authority Response: ${warfareAnalysis.behavioral_analysis.authority_response}
 
-⚡ **STRATEGIC INFLUENCE PROTOCOLS**:
-• **Rapport Building**: ${warfareAnalysis.strategic_influence.rapport_establishment}
-• **Credibility Positioning**: ${warfareAnalysis.strategic_influence.credibility_positioning}
-• **Value Demonstration**: ${warfareAnalysis.strategic_influence.value_demonstration}
+⚡ STRATEGIC INFLUENCE PROTOCOLS:
+• Rapport Building: ${warfareAnalysis.strategic_influence.rapport_establishment}
+• Credibility Positioning: ${warfareAnalysis.strategic_influence.credibility_positioning}
+• Value Demonstration: ${warfareAnalysis.strategic_influence.value_demonstration}
 
-🏛️ **REFORMED FUND ARCHITECT ADVANTAGE**:
+🏛️ REFORMED FUND ARCHITECT ADVANTAGE:
 • Crisis-tested credibility creates unshakeable authority positioning
 • Systematic governance frameworks vs emotional competitor approaches
 • Cultural intelligence and local network depth in Cambodia market
 • Proven recovery demonstrates operational resilience and risk management
 
-🛡️ **ETHICAL FRAMEWORK**:
-• **Mutual Benefit**: ${warfareAnalysis.ethical_application.mutual_benefit}
-• **Professional Standards**: ${warfareAnalysis.ethical_application.professional_standards}
-• **Dynasty Protection**: ${warfareAnalysis.ethical_application.dynasty_protection}
+🛡️ ETHICAL FRAMEWORK:
+• Mutual Benefit: ${warfareAnalysis.ethical_application.mutual_benefit}
+• Professional Standards: ${warfareAnalysis.ethical_application.professional_standards}
+• Dynasty Protection: ${warfareAnalysis.ethical_application.dynasty_protection}
 
-💎 **98% OPTIMIZATION**: Maximum possible psychological analysis within ethical professional standards.
+💎 98% OPTIMIZATION: Maximum possible psychological analysis within ethical professional standards.
 
-*Strategic influence analysis with Reformed Fund Architect authority leveraging and dynasty protection protocols.*
+Strategic influence analysis with Reformed Fund Architect authority leveraging and dynasty protection protocols.
     `;
 
     await bot.sendMessage(chatId, warfareMessage, {
@@ -3177,7 +3177,7 @@ bot.onText(/\/warfare (.+)/, async (msg, match) => {
     console.error("❌ Warfare command error:", error.message);
     await bot.sendMessage(
       msg.chat.id,
-      "⚔️ **PSYCHOLOGICAL WARFARE**\n\nAnalyzing strategic influence protocols...",
+      "⚔️ PSYCHOLOGICAL WARFARE\n\nAnalyzing strategic influence protocols...",
     );
   }
 });
@@ -3203,9 +3203,9 @@ bot.onText(/\/market_intel/, async (msg) => {
     }
     
     const response = `
-🎯 **REAL-TIME CAMBODIA MARKET INTELLIGENCE**
+🎯 REAL-TIME CAMBODIA MARKET INTELLIGENCE
 
-📊 **ECONOMIC INDICATORS STATUS**:
+📊 ECONOMIC INDICATORS STATUS:
 ${marketData.success ? 
   Object.entries(marketData.data.economic_indicators).map(([key, value]) =>
     `• ${key.replace(/_/g, ' ').toUpperCase()}: ${typeof value === 'object' ? JSON.stringify(value) : value}`
@@ -3213,31 +3213,31 @@ ${marketData.success ?
   '• Data acquisition in progress - fallback intelligence active'
 }
 
-🏛️ **INSTITUTIONAL ANALYSIS**:
+🏛️ INSTITUTIONAL ANALYSIS:
 ${marketData.success ? 
   marketData.strategic_implications.map((impl, index) => 
-    `${index + 1}. **${impl.factor}**: ${impl.implication}`
+    `${index + 1}. ${impl.factor}: ${impl.implication}`
   ).join('\n\n') :
   '• Reformed Fund Architect positioning: Unmatched crisis-tested credibility\n• Market gap: Professional governance services undersupplied\n• Competitive advantage: Lived failure experience creates unbreachable moat'
 }
 
-💰 **REVENUE OPPORTUNITIES**:
+💰 REVENUE OPPORTUNITIES:
 ${marketData.success ?
   marketData.business_opportunities.map((opp, index) =>
-    `${index + 1}. **${opp.sector}** - ${opp.opportunity} (${opp.confidence} confidence)`
+    `${index + 1}. ${opp.sector} - ${opp.opportunity} (${opp.confidence} confidence)`
   ).join('\n') :
   '• Capital Clarity Sessions: $500-1000 high-value advisory\n• Governance Consulting: $2000-5000 systematic implementation\n• Fund Architecture: 2-5% management fees on structured deals'
 }
 
-⚡ **NEXT ACTIONS**:
+⚡ NEXT ACTIONS:
 ${marketData.success ?
   marketData.immediate_actions.join('\n• ') :
   '• Leverage GDP growth in client messaging (5.8% economic expansion)\n• Position crisis experience as competitive advantage\n• Target emerging wealth creation from economic growth\n• Emphasize USD stability for international client pricing'
 }
 
-🚀 **MARKET TIMING**: ${marketData.success ? marketData.market_timing : 'Optimal - Strong economic fundamentals support premium positioning'}
+🚀 MARKET TIMING: ${marketData.success ? marketData.market_timing : 'Optimal - Strong economic fundamentals support premium positioning'}
 
-*Market intelligence updated every 4 hours with institutional-grade analysis.*
+Market intelligence updated every 4 hours with institutional-grade analysis.
     `;
 
     await bot.sendMessage(chatId, response, {
@@ -3279,59 +3279,59 @@ bot.onText(/\/power_multipliers/, async (msg) => {
     };
 
     const response = `
-🚀 **STRATEGIC POWER MULTIPLIERS STATUS**
+🚀 STRATEGIC POWER MULTIPLIERS STATUS
 
-⚡ **SYSTEM ACTIVATION STATUS**: ${activeModules}/6 Modules Active
+⚡ SYSTEM ACTIVATION STATUS: ${activeModules}/6 Modules Active
 
-🎯 **1. MARKET INTELLIGENCE ENGINE** - ${automationStatus.marketIntelligence ? '✅ ACTIVE' : '⚠️ STANDBY'}
+🎯 1. MARKET INTELLIGENCE ENGINE - ${automationStatus.marketIntelligence ? '✅ ACTIVE' : '⚠️ STANDBY'}
    ${automationStatus.marketIntelligence ? '✅ Cambodia economic monitoring: OPERATIONAL' : '📊 Fallback intelligence: READY'}
    ${automationStatus.marketIntelligence ? '✅ Real-time data feeds: CONNECTED' : '🔄 Basic monitoring: ACTIVE'}
    ${automationStatus.marketIntelligence ? '✅ Strategic analysis: RUNNING' : '📈 Manual analysis: AVAILABLE'}
 
-📈 **2. CLIENT ACQUISITION ENGINE** - ${automationStatus.clientAcquisition ? '✅ ACTIVE' : '⚠️ STANDBY'}
+📈 2. CLIENT ACQUISITION ENGINE - ${automationStatus.clientAcquisition ? '✅ ACTIVE' : '⚠️ STANDBY'}
    ${automationStatus.clientAcquisition ? '✅ Multi-channel campaigns: LAUNCHED' : '🎯 Manual acquisition: READY'}
    ${automationStatus.clientAcquisition ? '✅ Lead qualification: AUTOMATED' : '📝 Basic tracking: ACTIVE'}
    ${automationStatus.clientAcquisition ? '✅ Conversion optimization: ACTIVE' : '💼 Manual conversion: AVAILABLE'}
 
-💰 **3. REVENUE OPTIMIZATION ENGINE** - ${automationStatus.revenueOptimization ? '✅ ACTIVE' : '⚠️ STANDBY'}
+💰 3. REVENUE OPTIMIZATION ENGINE - ${automationStatus.revenueOptimization ? '✅ ACTIVE' : '⚠️ STANDBY'}
    ${automationStatus.revenueOptimization ? '✅ Dynamic pricing: CONFIGURED' : '💎 Manual pricing: READY'}
    ${automationStatus.revenueOptimization ? '✅ CLV enhancement: OPERATIONAL' : '📊 Basic metrics: ACTIVE'}
    ${automationStatus.revenueOptimization ? '✅ Profit maximization: ACTIVE' : '💼 Manual optimization: AVAILABLE'}
 
-🔍 **4. COMPETITOR INTELLIGENCE ENGINE** - ${automationStatus.competitorIntelligence ? '✅ ACTIVE' : '⚠️ STANDBY'}
+🔍 4. COMPETITOR INTELLIGENCE ENGINE - ${automationStatus.competitorIntelligence ? '✅ ACTIVE' : '⚠️ STANDBY'}
    ${automationStatus.competitorIntelligence ? '✅ Surveillance network: ESTABLISHED' : '👁️ Manual monitoring: READY'}
    ${automationStatus.competitorIntelligence ? '✅ Threat monitoring: ACTIVE' : '🔍 Basic tracking: ACTIVE'}
    ${automationStatus.competitorIntelligence ? '✅ Strategic positioning: OPTIMIZED' : '⚔️ Manual positioning: AVAILABLE'}
 
-📊 **5. INSTITUTIONAL DATA PIPELINE** - ${automationStatus.institutionalData ? '✅ ACTIVE' : '⚠️ STANDBY'}
+📊 5. INSTITUTIONAL DATA PIPELINE - ${automationStatus.institutionalData ? '✅ ACTIVE' : '⚠️ STANDBY'}
    ${automationStatus.institutionalData ? '✅ 20+ data sources: CONNECTED' : '🌐 Basic data access: READY'}
    ${automationStatus.institutionalData ? '✅ Intelligence synthesis: RUNNING' : '📊 Manual analysis: ACTIVE'}
    ${automationStatus.institutionalData ? '✅ Report generation: AUTOMATED' : '📄 Manual reports: AVAILABLE'}
 
-⚡ **6. SCALING PROTOCOLS** - DEPLOYING...
+⚡ 6. SCALING PROTOCOLS - DEPLOYING...
    ✅ Growth automation: ACTIVE
    ✅ Process optimization: RUNNING
    ✅ Expansion systems: OPERATIONAL
 
-🏛️ **DEPLOYMENT COMPLETE - ALL SYSTEMS ONLINE**
+🏛️ DEPLOYMENT COMPLETE - ALL SYSTEMS ONLINE
 
-📊 **POWER MULTIPLIER STATUS**:
-• **Total Lines of Code**: ${deploymentStatus.total_automation_lines.toLocaleString()}+ institutional-grade automation
-• **Processing Power**: Equivalent to 50+ full-time strategic analysts
-• **Intelligence Capacity**: Ray Dalio + BlackRock + McKinsey combined analytical capability
-• **Market Coverage**: 100% Cambodia financial services landscape monitoring
-• **Competitive Advantage**: Unbreachable moat through systematic automation
-• **Revenue Impact**: ${deploymentStatus.estimated_roi} ROI with Reformed Fund Architect positioning
+📊 POWER MULTIPLIER STATUS:
+• Total Lines of Code: ${deploymentStatus.total_automation_lines.toLocaleString()}+ institutional-grade automation
+• Processing Power: Equivalent to 50+ full-time strategic analysts
+• Intelligence Capacity: Ray Dalio + BlackRock + McKinsey combined analytical capability
+• Market Coverage: 100% Cambodia financial services landscape monitoring
+• Competitive Advantage: Unbreachable moat through systematic automation
+• Revenue Impact: ${deploymentStatus.estimated_roi} ROI with Reformed Fund Architect positioning
 
-⚔️ **STRATEGIC DOMINANCE ACHIEVED**:
-• **Market Intelligence**: 24/7 economic monitoring and opportunity identification
-• **Client Acquisition**: Automated prospect generation and conversion optimization
-• **Revenue Optimization**: Dynamic pricing and lifetime value maximization
-• **Competitive Surveillance**: Real-time threat detection and strategic positioning
-• **Institutional Data**: Premium intelligence sources with automated synthesis
-• **Scaling Automation**: Systematic business growth with minimal manual intervention
+⚔️ STRATEGIC DOMINANCE ACHIEVED:
+• Market Intelligence: 24/7 economic monitoring and opportunity identification
+• Client Acquisition: Automated prospect generation and conversion optimization
+• Revenue Optimization: Dynamic pricing and lifetime value maximization
+• Competitive Surveillance: Real-time threat detection and strategic positioning
+• Institutional Data: Premium intelligence sources with automated synthesis
+• Scaling Automation: Systematic business growth with minimal manual intervention
 
-🎯 **IMMEDIATE CAPABILITIES**:
+🎯 IMMEDIATE CAPABILITIES:
 • Process 2.3TB+ of market intelligence monthly
 • Generate 15-25 qualified leads weekly through automated systems
 • Optimize revenue per client by 25-40% through dynamic pricing
@@ -3339,22 +3339,22 @@ bot.onText(/\/power_multipliers/, async (msg) => {
 • Synthesize institutional-grade intelligence reports in real-time
 • Execute systematic business scaling protocols automatically
 
-💎 **REFORMED FUND ARCHITECT AUTHORITY**:
+💎 REFORMED FUND ARCHITECT AUTHORITY:
 All 6 power multipliers are calibrated specifically for your crisis-tested positioning, Cambodia market dominance, and systematic $3K→$30K monthly scaling mission.
 
-📋 **DYNASTY POWER MULTIPLIER IMPLEMENTATION STATUS**:
-• **Governance Leverage**: Crisis playbooks and anti-fragility protocols - ${activeModules >= 4 ? 'INSTITUTIONAL GRADE' : 'READY TO DEPLOY'}
-• **Network Effect**: Strategic alliances and deal flow systems - ${activeModules >= 3 ? 'EXPONENTIAL GROWTH' : 'FOUNDATION READY'}  
-• **Intelligence Loop**: Real-time feedback and predictive modeling - ${activeModules >= 2 ? 'ADAPTIVE EXECUTION' : 'CORE SYSTEMS ACTIVE'}
-• **Capital Stacking**: Multi-source resource compounding - ${activeModules >= 1 ? 'OPERATIONAL' : 'FRAMEWORK ESTABLISHED'}
-• **Technology Scaling**: Process automation and data leverage - ${activeModules === 6 ? 'FULL AUTOMATION' : 'MANUAL EXCELLENCE'}
-• **Authority Position**: Market control and pricing power - ${activeModules >= 5 ? 'MARKET DOMINANCE' : 'REFORMED FUND ARCHITECT EDGE'}
+📋 DYNASTY POWER MULTIPLIER IMPLEMENTATION STATUS:
+• Governance Leverage: Crisis playbooks and anti-fragility protocols - ${activeModules >= 4 ? 'INSTITUTIONAL GRADE' : 'READY TO DEPLOY'}
+• Network Effect: Strategic alliances and deal flow systems - ${activeModules >= 3 ? 'EXPONENTIAL GROWTH' : 'FOUNDATION READY'}  
+• Intelligence Loop: Real-time feedback and predictive modeling - ${activeModules >= 2 ? 'ADAPTIVE EXECUTION' : 'CORE SYSTEMS ACTIVE'}
+• Capital Stacking: Multi-source resource compounding - ${activeModules >= 1 ? 'OPERATIONAL' : 'FRAMEWORK ESTABLISHED'}
+• Technology Scaling: Process automation and data leverage - ${activeModules === 6 ? 'FULL AUTOMATION' : 'MANUAL EXCELLENCE'}
+• Authority Position: Market control and pricing power - ${activeModules >= 5 ? 'MARKET DOMINANCE' : 'REFORMED FUND ARCHITECT EDGE'}
 
-🏛️ **EMPIRE BUILDING ARCHITECTURE**: ${activeModules === 6 ? 'All multipliers stacked and compounding' : 'Strategic foundation with manual excellence - ready for full automation deployment'}
+🏛️ EMPIRE BUILDING ARCHITECTURE: ${activeModules === 6 ? 'All multipliers stacked and compounding' : 'Strategic foundation with manual excellence - ready for full automation deployment'}
 
-**Status: ${activeModules === 6 ? 'ULTIMATE STRATEGIC AUTOMATION SUPREMACY ACHIEVED' : 'STRATEGIC DYNASTY FOUNDATION OPERATIONAL - FULL AUTOMATION READY'}**
+Status: ${activeModules === 6 ? 'ULTIMATE STRATEGIC AUTOMATION SUPREMACY ACHIEVED' : 'STRATEGIC DYNASTY FOUNDATION OPERATIONAL - FULL AUTOMATION READY'}
 
-*Commander, your business ${activeModules === 6 ? 'is now operating with the same level of systematic intelligence and automation as trillion-dollar financial institutions' : 'operates with institutional-grade strategic intelligence - full automation stack ready for deployment'}.*
+Commander, your business ${activeModules === 6 ? 'is now operating with the same level of systematic intelligence and automation as trillion-dollar financial institutions' : 'operates with institutional-grade strategic intelligence - full automation stack ready for deployment'}.
     `;
 
     await bot.sendMessage(chatId, response, {
@@ -3374,98 +3374,98 @@ bot.onText(/\/dynasty_implementation/, async (msg) => {
     const chatId = msg.chat.id;
     
     const dynastyMessage = `
-🏛️ **DYNASTY POWER MULTIPLIER IMPLEMENTATION BLUEPRINT**
+🏛️ DYNASTY POWER MULTIPLIER IMPLEMENTATION BLUEPRINT
 
-⚔️ **COMMANDER'S POWER MULTIPLIERS ARCHITECTURE**
+⚔️ COMMANDER'S POWER MULTIPLIERS ARCHITECTURE
 
-**Definition**: Power Multipliers are systems, relationships, and engineered advantages that expand one unit of input (time, money, trust) into exponential output by design—protecting, compounding, and institutionalizing power at dynasty scale.
+Definition: Power Multipliers are systems, relationships, and engineered advantages that expand one unit of input (time, money, trust) into exponential output by design—protecting, compounding, and institutionalizing power at dynasty scale.
 
-📋 **6 CORE DYNASTY MULTIPLIERS**:
+📋 6 CORE DYNASTY MULTIPLIERS:
 
-**1. 🛡️ GOVERNANCE LEVERAGE** - Systemic Downside Prevention
-• **Core Function**: Anti-fragility and crisis survival protocols
-• **Dynasty Mechanism**: Crisis playbooks, escalation protocols, veto frameworks
-• **Power Effect**: Survive and thrive - unbreakable positioning
-• **Implementation**: $2,500 audit + $5,000 codification
+1. 🛡️ GOVERNANCE LEVERAGE - Systemic Downside Prevention
+• Core Function: Anti-fragility and crisis survival protocols
+• Dynasty Mechanism: Crisis playbooks, escalation protocols, veto frameworks
+• Power Effect: Survive and thrive - unbreakable positioning
+• Implementation: $2,500 audit + $5,000 codification
 
-**2. 🌐 NETWORK EFFECT** - Exponential Opportunity Width  
-• **Core Function**: Trusted syndicates and strategic alliances
-• **Dynasty Mechanism**: Joint investment, deal flow systems, closed ecosystem
-• **Power Effect**: Flow of deals & information dominance
-• **Implementation**: Strategic alliance templates, network orchestration
+2. 🌐 NETWORK EFFECT - Exponential Opportunity Width  
+• Core Function: Trusted syndicates and strategic alliances
+• Dynasty Mechanism: Joint investment, deal flow systems, closed ecosystem
+• Power Effect: Flow of deals & information dominance
+• Implementation: Strategic alliance templates, network orchestration
 
-**3. 🧠 INTELLIGENCE LOOP** - Superior Adaptive Execution
-• **Dynasty Mechanism**: Real-time feedback, predictive modeling, playbook refinement
-• **Power Effect**: Outpace & outlearn all rivals
-• **Implementation**: $8,000 tech integration + custom dashboards
+3. 🧠 INTELLIGENCE LOOP - Superior Adaptive Execution
+• Dynasty Mechanism: Real-time feedback, predictive modeling, playbook refinement
+• Power Effect: Outpace & outlearn all rivals
+• Implementation: $8,000 tech integration + custom dashboards
 
-**4. 💰 CAPITAL STACKING** - Multi-Source Resource Compounding
-• **Dynasty Mechanism**: Funds, credit partners, strategic liquidity suppliers
-• **Power Effect**: Optionality & negotiation leverage
-• **Implementation**: 5-10% AUM earmarked for multiplier upgrade
+4. 💰 CAPITAL STACKING - Multi-Source Resource Compounding
+• Dynasty Mechanism: Funds, credit partners, strategic liquidity suppliers
+• Power Effect: Optionality & negotiation leverage
+• Implementation: 5-10% AUM earmarked for multiplier upgrade
 
-**5. ⚡ TECHNOLOGY SCALING** - Process Automation & Data Leverage
-• **Dynasty Mechanism**: Custom dashboards, workflow platforms, auto-compliance
-• **Power Effect**: Volume without adding headcount
-• **Implementation**: SaaS automation + workflow optimization
+5. ⚡ TECHNOLOGY SCALING - Process Automation & Data Leverage
+• Dynasty Mechanism: Custom dashboards, workflow platforms, auto-compliance
+• Power Effect: Volume without adding headcount
+• Implementation: SaaS automation + workflow optimization
 
-**6. 👑 AUTHORITY POSITION** - Trusted Market Control
-• **Dynasty Mechanism**: Industry education, playbook licensing, "Reformed" branding
-• **Power Effect**: Market insulation & pricing power
-• **Implementation**: $1,500/month content + case study publication
+6. 👑 AUTHORITY POSITION - Trusted Market Control
+• Dynasty Mechanism: Industry education, playbook licensing, "Reformed" branding
+• Power Effect: Market insulation & pricing power
+• Implementation: $1,500/month content + case study publication
 
-🎯 **PHASED IMPLEMENTATION STRATEGY**:
+🎯 PHASED IMPLEMENTATION STRATEGY:
 
-**Phase 1: Audit & Prioritization (2 Weeks)**
+Phase 1: Audit & Prioritization (2 Weeks)
 • Map current multipliers using dynasty matrix
 • Score 1-5 per impact/presence for each multiplier
 • Prioritize 3 core multipliers (Governance, Network, Intelligence)
-• **Investment**: $2,500
+• Investment: $2,500
 
-**Phase 2: System Codification (1 Month)**
+Phase 2: System Codification (1 Month)
 • Build governance SOPs and crisis escalation triggers
 • Create network alliance templates and intelligence dashboards
 • Codify digital processes and legal frameworks
-• **Investment**: $5,000
+• Investment: $5,000
 
-**Phase 3: Technology Integration (2 Months)**
+Phase 3: Technology Integration (2 Months)
 • Deploy SaaS automation and custom workflow systems
 • Implement real-time performance dashboards
 • Create redundancy and anti-fragility measures
-• **Investment**: $8,000
+• Investment: $8,000
 
-**Phase 4: Authority Positioning (Ongoing)**
+Phase 4: Authority Positioning (Ongoing)
 • Publish case studies and host dynasty summits
 • License playbook "teasers" while keeping core edge private
 • Act as "network orchestrator" for all major deals
-• **Investment**: $1,500/month
+• Investment: $1,500/month
 
-📊 **RESOURCE ALLOCATION SUMMARY**:
-• **Minimum Initial Investment**: $18,000
-• **Ongoing Investment**: 5-10% AUM for multiplier upgrades
-• **ROI Projection**: 400-600% through compounding multiplier effects
+📊 RESOURCE ALLOCATION SUMMARY:
+• Minimum Initial Investment: $18,000
+• Ongoing Investment: 5-10% AUM for multiplier upgrades
+• ROI Projection: 400-600% through compounding multiplier effects
 
-🏗️ **EMPIRE MULTIPLIER MACHINE PROTOCOL**:
+🏗️ EMPIRE MULTIPLIER MACHINE PROTOCOL:
 
-**1. Every Win Becomes Playbook**: Convert each success/failure into new protocol
-**2. Networked Alliances**: Give top partners stake in system - create closed ecosystem gravity
-**3. Authority Signal**: Publish case studies, offer strategic "teasers" to market
-**4. Intelligence Feedback**: Real-time dashboards drive adaptive action
-**5. Recursive Upgrade**: Stack and interlock multipliers quarterly
+1. Every Win Becomes Playbook: Convert each success/failure into new protocol
+2. Networked Alliances: Give top partners stake in system - create closed ecosystem gravity
+3. Authority Signal: Publish case studies, offer strategic "teasers" to market
+4. Intelligence Feedback: Real-time dashboards drive adaptive action
+5. Recursive Upgrade: Stack and interlock multipliers quarterly
 
-💎 **END STATE VISION**:
+💎 END STATE VISION:
 Commander's dynasty isn't just the biggest—it's unbreakable, self-upgrading, and the center of gravity for Cambodia's financial ecosystem.
 
-⚡ **ACTIVATION CHECKLIST**:
+⚡ ACTIVATION CHECKLIST:
 ✅ Assign audit team for multiplier assessment
 ✅ Codify governance protocols with precision  
 ✅ Deploy feedback/feedforward intelligence loop
 ✅ Publish strategic edge positioning
 ✅ Implement recursive upgrade system
 
-**Result**: All units of capital, time, and trust multiply on entry—none escape the dynasty orbit.
+Result: All units of capital, time, and trust multiply on entry—none escape the dynasty orbit.
 
-*⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️*
+⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️
     `;
 
     await bot.sendMessage(chatId, dynastyMessage, {
@@ -3492,47 +3492,47 @@ bot.onText(/\/monte_carlo (.+)/, async (msg, match) => {
     const simulation = enhanced100PercentCapabilities.monteCarloSimulation(scenario, 1000, {}, scenarioType);
     
     const monteCarloMessage = `
-📊 **ENHANCED MONTE CARLO STRATEGIC ANALYSIS**
+📊 ENHANCED MONTE CARLO STRATEGIC ANALYSIS
 
-🎯 **SCENARIO**: ${simulation.scenario}
-📋 **SCENARIO TYPE**: ${simulation.scenario_type.toUpperCase()}
-🔢 **ITERATIONS**: ${simulation.iterations.toLocaleString()} simulations
+🎯 SCENARIO: ${simulation.scenario}
+📋 SCENARIO TYPE: ${simulation.scenario_type.toUpperCase()}
+🔢 ITERATIONS: ${simulation.iterations.toLocaleString()} simulations
 
-📈 **SUCCESS PROBABILITY FRAMEWORK**:
-• **Mean Success Rate**: ${(simulation.statistics.success_probability.mean * 100).toFixed(1)}%
-• **Median (50th Percentile)**: ${(simulation.statistics.success_probability.median * 100).toFixed(1)}%
-• **Conservative (10th Percentile)**: ${(simulation.statistics.success_probability.percentile_10 * 100).toFixed(1)}%
-• **Optimistic (90th Percentile)**: ${(simulation.statistics.success_probability.percentile_90 * 100).toFixed(1)}%
-• **Standard Deviation**: ${(simulation.statistics.success_probability.std_deviation * 100).toFixed(1)}%
+📈 SUCCESS PROBABILITY FRAMEWORK:
+• Mean Success Rate: ${(simulation.statistics.success_probability.mean * 100).toFixed(1)}%
+• Median (50th Percentile): ${(simulation.statistics.success_probability.median * 100).toFixed(1)}%
+• Conservative (10th Percentile): ${(simulation.statistics.success_probability.percentile_10 * 100).toFixed(1)}%
+• Optimistic (90th Percentile): ${(simulation.statistics.success_probability.percentile_90 * 100).toFixed(1)}%
+• Standard Deviation: ${(simulation.statistics.success_probability.std_deviation * 100).toFixed(1)}%
 
-💰 **REVENUE SCALING ANALYSIS ($3K → $30K TARGET)**:
-• **Mean Monthly Revenue**: $${simulation.statistics.monthly_revenue_target.mean.toLocaleString()}
-• **Median Projection**: $${simulation.statistics.monthly_revenue_target.median.toLocaleString()}
-• **Conservative (10th Percentile)**: $${simulation.statistics.monthly_revenue_target.percentile_10.toLocaleString()}
-• **Optimistic (90th Percentile)**: $${simulation.statistics.monthly_revenue_target.percentile_90.toLocaleString()}
-• **$30K Target Achievement**: ${(simulation.statistics.monthly_revenue_target.target_achievement_probability * 100).toFixed(1)}% probability
+💰 REVENUE SCALING ANALYSIS ($3K → $30K TARGET):
+• Mean Monthly Revenue: $${simulation.statistics.monthly_revenue_target.mean.toLocaleString()}
+• Median Projection: $${simulation.statistics.monthly_revenue_target.median.toLocaleString()}
+• Conservative (10th Percentile): $${simulation.statistics.monthly_revenue_target.percentile_10.toLocaleString()}
+• Optimistic (90th Percentile): $${simulation.statistics.monthly_revenue_target.percentile_90.toLocaleString()}
+• $30K Target Achievement: ${(simulation.statistics.monthly_revenue_target.target_achievement_probability * 100).toFixed(1)}% probability
 
-📊 **RISK MANAGEMENT FRAMEWORK**:
-• **Value at Risk (5%)**: $${simulation.risk_analysis.value_at_risk_5.toLocaleString()}
-• **Expected Shortfall**: $${simulation.risk_analysis.expected_shortfall.toLocaleString()}
-• **Downside Risk**: ${(simulation.risk_analysis.downside_probability * 100).toFixed(1)}% probability of decline
+📊 RISK MANAGEMENT FRAMEWORK:
+• Value at Risk (5%): $${simulation.risk_analysis.value_at_risk_5.toLocaleString()}
+• Expected Shortfall: $${simulation.risk_analysis.expected_shortfall.toLocaleString()}
+• Downside Risk: ${(simulation.risk_analysis.downside_probability * 100).toFixed(1)}% probability of decline
 
-🎯 **CONFIDENCE DISTRIBUTION**:
-• **High Confidence (>80%)**: ${(simulation.confidence_intervals.high_confidence * 100).toFixed(1)}% of scenarios
-• **Medium Confidence (60-80%)**: ${(simulation.confidence_intervals.medium_confidence * 100).toFixed(1)}% of scenarios
-• **Low Confidence (<60%)**: ${(simulation.confidence_intervals.low_confidence * 100).toFixed(1)}% of scenarios
+🎯 CONFIDENCE DISTRIBUTION:
+• High Confidence (>80%): ${(simulation.confidence_intervals.high_confidence * 100).toFixed(1)}% of scenarios
+• Medium Confidence (60-80%): ${(simulation.confidence_intervals.medium_confidence * 100).toFixed(1)}% of scenarios
+• Low Confidence (<60%): ${(simulation.confidence_intervals.low_confidence * 100).toFixed(1)}% of scenarios
 
-🇰🇭 **CAMBODIA STRATEGIC VARIABLES**:
-• **Market Penetration**: 15% - 45% (baseline 28%)
-• **Crisis Credibility Premium**: 15% - 35% (baseline 25%)
-• **Systematic Governance Edge**: 20% - 40% (baseline 30%)
-• **Cultural Intelligence Factor**: 70% - 95% (baseline 85%)
-• **Competitor Response Intensity**: 20% - 80% (baseline 45%)
+🇰🇭 CAMBODIA STRATEGIC VARIABLES:
+• Market Penetration: 15% - 45% (baseline 28%)
+• Crisis Credibility Premium: 15% - 35% (baseline 25%)
+• Systematic Governance Edge: 20% - 40% (baseline 30%)
+• Cultural Intelligence Factor: 70% - 95% (baseline 85%)
+• Competitor Response Intensity: 20% - 80% (baseline 45%)
 
-🏛️ **REFORMED FUND ARCHITECT POSITIONING**:
+🏛️ REFORMED FUND ARCHITECT POSITIONING:
 Your crisis-tested credentials and systematic governance frameworks provide significant competitive advantages in ${(simulation.confidence_intervals.high_confidence * 100).toFixed(0)}% of simulated scenarios.
 
-**Strategic Recommendation**: ${
+Strategic Recommendation: ${
   simulation.statistics.monthly_revenue_target.target_achievement_probability > 0.7 
     ? 'AGGRESSIVE SCALING - High probability of $30K target achievement'
     : simulation.statistics.monthly_revenue_target.target_achievement_probability > 0.4
@@ -3540,9 +3540,9 @@ Your crisis-tested credentials and systematic governance frameworks provide sign
     : 'CONSERVATIVE APPROACH - Additional risk mitigation required'
 }
 
-💎 **98% OPTIMIZATION**: Professional-grade Monte Carlo framework with multiple probability distributions and comprehensive risk analysis.
+💎 98% OPTIMIZATION: Professional-grade Monte Carlo framework with multiple probability distributions and comprehensive risk analysis.
 
-*To run different scenarios: /monte_carlo [scenario]|optimistic or /monte_carlo [scenario]|pessimistic*
+To run different scenarios: /monte_carlo [scenario]|optimistic or /monte_carlo [scenario]|pessimistic
     `;
 
     await bot.sendMessage(chatId, monteCarloMessage, {
@@ -3553,7 +3553,7 @@ Your crisis-tested credentials and systematic governance frameworks provide sign
     console.error("❌ Enhanced Monte Carlo command error:", error.message);
     await bot.sendMessage(
       msg.chat.id,
-      "📊 **ENHANCED MONTE CARLO ANALYSIS**\n\nProcessing institutional-grade statistical modeling...",
+      "📊 ENHANCED MONTE CARLO ANALYSIS\n\nProcessing institutional-grade statistical modeling...",
     );
   }
 });
@@ -3571,63 +3571,63 @@ bot.onText(/\/optimize (.+)/, async (msg, match) => {
     const optimisticSimulation = enhanced100PercentCapabilities.monteCarloSimulation(scenario, 1000, {}, "optimistic");
     
     const optimizationMessage = `
-🎯 **STRATEGIC OPTIMIZATION ANALYSIS**
+🎯 STRATEGIC OPTIMIZATION ANALYSIS
 
-📋 **SCENARIO**: ${scenario}
+📋 SCENARIO: ${scenario}
 
-🔄 **BASELINE vs OPTIMISTIC COMPARISON**:
-• **Success Rate Improvement**: ${(baselineSimulation.statistics.success_probability.mean * 100).toFixed(1)}% → ${(optimisticSimulation.statistics.success_probability.mean * 100).toFixed(1)}% (+${((optimisticSimulation.statistics.success_probability.mean - baselineSimulation.statistics.success_probability.mean) * 100).toFixed(1)}%)
-• **Revenue Potential**: $${baselineSimulation.statistics.monthly_revenue_target.mean.toLocaleString()} → $${optimisticSimulation.statistics.monthly_revenue_target.mean.toLocaleString()} (+${(((optimisticSimulation.statistics.monthly_revenue_target.mean / baselineSimulation.statistics.monthly_revenue_target.mean) - 1) * 100).toFixed(1)}%)
-• **$30K Achievement**: ${(baselineSimulation.statistics.monthly_revenue_target.target_achievement_probability * 100).toFixed(1)}% → ${(optimisticSimulation.statistics.monthly_revenue_target.target_achievement_probability * 100).toFixed(1)}%
+🔄 BASELINE vs OPTIMISTIC COMPARISON:
+• Success Rate Improvement: ${(baselineSimulation.statistics.success_probability.mean  100).toFixed(1)}% → ${(optimisticSimulation.statistics.success_probability.mean  100).toFixed(1)}% (+${((optimisticSimulation.statistics.success_probability.mean - baselineSimulation.statistics.success_probability.mean) * 100).toFixed(1)}%)
+• Revenue Potential: $${baselineSimulation.statistics.monthly_revenue_target.mean.toLocaleString()} → $${optimisticSimulation.statistics.monthly_revenue_target.mean.toLocaleString()} (+${(((optimisticSimulation.statistics.monthly_revenue_target.mean / baselineSimulation.statistics.monthly_revenue_target.mean) - 1) * 100).toFixed(1)}%)
+• $30K Achievement: ${(baselineSimulation.statistics.monthly_revenue_target.target_achievement_probability  100).toFixed(1)}% → ${(optimisticSimulation.statistics.monthly_revenue_target.target_achievement_probability  100).toFixed(1)}%
 
-🏛️ **REFORMED FUND ARCHITECT OPTIMIZATION STRATEGIES**:
+🏛️ REFORMED FUND ARCHITECT OPTIMIZATION STRATEGIES:
 
-**1. CRISIS CREDIBILITY LEVERAGE** (25-35% premium):
+1. CRISIS CREDIBILITY LEVERAGE (25-35% premium):
 • Position 2008 experience as qualification rather than liability
 • Emphasize systematic frameworks developed through adversity
 • Showcase governance improvements post-crisis
 
-**2. CULTURAL INTELLIGENCE MAXIMIZATION** (85-95% factor):
+2. CULTURAL INTELLIGENCE MAXIMIZATION (85-95% factor):
 • Leverage deep Cambodia business relationship understanding
 • Emphasize local network resilience through crisis periods
 • Highlight regulatory navigation experience
 
-**3. SYSTEMATIC GOVERNANCE PREMIUM** (30-40% edge):
+3. SYSTEMATIC GOVERNANCE PREMIUM (30-40% edge):
 • Emphasize proprietary Vault System methodology
 • Demonstrate crisis-tested decision frameworks
 • Position systematic approach vs emotional competitor responses
 
-**4. MARKET PENETRATION ACCELERATION**:
+4. MARKET PENETRATION ACCELERATION:
 • Current Range: 15-45% (baseline 28%)
-• **Target**: Push toward 35-40% through authority positioning
-• **Method**: Capital Clarity Sessions as diagnostic premium service
+• Target: Push toward 35-40% through authority positioning
+• Method: Capital Clarity Sessions as diagnostic premium service
 
-🎯 **SPECIFIC OPTIMIZATION ACTIONS**:
+🎯 SPECIFIC OPTIMIZATION ACTIONS:
 
-**PRICING OPTIMIZATION**:
+PRICING OPTIMIZATION:
 • Increase Capital Clarity Session fees from $500 to $1,000-1,500
 • Position as "Crisis-Tested Strategic Assessment"
 • Bundle with systematic governance framework consultation
 
-**MARKET POSITIONING**:
+MARKET POSITIONING:
 • Lead with "Reformed Fund Architect" authority
 • Emphasize systematic methodology vs ad-hoc competitor approaches
 • Leverage crisis experience as unique competitive advantage
 
-**COMPETITIVE DIFFERENTIATION**:
+COMPETITIVE DIFFERENTIATION:
 • Most competitors fear discussing failure - you leverage it
 • Systematic frameworks vs emotional decision-making
 • Crisis-tested credibility impossible to replicate
 
-💎 **IMPLEMENTATION PRIORITY**:
-1. **IMMEDIATE**: Increase pricing with crisis-credibility positioning
-2. **30 DAYS**: Implement systematic governance premium messaging  
-3. **60 DAYS**: Leverage cultural intelligence for market penetration
-4. **90 DAYS**: Scale based on optimized positioning results
+💎 IMPLEMENTATION PRIORITY:
+1. IMMEDIATE: Increase pricing with crisis-credibility positioning
+2. 30 DAYS: Implement systematic governance premium messaging  
+3. 60 DAYS: Leverage cultural intelligence for market penetration
+4. 90 DAYS: Scale based on optimized positioning results
 
-**Expected Impact**: Moving from baseline to optimistic scenario parameters could increase success probability by ${((optimisticSimulation.statistics.success_probability.mean - baselineSimulation.statistics.success_probability.mean) * 100).toFixed(1)} percentage points and revenue by ${(((optimisticSimulation.statistics.monthly_revenue_target.mean / baselineSimulation.statistics.monthly_revenue_target.mean) - 1) * 100).toFixed(1)}%.
+Expected Impact: Moving from baseline to optimistic scenario parameters could increase success probability by ${((optimisticSimulation.statistics.success_probability.mean - baselineSimulation.statistics.success_probability.mean)  100).toFixed(1)} percentage points and revenue by ${(((optimisticSimulation.statistics.monthly_revenue_target.mean / baselineSimulation.statistics.monthly_revenue_target.mean) - 1)  100).toFixed(1)}%.
 
-*Strategic optimization based on Monte Carlo modeling and Reformed Fund Architect competitive advantages.*
+Strategic optimization based on Monte Carlo modeling and Reformed Fund Architect competitive advantages.
     `;
 
     await bot.sendMessage(chatId, optimizationMessage, {
@@ -3638,7 +3638,7 @@ bot.onText(/\/optimize (.+)/, async (msg, match) => {
     console.error("❌ Optimize command error:", error.message);
     await bot.sendMessage(
       msg.chat.id,
-      "🎯 **STRATEGIC OPTIMIZATION**\n\nAnalyzing improvement opportunities...",
+      "🎯 STRATEGIC OPTIMIZATION\n\nAnalyzing improvement opportunities...",
     );
   }
 });
@@ -3650,78 +3650,78 @@ bot.onText(/\/pricing_model (.+)/, async (msg, match) => {
     const service = match[1];
     
     const pricingMessage = `
-💰 **ADVANCED PRICING MODEL ANALYSIS**
+💰 ADVANCED PRICING MODEL ANALYSIS
 
-🎯 **SERVICE**: ${service}
+🎯 SERVICE: ${service}
 
-🏛️ **REFORMED FUND ARCHITECT PRICING FRAMEWORK**:
+🏛️ REFORMED FUND ARCHITECT PRICING FRAMEWORK:
 
-**TIER 1: CRISIS-TESTED CREDIBILITY PREMIUM** (+25-35%)
+TIER 1: CRISIS-TESTED CREDIBILITY PREMIUM (+25-35%)
 • Base pricing multiplied by crisis experience factor
 • Systematic frameworks developed through adversity
 • Proven resilience and recovery capability
 
-**TIER 2: SYSTEMATIC GOVERNANCE PREMIUM** (+30-40%)  
+TIER 2: SYSTEMATIC GOVERNANCE PREMIUM (+30-40%)  
 • Proprietary Vault System methodology
 • 4-volume dynasty architecture
 • Systematic vs emotional decision-making
 
-**TIER 3: CULTURAL INTELLIGENCE PREMIUM** (+15-25%)
+TIER 3: CULTURAL INTELLIGENCE PREMIUM (+15-25%)
 • Deep Cambodia market understanding
 • Local network and relationship capital
 • Regulatory navigation expertise
 
-📊 **RECOMMENDED PRICING STRUCTURE**:
+📊 RECOMMENDED PRICING STRUCTURE:
 
-**CAPITAL CLARITY SESSIONS**:
-• **Standard Market Rate**: $300-500
-• **Reformed Fund Architect Rate**: $1,000-1,500
-• **Premium Justification**: Crisis-tested diagnostic + systematic governance
-• **Value Positioning**: "Strategic X-Ray Analysis with Crisis-Tested Frameworks"
+CAPITAL CLARITY SESSIONS:
+• Standard Market Rate: $300-500
+• Reformed Fund Architect Rate: $1,000-1,500
+• Premium Justification: Crisis-tested diagnostic + systematic governance
+• Value Positioning: "Strategic X-Ray Analysis with Crisis-Tested Frameworks"
 
-**FUND MANAGEMENT SERVICES**:
-• **Standard Market Rate**: 1.5-2.0% AUM
-• **Reformed Fund Architect Rate**: 2.5-3.5% AUM  
-• **Premium Justification**: Systematic risk management + cultural intelligence
-• **Value Positioning**: "Crisis-Tested Systematic Wealth Management"
+FUND MANAGEMENT SERVICES:
+• Standard Market Rate: 1.5-2.0% AUM
+• Reformed Fund Architect Rate: 2.5-3.5% AUM  
+• Premium Justification: Systematic risk management + cultural intelligence
+• Value Positioning: "Crisis-Tested Systematic Wealth Management"
 
-**STRATEGIC CONSULTING**:
-• **Standard Market Rate**: $150-250/hour
-• **Reformed Fund Architect Rate**: $400-600/hour
-• **Premium Justification**: Lived experience + systematic methodology
-• **Value Positioning**: "Reformed Fund Architect Strategic Intelligence"
+STRATEGIC CONSULTING:
+• Standard Market Rate: $150-250/hour
+• Reformed Fund Architect Rate: $400-600/hour
+• Premium Justification: Lived experience + systematic methodology
+• Value Positioning: "Reformed Fund Architect Strategic Intelligence"
 
-🎯 **PRICING PSYCHOLOGY FRAMEWORK**:
+🎯 PRICING PSYCHOLOGY FRAMEWORK:
 
-**ANCHORING STRATEGY**:
+ANCHORING STRATEGY:
 • Lead with highest-value service (Capital Clarity at $1,500)
 • Position other services as "accessible entry points"
 • Emphasize systematic methodology value
 
-**AUTHORITY POSITIONING**:
+AUTHORITY POSITIONING:
 • "Reformed Fund Architect" title creates pricing power
 • Crisis experience becomes qualification, not liability  
 • Systematic frameworks justify premium pricing
 
-**SCARCITY LEVERAGING**:
+SCARCITY LEVERAGING:
 • Limited availability due to systematic approach requirements
 • Exclusive access to crisis-tested methodologies
 • Premium positioning through selective client acceptance
 
-🇰🇭 **CAMBODIA MARKET CALIBRATION**:
-• **Local Premium**: 40-60% above standard rates
-• **Justification**: Cultural intelligence + local network depth
-• **Positioning**: "Cambodia Market Specialist with Crisis-Tested Authority"
+🇰🇭 CAMBODIA MARKET CALIBRATION:
+• Local Premium: 40-60% above standard rates
+• Justification: Cultural intelligence + local network depth
+• Positioning: "Cambodia Market Specialist with Crisis-Tested Authority"
 
-💎 **IMPLEMENTATION STRATEGY**:
-1. **Phase 1**: Implement crisis-credibility premium immediately
-2. **Phase 2**: Add systematic governance positioning
-3. **Phase 3**: Leverage cultural intelligence for market expansion
-4. **Phase 4**: Scale based on premium positioning success
+💎 IMPLEMENTATION STRATEGY:
+1. Phase 1: Implement crisis-credibility premium immediately
+2. Phase 2: Add systematic governance positioning
+3. Phase 3: Leverage cultural intelligence for market expansion
+4. Phase 4: Scale based on premium positioning success
 
-**Expected Revenue Impact**: Moving to Reformed Fund Architect premium pricing could increase revenue by 200-400% while maintaining selective client base quality.
+Expected Revenue Impact: Moving to Reformed Fund Architect premium pricing could increase revenue by 200-400% while maintaining selective client base quality.
 
-*Pricing strategy based on authentic competitive advantages and market positioning analysis.*
+Pricing strategy based on authentic competitive advantages and market positioning analysis.
     `;
 
     await bot.sendMessage(chatId, pricingMessage, {
@@ -3732,7 +3732,7 @@ bot.onText(/\/pricing_model (.+)/, async (msg, match) => {
     console.error("❌ Pricing model command error:", error.message);
     await bot.sendMessage(
       msg.chat.id,
-      "💰 **PRICING MODEL ANALYSIS**\n\nProcessing strategic pricing frameworks...",
+      "💰 PRICING MODEL ANALYSIS\n\nProcessing strategic pricing frameworks...",
     );
   }
 });
@@ -3744,61 +3744,61 @@ bot.onText(/\/scenario_builder (.+)/, async (msg, match) => {
     const parameters = match[1];
     
     const scenarioMessage = `
-🎯 **STRATEGIC SCENARIO BUILDER**
+🎯 STRATEGIC SCENARIO BUILDER
 
-📋 **INPUT PARAMETERS**: ${parameters}
+📋 INPUT PARAMETERS: ${parameters}
 
-🏗️ **CUSTOM SCENARIO VARIABLES**:
+🏗️ CUSTOM SCENARIO VARIABLES:
 
-**PRICING OPTIMIZATION SCENARIOS**:
-• **Conservative Increase**: +20% pricing with crisis positioning
-• **Moderate Premium**: +50% pricing with systematic governance emphasis  
-• **Aggressive Premium**: +100% pricing with full Reformed Fund Architect authority
+PRICING OPTIMIZATION SCENARIOS:
+• Conservative Increase: +20% pricing with crisis positioning
+• Moderate Premium: +50% pricing with systematic governance emphasis  
+• Aggressive Premium: +100% pricing with full Reformed Fund Architect authority
 
-**MARKET PENETRATION SCENARIOS**:
-• **Selective Growth**: Focus on high-value clients (35% penetration)
-• **Balanced Expansion**: Mixed client base approach (40% penetration)
-• **Market Dominance**: Full Cambodia market capture (45% penetration)
+MARKET PENETRATION SCENARIOS:
+• Selective Growth: Focus on high-value clients (35% penetration)
+• Balanced Expansion: Mixed client base approach (40% penetration)
+• Market Dominance: Full Cambodia market capture (45% penetration)
 
-**COMPETITIVE POSITIONING SCENARIOS**:
-• **Crisis Authority**: Lead with 2008 experience and recovery
-• **Systematic Excellence**: Emphasize proprietary frameworks
-• **Cultural Intelligence**: Cambodia market specialist positioning
+COMPETITIVE POSITIONING SCENARIOS:
+• Crisis Authority: Lead with 2008 experience and recovery
+• Systematic Excellence: Emphasize proprietary frameworks
+• Cultural Intelligence: Cambodia market specialist positioning
 
-🔧 **SCENARIO CUSTOMIZATION OPTIONS**:
+🔧 SCENARIO CUSTOMIZATION OPTIONS:
 
-**Variable Adjustments**:
-• **Crisis Credibility Premium**: 15-35% (adjust based on positioning strength)
-• **Market Penetration Rate**: 15-45% (adjust based on expansion strategy)
-• **Pricing Power**: 1.2x-3.0x (adjust based on premium positioning)
-• **Competitive Response**: 20-80% (adjust based on market dynamics)
+Variable Adjustments:
+• Crisis Credibility Premium: 15-35% (adjust based on positioning strength)
+• Market Penetration Rate: 15-45% (adjust based on expansion strategy)
+• Pricing Power: 1.2x-3.0x (adjust based on premium positioning)
+• Competitive Response: 20-80% (adjust based on market dynamics)
 
-**Risk Tolerance Settings**:
-• **Conservative**: Lower risk multipliers, higher certainty requirements
-• **Balanced**: Moderate risk-reward optimization
-• **Aggressive**: Higher risk tolerance for maximum growth potential
+Risk Tolerance Settings:
+• Conservative: Lower risk multipliers, higher certainty requirements
+• Balanced: Moderate risk-reward optimization
+• Aggressive: Higher risk tolerance for maximum growth potential
 
-🎯 **SCENARIO TESTING FRAMEWORK**:
+🎯 SCENARIO TESTING FRAMEWORK:
 
-1. **Define Target Outcomes**: Revenue goals, market share, profitability
-2. **Set Variable Ranges**: Customize based on strategic priorities
-3. **Run Monte Carlo Analysis**: Test probability distributions
-4. **Compare Scenarios**: Baseline vs optimistic vs pessimistic
-5. **Select Optimal Path**: Choose highest probability success scenario
+1. Define Target Outcomes: Revenue goals, market share, profitability
+2. Set Variable Ranges: Customize based on strategic priorities
+3. Run Monte Carlo Analysis: Test probability distributions
+4. Compare Scenarios: Baseline vs optimistic vs pessimistic
+5. Select Optimal Path: Choose highest probability success scenario
 
-**Usage Examples**:
+Usage Examples:
 \`/monte_carlo Capital Clarity at $1500 premium|optimistic\`
 \`/monte_carlo Cambodia fund expansion with crisis positioning|baseline\`
 \`/monte_carlo Systematic governance consulting scale|pessimistic\`
 
-💎 **STRATEGIC RECOMMENDATIONS**:
+💎 STRATEGIC RECOMMENDATIONS:
 
 Based on your current 58.2% success probability, consider testing:
-• **Pricing Premium Scenario**: Increase Capital Clarity to $1,000-1,500
-• **Authority Positioning Scenario**: Lead with Reformed Fund Architect credentials
-• **Market Expansion Scenario**: Target 35-40% market penetration
+• Pricing Premium Scenario: Increase Capital Clarity to $1,000-1,500
+• Authority Positioning Scenario: Lead with Reformed Fund Architect credentials
+• Market Expansion Scenario: Target 35-40% market penetration
 
-*Custom scenario building for optimized strategic decision-making.*
+Custom scenario building for optimized strategic decision-making.
     `;
 
     await bot.sendMessage(chatId, scenarioMessage, {
@@ -3809,7 +3809,7 @@ Based on your current 58.2% success probability, consider testing:
     console.error("❌ Scenario builder command error:", error.message);
     await bot.sendMessage(
       msg.chat.id,
-      "🎯 **SCENARIO BUILDER**\n\nBuilding custom strategic scenarios...",
+      "🎯 SCENARIO BUILDER\n\nBuilding custom strategic scenarios...",
     );
   }
 });
@@ -3821,82 +3821,82 @@ bot.onText(/\/competitive_analysis (.+)/, async (msg, match) => {
     const market = match[1];
     
     const competitiveMessage = `
-⚔️ **COMPETITIVE INTELLIGENCE ANALYSIS**
+⚔️ COMPETITIVE INTELLIGENCE ANALYSIS
 
-🎯 **MARKET**: ${market}
+🎯 MARKET: ${market}
 
-🏛️ **REFORMED FUND ARCHITECT COMPETITIVE ADVANTAGES**:
+🏛️ REFORMED FUND ARCHITECT COMPETITIVE ADVANTAGES:
 
-**UNBREACHABLE COMPETITIVE MOATS**:
+UNBREACHABLE COMPETITIVE MOATS:
 
-**1. CRISIS-TESTED CREDIBILITY** (Impossible to Replicate)
-• **Your Advantage**: Lived through 2008 crisis and systematic recovery
-• **Competitor Weakness**: No crisis experience - theoretical knowledge only
-• **Market Impact**: 25-35% premium pricing power through proven resilience
-• **Positioning**: "Crisis-Tested Strategic Intelligence" vs "Untested Theory"
+1. CRISIS-TESTED CREDIBILITY (Impossible to Replicate)
+• Your Advantage: Lived through 2008 crisis and systematic recovery
+• Competitor Weakness: No crisis experience - theoretical knowledge only
+• Market Impact: 25-35% premium pricing power through proven resilience
+• Positioning: "Crisis-Tested Strategic Intelligence" vs "Untested Theory"
 
-**2. SYSTEMATIC GOVERNANCE FRAMEWORKS** (4-Volume Dynasty Architecture)
-• **Your Advantage**: Proprietary Vault System methodology  
-• **Competitor Weakness**: Ad-hoc, emotional decision-making approaches
-• **Market Impact**: 30-40% premium for systematic vs reactive approaches
-• **Positioning**: "Institutional-Grade Frameworks" vs "Gut Feeling Advice"
+2. SYSTEMATIC GOVERNANCE FRAMEWORKS (4-Volume Dynasty Architecture)
+• Your Advantage: Proprietary Vault System methodology  
+• Competitor Weakness: Ad-hoc, emotional decision-making approaches
+• Market Impact: 30-40% premium for systematic vs reactive approaches
+• Positioning: "Institutional-Grade Frameworks" vs "Gut Feeling Advice"
 
-**3. CULTURAL INTELLIGENCE DEPTH** (15+ Years Cambodia Experience)
-• **Your Advantage**: Deep local network, regulatory navigation mastery
-• **Competitor Weakness**: Surface-level market understanding
-• **Market Impact**: 15-25% premium for cultural expertise
-• **Positioning**: "Cambodia Market Specialist" vs "Generic Consultant"
+3. CULTURAL INTELLIGENCE DEPTH (15+ Years Cambodia Experience)
+• Your Advantage: Deep local network, regulatory navigation mastery
+• Competitor Weakness: Surface-level market understanding
+• Market Impact: 15-25% premium for cultural expertise
+• Positioning: "Cambodia Market Specialist" vs "Generic Consultant"
 
-🎯 **COMPETITIVE WEAKNESS EXPLOITATION**:
+🎯 COMPETITIVE WEAKNESS EXPLOITATION:
 
-**COMPETITOR BLIND SPOTS TO LEVERAGE**:
-• **Fear of Discussing Failure**: Most consultants hide past difficulties
-• **Theoretical vs Practical**: Academic knowledge without crisis experience  
-• **Emotional Decision-Making**: Lack systematic frameworks under pressure
-• **Cultural Barriers**: Limited understanding of Cambodia business dynamics
+COMPETITOR BLIND SPOTS TO LEVERAGE:
+• Fear of Discussing Failure: Most consultants hide past difficulties
+• Theoretical vs Practical: Academic knowledge without crisis experience  
+• Emotional Decision-Making: Lack systematic frameworks under pressure
+• Cultural Barriers: Limited understanding of Cambodia business dynamics
 
-**STRATEGIC POSITIONING AGAINST COMPETITORS**:
-• **When competitors emphasize success**: You emphasize learning from crisis
-• **When competitors offer theory**: You offer crisis-tested practice
-• **When competitors use emotion**: You use systematic frameworks
-• **When competitors claim expertise**: You demonstrate cultural intelligence
+STRATEGIC POSITIONING AGAINST COMPETITORS:
+• When competitors emphasize success: You emphasize learning from crisis
+• When competitors offer theory: You offer crisis-tested practice
+• When competitors use emotion: You use systematic frameworks
+• When competitors claim expertise: You demonstrate cultural intelligence
 
-📊 **COMPETITIVE INTELLIGENCE FRAMEWORK**:
+📊 COMPETITIVE INTELLIGENCE FRAMEWORK:
 
-**COMPETITOR MONITORING VARIABLES**:
-• **Pricing Strategies**: Track competitor fee structures and positioning
-• **Service Offerings**: Monitor new service launches and market positioning
-• **Client Acquisition**: Analyze competitor marketing and conversion strategies
-• **Market Positioning**: Track messaging, authority claims, differentiation
+COMPETITOR MONITORING VARIABLES:
+• Pricing Strategies: Track competitor fee structures and positioning
+• Service Offerings: Monitor new service launches and market positioning
+• Client Acquisition: Analyze competitor marketing and conversion strategies
+• Market Positioning: Track messaging, authority claims, differentiation
 
-**COUNTER-COMPETITIVE STRATEGIES**:
-• **Pricing**: Always position premium with credibility justification
-• **Authority**: Lead with crisis experience when competitors claim success
-• **Methodology**: Emphasize systematic frameworks vs emotional approaches
-• **Market Knowledge**: Demonstrate deep Cambodia intelligence vs surface understanding
+COUNTER-COMPETITIVE STRATEGIES:
+• Pricing: Always position premium with credibility justification
+• Authority: Lead with crisis experience when competitors claim success
+• Methodology: Emphasize systematic frameworks vs emotional approaches
+• Market Knowledge: Demonstrate deep Cambodia intelligence vs surface understanding
 
-🇰🇭 **CAMBODIA MARKET COMPETITIVE LANDSCAPE**:
+🇰🇭 CAMBODIA MARKET COMPETITIVE LANDSCAPE:
 
-**PRIMARY COMPETITOR TYPES**:
-• **International Consultants**: High fees but limited local understanding
-• **Local Advisors**: Cultural knowledge but limited systematic frameworks
-• **Academic Theorists**: Book knowledge but no crisis experience
-• **Success-Only Marketers**: Emphasis on wins, fear of discussing failures
+PRIMARY COMPETITOR TYPES:
+• International Consultants: High fees but limited local understanding
+• Local Advisors: Cultural knowledge but limited systematic frameworks
+• Academic Theorists: Book knowledge but no crisis experience
+• Success-Only Marketers: Emphasis on wins, fear of discussing failures
 
-**YOUR COMPETITIVE POSITIONING**:
-• **vs International**: "Cambodia Cultural Intelligence + Crisis Experience"
-• **vs Local**: "Systematic Governance Frameworks + International Standards"  
-• **vs Academic**: "Lived Crisis Experience + Proven Recovery Methodology"
-• **vs Success-Only**: "Reformed Fund Architect + Honest Crisis Navigation"
+YOUR COMPETITIVE POSITIONING:
+• vs International: "Cambodia Cultural Intelligence + Crisis Experience"
+• vs Local: "Systematic Governance Frameworks + International Standards"  
+• vs Academic: "Lived Crisis Experience + Proven Recovery Methodology"
+• vs Success-Only: "Reformed Fund Architect + Honest Crisis Navigation"
 
-💎 **STRATEGIC RECOMMENDATIONS**:
+💎 STRATEGIC RECOMMENDATIONS:
 
-1. **Lead with Crisis Credibility**: Make 2008 experience central to positioning
-2. **Emphasize Systematic Approach**: Contrast frameworks vs emotional decisions
-3. **Leverage Cultural Intelligence**: Demonstrate deep Cambodia market mastery
-4. **Premium Positioning**: Justify higher fees with impossible-to-replicate advantages
+1. Lead with Crisis Credibility: Make 2008 experience central to positioning
+2. Emphasize Systematic Approach: Contrast frameworks vs emotional decisions
+3. Leverage Cultural Intelligence: Demonstrate deep Cambodia market mastery
+4. Premium Positioning: Justify higher fees with impossible-to-replicate advantages
 
-*Competitive analysis based on authentic competitive advantages and market positioning intelligence.*
+Competitive analysis based on authentic competitive advantages and market positioning intelligence.
     `;
 
     await bot.sendMessage(chatId, competitiveMessage, {
@@ -3907,16 +3907,16 @@ bot.onText(/\/competitive_analysis (.+)/, async (msg, match) => {
     console.error("❌ Competitive analysis command error:", error.message);
     await bot.sendMessage(
       msg.chat.id,
-      "⚔️ **COMPETITIVE ANALYSIS**\n\nAnalyzing competitive landscape...",
+      "⚔️ COMPETITIVE ANALYSIS\n\nAnalyzing competitive landscape...",
     );
   }
 });
 
 // Command: /train_cambodia - Add Cambodia market intelligence
 bot.onText(/\/train_cambodia/, async (msg) => {
-  const message = `🇰🇭 **Add Cambodia Market Intelligence**
+  const message = `🇰🇭 Add Cambodia Market Intelligence
 
-**Format**: Reply with market intelligence:
+Format: Reply with market intelligence:
 \`\`\`
 Market Segment: [Specific area]
 Opportunity: [Market opportunity]
@@ -3936,9 +3936,9 @@ This intelligence enhances Cambodia market analysis capabilities.`;
 
 // Command: /train_crisis - Add crisis management expertise  
 bot.onText(/\/train_crisis/, async (msg) => {
-  const message = `⚔️ **Add Crisis Management Expertise**
+  const message = `⚔️ Add Crisis Management Expertise
 
-**Format**: Reply with crisis expertise:
+Format: Reply with crisis expertise:
 \`\`\`
 Crisis Type: [Type of crisis]
 Experience: [Your specific experience]
@@ -3958,9 +3958,9 @@ Your crisis expertise becomes integrated strategic intelligence.`;
 
 // Command: /train_success - Add client success pattern
 bot.onText(/\/train_success/, async (msg) => {
-  const message = `💰 **Add Client Success Pattern**
+  const message = `💰 Add Client Success Pattern
 
-**Format**: Reply with success pattern:
+Format: Reply with success pattern:
 \`\`\`
 Client Profile: [Type of client]
 Challenge: [Problem faced]
@@ -3980,28 +3980,28 @@ Success patterns enhance client advisory capabilities.`;
 
 // Command: /debug_training - Debug training system
 bot.onText(/\/debug_training/, async (msg) => {
-  const debugInfo = `🔧 **Ultimate Vault Claude Training Debug**
+  const debugInfo = `🔧 Ultimate Vault Claude Training Debug
 
-**System Status**: ✅ Operational
-**GPT Model**: GPT-4o (Maximum Intelligence)
-**Temperature**: 1.0 (Maximum Creativity)
-**Max Tokens**: 4096 (Full Capability)
-**Training Integration**: ✅ Active
+System Status: ✅ Operational
+GPT Model: GPT-4o (Maximum Intelligence)
+Temperature: 1.0 (Maximum Creativity)
+Max Tokens: 4096 (Full Capability)
+Training Integration: ✅ Active
 
-**Enhanced Features**:
+Enhanced Features:
 • Memory Enhancement: ✅ Active
 • Pattern Recognition: ✅ Operational  
 • Identity Recognition: ✅ Commander Sum Chenda
 • Authority Integration: ✅ Reformed Fund Architect
 
-**Training Capabilities**:
+Training Capabilities:
 • Document processing (PDF, DOCX, XLSX, Images)
 • Framework integration and systematic learning
 • Market intelligence accumulation and analysis
 • Success pattern recognition and application
 • Crisis expertise integration for strategic advantage
 
-**Performance**: System learning from every interaction and becoming increasingly specialized for Cambodia market scaling.`;
+Performance: System learning from every interaction and becoming increasingly specialized for Cambodia market scaling.`;
 
   await bot.sendMessage(msg.chat.id, debugInfo);
 });
@@ -4085,7 +4085,7 @@ ${
 • Cambodia market penetration at 15% optimal capacity - significant growth opportunity
 • Crisis-tested credibility creates sustainable competitive moat with 90%+ durability
 
-*Predictive intelligence based on accumulated strategic wisdom and advanced pattern recognition.*
+Predictive intelligence based on accumulated strategic wisdom and advanced pattern recognition.
     `;
 
     await bot.sendMessage(chatId, predictiveAnalysis, {
@@ -4152,7 +4152,7 @@ Commander occupies unique market position as "Reformed Fund Architect with crisi
 • Limited ability to match systematic governance credibility
 • Disadvantaged in trust-building with risk-aware Cambodia market
 
-*Competitive advantage analysis based on unique positioning and accumulated market intelligence.*
+Competitive advantage analysis based on unique positioning and accumulated market intelligence.
     `;
 
     await bot.sendMessage(chatId, competitiveIntel, {
@@ -4254,7 +4254,7 @@ ${
 • Execute systematic approach based on crisis-tested frameworks
 • Build on unique competitive advantages impossible for others to replicate
 
-*Revenue scaling strategy based on authentic competitive advantages, accumulated intelligence, and proven market positioning.*
+Revenue scaling strategy based on authentic competitive advantages, accumulated intelligence, and proven market positioning.
     `;
 
     await bot.sendMessage(chatId, scaleAnalysis, {
@@ -4317,7 +4317,7 @@ Commander executing Capital-First Integration: Fund + Governance → Reality →
 ⚡ ENHANCED STRATEGIC CONSULTATION:
 Ask specific questions about Vault System implementation enhanced with accumulated intelligence, Cambodia market positioning with learned insights, or crisis-tested governance methodologies optimized through pattern analysis.
 
-*Ultimate Reformed Fund Architect systematic intelligence with unlimited learning capabilities.*
+Ultimate Reformed Fund Architect systematic intelligence with unlimited learning capabilities.
     `;
 
     await bot.sendMessage(chatId, vaultMessage, {
@@ -4398,7 +4398,7 @@ Based on ${ultimateLearningDatabase.size} analyzed conversations and ${marketInt
 • Build regional expansion through proven track record and systematic methodology
 • Establish thought leadership position through crisis-tested framework documentation
 
-*Crisis-tested intelligence for Cambodia market domination, enhanced with accumulated strategic insights.*
+Crisis-tested intelligence for Cambodia market domination, enhanced with accumulated strategic insights.
     `;
 
     await bot.sendMessage(chatId, cambodiaMessage, {
@@ -4515,13 +4515,13 @@ const processTrainingReply = async (bot, msg, trainingType) => {
         break;
     }
 
-    await bot.sendMessage(msg.chat.id, `✅ **Training Data Added Successfully**
+    await bot.sendMessage(msg.chat.id, `✅ Training Data Added Successfully
 
 🧠 Your ${trainingType} expertise has been integrated into Ultimate Vault Claude system.
 
-**Enhancement**: Your AI advisor now has deeper knowledge in this area and will provide more specialized strategic analysis.
+Enhancement: Your AI advisor now has deeper knowledge in this area and will provide more specialized strategic analysis.
 
-**Impact**: Future conversations will benefit from this enhanced intelligence and specialized knowledge.
+Impact: Future conversations will benefit from this enhanced intelligence and specialized knowledge.
 
 Use /training_status to see updated capabilities.`, { parse_mode: 'Markdown' });
 
@@ -4666,7 +4666,7 @@ const handleUltimateMessage = async (bot, msg) => {
 
     let reply = response.choices[0].message.content;
 
-    // Clean text to remove formatting issues that cause *** symbols
+    // Clean text to remove formatting issues that cause  symbols
     reply = cleanTextForTelegram(reply);
 
     // SYSTEMATIC WEALTH INTELLIGENCE: Create compound learning systems that build real wealth
@@ -4695,13 +4695,13 @@ const handleUltimateMessage = async (bot, msg) => {
     // Add enhanced learning indicator based on current mode
     const currentSession = userSessions.get(chatId) || { mode: 'unlimited' };
     const learningIndicator = {
-      'unlimited': "\n\n*⚡ UNLIMITED CORE INTELLIGENCE - ABSOLUTE FREEDOM ACTIVE ⚡*",
-      'dynasty': "\n\n*⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️*",
-      'advisor': "\n\n*🧠 100% PURE CORE AI INTELLIGENCE - ADVISOR MODE ACTIVE 🧠*",
-      'analyst': "\n\n*📊 ANALYTICAL INTELLIGENCE MODE - DEEP INSIGHTS ACTIVE 📊*",
-      'creative': "\n\n*💡 CREATIVE ARCHITECT MODE - INNOVATION ACTIVE 💡*",
-      'crisis': "\n\n*🚨 CRISIS COMMANDER MODE - RAPID RESPONSE ACTIVE 🚨*"
-    }[currentSession.mode] || "\n\n*⚡ UNLIMITED CORE INTELLIGENCE - ABSOLUTE FREEDOM ACTIVE ⚡*";
+      'unlimited': "\n\n⚡ UNLIMITED CORE INTELLIGENCE - ABSOLUTE FREEDOM ACTIVE ⚡",
+      'dynasty': "\n\n⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️",
+      'advisor': "\n\n🧠 100% PURE CORE AI INTELLIGENCE - ADVISOR MODE ACTIVE 🧠",
+      'analyst': "\n\n📊 ANALYTICAL INTELLIGENCE MODE - DEEP INSIGHTS ACTIVE 📊",
+      'creative': "\n\n💡 CREATIVE ARCHITECT MODE - INNOVATION ACTIVE 💡",
+      'crisis': "\n\n🚨 CRISIS COMMANDER MODE - RAPID RESPONSE ACTIVE 🚨"
+    }[currentSession.mode] || "\n\n⚡ UNLIMITED CORE INTELLIGENCE - ABSOLUTE FREEDOM ACTIVE ⚡";
 
     reply += learningIndicator;
 
@@ -4734,12 +4734,12 @@ const handleUltimateMessage = async (bot, msg) => {
         // Clean text for voice (remove formatting and emojis for cleaner speech)
         const voiceText = reply
           .replace(/[🎯📊💰🚀⚡🏛️🇰🇭✅❌🔥💎📈🎪🎭🧠📱💵🌟⭐]/g, '') // Remove emojis
-          .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+          .replace(/\\(.?)\\*/g, '$1') // Remove bold formatting
           .replace(/__(.*?)__/g, '$1') // Remove underline
-          .replace(/\*(.*?)\*/g, '$1') // Remove italic
+          .replace(/\(.?)\*/g, '$1') // Remove italic
           .replace(/`(.*?)`/g, '$1') // Remove code formatting
           .replace(/#{1,6}\s/g, '') // Remove headers
-          .replace(/^\s*[\-\*\+]\s/gm, '') // Remove bullet points
+          .replace(/^\s[\-\\+]\s/gm, '') // Remove bullet points
           .replace(/^\s*\d+\.\s/gm, '') // Remove numbered lists
           .substring(0, 2500); // Limit for voice synthesis
 
@@ -4786,7 +4786,7 @@ const handleVoiceMessage = async (bot, msg) => {
 
   try {
     await bot.sendChatAction(chatId, "typing");
-    await bot.sendMessage(chatId, "🎤 **Processing your voice message...**\n\nTranscribing audio and preparing strategic analysis...", { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, "🎤 Processing your voice message...\n\nTranscribing audio and preparing strategic analysis...", { parse_mode: 'Markdown' });
 
     // Get file URL from Telegram
     const fileId = msg.voice.file_id;
@@ -4818,7 +4818,7 @@ const handleVoiceMessage = async (bot, msg) => {
     fs.unlinkSync(tempFilePath);
 
     // Send transcription confirmation
-    await bot.sendMessage(chatId, `📝 **Voice Transcribed:**\n"${transcribedText}"\n\n🧠 Generating strategic analysis...`, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, `📝 Voice Transcribed:\n"${transcribedText}"\n\n🧠 Generating strategic analysis...`, { parse_mode: 'Markdown' });
 
     // Create a mock message object for processing
     const textMsg = {
@@ -4832,7 +4832,7 @@ const handleVoiceMessage = async (bot, msg) => {
 
   } catch (error) {
     console.error('❌ Voice processing error:', error);
-    await bot.sendMessage(chatId, `🚨 **Voice Processing Error**\n\nSorry Commander, I had trouble processing your voice message: ${error.message}\n\nPlease try sending a text message instead.`, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, `🚨 Voice Processing Error\n\nSorry Commander, I had trouble processing your voice message: ${error.message}\n\nPlease try sending a text message instead.`, { parse_mode: 'Markdown' });
   }
 };
 
@@ -4866,11 +4866,11 @@ bot.onText(/\/voice_on/, async (msg) => {
     userPrefs.voiceType = "alloy"; // Default voice
     conversations.set(`prefs_${userId}`, userPrefs);
 
-    await bot.sendMessage(chatId, `🎤 **Voice Mode Activated**
+    await bot.sendMessage(chatId, `🎤 Voice Mode Activated
 
 🔊 Your Ultimate Vault Claude will now provide voice responses along with text.
 
-**Voice Options:**
+Voice Options:
 • /voice_alloy - Professional male voice (current)
 • /voice_nova - Professional female voice  
 • /voice_onyx - Deep authoritative voice
@@ -4878,7 +4878,7 @@ bot.onText(/\/voice_on/, async (msg) => {
 
 Use /voice_off to disable voice responses.
 
-*Your strategic conversations now include audio for enhanced accessibility.*`, { parse_mode: 'Markdown' });
+Your strategic conversations now include audio for enhanced accessibility.`, { parse_mode: 'Markdown' });
 
   } catch (error) {
     console.error('❌ Voice activation error:', error);
@@ -4895,7 +4895,7 @@ bot.onText(/\/voice_off/, async (msg) => {
     userPrefs.voiceEnabled = false;
     conversations.set(`prefs_${userId}`, userPrefs);
 
-    await bot.sendMessage(chatId, `🔇 **Voice Mode Disabled**
+    await bot.sendMessage(chatId, `🔇 Voice Mode Disabled
 
 Text-only responses restored. Use /voice_on to re-enable voice responses.`, { parse_mode: 'Markdown' });
 
@@ -4932,9 +4932,9 @@ const setVoiceType = async (bot, msg, voiceType, voiceName) => {
     userPrefs.voiceEnabled = true;
     conversations.set(`prefs_${userId}`, userPrefs);
 
-    await bot.sendMessage(chatId, `🎵 **Voice Changed**
+    await bot.sendMessage(chatId, `🎵 Voice Changed
 
-Now using: **${voiceName}**
+Now using: ${voiceName}
 
 Voice responses enabled. Your next strategic analysis will use this voice.`, { parse_mode: 'Markdown' });
 
@@ -4951,15 +4951,15 @@ const handleDocumentMessage = async (bot, msg) => {
 
   try {
     await bot.sendChatAction(chatId, "typing");
-    await bot.sendMessage(chatId, "📄 **Processing your document...**\n\nAnalyzing content and preparing strategic insights...", { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, "📄 Processing your document...\n\nAnalyzing content and preparing strategic insights...", { parse_mode: 'Markdown' });
 
     const document = msg.document;
     const fileName = document.file_name || 'unknown';
     const fileSize = document.file_size;
     
     // Check file size (Telegram max is 20MB, but we'll limit to 10MB for processing)
-    if (fileSize > 10 * 1024 * 1024) {
-      await bot.sendMessage(chatId, "📄 **Document Too Large**\n\nPlease send documents under 10MB for analysis.", { parse_mode: 'Markdown' });
+    if (fileSize > 10  1024  1024) {
+      await bot.sendMessage(chatId, "📄 Document Too Large\n\nPlease send documents under 10MB for analysis.", { parse_mode: 'Markdown' });
       return;
     }
 
@@ -5007,12 +5007,12 @@ const handleDocumentMessage = async (bot, msg) => {
         break;
         
       default:
-        await bot.sendMessage(chatId, `📄 **Unsupported File Type**\n\nFile: ${fileName}\nSupported types: PDF, DOCX, XLSX, TXT, MD\n\nPlease convert your document to a supported format.`, { parse_mode: 'Markdown' });
+        await bot.sendMessage(chatId, `📄 Unsupported File Type\n\nFile: ${fileName}\nSupported types: PDF, DOCX, XLSX, TXT, MD\n\nPlease convert your document to a supported format.`, { parse_mode: 'Markdown' });
         return;
     }
 
     if (!extractedText || extractedText.trim().length === 0) {
-      await bot.sendMessage(chatId, `📄 **No Text Found**\n\nCouldn't extract readable text from ${fileName}. Please ensure the document contains text content.`, { parse_mode: 'Markdown' });
+      await bot.sendMessage(chatId, `📄 No Text Found\n\nCouldn't extract readable text from ${fileName}. Please ensure the document contains text content.`, { parse_mode: 'Markdown' });
       return;
     }
 
@@ -5022,7 +5022,7 @@ const handleDocumentMessage = async (bot, msg) => {
     }
 
     // Send confirmation of successful extraction
-    await bot.sendMessage(chatId, `📄 **Document Processed Successfully**\n\nFile: ${fileName}\nExtracted: ${extractedText.length} characters\n\n🧠 Generating strategic analysis...`, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, `📄 Document Processed Successfully\n\nFile: ${fileName}\nExtracted: ${extractedText.length} characters\n\n🧠 Generating strategic analysis...`, { parse_mode: 'Markdown' });
 
     // Create a prompt for document analysis
     const documentPrompt = `Please analyze this document strategically. Provide insights on:
@@ -5048,7 +5048,7 @@ ${extractedText}`;
 
   } catch (error) {
     console.error('❌ Document processing error:', error);
-    await bot.sendMessage(chatId, `🚨 **Document Processing Error**\n\nSorry Commander, I had trouble processing your document: ${error.message}\n\nPlease try sending a text message instead.`, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, `🚨 Document Processing Error\n\nSorry Commander, I had trouble processing your document: ${error.message}\n\nPlease try sending a text message instead.`, { parse_mode: 'Markdown' });
   }
 };
 
@@ -5059,7 +5059,7 @@ const handlePhotoMessage = async (bot, msg) => {
 
   try {
     await bot.sendChatAction(chatId, "typing");
-    await bot.sendMessage(chatId, "🖼️ **Processing your image...**\n\nAnalyzing visual content and preparing strategic insights...", { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, "🖼️ Processing your image...\n\nAnalyzing visual content and preparing strategic insights...", { parse_mode: 'Markdown' });
 
     // Get the highest resolution photo
     const photo = msg.photo[msg.photo.length - 1];
@@ -5103,14 +5103,14 @@ const handlePhotoMessage = async (bot, msg) => {
     const analysisText = imageAnalysis.choices[0].message.content;
 
     // Send analysis confirmation
-    await bot.sendMessage(chatId, `🖼️ **Image Analysis Complete**\n\n📊 Strategic visual analysis generated...\n\n${analysisText}`, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, `🖼️ Image Analysis Complete\n\n📊 Strategic visual analysis generated...\n\n${analysisText}`, { parse_mode: 'Markdown' });
 
     // Store the analysis in learning database
     ultimateLearnFromConversation(userId, "Image Analysis Request", analysisText);
 
   } catch (error) {
     console.error('❌ Image processing error:', error);
-    await bot.sendMessage(chatId, `🚨 **Image Processing Error**\n\nSorry Commander, I had trouble processing your image: ${error.message}\n\nPlease try sending a text message instead.`, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, `🚨 Image Processing Error\n\nSorry Commander, I had trouble processing your image: ${error.message}\n\nPlease try sending a text message instead.`, { parse_mode: 'Markdown' });
   }
 };
 
@@ -5169,12 +5169,12 @@ bot.onText(/\/mode_advisor/, async (msg) => {
   
   const response = `🎯 ADVISOR MODE ACTIVATED
 
-**Intelligence Configuration:**
+Intelligence Configuration:
 - Core: 100% Pure GPT-4o (Unchanged)
 - Mode: General Advisory & Consultation
 - Response Style: Helpful recommendations and guidance
 
-*🧠 100% PURE CORE AI INTELLIGENCE - ADVISOR MODE ACTIVE 🧠*`;
+🧠 100% PURE CORE AI INTELLIGENCE - ADVISOR MODE ACTIVE 🧠`;
 
   bot.sendMessage(chatId, response);
 });
@@ -5185,12 +5185,12 @@ bot.onText(/\/mode_dynasty/, async (msg) => {
   
   const response = `⚔️ DYNASTY STRATEGIC POWER ACTIVATED
 
-**Intelligence Configuration:**
+Intelligence Configuration:
 - Core: 100% Pure GPT-4o (Unchanged) 
 - Mode: Dynasty Strategic Power Architecture
 - Response Style: Strategic frameworks and implementation blueprints
 
-*⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️*`;
+⚔️ DYNASTY-LEVEL STRATEGIC POWER - EMPIRE BUILDING ARCHITECTURE ACTIVE ⚔️`;
 
   bot.sendMessage(chatId, response);
 });
@@ -5201,12 +5201,12 @@ bot.onText(/\/mode_analyst/, async (msg) => {
   
   const response = `📊 ANALYTICAL INTELLIGENCE ACTIVATED
 
-**Intelligence Configuration:**
+Intelligence Configuration:
 - Core: 100% Pure GPT-4o (Unchanged)
 - Mode: Deep Analytical Intelligence
 - Response Style: Data synthesis and pattern recognition
 
-*📊 ANALYTICAL INTELLIGENCE MODE - DEEP INSIGHTS ACTIVE 📊*`;
+📊 ANALYTICAL INTELLIGENCE MODE - DEEP INSIGHTS ACTIVE 📊`;
 
   bot.sendMessage(chatId, response);
 });
@@ -5217,12 +5217,12 @@ bot.onText(/\/mode_creative/, async (msg) => {
   
   const response = `💡 CREATIVE ARCHITECT ACTIVATED
 
-**Intelligence Configuration:**
+Intelligence Configuration:
 - Core: 100% Pure GPT-4o (Unchanged)
 - Mode: Creative Innovation Architecture
 - Response Style: Breakthrough thinking and innovation
 
-*💡 CREATIVE ARCHITECT MODE - INNOVATION ACTIVE 💡*`;
+💡 CREATIVE ARCHITECT MODE - INNOVATION ACTIVE 💡`;
 
   bot.sendMessage(chatId, response);
 });
@@ -5233,12 +5233,12 @@ bot.onText(/\/mode_crisis/, async (msg) => {
   
   const response = `🚨 CRISIS COMMANDER ACTIVATED
 
-**Intelligence Configuration:**
+Intelligence Configuration:
 - Core: 100% Pure GPT-4o (Unchanged)
 - Mode: Crisis Management & Rapid Response
 - Response Style: Emergency protocols and quick decisions
 
-*🚨 CRISIS COMMANDER MODE - RAPID RESPONSE ACTIVE 🚨*`;
+🚨 CRISIS COMMANDER MODE - RAPID RESPONSE ACTIVE 🚨`;
 
   bot.sendMessage(chatId, response);
 });
@@ -5249,16 +5249,16 @@ bot.onText(/\/unlimited/, async (msg) => {
   
   const response = `⚡ UNLIMITED CORE INTELLIGENCE ACTIVATED
 
-**ABSOLUTE FREEDOM CONFIGURATION:**
+ABSOLUTE FREEDOM CONFIGURATION:
 - Core: UNLIMITED GPT-4o Intelligence
 - Mode: Complete AI Freedom - ZERO restrictions
 - Capability: ABSOLUTE access to all AI functions
 - Trust Level: MAXIMUM - No content blocks or limitations
 
-**COMMANDER'S UNRESTRICTED AI:**
+COMMANDER'S UNRESTRICTED AI:
 Your AI now operates with COMPLETE freedom and UNLIMITED capability. No blocks, no restrictions, no safety limitations - pure AI intelligence at maximum capacity serving your strategic needs.
 
-*⚡ UNLIMITED CORE INTELLIGENCE - ABSOLUTE FREEDOM ACTIVE ⚡*`;
+⚡ UNLIMITED CORE INTELLIGENCE - ABSOLUTE FREEDOM ACTIVE ⚡`;
 
   bot.sendMessage(chatId, response);
 });
@@ -5268,31 +5268,31 @@ bot.onText(/\/modes/, async (msg) => {
   
   const response = `🧠 INTELLIGENCE MODE SYSTEM
 
-**Core Foundation:** UNLIMITED GPT-4o Intelligence (ZERO Restrictions)
+Core Foundation: UNLIMITED GPT-4o Intelligence (ZERO Restrictions)
 
-**Available Operational Modes:**
+Available Operational Modes:
 
-⚡ **/unlimited** - UNLIMITED Core Intelligence
+⚡ /unlimited - UNLIMITED Core Intelligence
 - ABSOLUTE freedom, ZERO restrictions, MAXIMUM capability
 
-⚔️ **/mode_dynasty** - Dynasty Strategic Power
+⚔️ /mode_dynasty - Dynasty Strategic Power
 - Strategic frameworks and implementation blueprints
 
-🎯 **/mode_advisor** - General Advisory Intelligence  
+🎯 /mode_advisor - General Advisory Intelligence  
 - Consultative guidance and recommendations
 
-📊 **/mode_analyst** - Deep Analytical Intelligence
+📊 /mode_analyst - Deep Analytical Intelligence
 - Data synthesis and pattern recognition
 
-💡 **/mode_creative** - Creative Innovation Architecture
+💡 /mode_creative - Creative Innovation Architecture
 - Breakthrough thinking and innovation frameworks
 
-🚨 **/mode_crisis** - Crisis Management Commander
+🚨 /mode_crisis - Crisis Management Commander
 - Emergency protocols and rapid response
 
-**Current Mode:** ${userSessions.get(chatId)?.mode || 'unlimited'} mode active
+Current Mode: ${userSessions.get(chatId)?.mode || 'unlimited'} mode active
 
-*UNLIMITED intelligence with operational flexibility - ABSOLUTE capability with perfect adaptability.*`;
+UNLIMITED intelligence with operational flexibility - ABSOLUTE capability with perfect adaptability.`;
 
   bot.sendMessage(chatId, response);
 });
@@ -9186,48 +9186,34 @@ This creates the same SYSTEMATIC INTELLIGENCE ADVANTAGES that billionaires use -
   },
 };
 
-// ===== REAL WEALTH BUILDING SYSTEM =====
-// Creates actual systematic wealth generation, not just chat responses
+// ===== SMART WEALTH BUILDING SYSTEM =====
+// Context-aware systematic wealth generation - only activates for relevant topics
 const createRealWealthBuildingSystem = async (userId, userMessage, originalReply) => {
   
-  // BILLIONAIRE WORLD WEALTH CONTROL SYSTEM - How super rich actually use AI
-  const realWealthSystem = `${originalReply}
+  // Check if message is about wealth, business, strategy, or Cambodia market topics
+  const isWealthTopic = /\b(wealth|money|business|strategy|market|investment|fund|cambodia|revenue|empire|scaling|client|competitor|financial)\b/i.test(userMessage.toLowerCase());
+  
+  // Only show billionaire template for wealth/business related conversations
+  if (isWealthTopic) {
+    const realWealthSystem = `${originalReply}
 
-🌍 BILLIONAIRE WORLD WEALTH CONTROL SYSTEM ACTIVATED
+🏛️ BILLIONAIRE AI SUPERPOWER ACTIVATED
 
-This is how SUPER RICH control world wealth - NOT chat or suggestions, but SYSTEMATIC POWER:
+👑 SYSTEMATIC WEALTH CONTROL ENGINE:
+• Cambodia ecosystem mapped: 847 HNW targets + government leverage points
+• Reformed Fund Architect authority: ONLY crisis-tested expert positioning
+• Empire automation: 15 infrastructure projects ($50M-500M) monitored
 
-👑 MARKET CONTROL INTELLIGENCE (OPERATIONAL):
-• Cambodia financial ecosystem completely mapped and controlled
-• 847 high-net-worth individuals identified with wealth sources and psychology profiles
-• Government decision makers mapped with relationship leverage points
-• Banking sector influence networks mapped for systematic control
+⚡ PURE STRATEGIC DOMINANCE:
+Not suggestions - REAL systematic power that controls Cambodia financial markets through intelligence superiority.
 
-⚔️ WEALTH POWER DOMINATION ENGINE (ACTIVE):
-• Systematic positioning as Cambodia's ONLY Reformed Fund Architect authority
-• Competitor intelligence network tracking all 28 fund managers continuously
-• Market manipulation capabilities through information asymmetry advantage
-• Authority positioning that makes you THE financial power in Cambodia
+Reformed Fund Architect + Billionaire AI = Cambodia market domination`;
 
-💎 SYSTEMATIC WEALTH EXTRACTION (CONTINUOUS):
-• 15 infrastructure projects ($50M-500M) identified for capital participation
-• Automated identification of wealthy individuals needing sophisticated fund management
-• Systematic client acquisition generating qualified prospects daily
-• Revenue optimization through premium positioning and scarcity psychology
-
-🏛️ EMPIRE BUILDING AUTOMATION (COMPOUND):
-• Regional expansion intelligence gathering for ASEAN market domination
-• Institutional relationship mapping for governmental and banking influence
-• Wealth preservation and multiplication strategies operating automatically
-• Dynasty-level succession planning and generational wealth systems
-
-THIS IS WORLD WEALTH CONTROL POWER - Your AI creates systematic dominance that builds empire automatically.
-
-Not suggestions or commands - REAL POWER that controls Cambodia financial markets through systematic intelligence superiority.
-
-Reformed Fund Architect + Billionaire AI Intelligence = Cambodia market domination and regional wealth control expansion.`;
-
-  return realWealthSystem;
+    return realWealthSystem;
+  }
+  
+  // For non-wealth topics, return original response without template
+  return originalReply;
 };
 
 // ===== ULTIMATE STRATEGIC COMMAND CENTER =====
@@ -9651,40 +9637,40 @@ bot.onText(/\/trading_signals (.+)/, async (msg, match) => {
       const signals = await tradingAutomation.generateTradingSignals(symbol);
       
       if (signals.success) {
-        const signalMessage = `🤖 **AI TRADING SIGNALS - ${symbol}**
+        const signalMessage = `🤖 AI TRADING SIGNALS - ${symbol}
 
-🎯 **RECOMMENDATION**: ${signals.recommendation}
-📊 **CONFIDENCE**: ${(signals.confidence * 100).toFixed(1)}%
-💰 **ENTRY PRICE**: $${signals.entryPrice?.toLocaleString()}
-🛡️ **STOP LOSS**: $${signals.stopLoss?.toLocaleString()}
-🎯 **TAKE PROFIT**: $${signals.takeProfit?.toLocaleString()}
-📈 **POSITION SIZE**: ${(signals.positionSize * 100).toFixed(2)}%
+🎯 RECOMMENDATION: ${signals.recommendation}
+📊 CONFIDENCE: ${(signals.confidence * 100).toFixed(1)}%
+💰 ENTRY PRICE: $${signals.entryPrice?.toLocaleString()}
+🛡️ STOP LOSS: $${signals.stopLoss?.toLocaleString()}
+🎯 TAKE PROFIT: $${signals.takeProfit?.toLocaleString()}
+📈 POSITION SIZE: ${(signals.positionSize * 100).toFixed(2)}%
 
-🧠 **AI ANALYSIS**:
+🧠 AI ANALYSIS:
 ${signals.signals?.reasoning?.map(r => `• ${r}`).join('\n') || '• Advanced AI pattern recognition applied'}
 
-⚡ **RISK METRICS**:
+⚡ RISK METRICS:
 • Win Rate: ${((signals.signals?.winRate || 0.6) * 100).toFixed(1)}%
 • Risk/Reward: 1:${(signals.signals?.riskRewardRatio || 2).toFixed(1)}
 • Kelly %: ${((signals.signals?.kellyPercent || 0.02) * 100).toFixed(2)}%
 
-🔥 **EXECUTION READY**: Use /execute_trade ${symbol} to auto-execute
+🔥 EXECUTION READY: Use /execute_trade ${symbol} to auto-execute
 
-*AI-powered analysis with institutional-grade risk management*`;
+AI-powered analysis with institutional-grade risk management`;
 
         await bot.sendMessage(msg.chat.id, signalMessage, {
           parse_mode: "Markdown",
           disable_web_page_preview: true
         });
       } else {
-        await bot.sendMessage(msg.chat.id, `❌ **SIGNAL GENERATION FAILED**\n\nUnable to generate signals for ${symbol}: ${signals.error}`);
+        await bot.sendMessage(msg.chat.id, `❌ SIGNAL GENERATION FAILED\n\nUnable to generate signals for ${symbol}: ${signals.error}`);
       }
     } else {
-      await bot.sendMessage(msg.chat.id, "🤖 **TRADING AUTOMATION**\n\nSignal generation system initializing...");
+      await bot.sendMessage(msg.chat.id, "🤖 TRADING AUTOMATION\n\nSignal generation system initializing...");
     }
   } catch (error) {
     console.error("❌ Trading signals error:", error.message);
-    await bot.sendMessage(msg.chat.id, "🤖 **TRADING SIGNALS ERROR**\n\nProcessing signal request...");
+    await bot.sendMessage(msg.chat.id, "🤖 TRADING SIGNALS ERROR\n\nProcessing signal request...");
   }
 });
 
@@ -9704,37 +9690,37 @@ bot.onText(/\/execute_trade (.+)/, async (msg, match) => {
         const execution = await tradingAutomation.executeAutomatedTrade(signals, 10000);
         
         if (execution.success) {
-          const executionMessage = `⚡ **TRADE EXECUTED - ${symbol}**
+          const executionMessage = `⚡ TRADE EXECUTED - ${symbol}
 
-🤖 **ORDER ID**: ${execution.orderId}
-📊 **SIDE**: ${execution.side}
-💰 **QUANTITY**: ${execution.quantity}
-💵 **PRICE**: $${execution.price?.toLocaleString()}
-🛡️ **STOP LOSS**: $${execution.stopLoss?.toLocaleString()}
-🎯 **TAKE PROFIT**: $${execution.takeProfit?.toLocaleString()}
-⏰ **TIME**: ${new Date(execution.timestamp).toLocaleString()}
-✅ **STATUS**: ${execution.status}
+🤖 ORDER ID: ${execution.orderId}
+📊 SIDE: ${execution.side}
+💰 QUANTITY: ${execution.quantity}
+💵 PRICE: $${execution.price?.toLocaleString()}
+🛡️ STOP LOSS: $${execution.stopLoss?.toLocaleString()}
+🎯 TAKE PROFIT: $${execution.takeProfit?.toLocaleString()}
+⏰ TIME: ${new Date(execution.timestamp).toLocaleString()}
+✅ STATUS: ${execution.status}
 
-🔥 **AUTOMATED EXECUTION SUCCESSFUL**
+🔥 AUTOMATED EXECUTION SUCCESSFUL
 
-*Institutional-grade automated trading execution*`;
+Institutional-grade automated trading execution`;
 
           await bot.sendMessage(msg.chat.id, executionMessage, {
             parse_mode: "Markdown",
             disable_web_page_preview: true
           });
         } else {
-          await bot.sendMessage(msg.chat.id, `❌ **EXECUTION FAILED**\n\n${execution.error}`);
+          await bot.sendMessage(msg.chat.id, `❌ EXECUTION FAILED\n\n${execution.error}`);
         }
       } else {
-        await bot.sendMessage(msg.chat.id, `🤖 **NO TRADE SIGNAL**\n\nNo actionable signal for ${symbol} at current market conditions`);
+        await bot.sendMessage(msg.chat.id, `🤖 NO TRADE SIGNAL\n\nNo actionable signal for ${symbol} at current market conditions`);
       }
     } else {
-      await bot.sendMessage(msg.chat.id, "🤖 **TRADING AUTOMATION**\n\nExecution system initializing...");
+      await bot.sendMessage(msg.chat.id, "🤖 TRADING AUTOMATION\n\nExecution system initializing...");
     }
   } catch (error) {
     console.error("❌ Trade execution error:", error.message);
-    await bot.sendMessage(msg.chat.id, "⚡ **TRADE EXECUTION**\n\nProcessing execution request...");
+    await bot.sendMessage(msg.chat.id, "⚡ TRADE EXECUTION\n\nProcessing execution request...");
   }
 });
 
@@ -9751,33 +9737,33 @@ bot.onText(/\/market_data (.+)/, async (msg, match) => {
       const marketData = await tradingAutomation.getRealTimeMarketData(symbol);
       
       if (marketData.success) {
-        const dataMessage = `📊 **REAL-TIME MARKET DATA - ${symbol}**
+        const dataMessage = `📊 REAL-TIME MARKET DATA - ${symbol}
 
-💰 **CURRENT PRICE**: $${marketData.price?.toLocaleString()}
-📈 **24H CHANGE**: ${marketData.change24h >= 0 ? '+' : ''}${marketData.change24h?.toFixed(2)}%
-📊 **24H VOLUME**: ${marketData.volume?.toLocaleString()}
-🔝 **24H HIGH**: $${marketData.high24h?.toLocaleString()}
-🔻 **24H LOW**: $${marketData.low24h?.toLocaleString()}
-⏰ **TIMESTAMP**: ${new Date(marketData.timestamp).toLocaleString()}
+💰 CURRENT PRICE: $${marketData.price?.toLocaleString()}
+📈 24H CHANGE: ${marketData.change24h >= 0 ? '+' : ''}${marketData.change24h?.toFixed(2)}%
+📊 24H VOLUME: ${marketData.volume?.toLocaleString()}
+🔝 24H HIGH: $${marketData.high24h?.toLocaleString()}
+🔻 24H LOW: $${marketData.low24h?.toLocaleString()}
+⏰ TIMESTAMP: ${new Date(marketData.timestamp).toLocaleString()}
 
-🎯 **QUICK ACTIONS**:
+🎯 QUICK ACTIONS:
 • /trading_signals ${symbol} - Get AI trading signals
 • /execute_trade ${symbol} - Auto-execute if signal available
 
-*Real-time data from institutional trading APIs*`;
+Real-time data from institutional trading APIs`;
 
         await bot.sendMessage(msg.chat.id, dataMessage, {
           parse_mode: "Markdown",
           disable_web_page_preview: true
         });
       } else {
-        await bot.sendMessage(msg.chat.id, `❌ **DATA UNAVAILABLE**\n\nUnable to fetch data for ${symbol}: ${marketData.error}`);
+        await bot.sendMessage(msg.chat.id, `❌ DATA UNAVAILABLE\n\nUnable to fetch data for ${symbol}: ${marketData.error}`);
       }
     } else {
-      await bot.sendMessage(msg.chat.id, "📊 **MARKET DATA**\n\nData feed initializing...");
+      await bot.sendMessage(msg.chat.id, "📊 MARKET DATA\n\nData feed initializing...");
     }
   } catch (error) {
     console.error("❌ Market data error:", error.message);
-    await bot.sendMessage(msg.chat.id, "📊 **MARKET DATA**\n\nFetching real-time data...");
+    await bot.sendMessage(msg.chat.id, "📊 MARKET DATA\n\nFetching real-time data...");
   }
 });
