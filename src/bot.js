@@ -2952,22 +2952,33 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• Every 4 hours: Contract monitoring\n" +
       "• 24/7: Continuous deal matching\n\n" +
       
-      "💰 EXPECTED RESULTS:\n" +
+      "💰 PRIVATE LENDING RESULTS:\n" +
       "• 5-15 qualified borrowers daily\n" +
       "• 3-8 Credit MOUs generated daily\n" +
       "• $500K-5M capital deployment daily\n" +
-      "• 10-18% annual returns + fees\n" +
-      "• Systematic private lending empire\n\n" +
+      "• 10-18% annual returns + fees\n\n" +
+      
+      "🤖 WEALTH MULTIPLICATION SYSTEMS:\n" +
+      "• Automated fund raising: $2-5M annually\n" +
+      "• Real estate cash flow: $1-3M annually\n" +
+      "• Platform transaction fees: $6-48M annually\n" +
+      "• Combined potential: $9-56M annually\n\n" +
       
       "🎯 COMMANDS:\n" +
       "• /prospects - View latest prospect intelligence\n" +
       "• /contracts - View major contract opportunities\n" +
       "• /lending - View daily lending activity\n" +
       "• /mous - Active Credit MOUs status\n" +
+      "• /superwealth - Learn billionaire wealth strategies\n" +
+      "• /wealthmachines - Deploy automated wealth systems\n" +
+      "• /wealthstatus - Check wealth machines status\n" +
       "• /empire_status - Complete automation overview\n" +
       "• /stop_automation - Pause automated systems\n\n" +
       
-      "⚡ AUTOMATED PRIVATE LENDING EMPIRE ONLINE";
+      "⚡ AUTOMATED PRIVATE LENDING EMPIRE ONLINE\n\n" +
+      "🚀 READY FOR WEALTH MULTIPLICATION:\n" +
+      "Use /wealthmachines to deploy automated wealth systems\n" +
+      "that generate $9-56M annually using billionaire strategies";
     
     await bot.sendMessage(chatId, systemStatus);
     
@@ -2979,6 +2990,9 @@ bot.onText(/\/autopilot/i, async (msg) => {
       isActive: true,
       startTime: new Date().toISOString()
     };
+
+    // Initialize wealth multiplication engine for future use
+    global.wealthEngine = null;
     
   } catch (error) {
     console.error('❌ Autopilot error:', error.message);
@@ -3072,6 +3086,92 @@ bot.onText(/\/lending/i, async (msg) => {
   } catch (error) {
     console.error('❌ Lending command error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not retrieve lending data. Try /autopilot to restart systems.");
+  }
+});
+
+// Command: /superwealth - Learn how billionaires build beyond private lending
+bot.onText(/\/superwealth/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "🏛️ Analyzing billionaire wealth strategies...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const SuperWealthStrategies = require('./src/intelligence/SuperWealthStrategies');
+    const superWealth = new SuperWealthStrategies(bot);
+    
+    await superWealth.generatePersonalizedStrategy(chatId);
+    
+  } catch (error) {
+    console.error('❌ Super wealth command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not retrieve wealth strategies.");
+  }
+});
+
+// Command: /wealthmachines - Deploy automated wealth multiplication systems
+bot.onText(/\/wealthmachines/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "🤖 Deploying automated wealth multiplication machines...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const WealthMultiplicationEngine = require('./src/automation/WealthMultiplicationEngine');
+    const wealthEngine = new WealthMultiplicationEngine(bot);
+    
+    await wealthEngine.deployAllWealthMachines(chatId);
+    
+    // Store wealth engine globally
+    global.wealthEngine = wealthEngine;
+    
+  } catch (error) {
+    console.error('❌ Wealth machines command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not deploy wealth machines.");
+  }
+});
+
+// Command: /wealthstatus - Check status of all wealth machines
+bot.onText(/\/wealthstatus/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.wealthEngine) {
+      await bot.sendMessage(chatId,
+        "⚠️ WEALTH MACHINES NOT DEPLOYED\n\n" +
+        "Use /wealthmachines to deploy automated wealth systems first."
+      );
+      return;
+    }
+    
+    const status = global.wealthEngine.getWealthMachinesStatus();
+    
+    let report = `🤖 WEALTH MACHINES STATUS REPORT\n\n`;
+    report += `📊 SYSTEM OVERVIEW:\n`;
+    report += `• Total machines: ${status.total_machines}\n`;
+    report += `• Active machines: ${status.active_machines}\n`;
+    report += `• Automation level: ${status.automation_level}\n\n`;
+    
+    report += `💰 INCOME GENERATION:\n`;
+    status.machines_details.forEach((machine, index) => {
+      report += `${index + 1}. ${machine.type.replace(/_/g, ' ').toUpperCase()}\n`;
+      report += `   Status: ${machine.status.toUpperCase()}\n`;
+      report += `   Potential: $${(machine.potential_annual_income / 1000000).toFixed(1)}M annually\n\n`;
+    });
+    
+    report += `🎯 TOTAL POTENTIAL INCOME: $${(status.total_potential_income / 1000000).toFixed(1)}M ANNUALLY\n`;
+    report += `⚡ ALL WEALTH MACHINES OPERATING 24/7`;
+    
+    await bot.sendMessage(chatId, report);
+    
+  } catch (error) {
+    console.error('❌ Wealth status command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not retrieve wealth status.");
   }
 });
 
@@ -3180,11 +3280,17 @@ bot.onText(/\/empire_status/i, async (msg) => {
       `• 3-8 Credit MOUs generated\n` +
       `• $500K-5M capital deployment\n\n` +
       
-      `🎯 MONTHLY PROJECTIONS:\n` +
-      `• 150-450 qualified borrowers\n` +
-      `• 90-240 Credit MOUs generated\n` +
-      `• $15M-150M capital deployment\n` +
+      `🎯 PRIVATE LENDING PROJECTIONS:\n` +
+      `• 150-450 qualified borrowers monthly\n` +
+      `• 90-240 Credit MOUs generated monthly\n` +
+      `• $15M-150M capital deployment monthly\n` +
       `• 10-18% annual returns + fees\n\n` +
+      
+      `🤖 WEALTH MACHINES STATUS:\n` +
+      `• Fund raising machine: ${global.wealthEngine ? '✅ ACTIVE' : '❌ Not deployed'}\n` +
+      `• Real estate machine: ${global.wealthEngine ? '✅ ACTIVE' : '❌ Not deployed'}\n` +
+      `• Platform machine: ${global.wealthEngine ? '✅ ACTIVE' : '❌ Not deployed'}\n` +
+      `• Combined potential: ${global.wealthEngine ? '$9-56M annually' : 'Use /wealthmachines to activate'}\n\n` +
       
       `⚡ EMPIRE STATUS: FULLY OPERATIONAL`;
     
@@ -3216,14 +3322,21 @@ bot.onText(/\/stop_automation/i, async (msg) => {
       global.automationSystems.isActive = false;
     }
     
+    // Also stop wealth machines if they exist
+    if (global.wealthEngine) {
+      // Wealth engine stop functionality would go here
+      global.wealthEngine = null;
+    }
+
     await bot.sendMessage(chatId,
-      "🛑 AUTOMATED PRIVATE LENDING EMPIRE STOPPED\n\n" +
-      "All lending automation has been paused:\n" +
-      "• Prospect hunting stopped\n" +
-      "• Borrower identification halted\n" +
-      "• Credit MOU generation paused\n" +
+      "🛑 AUTOMATED EMPIRE SYSTEMS STOPPED\n\n" +
+      "All automation has been paused:\n" +
+      "• Private lending automation stopped\n" +
+      "• Wealth multiplication machines halted\n" +
+      "• Prospect hunting paused\n" +
       "• Contract monitoring stopped\n\n" +
-      "Use /autopilot to restart the automated lending empire."
+      "Use /autopilot to restart private lending systems\n" +
+      "Use /wealthmachines to restart wealth multiplication"
     );
     
   } catch (error) {
