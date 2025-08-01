@@ -2974,6 +2974,8 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• /wealthstatus - Check wealth machines status\n" +
       "• /billionaire - Deploy complete billionaire automation suite\n" +
       "• /howrevenue - Explain how automation generates real revenue\n" +
+      "• /alerts - How automation communicates with you\n" +
+      "• /samplealert - See example automation messages\n" +
       "• /empirestatus - Complete empire automation overview\n" +
       "• /empire_status - Legacy automation overview\n" +
       "• /stop_automation - Pause automated systems\n\n" +
@@ -3222,6 +3224,53 @@ bot.onText(/\/howrevenue/i, async (msg) => {
   } catch (error) {
     console.error('❌ Revenue explanation command error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not explain revenue generation.");
+  }
+});
+
+// Command: /alerts - Explain how automation communicates with you
+bot.onText(/\/alerts/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "📱 Explaining how your automation systems communicate with you...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const AutomationAlerts = require('./src/communication/AutomationAlerts');
+    const alertsExplainer = new AutomationAlerts(bot);
+    
+    await alertsExplainer.explainCommunicationSystem(chatId);
+    
+  } catch (error) {
+    console.error('❌ Alerts explanation command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not explain communication system.");
+  }
+});
+
+// Command: /samplealert - See example of daily revenue alert
+bot.onText(/\/samplealert/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    const AutomationAlerts = require('./src/communication/AutomationAlerts');
+    const alertsSystem = new AutomationAlerts(bot);
+    
+    await bot.sendMessage(chatId, "📱 Sending sample daily revenue alert...");
+    
+    setTimeout(async () => {
+      await alertsSystem.sendSampleDailyAlert(chatId);
+    }, 2000);
+    
+    setTimeout(async () => {
+      await alertsSystem.sendSampleDealAlert(chatId);
+    }, 10000);
+    
+  } catch (error) {
+    console.error('❌ Sample alert command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not send sample alerts.");
   }
 });
 
