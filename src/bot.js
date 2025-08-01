@@ -425,12 +425,22 @@ try {
       const MarketApisBot = require(path.join(__dirname, 'automation', 'MarketApisBot'));
       global.marketApisBot = new MarketApisBot(bot);
       
+      // Initialize Crypto Trading Bot
+      const CryptoTradingBot = require(path.join(__dirname, 'automation', 'CryptoTradingBot'));
+      global.cryptoTradingBot = new CryptoTradingBot(bot);
+      
+      // Initialize Business Banking Bot
+      const BusinessBankingBot = require(path.join(__dirname, 'automation', 'BusinessBankingBot'));
+      global.businessBankingBotNew = new BusinessBankingBot(bot);
+      
       console.log('🤖 AI TRADING BOT - INITIALIZED (Delayed)');
       console.log('🏦 CAMBODIA BANKING BOT - INITIALIZED');
       console.log('🏛️ BUSINESS BANKING INTEGRATION - INITIALIZED');
       console.log('🏠 REAL ESTATE AUTOMATION - INITIALIZED');
       console.log('🏠 CAMBODIA PROPERTY BOT - INITIALIZED');
       console.log('📊 MARKET APIS BOT - INITIALIZED');
+      console.log('🔥 CRYPTO TRADING BOT - INITIALIZED');
+      console.log('💎 BUSINESS BANKING BOT - INITIALIZED');
       
       // Initialize banking and property automation
       global.bankingBot.initialize();
@@ -438,6 +448,8 @@ try {
       global.realEstateBot.initialize();
       global.propertyBot.initialize();
       global.marketApisBot.initialize();
+      global.cryptoTradingBot.initialize();
+      global.businessBankingBotNew.initialize();
       
       // Mark systems as initialized
       global.systemsInitialized = {
@@ -445,7 +457,9 @@ try {
         banking: true,
         business: true,
         realEstate: true,
-        market: true
+        market: true,
+        crypto: true,
+        businessBankingNew: true
       };
       
       // Initialize wealth generation coordinator
