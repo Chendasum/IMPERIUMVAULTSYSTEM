@@ -92,12 +92,12 @@ class ForexApiIntegration {
     try {
       const prices = {};
       for (const symbol of symbols) {
-        const response = await axios.get(
-          `${this.baseUrl}/users/current/accounts/${this.accountId}/symbols/${symbol}/current-price`,
+        const response = await metaApiAxios.get(
+          `${this.clientUrl}/users/current/accounts/${this.accountId}/symbols/${symbol}/current-price`,
           {
             headers: {
-              'Authorization': `Bearer ${this.metaApiToken}`,
-              'Content-Type': 'application/json'
+              'auth-token': this.metaApiToken,
+              'Accept': 'application/json'
             }
           }
         );
@@ -122,12 +122,13 @@ class ForexApiIntegration {
       if (stopLoss) orderData.stopLoss = stopLoss;
       if (takeProfit) orderData.takeProfit = takeProfit;
 
-      const response = await axios.post(
-        `${this.baseUrl}/users/current/accounts/${this.accountId}/trade`,
+      const response = await metaApiAxios.post(
+        `${this.clientUrl}/users/current/accounts/${this.accountId}/trade`,
         orderData,
         {
           headers: {
-            'Authorization': `Bearer ${this.metaApiToken}`,
+            'auth-token': this.metaApiToken,
+            'Accept': 'application/json',
             'Content-Type': 'application/json'
           }
         }
