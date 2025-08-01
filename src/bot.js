@@ -2973,6 +2973,7 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• /wealthmachines - Deploy automated wealth systems\n" +
       "• /wealthstatus - Check wealth machines status\n" +
       "• /billionaire - Deploy complete billionaire automation suite\n" +
+      "• /unlimited - Deploy unlimited intelligence engine (no limits)\n" +
       "• /aitrading - Deploy AI trading empire (global markets)\n" +
       "• /globalcapital - Deploy global capital movement systems\n" +
       "• /setup - How to connect AI systems to real accounts\n" +
@@ -3364,6 +3365,27 @@ bot.onText(/\/setup/i, async (msg) => {
   } catch (error) {
     console.error('❌ Setup guide error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not load setup guide.");
+  }
+});
+
+// Command: /unlimited - Deploy unlimited intelligence engine (no limits)
+bot.onText(/\/unlimited/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "🚀 Deploying Unlimited Intelligence Engine - No Limits, No Blocks...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const UnlimitedIntelligenceEngine = require('./src/core/UnlimitedIntelligenceEngine');
+    const unlimitedSystem = new UnlimitedIntelligenceEngine(bot);
+    
+    await unlimitedSystem.deployUnlimitedSystems(chatId);
+    
+  } catch (error) {
+    console.error('❌ Unlimited systems deployment error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not deploy unlimited systems.");
   }
 });
 
