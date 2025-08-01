@@ -4,18 +4,25 @@
 const axios = require('axios');
 const https = require('https');
 
-// Handle SSL certificate issues
-const agent = new https.Agent({
-  rejectUnauthorized: false
-});
+// Configure axios for MetaApi with proper SSL handling
+const axiosConfig = {
+  timeout: 30000,
+  httpsAgent: new https.Agent({
+    rejectUnauthorized: false,
+    keepAlive: true
+  })
+};
+
+// Create axios instance for MetaApi
+const metaApiAxios = axios.create(axiosConfig);
 
 class ForexApiIntegration {
   constructor() {
     // MetaApi configuration for XM account
     this.metaApiToken = process.env.METAAPI_TOKEN || null;
     this.accountId = process.env.METAAPI_ACCOUNT_ID || '4047c1bf-841e-4e9f-8513-bee33cee41f6'; // Your XM account ID
-    this.provisioningUrl = 'https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai';
-    this.clientUrl = 'https://mt-client-api-v1.agiliumtrade.agiliumtrade.ai';
+    this.provisioningUrl = 'https://mt-provisioning-api-v1.london.agiliumtrade.ai';
+    this.clientUrl = 'https://mt-client-api-v1.london.agiliumtrade.ai';
     
     // Trading parameters
     this.maxRiskPerTrade = 0.02; // 2% max risk per trade
@@ -45,34 +52,18 @@ class ForexApiIntegration {
   // Get account information
   async getAccountInformation() {
     try {
-      // First get account from provisioning API
-      const accountResponse = await axios.get(
-        `${this.provisioningUrl}/users/current/accounts/${this.accountId}`,
-        {
-          headers: {
-            'auth-token': this.metaApiToken,
-            'Content-Type': 'application/json'
-          },
-          httpsAgent: agent
-        }
-      );
-      
-      // Then get account information from client API
-      const infoResponse = await axios.get(
+      // Get account information directly from client API (simplified approach)
+      const response = await metaApiAxios.get(
         `${this.clientUrl}/users/current/accounts/${this.accountId}/account-information`,
         {
           headers: {
             'auth-token': this.metaApiToken,
-            'Content-Type': 'application/json'
-          },
-          httpsAgent: agent
+            'Accept': 'application/json'
+          }
         }
       );
       
-      return {
-        ...accountResponse.data,
-        ...infoResponse.data
-      };
+      return response.data;
     } catch (error) {
       throw new Error(`Failed to get account info: ${error.message}`);
     }
@@ -81,14 +72,13 @@ class ForexApiIntegration {
   // Get current positions
   async getCurrentPositions() {
     try {
-      const response = await axios.get(
+      const response = await metaApiAxios.get(
         `${this.clientUrl}/users/current/accounts/${this.accountId}/positions`,
         {
           headers: {
             'auth-token': this.metaApiToken,
-            'Content-Type': 'application/json'
-          },
-          httpsAgent: agent
+            'Accept': 'application/json'
+          }
         }
       );
       return response.data;
