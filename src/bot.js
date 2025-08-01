@@ -2977,6 +2977,7 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• /aitrading - Deploy AI trading empire (global markets)\n" +
       "• /globalcapital - Deploy global capital movement systems\n" +
       "• /setup - How to connect AI systems to real accounts\n" +
+      "• /practical - How to actually start making money from $0\n" +
       "• /howrevenue - Explain how automation generates real revenue\n" +
       "• /revenue - Show real daily revenue tracker with actual deals\n" +
       "• /alerts - How automation communicates with you\n" +
@@ -3386,6 +3387,27 @@ bot.onText(/\/unlimited/i, async (msg) => {
   } catch (error) {
     console.error('❌ Unlimited systems deployment error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not deploy unlimited systems.");
+  }
+});
+
+// Command: /practical - How to actually start making money from $0
+bot.onText(/\/practical/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "💡 Loading practical income generation guide - Start from $0...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const PracticalStartupGuide = require('./src/implementation/PracticalStartupGuide');
+    const startupGuide = new PracticalStartupGuide(bot);
+    
+    await startupGuide.showPracticalGuide(chatId);
+    
+  } catch (error) {
+    console.error('❌ Practical guide error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not load practical guide.");
   }
 });
 
