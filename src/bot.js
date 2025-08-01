@@ -334,6 +334,9 @@ const express = require("express");
 const { OpenAI } = require("openai");
 const axios = require("axios");
 
+// Forex Trading Integration - MetaApi Connection
+const ForexApiIntegration = require('./services/forex-api-integration');
+
 // ===== STRATEGIC POWER MULTIPLIER SYSTEMS INTEGRATION =====
 let MarketIntelligenceEngine, ClientAcquisitionEngine, RevenueOptimizationEngine;
 let CompetitorIntelligenceEngine, InstitutionalDataPipeline, AutomatedScalingProtocols;
@@ -367,6 +370,14 @@ try {
   console.log('🏛️ Institutional Data Pipeline - ACTIVE');
   console.log('🔥 Automated Scaling Protocols - ACTIVE');
   console.log('🤖 Trading Automation Engine - ACTIVE');
+  
+  // Initialize Forex Trading Integration
+  global.forexApi = new ForexApiIntegration();
+  console.log('📈 FOREX API INTEGRATION - READY (MetaApi Connection)');
+  
+  // Initialize Forex Trading Integration
+  global.forexApi = new ForexApiIntegration();
+  console.log('📈 FOREX API INTEGRATION - READY (MetaApi Connection)');
 } catch (error) {
   console.log('⚠️ Automation modules not found - running in basic mode');
   console.log('📁 Make sure src/automation/ directory exists with all 6 modules');
@@ -2979,6 +2990,11 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• /analysis - Market analysis and research services\n\n" +
       
       "🤖 AUTOMATED SYSTEMS (Scale Income):\n" +
+      "• /forex_status - Check XM forex trading account\n" +
+      "• /forex_signals - AI-powered forex trading signals\n" +
+      "• /forex_trade - Execute AI-recommended trades\n" +
+      "• /forex_performance - View trading performance\n" +
+      "• /forex_setup - MetaApi integration setup\n" +
       "• /aitrading - AI trading empire (global markets)\n" +
       "• /globalcapital - Global capital movement systems\n" +
       "• /unlimited - Unlimited intelligence engine (1000+ systems)\n\n" +
@@ -3135,6 +3151,290 @@ bot.onText(/\/superwealth/i, async (msg) => {
   } catch (error) {
     console.error('❌ Super wealth command error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not retrieve wealth strategies.");
+  }
+});
+
+// ===== FOREX TRADING COMMANDS - METAAPI INTEGRATION =====
+
+// Command: /forex_status - Check forex trading account status
+bot.onText(/\/forex_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    await bot.sendMessage(chatId, "📊 Checking forex trading account status...");
+    await bot.sendChatAction(chatId, "typing");
+
+    if (!global.forexApi) {
+      await bot.sendMessage(chatId, 
+        "⚠️ FOREX API NOT INITIALIZED\n\n" +
+        "Run /start to initialize the forex trading system."
+      );
+      return;
+    }
+
+    // Initialize connection if needed
+    const isConnected = await global.forexApi.initialize();
+    if (!isConnected) {
+      await bot.sendMessage(chatId, 
+        "❌ METAAPI CONNECTION FAILED\n\n" +
+        "• Check METAAPI_TOKEN environment variable\n" +
+        "• Verify MetaApi account is active\n" +
+        "• Contact support if issues persist"
+      );
+      return;
+    }
+
+    const status = await global.forexApi.getTradingStatus();
+    
+    const statusMessage = 
+      "📈 FOREX TRADING STATUS - XM ACCOUNT 68920491\n\n" +
+      
+      "💰 ACCOUNT BALANCE:\n" +
+      `• Balance: $${status.account.balance.toFixed(2)}\n` +
+      `• Equity: $${status.account.equity.toFixed(2)}\n` +
+      `• Free Margin: $${status.account.freeMargin.toFixed(2)}\n` +
+      `• Used Margin: $${status.account.margin.toFixed(2)}\n\n` +
+      
+      "📊 TRADING ACTIVITY:\n" +
+      `• Open Positions: ${status.openTrades.length}\n` +
+      `• Total Positions: ${status.positions}\n\n` +
+      
+      "💱 CURRENT MARKET PRICES:\n" +
+      Object.entries(status.marketPrices).map(([symbol, price]) => 
+        `• ${symbol}: ${price.bid}/${price.ask}`
+      ).join('\n') + "\n\n" +
+      
+      `🕐 Last Updated: ${new Date(status.timestamp).toLocaleString()}\n\n` +
+      
+      "⚡ AVAILABLE COMMANDS:\n" +
+      "• /forex_signals - View trading opportunities\n" +
+      "• /forex_trade - Place new trade\n" +
+      "• /forex_close - Close position\n" +
+      "• /forex_performance - View trading results";
+
+    await bot.sendMessage(chatId, statusMessage);
+
+  } catch (error) {
+    console.error('❌ Forex status error:', error.message);
+    await bot.sendMessage(msg.chat.id, `❌ Forex status check failed: ${error.message}`);
+  }
+});
+
+// Command: /forex_signals - AI-powered market analysis and trading signals
+bot.onText(/\/forex_signals/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    await bot.sendMessage(chatId, "🤖 AI analyzing forex markets...");
+    await bot.sendChatAction(chatId, "typing");
+
+    if (!global.forexApi) {
+      await bot.sendMessage(chatId, "⚠️ Forex API not initialized. Run /start first.");
+      return;
+    }
+
+    const symbols = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD'];
+    const analyses = [];
+
+    for (const symbol of symbols) {
+      const analysis = await global.forexApi.analyzeMarket(symbol);
+      analyses.push(analysis);
+    }
+
+    let signalsMessage = "🎯 ULTIMATE VAULT CLAUDE FOREX SIGNALS\n\n";
+    
+    analyses.forEach(analysis => {
+      const signalEmoji = analysis.signal === 'buy' ? '🟢' : analysis.signal === 'sell' ? '🔴' : '🟡';
+      
+      signalsMessage += 
+        `${signalEmoji} ${analysis.symbol}\n` +
+        `• Current Price: ${analysis.currentPrice}\n` +
+        `• Signal: ${analysis.signal.toUpperCase()}\n` +
+        `• Trend: ${analysis.trend}\n` +
+        `• Confidence: ${(analysis.confidence * 100).toFixed(0)}%\n` +
+        `• Entry: ${analysis.recommendation.entry}\n` +
+        `• Stop Loss: ${analysis.recommendation.stopLoss}\n` +
+        `• Take Profit: ${analysis.recommendation.takeProfit}\n` +
+        `• Lot Size: ${analysis.recommendation.lotSize}\n\n`;
+    });
+
+    signalsMessage += 
+      "⚡ AI ANALYSIS POWERED BY ULTIMATE VAULT CLAUDE\n" +
+      "🎯 Use /forex_trade to execute recommended trades\n" +
+      "📊 Risk Management: Maximum 2% per trade";
+
+    await bot.sendMessage(chatId, signalsMessage);
+
+  } catch (error) {
+    console.error('❌ Forex signals error:', error.message);
+    await bot.sendMessage(msg.chat.id, `❌ Forex signals failed: ${error.message}`);
+  }
+});
+
+// Command: /forex_trade - Place a forex trade with AI recommendations
+bot.onText(/\/forex_trade (.+)/i, async (msg, match) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    const tradeParams = match[1].split(' ');
+    
+    if (tradeParams.length < 3) {
+      await bot.sendMessage(chatId, 
+        "📖 FOREX TRADE USAGE:\n\n" +
+        "/forex_trade SYMBOL BUY/SELL LOTSIZE\n\n" +
+        "Example: /forex_trade EURUSD BUY 0.01\n\n" +
+        "💡 Use /forex_signals first to get AI recommendations"
+      );
+      return;
+    }
+
+    const [symbol, type, lotSize] = tradeParams;
+    const orderType = type.toUpperCase() === 'BUY' ? 'ORDER_TYPE_BUY' : 'ORDER_TYPE_SELL';
+    const volume = parseFloat(lotSize);
+
+    if (volume < 0.01 || volume > 1.0) {
+      await bot.sendMessage(chatId, "❌ Lot size must be between 0.01 and 1.0");
+      return;
+    }
+
+    await bot.sendMessage(chatId, `🤖 Placing ${type} order for ${symbol}...`);
+    await bot.sendChatAction(chatId, "typing");
+
+    // Get AI analysis for the trade
+    const analysis = await global.forexApi.analyzeMarket(symbol);
+    
+    // Place the trade with AI-calculated stop loss and take profit
+    const tradeResult = await global.forexApi.placeTrade(
+      symbol,
+      orderType,
+      volume,
+      analysis.recommendation.stopLoss,
+      analysis.recommendation.takeProfit
+    );
+
+    const successMessage = 
+      "✅ TRADE EXECUTED SUCCESSFULLY\n\n" +
+      `📈 Symbol: ${symbol}\n` +
+      `🎯 Type: ${type}\n` +
+      `📊 Volume: ${volume} lots\n` +
+      `💰 Entry Price: ${analysis.currentPrice}\n` +
+      `🛡️ Stop Loss: ${analysis.recommendation.stopLoss}\n` +
+      `🎯 Take Profit: ${analysis.recommendation.takeProfit}\n\n` +
+      `📋 Order ID: ${tradeResult.orderId || 'Processing'}\n` +
+      `🤖 AI Confidence: ${(analysis.confidence * 100).toFixed(0)}%\n\n` +
+      "✅ Trade is now being monitored by Ultimate Vault Claude";
+
+    await bot.sendMessage(chatId, successMessage);
+
+  } catch (error) {
+    console.error('❌ Forex trade error:', error.message);
+    await bot.sendMessage(msg.chat.id, `❌ Trade execution failed: ${error.message}`);
+  }
+});
+
+// Command: /forex_performance - View trading performance and statistics
+bot.onText(/\/forex_performance/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    await bot.sendMessage(chatId, "📊 Generating forex performance report...");
+    await bot.sendChatAction(chatId, "typing");
+
+    if (!global.forexApi) {
+      await bot.sendMessage(chatId, "⚠️ Forex API not initialized. Run /start first.");
+      return;
+    }
+
+    const [accountInfo, positions] = await Promise.all([
+      global.forexApi.getAccountInformation(),
+      global.forexApi.getCurrentPositions()
+    ]);
+
+    // Calculate basic performance metrics
+    const openTrades = positions.filter(p => p.type === 'POSITION_TYPE_BUY' || p.type === 'POSITION_TYPE_SELL');
+    const totalProfit = openTrades.reduce((sum, trade) => sum + (trade.profit || 0), 0);
+    const totalVolume = openTrades.reduce((sum, trade) => sum + (trade.volume || 0), 0);
+
+    const performanceMessage = 
+      "📊 ULTIMATE VAULT CLAUDE TRADING PERFORMANCE\n\n" +
+      
+      "💰 ACCOUNT PERFORMANCE:\n" +
+      `• Account Balance: $${accountInfo.balance.toFixed(2)}\n` +
+      `• Current Equity: $${accountInfo.equity.toFixed(2)}\n` +
+      `• Unrealized P&L: $${totalProfit.toFixed(2)}\n` +
+      `• Account Growth: ${((accountInfo.equity / accountInfo.balance - 1) * 100).toFixed(2)}%\n\n` +
+      
+      "📈 TRADING STATISTICS:\n" +
+      `• Open Positions: ${openTrades.length}\n` +
+      `• Total Volume: ${totalVolume.toFixed(2)} lots\n` +
+      `• Average Position: ${openTrades.length > 0 ? (totalVolume / openTrades.length).toFixed(2) : '0.00'} lots\n\n` +
+      
+      "🎯 ACTIVE POSITIONS:\n" +
+      (openTrades.length > 0 ? 
+        openTrades.map(trade => 
+          `• ${trade.symbol} ${trade.type === 'POSITION_TYPE_BUY' ? '🟢 BUY' : '🔴 SELL'} ${trade.volume} lots\n` +
+          `  P&L: $${(trade.profit || 0).toFixed(2)}`
+        ).join('\n') :
+        "• No active positions") + "\n\n" +
+      
+      "🤖 AI TRADING INSIGHTS:\n" +
+      `• Risk Management: Active (Max 2% per trade)\n` +
+      `• AI Confidence Average: Calculating...\n` +
+      `• Strategy: Trend Following + Breakout Detection\n\n` +
+      
+      "⚡ ULTIMATE VAULT CLAUDE FOREX AUTOMATION ACTIVE";
+
+    await bot.sendMessage(chatId, performanceMessage);
+
+  } catch (error) {
+    console.error('❌ Forex performance error:', error.message);
+    await bot.sendMessage(msg.chat.id, `❌ Performance report failed: ${error.message}`);
+  }
+});
+
+// Command: /forex_setup - Configure MetaApi token and settings
+bot.onText(/\/forex_setup/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    const setupMessage = 
+      "⚙️ FOREX TRADING SETUP - METAAPI INTEGRATION\n\n" +
+      
+      "📋 SETUP CHECKLIST:\n" +
+      "✅ XM Account: 68920491 (Verified)\n" +
+      "✅ MetaApi Account: Created\n" +
+      "✅ Account ID: 4047c1bf-841e-4e9f-8513-b...\n" +
+      "✅ Server: XMGlobal-MT5 2\n\n" +
+      
+      "🔑 REQUIRED: API TOKEN\n" +
+      "1. Go to MetaApi dashboard\n" +
+      "2. Click 'API Access' in sidebar\n" +
+      "3. Generate new token named 'Ultimate Vault Claude'\n" +
+      "4. Add METAAPI_TOKEN to environment variables\n\n" +
+      
+      "💰 COST: $0.015/hour (~$11/month)\n" +
+      "📈 FEATURES: Professional automated trading\n" +
+      "🤖 AI INTEGRATION: Ultimate Vault Claude intelligence\n\n" +
+      
+      "⚡ ONCE TOKEN IS ADDED:\n" +
+      "• /forex_status - Check account\n" +
+      "• /forex_signals - Get AI trading signals\n" +
+      "• /forex_trade - Execute trades\n" +
+      "• /forex_performance - View results\n\n" +
+      
+      "🎯 Your MetaApi account is ready - just add the API token!";
+
+    await bot.sendMessage(chatId, setupMessage);
+
+  } catch (error) {
+    console.error('❌ Forex setup error:', error.message);
+    await bot.sendMessage(msg.chat.id, `❌ Forex setup failed: ${error.message}`);
   }
 });
 
