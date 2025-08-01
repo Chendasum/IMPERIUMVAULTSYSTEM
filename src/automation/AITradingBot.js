@@ -251,15 +251,15 @@ class AITradingBot {
 
     const statusMessage = 
       `🤖 **AI AUTO-TRADING STATUS**\n\n` +
-      `⚡ Status: ${this.isRunning ? 'ACTIVE' : 'STOPPED'}\n` +
+      `⚡ Status: ${this.isRunning ? 'RUNNING' : 'STOPPED'}\n` +
       `📊 Today's Trades: ${this.dailyTradeCount}/${this.maxDailyTrades}\n` +
       `💼 Active Positions: ${this.activeTrades.size}\n` +
-      `🕐 Last Check: ${new Date().toLocaleTimeString()}\n` +
-      `🔄 Next Analysis: 5 minutes`;
+      `📈 Total Trades: ${this.tradingHistory.length}\n\n` +
+      `🛑 Use /stop_autotrading to stop`;
 
-    // Send status every hour only
+    // Send status every 30 minutes only (not every 5 minutes)
     const now = new Date();
-    if (now.getMinutes() === 0) {
+    if (now.getMinutes() === 0 || now.getMinutes() === 30) {
       await this.bot.sendMessage(this.userChatId, statusMessage);
     }
   }
