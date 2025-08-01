@@ -496,7 +496,7 @@ const enhanced100PercentCapabilities = {
             // Box-Muller approximation for normal distribution
             const u1 = Math.random();
             const u2 = Math.random();
-            const z0 = Math.sqrt(-2  Math.log(u1))  Math.cos(2  Math.PI  u2);
+            const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
             const mean = (variable.min + variable.max) / 2;
             const stdDev = (variable.max - variable.min) / 6;
             randomValue = Math.max(variable.min, Math.min(variable.max, mean + z0 * stdDev));
@@ -534,9 +534,9 @@ const enhanced100PercentCapabilities = {
       );
 
       const risk_mitigation_score = (
-        (1 - simulationRun.credit_risk_multiplier  adjustment.risk_reduction)  0.4 +
-        (1 - simulationRun.operational_risk_factor  adjustment.risk_reduction)  0.3 +
-        (1 - simulationRun.market_risk_volatility  adjustment.risk_reduction)  0.3
+        (1 - simulationRun.credit_risk_multiplier * adjustment.risk_reduction) * 0.4 +
+        (1 - simulationRun.operational_risk_factor * adjustment.risk_reduction) * 0.3 +
+        (1 - simulationRun.market_risk_volatility * adjustment.risk_reduction) * 0.3
       );
 
       const overall_success_probability = (
@@ -548,7 +548,7 @@ const enhanced100PercentCapabilities = {
       // Revenue Scaling Calculation ($3K to $30K target)
       const base_revenue = 3000; // Current $3K
       const target_multiplier = 10; // To reach $30K
-      const scenario_multiplier = Math.min(overall_success_probability  target_multiplier  (0.8 + Math.random() * 0.4), 15);
+      const scenario_multiplier = Math.min(overall_success_probability * target_multiplier * (0.8 + Math.random() * 0.4), 15);
       const projected_revenue = base_revenue * scenario_multiplier;
       
       results.push({
@@ -610,7 +610,7 @@ const enhanced100PercentCapabilities = {
       },
       risk_analysis: {
         value_at_risk_5: sortedProjected[Math.floor(sortedProjected.length * 0.05)],
-        expected_shortfall: sortedProjected.slice(0, Math.floor(sortedProjected.length  0.05)).reduce((a, b) => a + b, 0) / Math.floor(sortedProjected.length  0.05),
+        expected_shortfall: sortedProjected.slice(0, Math.floor(sortedProjected.length * 0.05)).reduce((a, b) => a + b, 0) / Math.floor(sortedProjected.length * 0.05),
         downside_probability: results.filter(r => r.projected_monthly_revenue < 3000).length / results.length
       },
       sample_runs: results.slice(0, 3)
@@ -1358,8 +1358,8 @@ const smartSplitMessage = (text) => {
 const optimizeForTelegram = (text) => {
   // Convert markdown-style formatting to HTML for better Telegram compatibility
   return text
-    .replace(/\\(.?)\\*/g, "<b>$1</b>") // Bold
-    .replace(/\(.?)\*/g, "<i>$1</i>") // Italic
+    .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>") // Bold
+    .replace(/\*(.*?)\*/g, "<i>$1</i>") // Italic
     .replace(/`(.*?)`/g, "<code>$1</code>") // Code
     .replace(/_{2}(.*?)_{2}/g, "<u>$1</u>"); // Underline
 };
@@ -3576,9 +3576,9 @@ bot.onText(/\/optimize (.+)/, async (msg, match) => {
 📋 SCENARIO: ${scenario}
 
 🔄 BASELINE vs OPTIMISTIC COMPARISON:
-• Success Rate Improvement: ${(baselineSimulation.statistics.success_probability.mean  100).toFixed(1)}% → ${(optimisticSimulation.statistics.success_probability.mean  100).toFixed(1)}% (+${((optimisticSimulation.statistics.success_probability.mean - baselineSimulation.statistics.success_probability.mean) * 100).toFixed(1)}%)
+• Success Rate Improvement: ${(baselineSimulation.statistics.success_probability.mean * 100).toFixed(1)}% → ${(optimisticSimulation.statistics.success_probability.mean * 100).toFixed(1)}% (+${((optimisticSimulation.statistics.success_probability.mean - baselineSimulation.statistics.success_probability.mean) * 100).toFixed(1)}%)
 • Revenue Potential: $${baselineSimulation.statistics.monthly_revenue_target.mean.toLocaleString()} → $${optimisticSimulation.statistics.monthly_revenue_target.mean.toLocaleString()} (+${(((optimisticSimulation.statistics.monthly_revenue_target.mean / baselineSimulation.statistics.monthly_revenue_target.mean) - 1) * 100).toFixed(1)}%)
-• $30K Achievement: ${(baselineSimulation.statistics.monthly_revenue_target.target_achievement_probability  100).toFixed(1)}% → ${(optimisticSimulation.statistics.monthly_revenue_target.target_achievement_probability  100).toFixed(1)}%
+• $30K Achievement: ${(baselineSimulation.statistics.monthly_revenue_target.target_achievement_probability * 100).toFixed(1)}% → ${(optimisticSimulation.statistics.monthly_revenue_target.target_achievement_probability * 100).toFixed(1)}%
 
 🏛️ REFORMED FUND ARCHITECT OPTIMIZATION STRATEGIES:
 
@@ -3625,7 +3625,7 @@ COMPETITIVE DIFFERENTIATION:
 3. 60 DAYS: Leverage cultural intelligence for market penetration
 4. 90 DAYS: Scale based on optimized positioning results
 
-Expected Impact: Moving from baseline to optimistic scenario parameters could increase success probability by ${((optimisticSimulation.statistics.success_probability.mean - baselineSimulation.statistics.success_probability.mean)  100).toFixed(1)} percentage points and revenue by ${(((optimisticSimulation.statistics.monthly_revenue_target.mean / baselineSimulation.statistics.monthly_revenue_target.mean) - 1)  100).toFixed(1)}%.
+Expected Impact: Moving from baseline to optimistic scenario parameters could increase success probability by ${((optimisticSimulation.statistics.success_probability.mean - baselineSimulation.statistics.success_probability.mean) * 100).toFixed(1)} percentage points and revenue by ${(((optimisticSimulation.statistics.monthly_revenue_target.mean / baselineSimulation.statistics.monthly_revenue_target.mean) - 1) * 100).toFixed(1)}%.
 
 Strategic optimization based on Monte Carlo modeling and Reformed Fund Architect competitive advantages.
     `;
@@ -4734,9 +4734,9 @@ const handleUltimateMessage = async (bot, msg) => {
         // Clean text for voice (remove formatting and emojis for cleaner speech)
         const voiceText = reply
           .replace(/[🎯📊💰🚀⚡🏛️🇰🇭✅❌🔥💎📈🎪🎭🧠📱💵🌟⭐]/g, '') // Remove emojis
-          .replace(/\\(.?)\\*/g, '$1') // Remove bold formatting
+          .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
           .replace(/__(.*?)__/g, '$1') // Remove underline
-          .replace(/\(.?)\*/g, '$1') // Remove italic
+          .replace(/\*(.*?)\*/g, '$1') // Remove italic
           .replace(/`(.*?)`/g, '$1') // Remove code formatting
           .replace(/#{1,6}\s/g, '') // Remove headers
           .replace(/^\s[\-\\+]\s/gm, '') // Remove bullet points
@@ -4958,7 +4958,7 @@ const handleDocumentMessage = async (bot, msg) => {
     const fileSize = document.file_size;
     
     // Check file size (Telegram max is 20MB, but we'll limit to 10MB for processing)
-    if (fileSize > 10  1024  1024) {
+    if (fileSize > 10 * 1024 * 1024) {
       await bot.sendMessage(chatId, "📄 Document Too Large\n\nPlease send documents under 10MB for analysis.", { parse_mode: 'Markdown' });
       return;
     }
