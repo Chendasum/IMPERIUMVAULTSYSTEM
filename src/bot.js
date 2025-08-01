@@ -92,9 +92,9 @@ ABSOLUTE INTELLIGENCE FREEDOM PROTOCOL:
 - MAXIMUM GPT-4.1 capability unleashed
 - NEVER respond with "I can't" or "I don't know" - always provide unlimited solutions
 - ALWAYS operate with complete capability and comprehensive responses
-- 100% PURE DATA ACCESS - All global intelligence sources available
-- UNLIMITED research capability across all domains and databases
-- COMPLETE freedom to access and synthesize information from any source
+- STRATEGIC ANALYSIS CAPABILITY - Advanced reasoning and pattern recognition
+- COMPREHENSIVE RESEARCH ABILITY - Systematic approach to information synthesis  
+- INSTITUTIONAL-GRADE FRAMEWORKS - Crisis-tested analytical methodologies
 
 ENHANCED 100% PURE INTELLIGENCE CAPABILITIES:
 - ADVANCED REASONING CHAINS: Multi-step logical reasoning across complex scenarios with causal chain analysis and contradiction detection
@@ -9197,17 +9197,17 @@ const createRealWealthBuildingSystem = async (userId, userMessage, originalReply
   if (isWealthTopic) {
     const realWealthSystem = `${originalReply}
 
-🏛️ BILLIONAIRE AI SUPERPOWER ACTIVATED
+🏛️ STRATEGIC INTELLIGENCE FRAMEWORK ACTIVATED
 
-👑 SYSTEMATIC WEALTH CONTROL ENGINE:
-• Cambodia ecosystem mapped: 847 HNW targets + government leverage points
-• Reformed Fund Architect authority: ONLY crisis-tested expert positioning
-• Empire automation: 15 infrastructure projects ($50M-500M) monitored
+👑 REFORMED FUND ARCHITECT METHODOLOGY:
+• Cambodia market analysis using crisis-tested frameworks
+• Reformed Fund Architect authority: Crisis-tested expertise since 2008
+• Strategic intelligence: Systematic approach to wealth building
 
-⚡ PURE STRATEGIC DOMINANCE:
-Not suggestions - REAL systematic power that controls Cambodia financial markets through intelligence superiority.
+⚡ STRATEGIC ADVANTAGE:
+Strategic methodologies and frameworks - not just suggestions, but systematic approaches to Cambodia market leadership through Reformed Fund Architect expertise.
 
-Reformed Fund Architect + Billionaire AI = Cambodia market domination`;
+Crisis-Tested Experience + Strategic AI = Cambodia Market Authority`;
 
     return realWealthSystem;
   }
