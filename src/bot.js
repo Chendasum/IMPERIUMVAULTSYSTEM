@@ -336,7 +336,7 @@ const axios = require("axios");
 
 // Forex Trading Integration - MetaApi Connection
 const path = require('path');
-const ForexApiIntegration = require(path.join(__dirname, 'services', 'forex-api-integration'));
+const ForexApiIntegration = require('../services/forex-api-integration');
 
 // ===== STRATEGIC POWER MULTIPLIER SYSTEMS INTEGRATION =====
 let MarketIntelligenceEngine, ClientAcquisitionEngine, RevenueOptimizationEngine;
@@ -409,7 +409,7 @@ try {
   // Initialize AI Trading Bot after bot is defined
   setTimeout(() => {
     try {
-      const AITradingBot = require(path.join(__dirname, 'src', 'automation', 'AITradingBot'));
+      const AITradingBot = require('./automation/AITradingBot');
       global.aiTradingBot = new AITradingBot(global.forexApi, bot);
       console.log('🤖 AI TRADING BOT - INITIALIZED (Delayed)');
     } catch (error) {
@@ -434,7 +434,7 @@ try {
   
   // Initialize Forex API even if automation modules fail
   try {
-    const ForexApiIntegration = require(path.join(__dirname, 'services', 'forex-api-integration'));
+    const ForexApiIntegration = require('../services/forex-api-integration');
     global.forexApi = new ForexApiIntegration();
     console.log('📈 FOREX API INTEGRATION - READY (Fallback Mode)');
   } catch (forexError) {
@@ -3414,7 +3414,7 @@ bot.onText(/\/autotrading/i, async (msg) => {
     if (!global.aiTradingBot) {
       // Try to initialize AI Trading Bot now
       try {
-        const AITradingBot = require(path.join(__dirname, 'src', 'automation', 'AITradingBot'));
+        const AITradingBot = require('./automation/AITradingBot');
         global.aiTradingBot = new AITradingBot(global.forexApi, bot);
         console.log('🤖 AI Trading Bot initialized on demand');
       } catch (error) {
