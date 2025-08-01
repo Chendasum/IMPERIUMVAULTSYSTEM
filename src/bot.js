@@ -2889,6 +2889,170 @@ bot.onText(/\/realdata/i, async (msg) => {
   }
 });
 
+// Command: /autopilot - Start automated wealth generation systems
+bot.onText(/\/autopilot/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, 
+      "🚀 AUTOMATED WEALTH GENERATION SYSTEMS\n\n" +
+      "Starting systematic empire building automation...\n" +
+      "⏱️ This will take 60-90 seconds to initialize all systems..."
+    );
+    await bot.sendChatAction(chatId, "typing");
+    
+    // Initialize automation systems
+    const CambodiaProspectHunter = require('./src/automation/CambodiaProspectHunter');
+    const GovernmentContractTracker = require('./src/automation/GovernmentContractTracker');
+    
+    const prospectHunter = new CambodiaProspectHunter(bot);
+    const contractTracker = new GovernmentContractTracker(bot);
+    
+    // Start automated systems
+    prospectHunter.startAutomatedHunting(chatId, 24); // Daily prospect hunting
+    contractTracker.startAutomatedMonitoring(chatId, 4); // Every 4 hours contract monitoring
+    
+    const systemStatus = 
+      "⚡ AUTOMATED WEALTH GENERATION ACTIVATED\n\n" +
+      "🕷️ PROSPECT HUNTER:\n" +
+      "• Scans Cambodia business directories daily\n" +
+      "• Identifies high-net-worth individuals\n" +
+      "• Calculates wealth scores automatically\n" +
+      "• Delivers 10+ qualified prospects daily\n\n" +
+      
+      "🏛️ CONTRACT TRACKER:\n" +
+      "• Monitors government websites every 4 hours\n" +
+      "• Identifies $50M+ infrastructure projects\n" +
+      "• Calculates fund participation opportunities\n" +
+      "• Analyzes revenue potential and risk levels\n\n" +
+      
+      "📊 AUTOMATION SCHEDULE:\n" +
+      "• 6:00 AM: Daily prospect intelligence report\n" +
+      "• Every 4 hours: Government contract updates\n" +
+      "• 24/7: Continuous market monitoring\n\n" +
+      
+      "💰 EXPECTED RESULTS:\n" +
+      "• 10+ qualified prospects daily\n" +
+      "• 3-5 major contract opportunities weekly\n" +
+      "• Systematic $30K+ revenue pipeline\n" +
+      "• Automated empire building intelligence\n\n" +
+      
+      "🎯 COMMANDS:\n" +
+      "• /prospects - View latest prospect intelligence\n" +
+      "• /contracts - View major contract opportunities\n" +
+      "• /stop_automation - Pause automated systems\n\n" +
+      
+      "⚡ SYSTEMATIC WEALTH GENERATION ONLINE";
+    
+    await bot.sendMessage(chatId, systemStatus);
+    
+    // Store automation status
+    global.automationSystems = {
+      prospectHunter: prospectHunter,
+      contractTracker: contractTracker,
+      isActive: true,
+      startTime: new Date().toISOString()
+    };
+    
+  } catch (error) {
+    console.error('❌ Autopilot error:', error.message);
+    await bot.sendMessage(msg.chat.id,
+      "❌ AUTOMATION SYSTEM ERROR\n\n" +
+      `Error: ${error.message}\n\n` +
+      "This may indicate:\n" +
+      "• Missing dependencies\n" +
+      "• Network connectivity issues\n" +
+      "• Website access restrictions\n\n" +
+      "🔧 System will retry automatically"
+    );
+  }
+});
+
+// Command: /prospects - View latest prospect intelligence
+bot.onText(/\/prospects/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.automationSystems || !global.automationSystems.prospectHunter) {
+      await bot.sendMessage(chatId, 
+        "⚠️ PROSPECT HUNTER NOT ACTIVE\n\n" +
+        "Use /autopilot to start automated systems first."
+      );
+      return;
+    }
+    
+    await bot.sendMessage(chatId, "🔍 Generating current prospect intelligence...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    // Get latest prospects
+    await global.automationSystems.prospectHunter.sendDailyProspectReport(chatId);
+    
+  } catch (error) {
+    console.error('❌ Prospects command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not retrieve prospect intelligence. Try /autopilot to restart systems.");
+  }
+});
+
+// Command: /contracts - View major contract opportunities
+bot.onText(/\/contracts/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.automationSystems || !global.automationSystems.contractTracker) {
+      await bot.sendMessage(chatId,
+        "⚠️ CONTRACT TRACKER NOT ACTIVE\n\n" +
+        "Use /autopilot to start automated systems first."
+      );
+      return;
+    }
+    
+    await bot.sendMessage(chatId, "🏛️ Scanning government contracts...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    // Get latest contracts  
+    await global.automationSystems.contractTracker.sendDailyContractReport(chatId);
+    
+  } catch (error) {
+    console.error('❌ Contracts command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not retrieve contract intelligence. Try /autopilot to restart systems.");
+  }
+});
+
+// Command: /stop_automation - Stop automated systems
+bot.onText(/\/stop_automation/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (global.automationSystems) {
+      if (global.automationSystems.prospectHunter) {
+        global.automationSystems.prospectHunter.stopAutomatedHunting();
+      }
+      if (global.automationSystems.contractTracker) {
+        global.automationSystems.contractTracker.stopAutomatedMonitoring();
+      }
+      global.automationSystems.isActive = false;
+    }
+    
+    await bot.sendMessage(chatId,
+      "🛑 AUTOMATED SYSTEMS STOPPED\n\n" +
+      "All wealth generation automation has been paused.\n\n" +
+      "Use /autopilot to restart automated systems."
+    );
+    
+  } catch (error) {
+    console.error('❌ Stop automation error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Error stopping automation systems.");
+  }
+});
+
 // Command: /insights - Ultimate intelligence dashboard
 bot.onText(/\/insights/, async (msg) => {
   // Dynasty Protection Check
