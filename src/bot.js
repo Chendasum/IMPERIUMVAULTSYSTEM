@@ -375,6 +375,11 @@ try {
   const AutomationStatusEngine = require('./src/automation/AutomationStatusEngine');
   global.automationStatusEngine = new AutomationStatusEngine();
   console.log('📊 AUTOMATION STATUS ENGINE - INITIALIZED');
+  
+  // Initialize AI Trading Bot
+  const AITradingBot = require('./src/automation/AITradingBot');
+  global.aiTradingBot = new AITradingBot(global.forexApi, bot);
+  console.log('🤖 AI TRADING BOT - INITIALIZED');
   console.log('⚡ 100% AUTOMATION SYSTEM DEPLOYMENT COMPLETE');
   
   // Initialize Forex Trading Integration
@@ -3254,7 +3259,8 @@ bot.onText(/\/forex_status/i, async (msg) => {
       
       "⚡ AVAILABLE COMMANDS:\n" +
       "• /forex_signals - AI-powered trading signals\n" +
-      "• /forex_trade SYMBOL BUY/SELL LOTSIZE - Execute trades\n" +
+      "• /autotrading - START full AI automation (no manual commands)\n" +
+      "• /forex_trade SYMBOL BUY/SELL LOTSIZE - Manual trade execution\n" +
       "• /forex_performance - View trading performance\n" +
       "• /forex_setup - Configuration and help\n\n" +
       "🤖 ULTIMATE VAULT CLAUDE AI TRADING ACTIVE\n" +
@@ -3386,6 +3392,81 @@ bot.onText(/\/forex_signals/i, async (msg) => {
       "📞 Contact support if issue persists";
     
     await bot.sendMessage(msg.chat.id, errorMessage, { parse_mode: 'Markdown' });
+  }
+});
+
+// Command: /autotrading - Start full AI automated trading
+bot.onText(/\/autotrading/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.aiTradingBot) {
+      await bot.sendMessage(chatId, "❌ AI Trading Bot not initialized. Restart bot.");
+      return;
+    }
+
+    if (!global.forexApi) {
+      await bot.sendMessage(chatId, "❌ Forex API not connected. Check /forex_status");
+      return;
+    }
+
+    await global.aiTradingBot.startAutoTrading(chatId);
+    
+  } catch (error) {
+    console.error('❌ Auto-trading command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not start AI auto-trading.");
+  }
+});
+
+// Command: /stop_autotrading - Stop AI automated trading
+bot.onText(/\/stop_autotrading/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.aiTradingBot) {
+      await bot.sendMessage(chatId, "❌ AI Trading Bot not available.");
+      return;
+    }
+
+    await global.aiTradingBot.stopAutoTrading(chatId);
+    
+  } catch (error) {
+    console.error('❌ Stop auto-trading error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not stop AI auto-trading.");
+  }
+});
+
+// Command: /trading_status - Check AI auto-trading status
+bot.onText(/\/trading_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.aiTradingBot) {
+      await bot.sendMessage(chatId, "❌ AI Trading Bot not available.");
+      return;
+    }
+
+    const status = global.aiTradingBot.getStatus();
+    
+    const statusMessage = 
+      `🤖 **AI AUTO-TRADING STATUS**\n\n` +
+      `⚡ Status: ${status.isRunning ? 'RUNNING' : 'STOPPED'}\n` +
+      `📊 Today's Trades: ${status.dailyTrades}/${status.maxDailyTrades}\n` +
+      `💼 Active Positions: ${status.activeTrades}\n` +
+      `📈 Total Trades: ${status.totalTrades}\n\n` +
+      `${status.isRunning ? '🛑 Use /stop_autotrading to stop' : '🚀 Use /autotrading to start'}`;
+
+    await bot.sendMessage(chatId, statusMessage);
+    
+  } catch (error) {
+    console.error('❌ Trading status error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not get trading status.");
   }
 });
 
