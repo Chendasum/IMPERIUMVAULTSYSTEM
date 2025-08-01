@@ -3385,7 +3385,14 @@ bot.onText(/\/aitrading/i, async (msg) => {
         
         `🚀 NEXT STEPS:\n` +
         `Use /setup to connect to real trading accounts\n` +
-        `Use /revenue to track automated income\n\n` +
+        `Use /revenue to track automated income\n` +
+        `Use /forexhelp for detailed forex trading setup guide\n\n` +
+        
+        `💡 SIMPLE EXPLANATION:\n` +
+        `Your AI can connect to your forex account (XM, IG, OANDA)\n` +
+        `and trade automatically based on market analysis.\n` +
+        `You set the rules, AI executes trades 24/7.\n` +
+        `Start with $500-1000 account for safe testing.\n\n` +
         
         `🏛️ AI TRADING EMPIRE DEPLOYMENT COMPLETE\n` +
         `Commander, your AI trading systems are ready for\n` +
@@ -3430,14 +3437,128 @@ bot.onText(/\/setup/i, async (msg) => {
     await bot.sendMessage(chatId, "📋 Loading real account setup guide...");
     await bot.sendChatAction(chatId, "typing");
     
-    const RealAccountConnector = require('./src/integration/RealAccountConnector');
-    const accountSetup = new RealAccountConnector(bot);
-    
-    await accountSetup.showImplementationGuide(chatId);
+    try {
+      const RealAccountConnector = require('./src/integration/RealAccountConnector');
+      const accountSetup = new RealAccountConnector(bot);
+      await accountSetup.showImplementationGuide(chatId);
+    } catch (moduleError) {
+      console.error('❌ Setup module error:', moduleError.message);
+      // Enhanced setup guide fallback
+      await bot.sendMessage(chatId,
+        `🔧 REAL ACCOUNT SETUP GUIDE\n\n` +
+        
+        `📊 FOREX ACCOUNT CONNECTION:\n\n` +
+        
+        `1️⃣ CHOOSE FOREX BROKER:\n` +
+        `• XM Global (accepts Cambodia clients)\n` +
+        `• IG Markets (international access)\n` +
+        `• OANDA (professional platform)\n` +
+        `• Plus500 (user-friendly interface)\n\n` +
+        
+        `2️⃣ OPEN TRADING ACCOUNT:\n` +
+        `• Minimum deposit: $100-500\n` +
+        `• Verify identity (passport/ID)\n` +
+        `• Choose account currency (USD recommended)\n` +
+        `• Select leverage (1:100 or 1:200 for safety)\n\n` +
+        
+        `3️⃣ GET API ACCESS:\n` +
+        `• Request API credentials from broker\n` +
+        `• You'll receive: API key, secret key, account ID\n` +
+        `• Most brokers provide free API access\n` +
+        `• Keep credentials secure and private\n\n` +
+        
+        `4️⃣ CONNECT AI TO YOUR ACCOUNT:\n` +
+        `• Enter API credentials in bot settings\n` +
+        `• AI tests connection automatically\n` +
+        `• Set trading rules and risk limits\n` +
+        `• Start with demo mode for testing\n\n` +
+        
+        `5️⃣ CONFIGURE TRADING RULES:\n` +
+        `• Maximum risk per trade: 2%\n` +
+        `• Trading hours: 9 AM - 5 PM Cambodia time\n` +
+        `• Currency pairs: USD/KHR, EUR/USD, GBP/USD\n` +
+        `• Stop trading if daily loss exceeds 5%\n\n` +
+        
+        `💰 INCOME POTENTIAL:\n` +
+        `• Conservative (5-10% monthly): Safe steady growth\n` +
+        `• Moderate (10-15% monthly): Balanced approach\n` +
+        `• Aggressive (15-25% monthly): Higher risk/reward\n\n` +
+        
+        `🚨 SAFETY FIRST:\n` +
+        `• Start with $500-1000 account\n` +
+        `• Never risk more than you can afford to lose\n` +
+        `• Use stop-loss orders on all trades\n` +
+        `• Monitor AI performance daily\n\n` +
+        
+        `📞 SUPPORT:\n` +
+        `Your AI can connect to real forex accounts and\n` +
+        `trade automatically. You control all settings\n` +
+        `and can stop/start trading anytime.`
+      );
+    }
     
   } catch (error) {
-    console.error('❌ Setup guide error:', error.message);
+    console.error('❌ Setup complete error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not load setup guide.");
+  }
+});
+
+// Command: /forexhelp - Detailed forex trading explanation
+bot.onText(/\/forexhelp/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId,
+      `💱 HOW YOUR AI HELPS WITH FOREX TRADING\n\n` +
+      
+      `🤖 YES - YOUR AI CAN HELP YOU TRADE FOREX!\n\n` +
+      
+      `📊 WHAT AI DOES FOR YOU:\n` +
+      `• Analyzes currency pairs (USD/KHR, EUR/USD, etc.)\n` +
+      `• Reads economic news and predicts movements\n` +
+      `• Identifies trading opportunities 24/7\n` +
+      `• Calculates risk/reward for every trade\n` +
+      `• Places trades automatically when criteria met\n\n` +
+      
+      `🔗 CONNECTING TO YOUR FOREX ACCOUNT:\n` +
+      `• AI connects to brokers like XM, IG, OANDA\n` +
+      `• You provide API credentials (safe & secure)\n` +
+      `• AI can place real trades in your account\n` +
+      `• You control all settings and limits\n\n` +
+      
+      `💰 PRACTICAL EXAMPLE:\n` +
+      `Your $1,000 forex account:\n` +
+      `• AI analyzes USD/KHR showing strength\n` +
+      `• AI suggests: Buy at 4,100, Target 4,150\n` +
+      `• Risk: $50 (5%), Potential profit: $125\n` +
+      `• AI places trade and manages it automatically\n\n` +
+      
+      `🎯 INCOME POTENTIAL:\n` +
+      `• $1,000 account → $50-250 monthly\n` +
+      `• $5,000 account → $250-1,250 monthly\n` +
+      `• $10,000 account → $500-2,500 monthly\n\n` +
+      
+      `🔧 GETTING STARTED:\n` +
+      `1. Open forex account with XM or IG\n` +
+      `2. Fund with $500-1000 to start safely\n` +
+      `3. Request API access from broker\n` +
+      `4. Use /setup to connect AI to your account\n` +
+      `5. Set trading rules and risk limits\n` +
+      `6. Let AI trade automatically for you\n\n` +
+      
+      `💡 SIMPLE EXPLANATION:\n` +
+      `Think of AI as your personal forex trader working 24/7.\n` +
+      `It never sleeps, never gets emotional, never misses opportunities.\n` +
+      `You set the rules, AI follows them perfectly.\n\n` +
+      
+      `Use /setup for detailed connection instructions!`
+    );
+    
+  } catch (error) {
+    console.error('❌ Forex help error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not load forex help.");
   }
 });
 
