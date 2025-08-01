@@ -126,23 +126,63 @@ class MarketApisBot {
 
       // Initial market scan
       await this.performMarketScan();
+      
+      // Initial 24/7 crypto scan
+      await this.performCrypto24x7Scan();
 
-      // Set up continuous monitoring (every 5 minutes)
+      // Set up continuous monitoring (every 5 minutes for stocks/forex)
       this.analysisInterval = setInterval(async () => {
         await this.performMarketScan();
       }, 5 * 60 * 1000);
 
-      console.log('✅ Market analysis started - monitoring all asset classes');
+      // Set up 24/7 crypto and currency monitoring (every 2 minutes)
+      this.crypto24x7Interval = setInterval(async () => {
+        await this.performCrypto24x7Scan();
+      }, 2 * 60 * 1000);
+
+      console.log('✅ Market analysis started - including 24/7 crypto monitoring');
       return { 
         success: true, 
-        message: 'Market analysis active across stocks, forex, commodities, crypto',
-        interval: '5 minutes'
+        message: 'Market analysis active with 24/7 crypto and currency monitoring',
+        interval: '5 min (stocks/forex), 2 min (crypto/currencies - 24/7)'
       };
 
     } catch (error) {
       console.error('❌ Market analysis start error:', error.message);
       this.isRunning = false;
       return { success: false, message: error.message };
+    }
+  }
+
+  // NEW: 24/7 Crypto and Currency Monitoring
+  async performCrypto24x7Scan() {
+    try {
+      console.log('🚀 Performing 24/7 crypto & currency scan...');
+      
+      const crypto24x7Results = {
+        timestamp: new Date(),
+        crypto: await this.scanCrypto(),
+        currencies: await this.scanForexRates()
+      };
+
+      // Identify crypto opportunities (24/7 markets)
+      const cryptoOpportunities = await this.identifyCrypto24x7Opportunities(crypto24x7Results);
+      
+      // Store results
+      this.marketData.set('crypto_24x7_scan', crypto24x7Results);
+      this.marketData.set('crypto_opportunities', cryptoOpportunities);
+      
+      // Send alerts for significant crypto moves
+      if (cryptoOpportunities.high_confidence.length > 0 || cryptoOpportunities.medium_confidence.length > 0) {
+        await this.sendCrypto24x7Alerts(cryptoOpportunities);
+      }
+
+      console.log(`✅ 24/7 Crypto scan complete - ${cryptoOpportunities.total} opportunities found`);
+      return crypto24x7Results;
+
+    } catch (error) {
+      console.error('❌ 24/7 Crypto scan error:', error.message);
+      return null;
     }
   }
 
@@ -412,6 +452,108 @@ class MarketApisBot {
     }
   }
 
+  // NEW: Identify 24/7 crypto and currency opportunities
+  async identifyCrypto24x7Opportunities(scanResults) {
+    try {
+      const opportunities = {
+        high_confidence: [],
+        medium_confidence: [],
+        low_confidence: [],
+        total: 0
+      };
+
+      // Analyze crypto (24/7 market - more sensitive to weekend moves)
+      scanResults.crypto.forEach(crypto => {
+        const changePercent = parseFloat(crypto.changePercent);
+        
+        // Weekend crypto moves can be more significant
+        if (Math.abs(changePercent) > 8) {
+          const confidence = Math.abs(changePercent) > 15 ? 'high' : 'medium';
+          const opportunity = {
+            asset: crypto.symbol,
+            type: 'crypto_24x7',
+            action: changePercent > 0 ? 'momentum_buy' : 'dip_buy',
+            confidence,
+            change: changePercent,
+            reason: `${Math.abs(changePercent)}% move in 24/7 crypto market - weekend volatility`,
+            market_status: '24/7 ACTIVE'
+          };
+          
+          opportunities[`${confidence}_confidence`].push(opportunity);
+        }
+      });
+
+      // Analyze currency rates (some pairs active 24/7)
+      scanResults.currencies.forEach(currency => {
+        const changePercent = parseFloat(currency.changePercent);
+        
+        if (Math.abs(changePercent) > 2) {
+          const opportunity = {
+            asset: currency.pair,
+            type: 'currency_24x7',
+            action: changePercent > 0 ? 'trend_follow' : 'reversal_play',
+            confidence: 'medium',
+            change: changePercent,
+            reason: `${Math.abs(changePercent)}% move in currency markets`,
+            market_status: 'WEEKEND ACTIVE'
+          };
+          
+          opportunities.medium_confidence.push(opportunity);
+        }
+      });
+
+      opportunities.total = 
+        opportunities.high_confidence.length + 
+        opportunities.medium_confidence.length + 
+        opportunities.low_confidence.length;
+
+      return opportunities;
+    } catch (error) {
+      console.error('24/7 Opportunity analysis error:', error.message);
+      return { high_confidence: [], medium_confidence: [], low_confidence: [], total: 0 };
+    }
+  }
+
+  // NEW: Send 24/7 crypto alerts
+  async sendCrypto24x7Alerts(opportunities) {
+    try {
+      if (!this.bot || (opportunities.high_confidence.length === 0 && opportunities.medium_confidence.length === 0)) return;
+
+      let alertMessage = `🌍 24/7 CRYPTO & CURRENCY ALERTS\n`;
+      alertMessage += `⏰ ${new Date().toLocaleString()} (Weekend Trading Active)\n\n`;
+      
+      // High confidence opportunities
+      if (opportunities.high_confidence.length > 0) {
+        alertMessage += `🚨 HIGH CONFIDENCE (24/7 Markets):\n`;
+        opportunities.high_confidence.forEach((opp, index) => {
+          alertMessage += `${index + 1}. ${opp.asset} - ${opp.action.replace('_', ' ').toUpperCase()}\n`;
+          alertMessage += `   Move: ${opp.change > 0 ? '+' : ''}${opp.change}%\n`;
+          alertMessage += `   Status: ${opp.market_status}\n\n`;
+        });
+      }
+
+      // Medium confidence opportunities
+      if (opportunities.medium_confidence.length > 0) {
+        alertMessage += `⚠️ MEDIUM CONFIDENCE (Weekend Active):\n`;
+        opportunities.medium_confidence.slice(0, 3).forEach((opp, index) => {
+          alertMessage += `${index + 1}. ${opp.asset} - ${opp.change > 0 ? '+' : ''}${opp.change}%\n`;
+        });
+        alertMessage += `\n`;
+      }
+
+      alertMessage += `📊 Total 24/7 Opportunities: ${opportunities.total}`;
+
+      // Send to admin
+      if (process.env.ADMIN_CHAT_ID) {
+        await this.bot.sendMessage(process.env.ADMIN_CHAT_ID, alertMessage);
+      }
+
+      console.log('📢 24/7 Crypto alerts sent successfully');
+    } catch (error) {
+      console.error('24/7 Alert sending error:', error.message);
+    }
+  }
+
   async sendTradingAlerts(opportunities) {
     try {
       if (!this.bot || opportunities.high_confidence.length === 0) return;
@@ -483,6 +625,11 @@ class MarketApisBot {
       if (this.analysisInterval) {
         clearInterval(this.analysisInterval);
         this.analysisInterval = null;
+      }
+      
+      if (this.crypto24x7Interval) {
+        clearInterval(this.crypto24x7Interval);
+        this.crypto24x7Interval = null;
       }
 
       this.isRunning = false;
