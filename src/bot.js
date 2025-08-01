@@ -2973,6 +2973,8 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• /wealthmachines - Deploy automated wealth systems\n" +
       "• /wealthstatus - Check wealth machines status\n" +
       "• /billionaire - Deploy complete billionaire automation suite\n" +
+      "• /aitrading - Deploy AI trading empire (global markets)\n" +
+      "• /globalcapital - Deploy global capital movement systems\n" +
       "• /howrevenue - Explain how automation generates real revenue\n" +
       "• /revenue - Show real daily revenue tracker with actual deals\n" +
       "• /alerts - How automation communicates with you\n" +
@@ -3298,6 +3300,48 @@ bot.onText(/\/revenue/i, async (msg) => {
   } catch (error) {
     console.error('❌ Revenue tracker command error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not load revenue tracker.");
+  }
+});
+
+// Command: /aitrading - Deploy AI trading empire (billionaire level)
+bot.onText(/\/aitrading/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "🤖 Deploying AI Trading Empire - Billionaire Level Systems...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const AITradingEngine = require('./src/automation/AITradingEngine');
+    const aiTradingSystem = new AITradingEngine(bot);
+    
+    await aiTradingSystem.deployAITradingEmpire(chatId);
+    
+  } catch (error) {
+    console.error('❌ AI Trading deployment error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not deploy AI trading systems.");
+  }
+});
+
+// Command: /globalcapital - Deploy global capital movement systems
+bot.onText(/\/globalcapital/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId, "🌍 Deploying Global Capital Systems - International Finance Automation...");
+    await bot.sendChatAction(chatId, "typing");
+    
+    const GlobalCapitalEngine = require('./src/automation/GlobalCapitalEngine');
+    const globalCapitalSystem = new GlobalCapitalEngine(bot);
+    
+    await globalCapitalSystem.deployGlobalCapitalSystems(chatId);
+    
+  } catch (error) {
+    console.error('❌ Global capital deployment error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not deploy global capital systems.");
   }
 });
 
