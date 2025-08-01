@@ -10,12 +10,12 @@ const path = require('path');
 
 let botPath = null;
 
-// Check possible bot file locations (prioritize root bot.js with autotrading)
+// Check possible bot file locations (use available src/bot.js and enhance it)
 const possiblePaths = [
-  './bot.js',           // Main bot with autotrading features
-  path.join(__dirname, 'bot.js'),
-  // './src/bot.js',     // Commented out - older version without autotrading
-  // path.join(__dirname, 'src', 'bot.js')
+  './src/bot.js',       // Available bot file to enhance with autotrading
+  path.join(__dirname, 'src', 'bot.js'),
+  './bot.js',           // Fallback if root bot.js exists
+  path.join(__dirname, 'bot.js')
 ];
 
 console.log('🔍 Searching for bot.js file...');
