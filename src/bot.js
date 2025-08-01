@@ -2966,6 +2966,7 @@ bot.onText(/\/autopilot/i, async (msg) => {
       
       "🚀 MAIN MENU & GETTING STARTED:\n" +
       "• /menu - Complete AI GPT superpower menu (START HERE)\n" +
+      "• /today - Start making money TODAY (immediate action plan)\n" +
       "• /practical - How to start making money from $0 today\n" +
       "• /setup - Connect AI systems to real trading accounts\n\n" +
       
@@ -3534,6 +3535,81 @@ bot.onText(/\/consulting/i, async (msg) => {
   } catch (error) {
     console.error('❌ Consulting complete error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not load consulting services.");
+  }
+});
+
+// Command: /today - Start making money TODAY action plan
+bot.onText(/\/today/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    await bot.sendMessage(chatId,
+      `🚀 START MAKING MONEY TODAY - IMMEDIATE ACTION PLAN\n\n` +
+      
+      `⏰ TODAY (NEXT 4-6 HOURS):\n\n` +
+      
+      `📋 MORNING SETUP (2-3 hours):\n` +
+      `1. Create professional LinkedIn profile\n` +
+      `   Title: "Strategic Business Consultant | AI Analysis"\n` +
+      `2. Set pricing: Business Analysis $300, Market Research $500\n` +
+      `3. Use your GPT to create 2 sample business analyses\n` +
+      `4. Identify 20 Cambodia businesses to contact\n\n` +
+      
+      `📞 AFTERNOON OUTREACH (2-3 hours):\n` +
+      `5. Contact 10-20 local businesses\n` +
+      `6. Offer: "Free 20-minute strategy consultation"\n` +
+      `7. Goal: Schedule 3-5 consultation calls\n` +
+      `8. During calls: Use GPT for real-time analysis\n\n` +
+      
+      `💰 3 IMMEDIATE INCOME METHODS:\n\n` +
+      
+      `METHOD 1: Cambodia Business Consulting\n` +
+      `• Target: Local SMEs, restaurants, shops\n` +
+      `• Price: $200-500 per analysis\n` +
+      `• Time: 2-4 hours work\n` +
+      `• Income: $400-1500 per day\n\n` +
+      
+      `METHOD 2: Digital Marketing Services\n` +
+      `• Target: Businesses wanting online presence\n` +
+      `• Price: $300-800 per strategy\n` +
+      `• Income: $600-2400 per day\n\n` +
+      
+      `METHOD 3: Market Research Reports\n` +
+      `• Target: Businesses launching new products\n` +
+      `• Price: $500-1200 per report\n` +
+      `• Income: $1000-3600 per day\n\n` +
+      
+      `🎯 HOW TO USE YOUR GPT:\n` +
+      `Client tells you about their business problems.\n` +
+      `You ask GPT: "Analyze this [restaurant/shop/service] business:\n` +
+      `[describe situation]. Provide growth recommendations."\n` +
+      `GPT gives professional analysis. You format it nicely.\n` +
+      `Client pays $200-500 for the strategic insights.\n\n` +
+      
+      `📞 EXACT OUTREACH MESSAGE:\n` +
+      `"Hi [Name], I'm a strategic consultant specializing in\n` +
+      `AI-powered business analysis. Would you be interested\n` +
+      `in a free 20-minute consultation where I analyze your\n` +
+      `business and share 2-3 growth strategies?"\n\n` +
+      
+      `🎯 TODAY'S GOALS:\n` +
+      `• Contact 10 businesses ✅\n` +
+      `• Schedule 2 consultations ✅\n` +
+      `• Potential earnings: $400-800 this week\n\n` +
+      
+      `🚀 START RIGHT NOW:\n` +
+      `Next 30 minutes: Update LinkedIn, find 10 local businesses,\n` +
+      `send first outreach message.\n\n` +
+      
+      `⚡ Your AI GPT = $200/hour consultant power.\n` +
+      `START TODAY!`
+    );
+    
+  } catch (error) {
+    console.error('❌ Today action plan error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not load today's action plan.");
   }
 });
 
