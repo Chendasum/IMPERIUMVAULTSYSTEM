@@ -4,35 +4,17 @@
 console.log('🏛️ Starting IMPERIUM VAULT SYSTEM...');
 console.log('⚡ Initializing Ultimate Vault Claude Strategic AI...');
 
-// Try multiple paths to find the bot file
+// Force use main bot.js file directly - no fallbacks
 const fs = require('fs');
 const path = require('path');
 
-let botPath = null;
+let botPath = './bot.js';  // Direct path to main bot.js
 
-// Check possible bot file locations (prioritize main bot.js with full autotrading)
-const possiblePaths = [
-  './bot.js',           // Main bot.js with complete autotrading features (11,763 lines)
-  path.join(__dirname, 'bot.js'),
-  './src/bot.js',       // Fallback - smaller version without full features
-  path.join(__dirname, 'src', 'bot.js')
-];
+console.log('🔍 Loading main bot.js file with complete autotrading...');
 
-console.log('🔍 Searching for bot.js file...');
-for (const testPath of possiblePaths) {
-  try {
-    if (fs.existsSync(testPath)) {
-      botPath = testPath;
-      console.log(`✅ Found bot.js at: ${testPath}`);
-      break;
-    }
-  } catch (error) {
-    console.log(`❌ Cannot access: ${testPath}`);
-  }
-}
-
-if (!botPath) {
-  console.error('🚨 CRITICAL ERROR: bot.js file not found in any expected location');
+// Verify main bot.js exists
+if (!fs.existsSync(botPath)) {
+  console.error('🚨 CRITICAL ERROR: Main bot.js file not found!');
   console.log('📁 Current directory contents:');
   try {
     const files = fs.readdirSync('.');
@@ -42,6 +24,8 @@ if (!botPath) {
   }
   process.exit(1);
 }
+
+console.log(`✅ Using main bot.js file: ${botPath}`);
 
 // Load the main bot application
 console.log(`🚀 Loading Ultimate Vault Claude from: ${botPath}`);
