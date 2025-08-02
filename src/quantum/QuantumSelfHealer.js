@@ -152,24 +152,32 @@ class QuantumSelfHealer {
       }
     }
     
-    // Also disable problematic autonomous decision cycles temporarily
+    // Permanently disable problematic autonomous decision cycles
     if (global.quantumCore && global.quantumCore.autonomousDecisionEngine) {
-      const originalEmergencyCleanup = global.quantumCore.autonomousDecisionEngine.triggerAutonomousAction;
-      if (originalEmergencyCleanup) {
+      const originalTriggerAction = global.quantumCore.autonomousDecisionEngine.triggerAutonomousAction;
+      if (originalTriggerAction) {
         global.quantumCore.autonomousDecisionEngine.triggerAutonomousAction = (actionType, confidence, opportunity) => {
-          // Skip emergency_memory_cleanup actions to prevent stack overflow
+          // Permanently skip emergency_memory_cleanup actions to prevent stack overflow
           if (actionType === 'emergency_memory_cleanup') {
-            console.log('🛡️ QUANTUM SELF-HEALER - Skipping emergency cleanup to prevent stack overflow');
-            return Promise.resolve({ success: false, reason: 'Prevented by self-healer' });
+            console.log('🛡️ QUANTUM SELF-HEALER - Emergency cleanup permanently disabled to prevent stack overflow');
+            return Promise.resolve({ success: false, reason: 'Permanently disabled by self-healer' });
           }
-          return originalEmergencyCleanup.call(global.quantumCore.autonomousDecisionEngine, actionType, confidence, opportunity);
+          return originalTriggerAction.call(global.quantumCore.autonomousDecisionEngine, actionType, confidence, opportunity);
         };
         
-        // Re-enable after 10 minutes
-        setTimeout(() => {
-          global.quantumCore.autonomousDecisionEngine.triggerAutonomousAction = originalEmergencyCleanup;
-          console.log('🔄 QUANTUM SELF-HEALER - Emergency cleanup re-enabled safely');
-        }, 600000);
+        console.log('🛡️ QUANTUM SELF-HEALER - Emergency memory cleanup permanently disabled');
+      }
+    }
+    
+    // Also disable emergency cleanup in memory optimizer components
+    if (global.quantumCore && global.quantumCore.components) {
+      for (const [name, component] of global.quantumCore.components) {
+        if (component && component.emergencyCleanup && typeof component.emergencyCleanup === 'function') {
+          component.emergencyCleanup = () => {
+            console.log(`🛡️ QUANTUM SELF-HEALER - Emergency cleanup disabled in ${name} component`);
+            return Promise.resolve();
+          };
+        }
       }
     }
   }
