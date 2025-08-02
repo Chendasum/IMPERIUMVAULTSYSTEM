@@ -354,7 +354,7 @@ try {
   InstitutionalDataPipeline = require('./src/automation/institutionalDataPipeline.js');
   AutomatedScalingProtocols = require('./src/automation/scalingProtocols.js');
   TradingAutomationEngine = require('./src/automation/tradingAutomation.js');
-  CambodiaArbitrageEngine = require('./automation/CambodiaArbitrageEngine'),
+  CambodiaArbitrageEngine = require('./automation/CambodiaArbitrageEngine');
   CambodiaRealCurrencyProfits = require('./automation/CambodiaRealCurrencyProfits');
 
   // Initialize automation engines
@@ -365,8 +365,7 @@ try {
   institutionalData = new InstitutionalDataPipeline();
   scalingProtocols = new AutomatedScalingProtocols();
   tradingAutomation = new TradingAutomationEngine();
-  cambodiaArbitrage = new CambodiaArbitrageEngine(bot);
-  cambodiaRealProfits = new CambodiaRealCurrencyProfits(bot);
+  // Cambodia engines will be initialized after bot is created
   
   console.log('✅ ALL 9 STRATEGIC POWER MULTIPLIERS LOADED SUCCESSFULLY');
   console.log('🚀 Market Intelligence Engine - ACTIVE');
@@ -1046,6 +1045,19 @@ try {
       filepath: false,
     });
 
+    // Initialize Cambodia currency engines after bot creation
+    if (CambodiaArbitrageEngine && CambodiaRealCurrencyProfits) {
+      try {
+        cambodiaArbitrage = new CambodiaArbitrageEngine(bot);
+        cambodiaRealProfits = new CambodiaRealCurrencyProfits(bot);
+        console.log('💱 Cambodia Currency Engines - INITIALIZED SUCCESSFULLY');
+      } catch (error) {
+        console.error('❌ Cambodia Currency Engines initialization failed:', error.message);
+      }
+    } else {
+      console.log('⚠️ Cambodia Currency Engine classes not loaded properly');
+    }
+
     // Setup webhook after bot initialization
     setTimeout(async () => {
       console.log("🔄 Setting up webhook for Railway...");
@@ -1064,6 +1076,13 @@ try {
       polling: true,
       filepath: false,
     });
+
+    // Initialize Cambodia currency engines after bot creation
+    if (CambodiaArbitrageEngine && CambodiaRealCurrencyProfits) {
+      cambodiaArbitrage = new CambodiaArbitrageEngine(bot);
+      cambodiaRealProfits = new CambodiaRealCurrencyProfits(bot);
+      console.log('💱 Cambodia Currency Engines - INITIALIZED');
+    }
   }
 
   openai = new OpenAI({
