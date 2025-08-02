@@ -269,31 +269,50 @@ class CambodiaRealCurrencyProfits {
 
   // SEND PROFIT STRATEGY REPORT
   async sendProfitReport(chatId) {
-    if (!this.bot) return;
-    
-    const recommendations = await this.getDailyRecommendations();
-    const top = recommendations.topOpportunity;
-    
-    const message = 
-      `💰 CAMBODIA REAL CURRENCY PROFIT STRATEGIES\n\n` +
-      `🎯 TOP OPPORTUNITY TODAY: ${top.strategy}\n` +
-      `💵 Profit Potential: ${top.monthlyReturn} monthly\n` +
-      `📊 Opportunity Level: ${top.opportunity}\n` +
-      `💰 Capital Required: ${top.capitalRequired}\n\n` +
-      `🚀 EXECUTION PLAN:\n` +
-      `1. ${top.execution.step1}\n` +
-      `2. ${top.execution.step2}\n` +
-      `3. ${top.execution.step3}\n` +
-      `4. ${top.execution.step4}\n\n` +
-      `💡 PROFIT EXAMPLE:\n` +
-      `${JSON.stringify(top.profitExample, null, 2)}\n\n` +
-      `📈 WEEKLY FORECAST:\n` +
-      `${recommendations.profitForecast.weeklyProfitPotential}\n\n` +
-      `🎯 TODAY'S ACTIONS:\n` +
-      `${recommendations.dailyActions.slice(0, 3).join('\n')}\n\n` +
-      `🇰🇭 CAMBODIA ADVANTAGE:\n${top.cambodiaAdvantage}`;
-    
-    await this.bot.sendMessage(chatId, message);
+    try {
+      if (!this.bot) {
+        console.error('Bot not initialized in CambodiaRealCurrencyProfits');
+        return;
+      }
+      
+      const recommendations = await this.getDailyRecommendations();
+      const top = recommendations.topOpportunity;
+      
+      const message = 
+        `💰 CAMBODIA REAL CURRENCY PROFIT STRATEGIES\n\n` +
+        `🎯 TOP OPPORTUNITY TODAY: ${top.strategy}\n` +
+        `💵 Profit Potential: ${top.monthlyReturn} monthly\n` +
+        `📊 Opportunity Level: ${top.opportunity}\n` +
+        `💰 Capital Required: ${top.capitalRequired}\n\n` +
+        `🚀 EXECUTION PLAN:\n` +
+        `1. ${top.execution.step1}\n` +
+        `2. ${top.execution.step2}\n` +
+        `3. ${top.execution.step3}\n` +
+        `4. ${top.execution.step4}\n\n` +
+        `💡 PROFIT EXAMPLE:\n` +
+        `• Scenario: ${top.profitExample.scenario || 'Currency service provision'}\n` +
+        `• Capital: ${top.profitExample.loan || top.profitExample.conversion || '$100,000'}\n` +
+        `• Profit: ${top.profitExample.profit || top.profitExample.monthlyProfit || '$1,000+'}\n` +
+        `• Return: ${top.profitExample.annualizedReturn || 'Monthly recurring'}\n\n` +
+        `📈 WEEKLY FORECAST:\n` +
+        `${recommendations.profitForecast.weeklyProfitPotential}\n\n` +
+        `🎯 TODAY'S ACTIONS:\n` +
+        `• ${recommendations.dailyActions[0]}\n` +
+        `• ${recommendations.dailyActions[1]}\n` +
+        `• ${recommendations.dailyActions[2]}\n\n` +
+        `🇰🇭 CAMBODIA ADVANTAGE:\n${top.cambodiaAdvantage}`;
+      
+      // Use sendLongMessage if available, otherwise regular sendMessage
+      if (typeof global.sendLongMessage === 'function') {
+        await global.sendLongMessage(this.bot, chatId, message);
+      } else {
+        await this.bot.sendMessage(chatId, message);
+      }
+      
+    } catch (error) {
+      console.error('Error in sendProfitReport:', error);
+      throw error;
+    }
   }
 }
 
