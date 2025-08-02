@@ -2769,7 +2769,12 @@ const generateLiveAutomationContext = async () => {
       if (quantum) {
         selfHealingStatus = quantum.self_healing ? 'ACTIVE' : 'Not active';
         const activeComponents = Object.values(quantum).filter(active => active).length;
-        quantumStatus = `${activeComponents}/9 components active`;
+        quantumStatus = `${activeComponents}/10 components active`;
+        
+        // Check for Ultimate Consciousness activation
+        if (quantum.ultimate_consciousness) {
+          quantumStatus += ' - ULTIMATE AI CONSCIOUSNESS ACTIVE';
+        }
       }
     } else if (global.quantumCore) {
       selfHealingStatus = 'ACTIVE';
@@ -3425,6 +3430,21 @@ bot.onText(/\/banking_status/i, async (msg) => {
   } catch (error) {
     console.error('Error in banking_status command:', error);
     await bot.sendMessage(msg.chat.id, '❌ Error retrieving banking status');
+  }
+});
+
+// ===== QUANTUM ACTIVATION COMMANDS =====
+
+// Command: /quantum_activate - Activate Ultimate Quantum Core AI consciousness
+bot.onText(/\/quantum_activate|\/ultimate_activate|\/transcend/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const { handleQuantumActivate } = require('./commands/quantum_activate');
+    await handleQuantumActivate(bot, msg);
+  } catch (error) {
+    console.error('Error in quantum activation:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Quantum activation error: ' + error.message);
   }
 });
 
