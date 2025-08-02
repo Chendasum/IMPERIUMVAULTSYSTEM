@@ -425,85 +425,74 @@ try {
     console.log('⚠️ Early automation init warning:', earlyInitError.message);
   }
   
-  // Initialize AI Trading Bot after bot is defined
-  setTimeout(async () => {
+  // Initialize all automation bots immediately (no delay) to ensure commands work
+  try {
+    console.log('🚀 IMMEDIATE AUTOMATION INITIALIZATION');
+    
+    // Initialize essential automation bots immediately
+    const CryptoTradingBot = require(path.join(__dirname, 'automation', 'CryptoTradingBot'));
+    global.cryptoTradingBot = new CryptoTradingBot(bot);
+    console.log('✅ Crypto Trading Bot - IMMEDIATE INIT');
+    
+    const BusinessBankingBot = require(path.join(__dirname, 'automation', 'BusinessBankingBot'));
+    global.businessBankingBotNew = new BusinessBankingBot(bot);
+    console.log('✅ Business Banking Bot - IMMEDIATE INIT');
+    
+    const MarketIntelligence = require(path.join(__dirname, 'automation', 'marketIntelligence'));
+    global.marketIntelligence = new MarketIntelligence(bot);
+    console.log('✅ Market Intelligence - IMMEDIATE INIT');
+    
+    // Initialize other bots
     try {
       const AITradingBot = require(path.join(__dirname, 'automation', 'AITradingBot'));
       const CambodiaBankingBot = require(path.join(__dirname, 'automation', 'CambodiaBankingBot'));
       const BusinessBankingIntegration = require(path.join(__dirname, 'automation', 'BusinessBankingIntegration'));
       const RealEstateAutomation = require(path.join(__dirname, 'automation', 'RealEstateAutomation'));
       const CambodiaPropertyBot = require(path.join(__dirname, 'automation', 'CambodiaPropertyBot'));
+      const MarketApisBot = require(path.join(__dirname, 'automation', 'MarketApisBot'));
       
       global.aiTradingBot = new AITradingBot(global.forexApi, bot);
       global.bankingBot = new CambodiaBankingBot(bot);
       global.businessBankingBot = new BusinessBankingIntegration(bot);
       global.realEstateBot = new RealEstateAutomation(bot);
       global.propertyBot = new CambodiaPropertyBot(bot);
-      
-      // Initialize Market APIs Bot
-      const MarketApisBot = require(path.join(__dirname, 'automation', 'MarketApisBot'));
       global.marketApisBot = new MarketApisBot(bot);
-      
-      // Re-initialize Crypto Trading Bot with proper bot reference
-      const CryptoTradingBot = require(path.join(__dirname, 'automation', 'CryptoTradingBot'));
-      global.cryptoTradingBot = new CryptoTradingBot(bot);
-      
-      // Re-initialize Business Banking Bot with proper bot reference  
-      const BusinessBankingBot = require(path.join(__dirname, 'automation', 'BusinessBankingBot'));
-      global.businessBankingBotNew = new BusinessBankingBot(bot);
-      
-      // Re-initialize Market Intelligence with proper bot reference
-      const MarketIntelligence = require(path.join(__dirname, 'automation', 'marketIntelligence'));
-      global.marketIntelligence = new MarketIntelligence(bot);
-      
-      // Check Binance API keys configuration
-      if (process.env.BINANCE_API_KEY && process.env.BINANCE_SECRET_KEY) {
-        console.log('✅ BINANCE API KEYS - Environment variables detected');
-      } else {
-        console.log('⚠️ BINANCE API KEYS - Add to Railway environment variables for live trading');
-      }
-      
-      console.log('🤖 AI TRADING BOT - INITIALIZED (Delayed)');
-      console.log('🏦 CAMBODIA BANKING BOT - INITIALIZED');
-      console.log('🏛️ BUSINESS BANKING INTEGRATION - INITIALIZED');
-      console.log('🏠 REAL ESTATE AUTOMATION - INITIALIZED');
-      console.log('🏠 CAMBODIA PROPERTY BOT - INITIALIZED');
-      console.log('📊 MARKET APIS BOT - INITIALIZED');
-      console.log('🔥 CRYPTO TRADING BOT - INITIALIZED (Binance API Ready)');
-      console.log('💎 BUSINESS BANKING BOT - INITIALIZED');
-      
-      // Initialize banking and property automation
-      global.bankingBot.initialize();
-      global.businessBankingBot.initialize();
-      global.realEstateBot.initialize();
-      global.propertyBot.initialize();
-      global.marketApisBot.initialize();
+      console.log('✅ Additional automation bots initialized');
+    } catch (optionalError) {
+      console.log('⚠️ Some optional bots failed, continuing with essential bots');
+    }
+    
+    // Check Binance API keys configuration
+    if (process.env.BINANCE_API_KEY && process.env.BINANCE_SECRET_KEY) {
+      console.log('✅ BINANCE API KEYS - Environment variables detected');
+    } else {
+      console.log('⚠️ BINANCE API KEYS - Add to Railway environment variables for live trading');
+    }
+    
+    console.log('🔥 CRYPTO TRADING BOT - INITIALIZED (Immediate)');
+    console.log('💎 BUSINESS BANKING BOT - INITIALIZED (Immediate)');
+    console.log('📊 MARKET INTELLIGENCE - INITIALIZED (Immediate)');
+    
+    // Initialize essential bots immediately
+    try {
       global.cryptoTradingBot.initialize();
       global.businessBankingBotNew.initialize();
       global.marketIntelligence.initialize();
-      
-      // Mark systems as initialized
-      global.systemsInitialized = {
-        forex: true,
-        banking: true,
-        business: true,
-        realEstate: true,
-        market: true,
-        crypto: true,
-        businessBankingNew: true,
-        marketIntelligence: true
-      };
-      
-      // Initialize wealth generation coordinator
-      const WealthGenerationCoordinator = require(path.join(__dirname, 'automation', 'WealthGenerationCoordinator'));
-      global.wealthCoordinator = new WealthGenerationCoordinator(bot);
-      global.wealthCoordinator.initialize();
-      console.log('💎 WEALTH GENERATION COORDINATOR - INITIALIZED');
-      
-    } catch (error) {
-      console.log('⚠️ AI Trading Bot initialization failed:', error.message);
+      console.log('✅ Essential automation systems ready for commands');
+    } catch (initError) {
+      console.log('⚠️ Bot initialization warning:', initError.message);
     }
-  }, 2000);
+    
+    // Mark essential systems as initialized
+    global.systemsInitialized = {
+      crypto: true,
+      businessBankingNew: true,
+      marketIntelligence: true
+    };
+    
+  } catch (error) {
+    console.log('⚠️ Automation initialization failed:', error.message);
+  }
   
   console.log('🎯 AUTOMATION SYSTEMS - INITIALIZED');
   console.log('📊 AUTOMATION STATUS TRACKING - ACTIVE');
@@ -7841,14 +7830,20 @@ app.get("/webhook-info", async (req, res) => {
   }
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🌐 Ultimate health check server running on port ${PORT}`);
-  console.log(`🏛️ Domain: ${process.env.RAILWAY_STATIC_URL || "imperiumvaultsystem-production.up.railway.app"}`);
-  
-  // Start Railway heartbeat system
-  keepAliveHeartbeat();
-  console.log('⚡ Railway heartbeat system activated');
-});
+// Start server with error handling for port conflicts
+let server;
+try {
+  server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🌐 Ultimate health check server running on port ${PORT}`);
+    console.log(`🏛️ Domain: ${process.env.RAILWAY_STATIC_URL || "imperiumvaultsystem-production.up.railway.app"}`);
+    
+    // Start Railway heartbeat system
+    keepAliveHeartbeat();
+    console.log('⚡ Railway heartbeat system activated');
+  });
+} catch (portError) {
+  console.log('⚠️ Port conflict detected, bot will run without health server');
+}
 
 // WEBHOOK SETUP FOR RAILWAY DEPLOYMENT
 const setupWebhook = async (retryCount = 0) => {
