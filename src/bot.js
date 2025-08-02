@@ -2769,7 +2769,7 @@ const generateLiveAutomationContext = async () => {
       if (quantum) {
         selfHealingStatus = quantum.self_healing ? 'ACTIVE' : 'Not active';
         const activeComponents = Object.values(quantum).filter(active => active).length;
-        quantumStatus = `${activeComponents}/6 components active`;
+        quantumStatus = `${activeComponents}/9 components active`;
       }
     } else if (global.quantumCore) {
       selfHealingStatus = 'ACTIVE';
