@@ -105,18 +105,15 @@ class AdvancedMemoryOptimizer {
   async emergencyOptimization(usagePercent) {
     console.log(`🚨 EMERGENCY CLEANUP - Memory at ${(usagePercent * 100).toFixed(1)}%, performing emergency optimization`);
     
-    // All previous optimizations plus emergency measures
-    await this.aggressiveOptimization(usagePercent);
-    
-    // Emergency measures
+    // Direct emergency measures without recursive calls
+    await this.clearTemporaryCaches();
+    await this.optimizeDataStructures();
+    await this.clearRebuildableData();
     await this.emergencyDataPurge();
     
-    // Multiple garbage collection passes
+    // Single garbage collection
     if (global.gc) {
-      for (let i = 0; i < 3; i++) {
-        global.gc();
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      global.gc();
     }
     
     console.log('✅ Emergency optimization complete');
