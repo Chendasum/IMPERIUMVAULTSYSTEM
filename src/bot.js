@@ -3382,24 +3382,55 @@ bot.onText(/\/autopilot/i, async (msg) => {
     await bot.sendChatAction(chatId, "typing");
     
     // Initialize all automation systems
-    const CambodiaProspectHunter = require('./src/automation/CambodiaProspectHunter');
-    const GovernmentContractTracker = require('./src/automation/GovernmentContractTracker');
-    const PrivateLendingEngine = require('./src/automation/PrivateLendingEngine');
+    const CambodiaProspectHunter = require('./automation/CambodiaProspectHunter');
+    const GovernmentContractTracker = require('./automation/GovernmentContractTracker');
+    const PrivateLendingEngine = require('./automation/PrivateLendingEngine');
     
-    const prospectHunter = new CambodiaProspectHunter(bot);
-    const contractTracker = new GovernmentContractTracker(bot);
-    const lendingEngine = new PrivateLendingEngine(bot);
+    // Enhanced automation initialization with error handling
+    let systemStatus = {
+      prospectHunter: false,
+      contractTracker: false,
+      lendingEngine: false
+    };
     
-    // Initialize lending operations
-    lendingEngine.initializeLendingOperations();
+    try {
+      const prospectHunter = new CambodiaProspectHunter(bot);
+      await prospectHunter.startAutomatedHunting(chatId, 24); // Daily prospect hunting
+      systemStatus.prospectHunter = true;
+      console.log('✅ Prospect Hunter initialized successfully');
+    } catch (error) {
+      console.log('⚠️ Prospect Hunter initialization failed:', error.message);
+    }
     
-    // Start all automated systems
-    prospectHunter.startAutomatedHunting(chatId, 24); // Daily prospect hunting
-    contractTracker.startAutomatedMonitoring(chatId, 4); // Every 4 hours contract monitoring
-    lendingEngine.startAutomatedLending(chatId, 7); // Daily lending automation at 7 AM
+    try {
+      const contractTracker = new GovernmentContractTracker(bot);
+      await contractTracker.startAutomatedMonitoring(chatId, 4); // Every 4 hours contract monitoring
+      systemStatus.contractTracker = true;
+      console.log('✅ Contract Tracker initialized successfully');
+    } catch (error) {
+      console.log('⚠️ Contract Tracker initialization failed:', error.message);
+    }
     
-    const systemStatus = 
-      "⚡ AUTOMATED PRIVATE LENDING EMPIRE ACTIVATED\n\n" +
+    try {
+      const lendingEngine = new PrivateLendingEngine(bot);
+      await lendingEngine.initializeLendingOperations();
+      await lendingEngine.startAutomatedLending(chatId, 7); // Daily lending automation at 7 AM
+      systemStatus.lendingEngine = true;
+      console.log('✅ Lending Engine initialized successfully');
+    } catch (error) {
+      console.log('⚠️ Lending Engine initialization failed:', error.message);
+    }
+    
+    // Generate status report based on actual initialization results
+    const successCount = Object.values(systemStatus).filter(status => status).length;
+    const totalSystems = Object.keys(systemStatus).length;
+    
+    const statusReport = successCount === totalSystems ? 
+      "⚡ AUTOMATED PRIVATE LENDING EMPIRE ACTIVATED\n\n" :
+      `⚠️ AUTOMATED EMPIRE PARTIALLY ACTIVATED (${successCount}/${totalSystems} systems)\n\n`;
+      
+    const systemStatusReport = 
+      statusReport +
       "🕷️ PROSPECT HUNTER:\n" +
       "• Scans Cambodia business directories daily\n" +
       "• Identifies high-net-worth individuals\n" +
@@ -3487,15 +3518,15 @@ bot.onText(/\/autopilot/i, async (msg) => {
       "• /billionaire - Deploy complete $500M-165B automation suite\n" +
       "Access the same automated systems billionaires use daily";
     
-    await bot.sendMessage(chatId, systemStatus);
+    await bot.sendMessage(chatId, systemStatusReport);
     
     // Store automation status
     global.automationSystems = {
-      prospectHunter: prospectHunter,
-      contractTracker: contractTracker,
-      lendingEngine: lendingEngine,
+      systemStatus: systemStatus,
       isActive: true,
-      startTime: new Date().toISOString()
+      startTime: new Date().toISOString(),
+      successfulSystems: successCount,
+      totalSystems: totalSystems
     };
 
     // Initialize wealth multiplication engine for future use
