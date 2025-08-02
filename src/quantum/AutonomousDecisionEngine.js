@@ -315,13 +315,26 @@ class AutonomousDecisionEngine {
       
       'emergency_memory_cleanup': async () => {
         console.log('🚨 AUTONOMOUS EMERGENCY CLEANUP - Critical memory situation');
-        if (global.quantumCore?.automatedConsciousness?.memoryOptimizer) {
-          const memoryUsage = process.memoryUsage();
-          const usagePercent = memoryUsage.heapUsed / memoryUsage.heapTotal;
-          await global.quantumCore.automatedConsciousness.memoryOptimizer.emergencyOptimization(usagePercent);
+        
+        // Simple emergency cleanup without recursive calls
+        try {
+          // Direct garbage collection
+          if (global.gc) {
+            global.gc();
+          }
+          
+          // Clear temporary caches directly
+          if (global.quantumCore?.temporaryCache) {
+            global.quantumCore.temporaryCache.clear();
+          }
+          
+          console.log('✅ Emergency cleanup completed successfully');
           return { success: true, result: 'Emergency memory cleanup completed' };
+          
+        } catch (error) {
+          console.log(`❌ Emergency cleanup error: ${error.message}`);
+          return { success: false, result: `Emergency cleanup failed: ${error.message}` };
         }
-        return { success: false, result: 'Emergency cleanup failed - optimizer unavailable' };
       },
       
       'activate_crypto_trading': async () => {
