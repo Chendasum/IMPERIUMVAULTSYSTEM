@@ -21,7 +21,7 @@ class MarketApisBot {
         currencylayer: 'https://api.currencylayer.com/live'
       },
       commodities: {
-        metals: 'https://api.metals-api.com/v1/latest',
+        metals: 'https://api.metals.live/v1/spot',
         commodities: 'https://commodities-api.com/api/latest'
       },
       crypto: {
@@ -41,186 +41,51 @@ class MarketApisBot {
 
   async initialize() {
     try {
-      console.log('🌍 Initializing Market APIs Bot...');
-      
-      // Test API connections
-      await this.testApiConnections();
+      console.log('📊 Initializing Market Intelligence...');
       
       // Initialize market data cache
       this.marketData.clear();
       
-      console.log('✅ Market APIs Bot initialized successfully');
-      return { success: true, message: 'Market APIs system ready' };
+      console.log('✅ Market Intelligence initialized');
+      return { success: true, message: 'Market Intelligence system ready' };
       
     } catch (error) {
-      console.error('❌ Market APIs initialization error:', error.message);
+      console.error('❌ Market Intelligence initialization error:', error.message);
       return { success: false, message: error.message };
-    }
-  }
-
-  async testApiConnections() {
-    const tests = [];
-    
-    // Test free APIs first
-    tests.push(this.testCoinGecko());
-    tests.push(this.testYahooFinance());
-    tests.push(this.testExchangeRateApi());
-    
-    // Test premium APIs if keys are available
-    if (process.env.ALPHA_VANTAGE_API_KEY) {
-      tests.push(this.testAlphaVantage());
-    }
-    if (process.env.FINNHUB_API_KEY) {
-      tests.push(this.testFinnhub());
-    }
-    if (process.env.CURRENCY_LAYER_API_KEY) {
-      tests.push(this.testCurrencyLayer());
-    }
-    if (process.env.METALS_API_KEY) {
-      tests.push(this.testMetalsApi());
-    }
-    
-    const results = await Promise.allSettled(tests);
-    
-    let workingApis = 0;
-    results.forEach((result, index) => {
-      if (result.status === 'fulfilled' && result.value) {
-        workingApis++;
-      }
-    });
-    
-    console.log(`📊 Market APIs Status: ${workingApis}/${tests.length} working`);
-    return workingApis > 0;
-  }
-
-  async testCoinGecko() {
-    try {
-      const response = await axios.get('https://api.coingecko.com/api/v3/ping', {
-        timeout: 5000
-      });
-      return response.status === 200;
-    } catch (error) {
-      console.log('CoinGecko API test failed:', error.message);
-      return false;
-    }
-  }
-
-  async testYahooFinance() {
-    try {
-      const response = await axios.get('https://query1.finance.yahoo.com/v8/finance/chart/AAPL', {
-        timeout: 5000
-      });
-      return response.status === 200;
-    } catch (error) {
-      console.log('Yahoo Finance API test failed:', error.message);
-      return false;
-    }
-  }
-
-  async testExchangeRateApi() {
-    try {
-      const response = await axios.get('https://api.exchangerate-api.com/v4/latest/USD', {
-        timeout: 5000
-      });
-      return response.status === 200;
-    } catch (error) {
-      console.log('Exchange Rate API test failed:', error.message);
-      return false;
-    }
-  }
-
-  async testAlphaVantage() {
-    try {
-      const response = await axios.get(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=AAPL&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`, {
-        timeout: 5000
-      });
-      console.log('✅ Alpha Vantage API - CONNECTED (Professional stock data)');
-      return response.status === 200;
-    } catch (error) {
-      console.log('Alpha Vantage API test failed:', error.message);
-      return false;
-    }
-  }
-
-  async testFinnhub() {
-    try {
-      const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=AAPL&token=${process.env.FINNHUB_API_KEY}`, {
-        timeout: 5000
-      });
-      console.log('✅ Finnhub API - CONNECTED (Real-time stock news)');
-      return response.status === 200;
-    } catch (error) {
-      console.log('Finnhub API test failed:', error.message);
-      return false;
-    }
-  }
-
-  async testCurrencyLayer() {
-    try {
-      const response = await axios.get(`https://api.currencylayer.com/live?access_key=${process.env.CURRENCY_LAYER_API_KEY}&currencies=EUR,GBP,JPY`, {
-        timeout: 5000
-      });
-      console.log('✅ CurrencyLayer API - CONNECTED (Professional forex data)');
-      return response.status === 200;
-    } catch (error) {
-      console.log('CurrencyLayer API test failed:', error.message);
-      return false;
-    }
-  }
-
-  async testMetalsApi() {
-    try {
-      const response = await axios.get(`https://api.metals-api.com/v1/latest?access_key=${process.env.METALS_API_KEY}&base=USD&symbols=XAU,XAG`, {
-        timeout: 5000
-      });
-      console.log('✅ Metals API - CONNECTED (Gold, Silver, Platinum prices)');
-      return response.status === 200;
-    } catch (error) {
-      console.log('Metals API test failed:', error.message);
-      return false;
     }
   }
 
   async startMarketAnalysis() {
     try {
       if (this.isRunning) {
-        return { success: false, message: 'Market analysis already running' };
+        console.log('📊 Market analysis already running');
+        return;
       }
 
-      console.log('🚀 Starting comprehensive market analysis...');
       this.isRunning = true;
+      console.log('🚀 Starting comprehensive market analysis...');
 
-      // Initial market scan
+      // Initial scan
       await this.performMarketScan();
-      
-      // Initial 24/7 crypto scan
-      await this.performCrypto24x7Scan();
 
-      // Set up continuous monitoring (every 5 minutes for stocks/forex)
+      // Schedule regular scans every 5 minutes
       this.analysisInterval = setInterval(async () => {
         await this.performMarketScan();
       }, 5 * 60 * 1000);
 
-      // Set up 24/7 crypto and currency monitoring (every 2 minutes)
-      this.crypto24x7Interval = setInterval(async () => {
+      // Start 24/7 crypto monitoring
+      this.cryptoInterval = setInterval(async () => {
         await this.performCrypto24x7Scan();
       }, 2 * 60 * 1000);
 
       console.log('✅ Market analysis started - including 24/7 crypto monitoring');
-      return { 
-        success: true, 
-        message: 'Market analysis active with 24/7 crypto and currency monitoring',
-        interval: '5 min (stocks/forex), 2 min (crypto/currencies - 24/7)'
-      };
-
+      
     } catch (error) {
-      console.error('❌ Market analysis start error:', error.message);
+      console.error('❌ Market analysis startup error:', error.message);
       this.isRunning = false;
-      return { success: false, message: error.message };
     }
   }
 
-  // NEW: 24/7 Crypto and Currency Monitoring
   async performCrypto24x7Scan() {
     try {
       console.log('🚀 Performing 24/7 crypto & currency scan...');
@@ -231,24 +96,18 @@ class MarketApisBot {
         currencies: await this.scanForex()
       };
 
-      // Identify crypto opportunities (24/7 markets)
-      const cryptoOpportunities = await this.identifyCrypto24x7Opportunities(crypto24x7Results);
-      
       // Store results
-      this.marketData.set('crypto_24x7_scan', crypto24x7Results);
-      this.marketData.set('crypto_opportunities', cryptoOpportunities);
+      this.marketData.set('crypto_24x7', crypto24x7Results);
+
+      // Quick opportunity check for crypto
+      const cryptoOpportunities = crypto24x7Results.crypto.filter(coin => 
+        Math.abs(parseFloat(coin.changePercent)) > 5 // 5% or more change
+      );
+
+      console.log(`✅ 24/7 Crypto scan complete - ${cryptoOpportunities.length} opportunities found`);
       
-      // Send alerts for significant crypto moves
-      if (cryptoOpportunities.high_confidence.length > 0 || cryptoOpportunities.medium_confidence.length > 0) {
-        await this.sendCrypto24x7Alerts(cryptoOpportunities);
-      }
-
-      console.log(`✅ 24/7 Crypto scan complete - ${cryptoOpportunities.total} opportunities found`);
-      return crypto24x7Results;
-
     } catch (error) {
-      console.error('❌ 24/7 Crypto scan error:', error.message);
-      return null;
+      console.log('❌ 24/7 Crypto scan error:', error.message);
     }
   }
 
@@ -378,59 +237,70 @@ class MarketApisBot {
       
       // Use Metals API for real gold/silver data if available
       if (process.env.METALS_API_KEY) {
-        try {
-          console.log('📊 Using Metals API for real-time precious metals data');
-          const response = await axios.get(`https://api.metals.live/v1/spot`, {
-            headers: {
-              'x-access-token': process.env.METALS_API_KEY
-            },
-            timeout: 10000
-          });
+        let metalsApiSuccess = false;
+        for (let attempt = 1; attempt <= 3 && !metalsApiSuccess; attempt++) {
+          try {
+            console.log(`📊 Metals API attempt ${attempt}/3 - Fetching real-time precious metals data`);
+            const response = await axios.get(`https://api.metals.live/v1/spot`, {
+              headers: {
+                'x-access-token': process.env.METALS_API_KEY
+              },
+              timeout: 15000
+            });
 
-          if (response.data) {
-            const metals = response.data;
+            if (response.data) {
+              console.log('✅ Metals API connection successful - Using live precious metals data');
+              const metals = response.data;
+              metalsApiSuccess = true;
             
-            // Add gold data
-            if (metals.gold) {
-              commodityData.push({
-                symbol: 'XAU/USD',
-                name: 'Gold (Live)',
-                price: metals.gold,
-                change: 0, // Metals API doesn't provide change data
-                changePercent: '0.00',
-                trend: 'neutral',
-                source: 'Metals API'
-              });
+              // Add gold data
+              if (metals.gold) {
+                commodityData.push({
+                  symbol: 'XAU/USD',
+                  name: 'Gold (Live)',
+                  price: metals.gold,
+                  change: 0, // Metals API doesn't provide change data
+                  changePercent: '0.00',
+                  trend: 'neutral',
+                  source: 'Metals API'
+                });
+              }
+              
+              // Add silver data
+              if (metals.silver) {
+                commodityData.push({
+                  symbol: 'XAG/USD',
+                  name: 'Silver (Live)',
+                  price: metals.silver,
+                  change: 0,
+                  changePercent: '0.00',
+                  trend: 'neutral',
+                  source: 'Metals API'
+                });
+              }
+              
+              // Add other metals if available
+              if (metals.platinum) {
+                commodityData.push({
+                  symbol: 'XPT/USD',
+                  name: 'Platinum (Live)',
+                  price: metals.platinum,
+                  change: 0,
+                  changePercent: '0.00',
+                  trend: 'neutral',
+                  source: 'Metals API'
+                });
+              }
             }
-            
-            // Add silver data
-            if (metals.silver) {
-              commodityData.push({
-                symbol: 'XAG/USD',
-                name: 'Silver (Live)',
-                price: metals.silver,
-                change: 0,
-                changePercent: '0.00',
-                trend: 'neutral',
-                source: 'Metals API'
-              });
-            }
-            
-            // Add other metals if available
-            if (metals.platinum) {
-              commodityData.push({
-                symbol: 'XPT/USD',
-                name: 'Platinum (Live)',
-                price: metals.platinum,
-                change: 0,
-                changePercent: '0.00',
-                trend: 'neutral',
-                source: 'Metals API'
-              });
+          } catch (metalsError) {
+            console.log(`⚠️ Metals API attempt ${attempt} failed: ${metalsError.message}`);
+            if (attempt < 3) {
+              console.log(`🔄 Retrying in 2 seconds...`);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            } else {
+              console.log('❌ All Metals API attempts failed - falling back to demo data');
             }
           }
-        } catch (metalsError) {
-          console.log('⚠️ Metals API error (falling back to demo data):', metalsError.message);
         }
       }
       
@@ -522,337 +392,104 @@ class MarketApisBot {
   }
 
   async identifyTradingOpportunities(scanResults) {
-    try {
-      const opportunities = {
-        high_confidence: [],
-        medium_confidence: [],
-        low_confidence: [],
-        total: 0
-      };
+    const opportunities = {
+      high_confidence: [],
+      medium_confidence: [],
+      low_confidence: [],
+      total: 0
+    };
 
-      // Analyze stocks for opportunities
+    try {
+      // Stock opportunities (3%+ movement)
       scanResults.stocks.forEach(stock => {
-        const changePercent = parseFloat(stock.changePercent);
-        
-        if (Math.abs(changePercent) > 3) {
-          const confidence = Math.abs(changePercent) > 5 ? 'high' : 'medium';
-          const opportunity = {
-            asset: stock.symbol,
+        const changePercent = Math.abs(parseFloat(stock.changePercent));
+        if (changePercent >= 3) {
+          opportunities.high_confidence.push({
             type: 'stock',
-            action: changePercent > 0 ? 'momentum_buy' : 'oversold_buy',
-            confidence,
-            change: changePercent,
-            reason: `${Math.abs(changePercent)}% move indicates ${changePercent > 0 ? 'strong momentum' : 'potential oversold bounce'}`
-          };
-          
-          opportunities[`${confidence}_confidence`].push(opportunity);
+            symbol: stock.symbol,
+            action: parseFloat(stock.changePercent) > 0 ? 'watch_breakout' : 'watch_reversal',
+            confidence: changePercent >= 5 ? 'high' : 'medium',
+            data: stock
+          });
         }
       });
 
-      // Analyze crypto for opportunities
+      // Crypto opportunities (5%+ movement)
       scanResults.crypto.forEach(crypto => {
-        const changePercent = parseFloat(crypto.changePercent);
-        
-        if (Math.abs(changePercent) > 5) {
-          const confidence = Math.abs(changePercent) > 10 ? 'high' : 'medium';
-          const opportunity = {
-            asset: crypto.symbol,
+        const changePercent = Math.abs(parseFloat(crypto.changePercent));
+        if (changePercent >= 5) {
+          opportunities.high_confidence.push({
             type: 'crypto',
-            action: changePercent > 0 ? 'momentum_buy' : 'dip_buy',
-            confidence,
-            change: changePercent,
-            reason: `${Math.abs(changePercent)}% 24h move in volatile crypto market`
-          };
-          
-          opportunities[`${confidence}_confidence`].push(opportunity);
+            symbol: crypto.symbol,
+            action: parseFloat(crypto.changePercent) > 0 ? 'momentum_buy' : 'reversal_watch',
+            confidence: changePercent >= 10 ? 'high' : 'medium',
+            data: crypto
+          });
         }
       });
 
-      // Analyze forex for opportunities (looking for significant moves)
+      // Forex opportunities (1%+ movement) 
       scanResults.forex.forEach(forex => {
-        const changePercent = parseFloat(forex.changePercent);
-        
-        if (Math.abs(changePercent) > 1) {
-          const opportunity = {
-            asset: forex.pair,
+        const changePercent = Math.abs(parseFloat(forex.changePercent));
+        if (changePercent >= 1) {
+          opportunities.medium_confidence.push({
             type: 'forex',
-            action: changePercent > 0 ? 'trend_follow' : 'reversal_play',
+            symbol: forex.pair,
+            action: parseFloat(forex.changePercent) > 0 ? 'trend_follow' : 'counter_trend',
             confidence: 'medium',
-            change: changePercent,
-            reason: `${Math.abs(changePercent)}% move in major currency pair`
-          };
-          
-          opportunities.medium_confidence.push(opportunity);
+            data: forex
+          });
         }
       });
 
-      opportunities.total = 
-        opportunities.high_confidence.length + 
-        opportunities.medium_confidence.length + 
-        opportunities.low_confidence.length;
+      opportunities.total = opportunities.high_confidence.length + 
+                           opportunities.medium_confidence.length + 
+                           opportunities.low_confidence.length;
 
       return opportunities;
+
     } catch (error) {
-      console.error('Opportunity analysis error:', error.message);
-      return { high_confidence: [], medium_confidence: [], low_confidence: [], total: 0 };
-    }
-  }
-
-  // NEW: Identify 24/7 crypto and currency opportunities
-  async identifyCrypto24x7Opportunities(scanResults) {
-    try {
-      const opportunities = {
-        high_confidence: [],
-        medium_confidence: [],
-        low_confidence: [],
-        total: 0
-      };
-
-      // Analyze crypto (24/7 market - more sensitive to weekend moves)
-      scanResults.crypto.forEach(crypto => {
-        const changePercent = parseFloat(crypto.changePercent);
-        
-        // Weekend crypto moves can be more significant
-        if (Math.abs(changePercent) > 8) {
-          const confidence = Math.abs(changePercent) > 15 ? 'high' : 'medium';
-          const opportunity = {
-            asset: crypto.symbol,
-            type: 'crypto_24x7',
-            action: changePercent > 0 ? 'momentum_buy' : 'dip_buy',
-            confidence,
-            change: changePercent,
-            reason: `${Math.abs(changePercent)}% move in 24/7 crypto market - weekend volatility`,
-            market_status: '24/7 ACTIVE'
-          };
-          
-          opportunities[`${confidence}_confidence`].push(opportunity);
-        }
-      });
-
-      // Analyze currency rates (some pairs active 24/7)
-      scanResults.currencies.forEach(currency => {
-        const changePercent = parseFloat(currency.changePercent);
-        
-        if (Math.abs(changePercent) > 2) {
-          const opportunity = {
-            asset: currency.pair,
-            type: 'currency_24x7',
-            action: changePercent > 0 ? 'trend_follow' : 'reversal_play',
-            confidence: 'medium',
-            change: changePercent,
-            reason: `${Math.abs(changePercent)}% move in currency markets`,
-            market_status: 'WEEKEND ACTIVE'
-          };
-          
-          opportunities.medium_confidence.push(opportunity);
-        }
-      });
-
-      opportunities.total = 
-        opportunities.high_confidence.length + 
-        opportunities.medium_confidence.length + 
-        opportunities.low_confidence.length;
-
+      console.error('Opportunity identification error:', error.message);
       return opportunities;
-    } catch (error) {
-      console.error('24/7 Opportunity analysis error:', error.message);
-      return { high_confidence: [], medium_confidence: [], low_confidence: [], total: 0 };
-    }
-  }
-
-  // NEW: Send 24/7 crypto alerts
-  async sendCrypto24x7Alerts(opportunities) {
-    try {
-      if (!this.bot || (opportunities.high_confidence.length === 0 && opportunities.medium_confidence.length === 0)) return;
-
-      let alertMessage = `🌍 24/7 CRYPTO & CURRENCY ALERTS\n`;
-      alertMessage += `⏰ ${new Date().toLocaleString()} (Weekend Trading Active)\n\n`;
-      
-      // High confidence opportunities
-      if (opportunities.high_confidence.length > 0) {
-        alertMessage += `🚨 HIGH CONFIDENCE (24/7 Markets):\n`;
-        opportunities.high_confidence.forEach((opp, index) => {
-          alertMessage += `${index + 1}. ${opp.asset} - ${opp.action.replace('_', ' ').toUpperCase()}\n`;
-          alertMessage += `   Move: ${opp.change > 0 ? '+' : ''}${opp.change}%\n`;
-          alertMessage += `   Status: ${opp.market_status}\n\n`;
-        });
-      }
-
-      // Medium confidence opportunities
-      if (opportunities.medium_confidence.length > 0) {
-        alertMessage += `⚠️ MEDIUM CONFIDENCE (Weekend Active):\n`;
-        opportunities.medium_confidence.slice(0, 3).forEach((opp, index) => {
-          alertMessage += `${index + 1}. ${opp.asset} - ${opp.change > 0 ? '+' : ''}${opp.change}%\n`;
-        });
-        alertMessage += `\n`;
-      }
-
-      alertMessage += `📊 Total 24/7 Opportunities: ${opportunities.total}`;
-
-      // Send to admin
-      if (process.env.ADMIN_CHAT_ID) {
-        await this.bot.sendMessage(process.env.ADMIN_CHAT_ID, alertMessage);
-      }
-
-      console.log('📢 24/7 Crypto alerts sent successfully');
-    } catch (error) {
-      console.error('24/7 Alert sending error:', error.message);
     }
   }
 
   async sendTradingAlerts(opportunities) {
     try {
-      if (!this.bot || opportunities.high_confidence.length === 0) return;
-
-      let alertMessage = `🚨 HIGH CONFIDENCE TRADING OPPORTUNITIES\n\n`;
-      
-      opportunities.high_confidence.forEach((opp, index) => {
-        alertMessage += `${index + 1}. ${opp.asset} (${opp.type.toUpperCase()})\n`;
-        alertMessage += `   Action: ${opp.action.replace('_', ' ').toUpperCase()}\n`;
-        alertMessage += `   Move: ${opp.change > 0 ? '+' : ''}${opp.change}%\n`;
-        alertMessage += `   Reason: ${opp.reason}\n\n`;
-      });
-
-      alertMessage += `⏰ Alert Time: ${new Date().toLocaleString()}\n`;
-      alertMessage += `📊 Total Opportunities: ${opportunities.total}`;
-
-      // Send to admin (you would set ADMIN_CHAT_ID)
-      if (process.env.ADMIN_CHAT_ID) {
-        await this.bot.sendMessage(process.env.ADMIN_CHAT_ID, alertMessage);
+      if (opportunities.high_confidence.length > 0) {
+        console.log(`🚨 ${opportunities.high_confidence.length} high-confidence trading opportunities detected`);
+        
+        // Here you could send alerts to specific channels or users
+        // For now, just log the opportunities
+        opportunities.high_confidence.forEach(opp => {
+          console.log(`📈 ${opp.type.toUpperCase()}: ${opp.symbol} - ${opp.action} (${opp.confidence} confidence)`);
+        });
       }
-
-      console.log('📢 Trading alerts sent successfully');
     } catch (error) {
       console.error('Alert sending error:', error.message);
     }
   }
 
-  async getMarketStatus() {
-    try {
-      const latestScan = this.marketData.get('latest_scan');
-      const opportunities = this.marketData.get('opportunities');
-
-      if (!latestScan) {
-        return {
-          status: 'No recent scan data',
-          message: 'Run /start_market_analysis to begin monitoring'
-        };
-      }
-
-      const status = {
-        lastScan: latestScan.timestamp,
-        isRunning: this.isRunning,
-        assets: {
-          stocks: latestScan.stocks.length,
-          forex: latestScan.forex.length,
-          commodities: latestScan.commodities.length,
-          crypto: latestScan.crypto.length
-        },
-        opportunities: {
-          total: opportunities?.total || 0,
-          high: opportunities?.high_confidence?.length || 0,
-          medium: opportunities?.medium_confidence?.length || 0
-        }
-      };
-
-      return status;
-    } catch (error) {
-      console.error('Market status error:', error.message);
-      return { status: 'Error retrieving market status', error: error.message };
-    }
+  getStatus() {
+    return {
+      isRunning: this.isRunning,
+      lastScan: this.marketData.get('latest_scan')?.timestamp,
+      totalOpportunities: this.marketData.get('opportunities')?.total || 0,
+      alerts: this.alerts.length
+    };
   }
 
-  async stopMarketAnalysis() {
-    try {
-      if (!this.isRunning) {
-        return { success: false, message: 'Market analysis not running' };
-      }
-
-      if (this.analysisInterval) {
-        clearInterval(this.analysisInterval);
-        this.analysisInterval = null;
-      }
-      
-      if (this.crypto24x7Interval) {
-        clearInterval(this.crypto24x7Interval);
-        this.crypto24x7Interval = null;
-      }
-
-      this.isRunning = false;
-      console.log('⏹️ Market analysis stopped');
-      
-      return { success: true, message: 'Market analysis stopped successfully' };
-    } catch (error) {
-      console.error('Market analysis stop error:', error.message);
-      return { success: false, message: error.message };
+  stopAnalysis() {
+    if (this.analysisInterval) {
+      clearInterval(this.analysisInterval);
+      this.analysisInterval = null;
     }
-  }
-
-  async getDetailedMarketReport() {
-    try {
-      const latestScan = this.marketData.get('latest_scan');
-      const opportunities = this.marketData.get('opportunities');
-
-      if (!latestScan) {
-        return 'No market data available. Start market analysis first.';
-      }
-
-      let report = `📊 COMPREHENSIVE MARKET INTELLIGENCE REPORT\n`;
-      report += `⏰ Last Updated: ${latestScan.timestamp.toLocaleString()}\n\n`;
-
-      // Stocks section
-      if (latestScan.stocks.length > 0) {
-        report += `📈 STOCKS (${latestScan.stocks.length} monitored):\n`;
-        latestScan.stocks.forEach(stock => {
-          const arrow = parseFloat(stock.changePercent) > 0 ? '↗️' : '↘️';
-          report += `${arrow} ${stock.symbol}: $${stock.price} (${stock.changePercent > 0 ? '+' : ''}${stock.changePercent}%)\n`;
-        });
-        report += `\n`;
-      }
-
-      // Forex section
-      if (latestScan.forex.length > 0) {
-        report += `💱 FOREX (${latestScan.forex.length} pairs):\n`;
-        latestScan.forex.slice(0, 3).forEach(forex => {
-          report += `📊 ${forex.pair}: ${forex.rate}\n`;
-        });
-        report += `\n`;
-      }
-
-      // Crypto section
-      if (latestScan.crypto.length > 0) {
-        report += `₿ CRYPTOCURRENCY (${latestScan.crypto.length} monitored):\n`;
-        latestScan.crypto.slice(0, 4).forEach(crypto => {
-          const arrow = parseFloat(crypto.changePercent) > 0 ? '🟢' : '🔴';
-          report += `${arrow} ${crypto.symbol}: $${crypto.price} (${crypto.changePercent > 0 ? '+' : ''}${crypto.changePercent}%)\n`;
-        });
-        report += `\n`;
-      }
-
-      // Opportunities section
-      if (opportunities && opportunities.total > 0) {
-        report += `🎯 TRADING OPPORTUNITIES (${opportunities.total} total):\n`;
-        
-        if (opportunities.high_confidence.length > 0) {
-          report += `🔥 HIGH CONFIDENCE (${opportunities.high_confidence.length}):\n`;
-          opportunities.high_confidence.slice(0, 3).forEach((opp, index) => {
-            report += `${index + 1}. ${opp.asset}: ${opp.action} (${opp.change > 0 ? '+' : ''}${opp.change}%)\n`;
-          });
-        }
-        
-        if (opportunities.medium_confidence.length > 0) {
-          report += `⚡ MEDIUM CONFIDENCE: ${opportunities.medium_confidence.length} opportunities\n`;
-        }
-      }
-
-      report += `\n🔄 Auto-refresh: Every 5 minutes\n`;
-      report += `📱 Use /market_status for quick overview`;
-
-      return report;
-    } catch (error) {
-      console.error('Market report error:', error.message);
-      return 'Error generating market report. Please try again.';
+    if (this.cryptoInterval) {
+      clearInterval(this.cryptoInterval);
+      this.cryptoInterval = null;
     }
+    this.isRunning = false;
+    console.log('📊 Market analysis stopped');
   }
 }
 
