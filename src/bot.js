@@ -3175,6 +3175,90 @@ bot.onText(/\/banking_status/i, async (msg) => {
   }
 });
 
+// ===== BILLIONAIRE AUTOMATION COMMANDS =====
+
+// Command: /start_billionaire_automation - Activate complete empire building system
+bot.onText(/\/start_billionaire_automation/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+
+    const BillionaireAutomationCommands = require('./commands/billionaireAutomation');
+    const billionaireCommands = new BillionaireAutomationCommands(bot);
+    await billionaireCommands.handleStartBillionaireAutomation(msg);
+  } catch (error) {
+    console.error('Error in start_billionaire_automation command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error starting billionaire automation');
+  }
+});
+
+// Command: /empire_status - Check billionaire empire status
+bot.onText(/\/empire_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+
+    const BillionaireAutomationCommands = require('./commands/billionaireAutomation');
+    const billionaireCommands = new BillionaireAutomationCommands(bot);
+    await billionaireCommands.handleEmpireStatus(msg);
+  } catch (error) {
+    console.error('Error in empire_status command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error retrieving empire status');
+  }
+});
+
+// Command: /empire_report - Generate comprehensive empire report
+bot.onText(/\/empire_report/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+
+    const BillionaireAutomationCommands = require('./commands/billionaireAutomation');
+    const billionaireCommands = new BillionaireAutomationCommands(bot);
+    await billionaireCommands.handleEmpireReport(msg);
+  } catch (error) {
+    console.error('Error in empire_report command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error generating empire report');
+  }
+});
+
+// Command: /business_acquisition - Business acquisition engine status
+bot.onText(/\/business_acquisition/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+
+    const BillionaireAutomationCommands = require('./commands/billionaireAutomation');
+    const billionaireCommands = new BillionaireAutomationCommands(bot);
+    await billionaireCommands.handleBusinessAcquisition(msg);
+  } catch (error) {
+    console.error('Error in business_acquisition command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error retrieving business acquisition status');
+  }
+});
+
+// Command: /real_estate_empire - Real estate empire management status
+bot.onText(/\/real_estate_empire/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+
+    const BillionaireAutomationCommands = require('./commands/billionaireAutomation');
+    const billionaireCommands = new BillionaireAutomationCommands(bot);
+    await billionaireCommands.handleRealEstateEmpire(msg);
+  } catch (error) {
+    console.error('Error in real_estate_empire command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error retrieving real estate empire status');
+  }
+});
+
+// Command: /billionaire_help - Show billionaire automation help
+bot.onText(/\/billionaire_help/i, async (msg) => {
+  try {
+    const BillionaireAutomationCommands = require('./commands/billionaireAutomation');
+    const billionaireCommands = new BillionaireAutomationCommands(bot);
+    await billionaireCommands.handleBillionaireHelp(msg);
+  } catch (error) {
+    console.error('Error in billionaire_help command:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Error displaying billionaire help');
+  }
+});
+
 // Command: /autopilot - Start automated wealth generation systems
 bot.onText(/\/autopilot/i, async (msg) => {
   try {
