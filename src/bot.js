@@ -7830,17 +7830,37 @@ app.get("/webhook-info", async (req, res) => {
   }
 });
 
-// Start server with error handling for port conflicts
+// Start server with proper error handling for port conflicts
 let server;
+
+// Add error handler to prevent crashes
+process.on('uncaughtException', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.log('⚠️ Port conflict handled gracefully, bot continues running');
+  } else {
+    console.log('⚠️ Uncaught exception handled:', error.message);
+  }
+});
+
 try {
   server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🌐 Ultimate health check server running on port ${PORT}`);
     console.log(`🏛️ Domain: ${process.env.RAILWAY_STATIC_URL || "imperiumvaultsystem-production.up.railway.app"}`);
     
-    // Start Railway heartbeat system
+    // Start Railway heartbeat system only if server starts successfully
     keepAliveHeartbeat();
     console.log('⚡ Railway heartbeat system activated');
   });
+  
+  // Handle server errors gracefully
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.log('⚠️ Port already in use, continuing without health server');
+    } else {
+      console.log('⚠️ Server error:', error.message);
+    }
+  });
+  
 } catch (portError) {
   console.log('⚠️ Port conflict detected, bot will run without health server');
 }
