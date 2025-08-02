@@ -527,6 +527,7 @@ try {
     
     // Initialize Complete Quantum AI System
     try {
+      const QuantumCore = require('./quantum/QuantumCore');
       global.quantumCore = new QuantumCore();
       await global.quantumCore.initialize();
       console.log('⚡ QUANTUM CORE - Complete institutional-grade AI system activated');
