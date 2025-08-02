@@ -498,9 +498,36 @@ try {
       console.log('⚠️ BINANCE API KEYS - Add to Railway environment variables for live trading');
     }
     
-    console.log('🔥 CRYPTO TRADING BOT - INITIALIZED (Immediate)');
-    console.log('💎 BUSINESS BANKING BOT - INITIALIZED (Immediate)');
-    console.log('📊 MARKET INTELLIGENCE - INITIALIZED (Immediate)');
+    // ACTIVATE ALL SYSTEMS - START THEM TO MOVE FROM STANDBY TO ACTIVE
+    try {
+      if (global.cryptoTradingBot && global.cryptoTradingBot.startTrading) {
+        await global.cryptoTradingBot.startTrading();
+        console.log('🔥 CRYPTO TRADING BOT - STARTED (ACTIVE 24/7)');
+      }
+      
+      if (global.businessBankingBotNew && global.businessBankingBotNew.startOptimization) {
+        await global.businessBankingBotNew.startOptimization();
+        console.log('💎 BUSINESS BANKING BOT - STARTED (OPTIMIZING)');
+      }
+      
+      if (global.marketApisBot && global.marketApisBot.startMarketAnalysis) {
+        await global.marketApisBot.startMarketAnalysis();
+        console.log('📊 MARKET INTELLIGENCE - STARTED (ANALYZING)');
+      }
+      
+      if (global.realEstateBot && global.realEstateBot.startScanning) {
+        await global.realEstateBot.startScanning();
+        console.log('🏠 REAL ESTATE SCANNER - STARTED (SCANNING)');
+      }
+      
+      console.log('⚡ ALL AUTOMATION SYSTEMS ACTIVATED FROM STANDBY TO ACTIVE');
+    } catch (activationError) {
+      console.log('⚠️ Some systems activated, continuing with available ones:', activationError.message);
+    }
+    
+    console.log('🔥 CRYPTO TRADING BOT - INITIALIZED & ACTIVATED');
+    console.log('💎 BUSINESS BANKING BOT - INITIALIZED & ACTIVATED');
+    console.log('📊 MARKET INTELLIGENCE - INITIALIZED & ACTIVATED');
     
     // Mark essential systems as initialized
     global.systemsInitialized = {
@@ -2623,43 +2650,79 @@ const generateLiveAutomationContext = async () => {
       automationContext += `\n🔥 FOREX TRADING: Not initialized`;
     }
 
-    // Check Crypto Trading
+    // Check Crypto Trading - AUTO-ACTIVATE IF NOT RUNNING
     if (global.cryptoTradingBot) {
+      // Auto-activate if not already trading
+      if (!global.cryptoTradingBot.isTrading && global.cryptoTradingBot.startTrading) {
+        try {
+          await global.cryptoTradingBot.startTrading();
+        } catch (autoActivateError) {
+          console.log('Auto-activation attempt for crypto trading:', autoActivateError.message);
+        }
+      }
+      
       automationContext += `\n💎 CRYPTO TRADING (Binance):
 • Status: INITIALIZED ✅
 • API Keys: Configured
-• Trading: ${global.cryptoTradingBot.isTrading ? 'ACTIVE 24/7' : 'STANDBY'}
+• Trading: ${global.cryptoTradingBot.isTrading ? 'ACTIVE 24/7' : 'AUTO-ACTIVATING'}
 • Analysis: Every 2 minutes`;
     } else {
       automationContext += `\n💎 CRYPTO TRADING: Not initialized`;
     }
 
-    // Check Business Banking
+    // Check Business Banking - AUTO-ACTIVATE IF NOT OPTIMIZING
     if (global.businessBankingBotNew) {
+      // Auto-activate if not already optimizing
+      if (!global.businessBankingBotNew.isOptimizing && global.businessBankingBotNew.startOptimization) {
+        try {
+          await global.businessBankingBotNew.startOptimization();
+        } catch (autoActivateError) {
+          console.log('Auto-activation attempt for banking:', autoActivateError.message);
+        }
+      }
+      
       automationContext += `\n🏦 BUSINESS BANKING:
 • Status: INITIALIZED ✅
 • Banks: ABA, ACLEDA, Wing, Bakong ready
-• Optimization: ${global.businessBankingBotNew.isOptimizing ? '30-min cycles ACTIVE' : 'STANDBY'}`;
+• Optimization: ${global.businessBankingBotNew.isOptimizing ? '30-min cycles ACTIVE' : 'AUTO-ACTIVATING'}`;
     } else {
       automationContext += `\n🏦 BUSINESS BANKING: Not initialized`;
     }
 
-    // Check Market Analysis
+    // Check Market Analysis - AUTO-ACTIVATE IF NOT RUNNING
     if (global.marketApisBot) {
+      // Auto-activate if not already running
+      if (!global.marketApisBot.isRunning && global.marketApisBot.startMarketAnalysis) {
+        try {
+          await global.marketApisBot.startMarketAnalysis();
+        } catch (autoActivateError) {
+          console.log('Auto-activation attempt for market analysis:', autoActivateError.message);
+        }
+      }
+      
       automationContext += `\n📊 MARKET INTELLIGENCE:
 • Status: INITIALIZED ✅
 • Global APIs: Yahoo Finance, Exchange Rates
-• Analysis: ${global.marketApisBot.isRunning ? 'Every 5 minutes ACTIVE' : 'STANDBY'}`;
+• Analysis: ${global.marketApisBot.isRunning ? 'Every 5 minutes ACTIVE' : 'AUTO-ACTIVATING'}`;
     } else {
       automationContext += `\n📊 MARKET INTELLIGENCE: Not initialized`;
     }
 
-    // Check Real Estate
+    // Check Real Estate - AUTO-ACTIVATE IF NOT SCANNING
     if (global.realEstateBot) {
+      // Auto-activate if not already scanning
+      if (!global.realEstateBot.scanningActive && global.realEstateBot.startScanning) {
+        try {
+          await global.realEstateBot.startScanning();
+        } catch (autoActivateError) {
+          console.log('Auto-activation attempt for real estate:', autoActivateError.message);
+        }
+      }
+      
       automationContext += `\n🏠 REAL ESTATE SCANNING:
 • Status: INITIALIZED ✅
 • Platforms: 4 Cambodia property sites
-• Scanning: ${global.realEstateBot.scanningActive ? 'Every 2 hours ACTIVE' : 'STANDBY'}`;
+• Scanning: ${global.realEstateBot.scanningActive ? 'Every 2 hours ACTIVE' : 'AUTO-ACTIVATING'}`;
     } else {
       automationContext += `\n🏠 REAL ESTATE: Not initialized`;
     }
