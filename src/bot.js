@@ -3061,7 +3061,7 @@ bot.onText(/\/start_all_automation/i, async (msg) => {
   try {
     if (!dynastyProtection(msg)) return;
 
-    const automationMaster = require('./src/commands/automationMaster');
+    const automationMaster = require('./commands/automationMaster');
     await automationMaster.start_all_automation.handler(bot, msg);
   } catch (error) {
     console.error('Error in start_all_automation command:', error);
@@ -3074,7 +3074,7 @@ bot.onText(/\/automation_status/i, async (msg) => {
   try {
     if (!dynastyProtection(msg)) return;
 
-    const automationMaster = require('./src/commands/automationMaster');
+    const automationMaster = require('./commands/automationMaster');
     await automationMaster.automation_status.handler(bot, msg);
   } catch (error) {
     console.error('Error in automation_status command:', error);
@@ -3095,7 +3095,7 @@ bot.onText(/\/start_crypto_trading/i, async (msg) => {
     console.log(`✅ Dynasty protection passed`);
     console.log(`🔧 Loading crypto trading commands...`);
     
-    const cryptoTrading = require('./src/commands/cryptoTrading');
+    const cryptoTrading = require('./commands/cryptoTrading');
     
     console.log(`🔧 Executing crypto trading handler...`);
     await cryptoTrading.start_crypto_trading.handler(bot, msg);
@@ -3141,7 +3141,7 @@ bot.onText(/\/crypto_status/i, async (msg) => {
   try {
     if (!dynastyProtection(msg)) return;
 
-    const cryptoTrading = require('./src/commands/cryptoTrading');
+    const cryptoTrading = require('./commands/cryptoTrading');
     await cryptoTrading.crypto_status.handler(bot, msg);
   } catch (error) {
     console.error('Error in crypto_status command:', error);
@@ -3154,7 +3154,7 @@ bot.onText(/\/start_banking_optimization/i, async (msg) => {
   try {
     if (!dynastyProtection(msg)) return;
 
-    const businessBanking = require('./src/commands/businessBanking');
+    const businessBanking = require('./commands/businessBanking');
     await businessBanking.start_banking_optimization.handler(bot, msg);
   } catch (error) {
     console.error('Error in start_banking_optimization command:', error);
@@ -3167,7 +3167,7 @@ bot.onText(/\/banking_status/i, async (msg) => {
   try {
     if (!dynastyProtection(msg)) return;
 
-    const businessBanking = require('./src/commands/businessBanking');
+    const businessBanking = require('./commands/businessBanking');
     await businessBanking.banking_status.handler(bot, msg);
   } catch (error) {
     console.error('Error in banking_status command:', error);
