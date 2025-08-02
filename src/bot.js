@@ -2769,7 +2769,7 @@ const generateLiveAutomationContext = async () => {
       if (quantum) {
         selfHealingStatus = quantum.self_healing ? 'ACTIVE' : 'Not active';
         const activeComponents = Object.values(quantum).filter(active => active).length;
-        quantumStatus = `${activeComponents}/11 components active`;
+        quantumStatus = `${activeComponents}/12 components active`;
         
         // Check for Ultimate Consciousness activation
         if (quantum.ultimate_consciousness) {
@@ -3463,6 +3463,19 @@ bot.onText(/\/gpt_status|\/consciousness_status|\/self_check/i, async (msg) => {
   } catch (error) {
     console.error('Error in GPT status check:', error);
     await bot.sendMessage(msg.chat.id, '❌ GPT status error: ' + error.message);
+  }
+});
+
+// Command: /memory_status - Check enterprise memory architecture and scaling
+bot.onText(/\/memory_status|\/memory_check|\/mem_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const { handleMemoryStatus } = require('./commands/memory_status');
+    await handleMemoryStatus(bot, msg);
+  } catch (error) {
+    console.error('Error in memory status check:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Memory status error: ' + error.message);
   }
 });
 
