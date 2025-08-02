@@ -425,19 +425,19 @@ try {
     console.log('⚠️ Early automation init warning:', earlyInitError.message);
   }
   
-  // Initialize all automation bots immediately (no delay) to ensure commands work
-  (async () => {
+  // Initialize automation bots after bot is ready
+  const initializeAutomationBots = async () => {
     try {
-      console.log('🚀 IMMEDIATE AUTOMATION INITIALIZATION');
+      console.log('🚀 IMMEDIATE AUTOMATION INITIALIZATION - Bot Ready');
       
-      // Initialize essential automation bots immediately with proper bot reference
+      // Initialize essential automation bots with proper bot reference
       const CryptoTradingBot = require(path.join(__dirname, 'automation', 'CryptoTradingBot'));
       global.cryptoTradingBot = new CryptoTradingBot(bot);
       try {
         await global.cryptoTradingBot.initialize();
         console.log('✅ Crypto Trading Bot - IMMEDIATE INIT & INITIALIZED');
       } catch (cryptoError) {
-        console.log('✅ Crypto Trading Bot - IMMEDIATE INIT (fallback mode)');
+        console.log('✅ Crypto Trading Bot - IMMEDIATE INIT (fallback mode):', cryptoError.message);
       }
       
       const BusinessBankingBot = require(path.join(__dirname, 'automation', 'BusinessBankingBot'));
@@ -446,7 +446,7 @@ try {
         await global.businessBankingBotNew.initialize();
         console.log('✅ Business Banking Bot - IMMEDIATE INIT & INITIALIZED');
       } catch (bankingError) {
-        console.log('✅ Business Banking Bot - IMMEDIATE INIT (fallback mode)');
+        console.log('✅ Business Banking Bot - IMMEDIATE INIT (fallback mode):', bankingError.message);
       }
       
       const MarketIntelligence = require(path.join(__dirname, 'automation', 'marketIntelligence'));
@@ -455,7 +455,7 @@ try {
         await global.marketIntelligence.initialize();
         console.log('✅ Market Intelligence - IMMEDIATE INIT & INITIALIZED');
       } catch (marketError) {
-        console.log('✅ Market Intelligence - IMMEDIATE INIT (fallback mode)');
+        console.log('✅ Market Intelligence - IMMEDIATE INIT (fallback mode):', marketError.message);
       }
     
     // Initialize other bots
@@ -501,7 +501,10 @@ try {
     } catch (error) {
       console.log('⚠️ Automation initialization failed:', error.message);
     }
-  })();
+  };
+  
+  // Call initialization after a brief delay to ensure bot is ready
+  setTimeout(initializeAutomationBots, 1000);
   
   console.log('🎯 AUTOMATION SYSTEMS - INITIALIZED');
   console.log('📊 AUTOMATION STATUS TRACKING - ACTIVE');
