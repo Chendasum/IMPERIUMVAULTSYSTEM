@@ -7,6 +7,9 @@ const automation_status = {
       const chatId = msg.chat.id;
       
       // Check if automation status engine is available
+      console.log('🔧 Checking global.automationStatusEngine:', !!global.automationStatusEngine);
+      console.log('🔧 Global object keys:', Object.keys(global));
+      
       if (!global.automationStatusEngine) {
         const warningMessage = 
           `⚠️ AUTOMATION STATUS ENGINE NOT INITIALIZED\n\n` +
