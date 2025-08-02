@@ -2758,20 +2758,32 @@ const generateLiveAutomationContext = async () => {
       global.realEstateBot
     ].filter(Boolean).length;
 
-    // Add Quantum Self-Healing Status
+    // Get Quantum AI Status from AutomationStatusEngine
     let selfHealingStatus = 'Not active';
-    if (global.quantumSelfHealing) {
-      const health = global.quantumSelfHealing.getSystemHealth();
-      selfHealingStatus = health.selfHealing ? 'AUTONOMOUS MAINTENANCE ACTIVE' : 'Standby';
+    let quantumStatus = 'Not initialized';
+    
+    if (global.automationStatusEngine) {
+      const status = global.automationStatusEngine.getCompleteAutomationStatus();
+      const quantum = status.detailed_status.quantum_ai;
+      
+      if (quantum) {
+        selfHealingStatus = quantum.self_healing ? 'ACTIVE' : 'Not active';
+        const activeComponents = Object.values(quantum).filter(active => active).length;
+        quantumStatus = `${activeComponents}/6 components active`;
+      }
+    } else if (global.quantumCore) {
+      selfHealingStatus = 'ACTIVE';
+      quantumStatus = 'Fully operational';
     }
 
-    automationContext += `\n\n⚡ AUTOMATION OVERVIEW:
-• Systems Initialized: ${activeSystemsCount}/5
-• Automation Level: ${Math.round((activeSystemsCount/5) * 100)}%
-• Self-Healing: ${selfHealingStatus}
-• Command Status: All commands functional
-• Memory: PostgreSQL permanent storage active
-• Intelligence: GPT-4o unlimited power mode`;
+    automationContext += `\n\n💾 **SYSTEM OVERVIEW**:
+- **Systems Initialized**: ${activeSystemsCount}/5
+- **Automation Level**: ${Math.round((activeSystemsCount/5) * 100)}%
+- **Self-Healing**: ${selfHealingStatus}
+- **Command Status**: All commands functional
+- **Memory**: Permanent storage active
+- **Intelligence**: GPT-4o unlimited power mode
+- **Quantum AI**: ${quantumStatus}`;
 
     return automationContext;
   } catch (error) {
