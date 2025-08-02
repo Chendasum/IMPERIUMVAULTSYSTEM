@@ -344,7 +344,7 @@ let CompetitorIntelligenceEngine, InstitutionalDataPipeline, AutomatedScalingPro
 let TradingAutomationEngine, CambodiaArbitrageEngine;
 let marketIntelligence, clientAcquisition, revenueOptimization;
 let competitorIntelligence, institutionalData, scalingProtocols, tradingAutomation;
-let cambodiaArbitrage;
+let cambodiaArbitrage, cambodiaRealProfits;
 
 try {
   MarketIntelligenceEngine = require('./src/automation/marketIntelligence.js');
@@ -354,7 +354,8 @@ try {
   InstitutionalDataPipeline = require('./src/automation/institutionalDataPipeline.js');
   AutomatedScalingProtocols = require('./src/automation/scalingProtocols.js');
   TradingAutomationEngine = require('./src/automation/tradingAutomation.js');
-  CambodiaArbitrageEngine = require('./automation/CambodiaArbitrageEngine');
+  CambodiaArbitrageEngine = require('./automation/CambodiaArbitrageEngine'),
+  CambodiaRealCurrencyProfits = require('./automation/CambodiaRealCurrencyProfits');
 
   // Initialize automation engines
   marketIntelligence = new MarketIntelligenceEngine();
@@ -365,8 +366,9 @@ try {
   scalingProtocols = new AutomatedScalingProtocols();
   tradingAutomation = new TradingAutomationEngine();
   cambodiaArbitrage = new CambodiaArbitrageEngine(bot);
+  cambodiaRealProfits = new CambodiaRealCurrencyProfits(bot);
   
-  console.log('✅ ALL 8 STRATEGIC POWER MULTIPLIERS LOADED SUCCESSFULLY');
+  console.log('✅ ALL 9 STRATEGIC POWER MULTIPLIERS LOADED SUCCESSFULLY');
   console.log('🚀 Market Intelligence Engine - ACTIVE');
   console.log('🎯 Client Acquisition Engine - ACTIVE');
   console.log('💰 Revenue Optimization Engine - ACTIVE');
@@ -375,6 +377,7 @@ try {
   console.log('🔥 Automated Scaling Protocols - ACTIVE');
   console.log('🤖 Trading Automation Engine - ACTIVE');
   console.log('💱 Cambodia Arbitrage Engine - ACTIVE');
+  console.log('💰 Cambodia Real Currency Profits - ACTIVE');
   
   // Initialize automation status engine
   const AutomationStatusEngine = require('./src/automation/AutomationStatusEngine');
@@ -3328,6 +3331,11 @@ bot.onText(/\/billionaire_help/i, async (msg) => {
 • /business_acquisition - Business acquisition engine
 • /real_estate_empire - Property portfolio status
 
+💱 CURRENCY PROFIT COMMANDS:
+• /arbitrage - Scan for arbitrage opportunities
+• /real_profits - Cambodia practical profit strategies
+• /profit_strategies - Detailed currency profit methods
+
 🏛️ 5 AUTOMATION ENGINES:
 
 1. 🏢 Business Acquisition Engine
@@ -3350,7 +3358,8 @@ bot.onText(/\/billionaire_help/i, async (msg) => {
 
 4. 💰 Capital Market Engine
 • Multi-bank optimization (ABA, ACLEDA, Wing, Bakong)
-• Currency arbitrage opportunities
+• Currency arbitrage monitoring (/arbitrage)
+• Real currency profit strategies (/real_profits)
 • Interest rate optimization
 • Automated fund transfers
 
@@ -4267,6 +4276,75 @@ bot.onText(/\/arbitrage_stop/i, async (msg) => {
   } catch (error) {
     console.error('❌ Stop arbitrage error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not stop arbitrage monitoring.");
+  }
+});
+
+// ===== CAMBODIA REAL CURRENCY PROFIT COMMANDS =====
+
+// Command: /real_profits - Show practical currency profit strategies
+bot.onText(/\/real_profits/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    await bot.sendMessage(chatId, "💰 Analyzing Cambodia's REAL currency profit opportunities...");
+    await bot.sendChatAction(chatId, "typing");
+
+    if (!cambodiaRealProfits) {
+      cambodiaRealProfits = new CambodiaRealCurrencyProfits(bot);
+    }
+
+    await cambodiaRealProfits.sendProfitReport(chatId);
+    
+  } catch (error) {
+    console.error('❌ Real profits command error:', error.message);
+    await bot.sendMessage(msg.chat.id, 
+      "❌ Could not analyze real profit opportunities. Please try again."
+    );
+  }
+});
+
+// Command: /profit_strategies - Detailed Cambodia currency profit methods
+bot.onText(/\/profit_strategies/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!cambodiaRealProfits) {
+      cambodiaRealProfits = new CambodiaRealCurrencyProfits(bot);
+    }
+
+    const opportunities = await cambodiaRealProfits.analyzeRealOpportunities();
+    
+    let message = `💰 CAMBODIA CURRENCY PROFIT STRATEGIES\n\n`;
+    message += `🇰🇭 REAL MARKET CONDITIONS:\n`;
+    message += `• NBC controls exchange rates - no direct arbitrage\n`;
+    message += `• Banks maintain coordinated spreads\n`;
+    message += `• Profit comes from service provision, not arbitrage\n\n`;
+    
+    message += `🎯 TOP 5 PROFITABLE STRATEGIES:\n\n`;
+    
+    opportunities.slice(0, 5).forEach((opp, index) => {
+      message += `${index + 1}. ${opp.strategy}\n`;
+      message += `💵 Returns: ${opp.monthlyReturn}\n`;
+      message += `💰 Capital: ${opp.capitalRequired}\n`;
+      message += `⚠️ Risk: ${opp.riskLevel}\n`;
+      message += `📊 Score: ${opp.profitPotential}/10\n\n`;
+    });
+    
+    message += `💡 WHY THESE WORK:\n`;
+    message += `• Banks focus on large clients only\n`;
+    message += `• Small businesses need better rates\n`;
+    message += `• Import/export companies need USD services\n`;
+    message += `• Cross-border rate differences exist\n\n`;
+    message += `📱 Use /real_profits for detailed daily recommendations`;
+    
+    await bot.sendMessage(chatId, message);
+    
+  } catch (error) {
+    console.error('❌ Profit strategies command error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not load profit strategies.");
   }
 });
 
