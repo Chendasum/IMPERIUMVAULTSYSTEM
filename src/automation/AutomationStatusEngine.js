@@ -80,65 +80,6 @@ class AutomationStatusEngine {
       potential_income: income
     };
   }
-
-  generateStatusReport() {
-    const status = this.getCompleteAutomationStatus();
-    
-    let report = `🤖 COMPLETE AUTOMATION SYSTEM STATUS\n\n`;
-    
-    // Overall status
-    report += `📊 SYSTEM OVERVIEW:\n`;
-    report += `• Status: ${status.overall_status.replace('_', ' ')}\n`;
-    report += `• Automation Level: ${status.automation_percentage}%\n`;
-    report += `• Active Systems: ${status.active_systems}/${status.total_systems}\n\n`;
-    
-    // Core engines
-    report += `🚀 CORE AUTOMATION ENGINES (7/7):\n`;
-    const coreEngines = status.detailed_status.core_automation;
-    Object.entries(coreEngines).forEach(([engine, active]) => {
-      const emoji = active ? '✅' : '❌';
-      const name = engine.replace(/_/g, ' ').toUpperCase();
-      report += `${emoji} ${name}\n`;
-    });
-    report += `\n`;
-    
-    // Forex trading
-    report += `📈 FOREX TRADING SYSTEM:\n`;
-    const forex = status.detailed_status.forex_trading;
-    report += `✅ MetaApi Connection: ${forex.connected ? 'CONNECTED' : 'DISCONNECTED'}\n`;
-    report += `✅ Account Balance: $${forex.account_balance}\n`;
-    report += `✅ AI Signals: ${forex.signals_active ? 'ACTIVE' : 'INACTIVE'}\n`;
-    report += `✅ Auto Trading: ${forex.auto_trading_ready ? 'READY' : 'NOT READY'}\n\n`;
-    
-    // Wealth machines
-    report += `🤖 WEALTH MACHINES:\n`;
-    const wealth = status.detailed_status.wealth_machines;
-    if (wealth.deployed) {
-      report += `✅ Status: DEPLOYED\n`;
-      report += `• Total Machines: ${wealth.total_machines}\n`;
-      report += `• Potential: $${(wealth.potential_income / 1000000).toFixed(1)}M annually\n`;
-    } else {
-      report += `❌ Status: NOT DEPLOYED\n`;
-      report += `Use /wealthmachines to activate\n`;
-    }
-    report += `\n`;
-    
-    // Billionaire automation
-    report += `🏛️ BILLIONAIRE AUTOMATION:\n`;
-    const billionaire = status.detailed_status.billionaire_automation;
-    if (billionaire.deployed) {
-      report += `✅ Status: DEPLOYED\n`;
-      report += `• Total Systems: ${billionaire.total_systems}\n`;
-      report += `• Potential: $${(billionaire.potential_income / 1000000000).toFixed(1)}B annually\n`;
-    } else {
-      report += `❌ Status: NOT DEPLOYED\n`;
-      report += `Use /billionaire to activate\n`;
-    }
-    
-    report += `\n⚡ AUTOMATION SYSTEM STATUS COMPLETE`;
-    
-    return report;
-  }
 }
 
 module.exports = AutomationStatusEngine;
