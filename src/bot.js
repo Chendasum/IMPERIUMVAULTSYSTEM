@@ -406,6 +406,25 @@ try {
     lendingEngine: true
   };
   
+  // Initialize essential automation components immediately (before setTimeout delay)
+  try {
+    const CryptoTradingBot = require(path.join(__dirname, 'automation', 'CryptoTradingBot'));
+    const BusinessBankingBot = require(path.join(__dirname, 'automation', 'BusinessBankingBot'));
+    const MarketIntelligence = require(path.join(__dirname, 'automation', 'marketIntelligence'));
+    
+    console.log('⚡ EARLY INITIALIZATION - Essential automation components');
+    // Note: bot parameter will be undefined here, but we'll reinitialize with proper bot later
+    global.cryptoTradingBot = new CryptoTradingBot(null);
+    global.businessBankingBotNew = new BusinessBankingBot(null);
+    global.marketIntelligence = new MarketIntelligence(null);
+    
+    console.log('✅ CRYPTO TRADING BOT - Pre-initialized');
+    console.log('✅ BUSINESS BANKING BOT - Pre-initialized');
+    console.log('✅ MARKET INTELLIGENCE - Pre-initialized');
+  } catch (earlyInitError) {
+    console.log('⚠️ Early automation init warning:', earlyInitError.message);
+  }
+  
   // Initialize AI Trading Bot after bot is defined
   setTimeout(async () => {
     try {
@@ -425,13 +444,17 @@ try {
       const MarketApisBot = require(path.join(__dirname, 'automation', 'MarketApisBot'));
       global.marketApisBot = new MarketApisBot(bot);
       
-      // Initialize Crypto Trading Bot with Railway environment support
+      // Re-initialize Crypto Trading Bot with proper bot reference
       const CryptoTradingBot = require(path.join(__dirname, 'automation', 'CryptoTradingBot'));
       global.cryptoTradingBot = new CryptoTradingBot(bot);
       
-      // Initialize Business Banking Bot
+      // Re-initialize Business Banking Bot with proper bot reference  
       const BusinessBankingBot = require(path.join(__dirname, 'automation', 'BusinessBankingBot'));
       global.businessBankingBotNew = new BusinessBankingBot(bot);
+      
+      // Re-initialize Market Intelligence with proper bot reference
+      const MarketIntelligence = require(path.join(__dirname, 'automation', 'marketIntelligence'));
+      global.marketIntelligence = new MarketIntelligence(bot);
       
       // Check Binance API keys configuration
       if (process.env.BINANCE_API_KEY && process.env.BINANCE_SECRET_KEY) {
@@ -457,6 +480,7 @@ try {
       global.marketApisBot.initialize();
       global.cryptoTradingBot.initialize();
       global.businessBankingBotNew.initialize();
+      global.marketIntelligence.initialize();
       
       // Mark systems as initialized
       global.systemsInitialized = {
@@ -466,7 +490,8 @@ try {
         realEstate: true,
         market: true,
         crypto: true,
-        businessBankingNew: true
+        businessBankingNew: true,
+        marketIntelligence: true
       };
       
       // Initialize wealth generation coordinator
