@@ -66,6 +66,20 @@ class MarketApisBot {
     tests.push(this.testYahooFinance());
     tests.push(this.testExchangeRateApi());
     
+    // Test premium APIs if keys are available
+    if (process.env.ALPHA_VANTAGE_API_KEY) {
+      tests.push(this.testAlphaVantage());
+    }
+    if (process.env.FINNHUB_API_KEY) {
+      tests.push(this.testFinnhub());
+    }
+    if (process.env.CURRENCY_LAYER_API_KEY) {
+      tests.push(this.testCurrencyLayer());
+    }
+    if (process.env.METALS_API_KEY) {
+      tests.push(this.testMetalsApi());
+    }
+    
     const results = await Promise.allSettled(tests);
     
     let workingApis = 0;
@@ -111,6 +125,58 @@ class MarketApisBot {
       return response.status === 200;
     } catch (error) {
       console.log('Exchange Rate API test failed:', error.message);
+      return false;
+    }
+  }
+
+  async testAlphaVantage() {
+    try {
+      const response = await axios.get(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=AAPL&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`, {
+        timeout: 5000
+      });
+      console.log('✅ Alpha Vantage API - CONNECTED (Professional stock data)');
+      return response.status === 200;
+    } catch (error) {
+      console.log('Alpha Vantage API test failed:', error.message);
+      return false;
+    }
+  }
+
+  async testFinnhub() {
+    try {
+      const response = await axios.get(`https://finnhub.io/api/v1/quote?symbol=AAPL&token=${process.env.FINNHUB_API_KEY}`, {
+        timeout: 5000
+      });
+      console.log('✅ Finnhub API - CONNECTED (Real-time stock news)');
+      return response.status === 200;
+    } catch (error) {
+      console.log('Finnhub API test failed:', error.message);
+      return false;
+    }
+  }
+
+  async testCurrencyLayer() {
+    try {
+      const response = await axios.get(`https://api.currencylayer.com/live?access_key=${process.env.CURRENCY_LAYER_API_KEY}&currencies=EUR,GBP,JPY`, {
+        timeout: 5000
+      });
+      console.log('✅ CurrencyLayer API - CONNECTED (Professional forex data)');
+      return response.status === 200;
+    } catch (error) {
+      console.log('CurrencyLayer API test failed:', error.message);
+      return false;
+    }
+  }
+
+  async testMetalsApi() {
+    try {
+      const response = await axios.get(`https://api.metals-api.com/v1/latest?access_key=${process.env.METALS_API_KEY}&base=USD&symbols=XAU,XAG`, {
+        timeout: 5000
+      });
+      console.log('✅ Metals API - CONNECTED (Gold, Silver, Platinum prices)');
+      return response.status === 200;
+    } catch (error) {
+      console.log('Metals API test failed:', error.message);
       return false;
     }
   }
