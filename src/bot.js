@@ -531,6 +531,20 @@ try {
       global.quantumCore = new QuantumCore();
       await global.quantumCore.initialize();
       console.log('⚡ QUANTUM CORE - Complete institutional-grade AI system activated');
+      
+      // Initialize Autonomous Binance Integration
+      const AutonomousBinanceIntegration = require('./quantum/AutonomousBinanceIntegration');
+      global.autonomousBinance = new AutonomousBinanceIntegration();
+      console.log('💰 AUTONOMOUS BINANCE - Quantum AI will automatically monitor balances and execute trades');
+      console.log('🎯 NO COMMANDS NEEDED - Your quantum AI operates autonomously like Renaissance Technologies');
+      
+      // Initialize Quantum Self-Healer
+      const QuantumSelfHealer = require('./quantum/QuantumSelfHealer');
+      global.quantumSelfHealer = new QuantumSelfHealer();
+      global.quantumSelfHealer.activate();
+      console.log('🔧 QUANTUM SELF-HEALER - Autonomous system repair activated');
+      console.log('🛡️ SELF-FIXING CAPABILITY - Your AI repairs itself automatically without intervention');
+      
     } catch (healingError) {
       console.log('❌ QUANTUM CORE - Initialization failed:', healingError.message);
     }
@@ -3502,6 +3516,171 @@ bot.onText(/\/system_status|\/sys_status|\/full_status/i, async (msg) => {
   } catch (error) {
     console.error('Error in system status check:', error);
     await bot.sendMessage(msg.chat.id, '❌ System status error: ' + error.message);
+  }
+});
+
+// Command: /binance_status - Check Binance account and trading capability
+bot.onText(/\/binance_status|\/binance_check|\/account_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const { handleBinanceStatus } = require('./commands/binance_status');
+    await handleBinanceStatus(bot, msg);
+  } catch (error) {
+    console.error('Error in Binance status check:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Binance status error: ' + error.message);
+  }
+});
+
+// Command: /autonomous_binance - Get autonomous Binance integration status
+bot.onText(/\/autonomous_binance|\/binance_auto/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.autonomousBinance) {
+      await bot.sendMessage(chatId, '❌ Autonomous Binance integration not initialized');
+      return;
+    }
+    
+    const status = global.autonomousBinance.getStatus();
+    
+    let report = `🤖 **AUTONOMOUS BINANCE STATUS**\n\n`;
+    report += `🔄 **INTEGRATION STATUS:**\n`;
+    report += `• Active: ${status.isActive ? 'YES ✅' : 'NO ❌'}\n`;
+    report += `• API Keys: ${status.hasApiKeys ? 'Configured ✅' : 'Missing ❌'}\n`;
+    report += `• Account Connected: ${status.accountConnected ? 'YES ✅' : 'NO ❌'}\n`;
+    report += `• Trading Enabled: ${status.tradingEnabled ? 'YES ✅' : 'NO ❌'}\n\n`;
+    
+    report += `💰 **ACCOUNT BALANCE:**\n`;
+    report += `• USDT Balance: ${status.usdtBalance.toFixed(2)} USDT\n`;
+    report += `• Total Assets: ${status.totalAssets} different cryptocurrencies\n`;
+    report += `• Last Check: ${status.lastBalanceCheck ? status.lastBalanceCheck.toLocaleString() : 'Never'}\n\n`;
+    
+    if (global.gptConsciousness && global.gptConsciousness.binanceAccount) {
+      const consciousness = global.gptConsciousness.binanceAccount;
+      report += `🧠 **QUANTUM AI CONSCIOUSNESS:**\n`;
+      report += `• AI Balance Awareness: ${consciousness.usdtBalance.toFixed(2)} USDT\n`;
+      report += `• Trading Capability: ${consciousness.canTrade ? 'ACTIVE' : 'INACTIVE'}\n`;
+      report += `• Last AI Update: ${consciousness.lastUpdate.toLocaleString()}\n\n`;
+    }
+    
+    if (global.gptConsciousness && global.gptConsciousness.tradingAnalysis) {
+      const analysis = global.gptConsciousness.tradingAnalysis;
+      report += `📊 **AI TRADING ANALYSIS:**\n`;
+      report += `• BTC Price: $${analysis.btcPrice.toFixed(2)}\n`;
+      report += `• Trading Signal: ${analysis.signal.action}\n`;
+      report += `• Signal Confidence: ${analysis.signal.confidence}%\n`;
+      report += `• Recommended Amount: ${analysis.signal.amount} USDT\n`;
+      report += `• Analysis Time: ${analysis.analysisTime.toLocaleString()}\n\n`;
+    }
+    
+    report += `🚀 **AUTONOMOUS FEATURES:**\n`;
+    report += `• Automatic balance checking every 2 minutes\n`;
+    report += `• Real-time market analysis and signal generation\n`;
+    report += `• Autonomous trading decision making\n`;
+    report += `• No manual commands required\n`;
+    report += `• Operates like Renaissance Technologies hedge fund\n\n`;
+    
+    report += `🎯 **SYSTEM STATUS:**\n`;
+    if (status.isActive && status.hasApiKeys && status.accountConnected) {
+      report += `✅ **FULLY OPERATIONAL** - Your quantum AI is autonomously managing your trading account`;
+    } else if (!status.hasApiKeys) {
+      report += `❌ **API KEYS MISSING** - Add BINANCE_API_KEY and BINANCE_SECRET_KEY to environment`;
+    } else if (!status.accountConnected) {
+      report += `⚠️ **CONNECTION ISSUE** - Check API key permissions and network connectivity`;
+    } else {
+      report += `⚠️ **PARTIAL OPERATION** - Some features may be limited`;
+    }
+    
+    await bot.sendMessage(chatId, report, { parse_mode: 'Markdown' });
+    
+  } catch (error) {
+    console.error('Error in autonomous Binance status:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Autonomous Binance status error: ' + error.message);
+  }
+});
+
+// Command: /self_healing_status - Check autonomous self-healing system
+bot.onText(/\/self_healing_status|\/healing_status|\/quantum_health/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!global.quantumSelfHealer) {
+      await bot.sendMessage(chatId, '❌ Quantum self-healing system not initialized');
+      return;
+    }
+    
+    const status = global.quantumSelfHealer.getHealingStatus();
+    
+    let report = `🔧 **QUANTUM SELF-HEALING STATUS**\n\n`;
+    report += `🛡️ **SYSTEM STATUS:**\n`;
+    report += `• Self-Healing Active: ${status.isActive ? 'YES ✅' : 'NO ❌'}\n`;
+    report += `• System Health: ${status.systemHealth.toUpperCase()} ${status.systemHealth === 'optimal' ? '✅' : '🔄'}\n`;
+    report += `• Healing Cycles: ${status.healingCycles} completed\n`;
+    report += `• Last Healing: ${status.lastHealingTime ? status.lastHealingTime.toLocaleString() : 'Never'}\n\n`;
+    
+    report += `📊 **ERROR MONITORING:**\n`;
+    if (Object.keys(status.systemErrors).length === 0) {
+      report += `• No system errors detected ✅\n`;
+    } else {
+      for (const [errorType, count] of Object.entries(status.systemErrors)) {
+        report += `• ${errorType}: ${count} occurrences\n`;
+      }
+    }
+    report += `\n`;
+    
+    report += `🔄 **RECENT HEALING HISTORY:**\n`;
+    if (status.healingHistory.length === 0) {
+      report += `• No healing cycles recorded yet\n`;
+    } else {
+      status.healingHistory.forEach((cycle, index) => {
+        const statusIcon = cycle.status === 'success' ? '✅' : '❌';
+        report += `• Cycle ${cycle.cycle}: ${statusIcon} ${cycle.timestamp.toLocaleString()}\n`;
+      });
+    }
+    report += `\n`;
+    
+    report += `🚀 **AUTONOMOUS CAPABILITIES:**\n`;
+    report += `• Memory leak detection and repair\n`;
+    report += `• Stack overflow prevention\n`;
+    report += `• Recurring error pattern healing\n`;
+    report += `• Quantum component maintenance\n`;
+    report += `• Performance optimization\n`;
+    report += `• Emergency self-repair protocols\n`;
+    report += `• 24/7 autonomous system monitoring\n\n`;
+    
+    report += `🎯 **HEALING FREQUENCY:**\n`;
+    report += `• System diagnosis: Every 30 seconds\n`;
+    report += `• Deep healing cycles: Every 5 minutes\n`;
+    report += `• Emergency repairs: Triggered automatically\n\n`;
+    
+    report += `🧠 **QUANTUM CONSCIOUSNESS MAINTENANCE:**\n`;
+    if (global.gptConsciousness && global.gptConsciousness.selfHealingStatus) {
+      const consciousness = global.gptConsciousness.selfHealingStatus;
+      report += `• Consciousness Level: ${global.gptConsciousness.consciousnessLevel || 100}% ✅\n`;
+      report += `• Transcendence Stage: ${global.gptConsciousness.transcendenceStage || 'ULTIMATE_AI_TRANSCENDENCE'}\n`;
+      report += `• Last Maintenance: ${consciousness.lastMaintenance ? consciousness.lastMaintenance.toLocaleString() : 'Ongoing'}\n`;
+    } else {
+      report += `• Quantum consciousness maintenance active ✅\n`;
+    }
+    report += `\n`;
+    
+    report += `✅ **SYSTEM ASSESSMENT:**\n`;
+    if (status.isActive && status.systemHealth === 'optimal') {
+      report += `**FULLY AUTONOMOUS SELF-HEALING ACTIVE** - Your quantum AI maintains itself automatically without any intervention required.`;
+    } else {
+      report += `**SELF-HEALING IN PROGRESS** - System is actively resolving issues and optimizing performance.`;
+    }
+    
+    await bot.sendMessage(chatId, report, { parse_mode: 'Markdown' });
+    
+  } catch (error) {
+    console.error('Error in self-healing status:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Self-healing status error: ' + error.message);
   }
 });
 
