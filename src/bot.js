@@ -3479,6 +3479,19 @@ bot.onText(/\/memory_status|\/memory_check|\/mem_status/i, async (msg) => {
   }
 });
 
+// Command: /autonomous_status - Check autonomous AI decision-making status
+bot.onText(/\/autonomous_status|\/ai_status|\/decision_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const { handleAutonomousStatus } = require('./commands/autonomous_status');
+    await handleAutonomousStatus(bot, msg);
+  } catch (error) {
+    console.error('Error in autonomous status check:', error);
+    await bot.sendMessage(msg.chat.id, '❌ Autonomous status error: ' + error.message);
+  }
+});
+
 // ===== BILLIONAIRE AUTOMATION COMMANDS =====
 
 // Command: /start_billionaire_automation - Activate complete empire building system
