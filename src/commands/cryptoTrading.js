@@ -6,25 +6,40 @@ module.exports = {
   'start_crypto_trading': {
     description: '🔥 Start automated crypto trading (24/7)',
     handler: async (bot, msg) => {
+      console.log('🔥 CRYPTO COMMAND START - User ID:', msg.from.id);
+      
       if (!isAuthorizedCommander(msg.from.id)) {
+        console.log('❌ Authorization failed for user:', msg.from.id);
         return bot.sendMessage(msg.chat.id, '⛔ Access denied. Commander authorization required.');
       }
+      
+      console.log('✅ Authorization passed');
 
       try {
+        console.log('🔧 Checking if crypto bot exists:', !!global.cryptoTradingBot);
+        
         if (!global.cryptoTradingBot) {
+          console.log('🔧 Creating crypto bot on-demand...');
           // Try to create crypto bot if it doesn't exist
           try {
             const CryptoTradingBot = require('../automation/CryptoTradingBot');
             global.cryptoTradingBot = new CryptoTradingBot(bot);
-            await global.cryptoTradingBot.initialize();
+            
+            console.log('🔧 Initializing crypto bot...');
+            const initResult = await global.cryptoTradingBot.initialize();
+            console.log('🔧 Init result:', initResult);
+            
             console.log('✅ Crypto bot created on-demand');
           } catch (createError) {
             console.error('❌ Failed to create crypto bot:', createError.message);
+            console.error('❌ Create error stack:', createError.stack);
             return bot.sendMessage(msg.chat.id, '❌ Crypto trading system unavailable. Please try again in a moment.');
           }
         }
 
+        console.log('🔧 Starting crypto trading...');
         const result = await global.cryptoTradingBot.startTrading();
+        console.log('🔧 Start trading result:', result);
         
         if (result.success) {
           const message = `🔥 CRYPTO TRADING AUTOMATION STARTED
