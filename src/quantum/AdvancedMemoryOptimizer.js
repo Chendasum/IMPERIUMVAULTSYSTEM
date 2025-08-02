@@ -47,9 +47,14 @@ class AdvancedMemoryOptimizer {
         this.memoryHistory.shift();
       }
       
-      // Determine optimization level needed
+      // Determine optimization level needed - simplified to avoid recursion
       if (usagePercent >= this.memoryThresholds.critical) {
-        await this.emergencyOptimization(usagePercent);
+        console.log(`🚨 EMERGENCY CLEANUP - Memory at ${(usagePercent * 100).toFixed(1)}%, performing emergency optimization`);
+        // Direct emergency cleanup without calling emergencyOptimization method
+        await this.clearTemporaryCaches();
+        await this.clearRebuildableData();
+        if (global.gc) global.gc();
+        console.log('✅ Emergency optimization complete');
       } else if (usagePercent >= this.memoryThresholds.warning) {
         await this.aggressiveOptimization(usagePercent);
       } else if (usagePercent >= this.memoryThresholds.proactive) {
@@ -88,8 +93,9 @@ class AdvancedMemoryOptimizer {
   async aggressiveOptimization(usagePercent) {
     console.log(`🧹 AGGRESSIVE CLEANUP - Memory at ${(usagePercent * 100).toFixed(1)}%, performing deep optimization`);
     
-    // All proactive optimizations plus more
-    await this.proactiveOptimization(usagePercent);
+    // Direct aggressive optimizations without recursive calls
+    await this.clearTemporaryCaches();
+    await this.optimizeDataStructures();
     
     // Force garbage collection if available
     if (global.gc) {
