@@ -418,11 +418,17 @@ class GovernmentContractTracker {
       if (majorContracts.length === 0) {
         await this.bot.sendMessage(chatId,
           "🏛️ DAILY CONTRACT MONITORING COMPLETED\n\n" +
-          "❌ No major contracts ($50M+) found today\n" +
+          "❌ No contracts ($500K+) found today - CAMBODIA MARKET OPTIMIZED\n" +
           "⚠️ This may indicate:\n" +
           "• Government websites requiring authentication\n" +
           "• Contracts not yet published\n" +
-          "• Seasonal variations in project announcements\n\n" +
+          "• Seasonal variations in project announcements\n" +
+          "• Ministry websites temporarily unavailable\n\n" +
+          "🎯 SYSTEM NOW MONITORING REALISTIC CAMBODIA CONTRACTS:\n" +
+          "• $500K+ Infrastructure projects (roads, schools, hospitals)\n" +
+          "• $1M+ Equipment procurement (medical, IT, construction)\n" +
+          "• $2M+ Development projects (bridges, buildings)\n" +
+          "• $5M+ Major infrastructure (airports, ports)\n\n" +
           "🔧 Consider checking ministry websites manually"
         );
         return;
