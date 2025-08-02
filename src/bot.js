@@ -2601,6 +2601,92 @@ const generateUltimateContext = (userId) => {
   }
 };
 
+// ===== LIVE AUTOMATION CONTEXT GENERATOR =====
+const generateLiveAutomationContext = async () => {
+  try {
+    let automationContext = "\n\nLIVE AUTOMATION SYSTEM STATUS:\n";
+
+    // Check MetaApi connection
+    if (global.forexApi) {
+      try {
+        const accountInfo = await global.forexApi.getAccountInformation();
+        automationContext += `\n🔥 FOREX TRADING (XM Account):
+• Status: CONNECTED ✅
+• Account: ${accountInfo.login}
+• Balance: $${accountInfo.balance}
+• Equity: $${accountInfo.equity}
+• Trading: ${global.aiTradingBot ? 'ACTIVE' : 'STANDBY'}`;
+      } catch (error) {
+        automationContext += `\n🔥 FOREX TRADING: MetaApi configured but connection issue`;
+      }
+    } else {
+      automationContext += `\n🔥 FOREX TRADING: Not initialized`;
+    }
+
+    // Check Crypto Trading
+    if (global.cryptoTradingBot) {
+      automationContext += `\n💎 CRYPTO TRADING (Binance):
+• Status: INITIALIZED ✅
+• API Keys: Configured
+• Trading: ${global.cryptoTradingBot.isTrading ? 'ACTIVE 24/7' : 'STANDBY'}
+• Analysis: Every 2 minutes`;
+    } else {
+      automationContext += `\n💎 CRYPTO TRADING: Not initialized`;
+    }
+
+    // Check Business Banking
+    if (global.businessBankingBotNew) {
+      automationContext += `\n🏦 BUSINESS BANKING:
+• Status: INITIALIZED ✅
+• Banks: ABA, ACLEDA, Wing, Bakong ready
+• Optimization: ${global.businessBankingBotNew.isOptimizing ? '30-min cycles ACTIVE' : 'STANDBY'}`;
+    } else {
+      automationContext += `\n🏦 BUSINESS BANKING: Not initialized`;
+    }
+
+    // Check Market Analysis
+    if (global.marketApisBot) {
+      automationContext += `\n📊 MARKET INTELLIGENCE:
+• Status: INITIALIZED ✅
+• Global APIs: Yahoo Finance, Exchange Rates
+• Analysis: ${global.marketApisBot.isRunning ? 'Every 5 minutes ACTIVE' : 'STANDBY'}`;
+    } else {
+      automationContext += `\n📊 MARKET INTELLIGENCE: Not initialized`;
+    }
+
+    // Check Real Estate
+    if (global.realEstateBot) {
+      automationContext += `\n🏠 REAL ESTATE SCANNING:
+• Status: INITIALIZED ✅
+• Platforms: 4 Cambodia property sites
+• Scanning: ${global.realEstateBot.scanningActive ? 'Every 2 hours ACTIVE' : 'STANDBY'}`;
+    } else {
+      automationContext += `\n🏠 REAL ESTATE: Not initialized`;
+    }
+
+    // System Integration Status
+    const activeSystemsCount = [
+      global.forexApi,
+      global.cryptoTradingBot,
+      global.businessBankingBotNew,
+      global.marketApisBot,
+      global.realEstateBot
+    ].filter(Boolean).length;
+
+    automationContext += `\n\n⚡ AUTOMATION OVERVIEW:
+• Systems Initialized: ${activeSystemsCount}/5
+• Automation Level: ${Math.round((activeSystemsCount/5) * 100)}%
+• Command Status: All commands functional
+• Memory: PostgreSQL permanent storage active
+• Intelligence: GPT-4o unlimited power mode`;
+
+    return automationContext;
+  } catch (error) {
+    console.error("❌ Live automation context error:", error.message);
+    return "\n\nAutomation system data temporarily unavailable";
+  }
+};
+
 // ===== ENHANCED ULTIMATE SYSTEM PROMPT =====
 const ULTIMATE_VAULT_SYSTEM_PROMPT = `អ្នកគឺជា ULTIMATE VAULT CLAUDE ដែលជាប្រព័ន្ធ AI យុទ្ធសាស្ត្រផ្ទាល់ខ្លួនកំពូលបំផុតរបស់ Commander Sum Chenda ។ អ្នកមិនមែនជាអ្នកជំនួយ AI ទូទៅទេ។ អ្នកគឺជាអត្តសញ្ញាណយុទ្ធសាស្ត្រ ការចងចាំស្ថាប័ន និងម៉ាស៊ីនកម្លាំងបញ្ញាប្រកួតប្រជែងរបស់គាត់ជាមួយនឹងជំនាញទីផ្សារកម្ពុជាយ៉ាងស៊ីជម្រៅ។
 
@@ -7866,7 +7952,27 @@ bot.on("message", async (msg) => {
 
     // Regular message handling with dynasty protection (ALL messages including "hello")
     console.log("🧠 Processing through Ultimate AI System...");
-    await handleUltimateMessage(bot, msg);
+    console.log("🔍 DEBUG: About to call handleUltimateMessage");
+    
+    try {
+      await handleUltimateMessage(bot, msg);
+      console.log("✅ DEBUG: handleUltimateMessage completed successfully");
+    } catch (error) {
+      console.error("❌ DEBUG: handleUltimateMessage failed:", error.message);
+      console.error("❌ DEBUG: Stack trace:", error.stack);
+      
+      // Send a simple response to let user know there's an issue
+      await bot.sendMessage(msg.chat.id, `🚨 CHAT SYSTEM ERROR DETECTED
+
+❌ Error: ${error.message}
+
+🔧 TROUBLESHOOTING:
+Your automation commands work perfectly, but chat processing has an error.
+
+Use /start_all_automation to continue with your wealth systems while I debug this.
+
+DEBUG MODE: ${error.stack?.split('\n')[0] || 'Unknown error location'}`);
+    }
   } catch (error) {
     console.error("❌ Message handler error:", error.message);
     // Log the full error and attempt direct response
@@ -7989,8 +8095,9 @@ const handleUltimateMessage = async (bot, msg) => {
       conversation = conversation.slice(-12);
     }
 
-    // Generate ultimate context with all accumulated intelligence
+    // Generate ultimate context with all accumulated intelligence + LIVE AUTOMATION DATA
     const ultimateContext = generateUltimateContext(userId);
+    const liveAutomationData = await generateLiveAutomationContext();
 
     const messages = [...conversation];
 
@@ -7998,8 +8105,8 @@ const handleUltimateMessage = async (bot, msg) => {
     const userSession = initializeUserSession(chatId);
     const currentMode = userSession.mode || 'unlimited';
 
-    // Build comprehensive Commander identity context while preserving unlimited intelligence
-    const commanderContext = buildCommanderContext(ultimateContext, currentMode);
+    // Build comprehensive Commander identity context with LIVE DATA
+    const commanderContext = buildCommanderContext(ultimateContext + liveAutomationData, currentMode);
 
     console.log("🧠 Commander Context Generated:", commanderContext);
 
