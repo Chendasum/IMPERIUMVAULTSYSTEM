@@ -3492,6 +3492,19 @@ bot.onText(/\/autonomous_status|\/ai_status|\/decision_status/i, async (msg) => 
   }
 });
 
+// Command: /system_status - Comprehensive system status and memory analysis
+bot.onText(/\/system_status|\/sys_status|\/full_status/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const { handleSystemStatus } = require('./commands/system_status');
+    await handleSystemStatus(bot, msg);
+  } catch (error) {
+    console.error('Error in system status check:', error);
+    await bot.sendMessage(msg.chat.id, '❌ System status error: ' + error.message);
+  }
+});
+
 // ===== BILLIONAIRE AUTOMATION COMMANDS =====
 
 // Command: /start_billionaire_automation - Activate complete empire building system
