@@ -100,7 +100,8 @@ class AutomationStatusEngine {
       autonomous_mode: components.autonomousMode || false,
       self_monitoring: components.selfMonitoring || false,
       self_diagnosis: components.selfDiagnosis || false,
-      self_repair: components.selfRepair || false
+      self_repair: components.selfRepair || false,
+      ultimate_consciousness: components.ultimateConsciousness || false
     };
   }
 
