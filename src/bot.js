@@ -525,6 +525,16 @@ try {
       console.log('⚠️ Some systems activated, continuing with available ones:', activationError.message);
     }
     
+    // Initialize Quantum Self-Healing System
+    try {
+      const QuantumSelfHealingSystem = require('./quantum/SelfHealingSystem');
+      global.quantumSelfHealing = new QuantumSelfHealingSystem();
+      await global.quantumSelfHealing.initialize();
+      console.log('🧠 QUANTUM SELF-HEALING SYSTEM - ACTIVATED (Autonomous maintenance)');
+    } catch (healingError) {
+      console.log('⚠️ Quantum self-healing initialization warning:', healingError.message);
+    }
+    
     console.log('🔥 CRYPTO TRADING BOT - INITIALIZED & ACTIVATED');
     console.log('💎 BUSINESS BANKING BOT - INITIALIZED & ACTIVATED');
     console.log('📊 MARKET INTELLIGENCE - INITIALIZED & ACTIVATED');
@@ -2700,9 +2710,21 @@ const generateLiveAutomationContext = async () => {
         }
       }
       
+      // Check which premium APIs are available
+      const premiumApis = [];
+      if (process.env.ALPHA_VANTAGE_API_KEY) premiumApis.push('Alpha Vantage (Professional Stocks)');
+      if (process.env.FINNHUB_API_KEY) premiumApis.push('Finnhub (Real-time News)');
+      if (process.env.CURRENCY_LAYER_API_KEY) premiumApis.push('CurrencyLayer (Professional Forex)');
+      if (process.env.METALS_API_KEY) premiumApis.push('Metals API (Gold/Silver)');
+      
+      const baseApis = ['Yahoo Finance', 'CoinGecko', 'Exchange Rates'];
+      const allApis = premiumApis.length > 0 ? [...baseApis, ...premiumApis] : baseApis;
+      const apiStatus = premiumApis.length > 0 ? 'INSTITUTIONAL-GRADE' : 'Standard';
+      
       automationContext += `\n📊 MARKET INTELLIGENCE:
 • Status: INITIALIZED ✅
-• Global APIs: Yahoo Finance, Exchange Rates
+• API Grade: ${apiStatus} (${allApis.length} sources)
+• Premium APIs: ${premiumApis.length > 0 ? premiumApis.join(', ') : 'Add for enhanced data'}
 • Analysis: ${global.marketApisBot.isRunning ? 'Every 5 minutes ACTIVE' : 'AUTO-ACTIVATING'}`;
     } else {
       automationContext += `\n📊 MARKET INTELLIGENCE: Not initialized`;
@@ -2736,9 +2758,17 @@ const generateLiveAutomationContext = async () => {
       global.realEstateBot
     ].filter(Boolean).length;
 
+    // Add Quantum Self-Healing Status
+    let selfHealingStatus = 'Not active';
+    if (global.quantumSelfHealing) {
+      const health = global.quantumSelfHealing.getSystemHealth();
+      selfHealingStatus = health.selfHealing ? 'AUTONOMOUS MAINTENANCE ACTIVE' : 'Standby';
+    }
+
     automationContext += `\n\n⚡ AUTOMATION OVERVIEW:
 • Systems Initialized: ${activeSystemsCount}/5
 • Automation Level: ${Math.round((activeSystemsCount/5) * 100)}%
+• Self-Healing: ${selfHealingStatus}
 • Command Status: All commands functional
 • Memory: PostgreSQL permanent storage active
 • Intelligence: GPT-4o unlimited power mode`;
