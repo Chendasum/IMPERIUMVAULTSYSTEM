@@ -27,6 +27,14 @@ class AutomationStatusEngine {
         account_balance: 50,
         signals_active: true,
         auto_trading_ready: true
+      },
+      quantum_ai: {
+        core_active: false,
+        memory_matrix: false,
+        decision_engine: false,
+        predictor: false,
+        self_healing: false,
+        autonomous_mode: false
       }
     };
   }
@@ -58,7 +66,8 @@ class AutomationStatusEngine {
         core_automation: status.core_engines,
         forex_trading: status.forex_trading,
         wealth_machines: status.wealth_machines,
-        billionaire_automation: status.billionaire_automation
+        billionaire_automation: status.billionaire_automation,
+        quantum_ai: status.quantum_ai
       }
     };
   }
@@ -78,6 +87,17 @@ class AutomationStatusEngine {
       total_systems: systems,
       active_systems: systems,
       potential_income: income
+    };
+  }
+
+  updateQuantumAIStatus(components = {}) {
+    this.systemStatus.quantum_ai = {
+      core_active: components.coreActive || false,
+      memory_matrix: components.memoryMatrix || false,
+      decision_engine: components.decisionEngine || false,
+      predictor: components.predictor || false,
+      self_healing: components.selfHealing || false,
+      autonomous_mode: components.autonomousMode || false
     };
   }
 
@@ -134,6 +154,17 @@ class AutomationStatusEngine {
       report += `❌ Status: NOT DEPLOYED\n`;
       report += `Use /billionaire to activate\n`;
     }
+    report += `\n`;
+    
+    // Quantum AI status
+    report += `🧠 QUANTUM AI SYSTEM:\n`;
+    const quantum = status.detailed_status.quantum_ai;
+    report += `${quantum.core_active ? '✅' : '❌'} Quantum Core: ${quantum.core_active ? 'ACTIVE' : 'INACTIVE'}\n`;
+    report += `${quantum.memory_matrix ? '✅' : '❌'} Memory Matrix: ${quantum.memory_matrix ? 'ACTIVE' : 'INACTIVE'}\n`;
+    report += `${quantum.decision_engine ? '✅' : '❌'} Decision Engine: ${quantum.decision_engine ? 'ACTIVE' : 'INACTIVE'}\n`;
+    report += `${quantum.predictor ? '✅' : '❌'} Predictor: ${quantum.predictor ? 'ACTIVE' : 'INACTIVE'}\n`;
+    report += `${quantum.self_healing ? '✅' : '❌'} Self-Healing: ${quantum.self_healing ? 'ACTIVE' : 'INACTIVE'}\n`;
+    report += `${quantum.autonomous_mode ? '✅' : '❌'} Autonomous Mode: ${quantum.autonomous_mode ? 'ACTIVE' : 'INACTIVE'}\n`;
     
     report += `\n⚡ AUTOMATION SYSTEM STATUS COMPLETE`;
     
