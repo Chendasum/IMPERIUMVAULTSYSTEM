@@ -376,23 +376,103 @@ class MarketApisBot {
     try {
       const commodityData = [];
       
-      // For demonstration, we'll use placeholder data
-      // In production, you'd integrate with proper commodity APIs
-      const commodities = [
-        { symbol: 'XAU/USD', name: 'Gold', price: 2045.50, change: 12.30, changePercent: 0.60 },
-        { symbol: 'XAG/USD', name: 'Silver', price: 24.85, change: -0.15, changePercent: -0.60 },
+      // Use Metals API for real gold/silver data if available
+      if (process.env.METALS_API_KEY) {
+        try {
+          console.log('📊 Using Metals API for real-time precious metals data');
+          const response = await axios.get(`https://api.metals.live/v1/spot`, {
+            headers: {
+              'x-access-token': process.env.METALS_API_KEY
+            },
+            timeout: 10000
+          });
+
+          if (response.data) {
+            const metals = response.data;
+            
+            // Add gold data
+            if (metals.gold) {
+              commodityData.push({
+                symbol: 'XAU/USD',
+                name: 'Gold (Live)',
+                price: metals.gold,
+                change: 0, // Metals API doesn't provide change data
+                changePercent: '0.00',
+                trend: 'neutral',
+                source: 'Metals API'
+              });
+            }
+            
+            // Add silver data
+            if (metals.silver) {
+              commodityData.push({
+                symbol: 'XAG/USD',
+                name: 'Silver (Live)',
+                price: metals.silver,
+                change: 0,
+                changePercent: '0.00',
+                trend: 'neutral',
+                source: 'Metals API'
+              });
+            }
+            
+            // Add other metals if available
+            if (metals.platinum) {
+              commodityData.push({
+                symbol: 'XPT/USD',
+                name: 'Platinum (Live)',
+                price: metals.platinum,
+                change: 0,
+                changePercent: '0.00',
+                trend: 'neutral',
+                source: 'Metals API'
+              });
+            }
+          }
+        } catch (metalsError) {
+          console.log('⚠️ Metals API error (falling back to demo data):', metalsError.message);
+        }
+      }
+      
+      // Add demo oil data (since Metals API is primarily for precious metals)
+      const oilData = [
         { symbol: 'WTI', name: 'Crude Oil WTI', price: 78.45, change: 1.20, changePercent: 1.55 },
         { symbol: 'BRENT', name: 'Brent Crude', price: 82.10, change: 0.85, changePercent: 1.05 }
       ];
+      
+      oilData.forEach(oil => {
+        commodityData.push({
+          symbol: oil.symbol,
+          name: oil.name,
+          price: oil.price,
+          change: oil.change,
+          changePercent: oil.changePercent.toFixed(2),
+          trend: oil.change > 0 ? 'bullish' : 'bearish',
+          source: 'Demo Data'
+        });
+      });
 
-      return commodities.map(commodity => ({
-        symbol: commodity.symbol,
-        name: commodity.name,
-        price: commodity.price,
-        change: commodity.change,
-        changePercent: commodity.changePercent.toFixed(2),
-        trend: commodity.change > 0 ? 'bullish' : 'bearish'
-      }));
+      // If no real data available, use demo precious metals data
+      if (commodityData.length === 2) { // Only oil data
+        const demoMetals = [
+          { symbol: 'XAU/USD', name: 'Gold (Demo)', price: 2045.50, change: 12.30, changePercent: 0.60 },
+          { symbol: 'XAG/USD', name: 'Silver (Demo)', price: 24.85, change: -0.15, changePercent: -0.60 }
+        ];
+        
+        demoMetals.forEach(metal => {
+          commodityData.push({
+            symbol: metal.symbol,
+            name: metal.name,
+            price: metal.price,
+            change: metal.change,
+            changePercent: metal.changePercent.toFixed(2),
+            trend: metal.change > 0 ? 'bullish' : 'bearish',
+            source: 'Demo Data'
+          });
+        });
+      }
+
+      return commodityData;
     } catch (error) {
       console.error('Commodities scan error:', error.message);
       return [];
