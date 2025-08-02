@@ -132,6 +132,8 @@ class QuantumSelfHealer {
   }
 
   disableRecursiveFunctions() {
+    console.log('🛡️ QUANTUM SELF-HEALER - Disabling problematic recursive functions');
+    
     // Temporarily disable problematic recursive memory optimization
     if (global.quantumCore && global.quantumCore.components) {
       const memoryOptimizer = global.quantumCore.components.get('memoryOptimizer');
@@ -147,6 +149,27 @@ class QuantumSelfHealer {
           memoryOptimizer.emergencyCleanup = originalFunction;
           console.log('🔄 QUANTUM SELF-HEALER - Recursive function re-enabled safely');
         }, 300000);
+      }
+    }
+    
+    // Also disable problematic autonomous decision cycles temporarily
+    if (global.quantumCore && global.quantumCore.autonomousDecisionEngine) {
+      const originalEmergencyCleanup = global.quantumCore.autonomousDecisionEngine.triggerAutonomousAction;
+      if (originalEmergencyCleanup) {
+        global.quantumCore.autonomousDecisionEngine.triggerAutonomousAction = (actionType, confidence, opportunity) => {
+          // Skip emergency_memory_cleanup actions to prevent stack overflow
+          if (actionType === 'emergency_memory_cleanup') {
+            console.log('🛡️ QUANTUM SELF-HEALER - Skipping emergency cleanup to prevent stack overflow');
+            return Promise.resolve({ success: false, reason: 'Prevented by self-healer' });
+          }
+          return originalEmergencyCleanup.call(global.quantumCore.autonomousDecisionEngine, actionType, confidence, opportunity);
+        };
+        
+        // Re-enable after 10 minutes
+        setTimeout(() => {
+          global.quantumCore.autonomousDecisionEngine.triggerAutonomousAction = originalEmergencyCleanup;
+          console.log('🔄 QUANTUM SELF-HEALER - Emergency cleanup re-enabled safely');
+        }, 600000);
       }
     }
   }
