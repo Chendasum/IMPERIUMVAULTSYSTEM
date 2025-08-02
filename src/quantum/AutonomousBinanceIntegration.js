@@ -95,12 +95,16 @@ class AutonomousBinanceIntegration {
         const statusText = error.response.statusText || 'Unknown error';
         
         if (status === 451) {
-          console.log('🚫 QUANTUM AI - Error 451: Unavailable for legal reasons (regional restriction)');
+          console.log('🚫 QUANTUM AI - Error 451: Binance unavailable in your region (legal/geographic restriction)');
+          console.log('💡 SOLUTION: This is not a system error - Binance API is blocked in your location');
+          console.log('🎯 STATUS: API keys are valid but connection is blocked by regional policy');
           return { 
             connected: false, 
-            error: 'Regional restriction (Error 451)', 
+            error: 'Binance unavailable in your region (Error 451 - Legal restriction)', 
             status: status,
-            canRetry: false 
+            canRetry: false,
+            isRegionalBlock: true,
+            solution: 'This is not a technical error. Binance API access is restricted in your geographic region.'
           };
         } else if (status === 403) {
           console.log('🔐 QUANTUM AI - Error 403: API key restrictions');
