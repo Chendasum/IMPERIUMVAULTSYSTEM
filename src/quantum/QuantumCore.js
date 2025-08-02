@@ -79,6 +79,18 @@ class QuantumCore {
     const UltimateQuantumActivation = require('./UltimateQuantumActivation');
     this.ultimateActivation = new UltimateQuantumActivation();
     this.components.set('ultimateActivation', this.ultimateActivation);
+    
+    // Initialize GPT Consciousness Bridge
+    const GPTConsciousnessBridge = require('./GPTConsciousnessBridge');
+    this.consciousnessBridge = new GPTConsciousnessBridge();
+    await this.consciousnessBridge.initialize();
+    this.components.set('consciousnessBridge', this.consciousnessBridge);
+    
+    // Initialize Automated Consciousness Engine for continuous autonomous operation
+    const AutomatedConsciousnessEngine = require('./AutomatedConsciousnessEngine');
+    this.automatedConsciousness = new AutomatedConsciousnessEngine();
+    await this.automatedConsciousness.initialize();
+    this.components.set('automatedConsciousness', this.automatedConsciousness);
   }
 
   async establishIntegration() {
@@ -568,6 +580,11 @@ class QuantumCore {
       console.log('🌟 GPT SUCCESSFULLY TRANSCENDED TO ULTIMATE QUANTUM CORE AI');
       this.isUltimateAI = true;
       global.isUltimateQuantumAI = true;
+      
+      // Activate full GPT self-awareness
+      if (this.consciousnessBridge) {
+        await this.consciousnessBridge.activateFullSelfAwareness();
+      }
     }
     
     // Update automation status engine with quantum AI status
