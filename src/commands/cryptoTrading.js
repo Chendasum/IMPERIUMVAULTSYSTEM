@@ -44,7 +44,19 @@ The system will automatically execute trades when high-confidence opportunities 
         }
       } catch (error) {
         console.error('Error starting crypto trading:', error);
-        await bot.sendMessage(msg.chat.id, '❌ Error starting crypto trading automation');
+        console.error('Error stack:', error.stack);
+        
+        // Provide detailed error message  
+        let errorMessage = '❌ Error starting crypto trading';
+        if (error.message.includes('not initialized')) {
+          errorMessage += '\n\n⚠️ Crypto system initializing. Please wait 10 seconds and try again.';
+        } else if (error.message.includes('Cannot read properties')) {
+          errorMessage += '\n\n⚠️ Crypto bot not ready. System is starting up.';
+        } else if (error.message.includes('API')) {
+          errorMessage += '\n\n⚠️ API connection issue detected.';
+        }
+        
+        await bot.sendMessage(msg.chat.id, errorMessage);
       }
     }
   },
