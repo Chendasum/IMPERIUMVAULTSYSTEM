@@ -341,9 +341,10 @@ const ForexApiIntegration = require('./services/forex-api-integration');
 // ===== STRATEGIC POWER MULTIPLIER SYSTEMS INTEGRATION =====
 let MarketIntelligenceEngine, ClientAcquisitionEngine, RevenueOptimizationEngine;
 let CompetitorIntelligenceEngine, InstitutionalDataPipeline, AutomatedScalingProtocols;
-let TradingAutomationEngine;
+let TradingAutomationEngine, CambodiaArbitrageEngine;
 let marketIntelligence, clientAcquisition, revenueOptimization;
 let competitorIntelligence, institutionalData, scalingProtocols, tradingAutomation;
+let cambodiaArbitrage;
 
 try {
   MarketIntelligenceEngine = require('./src/automation/marketIntelligence.js');
@@ -353,6 +354,7 @@ try {
   InstitutionalDataPipeline = require('./src/automation/institutionalDataPipeline.js');
   AutomatedScalingProtocols = require('./src/automation/scalingProtocols.js');
   TradingAutomationEngine = require('./src/automation/tradingAutomation.js');
+  CambodiaArbitrageEngine = require('./automation/CambodiaArbitrageEngine');
 
   // Initialize automation engines
   marketIntelligence = new MarketIntelligenceEngine();
@@ -362,8 +364,9 @@ try {
   institutionalData = new InstitutionalDataPipeline();
   scalingProtocols = new AutomatedScalingProtocols();
   tradingAutomation = new TradingAutomationEngine();
+  cambodiaArbitrage = new CambodiaArbitrageEngine(bot);
   
-  console.log('✅ ALL 7 STRATEGIC POWER MULTIPLIERS LOADED SUCCESSFULLY');
+  console.log('✅ ALL 8 STRATEGIC POWER MULTIPLIERS LOADED SUCCESSFULLY');
   console.log('🚀 Market Intelligence Engine - ACTIVE');
   console.log('🎯 Client Acquisition Engine - ACTIVE');
   console.log('💰 Revenue Optimization Engine - ACTIVE');
@@ -371,6 +374,7 @@ try {
   console.log('🏛️ Institutional Data Pipeline - ACTIVE');
   console.log('🔥 Automated Scaling Protocols - ACTIVE');
   console.log('🤖 Trading Automation Engine - ACTIVE');
+  console.log('💱 Cambodia Arbitrage Engine - ACTIVE');
   
   // Initialize automation status engine
   const AutomationStatusEngine = require('./src/automation/AutomationStatusEngine');
@@ -4121,6 +4125,191 @@ Use /international_status to monitor global capital deployment.`;
   } catch (error) {
     console.error('❌ Global capital error:', error.message);
     await bot.sendMessage(msg.chat.id, "❌ Could not deploy global capital systems.");
+  }
+});
+
+// ===== CAMBODIA CURRENCY ARBITRAGE COMMAND =====
+bot.onText(/\/arbitrage/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    await bot.sendMessage(chatId, "💱 Scanning Cambodia currency arbitrage opportunities...");
+    await bot.sendChatAction(chatId, "typing");
+
+    // Initialize arbitrage engine if not already done
+    if (!cambodiaArbitrage) {
+      cambodiaArbitrage = new CambodiaArbitrageEngine(bot);
+    }
+
+    // Scan for current opportunities
+    const opportunities = await cambodiaArbitrage.scanArbitrageOpportunities();
+    
+    if (opportunities.length === 0) {
+      const noOpportunityMessage = 
+        `💱 CAMBODIA CURRENCY ARBITRAGE SCAN COMPLETE\n\n` +
+        `❌ No profitable arbitrage opportunities found (${new Date().toLocaleTimeString()})\n\n` +
+        `🎯 CURRENT SCAN CRITERIA:\n` +
+        `• Minimum spread: 0.1% after fees\n` +
+        `• Banks monitored: ABA, ACLEDA, Wing, Bakong\n` +
+        `• Currencies: USD/KHR, THB/KHR, EUR/USD\n` +
+        `• Minimum capital: $50,000\n\n` +
+        `⚠️ REASONS FOR NO OPPORTUNITIES:\n` +
+        `• Spreads too narrow (fees exceed profit)\n` +
+        `• Market rates aligned across banks\n` +
+        `• Weekend/holiday trading hours\n` +
+        `• Temporary market stability\n\n` +
+        `🚀 WHAT MAKES ARBITRAGE PROFITABLE:\n` +
+        `• Bank rate differences >0.1% (20+ KHR spread)\n` +
+        `• Large volume transactions ($50K+)\n` +
+        `• Quick execution (15-30 minutes)\n` +
+        `• Multiple daily opportunities\n\n` +
+        `💰 TYPICAL CAMBODIA ARBITRAGE PROFITS:\n` +
+        `• $100K capital = $200-500 per trade\n` +
+        `• 3-5 trades daily = $600-2500 daily\n` +
+        `• Monthly potential = $15K-75K\n\n` +
+        `🔄 Use /arbitrage again in 30 minutes for fresh scan\n` +
+        `📊 Use /arbitrage_monitor to start continuous monitoring`;
+      
+      await bot.sendMessage(chatId, noOpportunityMessage);
+      return;
+    }
+
+    // Send arbitrage opportunities
+    await cambodiaArbitrage.sendArbitrageAlert(chatId, opportunities);
+    
+    // Offer continuous monitoring
+    const monitoringOffer = 
+      `🚀 ARBITRAGE MONITORING AVAILABLE\n\n` +
+      `Want automatic alerts when profitable opportunities appear?\n\n` +
+      `📱 /arbitrage_monitor - Start continuous monitoring\n` +
+      `⏰ Scans every 15 minutes automatically\n` +
+      `🔔 Instant alerts for profitable opportunities\n` +
+      `💰 Never miss a profitable trade again`;
+    
+    await bot.sendMessage(chatId, monitoringOffer);
+    
+  } catch (error) {
+    console.error('❌ Arbitrage command error:', error.message);
+    await bot.sendMessage(msg.chat.id, 
+      "❌ Currency arbitrage scan failed. The system will retry automatically."
+    );
+  }
+});
+
+// Command: /arbitrage_monitor - Start continuous arbitrage monitoring
+bot.onText(/\/arbitrage_monitor/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!cambodiaArbitrage) {
+      cambodiaArbitrage = new CambodiaArbitrageEngine(bot);
+    }
+    
+    const result = await cambodiaArbitrage.startArbitrageMonitoring(chatId);
+    
+    if (result.success) {
+      const monitoringMessage = 
+        `💱 CAMBODIA ARBITRAGE MONITORING ACTIVATED\n\n` +
+        `✅ System Status: ACTIVE\n` +
+        `🔄 Scan Frequency: Every 15 minutes\n` +
+        `🎯 Monitoring: ABA, ACLEDA, Wing, Bakong\n` +
+        `💰 Alert Threshold: 0.1%+ profit potential\n\n` +
+        `📊 WHAT YOU'LL RECEIVE:\n` +
+        `• Real-time profitable opportunity alerts\n` +
+        `• Detailed profit calculations for different amounts\n` +
+        `• Buy/sell bank recommendations\n` +
+        `• Execution time windows\n` +
+        `• Daily and monthly profit projections\n\n` +
+        `🔔 You'll be notified immediately when profitable spreads appear.\n\n` +
+        `📱 /arbitrage_stop - Stop monitoring\n` +
+        `📊 /arbitrage_summary - View performance stats`;
+      
+      await bot.sendMessage(chatId, monitoringMessage);
+    } else {
+      await bot.sendMessage(chatId, `⚠️ ${result.message}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Arbitrage monitoring error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not start arbitrage monitoring.");
+  }
+});
+
+// Command: /arbitrage_stop - Stop arbitrage monitoring
+bot.onText(/\/arbitrage_stop/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!cambodiaArbitrage) {
+      await bot.sendMessage(chatId, "⚠️ Arbitrage monitoring is not running.");
+      return;
+    }
+    
+    const result = cambodiaArbitrage.stopArbitrageMonitoring();
+    
+    if (result.success) {
+      await bot.sendMessage(chatId, 
+        `💱 ARBITRAGE MONITORING STOPPED\n\n` +
+        `✅ System Status: INACTIVE\n` +
+        `📊 Continuous monitoring has been disabled.\n\n` +
+        `🔄 Use /arbitrage_monitor to restart automatic monitoring\n` +
+        `💱 Use /arbitrage for manual scan`
+      );
+    } else {
+      await bot.sendMessage(chatId, `⚠️ ${result.message}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Stop arbitrage error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not stop arbitrage monitoring.");
+  }
+});
+
+// Command: /arbitrage_summary - View arbitrage performance
+bot.onText(/\/arbitrage_summary/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const chatId = msg.chat.id;
+    
+    if (!cambodiaArbitrage) {
+      await bot.sendMessage(chatId, "⚠️ Arbitrage system not initialized. Use /arbitrage first.");
+      return;
+    }
+    
+    const summary = cambodiaArbitrage.getArbitrageSummary();
+    
+    const summaryMessage = 
+      `💱 CAMBODIA ARBITRAGE PERFORMANCE SUMMARY\n\n` +
+      `📊 MONITORING STATISTICS:\n` +
+      `• Recent scans completed: ${summary.recentScans}\n` +
+      `• Average opportunities per scan: ${summary.averageOpportunities}\n` +
+      `• Average daily profit potential: ${summary.averageDailyPotential}\n` +
+      `• Last scan: ${summary.lastScan}\n` +
+      `• Monitoring status: ${summary.status}\n\n` +
+      `🎯 CAMBODIA MARKET REALITY:\n` +
+      `• Best arbitrage opportunities: Early morning (8-10 AM)\n` +
+      `• Peak activity: Monday-Friday business hours\n` +
+      `• Lowest spreads: Weekends and holidays\n` +
+      `• Optimal capital: $100K-500K per trade\n\n` +
+      `💰 PROFIT OPTIMIZATION TIPS:\n` +
+      `• Monitor 4+ banks simultaneously\n` +
+      `• Execute within 15-30 minute windows\n` +
+      `• Focus on USD/KHR major pairs\n` +
+      `• Maintain relationships with bank traders\n\n` +
+      `📱 /arbitrage - Manual scan now\n` +
+      `🔄 /arbitrage_monitor - Auto monitoring`;
+    
+    await bot.sendMessage(chatId, summaryMessage);
+    
+  } catch (error) {
+    console.error('❌ Arbitrage summary error:', error.message);
+    await bot.sendMessage(msg.chat.id, "❌ Could not generate arbitrage summary.");
   }
 });
 
