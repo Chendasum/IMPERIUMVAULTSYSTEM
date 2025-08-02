@@ -1,4 +1,4 @@
-// GOVERNMENT CONTRACT TRACKER - Automated $50M+ Opportunity Detection
+// GOVERNMENT CONTRACT TRACKER - Automated $500K+ Opportunity Detection - CAMBODIA OPTIMIZED
 // Monitors government websites for major infrastructure projects
 
 const axios = require('axios');
@@ -9,7 +9,7 @@ class GovernmentContractTracker {
     this.bot = telegramBot;
     this.contracts = new Map();
     this.isRunning = false;
-    this.minimumValue = 50000000; // $50M minimum
+    this.minimumValue = 500000; // $500K minimum - OPTIMIZED FOR CAMBODIA MARKET
   }
 
   // AUTOMATED CONTRACT MONITORING
