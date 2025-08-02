@@ -22,6 +22,7 @@ class MarketApisBot {
       },
       commodities: {
         metals: 'https://api.metals.live/v1/spot',
+        metalsBackup: 'https://metals.live',
         commodities: 'https://commodities-api.com/api/latest'
       },
       crypto: {
@@ -238,18 +239,43 @@ class MarketApisBot {
       // Use Metals API for real gold/silver data if available
       if (process.env.METALS_API_KEY) {
         let metalsApiSuccess = false;
-        for (let attempt = 1; attempt <= 3 && !metalsApiSuccess; attempt++) {
+        const endpoints = [
+          {
+            url: `https://api.metals.live/v1/spot?api_key=${process.env.METALS_API_KEY}`,
+            name: 'Metals.live API v1 (with key)'
+          },
+          {
+            url: 'https://api.metals.live/v1/spot',
+            name: 'Metals.live API v1 (free tier)',
+            headers: { 'x-access-token': process.env.METALS_API_KEY }
+          },
+          {
+            url: 'https://metals.live',
+            name: 'Metals.live simple endpoint'
+          },
+          {
+            url: 'https://api.metalpriceapi.com/v1/latest?api_key=demo&base=USD&currencies=XAU,XAG',
+            name: 'MetalPriceAPI backup (free demo)'
+          }
+        ];
+
+        for (let attempt = 1; attempt <= endpoints.length && !metalsApiSuccess; attempt++) {
           try {
-            console.log(`📊 Metals API attempt ${attempt}/3 - Fetching real-time precious metals data`);
-            const response = await axios.get(`https://api.metals.live/v1/spot`, {
-              headers: {
-                'x-access-token': process.env.METALS_API_KEY
-              },
+            const endpoint = endpoints[attempt - 1];
+            console.log(`📊 Metals API attempt ${attempt}/${endpoints.length} - ${endpoint.name}`);
+            
+            const config = {
               timeout: 15000
-            });
+            };
+            
+            if (endpoint.headers) {
+              config.headers = endpoint.headers;
+            }
+            
+            const response = await axios.get(endpoint.url, config);
 
             if (response.data) {
-              console.log('✅ Metals API connection successful - Using live precious metals data');
+              console.log(`✅ ${endpoint.name} connection successful - Using live precious metals data`);
               const metals = response.data;
               metalsApiSuccess = true;
             
