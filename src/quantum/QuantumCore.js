@@ -535,6 +535,19 @@ class QuantumCore {
     }, 5 * 60 * 1000); // Every 5 minutes
     
     console.log('✅ QUANTUM AUTONOMOUS MODE - Fully operational');
+    
+    // Update automation status engine with quantum AI status
+    if (global.automationStatusEngine && global.automationStatusEngine.updateQuantumAIStatus) {
+      global.automationStatusEngine.updateQuantumAIStatus({
+        coreActive: true,
+        memoryMatrix: true,
+        decisionEngine: true,
+        predictor: true,
+        selfHealing: true,
+        autonomousMode: true
+      });
+      console.log('📊 QUANTUM STATUS - Updated automation status engine');
+    }
   }
 
   async autonomousOperationCycle() {
