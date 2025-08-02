@@ -85,28 +85,29 @@ class CambodiaArbitrageEngine {
     return rates;
   }
 
-  // SIMULATE REAL CAMBODIA BANK RATES
+  // REAL CAMBODIA BANK RATES - UPDATED FROM LIVE DATA (August 2, 2025)
   async getBankRates(bankCode) {
     const bank = this.banks[bankCode];
     
-    // Realistic Cambodia rates with typical spreads
+    // REAL RATES from Commander's live market data (2:31 PM, Aug 2, 2025)
+    // Note: buy = bank buys USD from you, sell = bank sells USD to you
     const baseRates = {
       aba: {
-        'USD/KHR': { buy: 4100, sell: 4120, spread: 20 },
-        'THB/KHR': { buy: 114, sell: 116, spread: 2 },
+        'USD/KHR': { buy: 4003, sell: 4015, spread: 12 },
+        'THB/KHR': { buy: 120.40, sell: 123.70, spread: 3.3 },
         'EUR/USD': { buy: 1.0850, sell: 1.0870, spread: 0.002 }
       },
       acleda: {
-        'USD/KHR': { buy: 4105, sell: 4125, spread: 20 },
-        'THB/KHR': { buy: 115, sell: 117, spread: 2 },
+        'USD/KHR': { buy: 4001, sell: 4017, spread: 16 },
+        'THB/KHR': { buy: 120.40, sell: 123.70, spread: 3.3 },
         'EUR/USD': { buy: 1.0845, sell: 1.0875, spread: 0.003 }
       },
       wing: {
-        'USD/KHR': { buy: 4095, sell: 4115, spread: 20 },
-        'THB/KHR': { buy: 113, sell: 115, spread: 2 }
+        'USD/KHR': { buy: 4000, sell: 4020, spread: 20 },
+        'THB/KHR': { buy: 120, sell: 124, spread: 4 }
       },
       bakong: {
-        'USD/KHR': { buy: 4102, sell: 4118, spread: 16 }
+        'USD/KHR': { buy: 4002, sell: 4018, spread: 16 }
       }
     };
 
@@ -114,7 +115,8 @@ class CambodiaArbitrageEngine {
       bank: bank.name,
       timestamp: new Date().toISOString(),
       rates: baseRates[bankCode] || {},
-      fees: bank.fees
+      fees: bank.fees,
+      dataSource: 'LIVE_MARKET_RATES_AUG_2_2025'
     };
   }
 
@@ -148,26 +150,56 @@ class CambodiaArbitrageEngine {
     return opportunities.sort((a, b) => b.netProfitPercentage - a.netProfitPercentage);
   }
 
-  // CALCULATE ARBITRAGE PROFIT
+  // CALCULATE ARBITRAGE PROFIT - CORRECTED LOGIC
   calculateArbitrage(bank1Code, rates1, fees1, bank2Code, rates2, fees2) {
     const bank1 = this.banks[bank1Code];
     const bank2 = this.banks[bank2Code];
     
-    // Scenario 1: Buy from bank1, sell to bank2
-    const buyRate1 = rates1.buy;
-    const sellRate2 = rates2.sell;
-    const spread1to2 = sellRate2 - buyRate1;
+    // CORRECTED ARBITRAGE LOGIC:
+    // We buy USD from bank that SELLS cheapest (their sell rate = our buy cost)
+    // We sell USD to bank that BUYS highest (their buy rate = our sell price)
     
-    // Scenario 2: Buy from bank2, sell to bank1
-    const buyRate2 = rates2.buy;
-    const sellRate1 = rates1.sell;
-    const spread2to1 = sellRate1 - buyRate2;
+    // Scenario 1: Buy USD from bank1 (at their sell rate), sell to bank2 (at their buy rate)
+    const ourBuyCost1 = rates1.sell;    // We pay bank1's selling price
+    const ourSellPrice2 = rates2.buy;   // We receive bank2's buying price
+    const spread1to2 = ourSellPrice2 - ourBuyCost1;
     
-    // Choose best scenario
-    const bestSpread = Math.max(spread1to2, spread2to1);
-    const direction = spread1to2 > spread2to1 ? 
-      { from: bank1.name, to: bank2.name, buyRate: buyRate1, sellRate: sellRate2 } :
-      { from: bank2.name, to: bank1.name, buyRate: buyRate2, sellRate: sellRate1 };
+    // Scenario 2: Buy USD from bank2 (at their sell rate), sell to bank1 (at their buy rate)
+    const ourBuyCost2 = rates2.sell;    // We pay bank2's selling price
+    const ourSellPrice1 = rates1.buy;   // We receive bank1's buying price
+    const spread2to1 = ourSellPrice1 - ourBuyCost2;
+    
+    // Choose profitable scenario (if any)
+    let direction, bestSpread;
+    if (spread1to2 > spread2to1 && spread1to2 > 0) {
+      bestSpread = spread1to2;
+      direction = { 
+        buyFrom: bank1.name, 
+        sellTo: bank2.name, 
+        buyRate: ourBuyCost1, 
+        sellRate: ourSellPrice2,
+        explanation: `Buy USD from ${bank1.name} at ${ourBuyCost1} KHR, sell to ${bank2.name} at ${ourSellPrice2} KHR`
+      };
+    } else if (spread2to1 > 0) {
+      bestSpread = spread2to1;
+      direction = { 
+        buyFrom: bank2.name, 
+        sellTo: bank1.name, 
+        buyRate: ourBuyCost2, 
+        sellRate: ourSellPrice1,
+        explanation: `Buy USD from ${bank2.name} at ${ourBuyCost2} KHR, sell to ${bank1.name} at ${ourSellPrice1} KHR`
+      };
+    } else {
+      // No profitable arbitrage
+      return {
+        profitable: false,
+        currency: 'USD/KHR',
+        reason: 'No profitable arbitrage: All banks sell higher than others buy',
+        bank1Rates: `${bank1.name}: Buy ${rates1.buy}, Sell ${rates1.sell}`,
+        bank2Rates: `${bank2.name}: Buy ${rates2.buy}, Sell ${rates2.sell}`,
+        analysis: 'Banks maintain profitable spreads - arbitrage not possible with current rates'
+      };
+    }
     
     // Calculate profit with fees
     const grossProfitPercentage = (bestSpread / direction.buyRate) * 100;
@@ -179,14 +211,15 @@ class CambodiaArbitrageEngine {
     return {
       profitable,
       currency: 'USD/KHR',
-      buyFrom: direction.from,
-      sellTo: direction.to,
+      buyFrom: direction.buyFrom,
+      sellTo: direction.sellTo,
       buyRate: direction.buyRate,
       sellRate: direction.sellRate,
       spread: bestSpread,
       grossProfitPercentage: grossProfitPercentage.toFixed(3),
       totalFees: totalFees.toFixed(3),
       netProfitPercentage: netProfitPercentage.toFixed(3),
+      explanation: direction.explanation,
       timeWindow: '15-30 minutes',
       minimumCapital: `$${this.minimumCapital.toLocaleString()}`
     };
