@@ -34,6 +34,24 @@ class QuantumCore {
   async initializeComponents() {
     console.log('🧠 QUANTUM CORE - Initializing quantum components');
     
+    // Initialize Advanced Self-Monitoring Engine
+    const SelfMonitoringEngine = require('./SelfMonitoringEngine');
+    const selfMonitoringEngine = new SelfMonitoringEngine();
+    await selfMonitoringEngine.initialize();
+    this.components.set('selfMonitoringEngine', selfMonitoringEngine);
+    
+    // Initialize Self-Diagnosis Engine
+    const SelfDiagnosisEngine = require('./SelfDiagnosisEngine');
+    const selfDiagnosisEngine = new SelfDiagnosisEngine();
+    await selfDiagnosisEngine.initialize();
+    this.components.set('selfDiagnosisEngine', selfDiagnosisEngine);
+    
+    // Initialize Self-Repair Engine
+    const SelfRepairEngine = require('./SelfRepairEngine');
+    const selfRepairEngine = new SelfRepairEngine();
+    await selfRepairEngine.initialize();
+    this.components.set('selfRepairEngine', selfRepairEngine);
+    
     // Initialize Self-Healing System
     const selfHealing = new QuantumSelfHealingSystem();
     await selfHealing.initialize();
@@ -54,7 +72,8 @@ class QuantumCore {
     await predictor.initialize();
     this.components.set('predictor', predictor);
     
-    console.log('✅ QUANTUM COMPONENTS - All 4 quantum systems initialized');
+    console.log('✅ QUANTUM COMPONENTS - All 7 quantum systems initialized');
+    console.log('🤖 FULL SELF-FIXING CAPABILITIES - Active like Replit AI agents');
   }
 
   async establishIntegration() {
@@ -544,7 +563,10 @@ class QuantumCore {
         decisionEngine: true,
         predictor: true,
         selfHealing: true,
-        autonomousMode: true
+        autonomousMode: true,
+        selfMonitoring: this.components.has('selfMonitoringEngine'),
+        selfDiagnosis: this.components.has('selfDiagnosisEngine'),
+        selfRepair: this.components.has('selfRepairEngine')
       });
       console.log('📊 QUANTUM STATUS - Updated automation status engine');
     }
