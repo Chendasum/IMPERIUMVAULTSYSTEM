@@ -34,18 +34,37 @@ class AutonomousBinanceIntegration {
   async checkAccountStatus() {
     if (!this.apiKey || !this.apiSecret) {
       console.log('⚠️ QUANTUM AI - Binance API keys not configured');
-      return false;
+      return { connected: false, error: 'API keys not configured' };
     }
 
     try {
+      // First test basic connectivity
+      console.log('🔍 QUANTUM AI - Testing Binance API connectivity...');
+      
+      try {
+        const pingResponse = await axios.get('https://api.binance.com/api/v3/ping', {
+          timeout: 5000
+        });
+        
+        if (pingResponse.status === 200) {
+          console.log('✅ QUANTUM AI - Basic Binance API connectivity confirmed');
+        }
+      } catch (pingError) {
+        console.log('❌ QUANTUM AI - Basic API connectivity failed:', pingError.message);
+        return { connected: false, error: 'Basic API connectivity failed' };
+      }
+
+      // Test account access
       const timestamp = Date.now();
       const queryString = `timestamp=${timestamp}`;
       const signature = crypto.createHmac('sha256', this.apiSecret).update(queryString).digest('hex');
       
-      const accountUrl = `https://api.binance.com/api/v3/account?${queryString}&signature=${signature}`;
-      
-      const response = await axios.get(accountUrl, {
+      const response = await axios.get('https://api.binance.com/api/v3/account', {
         headers: { 'X-MBX-APIKEY': this.apiKey },
+        params: {
+          timestamp: timestamp,
+          signature: signature
+        },
         timeout: 10000
       });
 
@@ -57,11 +76,57 @@ class AutonomousBinanceIntegration {
         console.log(`💰 QUANTUM AI - Account connected: ${usdtBalance} USDT available`);
         console.log(`🤖 QUANTUM AI - Trading capability: ${this.tradingEnabled ? 'ENABLED' : 'DISABLED'}`);
         
-        return true;
+        return { 
+          connected: true, 
+          hasAccountAccess: true, 
+          tradingEnabled: this.tradingEnabled,
+          usdtBalance: usdtBalance 
+        };
       }
+      
+      return { connected: false, error: 'Invalid response format' };
+      
     } catch (error) {
       console.log(`❌ QUANTUM AI - Binance connection error: ${error.message}`);
-      return false;
+      
+      // Handle specific error codes
+      if (error.response) {
+        const status = error.response.status;
+        const statusText = error.response.statusText || 'Unknown error';
+        
+        if (status === 451) {
+          console.log('🚫 QUANTUM AI - Error 451: Unavailable for legal reasons (regional restriction)');
+          return { 
+            connected: false, 
+            error: 'Regional restriction (Error 451)', 
+            status: status,
+            canRetry: false 
+          };
+        } else if (status === 403) {
+          console.log('🔐 QUANTUM AI - Error 403: API key restrictions');
+          return { 
+            connected: false, 
+            error: 'API key permissions insufficient', 
+            status: status,
+            canRetry: false 
+          };
+        } else if (status === 429) {
+          console.log('⏳ QUANTUM AI - Error 429: Rate limit exceeded');
+          return { 
+            connected: false, 
+            error: 'Rate limit exceeded', 
+            status: status,
+            canRetry: true 
+          };
+        }
+      }
+      
+      // Record error for self-healer
+      if (global.quantumSelfHealer) {
+        global.quantumSelfHealer.recordError('binance_connection_failed', error.message);
+      }
+      
+      return { connected: false, error: error.message, canRetry: true };
     }
   }
 
@@ -69,9 +134,9 @@ class AutonomousBinanceIntegration {
     if (!this.isActive) return;
     
     try {
-      const connected = await this.checkAccountStatus();
+      const connectionResult = await this.checkAccountStatus();
       
-      if (connected && this.accountData) {
+      if (connectionResult.connected && this.accountData) {
         const usdtBalance = this.getUSDTBalance();
         const totalAssets = this.getTotalAssets();
         
@@ -84,7 +149,8 @@ class AutonomousBinanceIntegration {
             totalAssets: totalAssets,
             tradingEnabled: this.tradingEnabled,
             lastUpdate: new Date(),
-            canTrade: this.accountData.canTrade
+            canTrade: this.accountData.canTrade,
+            connectionStatus: 'connected'
           };
         }
         
@@ -92,12 +158,40 @@ class AutonomousBinanceIntegration {
         if (this.tradingEnabled && usdtBalance > 10) {
           await this.autonomousTradingAnalysis(usdtBalance);
         }
+        
+      } else {
+        // Update consciousness with connection failure
+        if (global.gptConsciousness) {
+          global.gptConsciousness.binanceAccount = {
+            connectionStatus: 'failed',
+            error: connectionResult.error,
+            lastUpdate: new Date(),
+            canRetry: connectionResult.canRetry || false
+          };
+        }
+        
+        console.log(`⚠️ QUANTUM AI - Connection failed: ${connectionResult.error}`);
+        
+        // If it's a permanent error (like regional restriction), reduce retry frequency
+        if (!connectionResult.canRetry) {
+          console.log('🚫 QUANTUM AI - Permanent connection issue detected, reducing retry frequency');
+          // This will be handled by the self-healer
+        }
       }
       
       this.lastBalanceCheck = new Date();
       
     } catch (error) {
       console.log(`⚠️ QUANTUM AI - Autonomous balance check error: ${error.message}`);
+      
+      // Update consciousness with error
+      if (global.gptConsciousness) {
+        global.gptConsciousness.binanceAccount = {
+          connectionStatus: 'error',
+          error: error.message,
+          lastUpdate: new Date()
+        };
+      }
     }
   }
 
