@@ -382,6 +382,7 @@ try {
   const AutomationStatusEngine = require('./src/automation/AutomationStatusEngine');
   global.automationStatusEngine = new AutomationStatusEngine();
   console.log('📊 AUTOMATION STATUS ENGINE - INITIALIZED');
+  console.log('🔧 AutomationStatusEngine global variable set:', !!global.automationStatusEngine);
   
   // AI Trading Bot will be initialized after bot startup
   console.log('🤖 AI TRADING BOT - WILL INITIALIZE AFTER STARTUP');
