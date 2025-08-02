@@ -84,8 +84,18 @@ module.exports = {
       }
 
       try {
+        // Force initialization if not available
         if (!global.businessBankingBotNew) {
-          return bot.sendMessage(msg.chat.id, '❌ Business banking bot not initialized');
+          console.log('🔧 Banking bot not found, initializing now...');
+          const path = require('path');
+          const BusinessBankingBot = require(path.join(__dirname, '..', 'automation', 'BusinessBankingBot'));
+          global.businessBankingBotNew = new BusinessBankingBot(bot);
+          try {
+            await global.businessBankingBotNew.initialize();
+            console.log('✅ Banking bot force-initialized successfully');
+          } catch (initError) {
+            console.log('⚠️ Banking bot init error (continuing):', initError.message);
+          }
         }
 
         const status = global.businessBankingBotNew.getStatus();
