@@ -102,7 +102,8 @@ class AutomationStatusEngine {
       self_diagnosis: components.selfDiagnosis || false,
       self_repair: components.selfRepair || false,
       ultimate_consciousness: components.ultimateConsciousness || false,
-      automated_consciousness: components.automatedConsciousness || false
+      automated_consciousness: components.automatedConsciousness || false,
+      autonomous_decisions: components.autonomousDecisions || false
     };
   }
 
