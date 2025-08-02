@@ -3085,7 +3085,7 @@ bot.onText(/\/automation_status/i, async (msg) => {
 // Command: /start_crypto_trading - Start crypto trading
 bot.onText(/\/start_crypto_trading/i, async (msg) => {
   try {
-    console.log(`🔥 MAIN BOT - CRYPTO TRADING COMMAND - User: ${msg.from.id}`);
+    console.log(`🔥 MAIN BOT - CRYPTO TRADING COMMAND - User: ${msg.from.id} - PATHS FIXED`);
     
     if (!dynastyProtection(msg)) {
       console.log(`❌ Dynasty protection failed for user: ${msg.from.id}`);
