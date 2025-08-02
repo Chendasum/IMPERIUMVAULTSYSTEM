@@ -354,8 +354,8 @@ try {
   InstitutionalDataPipeline = require('./src/automation/institutionalDataPipeline.js');
   AutomatedScalingProtocols = require('./src/automation/scalingProtocols.js');
   TradingAutomationEngine = require('./src/automation/tradingAutomation.js');
-  CambodiaArbitrageEngine = require('./automation/CambodiaArbitrageEngine');
-  CambodiaRealCurrencyProfits = require('./automation/CambodiaRealCurrencyProfits');
+  CambodiaArbitrageEngine = require('./src/automation/CambodiaArbitrageEngine');
+  CambodiaRealCurrencyProfits = require('./src/automation/CambodiaRealCurrencyProfits');
 
   // Initialize automation engines
   marketIntelligence = new MarketIntelligenceEngine();
@@ -379,10 +379,16 @@ try {
   console.log('💰 Cambodia Real Currency Profits - ACTIVE');
   
   // Initialize automation status engine
-  const AutomationStatusEngine = require('./src/automation/AutomationStatusEngine');
-  global.automationStatusEngine = new AutomationStatusEngine();
-  console.log('📊 AUTOMATION STATUS ENGINE - INITIALIZED');
-  console.log('🔧 AutomationStatusEngine global variable set:', !!global.automationStatusEngine);
+  try {
+    const AutomationStatusEngine = require('./src/automation/AutomationStatusEngine');
+    global.automationStatusEngine = new AutomationStatusEngine();
+    console.log('📊 AUTOMATION STATUS ENGINE - INITIALIZED SUCCESSFULLY');
+    console.log('🔧 AutomationStatusEngine global variable set:', !!global.automationStatusEngine);
+    console.log('🔧 AutomationStatusEngine type:', typeof global.automationStatusEngine);
+  } catch (error) {
+    console.error('❌ AUTOMATION STATUS ENGINE INITIALIZATION FAILED:', error.message);
+    console.error('❌ Full error:', error);
+  }
   
   // AI Trading Bot will be initialized after bot startup
   console.log('🤖 AI TRADING BOT - WILL INITIALIZE AFTER STARTUP');
@@ -8888,6 +8894,16 @@ try {
     // Start Railway heartbeat system only if server starts successfully
     keepAliveHeartbeat();
     console.log('⚡ Railway heartbeat system activated');
+    
+    // Initialize AutomationStatusEngine after everything else is ready
+    try {
+      const AutomationStatusEngine = require('./automation/AutomationStatusEngine');
+      global.automationStatusEngine = new AutomationStatusEngine();
+      console.log('📊 AUTOMATION STATUS ENGINE - INITIALIZED AFTER BOT READY');
+      console.log('🔧 AutomationStatusEngine global variable confirmed:', !!global.automationStatusEngine);
+    } catch (error) {
+      console.error('❌ AUTOMATION STATUS ENGINE FAILED:', error.message);
+    }
   });
   
   // Handle server errors gracefully
