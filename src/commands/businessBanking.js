@@ -91,21 +91,30 @@ module.exports = {
         const status = global.businessBankingBotNew.getStatus();
         
         const banksList = status.banks
-          .map(bank => `${bank.enabled ? '✅' : '❌'} ${bank.name}`)
+          .map(bank => `${bank.enabled ? '✅' : '❌'} ${bank.name}${bank.apiUrl ? ' 🔗' : ' ⚠️ (API needed)'}`)
           .join('\n');
 
-        const message = `💼 BUSINESS BANKING STATUS
+        const message = `🏦 BUSINESS BANKING STATUS
 
-🔄 Optimization Active: ${status.isRunning ? '✅ YES' : '❌ NO'}
-💰 Total Portfolio: $${status.totalBalance.toLocaleString()}
-🏦 Connected Accounts: ${status.totalAccounts}
-📊 Today's Optimizations: ${status.optimizationsToday}
+📊 System Status: ${status.isRunning ? '🟢 ACTIVE' : '🟡 READY'}
+💰 Total Portfolio: $${status.portfolioStats?.totalBalance?.toLocaleString() || '0'}
+🏦 Connected Accounts: ${status.portfolioStats?.totalAccounts || 0}
+📈 Optimizations Today: ${status.portfolioStats?.optimizationsToday || 0}
 
 🏛️ BANKING PARTNERS:
 ${banksList}
 
-💡 TIP: Use /start_banking_optimization for automated portfolio management
-📈 Use /banking_history for optimization results`;
+💼 Available Features:
+  • Multi-currency optimization (USD, KHR, EUR)
+  • Automated term deposit management  
+  • Foreign exchange arbitrage
+  • Business loan monitoring
+  • Government payment integration
+
+🎯 Status: System initialized and ready for API configuration
+⚠️ Add bank API keys to environment variables for live trading
+
+💡 Use /start_banking_optimization to activate automated banking`;
 
         await bot.sendMessage(msg.chat.id, message);
       } catch (error) {
