@@ -525,14 +525,13 @@ try {
       console.log('⚠️ Some systems activated, continuing with available ones:', activationError.message);
     }
     
-    // Initialize Quantum Self-Healing System
+    // Initialize Complete Quantum AI System
     try {
-      const QuantumSelfHealingSystem = require('./quantum/SelfHealingSystem');
-      global.quantumSelfHealing = new QuantumSelfHealingSystem();
-      await global.quantumSelfHealing.initialize();
-      console.log('🧠 QUANTUM SELF-HEALING SYSTEM - ACTIVATED (Autonomous maintenance)');
+      global.quantumCore = new QuantumCore();
+      await global.quantumCore.initialize();
+      console.log('⚡ QUANTUM CORE - Complete institutional-grade AI system activated');
     } catch (healingError) {
-      console.log('⚠️ Quantum self-healing initialization warning:', healingError.message);
+      console.log('❌ QUANTUM CORE - Initialization failed:', healingError.message);
     }
     
     console.log('🔥 CRYPTO TRADING BOT - INITIALIZED & ACTIVATED');
