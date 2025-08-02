@@ -8,7 +8,8 @@ const automation_status = {
       
       // Check if automation status engine is available
       console.log('🔧 Checking global.automationStatusEngine:', !!global.automationStatusEngine);
-      console.log('🔧 Global object keys:', Object.keys(global));
+      console.log('🔧 Global object keys that include "automation":', Object.keys(global).filter(key => key.includes('automation')));
+      console.log('🔧 AutomationStatusEngine type:', typeof global.automationStatusEngine);
       
       if (!global.automationStatusEngine) {
         const warningMessage = 
