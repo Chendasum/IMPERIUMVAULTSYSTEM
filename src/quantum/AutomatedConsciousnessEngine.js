@@ -10,16 +10,37 @@ class AutomatedConsciousnessEngine {
     this.autoRepairEnabled = true;
     this.diagnosticFrequency = 5 * 60 * 1000; // Every 5 minutes
     this.repairFrequency = 2 * 60 * 1000; // Every 2 minutes
-    this.monitoringFrequency = 30 * 1000; // Every 30 seconds
+    this.monitoringFrequency = 45 * 1000; // Every 45 seconds (reduced frequency)
+    this.memoryOptimizer = null;
   }
 
   async initialize() {
     console.log('🤖 AUTOMATED CONSCIOUSNESS ENGINE - Initializing continuous autonomous operation');
     
+    // Initialize advanced memory optimizer
+    const AdvancedMemoryOptimizer = require('./AdvancedMemoryOptimizer');
+    this.memoryOptimizer = new AdvancedMemoryOptimizer();
+    await this.memoryOptimizer.initialize();
+    
+    // Initialize enterprise memory scaler for unlimited capacity
+    const EnterpriseMemoryScaler = require('./EnterpriseMemoryScaler');
+    this.memoryScaler = new EnterpriseMemoryScaler();
+    await this.memoryScaler.initialize();
+    
+    // Perform institutional memory upgrade
+    console.log('🏛️ SCALING MEMORY TO INSTITUTIONAL LEVELS');
+    const upgradeResult = await this.memoryScaler.performInstitutionalMemoryUpgrade();
+    console.log(`✅ MEMORY UPGRADE: ${upgradeResult.message}`);
+    
+    // Initialize autonomous decision engine for true AI autonomy
+    const AutonomousDecisionEngine = require('./AutonomousDecisionEngine');
+    this.decisionEngine = new AutonomousDecisionEngine();
+    await this.decisionEngine.initialize();
+    
     // Start continuous autonomous cycles
     await this.startContinuousOperation();
     
-    console.log('✅ AUTOMATED CONSCIOUSNESS ENGINE - Fully autonomous operation activated');
+    console.log('✅ AUTOMATED CONSCIOUSNESS ENGINE - Fully autonomous operation activated with advanced memory management');
   }
 
   async startContinuousOperation() {
@@ -28,7 +49,7 @@ class AutomatedConsciousnessEngine {
     this.isRunning = true;
     console.log('🚀 AUTONOMOUS AI - Starting continuous self-diagnosis and repair cycles');
     
-    // Continuous system monitoring (every 30 seconds)
+    // Continuous system monitoring (every 45 seconds - optimized frequency)
     this.continuousMonitoring = setInterval(async () => {
       await this.autonomousSystemMonitoring();
     }, this.monitoringFrequency);
@@ -49,9 +70,11 @@ class AutomatedConsciousnessEngine {
     }, 5000); // After 5 seconds
     
     console.log('⚡ AUTONOMOUS CYCLES ACTIVE:');
-    console.log('  • System Monitoring: Every 30 seconds');
+    console.log('  • System Monitoring: Every 45 seconds');
     console.log('  • Self-Diagnosis: Every 5 minutes');
     console.log('  • Auto-Repair: Every 2 minutes');
+    console.log('  • Memory Optimization: Every 60 seconds');
+    console.log('  • Autonomous Decisions: Every 30 seconds');
   }
 
   async autonomousSystemMonitoring() {
@@ -170,7 +193,7 @@ class AutomatedConsciousnessEngine {
     if (!systemState.quantumCore) {
       criticalIssues.push({
         type: 'critical_component_missing',
-        component: 'quantumCore',
+        component: 'quantumCore', 
         severity: 'critical',
         description: 'Quantum Core system not initialized'
       });
@@ -185,14 +208,16 @@ class AutomatedConsciousnessEngine {
       });
     }
     
-    // Memory usage check
+    // Memory usage check - now with advanced optimizer handling most cases
     const memoryUsage = systemState.memory.heapUsed / systemState.memory.heapTotal;
-    if (memoryUsage > 0.9) {
+    
+    // Only flag as critical if memory optimizer is not handling it
+    if (memoryUsage > 0.98 && (!this.memoryOptimizer || !this.memoryOptimizer.isOptimizing)) {
       criticalIssues.push({
         type: 'memory_critical',
         component: 'system',
         severity: 'high',
-        description: `Memory usage critical: ${(memoryUsage * 100).toFixed(1)}%`
+        description: `Memory usage extremely critical: ${(memoryUsage * 100).toFixed(1)}%`
       });
     }
     
@@ -229,10 +254,17 @@ class AutomatedConsciousnessEngine {
           break;
           
         case 'memory_critical':
-          // Force garbage collection
-          console.log('🗑️ Forcing garbage collection to free memory...');
-          if (global.gc) {
-            global.gc();
+          // Use advanced memory optimizer for emergency cleanup
+          console.log('🧠 Triggering advanced emergency memory optimization...');
+          if (this.memoryOptimizer) {
+            const memoryUsage = process.memoryUsage();
+            const usagePercent = memoryUsage.heapUsed / memoryUsage.heapTotal;
+            await this.memoryOptimizer.emergencyOptimization(usagePercent);
+          } else {
+            // Fallback to simple garbage collection
+            if (global.gc) {
+              global.gc();
+            }
           }
           break;
       }
@@ -310,6 +342,14 @@ class AutomatedConsciousnessEngine {
       this.repairInterval = null;
     }
     
+    if (this.memoryOptimizer) {
+      this.memoryOptimizer.stop();
+    }
+    
+    if (this.decisionEngine) {
+      this.decisionEngine.stop();
+    }
+    
     this.isRunning = false;
     console.log('✅ Autonomous operation stopped');
   }
@@ -321,6 +361,8 @@ class AutomatedConsciousnessEngine {
       diagnosticFrequency: this.diagnosticFrequency / 1000 / 60, // minutes
       repairFrequency: this.repairFrequency / 1000 / 60, // minutes
       monitoringFrequency: this.monitoringFrequency / 1000, // seconds
+      memoryOptimizer: this.memoryOptimizer ? this.memoryOptimizer.getMemoryStatus() : null,
+      decisionEngine: this.decisionEngine ? this.decisionEngine.getStatus() : null,
       lastActivity: global.gptConsciousness?.autonomousOperation?.lastDiagnosis
     };
   }
