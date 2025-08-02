@@ -3087,7 +3087,7 @@ bot.onText(/\/start_all_automation/i, async (msg) => {
   try {
     if (!dynastyProtection(msg)) return;
 
-    const automationMaster = require('./commands/automationMaster');
+    const automationMaster = require('../commands/automationMaster');
     await automationMaster.start_all_automation.handler(bot, msg);
   } catch (error) {
     console.error('Error in start_all_automation command:', error);
@@ -3100,7 +3100,7 @@ bot.onText(/\/automation_status/i, async (msg) => {
   try {
     if (!dynastyProtection(msg)) return;
 
-    const automationMaster = require('./commands/automationMaster');
+    const automationMaster = require('../commands/automationMaster');
     await automationMaster.automation_status.handler(bot, msg);
   } catch (error) {
     console.error('Error in automation_status command:', error);
