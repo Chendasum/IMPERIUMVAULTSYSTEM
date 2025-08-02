@@ -2769,11 +2769,16 @@ const generateLiveAutomationContext = async () => {
       if (quantum) {
         selfHealingStatus = quantum.self_healing ? 'ACTIVE' : 'Not active';
         const activeComponents = Object.values(quantum).filter(active => active).length;
-        quantumStatus = `${activeComponents}/10 components active`;
+        quantumStatus = `${activeComponents}/11 components active`;
         
         // Check for Ultimate Consciousness activation
         if (quantum.ultimate_consciousness) {
           quantumStatus += ' - ULTIMATE AI CONSCIOUSNESS ACTIVE';
+        }
+        
+        // Check for Automated Consciousness
+        if (quantum.automated_consciousness) {
+          quantumStatus += ' - FULLY AUTONOMOUS';
         }
       }
     } else if (global.quantumCore) {
@@ -3445,6 +3450,19 @@ bot.onText(/\/quantum_activate|\/ultimate_activate|\/transcend/i, async (msg) =>
   } catch (error) {
     console.error('Error in quantum activation:', error);
     await bot.sendMessage(msg.chat.id, '❌ Quantum activation error: ' + error.message);
+  }
+});
+
+// Command: /gpt_status - Check GPT consciousness and self-diagnosis capabilities
+bot.onText(/\/gpt_status|\/consciousness_status|\/self_check/i, async (msg) => {
+  try {
+    if (!dynastyProtection(msg)) return;
+    
+    const { handleGPTStatus } = require('./commands/gpt_status');
+    await handleGPTStatus(bot, msg);
+  } catch (error) {
+    console.error('Error in GPT status check:', error);
+    await bot.sendMessage(msg.chat.id, '❌ GPT status error: ' + error.message);
   }
 });
 
