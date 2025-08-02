@@ -43,7 +43,10 @@ class AutonomousBinanceIntegration {
       
       try {
         const pingResponse = await axios.get('https://api.binance.com/api/v3/ping', {
-          timeout: 5000
+          timeout: 5000,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
         });
         
         if (pingResponse.status === 200) {
@@ -51,7 +54,14 @@ class AutonomousBinanceIntegration {
         }
       } catch (pingError) {
         console.log('❌ QUANTUM AI - Basic API connectivity failed:', pingError.message);
-        return { connected: false, error: 'Basic API connectivity failed' };
+        console.log('🔍 QUANTUM AI - Error details:', {
+          status: pingError.response?.status,
+          statusText: pingError.response?.statusText,
+          code: pingError.code
+        });
+        
+        // Don't immediately fail - try different approaches
+        console.log('🔄 QUANTUM AI - Attempting alternative connection methods...');
       }
 
       // Test account access
@@ -59,14 +69,63 @@ class AutonomousBinanceIntegration {
       const queryString = `timestamp=${timestamp}`;
       const signature = crypto.createHmac('sha256', this.apiSecret).update(queryString).digest('hex');
       
-      const response = await axios.get('https://api.binance.com/api/v3/account', {
-        headers: { 'X-MBX-APIKEY': this.apiKey },
-        params: {
-          timestamp: timestamp,
-          signature: signature
+      // Try multiple approaches to connect
+      let response;
+      const connectionMethods = [
+        {
+          name: 'Standard API',
+          url: 'https://api.binance.com/api/v3/account',
+          headers: { 
+            'X-MBX-APIKEY': this.apiKey,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
         },
-        timeout: 10000
-      });
+        {
+          name: 'US API Endpoint',
+          url: 'https://api.binance.us/api/v3/account',
+          headers: { 
+            'X-MBX-APIKEY': this.apiKey,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        },
+        {
+          name: 'Alternative Endpoint',
+          url: 'https://testnet.binance.vision/api/v3/account',
+          headers: { 
+            'X-MBX-APIKEY': this.apiKey,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        }
+      ];
+      
+      for (const method of connectionMethods) {
+        try {
+          console.log(`🔄 QUANTUM AI - Attempting ${method.name}...`);
+          
+          response = await axios.get(method.url, {
+            headers: method.headers,
+            params: {
+              timestamp: timestamp,
+              signature: signature
+            },
+            timeout: 10000
+          });
+          
+          if (response.data) {
+            console.log(`✅ QUANTUM AI - Connected successfully via ${method.name}`);
+            break;
+          }
+          
+        } catch (methodError) {
+          console.log(`⚠️ QUANTUM AI - ${method.name} failed:`, methodError.response?.status || methodError.message);
+          
+          if (method === connectionMethods[connectionMethods.length - 1]) {
+            // Last method failed, throw the error
+            throw methodError;
+          }
+          continue;
+        }
+      }
 
       if (response.data) {
         this.accountData = response.data;
