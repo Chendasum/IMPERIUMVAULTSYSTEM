@@ -228,7 +228,7 @@ class MarketApisBot {
       const crypto24x7Results = {
         timestamp: new Date(),
         crypto: await this.scanCrypto(),
-        currencies: await this.scanForexRates()
+        currencies: await this.scanForex()
       };
 
       // Identify crypto opportunities (24/7 markets)
