@@ -347,15 +347,15 @@ let competitorIntelligence, institutionalData, scalingProtocols, tradingAutomati
 let cambodiaArbitrage, cambodiaRealProfits;
 
 try {
-  MarketIntelligenceEngine = require('./src/automation/marketIntelligence.js');
-  ClientAcquisitionEngine = require('./src/automation/clientAcquisition.js');
-  RevenueOptimizationEngine = require('./src/automation/revenueOptimization.js');
-  CompetitorIntelligenceEngine = require('./src/automation/competitorIntelligence.js');
-  InstitutionalDataPipeline = require('./src/automation/institutionalDataPipeline.js');
-  AutomatedScalingProtocols = require('./src/automation/scalingProtocols.js');
-  TradingAutomationEngine = require('./src/automation/tradingAutomation.js');
-  CambodiaArbitrageEngine = require('./src/automation/CambodiaArbitrageEngine');
-  CambodiaRealCurrencyProfits = require('./src/automation/CambodiaRealCurrencyProfits');
+  MarketIntelligenceEngine = require('./automation/marketIntelligence.js');
+  ClientAcquisitionEngine = require('./automation/clientAcquisition.js');
+  RevenueOptimizationEngine = require('./automation/revenueOptimization.js');
+  CompetitorIntelligenceEngine = require('./automation/competitorIntelligence.js');
+  InstitutionalDataPipeline = require('./automation/institutionalDataPipeline.js');
+  AutomatedScalingProtocols = require('./automation/scalingProtocols.js');
+  TradingAutomationEngine = require('./automation/tradingAutomation.js');
+  CambodiaArbitrageEngine = require('./automation/CambodiaArbitrageEngine');
+  CambodiaRealCurrencyProfits = require('./automation/CambodiaRealCurrencyProfits');
 
   // Initialize automation engines
   marketIntelligence = new MarketIntelligenceEngine();
@@ -380,7 +380,7 @@ try {
   
   // Initialize automation status engine
   try {
-    const AutomationStatusEngine = require('./src/automation/AutomationStatusEngine');
+    const AutomationStatusEngine = require('./automation/AutomationStatusEngine');
     global.automationStatusEngine = new AutomationStatusEngine();
     console.log('📊 AUTOMATION STATUS ENGINE - INITIALIZED SUCCESSFULLY');
     console.log('🔧 AutomationStatusEngine global variable set:', !!global.automationStatusEngine);
@@ -5081,7 +5081,7 @@ bot.onText(/\/wealthmachines/i, async (msg) => {
     await bot.sendMessage(chatId, "🤖 Deploying automated wealth multiplication machines...");
     await bot.sendChatAction(chatId, "typing");
     
-    const WealthMultiplicationEngine = require('./src/automation/WealthMultiplicationEngine');
+    const WealthMultiplicationEngine = require('./automation/WealthMultiplicationEngine');
     const wealthEngine = new WealthMultiplicationEngine(bot);
     
     await wealthEngine.deployAllWealthMachines(chatId);
@@ -5151,7 +5151,7 @@ bot.onText(/\/billionaire/i, async (msg) => {
     await bot.sendMessage(chatId, "🏛️ Deploying complete billionaire automation suite...");
     await bot.sendChatAction(chatId, "typing");
     
-    const BillionaireAutomationEngine = require('./src/automation/BillionaireAutomationEngine');
+    const BillionaireAutomationEngine = require('./automation/BillionaireAutomationEngine');
     const billionaireEngine = new BillionaireAutomationEngine(bot);
     
     await billionaireEngine.deployBillionaireAutomation(chatId);
@@ -5275,7 +5275,7 @@ bot.onText(/\/aitrading/i, async (msg) => {
     await bot.sendChatAction(chatId, "typing");
     
     try {
-      const AITradingEngine = require('./src/automation/AITradingEngine');
+      const AITradingEngine = require('./automation/AITradingEngine');
       const aiTradingSystem = new AITradingEngine(bot);
       await aiTradingSystem.deployTradingEmpire(chatId);
     } catch (moduleError) {
@@ -5359,7 +5359,7 @@ bot.onText(/\/globalcapital/i, async (msg) => {
     await bot.sendMessage(chatId, "🌍 Deploying Global Capital Systems - International Finance Automation...");
     await bot.sendChatAction(chatId, "typing");
     
-    const GlobalCapitalEngine = require('./src/automation/GlobalCapitalEngine');
+    const GlobalCapitalEngine = require('./automation/GlobalCapitalEngine');
     const globalCapitalSystem = new GlobalCapitalEngine(bot);
     
     await globalCapitalSystem.deployGlobalCapitalSystems(chatId);
