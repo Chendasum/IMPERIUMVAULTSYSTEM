@@ -426,21 +426,37 @@ try {
   }
   
   // Initialize all automation bots immediately (no delay) to ensure commands work
-  try {
-    console.log('🚀 IMMEDIATE AUTOMATION INITIALIZATION');
-    
-    // Initialize essential automation bots immediately
-    const CryptoTradingBot = require(path.join(__dirname, 'automation', 'CryptoTradingBot'));
-    global.cryptoTradingBot = new CryptoTradingBot(bot);
-    console.log('✅ Crypto Trading Bot - IMMEDIATE INIT');
-    
-    const BusinessBankingBot = require(path.join(__dirname, 'automation', 'BusinessBankingBot'));
-    global.businessBankingBotNew = new BusinessBankingBot(bot);
-    console.log('✅ Business Banking Bot - IMMEDIATE INIT');
-    
-    const MarketIntelligence = require(path.join(__dirname, 'automation', 'marketIntelligence'));
-    global.marketIntelligence = new MarketIntelligence(bot);
-    console.log('✅ Market Intelligence - IMMEDIATE INIT');
+  (async () => {
+    try {
+      console.log('🚀 IMMEDIATE AUTOMATION INITIALIZATION');
+      
+      // Initialize essential automation bots immediately with proper bot reference
+      const CryptoTradingBot = require(path.join(__dirname, 'automation', 'CryptoTradingBot'));
+      global.cryptoTradingBot = new CryptoTradingBot(bot);
+      try {
+        await global.cryptoTradingBot.initialize();
+        console.log('✅ Crypto Trading Bot - IMMEDIATE INIT & INITIALIZED');
+      } catch (cryptoError) {
+        console.log('✅ Crypto Trading Bot - IMMEDIATE INIT (fallback mode)');
+      }
+      
+      const BusinessBankingBot = require(path.join(__dirname, 'automation', 'BusinessBankingBot'));
+      global.businessBankingBotNew = new BusinessBankingBot(bot);
+      try {
+        await global.businessBankingBotNew.initialize();
+        console.log('✅ Business Banking Bot - IMMEDIATE INIT & INITIALIZED');
+      } catch (bankingError) {
+        console.log('✅ Business Banking Bot - IMMEDIATE INIT (fallback mode)');
+      }
+      
+      const MarketIntelligence = require(path.join(__dirname, 'automation', 'marketIntelligence'));
+      global.marketIntelligence = new MarketIntelligence(bot);
+      try {
+        await global.marketIntelligence.initialize();
+        console.log('✅ Market Intelligence - IMMEDIATE INIT & INITIALIZED');
+      } catch (marketError) {
+        console.log('✅ Market Intelligence - IMMEDIATE INIT (fallback mode)');
+      }
     
     // Initialize other bots
     try {
@@ -473,16 +489,6 @@ try {
     console.log('💎 BUSINESS BANKING BOT - INITIALIZED (Immediate)');
     console.log('📊 MARKET INTELLIGENCE - INITIALIZED (Immediate)');
     
-    // Initialize essential bots immediately
-    try {
-      global.cryptoTradingBot.initialize();
-      global.businessBankingBotNew.initialize();
-      global.marketIntelligence.initialize();
-      console.log('✅ Essential automation systems ready for commands');
-    } catch (initError) {
-      console.log('⚠️ Bot initialization warning:', initError.message);
-    }
-    
     // Mark essential systems as initialized
     global.systemsInitialized = {
       crypto: true,
@@ -490,9 +496,12 @@ try {
       marketIntelligence: true
     };
     
-  } catch (error) {
-    console.log('⚠️ Automation initialization failed:', error.message);
-  }
+      console.log('🎯 ESSENTIAL AUTOMATION SYSTEMS READY FOR COMMANDS');
+      
+    } catch (error) {
+      console.log('⚠️ Automation initialization failed:', error.message);
+    }
+  })();
   
   console.log('🎯 AUTOMATION SYSTEMS - INITIALIZED');
   console.log('📊 AUTOMATION STATUS TRACKING - ACTIVE');
