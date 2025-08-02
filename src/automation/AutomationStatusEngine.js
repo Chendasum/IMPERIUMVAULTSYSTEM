@@ -97,7 +97,10 @@ class AutomationStatusEngine {
       decision_engine: components.decisionEngine || false,
       predictor: components.predictor || false,
       self_healing: components.selfHealing || false,
-      autonomous_mode: components.autonomousMode || false
+      autonomous_mode: components.autonomousMode || false,
+      self_monitoring: components.selfMonitoring || false,
+      self_diagnosis: components.selfDiagnosis || false,
+      self_repair: components.selfRepair || false
     };
   }
 
