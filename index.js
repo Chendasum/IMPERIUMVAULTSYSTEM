@@ -368,7 +368,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             
             response += `🎯 **Deal ID:** ${analysis.dealId}`;
             
-            await bot.sendMessage(chatId, response);
+            await splitAndSendMessage(bot, chatId, response);
             
         } catch (error) {
             await bot.sendMessage(chatId, `❌ Deal analysis error: ${error.message}`);
