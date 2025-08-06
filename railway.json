@@ -5,27 +5,31 @@
     "nixpacksPlan": {
       "phases": {
         "install": {
-          "cmds": ["npm install --legacy-peer-deps --no-audit --no-fund"]
+          "cmds": ["npm ci --only=production --no-audit --no-fund --prefer-offline"]
         }
       }
     },
     "env": {
       "NODE_ENV": "production",
       "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
-      "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium"
+      "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium",
+      "NODE_OPTIONS": "--max-old-space-size=4096"
     },
     "watchIgnore": [
       "temp/**",
       "logs/**",
       "coverage/**",
-      "*.log"
+      "*.log",
+      "node_modules/.cache/**"
     ]
   },
   "deploy": {
     "startCommand": "node index.js",
     "restartPolicyType": "ON_FAILURE",
     "healthcheckPath": "/health",
-    "healthcheckTimeout": 300
+    "healthcheckTimeout": 300,
+    "healthcheckInterval": 30,
+    "healthcheckInitialDelay": 90
   },
   "regions": ["us-west1"],
   "plugins": [],
