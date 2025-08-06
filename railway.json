@@ -27,9 +27,9 @@
     "startCommand": "node index.js",
     "restartPolicyType": "ON_FAILURE",
     "healthcheckPath": "/health",
-    "healthcheckTimeout": 300,
+    "healthcheckTimeout": 600,
     "healthcheckInterval": 30,
-    "healthcheckInitialDelay": 90
+    "healthcheckInitialDelay": 180
   },
   "regions": ["us-west1"],
   "plugins": [],
