@@ -25,6 +25,20 @@ const {
     getRayDalioMarketData
 } = require("./utils/liveData");
 
+// ⚙️ Telegram long message handler
+const MAX_MESSAGE_LENGTH = 4096;
+
+async function splitAndSendMessage(bot, chatId, text) {
+    if (text.length <= MAX_MESSAGE_LENGTH) {
+        await bot.sendMessage(chatId, text);
+    } else {
+        const chunks = text.match(new RegExp(.{1,${MAX_MESSAGE_LENGTH}}, 'g'));
+        for (const chunk of chunks) {
+            await bot.sendMessage(chatId, chunk);
+        }
+    }
+}
+
 // 🏦 CAMBODIA LENDING FUND INTEGRATION
 const { 
     analyzeLendingDeal, 
