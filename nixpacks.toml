@@ -1,7 +1,8 @@
-# Minimal nixpacks.toml - just fix the npm install
+# Minimal nixpacks.toml - Railway safe configuration
 [phases.install]
 cmds = ["npm install --legacy-peer-deps --no-audit --no-fund"]
 
 [variables]
 NODE_ENV = "production"
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium"
