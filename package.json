@@ -34,10 +34,7 @@
         "cleanup": "node scripts/cleanup-old-data.js",
         "backup": "node scripts/backup-database.js",
         "analyze": "node scripts/analyze-performance.js",
-        "deploy": "npm run setup && npm start",
-        "lint": "eslint . --ext .js",
-        "format": "prettier --write .",
-        "docs": "jsdoc -c jsdoc.conf.json"
+        "deploy": "npm run setup && npm start"
     },
     "author": {
         "name": "Sum Chenda",
@@ -95,7 +92,6 @@
         "technical-indicators": "^3.1.0",
         "finance": "^0.3.0",
         "trading-signals": "^5.0.5",
-        "alphavantage": "^1.2.0",
         "yahoo-finance2": "^2.11.3",
         "coinmarketcap-api": "^3.1.1",
         "coingecko-api": "^1.0.10",
@@ -106,10 +102,6 @@
         "twelve-data": "^1.4.14",
         "ccxt": "^4.2.25",
         "binance-api-node": "^0.12.6",
-        "okx-api": "^5.3.0",
-        "bybit-api": "^3.10.15",
-        "kraken-api": "^2.2.2",
-        "coinbase-pro": "^0.12.1",
         "express-rate-limit": "^7.1.5",
         "express-validator": "^7.0.1",
         "express-session": "^1.17.3",
@@ -118,9 +110,7 @@
         "passport-local": "^1.0.0",
         "passport-google-oauth20": "^2.0.0",
         "nodemailer": "^6.9.8",
-        "nodemailer-sendgrid-transport": "^0.2.0",
         "twilio": "^4.20.1",
-        "slack-node": "^0.1.8",
         "discord.js": "^14.14.1",
         "qrcode": "^1.5.3",
         "jimp": "^0.22.10",
@@ -129,7 +119,6 @@
         "d3": "^7.8.5",
         "plotly.js": "^2.29.1",
         "highcharts": "^11.3.0",
-        "tradingview-widgets": "^1.0.12",
         "crypto-js": "^4.2.0",
         "speakeasy": "^2.0.0",
         "otplib": "^12.0.1",
@@ -153,10 +142,7 @@
         "jaeger-client": "^3.19.0",
         "opentracing": "^0.14.7",
         "microtime": "^3.1.1",
-        "performance-now": "^2.1.0",
-        "clinic": "^13.0.0",
-        "0x": "^5.5.0",
-        "node-clinic": "^13.0.0"
+        "performance-now": "^2.1.0"
     },
     "devDependencies": {
         "@types/node": "^20.11.17",
@@ -249,129 +235,5 @@
             "volatilityAdjustment": true,
             "regimeAwarePositioning": true
         }
-    },
-    "performance": {
-        "monitoring": {
-            "responseTime": true,
-            "memoryUsage": true,
-            "apiLatency": true,
-            "databasePerformance": true,
-            "tradingSystemUptime": true
-        },
-        "optimization": {
-            "caching": "Redis + Node-Cache",
-            "compression": "gzip",
-            "clustering": "PM2 ready",
-            "loadBalancing": "Railway compatible",
-            "cdn": "Static asset optimization"
-        }
-    },
-    "security": {
-        "authentication": "JWT + bcrypt",
-        "rateLimiting": "Express rate limit",
-        "inputValidation": "Express validator",
-        "encryption": "Crypto-js + Argon2",
-        "headers": "Helmet.js",
-        "cors": "Configurable CORS"
-    },
-    "deployment": {
-        "platform": "Railway",
-        "database": "PostgreSQL",
-        "caching": "Redis (optional)",
-        "monitoring": "Built-in analytics",
-        "logging": "Winston + Daily rotate",
-        "healthChecks": "Express endpoints"
-    },
-    "testing": {
-        "unit": "Jest + Mocha",
-        "integration": "Supertest",
-        "mocking": "Nock + Sinon",
-        "coverage": "NYC",
-        "performance": "Clinic.js",
-        "api": "Custom test suites"
-    },
-    "documentation": {
-        "api": "JSDoc + TypeDoc",
-        "readme": "Comprehensive guide",
-        "deployment": "Railway specific",
-        "trading": "Risk management docs",
-        "rayDalio": "Methodology explanation"
-    },
-    "lint-staged": {
-        "*.js": [
-            "eslint --fix",
-            "prettier --write",
-            "git add"
-        ],
-        "*.json": [
-            "prettier --write",
-            "git add"
-        ],
-        "*.md": [
-            "prettier --write",
-            "git add"
-        ]
-    },
-    "husky": {
-        "hooks": {
-            "pre-commit": "lint-staged",
-            "commit-msg": "commitizen --cz"
-        }
-    },
-    "jest": {
-        "testEnvironment": "node",
-        "collectCoverage": true,
-        "coverageDirectory": "coverage",
-        "coverageReporters": [
-            "text",
-            "lcov",
-            "html"
-        ],
-        "testMatch": [
-            "**/tests/**/*.test.js",
-            "**/tests/**/*.spec.js"
-        ]
-    },
-    "eslintConfig": {
-        "extends": [
-            "airbnb-base",
-            "prettier"
-        ],
-        "plugins": [
-            "prettier"
-        ],
-        "rules": {
-            "prettier/prettier": "error",
-            "no-console": "off",
-            "no-unused-vars": "warn"
-        },
-        "env": {
-            "node": true,
-            "es2021": true,
-            "jest": true
-        }
-    },
-    "prettier": {
-        "semi": true,
-        "singleQuote": true,
-        "tabWidth": 4,
-        "trailingComma": "es5",
-        "printWidth": 100,
-        "bracketSpacing": true,
-        "arrowParens": "avoid"
-    },
-    "nodemonConfig": {
-        "watch": [
-            "."
-        ],
-        "ext": "js,json",
-        "ignore": [
-            "node_modules/",
-            "tests/",
-            "coverage/",
-            "logs/",
-            "temp/"
-        ],
-        "delay": 2000
     }
 }
