@@ -1803,63 +1803,7 @@ app.get("/dashboard", async (req, res) => {
     }
 });
 
-// Root endpoint - Service status page
-app.get("/", (req, res) => {
-    res.json({
-        service: "IMPERIUM GPT-4o System",
-        version: "Ray Dalio AI + Cambodia Lending Fund Enhanced",
-        status: "operational",
-        enhancement: "Bridgewater Associates-level Analysis + Cambodia Private Lending",
-        capabilities: {
-            ai: "GPT-4o with Ray Dalio's principles integration",
-            analysis: "Economic regime identification, market cycle analysis",
-            portfolio: "All Weather allocation, risk parity, correlation analysis", 
-            trading: "Live MetaTrader integration with position sizing",
-            lending: "Cambodia private lending fund analysis and management",
-            data: "Real-time FRED, Alpha Vantage, CoinGecko Pro, NewsAPI"
-        },
-        rayDalioFeatures: {
-            regime: "/regime - Economic regime analysis",
-            cycle: "/cycle - Market cycle positioning", 
-            opportunities: "/opportunities - AI trading opportunities",
-            risk: "/risk - Portfolio risk assessment",
-            macro: "/macro - Global macro outlook",
-            correlations: "/correlations - Asset correlation analysis",
-            allWeather: "/all_weather - Ray Dalio portfolio guidance"
-        },
-        cambodiaLendingFeatures: {
-            dealAnalyze: "/deal_analyze - AI-powered deal analysis",
-            portfolio: "/portfolio - Fund performance and status",
-            market: "/cambodia_market - Local market intelligence",
-            riskAssessment: "/risk_assessment - Portfolio risk analysis",
-            lpReport: "/lp_report - Investor reporting"
-        },
-        endpoints: {
-            analyze: "/analyze?q=your-question",
-            webhook: "/webhook (Telegram)",
-            dashboard: "/dashboard (Analytics)",
-            health: "/health",
-            stats: "/stats",
-        },
-        telegram: "Ray Dalio AI + Cambodia Fund Mode Active",
-        timestamp: new Date().toISOString(),
-    });
-});
-
-// Health check endpoint
-app.get("/health", (req, res) => {
-    res.json({
-        status: "healthy",
-        service: "IMPERIUM GPT-4o System",
-        enhancement: "Ray Dalio AI + Cambodia Lending Fund",
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-        rayDalioMode: "ACTIVE",
-        cambodiaFund: "ACTIVE",
-        metaApi: process.env.METAAPI_TOKEN ? "configured" : "not configured",
-        timestamp: new Date().toISOString(),
-    });
-});
+// DUPLICATE ENDPOINTS REMOVED - Using simple health checks at top of file for Railway deployment
 
 // Enhanced stats endpoint
 app.get("/stats", async (req, res) => {
