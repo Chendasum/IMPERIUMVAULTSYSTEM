@@ -1,8 +1,8 @@
 # nixpacks.toml - Railway configuration for Ray Dalio system
-
 [phases.setup]
 nixPkgs = [
     "nodejs-18_x",
+    "npm",
     "python3",
     "pkg-config",
     "cairo",
