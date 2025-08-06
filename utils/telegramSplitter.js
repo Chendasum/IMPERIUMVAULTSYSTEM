@@ -227,8 +227,8 @@ function formatRayDalioResponse(response, title = null) {
     formatted += response;
     
     // Add footer
-    formatted += `\n\n📊 **Powered by:** Ray Dalio's Principles + GPT-4o\n`;
-    formatted += `🏛️ **Institutional-Grade Analysis** | Cambodia Fund Ready`;
+    formatted += `\n\n📊 **Powered by:** Analysis Complete + GPT-4o\n`;
+    formatted += `🏛️ **Institutional-Grade Analysis** | IMPERIUMWEALTHSYSTEM`;
     
     return formatted;
 }
