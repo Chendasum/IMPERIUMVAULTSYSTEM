@@ -107,7 +107,7 @@
         "newsapi": "^2.4.1",
         "polygon": "^2.0.1",
         "finnhub": "^1.2.18",
-        "alpha-vantage": "^1.0.1",
+        "alphavantage": "^2.0.0"
         "twelve-data": "^1.4.14",
         "tradingview-charting-library": "^26.002.0",
         "ccxt": "^4.2.25",
