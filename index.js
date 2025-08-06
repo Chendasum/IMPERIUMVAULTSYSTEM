@@ -34,7 +34,7 @@ async function splitAndSendMessage(bot, chatId, text) {
     } else {
         const chunks = text.match(new RegExp(.{1,${MAX_MESSAGE_LENGTH}}, 'g'));
         for (const chunk of chunks) {
-            await bot.sendMessage(chatId, chunk);
+            await splitAndSendMessage(chatId, chunk);
         }
     }
 }
@@ -203,7 +203,7 @@ bot.on("message", async (msg) => {
         console.log(
             `🚫 Unauthorized access attempt from ${chatId} (Name: ${msg.chat?.first_name || "Unknown"} ${msg.chat?.last_name || ""}, Username: ${msg.chat?.username || "None"})`,
         );
-        await bot.sendMessage(
+        await splitAndSendMessage(
             chatId,
             `🚫 Access denied. This is a private GPT system.\n\nYour Chat ID: ${chatId}\nAuthorized ID: 484389665\n\nIf this is your personal account, contact system admin.`,
         );
@@ -270,10 +270,10 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
     // 🎯 DEAL ANALYSIS COMMAND
     if (text.startsWith('/deal_analyze ') || text === '/deal_analyze') {
         try {
-            await bot.sendMessage(chatId, "🎯 Analyzing Cambodia lending deal...");
+            await splitAndSendMessage(chatId, "🎯 Analyzing Cambodia lending deal...");
             
             if (text === '/deal_analyze') {
-                await bot.sendMessage(chatId, `📋 **Deal Analysis Usage:**
+                await splitAndSendMessage(chatId, `📋 **Deal Analysis Usage:**
 
 **Format:** /deal_analyze [amount] [type] [location] [rate] [term]
 
@@ -294,7 +294,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             // Parse parameters
             const params = text.replace('/deal_analyze ', '').split(' ');
             if (params.length < 5) {
-                await bot.sendMessage(chatId, "❌ Invalid format. Use: /deal_analyze [amount] [type] [location] [rate] [term]");
+                await splitAndSendMessage(chatId, "❌ Invalid format. Use: /deal_analyze [amount] [type] [location] [rate] [term]");
                 return;
             }
             
@@ -317,7 +317,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             const analysis = await analyzeLendingDeal(dealParams);
             
             if (analysis.error) {
-                await bot.sendMessage(chatId, `❌ Analysis error: ${analysis.error}`);
+                await splitAndSendMessage(chatId, `❌ Analysis error: ${analysis.error}`);
                 return;
             }
             
@@ -371,7 +371,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             await splitAndSendMessage(bot, chatId, response);
             
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Deal analysis error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Deal analysis error: ${error.message}`);
         }
         return;
     }
@@ -379,7 +379,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
     // 🏦 PORTFOLIO STATUS COMMAND
     if (text === '/portfolio' || text === '/fund_status') {
         try {
-            await bot.sendMessage(chatId, "🏦 Generating portfolio status...");
+            await splitAndSendMessage(chatId, "🏦 Generating portfolio status...");
             
             // Sample fund data - you would replace this with actual data
             const sampleFundData = {
@@ -393,7 +393,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             const portfolio = await getPortfolioStatus(sampleFundData);
             
             if (portfolio.error) {
-                await bot.sendMessage(chatId, `❌ Portfolio error: ${portfolio.error}`);
+                await splitAndSendMessage(chatId, `❌ Portfolio error: ${portfolio.error}`);
                 return;
             }
             
@@ -458,7 +458,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             await splitAndSendMessage(bot, chatId, response);
             
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Portfolio status error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Portfolio status error: ${error.message}`);
         }
         return;
     }
@@ -466,12 +466,12 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
     // 🇰🇭 CAMBODIA MARKET COMMAND
     if (text === '/cambodia_market' || text === '/market_cambodia') {
         try {
-            await bot.sendMessage(chatId, "🇰🇭 Analyzing Cambodia market conditions...");
+            await splitAndSendMessage(chatId, "🇰🇭 Analyzing Cambodia market conditions...");
             
             const conditions = await getCambodiaMarketConditions();
             
             if (conditions.error) {
-                await bot.sendMessage(chatId, `❌ Market analysis error: ${conditions.error}`);
+                await splitAndSendMessage(chatId, `❌ Market analysis error: ${conditions.error}`);
                 return;
             }
             
@@ -529,7 +529,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             await splitAndSendMessage(bot, chatId, response);
             
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Cambodia market error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Cambodia market error: ${error.message}`);
         }
         return;
     }
@@ -537,7 +537,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
     // 📊 RISK ASSESSMENT COMMAND
     if (text === '/risk_assessment' || text === '/portfolio_risk') {
         try {
-            await bot.sendMessage(chatId, "📊 Performing comprehensive risk assessment...");
+            await splitAndSendMessage(chatId, "📊 Performing comprehensive risk assessment...");
             
             // Sample portfolio data for assessment
             const samplePortfolioData = {
@@ -551,7 +551,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             const riskAssessment = await performRiskAssessment(samplePortfolioData);
             
             if (riskAssessment.error) {
-                await bot.sendMessage(chatId, `❌ Risk assessment error: ${riskAssessment.error}`);
+                await splitAndSendMessage(chatId, `❌ Risk assessment error: ${riskAssessment.error}`);
                 return;
             }
             
@@ -596,7 +596,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             await splitAndSendMessage(bot, chatId, response);
             
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Risk assessment error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Risk assessment error: ${error.message}`);
         }
         return;
     }
@@ -604,7 +604,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
     // 💼 LP REPORT COMMAND
     if (text.startsWith('/lp_report') || text === '/investor_report') {
         try {
-            await bot.sendMessage(chatId, "💼 Generating LP/Investor report...");
+            await splitAndSendMessage(chatId, "💼 Generating LP/Investor report...");
             
             const reportType = text.includes('monthly') ? 'monthly' : 
                               text.includes('quarterly') ? 'quarterly' : 'monthly';
@@ -612,7 +612,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             const report = await generateLPReport(reportType);
             
             if (report.error) {
-                await bot.sendMessage(chatId, `❌ Report generation error: ${report.error}`);
+                await splitAndSendMessage(chatId, `❌ Report generation error: ${report.error}`);
                 return;
             }
             
@@ -662,7 +662,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             await splitAndSendMessage(bot, chatId, response);
             
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ LP report error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ LP report error: ${error.message}`);
         }
         return;
     }
@@ -707,7 +707,7 @@ Ask questions like:
 
 🏛️ **Enhanced with Ray Dalio AI for institutional-grade analysis!**`;
 
-        await bot.sendMessage(chatId, helpMessage);
+        await splitAndSendMessage(chatId, helpMessage);
         return;
     }
 
@@ -716,7 +716,7 @@ Ask questions like:
     // Economic Regime Analysis - Core Ray Dalio concept
     if (text === '/regime' || text === '/economic_regime') {
         try {
-            await bot.sendMessage(chatId, "🏛️ Analyzing current economic regime like Ray Dalio...");
+            await splitAndSendMessage(chatId, "🏛️ Analyzing current economic regime like Ray Dalio...");
             
             const marketData = await getComprehensiveMarketData();
             
@@ -773,7 +773,7 @@ Structure like Bridgewater's Daily Observations with specific actionable insight
 
             await splitAndSendMessage(bot, chatId, response);
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Regime analysis error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Regime analysis error: ${error.message}`);
         }
         return;
     }
@@ -781,7 +781,7 @@ Structure like Bridgewater's Daily Observations with specific actionable insight
     // Market Cycle Analysis
     if (text === '/cycle' || text === '/market_cycle') {
         try {
-            await bot.sendMessage(chatId, "🔄 Analyzing market cycles like Bridgewater Associates...");
+            await splitAndSendMessage(chatId, "🔄 Analyzing market cycles like Bridgewater Associates...");
             
             const marketData = await getComprehensiveMarketData();
             
@@ -820,9 +820,9 @@ Conclude with specific asset class recommendations based on cycle positioning.`;
                 max_tokens: 2500
             });
 
-            await bot.sendMessage(chatId, `🔄 **MARKET CYCLE ANALYSIS**\n\n${cycleAnalysis.choices[0].message.content}`);
+            await splitAndSendMessage(chatId, `🔄 **MARKET CYCLE ANALYSIS**\n\n${cycleAnalysis.choices[0].message.content}`);
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Cycle analysis error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Cycle analysis error: ${error.message}`);
         }
         return;
     }
@@ -830,7 +830,7 @@ Conclude with specific asset class recommendations based on cycle positioning.`;
     // Market Opportunities Scanner - Enhanced AI Analysis
     if (text === '/opportunities' || text === '/scan') {
         try {
-            await bot.sendMessage(chatId, "🎯 Scanning for trading opportunities with institutional-grade analysis...");
+            await splitAndSendMessage(chatId, "🎯 Scanning for trading opportunities with institutional-grade analysis...");
             
             const marketData = await getComprehensiveMarketData();
             
@@ -873,9 +873,9 @@ Apply Ray Dalio's diversification and risk management principles.`;
                 max_tokens: 2500
             });
 
-            await bot.sendMessage(chatId, `🎯 **MARKET OPPORTUNITIES**\n\n${opportunities.choices[0].message.content}`);
+            await splitAndSendMessage(chatId, `🎯 **MARKET OPPORTUNITIES**\n\n${opportunities.choices[0].message.content}`);
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Opportunities scan error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Opportunities scan error: ${error.message}`);
         }
         return;
     }
@@ -930,9 +930,9 @@ Be specific and actionable with exact recommendations.`;
                 max_tokens: 2000
             });
 
-            await bot.sendMessage(chatId, `⚠️ **RISK ANALYSIS**\n\n${riskAnalysis.choices[0].message.content}`);
+            await splitAndSendMessage(chatId, `⚠️ **RISK ANALYSIS**\n\n${riskAnalysis.choices[0].message.content}`);
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Risk analysis error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Risk analysis error: ${error.message}`);
         }
         return;
     }
@@ -942,7 +942,7 @@ Be specific and actionable with exact recommendations.`;
         try {
             const params = text.split(' ');
             if (params.length < 3) {
-                await bot.sendMessage(chatId, "Usage: /size SYMBOL DIRECTION\nExample: /size EURUSD buy");
+                await splitAndSendMessage(chatId, "Usage: /size SYMBOL DIRECTION\nExample: /size EURUSD buy");
                 return;
             }
             
@@ -992,9 +992,9 @@ Give me exact numbers to execute this trade safely.`;
                 max_tokens: 1000
             });
 
-            await bot.sendMessage(chatId, `📊 **POSITION SIZING for ${symbol} ${direction.toUpperCase()}**\n\n${sizing.choices[0].message.content}`);
+            await splitAndSendMessage(chatId, `📊 **POSITION SIZING for ${symbol} ${direction.toUpperCase()}**\n\n${sizing.choices[0].message.content}`);
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Position sizing error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Position sizing error: ${error.message}`);
         }
         return;
     }
@@ -1050,9 +1050,9 @@ Make it actionable for someone in Cambodia with global market access.`;
                 max_tokens: 2500
             });
 
-            await bot.sendMessage(chatId, `🌦️ **ALL WEATHER PORTFOLIO**\n\n${allWeather.choices[0].message.content}`);
+            await splitAndSendMessage(chatId, `🌦️ **ALL WEATHER PORTFOLIO**\n\n${allWeather.choices[0].message.content}`);
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ All Weather analysis error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ All Weather analysis error: ${error.message}`);
         }
         return;
     }
@@ -1109,9 +1109,9 @@ Focus on actionable insights for portfolio construction in current environment.`
                 max_tokens: 2000
             });
 
-            await bot.sendMessage(chatId, `📊 **CORRELATION ANALYSIS**\n\n${correlations.choices[0].message.content}`);
+            await splitAndSendMessage(chatId, `📊 **CORRELATION ANALYSIS**\n\n${correlations.choices[0].message.content}`);
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Correlation analysis error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Correlation analysis error: ${error.message}`);
         }
         return;
     }
@@ -1177,9 +1177,9 @@ Think like Ray Dalio analyzing for Bridgewater's Daily Observations.`;
                 max_tokens: 3000
             });
 
-            await bot.sendMessage(chatId, `🌍 **MACRO OUTLOOK**\n\n${macroAnalysis.choices[0].message.content}`);
+            await splitAndSendMessage(chatId, `🌍 **MACRO OUTLOOK**\n\n${macroAnalysis.choices[0].message.content}`);
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Macro analysis error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Macro analysis error: ${error.message}`);
         }
         return;
     }
@@ -1232,13 +1232,13 @@ GPT-4o + Ray Dalio's Principles + Cambodia Market Intelligence + Live Trading Da
 
 Your system now rivals institutional hedge fund capabilities! 🌟`;
 
-        await bot.sendMessage(chatId, helpMessage);
+        await splitAndSendMessage(chatId, helpMessage);
         return;
     }
 
     // Debug command to get chat ID
     if (text === "/myid") {
-        await bot.sendMessage(chatId, `Your Chat ID: ${chatId}`);
+        await splitAndSendMessage(chatId, `Your Chat ID: ${chatId}`);
         return;
     }
 
@@ -1246,7 +1246,7 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
     
     if (text === '/test_metaapi' || text === '/debug_metaapi') {
         try {
-            await bot.sendMessage(chatId, "🔍 Testing MetaAPI connection step by step...");
+            await splitAndSendMessage(chatId, "🔍 Testing MetaAPI connection step by step...");
             
             const hasToken = !!process.env.METAAPI_TOKEN;
             const hasAccountId = !!process.env.METAAPI_ACCOUNT_ID;
@@ -1261,7 +1261,7 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
                 debugMsg += `• Token Length: ${process.env.METAAPI_TOKEN.length} chars\n\n`;
                 
                 debugMsg += `**Step 2 - Connection Test:**\n`;
-                await bot.sendMessage(chatId, debugMsg + "⏳ Testing connection...");
+                await splitAndSendMessage(chatId, debugMsg + "⏳ Testing connection...");
                 
                 const testResult = await testConnection();
                 
@@ -1290,26 +1290,26 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
             }
             
             debugMsg += `\n🕐 **Test Time:** ${new Date().toLocaleString()}`;
-            await bot.sendMessage(chatId, debugMsg);
+            await splitAndSendMessage(chatId, debugMsg);
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Debug test failed: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Debug test failed: ${error.message}`);
         }
         return;
     }
 
     if (text === "/trading" || text === "/mt5" || text === "/account") {
         try {
-            await bot.sendMessage(chatId, "📊 Fetching your MetaTrader account data...");
+            await splitAndSendMessage(chatId, "📊 Fetching your MetaTrader account data...");
             
             const tradingData = await getTradingSummary();
             if (tradingData && !tradingData.error) {
                 const formattedData = formatTradingDataForGPT(tradingData);
-                await bot.sendMessage(chatId, formattedData);
+                await splitAndSendMessage(chatId, formattedData);
             } else {
-                await bot.sendMessage(chatId, "❌ MetaTrader connection error. Check your MetaAPI credentials or use /test_metaapi for diagnostics.");
+                await splitAndSendMessage(chatId, "❌ MetaTrader connection error. Check your MetaAPI credentials or use /test_metaapi for diagnostics.");
             }
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ MetaTrader error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ MetaTrader error: ${error.message}`);
         }
         return;
     }
@@ -1326,12 +1326,12 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
                     msg += `   Open: ${pos.openPrice} | Current P&L: ${pos.profit?.toFixed(2)}\n`;
                     msg += `   Time: ${new Date(pos.openTime).toLocaleString()}\n\n`;
                 });
-                await bot.sendMessage(chatId, msg);
+                await splitAndSendMessage(chatId, msg);
             } else {
-                await bot.sendMessage(chatId, "📊 No open positions found or MetaAPI not connected.");
+                await splitAndSendMessage(chatId, "📊 No open positions found or MetaAPI not connected.");
             }
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Positions error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Positions error: ${error.message}`);
         }
         return;
     }
@@ -1339,7 +1339,7 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
     // Enhanced market briefing
     if (text === "/briefing" || text === "/daily" || text === "/brief") {
         try {
-            await bot.sendMessage(chatId, "📊 Generating Ray Dalio-style market briefing...");
+            await splitAndSendMessage(chatId, "📊 Generating Ray Dalio-style market briefing...");
             
             const marketData = await getComprehensiveMarketData();
             
@@ -1393,9 +1393,9 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
             briefing += `🤖 **Ray Dalio AI Analysis Ready**\n`;
             briefing += `💡 Ask: "What's your take on these conditions?" or "/opportunities"`;
             
-            await bot.sendMessage(chatId, briefing);
+            await splitAndSendMessage(chatId, briefing);
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Briefing error: ${error.message}`);
+            await splitAndSendMessage(chatId, `❌ Briefing error: ${error.message}`);
         }
         return;
     }
@@ -1410,7 +1410,7 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
         console.log("🎤 Voice message received");
         const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
         if (transcribedText) {
-            await bot.sendMessage(chatId, `🎤 Voice transcribed: "${transcribedText}"`);
+            await splitAndSendMessage(chatId, `🎤 Voice transcribed: "${transcribedText}"`);
             await handleGPTConversation(chatId, transcribedText);
         }
         return;
@@ -1420,7 +1420,7 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
         console.log("🖼️ Image received");
         const photoAnalysis = await processImageMessage(bot, msg.photo[msg.photo.length - 1].file_id, chatId, msg.caption);
         if (photoAnalysis) {
-            await bot.sendMessage(chatId, `🖼️ Image Analysis:\n\n${photoAnalysis}`);
+            await splitAndSendMessage(chatId, `🖼️ Image Analysis:\n\n${photoAnalysis}`);
         }
         return;
     }
@@ -1442,10 +1442,10 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
 
                 const result = await processTrainingDocument(chatId, tempPath, fileName, "uploaded");
                 if (result.success) {
-                    await bot.sendMessage(chatId, `📚 **Document Added to Your GPT Training:**\n\n📄 File: ${fileName}\n📊 Words: ${result.wordCount.toLocaleString()}\n\n✅ Your AI will now reference this document!`);
+                    await splitAndSendMessage(chatId, `📚 **Document Added to Your GPT Training:**\n\n📄 File: ${fileName}\n📊 Words: ${result.wordCount.toLocaleString()}\n\n✅ Your AI will now reference this document!`);
                 }
             } catch (error) {
-                await bot.sendMessage(chatId, `❌ Error processing document: ${error.message}`);
+                await splitAndSendMessage(chatId, `❌ Error processing document: ${error.message}`);
             }
         }
         return;
@@ -1576,11 +1576,11 @@ CURRENT CAPABILITIES:
         }
 
         console.log(`✅ Ray Dalio GPT response sent to ${chatId}. Tokens used: ${completion.usage?.total_tokens || "unknown"}`);
-        await bot.sendMessage(chatId, gptResponse);
+        await splitAndSendMessage(chatId, gptResponse);
     } catch (error) {
         console.error("Ray Dalio GPT Error:", error.message);
         let errorMsg = `❌ **IMPERIUM GPT Error:**\n\n${error.message}`;
-        await bot.sendMessage(chatId, errorMsg);
+        await splitAndSendMessage(chatId, errorMsg);
     }
 }
 
