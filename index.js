@@ -34,6 +34,17 @@ const {
     generateLPReport 
 } = require("./utils/cambodiaLending");
 
+// 📏 TELEGRAM MESSAGE SPLITTER INTEGRATION
+const {
+    sendLongMessage,
+    sendSmartResponse,
+    splitLongMessage,
+    formatRayDalioResponse,
+    formatCambodiaFundResponse,
+    getMessageStats,
+    TELEGRAM_LIMITS
+} = require("./utils/telegramSplitter");
+
 const {
     processVoiceMessage,
     processImageMessage,
@@ -189,9 +200,9 @@ bot.on("message", async (msg) => {
         console.log(
             `🚫 Unauthorized access attempt from ${chatId} (Name: ${msg.chat?.first_name || "Unknown"} ${msg.chat?.last_name || ""}, Username: ${msg.chat?.username || "None"})`,
         );
-        await bot.sendMessage(
-            chatId,
+        await sendSmartResponse(bot, chatId, 
             `🚫 Access denied. This is a private GPT system.\n\nYour Chat ID: ${chatId}\nAuthorized ID: 484389665\n\nIf this is your personal account, contact system admin.`,
+            null, 'general'
         );
         return;
     }
@@ -246,7 +257,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
 **Chat ID:** ${chatId}
 **Status:** ✅ RAY DALIO AI + CAMBODIA LENDING FUND ACTIVE`;
 
-        bot.sendMessage(chatId, welcomeMessage);
+        await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
         console.log("✅ Enhanced Ray Dalio system message sent");
         return;
     }
@@ -259,7 +270,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             await bot.sendMessage(chatId, "🎯 Analyzing Cambodia lending deal...");
             
             if (text === '/deal_analyze') {
-                await bot.sendMessage(chatId, `📋 **Deal Analysis Usage:**
+                const usageMessage = `📋 **Deal Analysis Usage:**
 
 **Format:** /deal_analyze [amount] [type] [location] [rate] [term]
 
@@ -273,14 +284,16 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
 • Type: commercial, residential, bridge, development
 • Location: "Chamkar Mon", "Daun Penh", "Toul Kork", etc.
 • Rate: Annual % (e.g., 18)
-• Term: Months (e.g., 12)`);
+• Term: Months (e.g., 12)`;
+
+                await sendSmartResponse(bot, chatId, usageMessage, null, 'cambodia');
                 return;
             }
             
             // Parse parameters
             const params = text.replace('/deal_analyze ', '').split(' ');
             if (params.length < 5) {
-                await bot.sendMessage(chatId, "❌ Invalid format. Use: /deal_analyze [amount] [type] [location] [rate] [term]");
+                await sendSmartResponse(bot, chatId, "❌ Invalid format. Use: /deal_analyze [amount] [type] [location] [rate] [term]", null, 'general');
                 return;
             }
             
@@ -303,7 +316,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             const analysis = await analyzeLendingDeal(dealParams);
             
             if (analysis.error) {
-                await bot.sendMessage(chatId, `❌ Analysis error: ${analysis.error}`);
+                await sendSmartResponse(bot, chatId, `❌ Analysis error: ${analysis.error}`, null, 'general');
                 return;
             }
             
@@ -354,10 +367,10 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             
             response += `🎯 **Deal ID:** ${analysis.dealId}`;
             
-            await bot.sendMessage(chatId, response);
+            await sendSmartResponse(bot, chatId, response, "Cambodia Deal Analysis", 'cambodia');
             
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Deal analysis error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Deal analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -379,7 +392,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             const portfolio = await getPortfolioStatus(sampleFundData);
             
             if (portfolio.error) {
-                await bot.sendMessage(chatId, `❌ Portfolio error: ${portfolio.error}`);
+                await sendSmartResponse(bot, chatId, `❌ Portfolio error: ${portfolio.error}`, null, 'general');
                 return;
             }
             
@@ -441,10 +454,10 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
                 });
             }
             
-            await bot.sendMessage(chatId, response);
+            await sendSmartResponse(bot, chatId, response, "Fund Portfolio Status", 'cambodia');
             
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Portfolio status error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Portfolio status error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -457,7 +470,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             const conditions = await getCambodiaMarketConditions();
             
             if (conditions.error) {
-                await bot.sendMessage(chatId, `❌ Market analysis error: ${conditions.error}`);
+                await sendSmartResponse(bot, chatId, `❌ Market analysis error: ${conditions.error}`, null, 'general');
                 return;
             }
             
@@ -512,10 +525,10 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             
             response += `📋 **MARKET SUMMARY:**\n${conditions.summary}`;
             
-            await bot.sendMessage(chatId, response);
+            await sendSmartResponse(bot, chatId, response, "Cambodia Market Intelligence", 'cambodia');
             
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Cambodia market error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Cambodia market error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -537,7 +550,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             const riskAssessment = await performRiskAssessment(samplePortfolioData);
             
             if (riskAssessment.error) {
-                await bot.sendMessage(chatId, `❌ Risk assessment error: ${riskAssessment.error}`);
+                await sendSmartResponse(bot, chatId, `❌ Risk assessment error: ${riskAssessment.error}`, null, 'general');
                 return;
             }
             
@@ -579,10 +592,10 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
                 });
             }
             
-            await bot.sendMessage(chatId, response);
+            await sendSmartResponse(bot, chatId, response, "Portfolio Risk Assessment", 'cambodia');
             
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Risk assessment error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Risk assessment error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -598,7 +611,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             const report = await generateLPReport(reportType);
             
             if (report.error) {
-                await bot.sendMessage(chatId, `❌ Report generation error: ${report.error}`);
+                await sendSmartResponse(bot, chatId, `❌ Report generation error: ${report.error}`, null, 'general');
                 return;
             }
             
@@ -645,10 +658,10 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             response += `📎 **Full Report:** ${report.reportId}\n`;
             response += `📊 **Dashboard:** Available on request`;
             
-            await bot.sendMessage(chatId, response);
+            await sendSmartResponse(bot, chatId, response, "LP Investor Report", 'cambodia');
             
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ LP report error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ LP report error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -693,7 +706,7 @@ Ask questions like:
 
 🏛️ **Enhanced with Ray Dalio AI for institutional-grade analysis!**`;
 
-        await bot.sendMessage(chatId, helpMessage);
+        await sendSmartResponse(bot, chatId, helpMessage, "Cambodia Fund Help", 'cambodia');
         return;
     }
 
@@ -750,16 +763,11 @@ Structure like Bridgewater's Daily Observations with specific actionable insight
                 temperature: 0.7
             });
 
-            let response = `🏛️ **ECONOMIC REGIME ANALYSIS**\n\n`;
-            response += `📅 **Analysis Date:** ${new Date().toLocaleDateString()}\n`;
-            response += `🕐 **Market Time:** ${new Date().toLocaleTimeString()}\n\n`;
-            response += `${analysis.choices[0].message.content}\n\n`;
-            response += `📊 **Data Sources:** FRED, Alpha Vantage, CoinGecko Pro, NewsAPI\n`;
-            response += `🧠 **Powered by:** Ray Dalio's Principles + GPT-4o`;
-
-            await bot.sendMessage(chatId, response);
+            const responseContent = analysis.choices[0].message.content;
+            await sendSmartResponse(bot, chatId, responseContent, "Economic Regime Analysis", 'raydalio');
+            
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Regime analysis error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Regime analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -806,9 +814,10 @@ Conclude with specific asset class recommendations based on cycle positioning.`;
                 max_tokens: 2500
             });
 
-            await bot.sendMessage(chatId, `🔄 **MARKET CYCLE ANALYSIS**\n\n${cycleAnalysis.choices[0].message.content}`);
+            await sendSmartResponse(bot, chatId, cycleAnalysis.choices[0].message.content, "Market Cycle Analysis", 'raydalio');
+            
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Cycle analysis error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Cycle analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -859,9 +868,10 @@ Apply Ray Dalio's diversification and risk management principles.`;
                 max_tokens: 2500
             });
 
-            await bot.sendMessage(chatId, `🎯 **MARKET OPPORTUNITIES**\n\n${opportunities.choices[0].message.content}`);
+            await sendSmartResponse(bot, chatId, opportunities.choices[0].message.content, "Market Opportunities", 'raydalio');
+            
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Opportunities scan error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Opportunities scan error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -916,9 +926,10 @@ Be specific and actionable with exact recommendations.`;
                 max_tokens: 2000
             });
 
-            await bot.sendMessage(chatId, `⚠️ **RISK ANALYSIS**\n\n${riskAnalysis.choices[0].message.content}`);
+            await sendSmartResponse(bot, chatId, riskAnalysis.choices[0].message.content, "Risk Analysis", 'raydalio');
+            
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Risk analysis error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Risk analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -928,7 +939,7 @@ Be specific and actionable with exact recommendations.`;
         try {
             const params = text.split(' ');
             if (params.length < 3) {
-                await bot.sendMessage(chatId, "Usage: /size SYMBOL DIRECTION\nExample: /size EURUSD buy");
+                await sendSmartResponse(bot, chatId, "Usage: /size SYMBOL DIRECTION\nExample: /size EURUSD buy", null, 'general');
                 return;
             }
             
@@ -978,9 +989,10 @@ Give me exact numbers to execute this trade safely.`;
                 max_tokens: 1000
             });
 
-            await bot.sendMessage(chatId, `📊 **POSITION SIZING for ${symbol} ${direction.toUpperCase()}**\n\n${sizing.choices[0].message.content}`);
+            await sendSmartResponse(bot, chatId, sizing.choices[0].message.content, `Position Sizing for ${symbol} ${direction.toUpperCase()}`, 'raydalio');
+            
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Position sizing error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Position sizing error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1036,9 +1048,10 @@ Make it actionable for someone in Cambodia with global market access.`;
                 max_tokens: 2500
             });
 
-            await bot.sendMessage(chatId, `🌦️ **ALL WEATHER PORTFOLIO**\n\n${allWeather.choices[0].message.content}`);
+            await sendSmartResponse(bot, chatId, allWeather.choices[0].message.content, "All Weather Portfolio", 'raydalio');
+            
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ All Weather analysis error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ All Weather analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1095,9 +1108,10 @@ Focus on actionable insights for portfolio construction in current environment.`
                 max_tokens: 2000
             });
 
-            await bot.sendMessage(chatId, `📊 **CORRELATION ANALYSIS**\n\n${correlations.choices[0].message.content}`);
+            await sendSmartResponse(bot, chatId, correlations.choices[0].message.content, "Correlation Analysis", 'raydalio');
+            
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Correlation analysis error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Correlation analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1163,9 +1177,10 @@ Think like Ray Dalio analyzing for Bridgewater's Daily Observations.`;
                 max_tokens: 3000
             });
 
-            await bot.sendMessage(chatId, `🌍 **MACRO OUTLOOK**\n\n${macroAnalysis.choices[0].message.content}`);
+            await sendSmartResponse(bot, chatId, macroAnalysis.choices[0].message.content, "Macro Outlook", 'raydalio');
+            
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Macro analysis error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Macro analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1218,13 +1233,13 @@ GPT-4o + Ray Dalio's Principles + Cambodia Market Intelligence + Live Trading Da
 
 Your system now rivals institutional hedge fund capabilities! 🌟`;
 
-        await bot.sendMessage(chatId, helpMessage);
+        await sendSmartResponse(bot, chatId, helpMessage, "System Commands", 'general');
         return;
     }
 
     // Debug command to get chat ID
     if (text === "/myid") {
-        await bot.sendMessage(chatId, `Your Chat ID: ${chatId}`);
+        await sendSmartResponse(bot, chatId, `Your Chat ID: ${chatId}`, null, 'general');
         return;
     }
 
@@ -1276,9 +1291,10 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
             }
             
             debugMsg += `\n🕐 **Test Time:** ${new Date().toLocaleString()}`;
-            await bot.sendMessage(chatId, debugMsg);
+            await sendSmartResponse(bot, chatId, debugMsg, "MetaAPI Debug Report", 'general');
+            
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Debug test failed: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Debug test failed: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1290,12 +1306,12 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
             const tradingData = await getTradingSummary();
             if (tradingData && !tradingData.error) {
                 const formattedData = formatTradingDataForGPT(tradingData);
-                await bot.sendMessage(chatId, formattedData);
+                await sendSmartResponse(bot, chatId, formattedData, "Trading Account Summary", 'general');
             } else {
-                await bot.sendMessage(chatId, "❌ MetaTrader connection error. Check your MetaAPI credentials or use /test_metaapi for diagnostics.");
+                await sendSmartResponse(bot, chatId, "❌ MetaTrader connection error. Check your MetaAPI credentials or use /test_metaapi for diagnostics.", null, 'general');
             }
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ MetaTrader error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ MetaTrader error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1312,12 +1328,12 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
                     msg += `   Open: ${pos.openPrice} | Current P&L: ${pos.profit?.toFixed(2)}\n`;
                     msg += `   Time: ${new Date(pos.openTime).toLocaleString()}\n\n`;
                 });
-                await bot.sendMessage(chatId, msg);
+                await sendSmartResponse(bot, chatId, msg, "Open Positions", 'general');
             } else {
-                await bot.sendMessage(chatId, "📊 No open positions found or MetaAPI not connected.");
+                await sendSmartResponse(bot, chatId, "📊 No open positions found or MetaAPI not connected.", null, 'general');
             }
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Positions error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Positions error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1379,9 +1395,10 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
             briefing += `🤖 **Ray Dalio AI Analysis Ready**\n`;
             briefing += `💡 Ask: "What's your take on these conditions?" or "/opportunities"`;
             
-            await bot.sendMessage(chatId, briefing);
+            await sendSmartResponse(bot, chatId, briefing, "Daily Market Briefing", 'raydalio');
+            
         } catch (error) {
-            await bot.sendMessage(chatId, `❌ Briefing error: ${error.message}`);
+            await sendSmartResponse(bot, chatId, `❌ Briefing error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1396,7 +1413,7 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
         console.log("🎤 Voice message received");
         const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
         if (transcribedText) {
-            await bot.sendMessage(chatId, `🎤 Voice transcribed: "${transcribedText}"`);
+            await sendSmartResponse(bot, chatId, `🎤 Voice transcribed: "${transcribedText}"`, null, 'general');
             await handleGPTConversation(chatId, transcribedText);
         }
         return;
@@ -1406,7 +1423,7 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
         console.log("🖼️ Image received");
         const photoAnalysis = await processImageMessage(bot, msg.photo[msg.photo.length - 1].file_id, chatId, msg.caption);
         if (photoAnalysis) {
-            await bot.sendMessage(chatId, `🖼️ Image Analysis:\n\n${photoAnalysis}`);
+            await sendSmartResponse(bot, chatId, `🖼️ Image Analysis:\n\n${photoAnalysis}`, "Image Analysis", 'general');
         }
         return;
     }
@@ -1428,10 +1445,10 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
 
                 const result = await processTrainingDocument(chatId, tempPath, fileName, "uploaded");
                 if (result.success) {
-                    await bot.sendMessage(chatId, `📚 **Document Added to Your GPT Training:**\n\n📄 File: ${fileName}\n📊 Words: ${result.wordCount.toLocaleString()}\n\n✅ Your AI will now reference this document!`);
+                    await sendSmartResponse(bot, chatId, `📚 **Document Added to Your GPT Training:**\n\n📄 File: ${fileName}\n📊 Words: ${result.wordCount.toLocaleString()}\n\n✅ Your AI will now reference this document!`, "Training Document Added", 'general');
                 }
             } catch (error) {
-                await bot.sendMessage(chatId, `❌ Error processing document: ${error.message}`);
+                await sendSmartResponse(bot, chatId, `❌ Error processing document: ${error.message}`, null, 'general');
             }
         }
         return;
@@ -1562,11 +1579,14 @@ CURRENT CAPABILITIES:
         }
 
         console.log(`✅ Ray Dalio GPT response sent to ${chatId}. Tokens used: ${completion.usage?.total_tokens || "unknown"}`);
-        await bot.sendMessage(chatId, gptResponse);
+        
+        // Use smart response system for long messages
+        await sendSmartResponse(bot, chatId, gptResponse, null, 'raydalio');
+        
     } catch (error) {
         console.error("Ray Dalio GPT Error:", error.message);
         let errorMsg = `❌ **IMPERIUM GPT Error:**\n\n${error.message}`;
-        await bot.sendMessage(chatId, errorMsg);
+        await sendSmartResponse(bot, chatId, errorMsg, null, 'general');
     }
 }
 
@@ -2001,6 +2021,7 @@ app.listen(PORT, "0.0.0.0", () => {
     console.log("🎯 Systematic Opportunities | 💹 Live Trading Integration");
     console.log("🇰🇭 Cambodia Deal Analysis | 💼 LP Reporting | 📊 Portfolio Management");
     console.log("📊 Live data: CoinGecko Pro, FRED, Alpha Vantage, NewsAPI, MetaAPI");
+    console.log("📏 TELEGRAM SPLITTER: Integrated for long message handling");
     console.log("🔗 Direct API: http://localhost:" + PORT + "/analyze?q=your-question");
     console.log("📱 Telegram: RAY DALIO AI + CAMBODIA FUND MODE ACTIVE");
     console.log("📈 Dashboard: http://localhost:" + PORT + "/dashboard");
