@@ -1,8 +1,24 @@
-# Minimal nixpacks.toml - Railway safe configuration
+# Optimized Railway deployment configuration
 [phases.install]
-cmds = ["npm install --legacy-peer-deps --no-audit --no-fund"]
+cmds = [
+    "npm ci --omit=dev --no-audit --no-fund --prefer-offline",
+    "npm cache clean --force"
+]
 
 [variables]
 NODE_ENV = "production"
+NPM_CONFIG_PRODUCTION = "true"
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
 PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium"
+NODE_OPTIONS = "--max-old-space-size=4096"
+
+[build]
+ignoredPaths = [
+    "logs/**",
+    "temp/**", 
+    "*.log",
+    ".git/**",
+    "node_modules/.cache/**",
+    "coverage/**",
+    "tests/**"
+]
