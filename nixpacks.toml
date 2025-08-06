@@ -8,7 +8,7 @@ nixPkgs = [
     "cairo",
     "pango",
     "libpng",
-    "libjpeg",   # ← FIXED THIS LINE
+    "libjpeg",
     "giflib",
     "librsvg",
     "pixman",
