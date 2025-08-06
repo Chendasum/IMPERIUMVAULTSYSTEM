@@ -593,7 +593,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
                 });
             }
             
-            await bot.sendMessage(chatId, response);
+            await splitAndSendMessage(bot, chatId, response);
             
         } catch (error) {
             await bot.sendMessage(chatId, `❌ Risk assessment error: ${error.message}`);
@@ -659,7 +659,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             response += `📎 **Full Report:** ${report.reportId}\n`;
             response += `📊 **Dashboard:** Available on request`;
             
-            await bot.sendMessage(chatId, response);
+            await splitAndSendMessage(bot, chatId, response);
             
         } catch (error) {
             await bot.sendMessage(chatId, `❌ LP report error: ${error.message}`);
@@ -771,7 +771,7 @@ Structure like Bridgewater's Daily Observations with specific actionable insight
             response += `📊 **Data Sources:** FRED, Alpha Vantage, CoinGecko Pro, NewsAPI\n`;
             response += `🧠 **Powered by:** Ray Dalio's Principles + GPT-4o`;
 
-            await bot.sendMessage(chatId, response);
+            await splitAndSendMessage(bot, chatId, response);
         } catch (error) {
             await bot.sendMessage(chatId, `❌ Regime analysis error: ${error.message}`);
         }
