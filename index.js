@@ -1573,33 +1573,9 @@ CURRENT CAPABILITIES:
 // ✅ Express server for webhook and API endpoints
 const express = require("express");
 const app = express();
-// Railway deployment: Use Railway's PORT or fallback to 8080
 const PORT = process.env.PORT || 8080;
-console.log(`🌐 Server will start on PORT: ${PORT} (Railway env PORT: ${process.env.PORT || 'not set'})`);
-
-// Prevent multiple server instances
-let serverInstance = null;
 
 app.use(express.json());
-
-// Railway health check endpoint (CRITICAL for Railway deployment)
-app.get("/", (req, res) => {
-    res.json({
-        status: "healthy",
-        service: "GPT-4o Ray Dalio AI + Cambodia Lending Fund",
-        version: "2.0.0",
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        port: PORT
-    });
-});
-
-app.get("/health", (req, res) => {
-    res.json({
-        status: "ok",
-        timestamp: new Date().toISOString()
-    });
-});
 
 // Telegram webhook endpoint
 app.post("/webhook", (req, res) => {
@@ -1803,7 +1779,63 @@ app.get("/dashboard", async (req, res) => {
     }
 });
 
-// DUPLICATE ENDPOINTS REMOVED - Using simple health checks at top of file for Railway deployment
+// Root endpoint - Service status page
+app.get("/", (req, res) => {
+    res.json({
+        service: "IMPERIUM GPT-4o System",
+        version: "Ray Dalio AI + Cambodia Lending Fund Enhanced",
+        status: "operational",
+        enhancement: "Bridgewater Associates-level Analysis + Cambodia Private Lending",
+        capabilities: {
+            ai: "GPT-4o with Ray Dalio's principles integration",
+            analysis: "Economic regime identification, market cycle analysis",
+            portfolio: "All Weather allocation, risk parity, correlation analysis", 
+            trading: "Live MetaTrader integration with position sizing",
+            lending: "Cambodia private lending fund analysis and management",
+            data: "Real-time FRED, Alpha Vantage, CoinGecko Pro, NewsAPI"
+        },
+        rayDalioFeatures: {
+            regime: "/regime - Economic regime analysis",
+            cycle: "/cycle - Market cycle positioning", 
+            opportunities: "/opportunities - AI trading opportunities",
+            risk: "/risk - Portfolio risk assessment",
+            macro: "/macro - Global macro outlook",
+            correlations: "/correlations - Asset correlation analysis",
+            allWeather: "/all_weather - Ray Dalio portfolio guidance"
+        },
+        cambodiaLendingFeatures: {
+            dealAnalyze: "/deal_analyze - AI-powered deal analysis",
+            portfolio: "/portfolio - Fund performance and status",
+            market: "/cambodia_market - Local market intelligence",
+            riskAssessment: "/risk_assessment - Portfolio risk analysis",
+            lpReport: "/lp_report - Investor reporting"
+        },
+        endpoints: {
+            analyze: "/analyze?q=your-question",
+            webhook: "/webhook (Telegram)",
+            dashboard: "/dashboard (Analytics)",
+            health: "/health",
+            stats: "/stats",
+        },
+        telegram: "Ray Dalio AI + Cambodia Fund Mode Active",
+        timestamp: new Date().toISOString(),
+    });
+});
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+    res.json({
+        status: "healthy",
+        service: "IMPERIUM GPT-4o System",
+        enhancement: "Ray Dalio AI + Cambodia Lending Fund",
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        rayDalioMode: "ACTIVE",
+        cambodiaFund: "ACTIVE",
+        metaApi: process.env.METAAPI_TOKEN ? "configured" : "not configured",
+        timestamp: new Date().toISOString(),
+    });
+});
 
 // Enhanced stats endpoint
 app.get("/stats", async (req, res) => {
@@ -1960,55 +1992,27 @@ Apply Ray Dalio's risk management principles to both global markets and local le
     }
 });
 
-// Graceful shutdown handler
-process.on('SIGTERM', () => {
-    console.log('📤 SIGTERM received, shutting down gracefully...');
-    if (serverInstance) {
-        serverInstance.close(() => {
-            console.log('✅ Server closed');
-            process.exit(0);
+app.listen(PORT, "0.0.0.0", () => {
+    console.log("✅ IMPERIUM GPT-4o Ray Dalio + Cambodia Lending System running on port " + PORT);
+    console.log("🧠 RAY DALIO AI MODE: Bridgewater Associates-level Analysis");
+    console.log("🏦 CAMBODIA LENDING FUND: Private lending analysis and portfolio management");
+    console.log("🏛️ Economic Regime Analysis | 🔄 Market Cycle Positioning");
+    console.log("🌦️ All Weather Portfolio | ⚠️ Risk Assessment | 📊 Correlations");
+    console.log("🎯 Systematic Opportunities | 💹 Live Trading Integration");
+    console.log("🇰🇭 Cambodia Deal Analysis | 💼 LP Reporting | 📊 Portfolio Management");
+    console.log("📊 Live data: CoinGecko Pro, FRED, Alpha Vantage, NewsAPI, MetaAPI");
+    console.log("🔗 Direct API: http://localhost:" + PORT + "/analyze?q=your-question");
+    console.log("📱 Telegram: RAY DALIO AI + CAMBODIA FUND MODE ACTIVE");
+    console.log("📈 Dashboard: http://localhost:" + PORT + "/dashboard");
+
+    // Set webhook for Railway deployment
+    const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
+    bot.setWebHook(webhookUrl)
+        .then(() => {
+            console.log("🔗 Webhook configured:", webhookUrl);
+            console.log("🌟 Ray Dalio AI + Cambodia Lending Fund ready for institutional-quality analysis!");
+        })
+        .catch((err) => {
+            console.error("❌ Webhook setup failed:", err.message);
         });
-    }
-});
-
-// Start server only if not already running
-if (!serverInstance) {
-    serverInstance = app.listen(PORT, "0.0.0.0", () => {
-        console.log("✅ IMPERIUM GPT-4o Ray Dalio + Cambodia Lending System running on port " + PORT);
-        console.log("🧠 RAY DALIO AI MODE: Bridgewater Associates-level Analysis");
-        console.log("🏦 CAMBODIA LENDING FUND: Private lending analysis and portfolio management");
-        console.log("🏛️ Economic Regime Analysis | 🔄 Market Cycle Positioning");
-        console.log("🌦️ All Weather Portfolio | ⚠️ Risk Assessment | 📊 Correlations");
-        console.log("🎯 Systematic Opportunities | 💹 Live Trading Integration");
-        console.log("🇰🇭 Cambodia Deal Analysis | 💼 LP Reporting | 📊 Portfolio Management");
-        console.log("📊 Live data: CoinGecko Pro, FRED, Alpha Vantage, NewsAPI, MetaAPI");
-        console.log("🔗 Direct API: Running on Railway port " + PORT);
-        console.log("📱 Telegram: RAY DALIO AI + CAMBODIA FUND MODE ACTIVE");
-        console.log("📈 Railway deployment ready on port " + PORT);
-
-        // Set webhook for Railway deployment
-        const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
-        bot.setWebHook(webhookUrl)
-            .then(() => {
-                console.log("🔗 Webhook configured:", webhookUrl);
-                console.log("🌟 Ray Dalio AI + Cambodia Lending Fund ready for institutional-quality analysis!");
-            })
-            .catch((err) => {
-                console.error("❌ Webhook setup failed:", err.message);
-            });
-    });
-    
-    serverInstance.on('error', (error) => {
-        if (error.code === 'EADDRINUSE') {
-            console.error(`❌ Port ${PORT} is already in use. Trying to find available port...`);
-            // Try alternative ports for Railway
-            const altPort = PORT + 1;
-            console.log(`🔄 Trying alternative port ${altPort}...`);
-            serverInstance = app.listen(altPort, "0.0.0.0", () => {
-                console.log(`✅ Server running on alternative port ${altPort}`);
-            });
-        } else {
-            console.error('❌ Server error:', error.message);
-        }
-    });
-}
+});"
