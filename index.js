@@ -25,22 +25,6 @@ const {
     getRayDalioMarketData
 } = require("./utils/liveData");
 
-// ⚙️ Telegram long message handler
-const MAX_MESSAGE_LENGTH = 4096;
-
-async function splitAndSendMessage(bot, chatId, text) {
-    if (!text) return;
-
-    if (text.length <= MAX_MESSAGE_LENGTH) {
-        await bot.sendMessage(chatId, text);
-    } else {
-        const chunks = text.match(new RegExp(`.{1,${MAX_MESSAGE_LENGTH}}`, 'gs'));
-        for (const chunk of chunks) {
-            await bot.sendMessage(chatId, chunk);
-        }
-    }
-}
-
 // 🏦 CAMBODIA LENDING FUND INTEGRATION
 const { 
     analyzeLendingDeal, 
@@ -108,6 +92,22 @@ const bot = new TelegramBot(telegramToken, { polling: false });
 
 // ✅ Initialize OpenAI API (latest SDK v4.38.1)
 const openai = new OpenAI({ apiKey: openaiKey });
+
+// 🔧 Handles long Telegram messages by splitting into chunks
+const MAX_MESSAGE_LENGTH = 4096;
+
+async function splitAndSendMessage(bot, chatId, text) {
+    if (!text) return;
+
+    if (text.length <= MAX_MESSAGE_LENGTH) {
+        await bot.sendMessage(chatId, text);
+    } else {
+        const chunks = text.match(new RegExp(`.{1,${MAX_MESSAGE_LENGTH}}`, 'g'));
+        for (const chunk of chunks) {
+            await bot.sendMessage(chatId, chunk);
+        }
+    }
+}
 
 // ✅ Initialize Database Connection
 initializeDatabase()
@@ -205,10 +205,7 @@ bot.on("message", async (msg) => {
         console.log(
             `🚫 Unauthorized access attempt from ${chatId} (Name: ${msg.chat?.first_name || "Unknown"} ${msg.chat?.last_name || ""}, Username: ${msg.chat?.username || "None"})`,
         );
-        await splitAndSendMessage(
-            chatId,
-            `🚫 Access denied. This is a private GPT system.\n\nYour Chat ID: ${chatId}\nAuthorized ID: 484389665\n\nIf this is your personal account, contact system admin.`,
-        );
+        await splitAndSendMessage(bot, chatId, `🚫 Access denied. This is a private GPT system.\n\nYour Chat ID: ${chatId}\nAuthorized ID: 484389665\n\nIf this is your personal account, contact system admin.`);
         return;
     }
 
@@ -262,7 +259,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
 **Chat ID:** ${chatId}
 **Status:** ✅ RAY DALIO AI + CAMBODIA LENDING FUND ACTIVE`;
 
-        bot.sendMessage(chatId, welcomeMessage);
+        await splitAndSendMessage(bot, chatId, welcomeMessage);
         console.log("✅ Enhanced Ray Dalio system message sent");
         return;
     }
@@ -272,10 +269,10 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
     // 🎯 DEAL ANALYSIS COMMAND
     if (text.startsWith('/deal_analyze ') || text === '/deal_analyze') {
         try {
-            await splitAndSendMessage(chatId, "🎯 Analyzing Cambodia lending deal...");
-            
+            await splitAndSendMessage(bot, chatId, "🎯 Analyzing Cambodia lending deal...");
+
             if (text === '/deal_analyze') {
-                await splitAndSendMessage(chatId, `📋 **Deal Analysis Usage:**
+                await splitAndSendMessage(bot, chatId, `📋 **Deal Analysis Usage:**
 
 **Format:** /deal_analyze [amount] [type] [location] [rate] [term]
 
@@ -292,14 +289,14 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
 • Term: Months (e.g., 12)`);
                 return;
             }
-            
+
             // Parse parameters
             const params = text.replace('/deal_analyze ', '').split(' ');
             if (params.length < 5) {
-                await splitAndSendMessage(chatId, "❌ Invalid format. Use: /deal_analyze [amount] [type] [location] [rate] [term]");
+                await splitAndSendMessage(bot, chatId, "❌ Invalid format. Use: /deal_analyze [amount] [type] [location] [rate] [term]");
                 return;
             }
-            
+
             const dealParams = {
                 amount: parseFloat(params[0]),
                 collateralType: params[1],
@@ -315,14 +312,14 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
                     experience: 'EXPERIENCED'
                 }
             };
-            
+
             const analysis = await analyzeLendingDeal(dealParams);
-            
+
             if (analysis.error) {
-                await splitAndSendMessage(chatId, `❌ Analysis error: ${analysis.error}`);
+                await splitAndSendMessage(bot, chatId, `❌ Analysis error: ${analysis.error}`);
                 return;
             }
-            
+
             let response = `🎯 **CAMBODIA DEAL ANALYSIS**\n\n`;
             response += `📊 **DEAL OVERVIEW:**\n`;
             response += `• Amount: $${analysis.dealSummary.amount.toLocaleString()} USD\n`;
@@ -330,36 +327,36 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             response += `• Term: ${analysis.dealSummary.term} months\n`;
             response += `• Monthly Payment: $${analysis.dealSummary.monthlyPayment.toFixed(0)}\n`;
             response += `• Total Return: $${analysis.dealSummary.totalReturn.toFixed(0)}\n\n`;
-            
+
             response += `⚠️ **RISK ASSESSMENT:**\n`;
             response += `• Overall Risk Score: ${analysis.riskAssessment.overallScore}/100\n`;
             response += `• Risk Category: ${analysis.riskAssessment.riskCategory}\n`;
             response += `• Credit Risk: ${analysis.riskAssessment.creditRisk}/100\n`;
             response += `• Market Risk: ${analysis.riskAssessment.marketRisk}/100\n`;
             response += `• Liquidity Risk: ${analysis.riskAssessment.liquidityRisk}\n\n`;
-            
+
             response += `🇰🇭 **CAMBODIA MARKET CONTEXT:**\n`;
             response += `• Current Conditions: ${analysis.marketContext.currentConditions}\n`;
             response += `• Market Timing: ${analysis.marketContext.marketTiming}\n`;
             response += `• Competitive Rate: ${analysis.marketContext.competitiveRate}%\n\n`;
-            
+
             response += `🏛️ **RAY DALIO ANALYSIS:**\n`;
             response += `• Regime Alignment: ${analysis.rayDalioInsights.regimeAlignment}\n`;
             response += `• Diversification Impact: ${analysis.rayDalioInsights.diversificationImpact}\n`;
             response += `• Macro Factors: ${analysis.rayDalioInsights.macroFactors}\n\n`;
-            
+
             response += `💰 **FINANCIAL METRICS:**\n`;
             response += `• Expected Return: ${analysis.metrics.expectedReturn}%\n`;
             response += `• Risk-Adjusted Return: ${analysis.metrics.riskAdjustedReturn.toFixed(2)}%\n`;
             response += `• Break-Even Default: ${analysis.metrics.breakEvenDefault.toFixed(1)}%\n\n`;
-            
+
             const decisionEmoji = analysis.recommendation.decision === 'APPROVE' ? '✅' : 
                                  analysis.recommendation.decision === 'CONDITIONAL_APPROVE' ? '⚠️' : '❌';
-            
+
             response += `${decisionEmoji} **RECOMMENDATION: ${analysis.recommendation.decision}**\n`;
             response += `• Confidence: ${analysis.recommendation.confidence}%\n`;
             response += `• Reason: ${analysis.recommendation.reasons[0]}\n\n`;
-            
+
             if (analysis.recommendation.conditions && analysis.recommendation.conditions.length > 0) {
                 response += `📋 **CONDITIONS:**\n`;
                 analysis.recommendation.conditions.forEach(condition => {
@@ -367,13 +364,13 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
                 });
                 response += `\n`;
             }
-            
+
             response += `🎯 **Deal ID:** ${analysis.dealId}`;
-            
+
             await splitAndSendMessage(bot, chatId, response);
-            
+
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Deal analysis error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Deal analysis error: ${error.message}`);
         }
         return;
     }
@@ -381,8 +378,8 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
     // 🏦 PORTFOLIO STATUS COMMAND
     if (text === '/portfolio' || text === '/fund_status') {
         try {
-            await splitAndSendMessage(chatId, "🏦 Generating portfolio status...");
-            
+            await splitAndSendMessage(bot, chatId, "🏦 Generating portfolio status...");
+
             // Sample fund data - you would replace this with actual data
             const sampleFundData = {
                 totalAUM: 2500000,
@@ -391,16 +388,16 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
                 activeDeals: 12,
                 currentYield: 17.5
             };
-            
+
             const portfolio = await getPortfolioStatus(sampleFundData);
-            
+
             if (portfolio.error) {
-                await splitAndSendMessage(chatId, `❌ Portfolio error: ${portfolio.error}`);
+                await splitAndSendMessage(bot, chatId, `❌ Portfolio error: ${portfolio.error}`);
                 return;
             }
-            
+
             let response = `🏦 **CAMBODIA LENDING FUND STATUS**\n\n`;
-            
+
             response += `💰 **FUND OVERVIEW:**\n`;
             response += `• Total AUM: $${portfolio.fundOverview.totalAUM.toLocaleString()}\n`;
             response += `• Deployed Capital: $${portfolio.fundOverview.deployedCapital.toLocaleString()}\n`;
@@ -408,7 +405,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             response += `• Deployment Ratio: ${portfolio.fundOverview.deploymentRatio.toFixed(1)}%\n`;
             response += `• Active Deals: ${portfolio.fundOverview.numberOfDeals}\n`;
             response += `• Avg Deal Size: $${portfolio.fundOverview.averageDealSize.toLocaleString()}\n\n`;
-            
+
             response += `📈 **PERFORMANCE METRICS:**\n`;
             response += `• Current Yield: ${portfolio.performance.currentYieldRate.toFixed(2)}%\n`;
             response += `• Target Yield: ${portfolio.performance.targetYieldRate}%\n`;
@@ -416,32 +413,32 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             response += `• Risk-Adj Return: ${portfolio.performance.riskAdjustedReturn.toFixed(2)}%\n`;
             response += `• Monthly Income: $${portfolio.performance.monthlyIncome.toLocaleString()}\n`;
             response += `• Annualized Return: ${portfolio.performance.annualizedReturn.toFixed(2)}%\n\n`;
-            
+
             response += `⚠️ **RISK METRICS:**\n`;
             response += `• Concentration Risk: ${portfolio.riskMetrics.concentrationRisk}\n`;
             response += `• Default Rate: ${portfolio.riskMetrics.defaultRate.toFixed(2)}%\n`;
             response += `• Portfolio VaR: ${portfolio.riskMetrics.portfolioVaR.toFixed(1)}%\n`;
             response += `• Diversification: ${portfolio.riskMetrics.diversificationScore}/100\n`;
             response += `• Liquidity: ${portfolio.riskMetrics.liquidity}\n\n`;
-            
+
             response += `🗺️ **GEOGRAPHIC ALLOCATION:**\n`;
             response += `• Phnom Penh: ${portfolio.geographicAllocation.phnomPenh.toFixed(1)}%\n`;
             response += `• Sihanoukville: ${portfolio.geographicAllocation.sihanoukville.toFixed(1)}%\n`;
             response += `• Siem Reap: ${portfolio.geographicAllocation.siemReap.toFixed(1)}%\n`;
             response += `• Other: ${portfolio.geographicAllocation.other.toFixed(1)}%\n\n`;
-            
+
             response += `🏗️ **SECTOR ALLOCATION:**\n`;
             response += `• Commercial: ${portfolio.sectorAllocation.commercial.toFixed(1)}%\n`;
             response += `• Residential: ${portfolio.sectorAllocation.residential.toFixed(1)}%\n`;
             response += `• Development: ${portfolio.sectorAllocation.development.toFixed(1)}%\n`;
             response += `• Bridge: ${portfolio.sectorAllocation.bridge.toFixed(1)}%\n\n`;
-            
+
             response += `🏛️ **RAY DALIO ASSESSMENT:**\n`;
             response += `• Diversification Score: ${portfolio.rayDalioPortfolioAnalysis.diversificationScore}/100\n`;
             response += `• Risk Parity Alignment: ${portfolio.rayDalioPortfolioAnalysis.riskParityAlignment}\n`;
             response += `• Macro Alignment: ${portfolio.rayDalioPortfolioAnalysis.macroAlignment}\n`;
             response += `• Regime Positioning: ${portfolio.rayDalioPortfolioAnalysis.regimePositioning}\n\n`;
-            
+
             if (portfolio.recommendations.length > 0) {
                 response += `💡 **RECOMMENDATIONS:**\n`;
                 portfolio.recommendations.slice(0, 3).forEach(rec => {
@@ -449,18 +446,18 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
                 });
                 response += `\n`;
             }
-            
+
             if (portfolio.alerts.length > 0) {
                 response += `🚨 **ALERTS:**\n`;
                 portfolio.alerts.slice(0, 2).forEach(alert => {
                     response += `• ${alert}\n`;
                 });
             }
-            
+
             await splitAndSendMessage(bot, chatId, response);
-            
+
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Portfolio status error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Portfolio status error: ${error.message}`);
         }
         return;
     }
@@ -468,31 +465,31 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
     // 🇰🇭 CAMBODIA MARKET COMMAND
     if (text === '/cambodia_market' || text === '/market_cambodia') {
         try {
-            await splitAndSendMessage(chatId, "🇰🇭 Analyzing Cambodia market conditions...");
-            
+            await splitAndSendMessage(bot, chatId, "🇰🇭 Analyzing Cambodia market conditions...");
+
             const conditions = await getCambodiaMarketConditions();
-            
+
             if (conditions.error) {
-                await splitAndSendMessage(chatId, `❌ Market analysis error: ${conditions.error}`);
+                await splitAndSendMessage(bot, chatId, `❌ Market analysis error: ${conditions.error}`);
                 return;
             }
-            
+
             let response = `🇰🇭 **CAMBODIA MARKET INTELLIGENCE**\n\n`;
-            
+
             response += `📊 **ECONOMIC ENVIRONMENT:**\n`;
             response += `• GDP Growth: ${conditions.economicEnvironment.gdpGrowth}%\n`;
             response += `• Inflation: ${conditions.economicEnvironment.inflation}%\n`;
             response += `• USD/KHR Stability: ${conditions.economicEnvironment.currencyStability}\n`;
             response += `• Political Stability: ${conditions.economicEnvironment.politicalStability}\n`;
             response += `• Regulatory Environment: ${conditions.economicEnvironment.regulatoryEnvironment}\n\n`;
-            
+
             response += `💰 **INTEREST RATE ENVIRONMENT:**\n`;
             response += `• Commercial Loans: ${conditions.interestRateEnvironment.commercialRates.commercial.min}-${conditions.interestRateEnvironment.commercialRates.commercial.max}% (avg: ${conditions.interestRateEnvironment.commercialRates.commercial.average}%)\n`;
             response += `• Bridge Loans: ${conditions.interestRateEnvironment.commercialRates.bridge.min}-${conditions.interestRateEnvironment.commercialRates.bridge.max}% (avg: ${conditions.interestRateEnvironment.commercialRates.bridge.average}%)\n`;
             response += `• Development: ${conditions.interestRateEnvironment.commercialRates.development.min}-${conditions.interestRateEnvironment.commercialRates.development.max}% (avg: ${conditions.interestRateEnvironment.commercialRates.development.average}%)\n`;
             response += `• Trend: ${conditions.interestRateEnvironment.trendDirection}\n`;
             response += `• Fed Impact: ${conditions.interestRateEnvironment.fedImpact}\n\n`;
-            
+
             response += `🏘️ **PROPERTY MARKET:**\n`;
             response += `• Phnom Penh Trend: ${conditions.propertyMarket.phnomPenhTrend}\n`;
             response += `• Demand/Supply: ${conditions.propertyMarket.demandSupplyBalance}\n`;
@@ -500,38 +497,38 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             response += `• Development Activity: ${conditions.propertyMarket.developmentActivity}\n`;
             response += `• Price Appreciation: ${conditions.propertyMarket.priceAppreciation}\n`;
             response += `• Liquidity: ${conditions.propertyMarket.liquidity}\n\n`;
-            
+
             response += `🏦 **BANKING SECTOR:**\n`;
             response += `• Liquidity: ${conditions.bankingSector.liquidityConditions}\n`;
             response += `• Credit Growth: ${conditions.bankingSector.creditGrowth}\n`;
             response += `• Competition: ${conditions.bankingSector.competitionLevel}\n`;
             response += `• Regulation: ${conditions.bankingSector.regulatoryChanges}\n\n`;
-            
+
             response += `⚠️ **RISK FACTORS:**\n`;
             response += `• Political: ${conditions.riskFactors.politicalRisk}\n`;
             response += `• Economic: ${conditions.riskFactors.economicRisk}\n`;
             response += `• Currency: ${conditions.riskFactors.currencyRisk}\n`;
             response += `• Regulatory: ${conditions.riskFactors.regulatoryRisk}\n`;
             response += `• Market: ${conditions.riskFactors.marketRisk}\n\n`;
-            
+
             response += `⏰ **MARKET TIMING:**\n`;
             response += `• Current Phase: ${conditions.marketTiming.currentPhase}\n`;
             response += `• Time in Cycle: ${conditions.marketTiming.timeInCycle}\n`;
             response += `• Next Phase: ${conditions.marketTiming.nextPhaseExpected}\n`;
             response += `• Lending Timing: ${conditions.marketTiming.timingForLending}\n\n`;
-            
+
             response += `🎯 **TOP OPPORTUNITIES:**\n`;
             conditions.opportunities.slice(0, 3).forEach(opp => {
                 response += `• ${opp}\n`;
             });
             response += `\n`;
-            
+
             response += `📋 **MARKET SUMMARY:**\n${conditions.summary}`;
-            
+
             await splitAndSendMessage(bot, chatId, response);
-            
+
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Cambodia market error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Cambodia market error: ${error.message}`);
         }
         return;
     }
@@ -539,8 +536,8 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
     // 📊 RISK ASSESSMENT COMMAND
     if (text === '/risk_assessment' || text === '/portfolio_risk') {
         try {
-            await splitAndSendMessage(chatId, "📊 Performing comprehensive risk assessment...");
-            
+            await splitAndSendMessage(bot, chatId, "📊 Performing comprehensive risk assessment...");
+
             // Sample portfolio data for assessment
             const samplePortfolioData = {
                 totalValue: 2500000,
@@ -549,16 +546,16 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
                 concentrationByLocation: { 'Phnom Penh': 0.7, 'Other': 0.3 },
                 concentrationByType: { 'commercial': 0.5, 'bridge': 0.3, 'development': 0.2 }
             };
-            
+
             const riskAssessment = await performRiskAssessment(samplePortfolioData);
-            
+
             if (riskAssessment.error) {
-                await splitAndSendMessage(chatId, `❌ Risk assessment error: ${riskAssessment.error}`);
+                await splitAndSendMessage(bot, chatId, `❌ Risk assessment error: ${riskAssessment.error}`);
                 return;
             }
-            
+
             let response = `📊 **PORTFOLIO RISK ASSESSMENT**\n\n`;
-            
+
             response += `⚠️ **OVERALL RISK METRICS:**\n`;
             response += `• Overall Risk Score: ${riskAssessment.portfolioRisk.overallRiskScore}/100\n`;
             response += `• Concentration Risk: ${riskAssessment.portfolioRisk.concentrationRisk}\n`;
@@ -567,38 +564,38 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             response += `• Liquidity Risk: ${riskAssessment.portfolioRisk.liquidityRisk}\n`;
             response += `• Operational Risk: ${riskAssessment.portfolioRisk.operationalRisk}\n`;
             response += `• Regulatory Risk: ${riskAssessment.portfolioRisk.regulatoryRisk}\n\n`;
-            
+
             response += `🏛️ **RAY DALIO RISK ANALYSIS:**\n`;
             response += `• Diversification Effectiveness: ${riskAssessment.rayDalioRiskAnalysis.diversificationEffectiveness}\n`;
             response += `• Correlation Risks: ${riskAssessment.rayDalioRiskAnalysis.correlationRisks}\n`;
             response += `• Risk Parity Alignment: ${riskAssessment.rayDalioRiskAnalysis.riskParityAlignment}\n\n`;
-            
+
             response += `🧪 **STRESS TEST RESULTS:**\n`;
             response += `• Economic Downturn: ${riskAssessment.stressTesting.economicDownturn}% loss\n`;
             response += `• Interest Rate Shock: ${riskAssessment.stressTesting.interestRateShock}% impact\n`;
             response += `• Default Scenarios: ${riskAssessment.stressTesting.defaultScenarios}% portfolio impact\n`;
             response += `• Liquidity Crisis: ${riskAssessment.stressTesting.liquidityCrisis}\n\n`;
-            
+
             response += `🚨 **EARLY WARNING INDICATORS:**\n`;
             response += `• Macro Warnings: ${riskAssessment.earlyWarning.macroIndicators}\n`;
             response += `• Portfolio Warnings: ${riskAssessment.earlyWarning.portfolioIndicators}\n`;
             response += `• Market Warnings: ${riskAssessment.earlyWarning.marketIndicators}\n\n`;
-            
+
             response += `📏 **RISK LIMITS:**\n`;
             response += `• Current Utilization: ${riskAssessment.riskLimits.currentUtilization}%\n`;
             response += `• Violations: ${riskAssessment.riskLimits.violations.length} detected\n\n`;
-            
+
             if (riskAssessment.riskActionItems.length > 0) {
                 response += `🎯 **ACTION ITEMS:**\n`;
                 riskAssessment.riskActionItems.slice(0, 3).forEach(item => {
                     response += `• ${item}\n`;
                 });
             }
-            
+
             await splitAndSendMessage(bot, chatId, response);
-            
+
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Risk assessment error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Risk assessment error: ${error.message}`);
         }
         return;
     }
@@ -606,65 +603,65 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
     // 💼 LP REPORT COMMAND
     if (text.startsWith('/lp_report') || text === '/investor_report') {
         try {
-            await splitAndSendMessage(chatId, "💼 Generating LP/Investor report...");
-            
+            await splitAndSendMessage(bot, chatId, "💼 Generating LP/Investor report...");
+
             const reportType = text.includes('monthly') ? 'monthly' : 
                               text.includes('quarterly') ? 'quarterly' : 'monthly';
-            
+
             const report = await generateLPReport(reportType);
-            
+
             if (report.error) {
-                await splitAndSendMessage(chatId, `❌ Report generation error: ${report.error}`);
+                await splitAndSendMessage(bot, chatId, `❌ Report generation error: ${report.error}`);
                 return;
             }
-            
+
             let response = `💼 **${report.reportType} LP REPORT**\n\n`;
             response += `📅 **Report Period:** ${report.reportPeriod}\n`;
             response += `🆔 **Report ID:** ${report.reportId}\n\n`;
-            
+
             response += `📋 **EXECUTIVE SUMMARY:**\n`;
             response += `${report.executiveSummary.fundPerformance}\n\n`;
-            
+
             response += `💰 **FINANCIAL PERFORMANCE:**\n`;
             response += `• Period Return: ${report.financialPerformance.returns.periodReturn.toFixed(2)}%\n`;
             response += `• Annualized Return: ${report.financialPerformance.returns.annualizedReturn.toFixed(2)}%\n`;
             response += `• Target vs Actual: ${report.financialPerformance.returns.targetVsActual > 0 ? '+' : ''}${report.financialPerformance.returns.targetVsActual.toFixed(1)}%\n`;
             response += `• Risk-Adjusted Return: ${report.financialPerformance.returns.riskAdjustedReturn.toFixed(2)}%\n\n`;
-            
+
             response += `💵 **INCOME BREAKDOWN:**\n`;
             response += `• Interest Income: ${report.financialPerformance.income.interestIncome.toLocaleString()}\n`;
             response += `• Fees: ${report.financialPerformance.income.fees.toLocaleString()}\n`;
             response += `• Total Income: ${report.financialPerformance.income.totalIncome.toLocaleString()}\n\n`;
-            
+
             response += `📊 **DEPLOYMENT METRICS:**\n`;
             response += `• Capital Deployed: ${report.financialPerformance.deploymentMetrics.capitalDeployed.toLocaleString()}\n`;
             response += `• Deployment Ratio: ${report.financialPerformance.deploymentMetrics.deploymentRatio.toFixed(1)}%\n`;
             response += `• Pipeline Value: ${report.financialPerformance.deploymentMetrics.pipelineDeal.toLocaleString()}\n\n`;
-            
+
             response += `🗺️ **PORTFOLIO ALLOCATION:**\n`;
             response += `• Geographic Diversification: ${report.portfolioAnalytics.diversification.score}/100\n`;
             response += `• Number of Deals: ${report.portfolioAnalytics.dealMetrics.numberOfDeals}\n`;
             response += `• Average Deal Size: ${report.portfolioAnalytics.dealMetrics.averageDealSize.toLocaleString()}\n`;
             response += `• Average Rate: ${report.portfolioAnalytics.dealMetrics.averageRate.toFixed(2)}%\n\n`;
-            
+
             response += `⚠️ **RISK SUMMARY:**\n`;
             response += `• Overall Risk: ${report.riskReporting.overallRisk}/100\n`;
             response += `• Stress Test: ${Object.keys(report.riskReporting.stressTestResults).length} scenarios tested\n\n`;
-            
+
             response += `🇰🇭 **MARKET COMMENTARY:**\n`;
             response += `${report.marketCommentary.cambodiaMarket}\n\n`;
-            
+
             response += `🔮 **FORWARD OUTLOOK:**\n`;
             response += `• Pipeline: ${report.forwardLooking.pipeline}\n`;
             response += `• Strategy: ${report.forwardLooking.strategy}\n\n`;
-            
+
             response += `📎 **Full Report:** ${report.reportId}\n`;
             response += `📊 **Dashboard:** Available on request`;
-            
+
             await splitAndSendMessage(bot, chatId, response);
-            
+
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ LP report error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ LP report error: ${error.message}`);
         }
         return;
     }
@@ -709,7 +706,7 @@ Ask questions like:
 
 🏛️ **Enhanced with Ray Dalio AI for institutional-grade analysis!**`;
 
-        await splitAndSendMessage(chatId, helpMessage);
+        await splitAndSendMessage(bot, chatId, helpMessage);
         return;
     }
 
@@ -718,10 +715,10 @@ Ask questions like:
     // Economic Regime Analysis - Core Ray Dalio concept
     if (text === '/regime' || text === '/economic_regime') {
         try {
-            await splitAndSendMessage(chatId, "🏛️ Analyzing current economic regime like Ray Dalio...");
-            
+            await splitAndSendMessage(bot, chatId, "🏛️ Analyzing current economic regime like Ray Dalio...");
+
             const marketData = await getComprehensiveMarketData();
-            
+
             const regimePrompt = `You are Ray Dalio analyzing the current economic regime. Based on this comprehensive data, provide institutional-quality analysis:
 
 CURRENT MARKET DATA:
@@ -775,7 +772,7 @@ Structure like Bridgewater's Daily Observations with specific actionable insight
 
             await splitAndSendMessage(bot, chatId, response);
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Regime analysis error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Regime analysis error: ${error.message}`);
         }
         return;
     }
@@ -783,10 +780,10 @@ Structure like Bridgewater's Daily Observations with specific actionable insight
     // Market Cycle Analysis
     if (text === '/cycle' || text === '/market_cycle') {
         try {
-            await splitAndSendMessage(chatId, "🔄 Analyzing market cycles like Bridgewater Associates...");
-            
+            await splitAndSendMessage(bot, chatId, "🔄 Analyzing market cycles like Bridgewater Associates...");
+
             const marketData = await getComprehensiveMarketData();
-            
+
             const cyclePrompt = `You are a Bridgewater Associates analyst performing comprehensive market cycle analysis:
 
 CURRENT INDICATORS:
@@ -822,9 +819,9 @@ Conclude with specific asset class recommendations based on cycle positioning.`;
                 max_tokens: 2500
             });
 
-            await splitAndSendMessage(chatId, `🔄 **MARKET CYCLE ANALYSIS**\n\n${cycleAnalysis.choices[0].message.content}`);
+            await splitAndSendMessage(bot, chatId, `🔄 **MARKET CYCLE ANALYSIS**\n\n${cycleAnalysis.choices[0].message.content}`);
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Cycle analysis error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Cycle analysis error: ${error.message}`);
         }
         return;
     }
@@ -832,10 +829,10 @@ Conclude with specific asset class recommendations based on cycle positioning.`;
     // Market Opportunities Scanner - Enhanced AI Analysis
     if (text === '/opportunities' || text === '/scan') {
         try {
-            await splitAndSendMessage(chatId, "🎯 Scanning for trading opportunities with institutional-grade analysis...");
-            
+            await splitAndSendMessage(bot, chatId, "🎯 Scanning for trading opportunities with institutional-grade analysis...");
+
             const marketData = await getComprehensiveMarketData();
-            
+
             const opportunityPrompt = `You are Ray Dalio's AI system identifying TOP trading opportunities based on comprehensive market analysis:
 
 CURRENT MARKET STATE:
@@ -875,9 +872,9 @@ Apply Ray Dalio's diversification and risk management principles.`;
                 max_tokens: 2500
             });
 
-            await splitAndSendMessage(chatId, `🎯 **MARKET OPPORTUNITIES**\n\n${opportunities.choices[0].message.content}`);
+            await splitAndSendMessage(bot, chatId, `🎯 **MARKET OPPORTUNITIES**\n\n${opportunities.choices[0].message.content}`);
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Opportunities scan error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Opportunities scan error: ${error.message}`);
         }
         return;
     }
@@ -886,7 +883,7 @@ Apply Ray Dalio's diversification and risk management principles.`;
     if (text === '/risk' || text === '/portfolio_risk') {
         try {
             const marketData = await getComprehensiveMarketData();
-            
+
             const riskPrompt = `You are Bridgewater's Chief Risk Officer analyzing portfolio risk and market conditions:
 
 MARKET RISK INDICATORS:
@@ -932,9 +929,9 @@ Be specific and actionable with exact recommendations.`;
                 max_tokens: 2000
             });
 
-            await splitAndSendMessage(chatId, `⚠️ **RISK ANALYSIS**\n\n${riskAnalysis.choices[0].message.content}`);
+            await splitAndSendMessage(bot, chatId, `⚠️ **RISK ANALYSIS**\n\n${riskAnalysis.choices[0].message.content}`);
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Risk analysis error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Risk analysis error: ${error.message}`);
         }
         return;
     }
@@ -944,16 +941,16 @@ Be specific and actionable with exact recommendations.`;
         try {
             const params = text.split(' ');
             if (params.length < 3) {
-                await splitAndSendMessage(chatId, "Usage: /size SYMBOL DIRECTION\nExample: /size EURUSD buy");
+                await splitAndSendMessage(bot, chatId, "Usage: /size SYMBOL DIRECTION\nExample: /size EURUSD buy");
                 return;
             }
-            
+
             const symbol = params[1].toUpperCase();
             const direction = params[2].toLowerCase();
-            
+
             const tradingData = await getTradingSummary();
             const marketData = await getComprehensiveMarketData();
-            
+
             const sizingPrompt = `You are Ray Dalio's risk manager calculating optimal position size:
 
 ACCOUNT INFO:
@@ -994,9 +991,9 @@ Give me exact numbers to execute this trade safely.`;
                 max_tokens: 1000
             });
 
-            await splitAndSendMessage(chatId, `📊 **POSITION SIZING for ${symbol} ${direction.toUpperCase()}**\n\n${sizing.choices[0].message.content}`);
+            await splitAndSendMessage(bot, chatId, `📊 **POSITION SIZING for ${symbol} ${direction.toUpperCase()}**\n\n${sizing.choices[0].message.content}`);
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Position sizing error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Position sizing error: ${error.message}`);
         }
         return;
     }
@@ -1005,7 +1002,7 @@ Give me exact numbers to execute this trade safely.`;
     if (text === '/all_weather' || text === '/portfolio') {
         try {
             const marketData = await getComprehensiveMarketData();
-            
+
             const portfolioPrompt = `You are Ray Dalio providing "All Weather" portfolio recommendations based on current market conditions:
 
 CURRENT ENVIRONMENT ANALYSIS:
@@ -1052,9 +1049,9 @@ Make it actionable for someone in Cambodia with global market access.`;
                 max_tokens: 2500
             });
 
-            await splitAndSendMessage(chatId, `🌦️ **ALL WEATHER PORTFOLIO**\n\n${allWeather.choices[0].message.content}`);
+            await splitAndSendMessage(bot, chatId, `🌦️ **ALL WEATHER PORTFOLIO**\n\n${allWeather.choices[0].message.content}`);
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ All Weather analysis error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ All Weather analysis error: ${error.message}`);
         }
         return;
     }
@@ -1063,7 +1060,7 @@ Make it actionable for someone in Cambodia with global market access.`;
     if (text === '/correlations' || text === '/corr') {
         try {
             const marketData = await getComprehensiveMarketData();
-            
+
             const correlationPrompt = `You are analyzing asset correlations like Bridgewater Associates for optimal diversification:
 
 CURRENT MARKET DATA:
@@ -1111,9 +1108,9 @@ Focus on actionable insights for portfolio construction in current environment.`
                 max_tokens: 2000
             });
 
-            await splitAndSendMessage(chatId, `📊 **CORRELATION ANALYSIS**\n\n${correlations.choices[0].message.content}`);
+            await splitAndSendMessage(bot, chatId, `📊 **CORRELATION ANALYSIS**\n\n${correlations.choices[0].message.content}`);
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Correlation analysis error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Correlation analysis error: ${error.message}`);
         }
         return;
     }
@@ -1122,7 +1119,7 @@ Focus on actionable insights for portfolio construction in current environment.`
     if (text === '/macro' || text === '/outlook') {
         try {
             const marketData = await getComprehensiveMarketData();
-            
+
             const macroPrompt = `You are Ray Dalio providing comprehensive macro economic outlook:
 
 MACRO INDICATORS:
@@ -1179,9 +1176,9 @@ Think like Ray Dalio analyzing for Bridgewater's Daily Observations.`;
                 max_tokens: 3000
             });
 
-            await splitAndSendMessage(chatId, `🌍 **MACRO OUTLOOK**\n\n${macroAnalysis.choices[0].message.content}`);
+            await splitAndSendMessage(bot, chatId, `🌍 **MACRO OUTLOOK**\n\n${macroAnalysis.choices[0].message.content}`);
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Macro analysis error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Macro analysis error: ${error.message}`);
         }
         return;
     }
@@ -1234,43 +1231,43 @@ GPT-4o + Ray Dalio's Principles + Cambodia Market Intelligence + Live Trading Da
 
 Your system now rivals institutional hedge fund capabilities! 🌟`;
 
-        await splitAndSendMessage(chatId, helpMessage);
+        await splitAndSendMessage(bot, chatId, helpMessage);
         return;
     }
 
     // Debug command to get chat ID
     if (text === "/myid") {
-        await splitAndSendMessage(chatId, `Your Chat ID: ${chatId}`);
+        await splitAndSendMessage(bot, chatId, `Your Chat ID: ${chatId}`);
         return;
     }
 
     // 💹 ========== EXISTING METATRADER COMMANDS ==========
-    
+
     if (text === '/test_metaapi' || text === '/debug_metaapi') {
         try {
-            await splitAndSendMessage(chatId, "🔍 Testing MetaAPI connection step by step...");
-            
+            await splitAndSendMessage(bot, chatId, "🔍 Testing MetaAPI connection step by step...");
+
             const hasToken = !!process.env.METAAPI_TOKEN;
             const hasAccountId = !!process.env.METAAPI_ACCOUNT_ID;
-            
+
             let debugMsg = `🔧 **METAAPI DEBUG REPORT**\n\n`;
             debugMsg += `**Step 1 - Credentials:**\n`;
             debugMsg += `• Token: ${hasToken ? '✅ SET' : '❌ MISSING'}\n`;
             debugMsg += `• Account ID: ${hasAccountId ? '✅ SET' : '❌ MISSING'}\n`;
-            
+
             if (hasToken && hasAccountId) {
                 debugMsg += `• Account ID: ${process.env.METAAPI_ACCOUNT_ID}\n`;
                 debugMsg += `• Token Length: ${process.env.METAAPI_TOKEN.length} chars\n\n`;
-                
+
                 debugMsg += `**Step 2 - Connection Test:**\n`;
-                await splitAndSendMessage(chatId, debugMsg + "⏳ Testing connection...");
-                
+                await splitAndSendMessage(bot, chatId, debugMsg + "⏳ Testing connection...");
+
                 const testResult = await testConnection();
-                
+
                 if (testResult.success) {
                     debugMsg += `• Connection: ✅ SUCCESS\n`;
                     debugMsg += `• Account Info: ${testResult.accountInfo ? '✅ AVAILABLE' : '❌ UNAVAILABLE'}\n`;
-                    
+
                     if (testResult.accountInfo) {
                         const acc = testResult.accountInfo;
                         debugMsg += `• Balance: ${acc.balance} ${acc.currency}\n`;
@@ -1281,7 +1278,7 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
                     debugMsg += `• Connection: ❌ FAILED\n`;
                     debugMsg += `• Error: ${testResult.error}\n`;
                 }
-                
+
                 const connectionStatus = await getConnectionStatus();
                 debugMsg += `\n**Step 3 - Status:**\n`;
                 debugMsg += `• MetaAPI: ${connectionStatus.metaApiInitialized ? '✅' : '❌'}\n`;
@@ -1290,28 +1287,28 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
             } else {
                 debugMsg += `\n❌ **Missing Credentials**\nAdd to Railway environment variables\n`;
             }
-            
+
             debugMsg += `\n🕐 **Test Time:** ${new Date().toLocaleString()}`;
-            await splitAndSendMessage(chatId, debugMsg);
+            await splitAndSendMessage(bot, chatId, debugMsg);
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Debug test failed: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Debug test failed: ${error.message}`);
         }
         return;
     }
 
     if (text === "/trading" || text === "/mt5" || text === "/account") {
         try {
-            await splitAndSendMessage(chatId, "📊 Fetching your MetaTrader account data...");
-            
+            await splitAndSendMessage(bot, chatId, "📊 Fetching your MetaTrader account data...");
+
             const tradingData = await getTradingSummary();
             if (tradingData && !tradingData.error) {
                 const formattedData = formatTradingDataForGPT(tradingData);
-                await splitAndSendMessage(chatId, formattedData);
+                await splitAndSendMessage(bot, chatId, formattedData);
             } else {
-                await splitAndSendMessage(chatId, "❌ MetaTrader connection error. Check your MetaAPI credentials or use /test_metaapi for diagnostics.");
+                await splitAndSendMessage(bot, chatId, "❌ MetaTrader connection error. Check your MetaAPI credentials or use /test_metaapi for diagnostics.");
             }
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ MetaTrader error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ MetaTrader error: ${error.message}`);
         }
         return;
     }
@@ -1328,12 +1325,12 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
                     msg += `   Open: ${pos.openPrice} | Current P&L: ${pos.profit?.toFixed(2)}\n`;
                     msg += `   Time: ${new Date(pos.openTime).toLocaleString()}\n\n`;
                 });
-                await splitAndSendMessage(chatId, msg);
+                await splitAndSendMessage(bot, chatId, msg);
             } else {
-                await splitAndSendMessage(chatId, "📊 No open positions found or MetaAPI not connected.");
+                await splitAndSendMessage(bot, chatId, "📊 No open positions found or MetaAPI not connected.");
             }
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Positions error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Positions error: ${error.message}`);
         }
         return;
     }
@@ -1341,32 +1338,32 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
     // Enhanced market briefing
     if (text === "/briefing" || text === "/daily" || text === "/brief") {
         try {
-            await splitAndSendMessage(chatId, "📊 Generating Ray Dalio-style market briefing...");
-            
+            await splitAndSendMessage(bot, chatId, "📊 Generating Ray Dalio-style market briefing...");
+
             const marketData = await getComprehensiveMarketData();
-            
+
             let briefing = `🎯 **IMPERIUM VAULT - RAY DALIO MARKET BRIEFING**\n\n`;
             briefing += `📅 **${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}**\n`;
             briefing += `🕐 **${new Date().toLocaleTimeString()}**\n\n`;
-            
+
             // Economic Regime Assessment
             briefing += `🏛️ **ECONOMIC REGIME:**\n`;
             if (marketData.markets.economics?.fedRate && marketData.markets.economics?.inflation) {
                 const fedRate = marketData.markets.economics.fedRate.value;
                 const inflation = marketData.markets.economics.inflation.value;
                 const realRate = fedRate - inflation;
-                
+
                 briefing += `• Fed Funds: ${fedRate}% | Inflation: ${inflation}% | Real Rate: ${realRate.toFixed(2)}%\n`;
                 briefing += `• Regime: ${fedRate > inflation ? 'RESTRICTIVE' : 'ACCOMMODATIVE'} Policy\n`;
                 briefing += `• Yield Curve: ${marketData.yields.curve > 0 ? 'NORMAL' : 'INVERTED'} (${marketData.yields.curve?.toFixed(2)}%)\n\n`;
             }
-            
+
             // Market Stress Indicators
             briefing += `⚠️ **MARKET STRESS INDICATORS:**\n`;
             briefing += `• VIX Fear Index: ${marketData.fear} ${marketData.fear > 20 ? '(ELEVATED)' : '(LOW)'}\n`;
             briefing += `• Dollar Strength: ${marketData.dollar}\n`;
             briefing += `• Risk Sentiment: ${marketData.fear < 20 ? 'RISK-ON' : marketData.fear > 30 ? 'RISK-OFF' : 'NEUTRAL'}\n\n`;
-            
+
             // Asset Performance
             briefing += `📈 **ASSET PERFORMANCE:**\n`;
             if (marketData.markets.stocks?.sp500) {
@@ -1379,7 +1376,7 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
             }
             briefing += `• Gold: ${marketData.commodities.gold}\n`;
             briefing += `• 10Y Treasury: ${marketData.yields.yield10Y}%\n\n`;
-            
+
             // Trading Account Status
             if (marketData.trading && !marketData.trading.error) {
                 briefing += `💰 **YOUR TRADING ACCOUNT:**\n`;
@@ -1391,13 +1388,13 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
                 }
                 briefing += `\n`;
             }
-            
+
             briefing += `🤖 **Ray Dalio AI Analysis Ready**\n`;
             briefing += `💡 Ask: "What's your take on these conditions?" or "/opportunities"`;
-            
-            await splitAndSendMessage(chatId, briefing);
+
+            await splitAndSendMessage(bot, chatId, briefing);
         } catch (error) {
-            await splitAndSendMessage(chatId, `❌ Briefing error: ${error.message}`);
+            await splitAndSendMessage(bot, chatId, `❌ Briefing error: ${error.message}`);
         }
         return;
     }
@@ -1412,7 +1409,7 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
         console.log("🎤 Voice message received");
         const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
         if (transcribedText) {
-            await splitAndSendMessage(chatId, `🎤 Voice transcribed: "${transcribedText}"`);
+            await splitAndSendMessage(bot, chatId, `🎤 Voice transcribed: "${transcribedText}"`);
             await handleGPTConversation(chatId, transcribedText);
         }
         return;
@@ -1422,7 +1419,7 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
         console.log("🖼️ Image received");
         const photoAnalysis = await processImageMessage(bot, msg.photo[msg.photo.length - 1].file_id, chatId, msg.caption);
         if (photoAnalysis) {
-            await splitAndSendMessage(chatId, `🖼️ Image Analysis:\n\n${photoAnalysis}`);
+            await splitAndSendMessage(bot, chatId, `🖼️ Image Analysis:\n\n${photoAnalysis}`);
         }
         return;
     }
@@ -1444,10 +1441,10 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
 
                 const result = await processTrainingDocument(chatId, tempPath, fileName, "uploaded");
                 if (result.success) {
-                    await splitAndSendMessage(chatId, `📚 **Document Added to Your GPT Training:**\n\n📄 File: ${fileName}\n📊 Words: ${result.wordCount.toLocaleString()}\n\n✅ Your AI will now reference this document!`);
+                    await splitAndSendMessage(bot, chatId, `📚 **Document Added to Your GPT Training:**\n\n📄 File: ${fileName}\n📊 Words: ${result.wordCount.toLocaleString()}\n\n✅ Your AI will now reference this document!`);
                 }
             } catch (error) {
-                await splitAndSendMessage(chatId, `❌ Error processing document: ${error.message}`);
+                await splitAndSendMessage(bot, chatId, `❌ Error processing document: ${error.message}`);
             }
         }
         return;
@@ -1516,7 +1513,7 @@ CURRENT CAPABILITIES:
         // Add comprehensive market data context
         if (marketData) {
             let marketContext = `\n\n🔴 LIVE MARKET DATA (${new Date().toLocaleDateString()}):\n\n`;
-            
+
             // Economic Regime
             marketContext += `📊 ECONOMIC REGIME:\n`;
             if (marketData.markets.economics?.fedRate) {
@@ -1524,13 +1521,13 @@ CURRENT CAPABILITIES:
                 marketContext += `• Inflation (CPI): ${marketData.markets.economics.inflation?.value}%\n`;
                 marketContext += `• Real Rate: ${(marketData.markets.economics.fedRate.value - (marketData.markets.economics.inflation?.value || 0)).toFixed(2)}%\n`;
             }
-            
+
             // Market Stress
             marketContext += `\n⚠️ MARKET STRESS:\n`;
             marketContext += `• VIX Fear Index: ${marketData.fear}\n`;
             marketContext += `• US Dollar Index: ${marketData.dollar}\n`;
             marketContext += `• Yield Curve (2s10s): ${marketData.yields.curve}% ${marketData.yields.curve < 0 ? '(INVERTED)' : '(NORMAL)'}\n`;
-            
+
             // Asset Prices
             marketContext += `\n💰 ASSET PRICES:\n`;
             if (marketData.markets.crypto?.bitcoin) {
@@ -1541,7 +1538,7 @@ CURRENT CAPABILITIES:
             }
             marketContext += `• Gold: ${marketData.commodities.gold}\n`;
             marketContext += `• 10Y Treasury: ${marketData.yields.yield10Y}%\n`;
-            
+
             messages[0].content += marketContext;
         }
 
@@ -1578,11 +1575,11 @@ CURRENT CAPABILITIES:
         }
 
         console.log(`✅ Ray Dalio GPT response sent to ${chatId}. Tokens used: ${completion.usage?.total_tokens || "unknown"}`);
-        await splitAndSendMessage(chatId, gptResponse);
+        await splitAndSendMessage(bot, chatId, gptResponse);
     } catch (error) {
         console.error("Ray Dalio GPT Error:", error.message);
         let errorMsg = `❌ **IMPERIUM GPT Error:**\n\n${error.message}`;
-        await splitAndSendMessage(chatId, errorMsg);
+        await splitAndSendMessage(bot, chatId, errorMsg);
     }
 }
 
@@ -1859,7 +1856,7 @@ app.get("/stats", async (req, res) => {
         const stats = await getDatabaseStats();
         const marketData = await getComprehensiveMarketData();
         const tradingData = await getTradingSummary().catch(() => null);
-        
+
         res.json({
             service: "IMPERIUM GPT-4o Ray Dalio AI + Cambodia Lending Fund",
             ...stats,
