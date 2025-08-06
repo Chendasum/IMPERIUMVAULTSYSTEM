@@ -29,12 +29,14 @@ const {
 const MAX_MESSAGE_LENGTH = 4096;
 
 async function splitAndSendMessage(bot, chatId, text) {
+    if (!text) return;
+
     if (text.length <= MAX_MESSAGE_LENGTH) {
         await bot.sendMessage(chatId, text);
     } else {
-        const chunks = text.match(new RegExp(.{1,${MAX_MESSAGE_LENGTH}}, 'g'));
+        const chunks = text.match(new RegExp(`.{1,${MAX_MESSAGE_LENGTH}}`, 'gs'));
         for (const chunk of chunks) {
-            await splitAndSendMessage(chatId, chunk);
+            await bot.sendMessage(chatId, chunk);
         }
     }
 }
