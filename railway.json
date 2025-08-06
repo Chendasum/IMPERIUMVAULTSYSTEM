@@ -5,7 +5,7 @@
     "nixpacksPlan": {
       "phases": {
         "install": {
-          "cmds": ["npm ci --only=production --no-audit --no-fund --prefer-offline"]
+          "cmds": ["npm install --omit=dev --no-audit --no-fund"]
         }
       }
     },
