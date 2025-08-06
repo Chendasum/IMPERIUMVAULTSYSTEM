@@ -1,0 +1,39 @@
+# nixpacks.toml - Railway configuration for Ray Dalio system
+[phases.setup]
+nixPkgs = [
+    "nodejs-18_x",
+    "npm",
+    "python3",
+    "pkg-config",
+    "cairo",
+    "pango",
+    "libpng",
+    "libjpeg",   # ← FIXED THIS LINE
+    "giflib",
+    "librsvg",
+    "pixman",
+    "chromium",
+    "xvfb-run",
+    "gcc",
+    "libuuid"
+]
+
+[phases.install]
+cmds = [
+    "npm install --legacy-peer-deps --no-audit --no-fund",
+    "mkdir -p temp logs"
+]
+
+[phases.build]
+cmds = [
+    "echo 'IMPERIUM VAULT System - Ray Dalio AI + Cambodia Lending Fund'",
+    "echo 'Build completed successfully'"
+]
+
+[start]
+cmd = "node index.js"
+
+[variables]
+NODE_ENV = "production"
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium"
