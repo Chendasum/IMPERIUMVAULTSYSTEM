@@ -526,7 +526,7 @@ This is your personal OpenAI GPT-4o with institutional-level market data access 
             
             response += `📋 **MARKET SUMMARY:**\n${conditions.summary}`;
             
-            await bot.sendMessage(chatId, response);
+            await splitAndSendMessage(bot, chatId, response);
             
         } catch (error) {
             await bot.sendMessage(chatId, `❌ Cambodia market error: ${error.message}`);
