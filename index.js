@@ -1557,13 +1557,13 @@ INSTRUCTION: Provide Ray Dalio-style analysis using his principles and Bridgewat
 
 MANDATORY FORMATTING REQUIREMENTS:
 - Use relevant emojis for EVERY major section: 🏛️ 📊 💰 ⚠️ 🎯 📈 💡 ✅ ❌ 🇰🇭 🏗️
-- Make ALL important numbers, percentages, and amounts **bold**
+- Make ALL important numbers, percentages, and amounts bold
 - Use bullet points with • for lists, not numbered lists
-- Create clear visual sections with **bold headers**
-- Add strategic insights with 💡 **Key Insight:** format
-- Include action items with ✅ **Action Items:** or 🎯 **Next Steps:**
-- Write conversationally but professionally - like explaining to a sophisticated investor
-- Use **bold** for emphasis on important concepts, names, locations
+- Create clear visual sections with bold headers
+- Add strategic insights with 💡 Key Insight: format
+- Include action items with ✅ Action Items: or 🎯 Next Steps:
+- Write conversationally but professionally
+- Use bold for emphasis on important concepts
 - Create scannable content with clear visual hierarchy
 
 EXAMPLE STYLE TO FOLLOW:
