@@ -1552,8 +1552,7 @@ CURRENT CAPABILITIES:
             messages[0].content += tradingContext;
         }
 
-        messages[0].content +=
-
+        messages[0].content += ` 
 INSTRUCTION: Provide Ray Dalio-style analysis using his principles and Bridgewater's systematic approach. Reference specific market data when relevant. Be institutional-quality but conversational. For Cambodia lending queries, apply institutional risk management principles.
 
 RESPONSE_PRESENTATION_PRINCIPLES:
