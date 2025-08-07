@@ -1502,17 +1502,22 @@ CURRENT CAPABILITIES:
 - Persistent memory across sessions
 - GPT-4o advanced reasoning (128K context)`;
 
-        const messages = [{ role: "system", content: systemPrompt }];
+       // Add memory context from database
+       const { buildConversationContext } = require('./utils/memory');
+       const memoryContext = await buildConversationContext(chatId);
+       systemPrompt += memoryContext;
 
-        // Add conversation history
-        if (conversationHistory && conversationHistory.length > 0) {
-            conversationHistory.forEach((conv) => {
-                if (conv && conv.user_message && conv.gpt_response) {
-                    messages.push({ role: "user", content: String(conv.user_message) });
-                    messages.push({ role: "assistant", content: String(conv.gpt_response) });
-                }
-            });
-        }
+       const messages = [{ role: "system", content: systemPrompt }];
+
+       // Add conversation history
+       if (conversationHistory && conversationHistory.length > 0) {
+           conversationHistory.forEach((conv) => {
+               if (conv && conv.user_message && conv.gpt_response) {
+                   messages.push({ role: "user", content: String(conv.user_message) });
+                   messages.push({ role: "assistant", content: String(conv.gpt_response) });
+               }
+           });
+       }
 
         // Add comprehensive market data context
         if (marketData) {
