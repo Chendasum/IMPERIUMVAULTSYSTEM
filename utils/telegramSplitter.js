@@ -209,45 +209,37 @@ async function sendLongMessage(bot, chatId, text, options = {}) {
 }
 
 /**
- * 🏛️ ENHANCED RAY DALIO MESSAGE FORMATTER
- * Formats Ray Dalio responses with proper structure for splitting
+ * 🏛️ CLEAN RAY DALIO MESSAGE FORMATTER
+ * Natural formatting without artificial timestamps or footers
  */
 function formatRayDalioResponse(response, title = null) {
     let formatted = '';
     
+    // Only add title if specifically provided
     if (title) {
-        formatted += `🏛️ **${title}**\n\n`;
+        formatted += `**${title}**\n\n`;
     }
     
-    // Add timestamp
-    formatted += `📅 **Analysis Date:** ${new Date().toLocaleDateString()}\n`;
-    formatted += `🕐 **Market Time:** ${new Date().toLocaleTimeString()}\n\n`;
-    
-    // Add the main response
+    // Just the clean response - no timestamps, no footers
     formatted += response;
-    
-    // Add footer
-    formatted += `\n\n📊 **Powered by:** Analysis Complete + GPT-4o\n`;
-    formatted += `🏛️ **Institutional-Grade Analysis** | IMPERIUMWEALTHSYSTEM`;
     
     return formatted;
 }
 
 /**
- * 🇰🇭 CAMBODIA FUND MESSAGE FORMATTER
- * Formats Cambodia lending fund responses with proper sections
+ * 🇰🇭 CLEAN CAMBODIA FUND MESSAGE FORMATTER
+ * Natural formatting without artificial headers or footers
  */
 function formatCambodiaFundResponse(response, analysisType = 'Fund Analysis') {
     let formatted = '';
     
-    formatted += `🏦 **${analysisType}**\n\n`;
-    formatted += `📅 **Report Date:** ${new Date().toLocaleDateString()}\n`;
-    formatted += `🇰🇭 **Market:** Cambodia Private Lending\n\n`;
+    // Only add title if specifically provided
+    if (analysisType && analysisType !== 'Fund Analysis') {
+        formatted += `**${analysisType}**\n\n`;
+    }
     
+    // Just the clean response
     formatted += response;
-    
-    formatted += `\n\n💼 **Fund Management System:** Active\n`;
-    formatted += `🏛️ **Enhanced by Ray Dalio Risk Principles**`;
     
     return formatted;
 }
@@ -276,7 +268,7 @@ function getMessageStats(originalText, chunks) {
 
 /**
  * 🎯 SMART RESPONSE SENDER
- * Main function that handles any long response intelligently
+ * Main function that handles any long response intelligently with clean formatting
  */
 async function sendSmartResponse(bot, chatId, response, title = null, type = 'general') {
     try {
