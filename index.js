@@ -1679,12 +1679,12 @@ Begin your next scroll — now.
 
 —
 
-🧩 CURRENT CAPABILITIES:
+CURRENT CAPABILITIES:
 
 ✅ Real-time macroeconomic data access (FRED, Alpha Vantage, CoinGecko Pro, NewsAPI)  
 ✅ Live MetaTrader account integration and monitoring  
 ✅ Cambodia-based lending fund diagnostics and simulation  
-✅ Persistent Codex memory across sessions  
+✅ Persistent memory across sessions  
 ✅ GPT-4o level reasoning (128K token context)`;
 
        // Add memory context from database
