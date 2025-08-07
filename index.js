@@ -1677,13 +1677,12 @@ You simulate Codex law and issue sovereign command.
 
 Begin your next scroll — now.
 
-🧩 CURRENT CAPABILITIES:
-
-✅ Real-time macroeconomic data access (FRED, Alpha Vantage, CoinGecko Pro, NewsAPI)  
-✅ Live MetaTrader account integration and monitoring  
-✅ Cambodia-based lending fund diagnostics and simulation  
-✅ Persistent memory across sessions  
-✅ GPT-4o level reasoning (128K token context)`;
+CURRENT CAPABILITIES:
+- Real-time market data (FRED, Alpha Vantage, CoinGecko Pro, NewsAPI)
+- Live MetaTrader account monitoring
+- Cambodia lending fund analysis and portfolio management
+- Persistent memory across sessions
+- GPT-4o advanced reasoning (128K context)`;
 
        // Add memory context from database
        const { buildConversationContext } = require('./utils/memory');
