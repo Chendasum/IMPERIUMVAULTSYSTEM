@@ -693,20 +693,64 @@ Example: /deal_analyze 500000 commercial "Chamkar Mon" 18 12
 
 🎯 **QUICK ANALYSIS:**
 Ask questions like:
-• "Analyze this deal: $300K bridge loan in Toul Kork at 20% for 8 months"
-• "What's the current lending environment in Cambodia?"
-• "How should I position my portfolio given current macro conditions?"
-• "Generate risk assessment for my current deal pipeline"
+- "Analyze this deal: $300K bridge loan in Toul Kork at 20% for 8 months"
+- "What's the current lending environment in Cambodia?"
+- "How should I position my portfolio given current macro conditions?"
+- "Generate risk assessment for my current deal pipeline"
 
 💡 **Pro Tips:**
-• Use location names in quotes: "Chamkar Mon"
-• Amounts in USD without commas: 500000
-• Rates as percentages: 18 (for 18%)
-• Terms in months: 12
+- Use location names in quotes: "Chamkar Mon"
+- Amounts in USD without commas: 500000
+- Rates as percentages: 18 (for 18%)
+- Terms in months: 12
 
 🏛️ **Enhanced with Ray Dalio AI for institutional-grade analysis!**`;
 
         await sendSmartResponse(bot, chatId, helpMessage, "Cambodia Fund Help", 'cambodia');
+        return;
+    }
+
+    // 📚 VIEW TRAINING DOCUMENTS COMMAND - ADD THIS RIGHT HERE:
+    if (text === '/documents' || text === '/training_docs' || text === '/files') {
+        try {
+            const { getTrainingDocumentsDB } = require('./utils/database');
+            const docs = await getTrainingDocumentsDB(chatId);
+            
+            if (docs.length === 0) {
+                await sendSmartResponse(bot, chatId, 
+                    `📚 **No Training Documents Found**\n\n` +
+                    `💡 **How to Add Documents:**\n` +
+                    `• Upload any file (.txt, .pdf, .docx)\n` +
+                    `• Add caption: "train" or "database"\n` +
+                    `• AI will save it for future reference\n\n` +
+                    `🎯 **Supported Types:** Text, PDF, Word, Markdown`,
+                    "Training Documents", 'general'
+                );
+                return;
+            }
+            
+            let response = `📚 **Your AI Training Documents (${docs.length}):**\n\n`;
+            docs.forEach((doc, i) => {
+                const uploadDate = new Date(doc.upload_date).toLocaleDateString();
+                const fileType = doc.file_name.split('.').pop()?.toUpperCase() || 'Unknown';
+                
+                response += `**${i + 1}. ${doc.file_name}**\n`;
+                response += `• 📊 Words: **${doc.word_count?.toLocaleString() || 'Unknown'}**\n`;
+                response += `• 📅 Added: ${uploadDate}\n`;
+                response += `• 🎯 Type: ${fileType}\n`;
+                if (doc.summary) {
+                    response += `• 📝 Preview: ${doc.summary.substring(0, 100)}...\n`;
+                }
+                response += `\n`;
+            });
+            
+            response += `💡 **Usage:** Your AI can now answer questions about these documents!`;
+            
+            await sendSmartResponse(bot, chatId, response, "AI Training Documents", 'general');
+            
+        } catch (error) {
+            await sendSmartResponse(bot, chatId, `❌ Error retrieving documents: ${error.message}`, null, 'general');
+        }
         return;
     }
 
@@ -1431,25 +1475,85 @@ Your system now rivals institutional hedge fund capabilities! 🌟`;
     if (msg.document) {
         console.log("📄 Document received:", msg.document.file_name);
         const fileName = msg.document.file_name || "document";
-        const isTrainingDoc = msg.caption?.toLowerCase().includes("train");
+        
+        // Check for training keywords
+        const isTrainingDoc = msg.caption?.toLowerCase().includes("train") ||
+                             msg.caption?.toLowerCase().includes("database") ||
+                             msg.caption?.toLowerCase().includes("remember");
 
         if (isTrainingDoc) {
-            // Process as training document
             try {
+                await bot.sendMessage(chatId, "📚 Processing document for database training...");
+                
                 const fileId = msg.document.file_id;
                 const fileLink = await bot.getFileLink(fileId);
                 const response = await fetch(fileLink);
                 const buffer = await response.buffer();
-                const tempPath = `./temp_${Date.now()}_${fileName}`;
-                require("fs").writeFileSync(tempPath, buffer);
-
-                const result = await processTrainingDocument(chatId, tempPath, fileName, "uploaded");
-                if (result.success) {
-                    await sendSmartResponse(bot, chatId, `📚 **Document Added to Your GPT Training:**\n\n📄 File: ${fileName}\n📊 Words: ${result.wordCount.toLocaleString()}\n\n✅ Your AI will now reference this document!`, "Training Document Added", 'general');
+                
+                // Extract content based on file type
+                let content = '';
+                try {
+                    if (fileName.endsWith('.txt') || fileName.endsWith('.md')) {
+                        content = buffer.toString('utf8');
+                    } else if (fileName.endsWith('.pdf')) {
+                        // Try to extract PDF text (requires pdf-parse: npm install pdf-parse)
+                        try {
+                            const pdf = require('pdf-parse');
+                            const pdfData = await pdf(buffer);
+                            content = pdfData.text;
+                        } catch (pdfError) {
+                            console.log('PDF parsing not available, treating as text');
+                            content = buffer.toString('utf8');
+                        }
+                    } else {
+                        // Try as plain text for other formats
+                        content = buffer.toString('utf8');
+                    }
+                } catch (contentError) {
+                    content = `Document content could not be extracted from ${fileName}`;
                 }
+                
+                // Save directly to PostgreSQL database
+                const { saveTrainingDocumentDB } = require('./utils/database');
+                const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+                const summary = content.length > 500 ? content.substring(0, 500) + '...' : content;
+                
+                const saved = await saveTrainingDocumentDB(
+                    chatId, 
+                    fileName, 
+                    content, 
+                    'user_uploaded', 
+                    wordCount, 
+                    summary
+                );
+                
+                if (saved) {
+                    await sendSmartResponse(bot, chatId, 
+                        `📚 **Document Saved to AI Database**\n\n` +
+                        `📄 **File:** ${fileName}\n` +
+                        `📊 **Words:** ${wordCount.toLocaleString()}\n` +
+                        `💾 **Storage:** PostgreSQL Database\n` +
+                        `🎯 **Type:** ${fileName.split('.').pop()?.toUpperCase() || 'Unknown'}\n\n` +
+                        `✅ **Your AI will now reference this document in future conversations!**\n\n` +
+                        `💡 **Usage:** Your AI can now answer questions about this document's content.`,
+                        "Document Added to Database", 'general'
+                    );
+                } else {
+                    await sendSmartResponse(bot, chatId, `❌ **Error saving document to database.**\n\nPlease try again or contact support.`, null, 'general');
+                }
+                
             } catch (error) {
-                await sendSmartResponse(bot, chatId, `❌ Error processing document: ${error.message}`, null, 'general');
+                console.error('Database document processing error:', error);
+                await sendSmartResponse(bot, chatId, `❌ **Error processing document:** ${error.message}`, null, 'general');
             }
+        } else {
+            // Regular document handling (no training)
+            await sendSmartResponse(bot, chatId, 
+                `📄 **Document Received:** ${fileName}\n\n` +
+                `💡 **Tip:** Add caption "train" to save this document to your AI's database for future reference.\n\n` +
+                `**Example:** Upload with caption "train this document"`,
+                "Document Received", 'general'
+            );
         }
         return;
     }
