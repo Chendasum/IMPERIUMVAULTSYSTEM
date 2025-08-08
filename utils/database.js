@@ -1448,6 +1448,37 @@ async function getActiveMarketSignals() {
     }
 }
 
+async function savePortfolioAllocation(chatId, allocation) {
+    try {
+        await pool.query(`
+            INSERT INTO portfolio_allocations (
+                chat_id, allocation_type, regime_name, asset_class,
+                allocation_percent, allocation_amount, reasoning,
+                confidence_level, performance_attribution, rebalancing_trigger
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `, [
+            chatId,
+            allocation.type,
+            allocation.regime,
+            allocation.assetClass,
+            allocation.percent,
+            allocation.amount,
+            allocation.reasoning,
+            allocation.confidence,
+            allocation.performance,
+            allocation.trigger
+        ]);
+
+        console.log(`📊 Portfolio allocation saved for ${chatId}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save portfolio allocation error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
 module.exports = {
     // 🏛️ ENHANCED STRATEGIC FUNCTIONS
     initializeDatabase,
