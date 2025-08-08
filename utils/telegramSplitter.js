@@ -1,497 +1,482 @@
-// utils/telegramSplitter.js - Handle Long Messages from OpenAI GPT-4o
-// IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Enhanced for 16,384 token responses
+// utils/telegramSplitter.js - STRATEGIC COMMANDER MESSAGE OPTIMIZATION
+const crypto = require('crypto');
 
-/**
- * 📏 TELEGRAM MESSAGE LIMITS
- */
+// 📏 TELEGRAM LIMITS - Strategic Command Optimized
 const TELEGRAM_LIMITS = {
-    MAX_MESSAGE_LENGTH: 4096,           // Telegram's hard limit
-    SAFE_MESSAGE_LENGTH: 4000,          // Safe limit with buffer
-    MAX_CAPTION_LENGTH: 1024,           // For media with captions
-    CHUNK_OVERLAP: 50,                  // Characters to overlap between chunks
-    MAX_CHUNKS_PER_BATCH: 20,           // Increased for long strategic reports
-    STRATEGIC_REPORT_MAX: 16384         // GPT-4o max tokens * ~4 chars per token
+    MAX_MESSAGE_LENGTH: 4096,          // Telegram's hard limit
+    SAFE_MESSAGE_LENGTH: 4000,         // Safe limit with buffer
+    MAX_CAPTION_LENGTH: 1024,          // For media captions
+    STRATEGIC_CHUNK_SIZE: 3800,        // Optimal for Strategic Commander reports
+    MAX_CHUNKS_PER_MESSAGE: 20,        // Prevent spam
+    STRATEGIC_DELAY_MS: 1500,          // Delay between strategic message chunks
+    PRIORITY_DELAY_MS: 500             // Faster for urgent strategic alerts
+};
+
+// 🎯 STRATEGIC MESSAGE TYPES
+const STRATEGIC_MESSAGE_TYPES = {
+    'general': {
+        emoji: '💬',
+        priority: 'normal',
+        formatting: 'standard'
+    },
+    'raydalio': {
+        emoji: '🏛️',
+        priority: 'high',
+        formatting: 'institutional'
+    },
+    'cambodia': {
+        emoji: '🇰🇭',
+        priority: 'high', 
+        formatting: 'institutional'
+    },
+    'trading': {
+        emoji: '💹',
+        priority: 'urgent',
+        formatting: 'financial'
+    },
+    'alert': {
+        emoji: '🚨',
+        priority: 'urgent',
+        formatting: 'alert'
+    },
+    'analysis': {
+        emoji: '📊',
+        priority: 'high',
+        formatting: 'analytical'
+    }
 };
 
 /**
- * 🔧 ENHANCED SMART MESSAGE SPLITTER
- * Intelligently splits long strategic messages while preserving formatting and context
+ * 🎯 STRATEGIC SMART RESPONSE HANDLER
+ * Intelligently splits and sends Strategic Commander messages
  */
-function splitLongMessage(text, maxLength = TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
-    if (!text || text.length <= maxLength) {
-        return [text];
-    }
-
-    const chunks = [];
-    let currentChunk = '';
-    
-    // Enhanced splitting logic for strategic reports
-    // Priority: 1) Strategic sections, 2) Paragraphs, 3) Sentences, 4) Words
-    
-    // First, try to split by strategic sections (marked with emojis + **TITLE**)
-    const strategicSections = text.split(/(?=🎯|⚡|🏛️|📊|💰|🇰🇭|⚠️|🚨|💡|🔮|📋)/);
-    
-    for (let i = 0; i < strategicSections.length; i++) {
-        const section = strategicSections[i].trim();
-        
-        if (!section) continue;
-        
-        // If section is too long, split it further
-        if (section.length > maxLength) {
-            // If we have a current chunk, save it first
-            if (currentChunk.trim()) {
-                chunks.push(currentChunk.trim());
-                currentChunk = '';
-            }
-            
-            // Split the long section by paragraphs
-            const subChunks = splitLongSection(section, maxLength);
-            chunks.push(...subChunks);
-        } else {
-            // Check if adding this section would exceed limit
-            const potentialChunk = currentChunk + (currentChunk ? '\n\n' : '') + section;
-            
-            if (potentialChunk.length <= maxLength) {
-                currentChunk = potentialChunk;
-            } else {
-                // Save current chunk and start new one
-                if (currentChunk.trim()) {
-                    chunks.push(currentChunk.trim());
-                }
-                currentChunk = section;
-            }
-        }
-    }
-    
-    // Add the last chunk if it exists
-    if (currentChunk.trim()) {
-        chunks.push(currentChunk.trim());
-    }
-    
-    return chunks.filter(chunk => chunk.trim().length > 0);
-}
-
-/**
- * 📄 SPLIT LONG STRATEGIC SECTION
- * Handles strategic sections that are too long by preserving structure
- */
-function splitLongSection(section, maxLength) {
-    const chunks = [];
-    
-    // Try splitting by paragraphs first (double newlines)
-    const paragraphs = section.split(/\n\n+/);
-    let currentChunk = '';
-    
-    for (const paragraph of paragraphs) {
-        if (paragraph.length > maxLength) {
-            // Single paragraph is too long, split by sentences
-            if (currentChunk.trim()) {
-                chunks.push(currentChunk.trim());
-                currentChunk = '';
-            }
-            
-            const subChunks = splitLongParagraph(paragraph, maxLength);
-            chunks.push(...subChunks);
-        } else {
-            const potentialChunk = currentChunk + (currentChunk ? '\n\n' : '') + paragraph;
-            
-            if (potentialChunk.length <= maxLength) {
-                currentChunk = potentialChunk;
-            } else {
-                if (currentChunk.trim()) {
-                    chunks.push(currentChunk.trim());
-                }
-                currentChunk = paragraph;
-            }
-        }
-    }
-    
-    if (currentChunk.trim()) {
-        chunks.push(currentChunk.trim());
-    }
-    
-    return chunks;
-}
-
-/**
- * 📄 SPLIT LONG PARAGRAPH
- * Handles paragraphs that are too long by splitting on sentences or words
- */
-function splitLongParagraph(paragraph, maxLength) {
-    const chunks = [];
-    
-    // Try splitting by sentences first (enhanced pattern for strategic content)
-    const sentences = paragraph.split(/(?<=[.!?:])\s+(?=[A-Z•])/);
-    let currentChunk = '';
-    
-    for (const sentence of sentences) {
-        if (sentence.length > maxLength) {
-            // Single sentence is too long, split by strategic bullet points or words
-            if (currentChunk.trim()) {
-                chunks.push(currentChunk.trim());
-                currentChunk = '';
-            }
-            
-            // Check if it's a bullet list that we can split
-            if (sentence.includes('•')) {
-                const bulletChunks = splitBulletList(sentence, maxLength);
-                chunks.push(...bulletChunks);
-            } else {
-                // Split by words as last resort
-                const wordChunks = splitByWords(sentence, maxLength);
-                chunks.push(...wordChunks);
-            }
-        } else {
-            const potentialChunk = currentChunk + (currentChunk ? ' ' : '') + sentence;
-            
-            if (potentialChunk.length <= maxLength) {
-                currentChunk = potentialChunk;
-            } else {
-                if (currentChunk.trim()) {
-                    chunks.push(currentChunk.trim());
-                }
-                currentChunk = sentence;
-            }
-        }
-    }
-    
-    if (currentChunk.trim()) {
-        chunks.push(currentChunk.trim());
-    }
-    
-    return chunks;
-}
-
-/**
- * 🔸 SPLIT BULLET LISTS INTELLIGENTLY
- * Preserves bullet point structure in strategic reports
- */
-function splitBulletList(text, maxLength) {
-    const chunks = [];
-    const bullets = text.split(/(?=•)/);
-    let currentChunk = '';
-    
-    for (const bullet of bullets) {
-        if (!bullet.trim()) continue;
-        
-        const potentialChunk = currentChunk + (currentChunk ? '\n' : '') + bullet;
-        
-        if (potentialChunk.length <= maxLength) {
-            currentChunk = potentialChunk;
-        } else {
-            if (currentChunk.trim()) {
-                chunks.push(currentChunk.trim());
-            }
-            
-            // If single bullet is too long, split it by words
-            if (bullet.length > maxLength) {
-                const wordChunks = splitByWords(bullet, maxLength);
-                chunks.push(...wordChunks);
-                currentChunk = '';
-            } else {
-                currentChunk = bullet;
-            }
-        }
-    }
-    
-    if (currentChunk.trim()) {
-        chunks.push(currentChunk.trim());
-    }
-    
-    return chunks;
-}
-
-/**
- * 🔤 SPLIT BY WORDS (LAST RESORT)
- * Final fallback for extremely long content
- */
-function splitByWords(text, maxLength) {
-    const chunks = [];
-    const words = text.split(' ');
-    let currentChunk = '';
-    
-    for (const word of words) {
-        const potentialChunk = currentChunk + (currentChunk ? ' ' : '') + word;
-        
-        if (potentialChunk.length <= maxLength) {
-            currentChunk = potentialChunk;
-        } else {
-            if (currentChunk.trim()) {
-                chunks.push(currentChunk.trim());
-            }
-            currentChunk = word;
-        }
-    }
-    
-    if (currentChunk.trim()) {
-        chunks.push(currentChunk.trim());
-    }
-    
-    return chunks;
-}
-
-/**
- * 📨 ENHANCED CHUNKED MESSAGES SENDER
- * Sends multiple messages with proper delays and strategic numbering
- */
-async function sendLongMessage(bot, chatId, text, options = {}) {
+async function sendSmartResponse(bot, chatId, message, title = null, messageType = 'general', options = {}) {
     try {
-        const chunks = splitLongMessage(text);
+        console.log(`🎯 Strategic Commander sending ${messageType} message to ${chatId}`);
         
-        console.log(`📨 Sending ${chunks.length} strategic message chunks to ${chatId}`);
-        
-        if (chunks.length === 1) {
-            // Single message, send normally
-            return await bot.sendMessage(chatId, chunks[0], {
-                ...options,
-                parse_mode: 'Markdown',
-                disable_web_page_preview: true
-            });
+        if (!message || message.trim().length === 0) {
+            console.log('⚠️ Empty message - skipping send');
+            return false;
         }
         
-        // Multiple messages - send with strategic numbering and delays
-        const results = [];
-        const totalChunks = chunks.length;
+        // Get strategic message configuration
+        const strategicConfig = STRATEGIC_MESSAGE_TYPES[messageType] || STRATEGIC_MESSAGE_TYPES.general;
+        const messageDelay = strategicConfig.priority === 'urgent' ? TELEGRAM_LIMITS.PRIORITY_DELAY_MS : TELEGRAM_LIMITS.STRATEGIC_DELAY_MS;
         
+        // Format message with Strategic Commander enhancements
+        let formattedMessage = formatStrategicMessage(message, title, messageType, strategicConfig);
+        
+        // Check if message needs splitting
+        if (formattedMessage.length <= TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
+            // Single message - send directly
+            await bot.sendMessage(chatId, formattedMessage, {
+                parse_mode: 'Markdown',
+                disable_web_page_preview: options.disablePreview !== false
+            });
+            
+            console.log(`✅ Strategic Commander single message sent (${formattedMessage.length} chars)`);
+            return true;
+        }
+        
+        // Message needs strategic splitting
+        const chunks = splitStrategicMessage(formattedMessage, title, messageType);
+        
+        if (chunks.length > TELEGRAM_LIMITS.MAX_CHUNKS_PER_MESSAGE) {
+            console.log(`⚠️ Strategic message too long (${chunks.length} chunks), truncating to ${TELEGRAM_LIMITS.MAX_CHUNKS_PER_MESSAGE}`);
+            chunks.splice(TELEGRAM_LIMITS.MAX_CHUNKS_PER_MESSAGE);
+        }
+        
+        // Send strategic chunks with appropriate delays
         for (let i = 0; i < chunks.length; i++) {
-            const chunkNumber = i + 1;
-            const isFirst = i === 0;
+            const chunk = chunks[i];
             const isLast = i === chunks.length - 1;
             
-            // Add strategic chunk numbering for multi-part messages
-            let messageText = chunks[i];
-            
-            if (totalChunks > 1) {
-                if (isFirst) {
-                    messageText = `⚡ **STRATEGIC REPORT - Part ${chunkNumber}/${totalChunks}**\n\n${messageText}`;
-                } else if (isLast) {
-                    messageText = `⚡ **STRATEGIC REPORT - Part ${chunkNumber}/${totalChunks} (FINAL)**\n\n${messageText}`;
-                } else {
-                    messageText = `⚡ **STRATEGIC REPORT - Part ${chunkNumber}/${totalChunks}**\n\n${messageText}`;
-                }
-            }
-            
             try {
-                const result = await bot.sendMessage(chatId, messageText, {
-                    ...options,
+                await bot.sendMessage(chatId, chunk, {
                     parse_mode: 'Markdown',
-                    disable_web_page_preview: true
+                    disable_web_page_preview: options.disablePreview !== false
                 });
-                results.push(result);
                 
-                // Strategic delay between messages (faster for better user experience)
-                if (!isLast && chunks.length > 2) {
-                    await sleep(800); // Reduced to 0.8 seconds for faster delivery
+                console.log(`✅ Strategic chunk ${i + 1}/${chunks.length} sent (${chunk.length} chars)`);
+                
+                // Strategic delay between chunks (except for last chunk)
+                if (!isLast) {
+                    await new Promise(resolve => setTimeout(resolve, messageDelay));
                 }
                 
             } catch (chunkError) {
-                console.error(`❌ Error sending strategic chunk ${chunkNumber}:`, chunkError.message);
+                console.error(`❌ Strategic chunk ${i + 1} failed:`, chunkError.message);
                 
-                // If markdown fails, try without formatting
+                // Try sending without markdown formatting as fallback
                 try {
-                    const fallbackResult = await bot.sendMessage(chatId, messageText, {
-                        ...options,
-                        parse_mode: undefined,
-                        disable_web_page_preview: true
-                    });
-                    results.push(fallbackResult);
+                    const plainChunk = chunk.replace(/[*_`~]/g, '');
+                    await bot.sendMessage(chatId, plainChunk);
+                    console.log(`✅ Strategic chunk ${i + 1} sent as plain text`);
                 } catch (fallbackError) {
-                    console.error(`❌ Strategic fallback also failed for chunk ${chunkNumber}:`, fallbackError.message);
-                    // Continue with next chunk
+                    console.error(`❌ Strategic chunk ${i + 1} completely failed:`, fallbackError.message);
                 }
             }
         }
         
-        console.log(`✅ Successfully sent ${results.length}/${totalChunks} strategic message chunks`);
-        return results;
+        console.log(`✅ Strategic Commander message complete: ${chunks.length} chunks sent`);
+        return true;
         
     } catch (error) {
-        console.error('❌ Error in sendLongMessage:', error.message);
+        console.error('❌ Strategic Smart Response error:', error.message);
         
-        // Emergency strategic fallback - try to send truncated message
+        // Emergency fallback - send basic message
         try {
-            const truncatedText = text.substring(0, TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH - 150) + 
-                                 '\n\n⚡ **(Strategic report truncated - Use dashboard for full analysis)**';
-            return await bot.sendMessage(chatId, truncatedText, {
-                ...options,
-                parse_mode: 'Markdown',
-                disable_web_page_preview: true
-            });
-        } catch (fallbackError) {
-            console.error('❌ Emergency strategic fallback also failed:', fallbackError.message);
-            throw error;
+            const emergencyMessage = `🚨 **STRATEGIC COMMANDER ERROR**\n\nMessage delivery failed. Error: ${error.message}\n\nOriginal message length: ${message?.length || 0} characters`;
+            await bot.sendMessage(chatId, emergencyMessage.substring(0, TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH));
+        } catch (emergencyError) {
+            console.error('❌ Emergency fallback also failed:', emergencyError.message);
         }
+        
+        return false;
     }
 }
 
 /**
- * 🏛️ STRATEGIC COMMANDER MESSAGE FORMATTER
- * Enhanced formatting for strategic command responses
+ * 🏛️ FORMAT STRATEGIC MESSAGE
+ * Enhances messages with Strategic Commander branding and formatting
  */
-function formatRayDalioResponse(response, title = null) {
+function formatStrategicMessage(message, title, messageType, config) {
     let formatted = '';
     
-    // Add strategic title if provided
+    // Add strategic header if title provided
     if (title) {
-        formatted += `🎯 **${title.toUpperCase()}**\n\n`;
+        const titleEmoji = config.emoji;
+        formatted += `${titleEmoji} **${title.toUpperCase()}**\n\n`;
     }
     
-    // Clean response without artificial footers
-    formatted += response;
-    
-    return formatted;
-}
-
-/**
- * 🇰🇭 STRATEGIC CAMBODIA FUND MESSAGE FORMATTER
- * Enhanced formatting for Cambodia fund responses
- */
-function formatCambodiaFundResponse(response, analysisType = null) {
-    let formatted = '';
-    
-    // Add strategic analysis type if provided
-    if (analysisType) {
-        formatted += `🏦 **${analysisType.toUpperCase()}**\n\n`;
-    }
-    
-    // Clean response
-    formatted += response;
-    
-    return formatted;
-}
-
-/**
- * ⏰ SLEEP UTILITY
- * Optimized for strategic message delivery
- */
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-/**
- * 📊 ENHANCED MESSAGE STATISTICS
- * Provides detailed stats about strategic message splitting
- */
-function getMessageStats(originalText, chunks) {
-    const stats = {
-        originalLength: originalText.length,
-        chunksCreated: chunks.length,
-        averageChunkLength: Math.round(chunks.reduce((sum, chunk) => sum + chunk.length, 0) / chunks.length),
-        maxChunkLength: Math.max(...chunks.map(chunk => chunk.length)),
-        minChunkLength: Math.min(...chunks.map(chunk => chunk.length)),
-        compressionRatio: (originalText.length / chunks.join('').length * 100).toFixed(1),
-        estimatedDeliveryTime: chunks.length > 1 ? `${(chunks.length - 1) * 0.8}s` : '0s',
-        strategicSections: (originalText.match(/🎯|⚡|🏛️|📊|💰|🇰🇭|⚠️|🚨|💡|🔮|📋/g) || []).length
-    };
-    
-    return stats;
-}
-
-/**
- * 🎯 ENHANCED SMART RESPONSE SENDER
- * Main function for strategic command system responses
- */
-async function sendSmartResponse(bot, chatId, response, title = null, type = 'general') {
-    try {
-        let formattedResponse;
-        
-        switch (type) {
-            case 'raydalio':
-            case 'strategic':
-                formattedResponse = formatRayDalioResponse(response, title);
-                break;
-            case 'cambodia':
-            case 'fund':
-                formattedResponse = formatCambodiaFundResponse(response, title);
-                break;
-            case 'general':
-            default:
-                formattedResponse = title ? `⚡ **${title}**\n\n${response}` : response;
-        }
-        
-        // Check if splitting is needed
-        if (formattedResponse.length <= TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
-            return await bot.sendMessage(chatId, formattedResponse, { 
-                parse_mode: 'Markdown',
-                disable_web_page_preview: true 
-            });
-        }
-        
-        // Log strategic message stats
-        const chunks = splitLongMessage(formattedResponse);
-        const stats = getMessageStats(formattedResponse, chunks);
-        console.log(`📊 Strategic Message Stats:`, stats);
-        
-        // Send as chunked strategic messages
-        return await sendLongMessage(bot, chatId, formattedResponse, {
-            disable_web_page_preview: true
+    // Add strategic timestamp for certain message types
+    if (config.priority === 'urgent' || messageType === 'trading') {
+        const timestamp = new Date().toLocaleTimeString('en-US', { 
+            timeZone: 'Asia/Phnom_Penh',
+            hour12: false 
         });
-        
-    } catch (error) {
-        console.error('❌ Error in sendSmartResponse:', error.message);
-        
-        // Ultimate strategic fallback
-        try {
-            await bot.sendMessage(chatId, `❌ **STRATEGIC RESPONSE ERROR**\n\n⚡ The strategic analysis exceeded delivery limits. Please use specific commands or check the dashboard for full intelligence.\n\n🌐 **Dashboard:** https://imperiumvaultsystem-production.up.railway.app/dashboard\n\n💡 **Tip:** Try more focused strategic queries like "/regime" or "/opportunities"`, {
-                parse_mode: 'Markdown',
-                disable_web_page_preview: true
-            });
-        } catch (fallbackError) {
-            console.error('❌ Ultimate strategic fallback failed:', fallbackError.message);
-        }
-        
-        throw error;
+        formatted += `🕐 **Strategic Time:** ${timestamp} Cambodia\n\n`;
+    }
+    
+    // Add main message content
+    formatted += message;
+    
+    // Add strategic footer based on message type
+    const footer = getStrategicFooter(messageType, config);
+    if (footer) {
+        formatted += `\n\n${footer}`;
+    }
+    
+    return formatted;
+}
+
+/**
+ * 📊 GET STRATEGIC FOOTER
+ */
+function getStrategicFooter(messageType, config) {
+    switch (messageType) {
+        case 'raydalio':
+            return '🏛️ *Strategic Commander • Institutional-Grade Analysis*';
+        case 'cambodia':
+            return '🇰🇭 *Strategic Commander • Cambodia Fund Intelligence*';
+        case 'trading':
+            return '💹 *Strategic Commander • Live Trading Intelligence*';
+        case 'analysis':
+            return '📊 *Strategic Commander • Market Warfare Analysis*';
+        case 'alert':
+            return '🚨 *Strategic Commander • Urgent Alert*';
+        default:
+            return null;
     }
 }
 
 /**
- * 🚀 STRATEGIC MESSAGE VALIDATOR
- * Validates message content for strategic formatting
+ * ✂️ SPLIT STRATEGIC MESSAGE
+ * Intelligently splits long Strategic Commander messages
  */
-function validateStrategicMessage(text) {
-    const validation = {
-        isValid: true,
-        warnings: [],
-        suggestions: []
+function splitStrategicMessage(message, title, messageType) {
+    const chunks = [];
+    let remainingMessage = message;
+    let partNumber = 1;
+    
+    // Strategic message configuration
+    const config = STRATEGIC_MESSAGE_TYPES[messageType] || STRATEGIC_MESSAGE_TYPES.general;
+    const maxChunkSize = TELEGRAM_LIMITS.STRATEGIC_CHUNK_SIZE;
+    
+    while (remainingMessage.length > maxChunkSize) {
+        // Find optimal split point
+        let splitPoint = findStrategicSplitPoint(remainingMessage, maxChunkSize);
+        
+        if (splitPoint === -1) {
+            // Force split if no good point found
+            splitPoint = maxChunkSize - 100; // Leave room for headers
+        }
+        
+        // Extract chunk
+        let chunk = remainingMessage.substring(0, splitPoint).trim();
+        
+        // Add strategic chunk header
+        const chunkHeader = `${config.emoji} **STRATEGIC COMMANDER** (Part ${partNumber})\n\n`;
+        
+        // Check if chunk with header fits
+        if (chunk.length + chunkHeader.length > maxChunkSize) {
+            // Reduce chunk size to accommodate header
+            const availableSpace = maxChunkSize - chunkHeader.length - 50; // Buffer
+            chunk = chunk.substring(0, availableSpace).trim();
+            
+            // Find last complete sentence or line
+            const lastSentence = chunk.lastIndexOf('.');
+            const lastLine = chunk.lastIndexOf('\n');
+            const cutPoint = Math.max(lastSentence, lastLine);
+            
+            if (cutPoint > availableSpace * 0.7) { // Only if cut point is reasonable
+                chunk = chunk.substring(0, cutPoint + 1).trim();
+            }
+        }
+        
+        // Add header and push chunk
+        const finalChunk = chunkHeader + chunk;
+        chunks.push(finalChunk);
+        
+        // Remove processed content
+        remainingMessage = remainingMessage.substring(chunk.length).trim();
+        partNumber++;
+        
+        // Safety check
+        if (partNumber > TELEGRAM_LIMITS.MAX_CHUNKS_PER_MESSAGE) {
+            console.log('⚠️ Strategic message splitting reached maximum chunks limit');
+            break;
+        }
+    }
+    
+    // Add remaining content as final chunk
+    if (remainingMessage.length > 0) {
+        const finalHeader = partNumber > 1 ? 
+            `${config.emoji} **STRATEGIC COMMANDER** (Part ${partNumber} - Final)\n\n` : '';
+        
+        chunks.push(finalHeader + remainingMessage);
+    }
+    
+    return chunks;
+}
+
+/**
+ * 🔍 FIND STRATEGIC SPLIT POINT
+ * Finds optimal points to split Strategic Commander messages
+ */
+function findStrategicSplitPoint(text, maxLength) {
+    // Strategic splitting priorities (in order of preference)
+    const splitPatterns = [
+        /\n\n🎯/g,           // Strategic section headers
+        /\n\n🏛️/g,          // Strategic analysis sections
+        /\n\n📊/g,           // Strategic data sections
+        /\n\n💰/g,           // Strategic financial sections
+        /\n\n⚠️/g,           // Strategic warning sections
+        /\n\n\*\*[A-Z]/g,    // Bold headers
+        /\n\n/g,             // Double line breaks
+        /\.\s+/g,            // End of sentences
+        /\n/g,               // Single line breaks
+        /;\s+/g,             // Semicolons
+        /,\s+/g              // Commas (last resort)
+    ];
+    
+    // Search for best split point within acceptable range
+    const minSplitPoint = maxLength * 0.7; // Don't split too early
+    
+    for (const pattern of splitPatterns) {
+        const matches = [...text.matchAll(pattern)];
+        
+        // Find last match within acceptable range
+        for (let i = matches.length - 1; i >= 0; i--) {
+            const matchEnd = matches[i].index + matches[i][0].length;
+            
+            if (matchEnd >= minSplitPoint && matchEnd <= maxLength) {
+                return matchEnd;
+            }
+        }
+    }
+    
+    return -1; // No good split point found
+}
+
+/**
+ * 📝 SPLIT LONG MESSAGE (Legacy function for compatibility)
+ */
+function splitLongMessage(message, maxLength = TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
+    if (message.length <= maxLength) {
+        return [message];
+    }
+    
+    const chunks = [];
+    let remaining = message;
+    
+    while (remaining.length > maxLength) {
+        let splitPoint = findStrategicSplitPoint(remaining, maxLength);
+        
+        if (splitPoint === -1) {
+            splitPoint = maxLength;
+        }
+        
+        chunks.push(remaining.substring(0, splitPoint).trim());
+        remaining = remaining.substring(splitPoint).trim();
+    }
+    
+    if (remaining.length > 0) {
+        chunks.push(remaining);
+    }
+    
+    return chunks;
+}
+
+/**
+ * 📊 SEND LONG MESSAGE (Legacy function for compatibility)
+ */
+async function sendLongMessage(bot, chatId, message, delay = TELEGRAM_LIMITS.STRATEGIC_DELAY_MS) {
+    const chunks = splitLongMessage(message);
+    
+    for (let i = 0; i < chunks.length; i++) {
+        try {
+            await bot.sendMessage(chatId, chunks[i], { parse_mode: 'Markdown' });
+            
+            if (i < chunks.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        } catch (error) {
+            console.error(`❌ Chunk ${i + 1} failed:`, error.message);
+        }
+    }
+}
+
+/**
+ * 🏛️ FORMAT RAY DALIO RESPONSE (Enhanced for Strategic Commander)
+ */
+function formatRayDalioResponse(analysis, title = "Strategic Analysis") {
+    let formatted = `🏛️ **${title.toUpperCase()}**\n\n`;
+    
+    // Add strategic timestamp
+    const timestamp = new Date().toLocaleTimeString('en-US', { 
+        timeZone: 'Asia/Phnom_Penh',
+        hour12: false 
+    });
+    formatted += `🕐 **Strategic Time:** ${timestamp} Cambodia\n\n`;
+    
+    // Add main analysis
+    formatted += analysis;
+    
+    // Add strategic footer
+    formatted += '\n\n🏛️ *Strategic Commander • Institutional-Grade Market Intelligence*';
+    
+    return formatted;
+}
+
+/**
+ * 🇰🇭 FORMAT CAMBODIA FUND RESPONSE
+ */
+function formatCambodiaFundResponse(analysis, title = "Cambodia Fund Analysis") {
+    let formatted = `🇰🇭 **${title.toUpperCase()}**\n\n`;
+    
+    // Add strategic timestamp
+    const timestamp = new Date().toLocaleTimeString('en-US', { 
+        timeZone: 'Asia/Phnom_Penh',
+        hour12: false 
+    });
+    formatted += `🕐 **Strategic Time:** ${timestamp} Cambodia\n\n`;
+    
+    // Add main analysis
+    formatted += analysis;
+    
+    // Add strategic footer
+    formatted += '\n\n🇰🇭 *Strategic Commander • Cambodia Private Lending Intelligence*';
+    
+    return formatted;
+}
+
+/**
+ * 📈 GET MESSAGE STATS
+ */
+function getMessageStats(message) {
+    if (!message || typeof message !== 'string') {
+        return {
+            length: 0,
+            chunks: 0,
+            estimatedSendTime: 0,
+            type: 'invalid'
+        };
+    }
+    
+    const length = message.length;
+    const chunks = Math.ceil(length / TELEGRAM_LIMITS.STRATEGIC_CHUNK_SIZE);
+    const estimatedSendTime = chunks > 1 ? 
+        (chunks - 1) * TELEGRAM_LIMITS.STRATEGIC_DELAY_MS + 1000 : 1000;
+    
+    let type = 'short';
+    if (length > TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
+        type = chunks <= 5 ? 'medium' : 'long';
+    }
+    
+    return {
+        length,
+        chunks,
+        estimatedSendTime,
+        type,
+        withinLimits: length <= TELEGRAM_LIMITS.MAX_MESSAGE_LENGTH
     };
+}
+
+/**
+ * 🚨 SEND STRATEGIC ALERT
+ * For urgent Strategic Commander alerts
+ */
+async function sendStrategicAlert(bot, chatId, alertMessage, alertType = 'general') {
+    const alertHeader = '🚨 **STRATEGIC COMMANDER ALERT**\n\n';
+    const timestamp = new Date().toLocaleTimeString('en-US', { 
+        timeZone: 'Asia/Phnom_Penh',
+        hour12: false 
+    });
+    const timeHeader = `🕐 **Alert Time:** ${timestamp} Cambodia\n\n`;
     
-    // Check for strategic markers
-    const strategicMarkers = (text.match(/🎯|⚡|🏛️|📊|💰|🇰🇭|⚠️|🚨|💡|🔮|📋/g) || []).length;
-    if (strategicMarkers === 0) {
-        validation.warnings.push('No strategic section markers found');
-        validation.suggestions.push('Add strategic emojis (🎯⚡🏛️) to improve readability');
-    }
+    const fullAlert = alertHeader + timeHeader + alertMessage + '\n\n🚨 *Strategic Commander • Urgent Alert System*';
     
-    // Check message length efficiency
-    if (text.length > TELEGRAM_LIMITS.STRATEGIC_REPORT_MAX) {
-        validation.warnings.push('Message exceeds strategic report maximum');
-        validation.suggestions.push('Consider breaking into multiple focused analyses');
-    }
-    
-    return validation;
+    return await sendSmartResponse(bot, chatId, fullAlert, null, 'alert', { 
+        disablePreview: true,
+        priority: 'urgent'
+    });
+}
+
+/**
+ * 📊 SEND STRATEGIC REPORT
+ * For comprehensive Strategic Commander reports
+ */
+async function sendStrategicReport(bot, chatId, reportContent, reportTitle, reportType = 'analysis') {
+    return await sendSmartResponse(bot, chatId, reportContent, reportTitle, reportType, {
+        disablePreview: true,
+        priority: 'high'
+    });
 }
 
 module.exports = {
-    // Main strategic functions
-    sendLongMessage,
+    // 🎯 STRATEGIC COMMANDER FUNCTIONS
     sendSmartResponse,
-    splitLongMessage,
+    sendStrategicAlert,
+    sendStrategicReport,
     
-    // Enhanced formatters
+    // 🏛️ FORMATTING FUNCTIONS
+    formatStrategicMessage,
     formatRayDalioResponse,
     formatCambodiaFundResponse,
     
-    // Strategic utilities
+    // ✂️ SPLITTING FUNCTIONS
+    splitStrategicMessage,
+    splitLongMessage,
+    findStrategicSplitPoint,
+    
+    // 📊 UTILITY FUNCTIONS
     getMessageStats,
-    validateStrategicMessage,
+    
+    // 📝 LEGACY COMPATIBILITY
+    sendLongMessage,
+    
+    // 📏 CONSTANTS
     TELEGRAM_LIMITS,
-    
-    // Enhanced splitting functions
-    splitLongSection,
-    splitLongParagraph,
-    splitBulletList,
-    splitByWords,
-    
-    // Legacy support
-    splitAndSendMessage: sendLongMessage
+    STRATEGIC_MESSAGE_TYPES
 };
