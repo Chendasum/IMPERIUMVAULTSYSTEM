@@ -2260,7 +2260,7 @@ Apply Strategic Commander risk management principles to both global markets and 
     }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
     console.log("✅ IMPERIUM GPT-4o Strategic Command System running on port " + PORT);
     console.log("⚡ STRATEGIC COMMANDER AI MODE: Institutional-Level Strategic Analysis");
     console.log("🏦 CAMBODIA LENDING FUND: Private lending strategic analysis and portfolio management");
