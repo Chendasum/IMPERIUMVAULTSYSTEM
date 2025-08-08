@@ -1448,9 +1448,6 @@ async function getActiveMarketSignals() {
     }
 }
 
-/**
- * 📊 SAVE PORTFOLIO ALLOCATION
- */
 async function savePortfolioAllocation(chatId, allocation) {
     try {
         await pool.query(`
