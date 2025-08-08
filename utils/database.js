@@ -1448,6 +1448,458 @@ async function getActiveMarketSignals() {
     }
 }
 
+/**
+ * 📊 SAVE PORTFOLIO ALLOCATION
+ */
+async function savePortfolioAllocation(chatId, allocation) {
+    try {
+        await pool.query(`
+            INSERT INTO portfolio_allocations (
+                chat_id, allocation_type, regime_name, asset_class,
+                allocation_percent, allocation_amount, reasoning,
+                confidence_level, performance_attribution, rebalancing_trigger
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `, [
+            chatId,
+            allocation.type || 'RECOMMENDED',
+            allocation.regime || 'CURRENT',
+            allocation.assetClass,
+            allocation.percent,
+            allocation.amount || null,
+            allocation.reasoning || '',
+            allocation.confidence || 70,
+            allocation.performance || null,
+            allocation.trigger || 'MANUAL'
+        ]);
+
+        console.log(`📊 Portfolio allocation saved for ${chatId}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save portfolio allocation error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📏 SAVE POSITION SIZING
+ */
+async function savePositionSizing(chatId, sizing) {
+    try {
+        await pool.query(`
+            INSERT INTO position_sizing_history (
+                chat_id, symbol, direction, recommended_size, actual_size,
+                risk_percent, regime_multiplier, volatility_multiplier,
+                correlation_multiplier, entry_price, stop_loss, take_profit,
+                account_balance, current_regime, sizing_rationale,
+                kelly_criterion, max_position_size
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        `, [
+            chatId,
+            sizing.symbol,
+            sizing.direction,
+            sizing.recommendedSize,
+            sizing.actualSize || null,
+            sizing.riskPercent,
+            sizing.regimeMultiplier || 1.0,
+            sizing.volatilityMultiplier || 1.0,
+            sizing.correlationMultiplier || 1.0,
+            sizing.entryPrice,
+            sizing.stopLoss,
+            sizing.takeProfit || null,
+            sizing.accountBalance,
+            sizing.currentRegime || 'UNKNOWN',
+            sizing.rationale || '',
+            sizing.kellyCriterion || null,
+            sizing.maxPositionSize || null
+        ]);
+
+        console.log(`📏 Position sizing saved for ${chatId}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save position sizing error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 🚨 SAVE MARKET SIGNAL
+ */
+async function saveMarketSignal(signal) {
+    try {
+        await pool.query(`
+            INSERT INTO market_signals (
+                signal_type, signal_strength, signal_description,
+                market_data, impact_level, actionable_insights,
+                false_positive, signal_accuracy
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
+            signal.type,
+            signal.strength || 'MODERATE',
+            signal.description,
+            JSON.stringify(signal.marketData || {}),
+            signal.impact || 'MODERATE',
+            signal.insights || [],
+            false,
+            signal.accuracy || null
+        ]);
+
+        console.log(`🚨 Market signal saved: ${signal.type}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save market signal error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📝 SAVE DAILY OBSERVATION
+ */
+async function saveDailyObservation(observation) {
+    try {
+        await pool.query(`
+            INSERT INTO daily_observations (
+                observation_date, market_regime, regime_confidence,
+                key_themes, market_moves, economic_data, outlook,
+                risk_factors, opportunities, position_recommendations,
+                market_stress_level, liquidity_conditions, sentiment_indicators
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        `, [
+            observation.date || new Date().toISOString().split('T')[0],
+            observation.marketRegime || 'UNKNOWN',
+            observation.regimeConfidence || 50,
+            observation.keyThemes || [],
+            JSON.stringify(observation.marketMoves || {}),
+            JSON.stringify(observation.economicData || {}),
+            observation.outlook || '',
+            observation.riskFactors || [],
+            observation.opportunities || [],
+            JSON.stringify(observation.positionRecommendations || {}),
+            observation.marketStressLevel || 50,
+            observation.liquidityConditions || 'NORMAL',
+            JSON.stringify(observation.sentimentIndicators || {})
+        ]);
+
+        console.log(`📝 Daily observation saved for ${observation.date}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save daily observation error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📊 LOG COMMAND USAGE
+ */
+async function logCommandUsage(chatId, command, executionTime, success = true, errorMessage = null) {
+    try {
+        await pool.query(`
+            INSERT INTO command_analytics (
+                chat_id, command, command_type, execution_time_ms,
+                success, error_message, regime_context,
+                market_conditions, user_satisfaction, command_complexity,
+                data_sources_used
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        `, [
+            chatId,
+            command,
+            getCommandType(command),
+            executionTime,
+            success,
+            errorMessage,
+            await getCurrentRegimeForLogging(),
+            JSON.stringify({}), // Market conditions
+            null, // User satisfaction
+            getCommandComplexity(command),
+            getDataSourcesUsed(command)
+        ]);
+
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Log command usage error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📈 GET REGIME TRANSITIONS
+ */
+async function getRegimeTransitions(days = 30) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                regime_name,
+                date_detected,
+                confidence,
+                LAG(regime_name) OVER (ORDER BY date_detected) as previous_regime,
+                LAG(date_detected) OVER (ORDER BY date_detected) as previous_date
+            FROM regime_history 
+            WHERE date_detected >= CURRENT_DATE - INTERVAL '${days} days'
+            ORDER BY date_detected DESC
+        `);
+
+        const transitions = result.rows.filter(row => 
+            row.previous_regime && row.regime_name !== row.previous_regime
+        );
+
+        connectionStats.successfulQueries++;
+        return transitions;
+    } catch (error) {
+        console.error('Get regime transitions error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📊 GET PORTFOLIO PERFORMANCE BY REGIME
+ */
+async function getPortfolioPerformanceByRegime(chatId) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                regime_name,
+                COUNT(*) as trade_count,
+                AVG(profit_loss) as avg_profit,
+                SUM(profit_loss) as total_profit,
+                AVG(regime_confidence) as avg_confidence,
+                MAX(profit_loss) as best_trade,
+                MIN(profit_loss) as worst_trade
+            FROM regime_performance 
+            WHERE chat_id = $1
+            GROUP BY regime_name
+            ORDER BY total_profit DESC
+        `, [chatId]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get portfolio performance by regime error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📏 GET POSITION SIZING ANALYTICS
+ */
+async function getPositionSizingAnalytics(chatId) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                symbol,
+                AVG(recommended_size) as avg_size,
+                AVG(risk_percent) as avg_risk,
+                COUNT(*) as sizing_count,
+                AVG(regime_multiplier) as avg_regime_multiplier,
+                current_regime
+            FROM position_sizing_history 
+            WHERE chat_id = $1
+            GROUP BY symbol, current_regime
+            ORDER BY sizing_count DESC
+        `, [chatId]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get position sizing analytics error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📊 GET COMMAND USAGE STATS
+ */
+async function getCommandUsageStats(days = 30) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                command,
+                command_type,
+                COUNT(*) as usage_count,
+                AVG(execution_time_ms) as avg_execution_time,
+                COUNT(CASE WHEN success = true THEN 1 END) as successful_count,
+                COUNT(CASE WHEN success = false THEN 1 END) as failed_count
+            FROM command_analytics 
+            WHERE timestamp >= CURRENT_DATE - INTERVAL '${days} days'
+            GROUP BY command, command_type
+            ORDER BY usage_count DESC
+        `);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get command usage stats error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📝 GET RECENT DAILY OBSERVATIONS
+ */
+async function getRecentDailyObservations(days = 7) {
+    try {
+        const result = await pool.query(`
+            SELECT * FROM daily_observations 
+            WHERE observation_date >= CURRENT_DATE - INTERVAL '${days} days'
+            ORDER BY observation_date DESC
+        `);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get recent daily observations error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 🧹 CLEANUP OLD DATA
+ */
+async function cleanupOldData() {
+    try {
+        const cleanupResults = {
+            conversationsDeleted: 0,
+            regimeHistoryDeleted: 0,
+            signalsResolved: 0
+        };
+
+        // Clean old conversations (keep last 6 months for high importance)
+        const conversationsResult = await pool.query(`
+            DELETE FROM conversations 
+            WHERE timestamp < NOW() - INTERVAL '6 months' 
+            AND strategic_importance = 'low'
+        `);
+        cleanupResults.conversationsDeleted = conversationsResult.rowCount;
+
+        // Clean old regime history (keep last 2 years)
+        const regimeResult = await pool.query(`
+            DELETE FROM regime_history 
+            WHERE timestamp < NOW() - INTERVAL '2 years'
+        `);
+        cleanupResults.regimeHistoryDeleted = regimeResult.rowCount;
+
+        // Auto-resolve old market signals
+        const signalsResult = await pool.query(`
+            UPDATE market_signals 
+            SET resolved_at = NOW() 
+            WHERE triggered_at < NOW() - INTERVAL '30 days' 
+            AND resolved_at IS NULL
+        `);
+        cleanupResults.signalsResolved = signalsResult.rowCount;
+
+        console.log('🧹 Data cleanup completed:', cleanupResults);
+        connectionStats.successfulQueries++;
+        return cleanupResults;
+    } catch (error) {
+        console.error('Cleanup old data error:', error.message);
+        connectionStats.failedQueries++;
+        return { error: error.message };
+    }
+}
+
+/**
+ * 📈 GET REGIME PERFORMANCE SUMMARY
+ */
+async function getRegimePerformanceSummary() {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                rh.regime_name,
+                rh.confidence as avg_confidence,
+                COUNT(rp.id) as trade_count,
+                AVG(rp.profit_loss) as avg_performance,
+                SUM(rp.profit_loss) as total_performance
+            FROM regime_history rh
+            LEFT JOIN regime_performance rp ON rh.regime_name = rp.regime_name
+            WHERE rh.timestamp >= NOW() - INTERVAL '1 year'
+            GROUP BY rh.regime_name, rh.confidence
+            ORDER BY total_performance DESC
+        `);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get regime performance summary error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📊 GET RISK TREND ANALYSIS  
+ */
+async function getRiskTrendAnalysis(chatId) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                DATE(timestamp) as date,
+                AVG(total_risk_percent) as avg_risk,
+                AVG(diversification_score) as avg_diversification,
+                correlation_risk,
+                regime_risk
+            FROM risk_assessments 
+            WHERE chat_id = $1 
+            AND timestamp >= NOW() - INTERVAL '90 days'
+            GROUP BY DATE(timestamp), correlation_risk, regime_risk
+            ORDER BY date DESC
+        `, [chatId]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get risk trend analysis error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+// HELPER FUNCTIONS
+function getCommandType(command) {
+    if (command.startsWith('/regime') || command.startsWith('/cycle')) return 'REGIME_ANALYSIS';
+    if (command.startsWith('/deal_') || command.includes('cambodia')) return 'CAMBODIA_FUND';
+    if (command.startsWith('/trading') || command.startsWith('/positions')) return 'TRADING';
+    if (command.startsWith('/risk')) return 'RISK_MANAGEMENT';
+    return 'GENERAL';
+}
+
+function getCommandComplexity(command) {
+    const complexCommands = ['/regime', '/cycle', '/opportunities', '/all_weather', '/macro'];
+    return complexCommands.includes(command) ? 'HIGH' : 'MEDIUM';
+}
+
+function getDataSourcesUsed(command) {
+    const sources = [];
+    if (command.includes('regime') || command.includes('cycle')) sources.push('FRED', 'ALPHA_VANTAGE');
+    if (command.includes('trading')) sources.push('METAAPI');
+    if (command.includes('news')) sources.push('NEWSAPI');
+    return sources;
+}
+
+async function getCurrentRegimeForLogging() {
+    try {
+        const result = await pool.query(`
+            SELECT regime_name FROM regime_history 
+            ORDER BY timestamp DESC LIMIT 1
+        `);
+        return result.rows[0]?.regime_name || 'UNKNOWN';
+    } catch (error) {
+        return 'UNKNOWN';
+    }
+}
+
 module.exports = {
     // 🏛️ ENHANCED STRATEGIC FUNCTIONS
     initializeDatabase,
