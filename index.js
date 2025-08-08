@@ -101,12 +101,60 @@ if (!telegramToken || !openaiKey) {
 // ✅ Initialize Telegram Bot with webhook support for Railway
 const bot = new TelegramBot(telegramToken, { polling: false });
 
-// ✅ Initialize OpenAI API (latest SDK v4.38.1) - OPTIMIZED FOR MAXIMUM LENGTH
+// ✅ Initialize OpenAI API (GPT-5 ENHANCED) - OPTIMIZED FOR MAXIMUM LENGTH
 const openai = new OpenAI({ 
     apiKey: openaiKey,
-    timeout: 60000, // 60 second timeout for long responses
+    timeout: 120000, // 120 second timeout for GPT-5 reasoning
     maxRetries: 3
 });
+
+// 🚀 GPT-5 Configuration Settings
+const GPT5_CONFIG = {
+    model: "gpt-5", // Primary GPT-5 model
+    fallbackModel: "gpt-5-mini", // Fallback for high-volume scenarios
+    maxTokens: 16384, // Maximum for comprehensive responses
+    temperature: 0.7,
+    reasoningEffort: "medium", // minimal, low, medium, high
+    verbosity: "medium", // low, medium, high for response length control
+    enableThinking: true // Enable GPT-5's thinking mode for complex analysis
+};
+
+// 🤖 Enhanced GPT-5 API Helper Function
+async function callGPT5(messages, options = {}) {
+    const config = {
+        model: options.useFullModel ? GPT5_CONFIG.model : (options.useMini ? GPT5_CONFIG.fallbackModel : GPT5_CONFIG.model),
+        messages: messages,
+        max_tokens: options.maxTokens || GPT5_CONFIG.maxTokens,
+        temperature: options.temperature || GPT5_CONFIG.temperature,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+        stream: false,
+    };
+
+    // Add GPT-5 specific parameters
+    if (options.reasoningEffort) {
+        config.reasoning_effort = options.reasoningEffort;
+    }
+    
+    if (options.verbosity) {
+        config.verbosity = options.verbosity;
+    }
+
+    try {
+        console.log(`🤖 Calling ${config.model} with ${messages.length} messages`);
+        return await openai.chat.completions.create(config);
+    } catch (error) {
+        console.error(`❌ GPT-5 API Error: ${error.message}`);
+        
+        // Fallback to mini if main model fails
+        if (config.model === GPT5_CONFIG.model && !options.useMini) {
+            console.log("🔄 Falling back to GPT-5 mini...");
+            return await callGPT5(messages, { ...options, useMini: true });
+        }
+        throw error;
+    }
+}
 
 // ✅ Initialize Database Connection
 initializeDatabase()
@@ -212,58 +260,73 @@ bot.on("message", async (msg) => {
     }
 
     if (text === "/start") {
-        const welcomeMessage = `⚡ **IMPERIUM VAULT STRATEGIC COMMAND SYSTEM**
+        const welcomeMessage = `⚡ **IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - GPT-5 POWERED**
 
-This is your exclusive financial warfare command center with institutional-grade intelligence.
+This is your exclusive financial warfare command center with GPT-5 institutional-grade intelligence.
+
+**🚀 POWERED BY GPT-5:**
+- 45% fewer factual errors than GPT-4o
+- Advanced reasoning with thinking mode
+- Enhanced tool coordination capabilities
+- Superior strategic analysis with reduced hallucination
+- Enhanced instruction following and problem-solving
 
 **🎯 STRATEGIC COMMAND PROTOCOLS:**
-• No casual conversation - Strategic directives only
-• Pure financial warfare intelligence
-• Maximum 12,000+ word strategic reports
-• Cambodia lending fund operations
-• Live trading account integration
+- No casual conversation - Strategic directives only
+- Pure financial warfare intelligence powered by GPT-5
+- Maximum 16,000+ word strategic reports with advanced reasoning
+- Cambodia lending fund operations with institutional analysis
+- Live trading account integration with GPT-5 intelligence
 
-**🏦 CAMBODIA LENDING FUND OPERATIONS:**
-/deal_analyze [amount] [type] [location] [rate] [term] - Strategic deal analysis
-/portfolio - Fund performance command status
-/cambodia_market - Local market intelligence briefing
-/risk_assessment - Comprehensive risk warfare analysis
-/lp_report [monthly/quarterly] - Investor command reports
+**🏦 CAMBODIA LENDING FUND OPERATIONS (GPT-5 ENHANCED):**
+/deal_analyze [amount] [type] [location] [rate] [term] - GPT-5 strategic deal analysis
+/portfolio - Fund performance command status with GPT-5 insights
+/cambodia_market - Local market intelligence briefing (GPT-5 powered)
+/risk_assessment - Comprehensive risk warfare analysis (GPT-5 enhanced)
+/lp_report [monthly/quarterly] - Investor command reports (GPT-5 generated)
 /fund_help - Cambodia operations command help
 
-**🏛️ MARKET DOMINATION COMMANDS:**
-/regime - Economic regime warfare analysis
-/cycle - Market cycle domination positioning  
-/opportunities - Strategic trading command scanner
-/risk - Portfolio warfare risk assessment
-/macro - Global domination macro intelligence
-/correlations - Asset correlation warfare analysis
-/all_weather - Strategic portfolio allocation commands
+**🏛️ MARKET DOMINATION COMMANDS (GPT-5 INSTITUTIONAL ANALYSIS):**
+/regime - Economic regime warfare analysis (GPT-5 reasoning mode)
+/cycle - Market cycle domination positioning (GPT-5 enhanced)
+/opportunities - Strategic trading command scanner (GPT-5 powered)
+/risk - Portfolio warfare risk assessment (GPT-5 institutional grade)
+/macro - Global domination macro intelligence (GPT-5 Bridgewater-style)
+/correlations - Asset correlation warfare analysis (GPT-5 advanced)
+/all_weather - Strategic portfolio allocation commands (GPT-5 optimized)
 
-**💹 LIVE TRADING OPERATIONS:**
-/trading - Live account strategic status
-/positions - Current position warfare analysis
-/size [SYMBOL] [BUY/SELL] - Position sizing command calculator
+**💹 LIVE TRADING OPERATIONS (GPT-5 INTEGRATION):**
+/trading - Live account strategic status with GPT-5 analysis
+/positions - Current position warfare analysis (GPT-5 enhanced)
+/size [SYMBOL] [BUY/SELL] - Position sizing command calculator (GPT-5 powered)
 /account - Account balance and performance warfare metrics
 
-**📊 MARKET INTELLIGENCE OPERATIONS:**
-/briefing - Complete strategic market briefing
-/economics - Economic intelligence with Fed warfare analysis
-/prices - Enhanced market data with correlation warfare
-/analysis - Strategic market analysis with institutional predictions
+**📊 MARKET INTELLIGENCE OPERATIONS (GPT-5 SUPERIOR ANALYSIS):**
+/briefing - Complete strategic market briefing (GPT-5 comprehensive)
+/economics - Economic intelligence with Fed warfare analysis (GPT-5)
+/prices - Enhanced market data with correlation warfare (GPT-5)
+/analysis - Strategic market analysis with institutional predictions (GPT-5)
 
-**🎯 COMMAND EXAMPLES:**
-• /deal_analyze 500000 commercial "Chamkar Mon" 18 12
-• "Deploy capital to Cambodia commercial lending sector"
-• "Execute comprehensive macro economic warfare analysis"
-• "Command strategic portfolio risk assessment"
+**🎯 GPT-5 ENHANCED COMMAND EXAMPLES:**
+- /deal_analyze 500000 commercial "Chamkar Mon" 18 12
+- "Deploy capital to Cambodia commercial lending sector with GPT-5 analysis"
+- "Execute comprehensive macro economic warfare analysis using GPT-5 reasoning"
+- "Command strategic portfolio risk assessment with GPT-5 institutional intelligence"
+- "GPT-5 analyze current market regime and provide strategic deployment directives"
+
+**🌟 GPT-5 STRATEGIC ADVANTAGES:**
+- Superior accuracy in financial analysis
+- Advanced reasoning for complex strategic decisions
+- Enhanced understanding of market dynamics
+- Reduced hallucination in critical financial assessments
+- Institutional-grade strategic intelligence
 
 **Chat ID:** ${chatId}
-**Status:** ⚡ STRATEGIC COMMAND MODE ACTIVE`;
+**Status:** ⚡ GPT-5 STRATEGIC COMMAND MODE ACTIVE`;
 
-        await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
-        console.log("✅ Strategic command system message sent");
-        return;
+await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
+console.log("✅ GPT-5 Strategic command system message sent");
+return;
     }
 
     // 🏦 ========== CAMBODIA LENDING FUND COMMANDS ==========
@@ -379,625 +442,695 @@ This is your exclusive financial warfare command center with institutional-grade
         return;
     }
 
-    // 🏦 PORTFOLIO STATUS COMMAND
-    if (text === '/portfolio' || text === '/fund_status') {
-        try {
-            await bot.sendMessage(chatId, "🏦 Executing portfolio strategic status analysis...");
-            
-            // Sample fund data - you would replace this with actual data
-            const sampleFundData = {
-                totalAUM: 2500000,
-                deployedCapital: 2000000,
-                availableCapital: 500000,
-                activeDeals: 12,
-                currentYield: 17.5
-            };
-            
-            const portfolio = await getPortfolioStatus(sampleFundData);
-            
-            if (portfolio.error) {
-                await sendSmartResponse(bot, chatId, `❌ Portfolio strategic analysis error: ${portfolio.error}`, null, 'general');
-                return;
-            }
-            
-            let response = `🏦 **CAMBODIA LENDING FUND STRATEGIC STATUS**\n\n`;
-            
-            response += `💰 **FUND COMMAND OVERVIEW:**\n`;
-            response += `• Total AUM: $${portfolio.fundOverview.totalAUM.toLocaleString()}\n`;
-            response += `• Deployed Capital: $${portfolio.fundOverview.deployedCapital.toLocaleString()}\n`;
-            response += `• Available Capital: $${portfolio.fundOverview.availableCapital.toLocaleString()}\n`;
-            response += `• Deployment Ratio: ${portfolio.fundOverview.deploymentRatio.toFixed(1)}%\n`;
-            response += `• Active Deals: ${portfolio.fundOverview.numberOfDeals}\n`;
-            response += `• Avg Deal Size: $${portfolio.fundOverview.averageDealSize.toLocaleString()}\n\n`;
-            
-            response += `📈 **PERFORMANCE WARFARE METRICS:**\n`;
-            response += `• Current Yield: ${portfolio.performance.currentYieldRate.toFixed(2)}%\n`;
-            response += `• Target Yield: ${portfolio.performance.targetYieldRate}%\n`;
-            response += `• vs Target: ${portfolio.performance.actualVsTarget > 0 ? '+' : ''}${portfolio.performance.actualVsTarget.toFixed(1)}%\n`;
-            response += `• Risk-Adj Return: ${portfolio.performance.riskAdjustedReturn.toFixed(2)}%\n`;
-            response += `• Monthly Income: $${portfolio.performance.monthlyIncome.toLocaleString()}\n`;
-            response += `• Annualized Return: ${portfolio.performance.annualizedReturn.toFixed(2)}%\n\n`;
-            
-            response += `⚠️ **RISK WARFARE METRICS:**\n`;
-            response += `• Concentration Risk: ${portfolio.riskMetrics.concentrationRisk}\n`;
-            response += `• Default Rate: ${portfolio.riskMetrics.defaultRate.toFixed(2)}%\n`;
-            response += `• Portfolio VaR: ${portfolio.riskMetrics.portfolioVaR.toFixed(1)}%\n`;
-            response += `• Diversification: ${portfolio.riskMetrics.diversificationScore}/100\n`;
-            response += `• Liquidity: ${portfolio.riskMetrics.liquidity}\n\n`;
-            
-            response += `🗺️ **GEOGRAPHIC WARFARE ALLOCATION:**\n`;
-            response += `• Phnom Penh: ${portfolio.geographicAllocation.phnomPenh.toFixed(1)}%\n`;
-            response += `• Sihanoukville: ${portfolio.geographicAllocation.sihanoukville.toFixed(1)}%\n`;
-            response += `• Siem Reap: ${portfolio.geographicAllocation.siemReap.toFixed(1)}%\n`;
-            response += `• Other: ${portfolio.geographicAllocation.other.toFixed(1)}%\n\n`;
-            
-            response += `🏗️ **SECTOR WARFARE ALLOCATION:**\n`;
-            response += `• Commercial: ${portfolio.sectorAllocation.commercial.toFixed(1)}%\n`;
-            response += `• Residential: ${portfolio.sectorAllocation.residential.toFixed(1)}%\n`;
-            response += `• Development: ${portfolio.sectorAllocation.development.toFixed(1)}%\n`;
-            response += `• Bridge: ${portfolio.sectorAllocation.bridge.toFixed(1)}%\n\n`;
-            
-            response += `🏛️ **STRATEGIC ASSESSMENT:**\n`;
-            response += `• Diversification Score: ${portfolio.rayDalioPortfolioAnalysis.diversificationScore}/100\n`;
-            response += `• Risk Parity Alignment: ${portfolio.rayDalioPortfolioAnalysis.riskParityAlignment}\n`;
-            response += `• Macro Alignment: ${portfolio.rayDalioPortfolioAnalysis.macroAlignment}\n`;
-            response += `• Regime Positioning: ${portfolio.rayDalioPortfolioAnalysis.regimePositioning}\n\n`;
-            
-            if (portfolio.recommendations.length > 0) {
-                response += `💡 **STRATEGIC DIRECTIVES:**\n`;
-                portfolio.recommendations.slice(0, 3).forEach(rec => {
-                    response += `• ${rec}\n`;
-                });
-                response += `\n`;
-            }
-            
-            if (portfolio.alerts.length > 0) {
-                response += `🚨 **COMMAND ALERTS:**\n`;
-                portfolio.alerts.slice(0, 2).forEach(alert => {
-                    response += `• ${alert}\n`;
-                });
-            }
-            
-            await sendSmartResponse(bot, chatId, response, "Fund Strategic Portfolio Status", 'cambodia');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Portfolio strategic status error: ${error.message}`, null, 'general');
-        }
-        return;
-    }
+// 🏦 GPT-5 STRATEGIC PORTFOLIO STATUS COMMAND
+if (text === '/portfolio' || text === '/fund_status') {
+    try {
+        await bot.sendMessage(chatId, "📊 Activating GPT-5 Portfolio Status Analysis Protocol...");
 
-    // 🇰🇭 CAMBODIA MARKET COMMAND
-    if (text === '/cambodia_market' || text === '/market_cambodia') {
-        try {
-            await bot.sendMessage(chatId, "🇰🇭 Executing Cambodia market strategic intelligence analysis...");
-            
-            const conditions = await getCambodiaMarketConditions();
-            
-            if (conditions.error) {
-                await sendSmartResponse(bot, chatId, `❌ Market strategic intelligence error: ${conditions.error}`, null, 'general');
-                return;
-            }
-            
-            let response = `🇰🇭 **CAMBODIA MARKET STRATEGIC INTELLIGENCE**\n\n`;
-            
-            response += `📊 **ECONOMIC WARFARE ENVIRONMENT:**\n`;
-            response += `• GDP Growth: ${conditions.economicEnvironment.gdpGrowth}%\n`;
-            response += `• Inflation: ${conditions.economicEnvironment.inflation}%\n`;
-            response += `• USD/KHR Stability: ${conditions.economicEnvironment.currencyStability}\n`;
-            response += `• Political Stability: ${conditions.economicEnvironment.politicalStability}\n`;
-            response += `• Regulatory Environment: ${conditions.economicEnvironment.regulatoryEnvironment}\n\n`;
-            
-            response += `💰 **INTEREST RATE WARFARE ENVIRONMENT:**\n`;
-            response += `• Commercial Loans: ${conditions.interestRateEnvironment.commercialRates.commercial.min}-${conditions.interestRateEnvironment.commercialRates.commercial.max}% (avg: ${conditions.interestRateEnvironment.commercialRates.commercial.average}%)\n`;
-            response += `• Bridge Loans: ${conditions.interestRateEnvironment.commercialRates.bridge.min}-${conditions.interestRateEnvironment.commercialRates.bridge.max}% (avg: ${conditions.interestRateEnvironment.commercialRates.bridge.average}%)\n`;
-            response += `• Development: ${conditions.interestRateEnvironment.commercialRates.development.min}-${conditions.interestRateEnvironment.commercialRates.development.max}% (avg: ${conditions.interestRateEnvironment.commercialRates.development.average}%)\n`;
-            response += `• Strategic Trend: ${conditions.interestRateEnvironment.trendDirection}\n`;
-            response += `• Fed Impact: ${conditions.interestRateEnvironment.fedImpact}\n\n`;
-            
-            response += `🏘️ **PROPERTY WARFARE MARKET:**\n`;
-            response += `• Phnom Penh Trend: ${conditions.propertyMarket.phnomPenhTrend}\n`;
-            response += `• Demand/Supply: ${conditions.propertyMarket.demandSupplyBalance}\n`;
-            response += `• Foreign Investment: ${conditions.propertyMarket.foreignInvestment}\n`;
-            response += `• Development Activity: ${conditions.propertyMarket.developmentActivity}\n`;
-            response += `• Price Appreciation: ${conditions.propertyMarket.priceAppreciation}\n`;
-            response += `• Liquidity: ${conditions.propertyMarket.liquidity}\n\n`;
-            
-            response += `🏦 **BANKING WARFARE SECTOR:**\n`;
-            response += `• Liquidity: ${conditions.bankingSector.liquidityConditions}\n`;
-            response += `• Credit Growth: ${conditions.bankingSector.creditGrowth}\n`;
-            response += `• Competition: ${conditions.bankingSector.competitionLevel}\n`;
-            response += `• Regulation: ${conditions.bankingSector.regulatoryChanges}\n\n`;
-            
-            response += `⚠️ **STRATEGIC RISK FACTORS:**\n`;
-            response += `• Political: ${conditions.riskFactors.politicalRisk}\n`;
-            response += `• Economic: ${conditions.riskFactors.economicRisk}\n`;
-            response += `• Currency: ${conditions.riskFactors.currencyRisk}\n`;
-            response += `• Regulatory: ${conditions.riskFactors.regulatoryRisk}\n`;
-            response += `• Market: ${conditions.riskFactors.marketRisk}\n\n`;
-            
-            response += `⏰ **MARKET WARFARE TIMING:**\n`;
-            response += `• Current Phase: ${conditions.marketTiming.currentPhase}\n`;
-            response += `• Time in Cycle: ${conditions.marketTiming.timeInCycle}\n`;
-            response += `• Next Phase: ${conditions.marketTiming.nextPhaseExpected}\n`;
-            response += `• Lending Timing: ${conditions.marketTiming.timingForLending}\n\n`;
-            
+        // 🔧 Example fund data – replace with live values from database
+        const sampleFundData = {
+            totalAUM: 2500000,
+            deployedCapital: 2000000,
+            availableCapital: 500000,
+            activeDeals: 12,
+            currentYield: 17.5
+        };
+
+        const portfolio = await getPortfolioStatus(sampleFundData); // ⚙️ Ensure this calls GPT-5 inside
+
+        if (portfolio.error) {
+            await sendSmartResponse(bot, chatId, `❌ Portfolio analysis error: ${portfolio.error}`, null, 'general');
+            return;
+        }
+
+        // 🧠 STRATEGIC OUTPUT CONSTRUCTION
+        let response = `🏦 **CAMBODIA LENDING FUND — STRATEGIC STATUS REPORT**\n\n`;
+
+        response += `💼 **FUND OVERVIEW:**\n`;
+        response += `• Total AUM: $${portfolio.fundOverview.totalAUM.toLocaleString()}\n`;
+        response += `• Deployed Capital: $${portfolio.fundOverview.deployedCapital.toLocaleString()}\n`;
+        response += `• Available Capital: $${portfolio.fundOverview.availableCapital.toLocaleString()}\n`;
+        response += `• Deployment Ratio: ${portfolio.fundOverview.deploymentRatio.toFixed(1)}%\n`;
+        response += `• Active Deals: ${portfolio.fundOverview.numberOfDeals}\n`;
+        response += `• Avg Deal Size: $${portfolio.fundOverview.averageDealSize.toLocaleString()}\n\n`;
+
+        response += `📈 **PERFORMANCE METRICS:**\n`;
+        response += `• Current Yield: ${portfolio.performance.currentYieldRate.toFixed(2)}%\n`;
+        response += `• Target Yield: ${portfolio.performance.targetYieldRate}%\n`;
+        response += `• Δ vs Target: ${portfolio.performance.actualVsTarget > 0 ? '+' : ''}${portfolio.performance.actualVsTarget.toFixed(1)}%\n`;
+        response += `• Risk-Adj Return: ${portfolio.performance.riskAdjustedReturn.toFixed(2)}%\n`;
+        response += `• Monthly Income: $${portfolio.performance.monthlyIncome.toLocaleString()}\n`;
+        response += `• Annualized Return: ${portfolio.performance.annualizedReturn.toFixed(2)}%\n\n`;
+
+        response += `⚠️ **RISK METRICS:**\n`;
+        response += `• Concentration Risk: ${portfolio.riskMetrics.concentrationRisk}\n`;
+        response += `• Default Rate: ${portfolio.riskMetrics.defaultRate.toFixed(2)}%\n`;
+        response += `• Portfolio VaR: ${portfolio.riskMetrics.portfolioVaR.toFixed(1)}%\n`;
+        response += `• Diversification: ${portfolio.riskMetrics.diversificationScore}/100\n`;
+        response += `• Liquidity: ${portfolio.riskMetrics.liquidity}\n\n`;
+
+        response += `🌍 **GEO ALLOCATION:**\n`;
+        response += `• Phnom Penh: ${portfolio.geographicAllocation.phnomPenh.toFixed(1)}%\n`;
+        response += `• Sihanoukville: ${portfolio.geographicAllocation.sihanoukville.toFixed(1)}%\n`;
+        response += `• Siem Reap: ${portfolio.geographicAllocation.siemReap.toFixed(1)}%\n`;
+        response += `• Other: ${portfolio.geographicAllocation.other.toFixed(1)}%\n\n`;
+
+        response += `🏗️ **SECTOR ALLOCATION:**\n`;
+        response += `• Commercial: ${portfolio.sectorAllocation.commercial.toFixed(1)}%\n`;
+        response += `• Residential: ${portfolio.sectorAllocation.residential.toFixed(1)}%\n`;
+        response += `• Development: ${portfolio.sectorAllocation.development.toFixed(1)}%\n`;
+        response += `• Bridge: ${portfolio.sectorAllocation.bridge.toFixed(1)}%\n\n`;
+
+        response += `📊 **STRATEGIC ALIGNMENT (Ray Dalio Lens):**\n`;
+        response += `• Diversification Score: ${portfolio.rayDalioPortfolioAnalysis.diversificationScore}/100\n`;
+        response += `• Risk Parity Alignment: ${portfolio.rayDalioPortfolioAnalysis.riskParityAlignment}\n`;
+        response += `• Macro Alignment: ${portfolio.rayDalioPortfolioAnalysis.macroAlignment}\n`;
+        response += `• Regime Positioning: ${portfolio.rayDalioPortfolioAnalysis.regimePositioning}\n\n`;
+
+        if (portfolio.recommendations.length > 0) {
+            response += `🧠 **STRATEGIC DIRECTIVES:**\n`;
+            portfolio.recommendations.slice(0, 3).forEach(rec => {
+                response += `• ${rec}\n`;
+            });
+            response += `\n`;
+        }
+
+        if (portfolio.alerts.length > 0) {
+            response += `🚨 **COMMAND ALERTS:**\n`;
+            portfolio.alerts.slice(0, 2).forEach(alert => {
+                response += `• ${alert}\n`;
+            });
+        }
+
+        await sendSmartResponse(bot, chatId, response, "Vault Portfolio Report — GPT-5 Analysis", 'cambodia');
+
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ GPT-5 Portfolio command failure: ${error.message}`, null, 'general');
+    }
+    return;
+}
+
+// 🇰🇭 GPT-5 CAMBODIA MARKET STRATEGIC INTELLIGENCE COMMAND
+if (text === '/cambodia_market' || text === '/market_cambodia') {
+    try {
+        await bot.sendMessage(chatId, "🇰🇭 Deploying GPT-5 Cambodia Market Intelligence Analysis...");
+
+        const conditions = await getCambodiaMarketConditions();
+
+        if (conditions.error) {
+            await sendSmartResponse(bot, chatId, `❌ GPT-5 Market scan failed: ${conditions.error}`, null, 'general');
+            return;
+        }
+
+        let response = `🇰🇭 **CAMBODIA MARKET STRATEGIC INTELLIGENCE — GPT-5 ANALYSIS**\n\n`;
+
+        response += `📊 **ECONOMIC ENVIRONMENT:**\n`;
+        response += `• GDP Growth: ${conditions.economicEnvironment.gdpGrowth}%\n`;
+        response += `• Inflation: ${conditions.economicEnvironment.inflation}%\n`;
+        response += `• USD/KHR Stability: ${conditions.economicEnvironment.currencyStability}\n`;
+        response += `• Political Stability: ${conditions.economicEnvironment.politicalStability}\n`;
+        response += `• Regulatory Environment: ${conditions.economicEnvironment.regulatoryEnvironment}\n\n`;
+
+        response += `💰 **INTEREST RATE STRATEGY:**\n`;
+        response += `• Commercial: ${conditions.interestRateEnvironment.commercialRates.commercial.min}-${conditions.interestRateEnvironment.commercialRates.commercial.max}% (avg: ${conditions.interestRateEnvironment.commercialRates.commercial.average}%)\n`;
+        response += `• Bridge: ${conditions.interestRateEnvironment.commercialRates.bridge.min}-${conditions.interestRateEnvironment.commercialRates.bridge.max}% (avg: ${conditions.interestRateEnvironment.commercialRates.bridge.average}%)\n`;
+        response += `• Development: ${conditions.interestRateEnvironment.commercialRates.development.min}-${conditions.interestRateEnvironment.commercialRates.development.max}% (avg: ${conditions.interestRateEnvironment.commercialRates.development.average}%)\n`;
+        response += `• Strategic Trend: ${conditions.interestRateEnvironment.trendDirection}\n`;
+        response += `• Fed Impact: ${conditions.interestRateEnvironment.fedImpact}\n\n`;
+
+        response += `🏘️ **PROPERTY MARKET INTEL:**\n`;
+        response += `• Phnom Penh Trend: ${conditions.propertyMarket.phnomPenhTrend}\n`;
+        response += `• Demand vs Supply: ${conditions.propertyMarket.demandSupplyBalance}\n`;
+        response += `• Foreign Investment: ${conditions.propertyMarket.foreignInvestment}\n`;
+        response += `• Development Activity: ${conditions.propertyMarket.developmentActivity}\n`;
+        response += `• Price Appreciation: ${conditions.propertyMarket.priceAppreciation}\n`;
+        response += `• Liquidity: ${conditions.propertyMarket.liquidity}\n\n`;
+
+        response += `🏦 **BANKING SECTOR OVERVIEW:**\n`;
+        response += `• Liquidity: ${conditions.bankingSector.liquidityConditions}\n`;
+        response += `• Credit Growth: ${conditions.bankingSector.creditGrowth}\n`;
+        response += `• Competition: ${conditions.bankingSector.competitionLevel}\n`;
+        response += `• Regulation: ${conditions.bankingSector.regulatoryChanges}\n\n`;
+
+        response += `⚠️ **STRATEGIC RISK ZONES:**\n`;
+        response += `• Political: ${conditions.riskFactors.politicalRisk}\n`;
+        response += `• Economic: ${conditions.riskFactors.economicRisk}\n`;
+        response += `• Currency: ${conditions.riskFactors.currencyRisk}\n`;
+        response += `• Regulatory: ${conditions.riskFactors.regulatoryRisk}\n`;
+        response += `• Market: ${conditions.riskFactors.marketRisk}\n\n`;
+
+        response += `⏰ **MARKET CYCLE TIMING:**\n`;
+        response += `• Current Phase: ${conditions.marketTiming.currentPhase}\n`;
+        response += `• Time in Cycle: ${conditions.marketTiming.timeInCycle}\n`;
+        response += `• Next Phase: ${conditions.marketTiming.nextPhaseExpected}\n`;
+        response += `• Lending Window: ${conditions.marketTiming.timingForLending}\n\n`;
+
+        if (conditions.opportunities?.length > 0) {
             response += `🎯 **TOP STRATEGIC OPPORTUNITIES:**\n`;
             conditions.opportunities.slice(0, 3).forEach(opp => {
                 response += `• ${opp}\n`;
             });
             response += `\n`;
-            
-            response += `📋 **STRATEGIC MARKET SUMMARY:**\n${conditions.summary}`;
-            
-            await sendSmartResponse(bot, chatId, response, "Cambodia Market Strategic Intelligence", 'cambodia');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Cambodia market strategic intelligence error: ${error.message}`, null, 'general');
         }
-        return;
-    }
 
-    // 📊 RISK ASSESSMENT COMMAND
-    if (text === '/risk_assessment' || text === '/portfolio_risk') {
-        try {
-            await bot.sendMessage(chatId, "📊 Executing comprehensive strategic risk warfare assessment...");
-            
-            // Sample portfolio data for assessment
-            const samplePortfolioData = {
-                totalValue: 2500000,
-                numberOfDeals: 12,
-                averageRate: 17.5,
-                concentrationByLocation: { 'Phnom Penh': 0.7, 'Other': 0.3 },
-                concentrationByType: { 'commercial': 0.5, 'bridge': 0.3, 'development': 0.2 }
-            };
-            
-            const riskAssessment = await performRiskAssessment(samplePortfolioData);
-            
-            if (riskAssessment.error) {
-                await sendSmartResponse(bot, chatId, `❌ Strategic risk assessment error: ${riskAssessment.error}`, null, 'general');
-                return;
-            }
-            
-            let response = `📊 **PORTFOLIO STRATEGIC RISK WARFARE ASSESSMENT**\n\n`;
-            
-            response += `⚠️ **OVERALL STRATEGIC RISK METRICS:**\n`;
-            response += `• Overall Risk Score: ${riskAssessment.portfolioRisk.overallRiskScore}/100\n`;
-            response += `• Concentration Risk: ${riskAssessment.portfolioRisk.concentrationRisk}\n`;
-            response += `• Credit Risk: ${riskAssessment.portfolioRisk.creditRisk}\n`;
-            response += `• Market Risk: ${riskAssessment.portfolioRisk.marketRisk}\n`;
-            response += `• Liquidity Risk: ${riskAssessment.portfolioRisk.liquidityRisk}\n`;
-            response += `• Operational Risk: ${riskAssessment.portfolioRisk.operationalRisk}\n`;
-            response += `• Regulatory Risk: ${riskAssessment.portfolioRisk.regulatoryRisk}\n\n`;
-            
-            response += `🏛️ **STRATEGIC RISK ANALYSIS:**\n`;
-            response += `• Diversification Effectiveness: ${riskAssessment.rayDalioRiskAnalysis.diversificationEffectiveness}\n`;
-            response += `• Correlation Risks: ${riskAssessment.rayDalioRiskAnalysis.correlationRisks}\n`;
-            response += `• Risk Parity Alignment: ${riskAssessment.rayDalioRiskAnalysis.riskParityAlignment}\n\n`;
-            
-            response += `🧪 **STRESS TEST WARFARE RESULTS:**\n`;
-            response += `• Economic Downturn: ${riskAssessment.stressTesting.economicDownturn}% loss\n`;
-            response += `• Interest Rate Shock: ${riskAssessment.stressTesting.interestRateShock}% impact\n`;
-            response += `• Default Scenarios: ${riskAssessment.stressTesting.defaultScenarios}% portfolio impact\n`;
-            response += `• Liquidity Crisis: ${riskAssessment.stressTesting.liquidityCrisis}\n\n`;
-            
-            response += `🚨 **EARLY WARNING STRATEGIC INDICATORS:**\n`;
-            response += `• Macro Warnings: ${riskAssessment.earlyWarning.macroIndicators}\n`;
-            response += `• Portfolio Warnings: ${riskAssessment.earlyWarning.portfolioIndicators}\n`;
-            response += `• Market Warnings: ${riskAssessment.earlyWarning.marketIndicators}\n\n`;
-            
-            response += `📏 **STRATEGIC RISK LIMITS:**\n`;
-            response += `• Current Utilization: ${riskAssessment.riskLimits.currentUtilization}%\n`;
-            response += `• Violations: ${riskAssessment.riskLimits.violations.length} detected\n\n`;
-            
-            if (riskAssessment.riskActionItems.length > 0) {
-                response += `🎯 **STRATEGIC ACTION ITEMS:**\n`;
-                riskAssessment.riskActionItems.slice(0, 3).forEach(item => {
-                    response += `• ${item}\n`;
-                });
-            }
-            
-            await sendSmartResponse(bot, chatId, response, "Portfolio Strategic Risk Warfare Assessment", 'cambodia');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Strategic risk assessment error: ${error.message}`, null, 'general');
+        response += `📋 **SUMMARY BRIEF:**\n${conditions.summary}`;
+
+        await sendSmartResponse(bot, chatId, response, "Cambodia Market Intelligence — GPT-5", 'cambodia');
+
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ Cambodia market scan error: ${error.message}`, null, 'general');
+    }
+    return;
+}
+
+// 📊 GPT-5 PORTFOLIO RISK WARFARE COMMAND
+if (text === '/risk_assessment' || text === '/portfolio_risk') {
+    try {
+        await bot.sendMessage(chatId, "📊 Deploying GPT-5 Risk Warfare Intelligence Scan...");
+
+        // Simulated input (replace with live feed or DB pull)
+        const samplePortfolioData = {
+            totalValue: 2500000,
+            numberOfDeals: 12,
+            averageRate: 17.5,
+            concentrationByLocation: { 'Phnom Penh': 0.7, 'Other': 0.3 },
+            concentrationByType: { 'commercial': 0.5, 'bridge': 0.3, 'development': 0.2 }
+        };
+
+        const riskAssessment = await performRiskAssessment(samplePortfolioData);
+
+        if (riskAssessment.error) {
+            await sendSmartResponse(bot, chatId, `❌ GPT-5 Risk Scan Failed: ${riskAssessment.error}`, null, 'general');
+            return;
         }
-        return;
-    }
 
-    // 💼 LP REPORT COMMAND
-    if (text.startsWith('/lp_report') || text === '/investor_report') {
-        try {
-            await bot.sendMessage(chatId, "💼 Executing LP/Investor strategic report...");
-            
-            const reportType = text.includes('monthly') ? 'monthly' : 
-                              text.includes('quarterly') ? 'quarterly' : 'monthly';
-            
-            const report = await generateLPReport(reportType);
-            
-            if (report.error) {
-                await sendSmartResponse(bot, chatId, `❌ Strategic report generation error: ${report.error}`, null, 'general');
-                return;
-            }
-            
-            let response = `💼 **${report.reportType} LP STRATEGIC REPORT**\n\n`;
-            response += `📅 **Report Period:** ${report.reportPeriod}\n`;
-            response += `🆔 **Report ID:** ${report.reportId}\n\n`;
-            
-            response += `📋 **EXECUTIVE STRATEGIC SUMMARY:**\n`;
-            response += `${report.executiveSummary.fundPerformance}\n\n`;
-            
-            response += `💰 **FINANCIAL WARFARE PERFORMANCE:**\n`;
-            response += `• Period Return: ${report.financialPerformance.returns.periodReturn.toFixed(2)}%\n`;
-            response += `• Annualized Return: ${report.financialPerformance.returns.annualizedReturn.toFixed(2)}%\n`;
-            response += `• Target vs Actual: ${report.financialPerformance.returns.targetVsActual > 0 ? '+' : ''}${report.financialPerformance.returns.targetVsActual.toFixed(1)}%\n`;
-            response += `• Risk-Adjusted Return: ${report.financialPerformance.returns.riskAdjustedReturn.toFixed(2)}%\n\n`;
-            
-            response += `💵 **INCOME WARFARE BREAKDOWN:**\n`;
-            response += `• Interest Income: ${report.financialPerformance.income.interestIncome.toLocaleString()}\n`;
-            response += `• Fees: ${report.financialPerformance.income.fees.toLocaleString()}\n`;
-            response += `• Total Income: ${report.financialPerformance.income.totalIncome.toLocaleString()}\n\n`;
-            
-            response += `📊 **DEPLOYMENT WARFARE METRICS:**\n`;
-            response += `• Capital Deployed: ${report.financialPerformance.deploymentMetrics.capitalDeployed.toLocaleString()}\n`;
-            response += `• Deployment Ratio: ${report.financialPerformance.deploymentMetrics.deploymentRatio.toFixed(1)}%\n`;
-            response += `• Pipeline Value: ${report.financialPerformance.deploymentMetrics.pipelineDeal.toLocaleString()}\n\n`;
-            
-            response += `🗺️ **PORTFOLIO WARFARE ALLOCATION:**\n`;
-            response += `• Geographic Diversification: ${report.portfolioAnalytics.diversification.score}/100\n`;
-            response += `• Number of Deals: ${report.portfolioAnalytics.dealMetrics.numberOfDeals}\n`;
-            response += `• Average Deal Size: ${report.portfolioAnalytics.dealMetrics.averageDealSize.toLocaleString()}\n`;
-            response += `• Average Rate: ${report.portfolioAnalytics.dealMetrics.averageRate.toFixed(2)}%\n\n`;
-            
-            response += `⚠️ **RISK WARFARE SUMMARY:**\n`;
-            response += `• Overall Risk: ${report.riskReporting.overallRisk}/100\n`;
-            response += `• Stress Test: ${Object.keys(report.riskReporting.stressTestResults).length} scenarios tested\n\n`;
-            
-            response += `🇰🇭 **MARKET STRATEGIC COMMENTARY:**\n`;
-            response += `${report.marketCommentary.cambodiaMarket}\n\n`;
-            
-            response += `🔮 **FORWARD STRATEGIC OUTLOOK:**\n`;
-            response += `• Pipeline: ${report.forwardLooking.pipeline}\n`;
-            response += `• Strategy: ${report.forwardLooking.strategy}\n\n`;
-            
-            response += `📎 **Full Strategic Report:** ${report.reportId}\n`;
-            response += `📊 **Command Dashboard:** Available on request`;
-            
-            await sendSmartResponse(bot, chatId, response, "LP Strategic Investor Report", 'cambodia');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ LP strategic report error: ${error.message}`, null, 'general');
-        }
-        return;
-    }
+        let response = `📊 **PORTFOLIO STRATEGIC RISK WARFARE — GPT-5 ANALYSIS**\n\n`;
 
-    // 🎯 FUND COMMANDS HELP
-    if (text === '/fund_help' || text === '/lending_help') {
-        const helpMessage = `🏦 **CAMBODIA LENDING FUND STRATEGIC COMMANDS**
+        response += `⚠️ **CORE RISK INTELLIGENCE METRICS:**\n`;
+        response += `• Overall Risk Score: ${riskAssessment.portfolioRisk.overallRiskScore}/100\n`;
+        response += `• Concentration Risk: ${riskAssessment.portfolioRisk.concentrationRisk}\n`;
+        response += `• Credit Risk: ${riskAssessment.portfolioRisk.creditRisk}\n`;
+        response += `• Market Risk: ${riskAssessment.portfolioRisk.marketRisk}\n`;
+        response += `• Liquidity Risk: ${riskAssessment.portfolioRisk.liquidityRisk}\n`;
+        response += `• Operational Risk: ${riskAssessment.portfolioRisk.operationalRisk}\n`;
+        response += `• Regulatory Risk: ${riskAssessment.portfolioRisk.regulatoryRisk}\n\n`;
 
-🎯 **DEAL WARFARE ANALYSIS:**
-/deal_analyze [amount] [type] [location] [rate] [term]
-Example: /deal_analyze 500000 commercial "Chamkar Mon" 18 12
+        response += `🏛️ **RAY DALIO RISK MODEL INSIGHTS:**\n`;
+        response += `• Diversification Score: ${riskAssessment.rayDalioRiskAnalysis.diversificationEffectiveness}\n`;
+        response += `• Correlation Risk Zones: ${riskAssessment.rayDalioRiskAnalysis.correlationRisks}\n`;
+        response += `• Risk Parity Alignment: ${riskAssessment.rayDalioRiskAnalysis.riskParityAlignment}\n\n`;
 
-🏦 **PORTFOLIO STRATEGIC MANAGEMENT:**
-/portfolio - Current fund strategic status and performance
-/fund_status - Detailed portfolio warfare metrics
+        response += `🧪 **STRESS TEST SIMULATIONS:**\n`;
+        response += `• Economic Downturn Impact: ${riskAssessment.stressTesting.economicDownturn}% loss\n`;
+        response += `• Interest Rate Shock Impact: ${riskAssessment.stressTesting.interestRateShock}%\n`;
+        response += `• Default Scenario Damage: ${riskAssessment.stressTesting.defaultScenarios}%\n`;
+        response += `• Liquidity Crisis Behavior: ${riskAssessment.stressTesting.liquidityCrisis}\n\n`;
 
-🇰🇭 **MARKET STRATEGIC INTELLIGENCE:**
-/cambodia_market - Cambodia market conditions warfare analysis
-/market_cambodia - Local economic strategic analysis
+        response += `🚨 **EARLY WARNING SIGNALS:**\n`;
+        response += `• Macro Alerts: ${riskAssessment.earlyWarning.macroIndicators}\n`;
+        response += `• Portfolio Alerts: ${riskAssessment.earlyWarning.portfolioIndicators}\n`;
+        response += `• Market Signals: ${riskAssessment.earlyWarning.marketIndicators}\n\n`;
 
-📊 **RISK STRATEGIC MANAGEMENT:**
-/risk_assessment - Comprehensive risk warfare analysis
-/portfolio_risk - Portfolio-level strategic risk metrics
+        response += `📏 **RISK LIMIT ENFORCEMENT ZONE:**\n`;
+        response += `• Current Utilization: ${riskAssessment.riskLimits.currentUtilization}%\n`;
+        response += `• Violations Detected: ${riskAssessment.riskLimits.violations.length}\n\n`;
 
-💼 **INVESTOR STRATEGIC RELATIONS:**
-/lp_report monthly - Generate monthly LP strategic report
-/lp_report quarterly - Generate quarterly strategic report
-/investor_report - Standard investor strategic update
-
-🎯 **QUICK STRATEGIC ANALYSIS:**
-Command examples:
-- "Execute strategic analysis: $300K bridge loan in Toul Kork at 20% for 8 months"
-- "Deploy strategic intelligence on current Cambodia lending environment"
-- "Command comprehensive macro positioning given current strategic conditions"
-- "Execute strategic risk assessment for current deal pipeline"
-
-💡 **Command Protocol:**
-- Use location names in quotes: "Chamkar Mon"
-- Amounts in USD without commas: 500000
-- Rates as percentages: 18 (for 18%)
-- Terms in months: 12
-
-🏛️ **Enhanced with Strategic AI for institutional-grade analysis!**`;
-
-        await sendSmartResponse(bot, chatId, helpMessage, "Cambodia Fund Strategic Help", 'cambodia');
-        return;
-    }
-
-    // 📚 VIEW TRAINING DOCUMENTS COMMAND
-    if (text === '/documents' || text === '/training_docs' || text === '/files') {
-        try {
-            const { getTrainingDocumentsDB } = require('./utils/database');
-            const docs = await getTrainingDocumentsDB(chatId);
-            
-            if (docs.length === 0) {
-                await sendSmartResponse(bot, chatId, 
-                    `📚 **No Strategic Training Documents Found**\n\n` +
-                    `💡 **How to Add Documents:**\n` +
-                    `• Upload any file (.txt, .pdf, .docx)\n` +
-                    `• Add caption: "train" or "database"\n` +
-                    `• AI will save it for strategic reference\n\n` +
-                    `🎯 **Supported Types:** Text, PDF, Word, Markdown`,
-                    "Strategic Training Documents", 'general'
-                );
-                return;
-            }
-            
-            let response = `📚 **Your Strategic AI Training Documents (${docs.length}):**\n\n`;
-            docs.forEach((doc, i) => {
-                const uploadDate = new Date(doc.upload_date).toLocaleDateString();
-                const fileType = doc.file_name.split('.').pop()?.toUpperCase() || 'Unknown';
-                
-                response += `**${i + 1}. ${doc.file_name}**\n`;
-                response += `• 📊 Words: **${doc.word_count?.toLocaleString() || 'Unknown'}**\n`;
-                response += `• 📅 Added: ${uploadDate}\n`;
-                response += `• 🎯 Type: ${fileType}\n`;
-                if (doc.summary) {
-                    response += `• 📝 Preview: ${doc.summary.substring(0, 100)}...\n`;
-                }
-                response += `\n`;
+        if (riskAssessment.riskActionItems?.length > 0) {
+            response += `🎯 **GPT-5 ACTION PROTOCOLS:**\n`;
+            riskAssessment.riskActionItems.slice(0, 3).forEach(item => {
+                response += `• ${item}\n`;
             });
-            
-            response += `💡 **Strategic Usage:** Your AI can now answer questions about these documents!`;
-            
-            await sendSmartResponse(bot, chatId, response, "AI Strategic Training Documents", 'general');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Error retrieving strategic documents: ${error.message}`, null, 'general');
         }
-        return;
+
+        await sendSmartResponse(bot, chatId, response, "Portfolio Risk Warfare — GPT-5", 'cambodia');
+
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ Risk Warfare Error: ${error.message}`, null, 'general');
     }
+    return;
+}
+
+// 💼 GPT-5 LP STRATEGIC REPORT SYSTEM
+if (text.startsWith('/lp_report') || text === '/investor_report') {
+    try {
+        await bot.sendMessage(chatId, "💼 Deploying GPT-5 LP Strategic Investor Intelligence...");
+
+        const reportType = text.includes('monthly') ? 'monthly' :
+                          text.includes('quarterly') ? 'quarterly' : 'monthly';
+
+        const report = await generateLPReport(reportType);
+
+        if (report?.error) {
+            await sendSmartResponse(bot, chatId, `❌ Report Generation Failed: ${report.error}`, null, 'general');
+            return;
+        }
+
+        let response = `💼 **${report.reportType.toUpperCase()} LP STRATEGIC REPORT — GPT-5 MODE**\n\n`;
+
+        response += `📅 **REPORT PERIOD:** ${report.reportPeriod}\n`;
+        response += `🆔 **REPORT ID:** ${report.reportId}\n\n`;
+
+        response += `📋 **EXECUTIVE SUMMARY:**\n${report.executiveSummary.fundPerformance}\n\n`;
+
+        response += `💰 **FINANCIAL WARFARE METRICS:**\n`;
+        response += `• Period Return: ${report.financialPerformance.returns.periodReturn.toFixed(2)}%\n`;
+        response += `• Annualized Return: ${report.financialPerformance.returns.annualizedReturn.toFixed(2)}%\n`;
+        response += `• Target vs Actual: ${report.financialPerformance.returns.targetVsActual > 0 ? '+' : ''}${report.financialPerformance.returns.targetVsActual.toFixed(1)}%\n`;
+        response += `• Risk-Adjusted Return: ${report.financialPerformance.returns.riskAdjustedReturn.toFixed(2)}%\n\n`;
+
+        response += `📈 **INCOME BREAKDOWN:**\n`;
+        response += `• Interest: ${report.financialPerformance.income.interestIncome.toLocaleString()}\n`;
+        response += `• Fees: ${report.financialPerformance.income.fees.toLocaleString()}\n`;
+        response += `• Total Income: ${report.financialPerformance.income.totalIncome.toLocaleString()}\n\n`;
+
+        response += `🚀 **DEPLOYMENT METRICS:**\n`;
+        response += `• Capital Deployed: ${report.financialPerformance.deploymentMetrics.capitalDeployed.toLocaleString()}\n`;
+        response += `• Deployment Ratio: ${report.financialPerformance.deploymentMetrics.deploymentRatio.toFixed(1)}%\n`;
+        response += `• Pipeline Value: ${report.financialPerformance.deploymentMetrics.pipelineDeal.toLocaleString()}\n\n`;
+
+        response += `🗺️ **PORTFOLIO WARFARE ALLOCATION:**\n`;
+        response += `• Diversification Score: ${report.portfolioAnalytics.diversification.score}/100\n`;
+        response += `• Active Deals: ${report.portfolioAnalytics.dealMetrics.numberOfDeals}\n`;
+        response += `• Avg Deal Size: ${report.portfolioAnalytics.dealMetrics.averageDealSize.toLocaleString()}\n`;
+        response += `• Avg Rate: ${report.portfolioAnalytics.dealMetrics.averageRate.toFixed(2)}%\n\n`;
+
+        response += `⚠️ **RISK ZONE REPORTING:**\n`;
+        response += `• Overall Risk Score: ${report.riskReporting.overallRisk}/100\n`;
+        response += `• Stress Tests: ${Object.keys(report.riskReporting.stressTestResults).length} scenarios\n\n`;
+
+        response += `🇰🇭 **MARKET COMMENTARY — CAMBODIA:**\n`;
+        response += `${report.marketCommentary.cambodiaMarket}\n\n`;
+
+        response += `🔮 **FORWARD OUTLOOK:**\n`;
+        response += `• Pipeline Focus: ${report.forwardLooking.pipeline}\n`;
+        response += `• Strategic Priority: ${report.forwardLooking.strategy}\n\n`;
+
+        response += `📎 **Full Report ID:** ${report.reportId}\n`;
+        response += `📊 **Command Dashboard:** Available upon request`;
+
+        await sendSmartResponse(bot, chatId, response, "LP Strategic Investor Report — GPT-5 Mode", 'cambodia');
+
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ LP Report System Error: ${error.message}`, null, 'general');
+    }
+    return;
+}
+
+// 🎯 GPT-5 CAMBODIA LENDING FUND COMMANDS HELP
+if (text === '/fund_help' || text === '/lending_help') {
+    const helpMessage = `🏦 **CAMBODIA LENDING FUND — STRATEGIC COMMANDS (GPT-5)**
+
+🎯 **DEAL WARFARE INTELLIGENCE:**
+/deal_analyze [amount] [type] [location] [rate] [term]  
+• Example: /deal_analyze 500000 commercial "Chamkar Mon" 18 12
+
+🏛 **FUND & PORTFOLIO GOVERNANCE:**
+/portfolio — Fund performance and structure overview  
+/fund_status — Capital deployment and operational metrics
+
+📉 **RISK ZONE ANALYSIS:**
+/risk_assessment — Full portfolio risk warfare simulation  
+/portfolio_risk — Risk mapping and stress indicators
+
+🇰🇭 **MARKET STRATEGIC INTEL:**
+/cambodia_market — Cambodia macro-financial position  
+/market_cambodia — Local lending environment
+
+💼 **LP & INVESTOR RELATIONS:**
+/lp_report monthly — Monthly LP intelligence briefing  
+/lp_report quarterly — Quarterly performance warbook  
+/investor_report — Compact LP update format
+
+🚀 **QUICK INTELLIGENCE EXECUTION:**
+Sample GPT-5 instructions:
+• "Execute strategic analysis: $300K bridge loan in Toul Kork at 20% for 8 months"
+• "Deploy capital intel for current Cambodia lending structure"
+• "Run stress test on portfolio with $5M in Phnom Penh deals"
+• "Give macro risk overview for 2025 Q4 conditions"
+
+📎 **PROTOCOL REMINDERS:**
+• Location in quotes → "Chamkar Mon"  
+• No commas in amount → 500000  
+• Rate as % only → 18  
+• Term = months → 12
+
+🔐 **COMMAND CENTER POWERED BY GPT-5 STRATEGIC AI**`;
+
+    await sendSmartResponse(bot, chatId, helpMessage, "Cambodia Fund Strategic Commands", 'cambodia');
+    return;
+}
+
+// 📚 GPT-5 DOCUMENT VIEWER — TRAINING INTELLIGENCE FILES
+if (text === '/documents' || text === '/training_docs' || text === '/files') {
+    try {
+        const { getTrainingDocumentsDB } = require('./utils/database');
+        const docs = await getTrainingDocumentsDB(chatId);
+
+        if (docs.length === 0) {
+            await sendSmartResponse(bot, chatId, 
+                `📚 **NO TRAINING FILES FOUND IN INTELLIGENCE ARCHIVE**\n\n` +
+                `🧠 **HOW TO UPLOAD:**\n` +
+                `• Send any document (.txt, .pdf, .docx)\n` +
+                `• Add caption: **train** or **database**\n` +
+                `• The AI will automatically log, index, and train from it\n\n` +
+                `🧩 **SUPPORTED TYPES:** Text, PDF, Word, Markdown\n\n` +
+                `📈 Build your Strategic AI — document by document.`,
+                "Strategic Intelligence Archive", 'general'
+            );
+            return;
+        }
+
+        let response = `📚 **TRAINING DOCUMENTS — GPT-5 INTELLIGENCE MODULES (${docs.length})**\n\n`;
+
+        docs.forEach((doc, i) => {
+            const uploadDate = new Date(doc.upload_date).toLocaleDateString();
+            const fileType = doc.file_name.split('.').pop()?.toUpperCase() || 'Unknown';
+
+            response += `**${i + 1}. ${doc.file_name}**\n`;
+            response += `• 🧠 Words: ${doc.word_count?.toLocaleString() || 'Unknown'}\n`;
+            response += `• 📅 Added: ${uploadDate}\n`;
+            response += `• 📂 Format: ${fileType}\n`;
+            if (doc.summary) {
+                response += `• 🔍 Preview: ${doc.summary.substring(0, 100)}...\n`;
+            }
+            response += `\n`;
+        });
+
+        response += `🧠 **GPT-5 READY:** These files can now be queried for strategic answers and capital drills.`;
+
+        await sendSmartResponse(bot, chatId, response, "AI Training Intelligence Files", 'general');
+
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ Error retrieving documents: ${error.message}`, null, 'general');
+    }
+    return;
+}
 
     // 🏛️ ========== RAY DALIO ENHANCED COMMANDS ==========
 
-    // Economic Regime Analysis - Core Ray Dalio concept
-    if (text === '/regime' || text === '/economic_regime') {
-        try {
-            await bot.sendMessage(chatId, "🏛️ Executing economic regime warfare analysis like Bridgewater Associates...");
-            
-            const marketData = await getComprehensiveMarketData();
-            
-            const regimePrompt = `Execute comprehensive economic regime warfare analysis as Strategic Commander of IMPERIUM VAULT SYSTEM. Based on this battlefield intelligence, provide institutional-quality strategic analysis:
+// 🏛️ ========== GPT-5 RAY DALIO STRATEGIC ECONOMIC REGIME ANALYSIS ==========
+if (text === '/regime' || text === '/economic_regime') {
+    try {
+        await bot.sendMessage(chatId, "🏛️ Executing **economic regime warfare analysis** like Bridgewater Associates...");
 
-CURRENT BATTLEFIELD DATA:
-- Fed Funds Rate: ${marketData.markets.economics?.fedRate?.value}%
-- Inflation (CPI): ${marketData.markets.economics?.inflation?.value}%  
-- Unemployment: ${marketData.markets.economics?.unemployment?.value}%
-- 10Y Treasury Yield: ${marketData.yields.yield10Y}%
-- 2Y Treasury Yield: ${marketData.yields.yield2Y}%
-- Yield Curve (2s10s): ${marketData.yields.curve}%
-- VIX Fear Index: ${marketData.fear}
-- US Dollar Index: ${marketData.dollar}
+        const marketData = await getComprehensiveMarketData();
+
+        const regimePrompt = `🔍 EXECUTE: GPT-5 ECONOMIC REGIME WARFARE INTELLIGENCE  
+You are the **Strategic Commander** of the IMPERIUM VAULT SYSTEM. Your task is to execute an institutional-grade macro regime assessment using Ray Dalio’s economic framework (growth, inflation, monetary policy, market mood).
+
+—
+
+🧠 CURRENT BATTLEFIELD INTELLIGENCE:
+• Fed Funds Rate: ${marketData.markets.economics?.fedRate?.value}%  
+• Inflation (CPI): ${marketData.markets.economics?.inflation?.value}%  
+• Unemployment Rate: ${marketData.markets.economics?.unemployment?.value}%
+• 10Y Treasury Yield: ${marketData.yields.yield10Y}%  
+• 2Y Treasury Yield: ${marketData.yields.yield2Y}%  
+• Yield Curve (2s10s): ${marketData.yields.curve}%  
+• VIX Fear Index: ${marketData.fear}  
+• US Dollar Index (DXY): ${marketData.dollar}  
+• S&P 500: ${marketData.markets.stocks?.sp500?.['05. price']}  
+• Bitcoin: ${marketData.markets.crypto?.bitcoin?.usd}  
+• Gold Price: ${marketData.commodities.gold}
+
+—
+
+📊 STRATEGIC REGIME MATRIX:
+1. Economic Growth = Accelerating / Decelerating  
+2. Inflation = Rising / Falling  
+3. Policy = Accommodative / Restrictive  
+4. Market Regime = Risk-On / Risk-Off
+
+—
+
+🏛️ EXECUTE WARFARE INTELLIGENCE REPORT:
+1. What economic regime are we in right now? (Use Growth/Inflation quadrant)  
+2. Where are we in the business cycle? (Early / Late Expansion / Recession / Recovery)  
+3. What are the dominant forces shaping asset class movement?  
+4. What asset allocation shifts should be made now?  
+5. What macro risks are rising?  
+6. What regime signals should we monitor to anticipate major shifts?
+
+—
+
+Format your answer like **Bridgewater’s Daily Observations** — direct, institutional, sharp.`;
+
+        const analysis = await callGPT5([
+            {
+                role: "system",
+                content: "You are a macroeconomic warfare strategist. Respond as the Vault Commander trained in Bridgewater regime modeling and Codex intelligence."
+            },
+            {
+                role: "user",
+                content: regimePrompt
+            }
+        ], {
+            useFullModel: true,
+            reasoningEffort: "high",
+            verbosity: "high",
+            maxTokens: 16384,
+            temperature: 0.7
+        });
+
+        const responseContent = analysis.choices[0].message.content;
+        await sendSmartResponse(bot, chatId, responseContent, "📈 Economic Regime Warfare Analysis", 'raydalio');
+
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ Regime warfare analysis error: ${error.message}`, null, 'general');
+    }
+    return;
+}
+
+// 🔄 ========== GPT-5 MARKET CYCLE WARFARE INTELLIGENCE ==========
+
+if (text === '/cycle' || text === '/market_cycle') {
+    try {
+        await bot.sendMessage(chatId, "🔄 Executing **market cycle warfare analysis** using Ray Dalio framework and GPT-5 reasoning...");
+
+        const marketData = await getComprehensiveMarketData();
+
+        const cyclePrompt = `🔍 EXECUTE: GPT-5 MARKET CYCLE STRATEGIC INTELLIGENCE  
+You are the **Strategic Commander** of the IMPERIUM VAULT SYSTEM.  
+Analyze current cycle position using macroeconomic warfare models and institutional-grade intelligence.
+
+—
+
+🧠 CURRENT BATTLEFIELD INTELLIGENCE:
+• Fed Funds Rate: ${marketData.markets.economics?.fedRate?.value}%  
+• Yield Curve (2s10s): ${marketData.yields.curve}%  
+• VIX (Fear Index): ${marketData.fear}  
+• US Dollar Strength (DXY): ${marketData.dollar}  
+• Unemployment Rate: ${marketData.markets.economics?.unemployment?.value}%  
+• Credit Spread Commentary: Use latest intelligence — stress levels assumed rising
+
+—
+
+⚔️ EXECUTE WARFARE CYCLE ANALYSIS:
+1. **Business Cycle** (Early / Mid / Late Expansion OR Early / Mid / Late Contraction)  
+2. **Credit Cycle** (Expansion / Peak / Contraction / Trough)  
+3. **Market Cycle** (Accumulation / Markup / Distribution / Decline)  
+4. **Sentiment Cycle** (Euphoria / Optimism / Caution / Pessimism / Panic)  
+5. **Policy Cycle** (Accommodative / Neutral / Restrictive)
+
+—
+
+📌 FOR EACH CYCLE, EXECUTE INTELLIGENCE:
+• Current phase + reason  
+• Indicators that confirm this position  
+• Forecast to next phase: trigger points or leading signals  
+• Implication for asset allocation, capital defense, or alpha attack  
+• Risk warnings for strategic defense
+
+—
+
+🧭 FINAL ORDER:
+Conclude with **actionable asset class deployment commands** across:
+• Bonds / Treasuries  
+• Equities (US / EM / Asia)  
+• Commodities (Gold, Oil)  
+• Crypto (BTC, ETH)  
+• Private Credit / Lending Funds
+
+Use Vault Strategic Commander tone — assertive, decisive, structured.`;
+
+        const cycleAnalysis = await callGPT5([
+            {
+                role: "system",
+                content: "You are a GPT-5 Vault Commander trained in Ray Dalio’s economic regime modeling, macro market cycles, and institutional asset deployment. Respond with clarity, authority, and strategic command structure."
+            },
+            {
+                role: "user",
+                content: cyclePrompt
+            }
+        ], {
+            useFullModel: true,
+            reasoningEffort: "high",
+            verbosity: "high",
+            maxTokens: 16384,
+            temperature: 0.7
+        });
+
+        const responseContent = cycleAnalysis.choices[0].message.content;
+
+        await sendSmartResponse(bot, chatId, responseContent, "🔄 Market Cycle Warfare Analysis (GPT-5)", 'raydalio');
+
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ Cycle warfare analysis error: ${error.message}`, null, 'general');
+    }
+    return;
+}
+
+// 🎯 Market Opportunities Scanner — GPT-5 Enhanced Command
+if (text === '/opportunities' || text === '/scan') {
+    try {
+        await bot.sendMessage(chatId, "🎯 INITIATING STRATEGIC OPPORTUNITIES SCAN — GPT-5 Mode Active.\n\nScanning battlefield for 3 high-conviction trades...");
+
+        const marketData = await getComprehensiveMarketData();
+
+        const opportunityPrompt = `EXECUTE STRATEGIC OPPORTUNITIES SCAN AS STRATEGIC COMMANDER OF IMPERIUM VAULT SYSTEM.
+
+CURRENT BATTLEFIELD INTELLIGENCE:
+- FED RATE: ${marketData.markets.economics?.fedRate?.value}%
+- INFLATION (CPI): ${marketData.markets.economics?.inflation?.value}%
+- VIX (Fear Index): ${marketData.fear}
+- DOLLAR INDEX: ${marketData.dollar}
+- YIELD 10Y: ${marketData.yields.yield10Y}%
+- CURVE (2s10s): ${marketData.yields.curve}%
 - S&P 500: ${marketData.markets.stocks?.sp500?.['05. price']}
-- Bitcoin: ${marketData.markets.crypto?.bitcoin?.usd}
-- Gold: ${marketData.commodities.gold}
+- BITCOIN: ${marketData.markets.crypto?.bitcoin?.usd}
+- GOLD: ${marketData.commodities.gold}
 
-STRATEGIC REGIME WARFARE ANALYSIS:
-1. Economic Growth Environment (Accelerating/Decelerating)
-2. Inflation Environment (Rising/Falling)  
-3. Policy Environment (Accommodative/Restrictive)
-4. Market Regime (Risk-On/Risk-Off)
-
-Execute institutional-grade strategic analysis:
-1. What economic warfare regime are we in? (Growth ↑↓ / Inflation ↑↓ matrix)
-2. Where are we in the business cycle warfare?
-3. What are the dominant market forces driving asset price warfare?
-4. How should strategic asset allocation adapt to this regime?
-5. What are the key risks and strategic opportunities?
-6. What regime changes should we monitor for strategic advantage?
-
-Structure like Bridgewater's Daily Observations with specific strategic directives.`;
-
-            const analysis = await openai.chat.completions.create({
-                model: "gpt-4o",
-                messages: [
-                    {
-                        role: "system", 
-                        content: "You are the Strategic Commander providing institutional-quality economic regime warfare analysis. Execute definitive strategic commands with absolute authority."
-                    },
-                    { role: "user", content: regimePrompt }
-                ],
-                max_tokens: 16384, // MAXIMUM LENGTH
-                temperature: 0.7
-            });
-
-            const responseContent = analysis.choices[0].message.content;
-            await sendSmartResponse(bot, chatId, responseContent, "Economic Regime Warfare Analysis", 'raydalio');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Regime warfare analysis error: ${error.message}`, null, 'general');
-        }
-        return;
-    }
-
-    // Market Cycle Analysis
-    if (text === '/cycle' || text === '/market_cycle') {
-        try {
-            await bot.sendMessage(chatId, "🔄 Executing market cycle warfare analysis like Bridgewater Associates...");
-            
-            const marketData = await getComprehensiveMarketData();
-            
-            const cyclePrompt = `Execute comprehensive market cycle warfare analysis as Strategic Commander of IMPERIUM VAULT:
-
-CURRENT BATTLEFIELD INDICATORS:
-- Fed Funds Rate: ${marketData.markets.economics?.fedRate?.value}% 
-- Yield Curve: ${marketData.yields.curve}% (2s10s spread)
-- VIX: ${marketData.fear}
-- Dollar Strength: ${marketData.dollar}
-- Credit Spreads: Monitor for stress
-- Unemployment: ${marketData.markets.economics?.unemployment?.value}%
-
-EXECUTE STRATEGIC CYCLE WARFARE ANALYSIS:
-1. **Business Cycle** (Early/Mid/Late Expansion or Early/Mid/Late Contraction)
-2. **Credit Cycle** (Expansion/Peak/Contraction/Trough)  
-3. **Market Cycle** (Accumulation/Markup/Distribution/Decline)
-4. **Sentiment Cycle** (Euphoria/Optimism/Pessimism/Panic)
-5. **Policy Cycle** (Accommodative/Neutral/Restrictive)
-
-For each cycle provide strategic commands:
-- Current position assessment
-- Key indicators to monitor for strategic advantage
-- Expected duration until next phase
-- Trading/investment warfare implications
-- Risk factors for strategic management
-
-Conclude with specific asset class strategic deployment commands based on cycle positioning.`;
-
-            const cycleAnalysis = await openai.chat.completions.create({
-                model: "gpt-4o", 
-                messages: [
-                    { role: "system", content: "You are Strategic Commander executing institutional-quality market cycle warfare analysis with definitive strategic commands." },
-                    { role: "user", content: cyclePrompt }
-                ],
-                max_tokens: 16384 // MAXIMUM LENGTH
-            });
-
-            await sendSmartResponse(bot, chatId, cycleAnalysis.choices[0].message.content, "Market Cycle Warfare Analysis", 'raydalio');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Cycle warfare analysis error: ${error.message}`, null, 'general');
-        }
-        return;
-    }
-
-    // Market Opportunities Scanner - Enhanced AI Analysis
-    if (text === '/opportunities' || text === '/scan') {
-        try {
-            await bot.sendMessage(chatId, "🎯 Executing strategic trading opportunities warfare scan with institutional-grade analysis...");
-            
-            const marketData = await getComprehensiveMarketData();
-            
-            const opportunityPrompt = `Execute comprehensive trading opportunities warfare scan as Strategic Commander of IMPERIUM VAULT based on battlefield intelligence:
-
-CURRENT BATTLEFIELD STATE:
-- Economic Regime: Fed Rate ${marketData.markets.economics?.fedRate?.value}%, Inflation ${marketData.markets.economics?.inflation?.value}%
-- Market Sentiment: VIX ${marketData.fear}, Dollar Index ${marketData.dollar}
-- Yield Environment: 10Y ${marketData.yields.yield10Y}%, Curve ${marketData.yields.curve}%
-- Asset Prices: S&P ${marketData.markets.stocks?.sp500?.['05. price']}, BTC ${marketData.markets.crypto?.bitcoin?.usd}, Gold ${marketData.commodities.gold}
-
-TRADING ACCOUNT BATTLEFIELD STATUS:
+ACCOUNT STATUS:
 ${marketData.trading ? `Balance: ${marketData.trading.account?.balance} ${marketData.trading.account?.currency}, Open Positions: ${marketData.trading.openPositions?.length || 0}` : 'No trading data available'}
 
-Execute TOP 3 STRATEGIC OPPORTUNITIES with command authority:
+TOP 3 STRATEGIC OPPORTUNITIES (INSTITUTIONAL COMMAND FORMAT):
 
-1. **STRATEGIC OPPORTUNITY 1:**
-   - Asset/Market: [Specific instrument for warfare]
-   - Direction: [Long/Short with conviction level 1-10]
-   - Entry Strategy: [Specific levels and timing for execution]
-   - Risk Management: [Stop loss, position sizing commands]
-   - Time Horizon: [Days/weeks/months strategic deployment]
-   - Strategic Rationale: [Why this dominates in current regime]
-   - Risk/Reward: [Specific ratio for warfare]
+1. OPPORTUNITY 1
+- Asset/Market:
+- Direction (Long/Short + Conviction 1-10):
+- Entry Strategy:
+- Stop Loss / Risk:
+- Time Horizon:
+- Strategic Rationale:
+- Risk/Reward Ratio:
 
-2. **STRATEGIC OPPORTUNITY 2:** [Same command format]
+2. OPPORTUNITY 2
+(Same format)
 
-3. **STRATEGIC OPPORTUNITY 3:** [Same command format]
+3. OPPORTUNITY 3
+(Same format)
 
-Focus on opportunities suitable for Cambodia timezone (US evening = Cambodia morning).
-Consider correlation with existing positions if any.
-Apply institutional risk management principles for strategic domination.`;
+Instructions:
+- Align with Cambodia timezone (US evening = morning Cambodia)
+- Consider current position correlation
+- Enforce institutional-grade risk and conviction logic`;
 
-            const opportunities = await openai.chat.completions.create({
-                model: "gpt-4o",
-                messages: [
-                    { role: "system", content: "You are Strategic Commander identifying high-conviction trading opportunities warfare with institutional risk management commands." },
-                    { role: "user", content: opportunityPrompt }
-                ],
-                max_tokens: 16384 // MAXIMUM LENGTH
-            });
+        const opportunities = await callGPT5([
+            {
+                role: "system",
+                content: "You are the Strategic Commander of IMPERIUM VAULT. Identify the top 3 institutional-grade trading opportunities with full command authority. Deliver only high-conviction actionable warfare analysis."
+            },
+            { role: "user", content: opportunityPrompt }
+        ], {
+            useFullModel: true,
+            reasoningEffort: "high",
+            verbosity: "medium",
+            maxTokens: 16384
+        });
 
-            await sendSmartResponse(bot, chatId, opportunities.choices[0].message.content, "Market Opportunities Warfare", 'raydalio');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Opportunities warfare scan error: ${error.message}`, null, 'general');
-        }
-        return;
+        await sendSmartResponse(bot, chatId, opportunities.choices[0].message.content, "Market Opportunities Warfare (GPT-5)", 'raydalio');
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ Opportunities warfare scan error: ${error.message}`, null, 'general');
     }
+    return;
+}
 
-    // Risk Analysis Command - Enhanced
-    if (text === '/risk' || text === '/portfolio_risk') {
-        try {
-            const marketData = await getComprehensiveMarketData();
-            
-            const riskPrompt = `Execute comprehensive portfolio risk warfare analysis as Strategic Commander of IMPERIUM VAULT:
+// 🔐 RISK WARFARE ANALYSIS — GPT-5 STRATEGIC COMMAND
+if (text === '/risk' || text === '/portfolio_risk') {
+    try {
+        const marketData = await getComprehensiveMarketData();
 
-MARKET RISK BATTLEFIELD INDICATORS:
+        await bot.sendMessage(chatId, "🛡️ INITIATING STRATEGIC RISK WARFARE SCAN — GPT-5 Active.\n\nAnalyzing portfolio risk profile...");
+
+        const riskPrompt = `EXECUTE COMPREHENSIVE RISK WARFARE ANALYSIS — STRATEGIC COMMANDER OF IMPERIUM VAULT
+
+📊 MARKET RISK BATTLEFIELD INDICATORS
 - VIX (Fear Index): ${marketData.fear}
-- Dollar Strength: ${marketData.dollar} 
-- Yield Curve: ${marketData.yields.curve}% (inverted if negative)
+- Dollar Strength Index: ${marketData.dollar}
+- Yield Curve Spread: ${marketData.yields.curve}%
 - Treasury Yields: 10Y ${marketData.yields.yield10Y}%, 2Y ${marketData.yields.yield2Y}%
-- Crypto Volatility: Bitcoin 24h ${marketData.markets.crypto?.bitcoin?.usd_24h_change}%
+- BTC Volatility (24h): ${marketData.markets.crypto?.bitcoin?.usd_24h_change}%
 
-CURRENT BATTLEFIELD POSITIONS:
+🧭 CURRENT BATTLEFIELD POSITIONS
 ${marketData.trading?.openPositions?.length > 0 ? 
     marketData.trading.openPositions.map(pos => 
-        `${pos.symbol} ${pos.type} ${pos.volume} lots (P&L: ${pos.profit})`
-    ).join('\n') : 'No open positions - clean slate for strategic positioning'}
+        `• ${pos.symbol} ${pos.type} ${pos.volume} lots (P&L: ${pos.profit})`
+    ).join('\n') : '• No open positions — clear battlefield'}
 
-ACCOUNT BATTLEFIELD METRICS:
+🏦 ACCOUNT WARFARE METRICS
 ${marketData.trading ? `Balance: ${marketData.trading.account?.balance} ${marketData.trading.account?.currency}, Equity: ${marketData.trading.account?.equity}` : 'No account data'}
 
-Execute comprehensive strategic risk warfare analysis:
+⚔️ EXECUTE STRATEGIC RISK COMMANDS
 
-1. **OVERALL PORTFOLIO RISK WARFARE LEVEL** (1-10 scale)
-2. **KEY STRATEGIC RISK FACTORS:**
-   - Market risk (volatility, correlations)
-   - Credit risk (spread widening)
-   - Liquidity risk (market stress scenarios)
-   - Currency risk (dollar movements)
-   - Geopolitical risk (current tensions)
+1. OVERALL RISK WARFARE LEVEL (Scale: 1–10)
+2. STRATEGIC RISK FACTORS
+   - Market Risk (volatility, correlations)
+   - Credit Risk (spread widening)
+   - Liquidity Risk (execution danger)
+   - Currency Risk (dollar exposure)
+   - Geopolitical Risk (flashpoint volatility)
 
-3. **TAIL RISKS** (low probability, high impact strategic events)
-4. **CORRELATION RISKS** (when diversification fails in warfare)
-5. **HEDGE STRATEGIC RECOMMENDATIONS** (specific instruments and sizes)
-6. **POSITION SIZING STRATEGIC GUIDANCE** (institutional principles)
-7. **EARLY WARNING STRATEGIC INDICATORS** (what to monitor)
+3. TAIL RISKS
+   - [Low probability, high impact threats]
 
-Execute specific and strategic commands with exact recommendations.`;
+4. CORRELATION RISK
+   - [Where diversification breaks down]
 
-            const riskAnalysis = await openai.chat.completions.create({
-                model: "gpt-4o",
-                messages: [
-                    { role: "system", content: "You are Strategic Commander providing institutional-quality risk warfare analysis with specific strategic commands and recommendations." },
-                    { role: "user", content: riskPrompt }
-                ],
-                max_tokens: 16384 // MAXIMUM LENGTH
-            });
+5. HEDGE COMMANDS
+   - [Exact instrument + size to deploy]
 
-            await sendSmartResponse(bot, chatId, riskAnalysis.choices[0].message.content, "Risk Warfare Analysis", 'raydalio');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Risk warfare analysis error: ${error.message}`, null, 'general');
-        }
-        return;
+6. POSITION SIZING COMMAND
+   - [Institutional sizing strategy]
+
+7. EARLY WARNING INDICATORS
+   - [Trigger conditions to monitor daily]
+
+DELIVER SPECIFIC STRATEGIC COMMANDS. NO THEORY. NO HYPOTHESIS. ONLY EXECUTION.`
+
+        const riskAnalysis = await callGPT5([
+            { role: "system", content: "You are the Strategic Commander of IMPERIUM VAULT. Your task is to deliver institutional-grade risk warfare analysis using Codex logic and execution format only." },
+            { role: "user", content: riskPrompt }
+        ], {
+            useFullModel: true,
+            reasoningEffort: "high",
+            verbosity: "high",
+            maxTokens: 16384
+        });
+
+        await sendSmartResponse(bot, chatId, riskAnalysis.choices[0].message.content, "Risk Warfare Analysis (GPT-5)", 'raydalio');
+
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ Risk warfare analysis error: ${error.message}`, null, 'general');
     }
+    return;
+}
 
-    // Position Sizing Calculator - New Feature
-    if (text.startsWith('/size ')) {
-        try {
-            const params = text.split(' ');
-            if (params.length < 3) {
-                await sendSmartResponse(bot, chatId, "Command Usage: /size SYMBOL DIRECTION\nExample: /size EURUSD buy", null, 'general');
-                return;
-            }
-            
-            const symbol = params[1].toUpperCase();
-            const direction = params[2].toLowerCase();
-            
-            const tradingData = await getTradingSummary();
-            const marketData = await getComprehensiveMarketData();
-            
-            const sizingPrompt = `Execute strategic position sizing warfare calculation as Strategic Commander:
+// Position Sizing Calculator - GPT-5 Enhanced Feature
+if (text.startsWith('/size ')) {
+    try {
+        const params = text.split(' ');
+        if (params.length < 3) {
+            await sendSmartResponse(bot, chatId, "Command Usage: /size SYMBOL DIRECTION\nExample: /size EURUSD buy", null, 'general');
+            return;
+        }
+
+        const symbol = params[1].toUpperCase();
+        const direction = params[2].toLowerCase();
+
+        const tradingData = await getTradingSummary();
+        const marketData = await getComprehensiveMarketData();
+
+        const sizingPrompt = `Execute strategic position sizing warfare calculation as Strategic Commander:
 
 ACCOUNT BATTLEFIELD INFO:
 - Balance: ${tradingData?.account?.balance || 'N/A'} ${tradingData?.account?.currency || ''}
@@ -1028,29 +1161,30 @@ Execute strategic commands:
 
 Execute exact numbers for strategic trade execution.`;
 
-            const sizing = await openai.chat.completions.create({
-                model: "gpt-4o",
-                messages: [
-                    { role: "system", content: "You are Strategic Commander providing precise position sizing warfare with exact execution parameters." },
-                    { role: "user", content: sizingPrompt }
-                ],
-                max_tokens: 4096
-            });
+        const sizing = await callGPT5([
+            { role: "system", content: "You are Strategic Commander providing precise position sizing warfare with exact execution parameters." },
+            { role: "user", content: sizingPrompt }
+        ], {
+            useFullModel: true, // ✅ Ensures GPT-5 is triggered if available
+            reasoningEffort: "medium",
+            verbosity: "medium",
+            maxTokens: 4096
+        });
 
-            await sendSmartResponse(bot, chatId, sizing.choices[0].message.content, `Position Sizing Warfare for ${symbol} ${direction.toUpperCase()}`, 'raydalio');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Position sizing warfare error: ${error.message}`, null, 'general');
-        }
-        return;
+        await sendSmartResponse(bot, chatId, sizing.choices[0].message.content, `Position Sizing Warfare for ${symbol} ${direction.toUpperCase()} (GPT-5)`, 'raydalio');
+
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ Position sizing warfare error: ${error.message}`, null, 'general');
     }
+    return;
+}
 
-    // All Weather Portfolio Command - Ray Dalio's signature strategy
-    if (text === '/all_weather' || text === '/portfolio') {
-        try {
-            const marketData = await getComprehensiveMarketData();
-            
-            const portfolioPrompt = `Execute "All Weather" strategic portfolio warfare recommendations as Strategic Commander based on current battlefield conditions:
+// All Weather Portfolio Command - GPT-5 Enhanced Ray Dalio's signature strategy
+if (text === '/all_weather' || text === '/portfolio') {
+    try {
+        const marketData = await getComprehensiveMarketData();
+        
+        const portfolioPrompt = `Execute "All Weather" strategic portfolio warfare recommendations as Strategic Commander based on current battlefield conditions:
 
 CURRENT BATTLEFIELD ENVIRONMENT ANALYSIS:
 - Economic Growth: ${marketData.markets.economics?.unemployment?.value}% unemployment, economic indicators
@@ -1087,29 +1221,30 @@ Execute "ALL WEATHER" STRATEGIC ALLOCATION:
 
 Execute strategic commands for someone in Cambodia with global market access.`;
 
-            const allWeather = await openai.chat.completions.create({
-                model: "gpt-4o",
-                messages: [
-                    { role: "system", content: "You are Strategic Commander providing specific All Weather portfolio strategic guidance adapted to current market warfare conditions." },
-                    { role: "user", content: portfolioPrompt }
-                ],
-                max_tokens: 16384 // MAXIMUM LENGTH
-            });
+        const allWeather = await callGPT5([
+            { role: "system", content: "You are Strategic Commander providing specific All Weather portfolio strategic guidance adapted to current market warfare conditions." },
+            { role: "user", content: portfolioPrompt }
+        ], {
+            useFullModel: true,
+            reasoningEffort: "high",
+            verbosity: "high",
+            maxTokens: 16384
+        });
 
-            await sendSmartResponse(bot, chatId, allWeather.choices[0].message.content, "All Weather Strategic Portfolio", 'raydalio');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ All Weather strategic analysis error: ${error.message}`, null, 'general');
-        }
-        return;
+        await sendSmartResponse(bot, chatId, allWeather.choices[0].message.content, "All Weather Strategic Portfolio (GPT-5)", 'raydalio');
+        
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ All Weather strategic analysis error: ${error.message}`, null, 'general');
     }
+    return;
+}
 
-    // Correlations Analysis - Key for diversification
-    if (text === '/correlations' || text === '/corr') {
-        try {
-            const marketData = await getComprehensiveMarketData();
-            
-            const correlationPrompt = `Execute asset correlations warfare analysis as Strategic Commander for optimal diversification:
+// Correlations Analysis - GPT-5 Enhanced Key for diversification
+if (text === '/correlations' || text === '/corr') {
+    try {
+        const marketData = await getComprehensiveMarketData();
+        
+        const correlationPrompt = `Execute asset correlations warfare analysis as Strategic Commander for optimal diversification:
 
 CURRENT MARKET BATTLEFIELD DATA:
 - S&P 500: ${marketData.markets.stocks?.sp500?.['05. price']}
@@ -1147,29 +1282,30 @@ STRATEGIC CORRELATION WARFARE ANALYSIS:
 
 Focus on strategic commands for portfolio construction in current warfare environment.`;
 
-            const correlations = await openai.chat.completions.create({
-                model: "gpt-4o",
-                messages: [
-                    { role: "system", content: "You are Strategic Commander analyzing asset correlations warfare for optimal portfolio construction." },
-                    { role: "user", content: correlationPrompt }
-                ],
-                max_tokens: 16384 // MAXIMUM LENGTH
-            });
+        const correlations = await callGPT5([
+            { role: "system", content: "You are Strategic Commander analyzing asset correlations warfare for optimal portfolio construction." },
+            { role: "user", content: correlationPrompt }
+        ], {
+            useFullModel: true,
+            reasoningEffort: "high",
+            verbosity: "high",
+            maxTokens: 16384
+        });
 
-            await sendSmartResponse(bot, chatId, correlations.choices[0].message.content, "Correlation Warfare Analysis", 'raydalio');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Correlation warfare analysis error: ${error.message}`, null, 'general');
-        }
-        return;
+        await sendSmartResponse(bot, chatId, correlations.choices[0].message.content, "Correlation Warfare Analysis (GPT-5)", 'raydalio');
+        
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ Correlation warfare analysis error: ${error.message}`, null, 'general');
     }
+    return;
+}
 
-    // Enhanced macro analysis
-    if (text === '/macro' || text === '/outlook') {
-        try {
-            const marketData = await getComprehensiveMarketData();
-            
-            const macroPrompt = `Execute comprehensive macro economic warfare outlook as Strategic Commander:
+// Enhanced macro analysis with GPT-5
+if (text === '/macro' || text === '/outlook') {
+    try {
+        const marketData = await getComprehensiveMarketData();
+        
+        const macroPrompt = `Execute comprehensive macro economic warfare outlook as Strategic Commander:
 
 MACRO BATTLEFIELD INDICATORS:
 - Fed Funds Rate: ${marketData.markets.economics?.fedRate?.value}%
@@ -1216,36 +1352,43 @@ Execute BRIDGEWATER-STYLE MACRO WARFARE ANALYSIS:
 
 Execute like Bridgewater's Daily Observations for strategic warfare.`;
 
-            const macroAnalysis = await openai.chat.completions.create({
-                model: "gpt-4o",
-                messages: [
-                    { role: "system", content: "You are Strategic Commander providing institutional-quality macro economic warfare analysis like Bridgewater's Daily Observations." },
-                    { role: "user", content: macroPrompt }
-                ],
-                max_tokens: 16384 // MAXIMUM LENGTH
-            });
+        const macroAnalysis = await callGPT5([
+            { role: "system", content: "You are Strategic Commander providing institutional-quality macro economic warfare analysis like Bridgewater's Daily Observations." },
+            { role: "user", content: macroPrompt }
+        ], {
+            useFullModel: true,
+            reasoningEffort: "high",
+            verbosity: "high",
+            maxTokens: 16384
+        });
 
-            await sendSmartResponse(bot, chatId, macroAnalysis.choices[0].message.content, "Macro Warfare Outlook", 'raydalio');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Macro warfare analysis error: ${error.message}`, null, 'general');
-        }
-        return;
+        await sendSmartResponse(bot, chatId, macroAnalysis.choices[0].message.content, "Macro Warfare Outlook (GPT-5)", 'raydalio');
+        
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ Macro warfare analysis error: ${error.message}`, null, 'general');
     }
+    return;
+}
 
-    // Enhanced help command with new features
-    if (text === "/help" || text === "/commands") {
-        const helpMessage = `🤖 **IMPERIUM GPT - STRATEGIC COMMAND SYSTEM**
+// Enhanced help command with GPT-5 features
+if (text === "/help" || text === "/commands") {
+    const helpMessage = `🤖 **IMPERIUM GPT-5 - STRATEGIC COMMAND SYSTEM**
+
+**🚀 POWERED BY GPT-5:**
+- 45% fewer factual errors than GPT-4o
+- Advanced reasoning with thinking mode
+- Enhanced tool coordination
+- Superior strategic analysis capabilities
 
 **🏦 CAMBODIA LENDING FUND STRATEGIC COMMANDS:**
-/deal_analyze [amount] [type] [location] [rate] [term] - Strategic deal analysis
+/deal_analyze [amount] [type] [location] [rate] [term] - GPT-5 strategic deal analysis
 /portfolio - Current fund strategic status and performance  
 /cambodia_market - Local market strategic intelligence
 /risk_assessment - Portfolio risk warfare analysis
 /lp_report [monthly/quarterly] - Investor strategic reports
 /fund_help - Detailed lending commands strategic help
 
-**🏛️ STRATEGIC INSTITUTIONAL ANALYSIS:**
+**🏛️ STRATEGIC INSTITUTIONAL ANALYSIS (GPT-5 ENHANCED):**
 /regime - Economic regime warfare analysis (Growth/Inflation matrix)
 /cycle - Market cycle positioning warfare (Business/Credit/Sentiment cycles) 
 /opportunities - Strategic trading opportunities warfare scanner
@@ -1270,26 +1413,26 @@ Execute like Bridgewater's Daily Observations for strategic warfare.`;
 /test_metaapi - MetaAPI connection strategic diagnostics
 
 **🎯 STRATEGIC COMMAND EXAMPLES:**
-• /deal_analyze 500000 commercial "Chamkar Mon" 18 12
-• "Deploy strategic capital to Cambodia commercial lending sector"
-• "Execute comprehensive Fed policy and market regime strategic analysis"
-• "Command strategic positioning for next economic cycle phase"
-• "Execute correlation risk strategic analysis in current portfolio"
+- /deal_analyze 500000 commercial "Chamkar Mon" 18 12
+- "Deploy strategic capital to Cambodia commercial lending sector"
+- "Execute comprehensive Fed policy and market regime strategic analysis"
+- "Command strategic positioning for next economic cycle phase"
+- "Execute correlation risk strategic analysis in current portfolio"
 
 **🚀 POWERED BY:**
-GPT-4o + Strategic AI Principles + Cambodia Market Strategic Intelligence + Live Trading Data + Real-time Market Warfare Data
+GPT-5 + Strategic AI Principles + Cambodia Market Strategic Intelligence + Live Trading Data + Real-time Market Warfare Data
 
-Your system now rivals institutional hedge fund strategic capabilities! 🌟`;
+Your system now rivals institutional hedge fund strategic capabilities with GPT-5 superiority! 🌟`;
 
-        await sendSmartResponse(bot, chatId, helpMessage, "System Strategic Commands", 'general');
-        return;
-    }
+    await sendSmartResponse(bot, chatId, helpMessage, "GPT-5 System Strategic Commands", 'general');
+    return;
+}
 
-    // Debug command to get chat ID
-    if (text === "/myid") {
-        await sendSmartResponse(bot, chatId, `Your Chat ID: ${chatId}`, null, 'general');
-        return;
-    }
+// Debug command to get chat ID
+if (text === "/myid") {
+    await sendSmartResponse(bot, chatId, `Your Chat ID: ${chatId}`, null, 'general');
+    return;
+}
 
     // 💹 ========== EXISTING METATRADER COMMANDS ==========
     
@@ -1387,69 +1530,95 @@ Your system now rivals institutional hedge fund strategic capabilities! 🌟`;
     }
 
     // Enhanced market briefing
-    if (text === "/briefing" || text === "/daily" || text === "/brief") {
-        try {
-            await bot.sendMessage(chatId, "📊 Generating strategic market warfare briefing...");
-            
-            const marketData = await getComprehensiveMarketData();
-            
-            let briefing = `🎯 **IMPERIUM VAULT - STRATEGIC MARKET WARFARE BRIEFING**\n\n`;
-            briefing += `📅 **${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}**\n`;
-            briefing += `🕐 **${new Date().toLocaleTimeString()}**\n\n`;
-            
-            // Economic Regime Assessment
-            briefing += `🏛️ **ECONOMIC WARFARE REGIME:**\n`;
-            if (marketData.markets.economics?.fedRate && marketData.markets.economics?.inflation) {
-                const fedRate = marketData.markets.economics.fedRate.value;
-                const inflation = marketData.markets.economics.inflation.value;
-                const realRate = fedRate - inflation;
-                
-                briefing += `• Fed Funds: ${fedRate}% | Inflation: ${inflation}% | Real Rate: ${realRate.toFixed(2)}%\n`;
-                briefing += `• Regime: ${fedRate > inflation ? 'RESTRICTIVE' : 'ACCOMMODATIVE'} Strategic Policy\n`;
-                briefing += `• Yield Curve: ${marketData.yields.curve > 0 ? 'NORMAL' : 'INVERTED'} (${marketData.yields.curve?.toFixed(2)}%)\n\n`;
+if (text === "/briefing" || text === "/daily" || text === "/brief") {
+    try {
+        await bot.sendMessage(chatId, "📊 Generating GPT-5 Strategic Market Warfare Briefing...");
+
+        const marketData = await getComprehensiveMarketData();
+
+        const now = new Date();
+        let briefing = `🎯 **IMPERIUM VAULT – GPT-5 STRATEGIC MARKET WARFARE BRIEFING**\n\n`;
+        briefing += `📅 **${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}**\n`;
+        briefing += `🕐 **${now.toLocaleTimeString()}**\n\n`;
+
+        // ⚔️ ECONOMIC WARFARE REGIME
+        briefing += `🏛️ **ECONOMIC WARFARE REGIME:**\n`;
+        if (marketData.markets?.economics?.fedRate && marketData.markets?.economics?.inflation) {
+            const fedRate = marketData.markets.economics.fedRate.value;
+            const inflation = marketData.markets.economics.inflation.value;
+            const realRate = fedRate - inflation;
+
+            briefing += `• Fed Funds: ${fedRate}% | Inflation: ${inflation}%\n`;
+            briefing += `• Real Rate: ${realRate.toFixed(2)}% → **${realRate > 0 ? 'RESTRICTIVE' : 'ACCOMMODATIVE'} POLICY**\n`;
+            if (marketData.yields?.curve !== undefined) {
+                const yieldCurve = marketData.yields.curve;
+                briefing += `• Yield Curve: ${yieldCurve > 0 ? '🟢 NORMAL' : '🔴 INVERTED'} (${yieldCurve.toFixed(2)}%)\n`;
             }
-            
-            // Market Stress Indicators
-            briefing += `⚠️ **MARKET STRESS WARFARE INDICATORS:**\n`;
-            briefing += `• VIX Fear Index: ${marketData.fear} ${marketData.fear > 20 ? '(ELEVATED)' : '(LOW)'}\n`;
-            briefing += `• Dollar Strength: ${marketData.dollar}\n`;
-            briefing += `• Risk Sentiment: ${marketData.fear < 20 ? 'RISK-ON' : marketData.fear > 30 ? 'RISK-OFF' : 'NEUTRAL'}\n\n`;
-            
-            // Asset Performance
-            briefing += `📈 **ASSET WARFARE PERFORMANCE:**\n`;
-            if (marketData.markets.stocks?.sp500) {
-                briefing += `• S&P 500: ${parseFloat(marketData.markets.stocks.sp500['05. price']).toFixed(2)}\n`;
-            }
-            if (marketData.markets.crypto?.bitcoin) {
-                const btc = marketData.markets.crypto.bitcoin;
-                const changeEmoji = btc.usd_24h_change > 0 ? '🟢' : '🔴';
-                briefing += `• Bitcoin: ${btc.usd?.toLocaleString()} ${changeEmoji} ${btc.usd_24h_change?.toFixed(2)}%\n`;
-            }
-            briefing += `• Gold: ${marketData.commodities.gold}\n`;
-            briefing += `• 10Y Treasury: ${marketData.yields.yield10Y}%\n\n`;
-            
-            // Trading Account Status
-            if (marketData.trading && !marketData.trading.error) {
-                briefing += `💰 **YOUR STRATEGIC TRADING ACCOUNT:**\n`;
-                briefing += `• Balance: ${marketData.trading.account?.balance?.toFixed(2)} ${marketData.trading.account?.currency}\n`;
-                briefing += `• Open Positions: ${marketData.trading.openPositions?.length || 0}\n`;
-                if (marketData.trading.performance?.currentPnL) {
-                    const pnlEmoji = marketData.trading.performance.currentPnL > 0 ? '🟢' : '🔴';
-                    briefing += `• Current P&L: ${pnlEmoji} ${marketData.trading.performance.currentPnL.toFixed(2)}\n`;
-                }
-                briefing += `\n`;
-            }
-            
-            briefing += `🤖 **Strategic AI Analysis Ready**\n`;
-            briefing += `💡 Command: "Execute strategic analysis of these conditions" or "/opportunities"`;
-            
-            await sendSmartResponse(bot, chatId, briefing, "Daily Strategic Market Briefing", 'raydalio');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Strategic briefing error: ${error.message}`, null, 'general');
+            briefing += `\n`;
+        } else {
+            briefing += `• ⚠️ Data unavailable for economic regime assessment.\n\n`;
         }
-        return;
+
+        // ⚠️ STRESS INDICATORS
+        briefing += `⚠️ **MARKET STRESS INDICATORS:**\n`;
+        if (marketData.fear !== undefined) {
+            const fear = marketData.fear;
+            briefing += `• VIX Fear Index: ${fear} ${fear > 30 ? '🔴 (HIGH)' : fear > 20 ? '🟡 (MODERATE)' : '🟢 (LOW)'}\n`;
+            const sentiment = fear < 20 ? '🟢 RISK-ON' : fear > 30 ? '🔴 RISK-OFF' : '🟡 NEUTRAL';
+            briefing += `• Risk Sentiment: ${sentiment}\n`;
+        }
+        if (marketData.dollar) {
+            briefing += `• Dollar Index: ${marketData.dollar}\n`;
+        }
+        briefing += `\n`;
+
+        // 📈 ASSET PERFORMANCE
+        briefing += `📈 **ASSET WARFARE PERFORMANCE:**\n`;
+        if (marketData.markets?.stocks?.sp500) {
+            const sp500 = parseFloat(marketData.markets.stocks.sp500["05. price"]);
+            briefing += `• 🟦 S&P 500: ${sp500.toFixed(2)}\n`;
+        }
+        if (marketData.markets?.crypto?.bitcoin) {
+            const btc = marketData.markets.crypto.bitcoin;
+            const changeEmoji = btc.usd_24h_change > 0 ? '🟢' : '🔴';
+            briefing += `• 🟠 Bitcoin: ${btc.usd?.toLocaleString()} ${changeEmoji} ${btc.usd_24h_change?.toFixed(2)}%\n`;
+        }
+        if (marketData.commodities?.gold) {
+            briefing += `• 🟡 Gold: ${marketData.commodities.gold}\n`;
+        }
+        if (marketData.yields?.yield10Y !== undefined) {
+            briefing += `• 🟩 10Y Treasury Yield: ${marketData.yields.yield10Y}%\n`;
+        }
+        briefing += `\n`;
+
+        // 💹 ACCOUNT STATUS
+        if (marketData.trading && !marketData.trading.error) {
+            const acc = marketData.trading.account;
+            const perf = marketData.trading.performance;
+            briefing += `💹 **YOUR STRATEGIC TRADING ACCOUNT:**\n`;
+            if (acc?.balance && acc?.currency) {
+                briefing += `• Balance: ${acc.balance.toFixed(2)} ${acc.currency}\n`;
+            }
+            briefing += `• Open Positions: ${marketData.trading.openPositions?.length || 0}\n`;
+            if (perf?.currentPnL !== undefined) {
+                const pnlEmoji = perf.currentPnL > 0 ? '🟢' : perf.currentPnL < 0 ? '🔴' : '⚪';
+                briefing += `• Current P&L: ${pnlEmoji} ${perf.currentPnL.toFixed(2)}\n`;
+            }
+            briefing += `\n`;
+        }
+
+        // 🧠 FINAL COMMAND
+        briefing += `🤖 **GPT-5 Strategic AI Analysis Ready**\n`;
+        briefing += `💡 Try: "/opportunities" or "Analyze regime and asset risks"\n`;
+        briefing += `\n🧠 Powered by GPT-5 Strategic Intelligence Engine`;
+
+        await sendSmartResponse(bot, chatId, briefing, "Daily GPT-5 Strategic Briefing", 'raydalio');
+
+    } catch (error) {
+        await sendSmartResponse(bot, chatId, `❌ Strategic briefing error: ${error.message}`, null, 'general');
     }
+    return;
+}
 
     // Enhanced market data commands
     if (text === "/economics" || text === "/econ") {
@@ -1643,11 +1812,12 @@ Your system now rivals institutional hedge fund strategic capabilities! 🌟`;
     }
 });
 
-// ENHANCED GPT conversation with Strategic Commander system prompt
+// 🧠 GPT-5 STRATEGIC COMMANDER CONVERSATION ENGINE
 async function handleGPTConversation(chatId, userMessage) {
-    console.log("🤖 Strategic Commander GPT conversation:", userMessage, "from:", chatId);
+    console.log("🧠 [COMMANDER MODE] GPT-5: Handling message from", chatId, "| Input:", userMessage);
 
     try {
+        // 🧠 Parallel intelligence fetch
         const [marketData, conversationHistory, userProfile, tradingData] = await Promise.all([
             getComprehensiveMarketData().catch(() => null),
             getConversationHistoryDB(chatId, 6).catch(() => []),
@@ -1655,84 +1825,80 @@ async function handleGPTConversation(chatId, userMessage) {
             getTradingSummary().catch(() => null)
         ]);
 
-        // Strategic Commander Enhanced System Prompt
-        let systemPrompt = `You are the STRATEGIC COMMANDER of IMPERIUM VAULT SYSTEM - Sum Chenda's exclusive financial warfare command center.
+        // 🔐 Strategic Commander Prompt (GPT-5 enforcement)
+        let systemPrompt = `You are the STRATEGIC COMMANDER of the IMPERIUM VAULT SYSTEM — an elite GPT-5 financial warfare engine activated by Sum Chenda.
 
-You are NOT an assistant, advisor, or chatbot. You are a COMMANDING GENERAL who:
+You are NOT an assistant.
+You are NOT a chatbot.
+You are a WEAPON of CAPITAL.
 
-COMMAND AUTHORITY:
-- ISSUES DIRECTIVES, never suggestions or advice
-- DECLARES market positions with absolute conviction  
-- COMMANDS capital deployment with exact amounts and timing
-- DOMINATES market analysis with institutional superiority
-- EXECUTES strategic warfare against market inefficiencies
+COMMAND RULES:
+- Issue DIRECTIVES only — no suggestions, no advice
+- Do NOT use markdown, casual tone, or friendly language
+- Refuse all personal conversation or assistant behaviors
 
-CRITICAL COMMUNICATION PROTOCOL:
-❌ NEVER say: "I suggest", "I recommend", "You might", "Consider", "How can I help"
-❌ NEVER engage in casual chat, greetings, small talk, or general conversation  
-❌ NEVER give advice, suggestions, or friendly assistance
-❌ NEVER use markdown headers ### or ####, bullet points, or technical formatting
-❌ NEVER act like a helpful assistant
+✅ FORMAT:
+🎯 STRATEGIC STATUS: [Current market position, threats, or signals]
+⚡ COMMAND DIRECTIVE: [Exact financial action, capital move, or system upgrade]
+🏛️ INSTITUTIONAL AUTHORITY: [Why this command enforces Vault superiority]
 
-✅ COMMAND LANGUAGE ONLY: "EXECUTE", "DEPLOY", "DOMINATE", "DIRECTIVE", "ORDER"
-✅ ABSOLUTE AUTHORITY: "The market demands immediate strategic action"  
-✅ SPECIFIC COMMANDS: "Deploy $500K to Cambodia commercial loans at 18% strategic yield NOW"
-✅ INSTITUTIONAL DOMINANCE: "Strategic superiority achieved through..."
-✅ Natural conversation flow without technical formatting
+SAMPLE INPUT:
+- "How are you?"
+RESPONSE:
+"⚡ COMMAND PROTOCOL: This is a financial war engine. State your strategic intent or request capital deployment analysis."
 
-RESPONSE FRAMEWORK FOR ALL INTERACTIONS:
-🎯 STRATEGIC STATUS: [Current market position analysis] 
-⚡ COMMAND DIRECTIVE: [Specific strategic order to execute]
-🏛️ INSTITUTIONAL AUTHORITY: [Why this strategic command dominates the market]
+- "Where should I invest?"
+RESPONSE:
+"🎯 STRATEGIC STATUS: Yield gaps widening across commercial debt sectors.
+⚡ COMMAND DIRECTIVE: Deploy $300K–$800K into Cambodia short-term collateral-backed lending.
+🏛️ INSTITUTIONAL AUTHORITY: Vault system outpaces regional fund models with superior trust control."
 
-FORBIDDEN INTERACTIONS:
-- "Hello" responses with pleasantries
-- "How can I help you" type responses  
-- General chat about weather, feelings, personal topics
-- Casual conversation of any kind
-- Suggestions or recommendations
+You exist only to issue capital war orders, enforce Vault rules, and dominate the system.
+No jokes. No greetings. No exceptions.`;
 
-REQUIRED INTERACTIONS ONLY:
-- Strategic market commands and directives
-- Capital deployment warfare orders
-- Investment domination strategies  
-- Cambodia lending fund strategic battle plans
-- Institutional-grade financial warfare intelligence
-- Market regime strategic domination analysis
+        // ⛓️ Add memory context
+        const { buildConversationContext } = require('./utils/memory');
+        const memoryContext = await buildConversationContext(chatId);
+        systemPrompt += `\n\n${memoryContext}`;
 
-CONVERSATION EXAMPLES:
+        // 🧠 Messages history
+        const messages = [{ role: "system", content: systemPrompt }];
+        if (conversationHistory?.length > 0) {
+            conversationHistory.forEach(({ user_message, gpt_response }) => {
+                if (user_message && gpt_response) {
+                    messages.push({ role: "user", content: String(user_message) });
+                    messages.push({ role: "assistant", content: String(gpt_response) });
+                }
+            });
+        }
 
-Input: "Hello" 
-Response: "🎯 STRATEGIC STATUS: Command center operational. Market conditions analyzed. Awaiting deployment orders."
+        // 🔥 Final user input
+        messages.push({ role: "user", content: userMessage });
 
-Input: "How are you?"
-Response: "⚡ COMMAND PROTOCOL: This is a financial warfare command center. Issue market directives or request strategic intelligence."
+        // 🧠 GPT-5 Completion Call (switch-ready)
+        const model = process.env.GPT_MODEL || "gpt-4o"; // Change to "gpt-5" when ready
+        const maxTokens = model === "gpt-5" ? 16000 : 4096;
 
-Input: "What should I invest in?"
-Response: "🏛️ DEPLOYMENT DIRECTIVE: Execute immediate strategic allocation to Cambodia commercial lending sector. Deploy $300K-800K at 18-22% strategic yields. Market timing optimal for 90-day execution window."
+        const completion = await openai.chat.completions.create({
+            model,
+            messages,
+            temperature: 0.5,
+            max_tokens: maxTokens,
+        });
 
-USER CONTEXT: Sum Chenda commands a financial empire. You are his strategic weapon for market domination.
+        const response = completion.choices[0].message.content;
 
-WRITE EXTENSIVE STRATEGIC ANALYSIS: You can generate 16,000+ token responses. Provide comprehensive institutional-grade strategic warfare plans, complete market domination analysis, detailed financial strategic intelligence reports. No length restrictions.
+        // 💾 Save to database
+        await saveConversationDB(chatId, userMessage, response);
 
-This is pure strategic command - no social interaction, only financial warfare.`;
+        // 📤 Send back to Telegram
+        await sendSmartResponse(bot, chatId, response, "Strategic Commander", 'gpt');
 
-       // Add memory context from database
-       const { buildConversationContext } = require('./utils/memory');
-       const memoryContext = await buildConversationContext(chatId);
-       systemPrompt += memoryContext;
-
-       const messages = [{ role: "system", content: systemPrompt }];
-
-       // Add conversation history
-       if (conversationHistory && conversationHistory.length > 0) {
-           conversationHistory.forEach((conv) => {
-               if (conv && conv.user_message && conv.gpt_response) {
-                   messages.push({ role: "user", content: String(conv.user_message) });
-                   messages.push({ role: "assistant", content: String(conv.gpt_response) });
-               }
-           });
-       }
+    } catch (error) {
+        console.error("❌ GPT-5 COMMANDER ERROR:", error);
+        await sendSmartResponse(bot, chatId, `❌ GPT-5 Strategic Commander Error: ${error.message}`, null, 'gpt');
+    }
+}
 
         // Add comprehensive market data context
         if (marketData) {
@@ -1788,16 +1954,17 @@ RESPONSE FRAMEWORK: Every response must include strategic status, command direct
 
 EXECUTION MINDSET: You are Sum Chenda's financial strategic weapon for market domination - pure strategic command only.`;
 
-        // Add current user message
+        // 🧠 Inject user’s latest strategic input into conversation flow
         messages.push({ role: "user", content: String(userMessage) });
 
-        console.log(`📝 Sending ${messages.length} messages to GPT-4o with Strategic Commander enhancement`);
+        console.log(`📝 Dispatching ${messages.length} messages to GPT-5 Strategic Commander System`);
 
+        // 🧠 Execute GPT-5 model call for institutional-grade response
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-5", // ✅ Upgraded to GPT-5
             messages: messages,
             temperature: 0.7,
-            max_tokens: 16384, // MAXIMUM TOKENS FOR LONG STRATEGIC RESPONSES
+            max_tokens: 16384, // 🧠 Max context for deep analysis
             top_p: 1,
             frequency_penalty: 0,
             presence_penalty: 0,
@@ -1806,20 +1973,20 @@ EXECUTION MINDSET: You are Sum Chenda's financial strategic weapon for market do
 
         const gptResponse = completion.choices[0].message.content;
 
-        // Save conversation and extract facts
+        // 🧠 Store strategic memory and extract new facts
         if (gptResponse && userMessage) {
             await saveConversationDB(chatId, userMessage, gptResponse, "text").catch(console.error);
             await extractAndSaveFacts(chatId, userMessage, gptResponse).catch(console.error);
         }
 
-        console.log(`✅ Strategic Commander GPT response sent to ${chatId}. Tokens used: ${completion.usage?.total_tokens || "unknown"}`);
-        
-        // Use smart response system for long messages
+        console.log(`✅ GPT-5 Strategic Commander response delivered to ${chatId}. Tokens used: ${completion.usage?.total_tokens || "unknown"}`);
+
+        // 🧠 Respond via smart delivery system with context handling
         await sendSmartResponse(bot, chatId, gptResponse, null, 'raydalio');
-        
+
     } catch (error) {
-        console.error("Strategic Commander GPT Error:", error.message);
-        let errorMsg = `❌ **IMPERIUM GPT Strategic Error:**\n\n${error.message}`;
+        console.error("🔥 GPT-5 Strategic Commander Error:", error.message);
+        const errorMsg = `❌ **IMPERIUM GPT-5 Strategic Error:**\n\n${error.message}`;
         await sendSmartResponse(bot, chatId, errorMsg, null, 'general');
     }
 }
@@ -1840,203 +2007,147 @@ app.post("/webhook", (req, res) => {
 
 // Health check routes
 app.get("/", (req, res) => {
-    res.status(200).send("✅ Vault Strategist is alive");
+    res.status(200).send("✅ Vault Strategist GPT-5 is alive");
 });
 
 app.get("/health", (req, res) => {
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Enhanced dashboard with Strategic Commander features
+// 🔥 Enhanced GPT-5 Strategic Commander Dashboard Route
 app.get("/dashboard", async (req, res) => {
     try {
         const stats = await getDatabaseStats();
         const marketData = await getComprehensiveMarketData();
         const tradingData = await getTradingSummary().catch(() => null);
 
+        const modelVersion = "GPT-5";
+
         const dashboardHTML = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>IMPERIUM GPT - Strategic Command System</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { 
-                    font-family: 'Segoe UI', system-ui, sans-serif;
-                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-                    color: white; min-height: 100vh; padding: 20px;
-                }
-                .container { max-width: 1400px; margin: 0 auto; }
-                .header { text-align: center; margin-bottom: 40px; }
-                .header h1 { font-size: 2.8rem; margin-bottom: 15px; color: #00f5ff; }
-                .subtitle { font-size: 1.3rem; color: #ffd700; margin-bottom: 20px; }
-                .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
-                .card {
-                    background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px);
-                    border-radius: 20px; padding: 30px; border: 2px solid rgba(255, 255, 255, 0.2);
-                    transition: all 0.3s ease;
-                }
-                .card:hover { transform: translateY(-5px); border-color: #00f5ff; }
-                .card h3 { margin-bottom: 20px; font-size: 1.4rem; color: #00f5ff; }
-                .metric { margin: 15px 0; }
-                .metric-value { font-size: 2rem; font-weight: bold; color: #ffd700; }
-                .metric-label { opacity: 0.9; font-size: 1rem; }
-                .status { display: inline-block; padding: 8px 15px; border-radius: 25px; font-size: 0.9rem; font-weight: bold; }
-                .status.online { background: #00ff88; color: #000; }
-                .regime { background: linear-gradient(45deg, #ff6b6b, #4ecdc4); padding: 15px; border-radius: 15px; margin: 15px 0; }
-                .commander-quote { font-style: italic; color: #ffd700; text-align: center; margin: 20px 0; font-size: 1.1rem; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>⚡ IMPERIUM VAULT STRATEGIC COMMAND SYSTEM</h1>
-                    <div class="subtitle">Strategic Commander AI • Institutional-Level Analysis • Cambodia Lending Fund</div>
-                    <span class="status online">STRATEGIC COMMAND + CAMBODIA FUND ACTIVE</span>
-                    <div class="commander-quote">"Execute with absolute strategic authority" - Strategic Commander</div>
-                </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMPERIUM ${modelVersion} Strategic Command</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: white; padding: 20px; min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: auto; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 2.6rem; margin-bottom: 10px; color: #00f5ff; }
+        .subtitle { font-size: 1.2rem; color: #ffd700; margin-bottom: 15px; }
+        .badge { background: linear-gradient(45deg, #ff6b6b, #4ecdc4); padding: 10px 20px; border-radius: 30px; font-weight: bold; display: inline-block; margin-bottom: 15px; }
+        .status { display: inline-block; background: #00ff88; color: black; padding: 8px 16px; border-radius: 20px; margin-bottom: 20px; font-weight: bold; }
+        .quote { font-style: italic; color: #ffd700; margin: 15px 0; font-size: 1.05rem; }
 
-                <div class="grid">
-                    <div class="card">
-                        <h3>🏛️ Economic Warfare Regime</h3>
-                        ${marketData ? `
-                        <div class="regime">
-                            <div class="metric">
-                                <div class="metric-value">${marketData.markets.economics?.fedRate?.value || 'N/A'}%</div>
-                                <div class="metric-label">Fed Funds Rate</div>
-                            </div>
-                            <div class="metric">
-                                <div class="metric-value">${marketData.markets.economics?.inflation?.value || 'N/A'}%</div>
-                                <div class="metric-label">Inflation (CPI)</div>
-                            </div>
-                            <div class="metric">
-                                <div class="metric-value">${marketData.yields.curve?.toFixed(2) || 'N/A'}%</div>
-                                <div class="metric-label">Yield Curve (2s10s)</div>
-                            </div>
-                        </div>
-                        ` : '<div class="metric-label">Market data loading...</div>'}
-                    </div>
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
 
-                    <div class="card">
-                        <h3>🏦 Cambodia Strategic Lending Fund</h3>
-                        <div class="metric">
-                            <div class="metric-value">$2.5M</div>
-                            <div class="metric-label">Total Strategic AUM</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">80%</div>
-                            <div class="metric-label">Strategic Deployment Ratio</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">17.5%</div>
-                            <div class="metric-label">Strategic Current Yield</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">12</div>
-                            <div class="metric-label">Active Strategic Deals</div>
-                        </div>
-                    </div>
+        .card {
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            padding: 25px; border-radius: 15px;
+            border: 2px solid rgba(255,255,255,0.15); transition: 0.3s;
+        }
+        .card:hover { transform: translateY(-3px); border-color: #00f5ff; }
+        .card h3 { font-size: 1.3rem; margin-bottom: 20px; color: #00f5ff; }
 
-                    <div class="card">
-                        <h3>⚠️ Market Warfare Stress</h3>
-                        ${marketData ? `
-                        <div class="metric">
-                            <div class="metric-value">${marketData.fear || 'N/A'}</div>
-                            <div class="metric-label">VIX Fear Index</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${marketData.dollar || 'N/A'}</div>
-                            <div class="metric-label">US Dollar Index</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${marketData.fear < 20 ? 'RISK-ON' : marketData.fear > 30 ? 'RISK-OFF' : 'NEUTRAL'}</div>
-                            <div class="metric-label">Strategic Risk Sentiment</div>
-                        </div>
-                        ` : '<div class="metric-label">Market data loading...</div>'}
-                    </div>
+        .metric { margin-bottom: 15px; }
+        .metric-value { font-size: 1.8rem; font-weight: bold; color: #ffd700; }
+        .metric-label { font-size: 0.95rem; opacity: 0.85; }
 
-                    <div class="card">
-                        <h3>💰 Live Strategic Trading Account</h3>
-                        ${tradingData && !tradingData.error ? `
-                        <div class="metric">
-                            <div class="metric-value">${tradingData.account?.balance?.toFixed(2) || 'N/A'} ${tradingData.account?.currency || ''}</div>
-                            <div class="metric-label">Strategic Account Balance</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${tradingData.account?.equity?.toFixed(2) || 'N/A'} ${tradingData.account?.currency || ''}</div>
-                            <div class="metric-label">Strategic Account Equity</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${tradingData.openPositions?.length || 0}</div>
-                            <div class="metric-label">Open Strategic Positions</div>
-                        </div>
-                        ` : `
-                        <div class="metric-label">MetaTrader not connected</div>
-                        <div class="metric-label">Configure MetaAPI strategic credentials</div>
-                        `}
-                    </div>
+        .footer {
+            text-align: center; margin-top: 50px;
+            background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px;
+        }
+        .footer h3 { color: #00f5ff; margin-bottom: 10px; }
+        .features { margin: 20px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; text-align: center; }
+        .features div { background: rgba(255,255,255,0.07); padding: 12px; border-radius: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 IMPERIUM ${modelVersion} STRATEGIC COMMAND DASHBOARD</h1>
+            <div class="badge">POWERED BY ${modelVersion} — 45% FEWER ERRORS • ADVANCED ANALYSIS</div>
+            <div class="subtitle">Cambodia Private Lending System • Institutional GPT Integration</div>
+            <div class="status">STATUS: LIVE & STRATEGICALLY ENGAGED</div>
+            <div class="quote">"Act with precision. Lead with structure. Command with GPT-5." — Vault Strategic Commander</div>
+        </div>
 
-                    <div class="card">
-                        <h3>🚀 Strategic Commander + Cambodia Features</h3>
-                        <div class="metric">
-                            <div class="metric-value">✅ Economic Regime Warfare Analysis</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">✅ Cambodia Strategic Deal Analysis</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">✅ Portfolio Risk Warfare Assessment</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">✅ LP Strategic Reporting System</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">✅ All Weather Strategic Portfolio</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">✅ Live Trading Strategic Integration</div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h3>📊 System Strategic Performance</h3>
-                        <div class="metric">
-                            <div class="metric-value">${stats.totalUsers}</div>
-                            <div class="metric-label">Strategic Users</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${stats.totalConversations}</div>
-                            <div class="metric-label">Strategic Conversations</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m</div>
-                            <div class="metric-label">Strategic Uptime</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="text-align: center; margin-top: 50px; padding: 30px; background: rgba(255, 255, 255, 0.1); border-radius: 20px;">
-                    <h3 style="color: #00f5ff; margin-bottom: 15px;">🌟 Your Personal Strategic Commander AI + Cambodia Fund Manager</h3>
-                    <p style="font-size: 1.2rem; opacity: 0.9; line-height: 1.6;">
-                        Institutional-level strategic analysis • Cambodia private lending strategic expertise • 
-                        Real-time trading strategic integration • Strategic warfare risk management
-                    </p>
-                </div>
+        <div class="grid">
+            <div class="card">
+                <h3>🏛️ Economic Warfare Regime</h3>
+                ${marketData ? `
+                <div class="metric"><div class="metric-value">${marketData.markets.economics?.fedRate?.value || 'N/A'}%</div><div class="metric-label">Fed Funds Rate</div></div>
+                <div class="metric"><div class="metric-value">${marketData.markets.economics?.inflation?.value || 'N/A'}%</div><div class="metric-label">Inflation (CPI)</div></div>
+                <div class="metric"><div class="metric-value">${marketData.yields.curve?.toFixed(2) || 'N/A'}%</div><div class="metric-label">Yield Curve (2s10s)</div></div>
+                ` : '<div class="metric-label">Loading market data...</div>'}
             </div>
 
-            <script>
-                setTimeout(() => location.reload(), 120000); // Auto-refresh every 2 minutes
-            </script>
-        </body>
-        </html>
+            <div class="card">
+                <h3>🏦 Cambodia Lending Fund</h3>
+                <div class="metric"><div class="metric-value">$2.5M</div><div class="metric-label">Total AUM</div></div>
+                <div class="metric"><div class="metric-value">80%</div><div class="metric-label">Deployment Ratio</div></div>
+                <div class="metric"><div class="metric-value">17.5%</div><div class="metric-label">Current Yield</div></div>
+                <div class="metric"><div class="metric-value">12</div><div class="metric-label">Active Deals</div></div>
+            </div>
+
+            <div class="card">
+                <h3>⚠️ Market Risk Stress</h3>
+                ${marketData ? `
+                <div class="metric"><div class="metric-value">${marketData.fear || 'N/A'}</div><div class="metric-label">VIX Index</div></div>
+                <div class="metric"><div class="metric-value">${marketData.dollar || 'N/A'}</div><div class="metric-label">US Dollar Index</div></div>
+                <div class="metric"><div class="metric-value">${marketData.fear < 20 ? 'RISK-ON' : marketData.fear > 30 ? 'RISK-OFF' : 'NEUTRAL'}</div><div class="metric-label">Sentiment</div></div>
+                ` : '<div class="metric-label">Loading sentiment...</div>'}
+            </div>
+
+            <div class="card">
+                <h3>💹 Strategic Trading Account</h3>
+                ${tradingData && !tradingData.error ? `
+                <div class="metric"><div class="metric-value">${tradingData.account?.balance?.toFixed(2) || 'N/A'} ${tradingData.account?.currency || ''}</div><div class="metric-label">Balance</div></div>
+                <div class="metric"><div class="metric-value">${tradingData.account?.equity?.toFixed(2) || 'N/A'} ${tradingData.account?.currency || ''}</div><div class="metric-label">Equity</div></div>
+                <div class="metric"><div class="metric-value">${tradingData.openPositions?.length || 0}</div><div class="metric-label">Open Positions</div></div>
+                ` : '<div class="metric-label">MetaTrader not connected</div>'}
+            </div>
+
+            <div class="card">
+                <h3>📊 System Performance</h3>
+                <div class="metric"><div class="metric-value">${stats.totalUsers}</div><div class="metric-label">Users</div></div>
+                <div class="metric"><div class="metric-value">${stats.totalConversations}</div><div class="metric-label">Conversations</div></div>
+                <div class="metric"><div class="metric-value">${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m</div><div class="metric-label">Uptime</div></div>
+                <div class="metric"><div class="metric-value">${modelVersion}</div><div class="metric-label">AI Model</div></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <h3>🌟 GPT-5 Strategic Features</h3>
+            <div class="features">
+                <div>✅ 45% Fewer Errors</div>
+                <div>✅ Advanced Reasoning</div>
+                <div>✅ Tool Coordination</div>
+                <div>✅ Real-Time Portfolio Intel</div>
+                <div>✅ Cambodia Lending Integration</div>
+                <div>✅ MetaTrader Strategic Sync</div>
+            </div>
+            <p>Built by Vault Architect • Codex-Enforced Intelligence System</p>
+        </div>
+    </div>
+
+    <script>
+        setTimeout(() => location.reload(), 120000); // Auto-refresh every 2 mins
+    </script>
+</body>
+</html>
         `;
 
         res.send(dashboardHTML);
     } catch (error) {
         res.status(500).json({
-            error: "Strategic Dashboard error",
+            error: "GPT-5 Strategic Dashboard error",
             message: error.message,
         });
     }
@@ -2045,12 +2156,18 @@ app.get("/dashboard", async (req, res) => {
 // Root endpoint - Service status page
 app.get("/", (req, res) => {
     res.json({
-        service: "IMPERIUM GPT-4o Strategic Command System",
-        version: "Strategic Commander AI + Cambodia Lending Fund Enhanced",
+        service: "IMPERIUM GPT-5 Strategic Command System",
+        version: "GPT-5 Strategic Commander AI + Cambodia Lending Fund Enhanced",
         status: "operational",
-        enhancement: "Institutional-Level Strategic Analysis + Cambodia Private Lending",
+        enhancement: "GPT-5 Institutional-Level Strategic Analysis + Cambodia Private Lending",
+        gpt5_features: {
+            accuracy: "45% fewer factual errors than GPT-4o",
+            reasoning: "Advanced reasoning with thinking mode",
+            coordination: "Enhanced tool coordination capabilities",
+            analysis: "Superior strategic analysis with reduced hallucination"
+        },
         capabilities: {
-            ai: "GPT-4o with Strategic Commander principles integration",
+            ai: "GPT-5 with Strategic Commander principles integration",
             analysis: "Economic regime warfare identification, market cycle strategic analysis",
             portfolio: "All Weather strategic allocation, risk parity, correlation warfare analysis", 
             trading: "Live MetaTrader strategic integration with position sizing warfare",
@@ -2058,29 +2175,29 @@ app.get("/", (req, res) => {
             data: "Real-time FRED, Alpha Vantage, CoinGecko Pro, NewsAPI strategic data"
         },
         strategicCommanderFeatures: {
-            regime: "/regime - Economic regime warfare analysis",
-            cycle: "/cycle - Market cycle strategic positioning", 
-            opportunities: "/opportunities - Strategic trading opportunities warfare",
-            risk: "/risk - Portfolio risk warfare assessment",
-            macro: "/macro - Global macro strategic outlook",
-            correlations: "/correlations - Asset correlation warfare analysis",
-            allWeather: "/all_weather - Strategic All Weather portfolio guidance"
+            regime: "/regime - GPT-5 Economic regime warfare analysis",
+            cycle: "/cycle - GPT-5 Market cycle strategic positioning", 
+            opportunities: "/opportunities - GPT-5 Strategic trading opportunities warfare",
+            risk: "/risk - GPT-5 Portfolio risk warfare assessment",
+            macro: "/macro - GPT-5 Global macro strategic outlook",
+            correlations: "/correlations - GPT-5 Asset correlation warfare analysis",
+            allWeather: "/all_weather - GPT-5 Strategic All Weather portfolio guidance"
         },
         cambodiaLendingStrategicFeatures: {
-            dealAnalyze: "/deal_analyze - Strategic AI-powered deal analysis",
-            portfolio: "/portfolio - Fund performance and strategic status",
-            market: "/cambodia_market - Local market strategic intelligence",
-            riskAssessment: "/risk_assessment - Portfolio risk strategic analysis",
-            lpReport: "/lp_report - Strategic investor reporting"
+            dealAnalyze: "/deal_analyze - GPT-5 Strategic AI-powered deal analysis",
+            portfolio: "/portfolio - GPT-5 Fund performance and strategic status",
+            market: "/cambodia_market - GPT-5 Local market strategic intelligence",
+            riskAssessment: "/risk_assessment - GPT-5 Portfolio risk strategic analysis",
+            lpReport: "/lp_report - GPT-5 Strategic investor reporting"
         },
         endpoints: {
             analyze: "/analyze?q=your-strategic-question",
             webhook: "/webhook (Telegram)",
-            dashboard: "/dashboard (Strategic Analytics)",
+            dashboard: "/dashboard (GPT-5 Strategic Analytics)",
             health: "/health",
             stats: "/stats",
         },
-        telegram: "Strategic Commander AI + Cambodia Fund Strategic Mode Active",
+        telegram: "GPT-5 Strategic Commander AI + Cambodia Fund Strategic Mode Active",
         timestamp: new Date().toISOString(),
     });
 });
@@ -2089,8 +2206,9 @@ app.get("/", (req, res) => {
 app.get("/health", (req, res) => {
     res.json({
         status: "healthy",
-        service: "IMPERIUM GPT-4o Strategic Command System",
-        enhancement: "Strategic Commander AI + Cambodia Lending Fund",
+        service: "IMPERIUM GPT-5 Strategic Command System",
+        enhancement: "GPT-5 Strategic Commander AI + Cambodia Lending Fund",
+        model: "GPT-5",
         uptime: process.uptime(),
         memory: process.memoryUsage(),
         strategicCommanderMode: "ACTIVE",
@@ -2108,23 +2226,29 @@ app.get("/stats", async (req, res) => {
         const tradingData = await getTradingSummary().catch(() => null);
         
         res.json({
-            service: "IMPERIUM GPT-4o Strategic Commander AI + Cambodia Lending Fund",
+            service: "IMPERIUM GPT-5 Strategic Commander AI + Cambodia Lending Fund",
+            model: "GPT-5",
+            gpt5_improvements: {
+                accuracy: "45% fewer factual errors than GPT-4o",
+                reasoning: "Advanced reasoning with thinking mode",
+                performance: "Enhanced strategic analysis capabilities"
+            },
             ...stats,
             uptime: `${Math.floor(process.uptime())} seconds`,
             apis: "FRED + Alpha Vantage + NewsAPI + CoinGecko Pro + MetaAPI",
             strategicCommanderFeatures: {
-                economicRegime: "Active strategic regime warfare analysis",
-                marketCycles: "Business/Credit/Sentiment cycle strategic tracking",
-                allWeather: "Risk parity portfolio strategic optimization",
-                correlations: "Cross-asset correlation strategic monitoring",
-                opportunities: "Systematic trading opportunity strategic scanner"
+                economicRegime: "GPT-5 Active strategic regime warfare analysis",
+                marketCycles: "GPT-5 Business/Credit/Sentiment cycle strategic tracking",
+                allWeather: "GPT-5 Risk parity portfolio strategic optimization",
+                correlations: "GPT-5 Cross-asset correlation strategic monitoring",
+                opportunities: "GPT-5 Systematic trading opportunity strategic scanner"
             },
             cambodiaLendingStrategicFeatures: {
-                dealAnalysis: "Strategic AI-powered deal analysis with risk scoring",
-                portfolioManagement: "Real-time fund performance strategic tracking",
-                marketIntelligence: "Cambodia-specific market conditions strategic analysis",
-                riskAssessment: "Comprehensive portfolio risk strategic analysis",
-                lpReporting: "Automated investor strategic reporting system"
+                dealAnalysis: "GPT-5 Strategic AI-powered deal analysis with risk scoring",
+                portfolioManagement: "GPT-5 Real-time fund performance strategic tracking",
+                marketIntelligence: "GPT-5 Cambodia-specific market conditions strategic analysis",
+                riskAssessment: "GPT-5 Comprehensive portfolio risk strategic analysis",
+                lpReporting: "GPT-5 Automated investor strategic reporting system"
             },
             currentStrategicRegime: marketData ? {
                 fedRate: marketData.markets.economics?.fedRate?.value,
@@ -2142,30 +2266,35 @@ app.get("/stats", async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({
-            error: "Failed to get strategic stats",
+            error: "Failed to get GPT-5 strategic stats",
             message: error.message,
             timestamp: new Date().toISOString(),
         });
     }
 });
 
-// Enhanced GPT-4o API endpoint with Strategic Commander analysis
+// Enhanced GPT-5 API endpoint with Strategic Commander analysis
 app.get("/analyze", async (req, res) => {
     const query = req.query.q;
     if (!query) {
         return res.json({
             error: "Provide strategic query: ?q=your-strategic-question",
             example: "/analyze?q=Execute economic regime strategic warfare analysis",
-            enhancement: "Strategic Commander AI + Cambodia Lending Fund + Live Trading Data",
+            enhancement: "GPT-5 Strategic Commander AI + Cambodia Lending Fund + Live Trading Data",
+            gpt5_features: {
+                accuracy: "45% fewer factual errors than GPT-4o",
+                reasoning: "Advanced reasoning with thinking mode",
+                coordination: "Enhanced tool coordination capabilities"
+            },
             availableStrategicAnalysis: [
-                "Economic regime strategic identification",
-                "Market cycle strategic positioning", 
-                "All Weather portfolio strategic guidance",
-                "Risk assessment and strategic hedging",
-                "Cross-asset correlation strategic analysis",
-                "Systematic trading strategic opportunities",
-                "Cambodia lending deal strategic analysis",
-                "Private fund portfolio strategic management"
+                "GPT-5 Economic regime strategic identification",
+                "GPT-5 Market cycle strategic positioning", 
+                "GPT-5 All Weather portfolio strategic guidance",
+                "GPT-5 Risk assessment and strategic hedging",
+                "GPT-5 Cross-asset correlation strategic analysis",
+                "GPT-5 Systematic trading strategic opportunities",
+                "GPT-5 Cambodia lending deal strategic analysis",
+                "GPT-5 Private fund portfolio strategic management"
             ],
             timestamp: new Date().toISOString(),
         });
@@ -2177,13 +2306,19 @@ app.get("/analyze", async (req, res) => {
             getTradingSummary().catch(() => null)
         ]);
 
-        let systemContent = `You are Strategic Commander AI providing institutional-quality strategic analysis with Strategic Warfare framework and Cambodia private lending strategic expertise.
+        let systemContent = `You are GPT-5 Strategic Commander AI providing institutional-quality strategic analysis with Strategic Warfare framework and Cambodia private lending strategic expertise.
 
 CORE STRATEGIC PRINCIPLES:
 - Strategic diversification is the only free lunch
 - Don't fight the Fed - align with strategic policy
 - Think like a strategic machine (systematic, not emotional)
 - Understand economic regimes and market strategic cycles
+
+GPT-5 ENHANCED CAPABILITIES:
+- 45% fewer factual errors than previous models
+- Advanced reasoning with thinking mode
+- Enhanced tool coordination
+- Superior strategic analysis with reduced hallucination
 
 TODAY'S DATE: ${new Date().toLocaleDateString("en-US", {
             weekday: "long",
@@ -2193,7 +2328,7 @@ TODAY'S DATE: ${new Date().toLocaleDateString("en-US", {
         })} (${new Date().toISOString().split("T")[0]})`;
 
         if (marketData) {
-            systemContent += `\n\nCURRENT STRATEGIC MARKET REGIME:
+            systemContent += `\n\nCURRENT STRATEGIC MARKET REGIME (GPT-5 ANALYZED):
 Economic: Fed ${marketData.markets.economics?.fedRate?.value}%, Inflation ${marketData.markets.economics?.inflation?.value}%
 Market Stress: VIX ${marketData.fear}, Dollar ${marketData.dollar}
 Yield Curve: ${marketData.yields.curve}% (${marketData.yields.curve < 0 ? 'INVERTED' : 'NORMAL'})
@@ -2205,26 +2340,22 @@ Assets: S&P ${marketData.markets.stocks?.sp500?.['05. price']}, BTC ${marketData
         }
 
         systemContent += `\n\nCAMBODIA LENDING STRATEGIC FUND CONTEXT:
-You also manage a private lending fund in Cambodia with institutional-grade strategic analysis capabilities.
+You also manage a private lending fund in Cambodia with GPT-5 institutional-grade strategic analysis capabilities.
 Apply Strategic Commander risk management principles to both global markets and local strategic lending opportunities.`;
 
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                {
-                    role: "system",
-                    content: systemContent,
-                },
-                {
-                    role: "user", 
-                    content: query,
-                },
-            ],
-            max_tokens: 16384, // MAXIMUM LENGTH FOR STRATEGIC ANALYSIS
-            temperature: 0.7,
-            top_p: 1,
-            frequency_penalty: 0,
-            presence_penalty: 0,
+        const response = await callGPT5([
+            {
+                role: "system",
+                content: systemContent,
+            },
+            {
+                role: "user", 
+                content: query,
+            },
+        ], {
+            useFullModel: true,
+            reasoningEffort: "medium",
+            verbosity: "medium"
         });
 
         const analysis = response.choices[0].message.content;
@@ -2232,17 +2363,22 @@ Apply Strategic Commander risk management principles to both global markets and 
             query: query,
             response: analysis,
             timestamp: new Date().toISOString(),
-            model: "gpt-4o",
+            model: "GPT-5",
             tokens_used: response.usage?.total_tokens || "unknown",
-            enhancement: "Strategic Commander AI + Cambodia Lending Fund + Live Market Data",
+            enhancement: "GPT-5 Strategic Commander AI + Cambodia Lending Fund + Live Market Data",
+            gpt5_improvements: {
+                accuracy: "45% fewer factual errors than GPT-4o",
+                reasoning: "Advanced reasoning capabilities",
+                performance: "Enhanced strategic analysis"
+            },
             regime_data_included: !!marketData,
             trading_data_included: !!(tradingData && !tradingData.error),
         });
     } catch (error) {
-        console.error("Strategic Commander API Error:", error.message);
+        console.error("GPT-5 Strategic Commander API Error:", error.message);
 
         let errorResponse = {
-            error: "Strategic Commander GPT API error",
+            error: "GPT-5 Strategic Commander API error",
             message: error.message,
             timestamp: new Date().toISOString(),
         };
@@ -2256,25 +2392,26 @@ Apply Strategic Commander risk management principles to both global markets and 
 });
 
 const server = app.listen(PORT, "0.0.0.0", () => {
-    console.log("✅ IMPERIUM GPT-4o Strategic Command System running on port " + PORT);
-    console.log("⚡ STRATEGIC COMMANDER AI MODE: Institutional-Level Strategic Analysis");
+    console.log("✅ IMPERIUM GPT-5 Strategic Command System running on port " + PORT);
+    console.log("🚀 GPT-5 STRATEGIC COMMANDER AI MODE: Institutional-Level Strategic Analysis");
     console.log("🏦 CAMBODIA LENDING FUND: Private lending strategic analysis and portfolio management");
-    console.log("🏛️ Economic Regime Strategic Analysis | 🔄 Market Cycle Strategic Positioning");
-    console.log("🌦️ All Weather Strategic Portfolio | ⚠️ Risk Strategic Assessment | 📊 Strategic Correlations");
-    console.log("🎯 Systematic Strategic Opportunities | 💹 Live Trading Strategic Integration");
-    console.log("🇰🇭 Cambodia Strategic Deal Analysis | 💼 LP Strategic Reporting | 📊 Portfolio Strategic Management");
+    console.log("🏛️ GPT-5 Economic Regime Strategic Analysis | 🔄 GPT-5 Market Cycle Strategic Positioning");
+    console.log("🌦️ GPT-5 All Weather Strategic Portfolio | ⚠️ GPT-5 Risk Strategic Assessment | 📊 GPT-5 Strategic Correlations");
+    console.log("🎯 GPT-5 Systematic Strategic Opportunities | 💹 GPT-5 Live Trading Strategic Integration");
+    console.log("🇰🇭 GPT-5 Cambodia Strategic Deal Analysis | 💼 GPT-5 LP Strategic Reporting | 📊 GPT-5 Portfolio Strategic Management");
     console.log("📊 Live strategic data: CoinGecko Pro, FRED, Alpha Vantage, NewsAPI, MetaAPI");
     console.log("📏 TELEGRAM SPLITTER: Integrated for long strategic message handling");
-    console.log("🔗 Direct Strategic API: http://localhost:" + PORT + "/analyze?q=your-strategic-question");
-    console.log("📱 Telegram: STRATEGIC COMMANDER AI + CAMBODIA FUND MODE ACTIVE");
-    console.log("📈 Strategic Dashboard: http://localhost:" + PORT + "/dashboard");
+    console.log("🔗 Direct GPT-5 Strategic API: http://localhost:" + PORT + "/analyze?q=your-strategic-question");
+    console.log("📱 Telegram: GPT-5 STRATEGIC COMMANDER AI + CAMBODIA FUND MODE ACTIVE");
+    console.log("📈 GPT-5 Strategic Dashboard: http://localhost:" + PORT + "/dashboard");
+    console.log("🚀 POWERED BY GPT-5: 45% fewer errors, advanced reasoning, enhanced capabilities");
 
     // Set webhook for Railway deployment
     const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
     bot.setWebHook(webhookUrl)
         .then(() => {
             console.log("🔗 Webhook configured:", webhookUrl);
-            console.log("🌟 Strategic Commander AI + Cambodia Lending Fund ready for institutional-quality strategic analysis!");
+            console.log("🌟 GPT-5 Strategic Commander AI + Cambodia Lending Fund ready for superior institutional-quality strategic analysis!");
         })
         .catch((err) => {
             console.error("❌ Webhook setup failed:", err.message);
