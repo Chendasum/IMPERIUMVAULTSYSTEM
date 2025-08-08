@@ -1047,72 +1047,80 @@ async function performDatabaseMaintenance() {
 /**
  * 📊 DATABASE HEALTH CHECK
  */
-async function performHealthCheck({ light = false } = {}) {
+async function performHealthCheck() {
     try {
-        const now = new Date();
         const healthCheck = {
             status: 'HEALTHY',
             checks: {},
-            timestamp: now.toISOString()
+            timestamp: new Date().toISOString()
         };
 
-        // ✅ Fast check: DB connection test
-        const connectionTest = await pool.query('SELECT NOW()');
+        // Connection test
+        const connectionTest = await pool.query('SELECT NOW() as current_time');
         healthCheck.checks.connection = {
             status: 'PASS',
-            responseTimeMs: 1,
+            responseTime: new Date() - new Date(connectionTest.rows[0].current_time),
             details: 'Database connection successful'
         };
 
-        if (!light) {
-            // ✅ Run heavy diagnostics in parallel
-            const [tableCounts, indexUsage, dbSize] = await Promise.all([
-                pool.query(`
-                    SELECT schemaname, tablename, n_tup_ins, n_tup_upd, n_tup_del 
-                    FROM pg_stat_user_tables 
-                    WHERE schemaname = 'public'
-                `),
-                pool.query(`
-                    SELECT indexrelname as index_name, idx_tup_read, idx_tup_fetch 
-                    FROM pg_stat_user_indexes 
-                    WHERE idx_tup_read > 0 
-                    ORDER BY idx_tup_read DESC 
-                    LIMIT 10
-                `),
-                pool.query(`
-                    SELECT pg_size_pretty(pg_database_size(current_database())) as size
-                `)
-            ]);
+        // Table count checks
+        const tableCounts = await pool.query(`
+            SELECT 
+                schemaname,
+                tablename,
+                n_tup_ins as inserts,
+                n_tup_upd as updates,
+                n_tup_del as deletes
+            FROM pg_stat_user_tables 
+            WHERE schemaname = 'public'
+        `);
 
-            healthCheck.checks.tables = {
-                status: 'PASS',
-                count: tableCounts.rows.length,
-                details: tableCounts.rows
-            };
+        healthCheck.checks.tables = {
+            status: 'PASS',
+            count: tableCounts.rows.length,
+            details: tableCounts.rows
+        };
 
-            healthCheck.checks.indexes = {
-                status: 'PASS',
-                activeIndexes: indexUsage.rows.length,
-                topIndexes: indexUsage.rows
-            };
+        // Index usage check
+        const indexUsage = await pool.query(`
+            SELECT 
+                indexrelname as index_name,
+                idx_tup_read as reads,
+                idx_tup_fetch as fetches
+            FROM pg_stat_user_indexes 
+            WHERE idx_tup_read > 0
+            ORDER BY idx_tup_read DESC
+            LIMIT 10
+        `);
 
-            healthCheck.checks.storage = {
-                status: 'PASS',
-                size: dbSize.rows[0].size,
-                details: 'Database size within normal limits'
-            };
-        }
+        healthCheck.checks.indexes = {
+            status: 'PASS',
+            activeIndexes: indexUsage.rows.length,
+            topIndexes: indexUsage.rows
+        };
 
-        // ✅ Attach live stats
+        // Database size check
+        const dbSize = await pool.query(`
+            SELECT pg_size_pretty(pg_database_size(current_database())) as size
+        `);
+
+        healthCheck.checks.storage = {
+            status: 'PASS',
+            size: dbSize.rows[0].size,
+            details: 'Database size within normal limits'
+        };
+
+        // Performance metrics
         healthCheck.checks.performance = {
             status: connectionStats.connectionHealth === 'HEALTHY' ? 'PASS' : 'WARN',
             totalQueries: connectionStats.totalQueries,
-            successRate: connectionStats.totalQueries > 0 ?
+            successRate: connectionStats.totalQueries > 0 ? 
                 ((connectionStats.successfulQueries / connectionStats.totalQueries) * 100).toFixed(2) : 100,
             lastError: connectionStats.lastError
         };
 
         return healthCheck;
+
     } catch (error) {
         console.error('Database health check error:', error.message);
         return {
@@ -1889,43 +1897,6 @@ async function getCurrentRegimeForLogging() {
         return result.rows[0]?.regime_name || 'UNKNOWN';
     } catch (error) {
         return 'UNKNOWN';
-    }
-}
-
-async function saveRiskAssessment(chatId, riskData) {
-    try {
-        await pool.query(`
-            INSERT INTO risk_assessments (
-                chat_id, assessment_type, total_risk_percent, correlation_risk,
-                regime_risk, position_count, diversification_score,
-                account_balance, current_regime, regime_confidence, risk_data,
-                recommendations, stress_test_results, var_95, max_sector_concentration
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-        `, [
-            chatId,
-            riskData.type || 'GENERAL',
-            riskData.totalRiskPercent || 0,
-            riskData.correlationRisk || 'LOW',
-            riskData.regimeRisk || 'LOW',
-            riskData.positionCount || 0,
-            riskData.diversificationScore || 0,
-            riskData.accountBalance || 0,
-            riskData.currentRegime || 'UNKNOWN',
-            riskData.regimeConfidence || 0,
-            JSON.stringify(riskData.details || {}),
-            riskData.recommendations || [],
-            JSON.stringify(riskData.stressTestResults || {}),
-            riskData.var95 || 0,
-            riskData.maxSectorConcentration || 0
-        ]);
-
-        console.log(`📊 Risk assessment saved for ${chatId}`);
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Save risk assessment error:', error.message);
-        connectionStats.failedQueries++;
-        return false;
     }
 }
 
