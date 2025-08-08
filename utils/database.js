@@ -1900,6 +1900,43 @@ async function getCurrentRegimeForLogging() {
     }
 }
 
+async function saveRiskAssessment(chatId, riskData) {
+    try {
+        await pool.query(`
+            INSERT INTO risk_assessments (
+                chat_id, assessment_type, total_risk_percent, correlation_risk,
+                regime_risk, position_count, diversification_score,
+                account_balance, current_regime, regime_confidence, risk_data,
+                recommendations, stress_test_results, var_95, max_sector_concentration
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        `, [
+            chatId,
+            riskData.type || 'GENERAL',
+            riskData.totalRiskPercent || 0,
+            riskData.correlationRisk || 'LOW',
+            riskData.regimeRisk || 'LOW',
+            riskData.positionCount || 0,
+            riskData.diversificationScore || 0,
+            riskData.accountBalance || 0,
+            riskData.currentRegime || 'UNKNOWN',
+            riskData.regimeConfidence || 0,
+            JSON.stringify(riskData.details || {}),
+            riskData.recommendations || [],
+            JSON.stringify(riskData.stressTestResults || {}),
+            riskData.var95 || 0,
+            riskData.maxSectorConcentration || 0
+        ]);
+
+        console.log(`📊 Risk assessment saved for ${chatId}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save risk assessment error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
 module.exports = {
     // 🏛️ ENHANCED STRATEGIC FUNCTIONS
     initializeDatabase,
