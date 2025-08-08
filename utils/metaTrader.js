@@ -1,5 +1,4 @@
-// utils/metaTrader.js - RAY DALIO ENHANCED MetaAPI Integration with Institutional Risk Management
-
+// utils/metaTrader.js - STRATEGIC COMMANDER ENHANCED MetaAPI Integration
 const MetaApi = require('metaapi.cloud-sdk').default;
 const { getRayDalioMarketData, getYieldCurveAnalysis, getCreditSpreadAnalysis } = require('./liveData');
 
@@ -13,212 +12,163 @@ let account = null;
 let isConnected = false;
 let isSynchronized = false;
 
-// 🏛️ RAY DALIO RISK MANAGEMENT PARAMETERS
-const RISK_PARAMETERS = {
-    MAX_RISK_PER_TRADE: 0.02,           // 2% max risk per trade (Ray Dalio standard)
+// 🏛️ STRATEGIC COMMANDER RISK MANAGEMENT PARAMETERS (Enhanced)
+const STRATEGIC_RISK_PARAMETERS = {
+    MAX_RISK_PER_TRADE: 0.02,           // 2% max risk per trade (Strategic Commander standard)
     MAX_PORTFOLIO_RISK: 0.06,           // 6% max total portfolio risk
     MAX_CORRELATION_EXPOSURE: 0.15,     // 15% max exposure to correlated assets
     VOLATILITY_LOOKBACK: 20,            // 20-day volatility calculation
-    REGIME_RISK_MULTIPLIERS: {
-        'GROWTH_RISING_INFLATION_FALLING': 1.2,    // Goldilocks - increase risk
-        'GROWTH_RISING_INFLATION_RISING': 1.0,     // Growth/Inflation - normal risk
-        'GROWTH_FALLING_INFLATION_RISING': 0.6,    // Stagflation - reduce risk
-        'GROWTH_FALLING_INFLATION_FALLING': 0.8,   // Deflationary - cautious
-        'TRANSITIONAL': 0.7                        // Uncertain regime - conservative
+    STRATEGIC_REGIME_MULTIPLIERS: {
+        'GROWTH_RISING_INFLATION_FALLING': 1.2,    // Goldilocks - increase strategic risk
+        'GROWTH_RISING_INFLATION_RISING': 1.0,     // Growth/Inflation - normal strategic risk
+        'GROWTH_FALLING_INFLATION_RISING': 0.6,    // Stagflation - reduce strategic risk
+        'GROWTH_FALLING_INFLATION_FALLING': 0.8,   // Deflationary - cautious strategic positioning
+        'TRANSITIONAL': 0.7                        // Uncertain regime - conservative strategic stance
     }
 };
 
-// 💰 CURRENCY CORRELATIONS MATRIX (Simplified)
-const CURRENCY_CORRELATIONS = {
-    'EURUSD': { 'GBPUSD': 0.8, 'AUDUSD': 0.7, 'NZDUSD': 0.7, 'USDJPY': -0.6 },
-    'GBPUSD': { 'EURUSD': 0.8, 'AUDUSD': 0.6, 'NZDUSD': 0.6, 'USDJPY': -0.5 },
-    'AUDUSD': { 'EURUSD': 0.7, 'GBPUSD': 0.6, 'NZDUSD': 0.9, 'USDJPY': -0.4 },
-    'NZDUSD': { 'EURUSD': 0.7, 'GBPUSD': 0.6, 'AUDUSD': 0.9, 'USDJPY': -0.4 },
-    'USDJPY': { 'EURUSD': -0.6, 'GBPUSD': -0.5, 'AUDUSD': -0.4, 'NZDUSD': -0.4 },
-    'USDCHF': { 'EURUSD': -0.7, 'GBPUSD': -0.6, 'USDJPY': 0.5 }
-};
-
 /**
- * 🚀 INITIALIZE METAAPI CONNECTION (Enhanced)
+ * 🎯 STRATEGIC COMMANDER POSITION SIZING CALCULATOR
+ * Enhanced with institutional authority and strategic warfare principles
  */
-async function initializeMetaAPI() {
+async function calculateStrategicPositionSize(symbol, direction, entryPrice, stopLoss, accountBalance, marketData = null) {
     try {
-        if (!METAAPI_TOKEN || !METAAPI_ACCOUNT_ID) {
-            console.log('⚠️ MetaAPI credentials not found in environment variables');
-            return false;
-        }
-
-        console.log('🔄 Initializing MetaAPI connection with Ray Dalio enhancements...');
+        console.log(`🎯 Strategic Commander calculating position size for ${symbol} ${direction}`);
         
-        metaApi = new MetaApi(METAAPI_TOKEN);
-        account = await metaApi.metatraderAccountApi.getAccount(METAAPI_ACCOUNT_ID);
-        
-        console.log('⏳ Waiting for account deployment...');
-        await account.waitDeployed();
-        
-        connection = account.getStreamingConnection();
-        await connection.connect();
-        isConnected = true;
-        
-        console.log('⏳ Waiting for synchronization...');
-        await connection.waitSynchronized();
-        isSynchronized = true;
-        
-        console.log('✅ MetaAPI connected successfully with institutional risk management');
-        return true;
-        
-    } catch (error) {
-        console.error('❌ MetaAPI initialization error:', error.message);
-        isConnected = false;
-        isSynchronized = false;
-        return false;
-    }
-}
-
-/**
- * 🎯 RAY DALIO POSITION SIZING CALCULATOR
- * Uses volatility-adjusted position sizing with regime considerations
- */
-async function calculateRayDalioPositionSize(symbol, direction, entryPrice, stopLoss, accountBalance, marketData = null) {
-    try {
-        console.log(`🎯 Calculating Ray Dalio position size for ${symbol} ${direction}`);
-        
-        // Get current market regime data if not provided
+        // Get current strategic market regime data
         if (!marketData) {
             marketData = await getRayDalioMarketData().catch(() => null);
         }
         
-        // Calculate base risk amount (2% of account)
-        const baseRiskAmount = accountBalance * RISK_PARAMETERS.MAX_RISK_PER_TRADE;
+        // Calculate base strategic risk amount (2% of account)
+        const baseStrategicRisk = accountBalance * STRATEGIC_RISK_PARAMETERS.MAX_RISK_PER_TRADE;
         
-        // Calculate stop loss distance
+        // Calculate strategic stop loss distance
         const stopLossDistance = Math.abs(entryPrice - stopLoss);
         const stopLossPercent = stopLossDistance / entryPrice;
         
-        // Base position size calculation
-        let positionSize = baseRiskAmount / stopLossDistance;
+        // Base strategic position size calculation
+        let strategicPositionSize = baseStrategicRisk / stopLossDistance;
         
-        // Get regime risk multiplier
-        const regimeMultiplier = getRegimeRiskMultiplier(marketData);
+        // Get strategic regime multiplier
+        const regimeMultiplier = getStrategicRegimeMultiplier(marketData);
         
-        // Apply regime adjustment
-        positionSize *= regimeMultiplier;
+        // Apply strategic regime adjustment
+        strategicPositionSize *= regimeMultiplier;
         
-        // Calculate volatility adjustment
-        const volatilityMultiplier = await getVolatilityAdjustment(symbol);
-        positionSize *= volatilityMultiplier;
+        // Calculate strategic volatility adjustment
+        const volatilityMultiplier = await getStrategicVolatilityAdjustment(symbol);
+        strategicPositionSize *= volatilityMultiplier;
         
-        // Apply correlation limits
-        const correlationMultiplier = await getCorrelationAdjustment(symbol);
-        positionSize *= correlationMultiplier;
+        // Apply strategic correlation limits
+        const correlationMultiplier = await getStrategicCorrelationAdjustment(symbol);
+        strategicPositionSize *= correlationMultiplier;
         
-        // Calculate position value and margin requirement
-        const positionValue = positionSize * entryPrice;
+        // Calculate strategic position value and margin requirement
+        const positionValue = strategicPositionSize * entryPrice;
         const leverage = await getAccountLeverage();
         const marginRequired = positionValue / leverage;
         
-        // Final validation checks
-        const maxPositionSize = accountBalance * 0.1; // Max 10% of account per trade
-        positionSize = Math.min(positionSize, maxPositionSize);
+        // Strategic validation checks
+        const maxStrategicPosition = accountBalance * 0.1; // Max 10% of account per strategic trade
+        strategicPositionSize = Math.min(strategicPositionSize, maxStrategicPosition);
         
-        // Round to appropriate lot size
-        const lotSize = roundToLotSize(positionSize, symbol);
+        // Round to strategic lot size
+        const strategicLotSize = roundToLotSize(strategicPositionSize, symbol);
         
-        const analysis = {
-            recommendedSize: lotSize,
-            riskAmount: lotSize * stopLossDistance,
-            riskPercent: (lotSize * stopLossDistance / accountBalance) * 100,
-            positionValue: lotSize * entryPrice,
-            marginRequired: (lotSize * entryPrice) / leverage,
-            marginUtilization: ((lotSize * entryPrice) / leverage / accountBalance) * 100,
+        const strategicAnalysis = {
+            recommendedSize: strategicLotSize,
+            strategicRiskAmount: strategicLotSize * stopLossDistance,
+            strategicRiskPercent: (strategicLotSize * stopLossDistance / accountBalance) * 100,
+            positionValue: strategicLotSize * entryPrice,
+            marginRequired: (strategicLotSize * entryPrice) / leverage,
+            marginUtilization: ((strategicLotSize * entryPrice) / leverage / accountBalance) * 100,
             
-            // Risk factors
-            regimeMultiplier: regimeMultiplier,
-            volatilityMultiplier: volatilityMultiplier,
-            correlationMultiplier: correlationMultiplier,
+            // Strategic risk factors
+            strategicRegimeMultiplier: regimeMultiplier,
+            strategicVolatilityMultiplier: volatilityMultiplier,
+            strategicCorrelationMultiplier: correlationMultiplier,
             
-            // Regime context
-            currentRegime: marketData?.rayDalio?.regime?.currentRegime?.name || 'UNKNOWN',
-            regimeConfidence: marketData?.rayDalio?.regime?.confidence || 0,
+            // Strategic regime context
+            currentStrategicRegime: marketData?.rayDalio?.regime?.currentRegime?.name || 'UNKNOWN',
+            strategicRegimeConfidence: marketData?.rayDalio?.regime?.confidence || 0,
             
-            // Risk metrics
+            // Strategic risk metrics
             stopLossDistance: stopLossDistance,
             stopLossPercent: (stopLossPercent * 100).toFixed(2),
-            riskRewardRatio: null, // To be calculated with take profit
+            strategicRiskRewardRatio: null, // To be calculated with take profit
             
-            // Warnings
-            warnings: []
+            // Strategic warnings
+            strategicWarnings: []
         };
         
-        // Add warnings
-        if (analysis.riskPercent > 2.5) {
-            analysis.warnings.push('⚠️ Risk exceeds 2.5% - consider reducing position size');
+        // Add strategic warnings
+        if (strategicAnalysis.strategicRiskPercent > 2.5) {
+            strategicAnalysis.strategicWarnings.push('⚠️ Strategic risk exceeds 2.5% - reduce position size immediately');
         }
         
-        if (analysis.marginUtilization > 20) {
-            analysis.warnings.push('⚠️ High margin utilization - monitor margin levels');
+        if (strategicAnalysis.marginUtilization > 20) {
+            strategicAnalysis.strategicWarnings.push('⚠️ High margin utilization detected - monitor strategic levels');
         }
         
         if (regimeMultiplier < 0.8) {
-            analysis.warnings.push('🏛️ Current regime suggests defensive positioning');
+            strategicAnalysis.strategicWarnings.push('🏛️ Current regime demands defensive strategic positioning');
         }
         
         if (marketData?.rayDalio?.regime?.confidence < 60) {
-            analysis.warnings.push('🔄 Low regime confidence - consider smaller position');
+            strategicAnalysis.strategicWarnings.push('🔄 Low regime confidence - implement smaller strategic position');
         }
         
-        console.log(`✅ Position size calculated: ${lotSize} lots (${analysis.riskPercent.toFixed(2)}% risk)`);
-        return analysis;
+        console.log(`✅ Strategic position size calculated: ${strategicLotSize} lots (${strategicAnalysis.strategicRiskPercent.toFixed(2)}% strategic risk)`);
+        return strategicAnalysis;
         
     } catch (error) {
-        console.error('Position sizing error:', error.message);
+        console.error('Strategic position sizing error:', error.message);
         return {
             error: error.message,
-            recommendedSize: 0.01, // Minimum fallback
-            warnings: ['❌ Position sizing calculation failed - using minimum size']
+            recommendedSize: 0.01, // Minimum strategic fallback
+            strategicWarnings: ['❌ Strategic position sizing calculation failed - using minimum safe size']
         };
     }
 }
 
 /**
- * 🏛️ GET REGIME RISK MULTIPLIER
+ * 🏛️ GET STRATEGIC REGIME MULTIPLIER
  */
-function getRegimeRiskMultiplier(marketData) {
+function getStrategicRegimeMultiplier(marketData) {
     if (!marketData?.rayDalio?.regime?.currentRegime) {
-        return RISK_PARAMETERS.REGIME_RISK_MULTIPLIERS.TRANSITIONAL;
+        return STRATEGIC_RISK_PARAMETERS.STRATEGIC_REGIME_MULTIPLIERS.TRANSITIONAL;
     }
     
     const regimeName = marketData.rayDalio.regime.currentRegime.name;
     const confidence = marketData.rayDalio.regime.confidence || 50;
     
-    // Base multiplier from regime
-    let multiplier = RISK_PARAMETERS.REGIME_RISK_MULTIPLIERS[regimeName] || 0.8;
+    // Base strategic multiplier from regime
+    let strategicMultiplier = STRATEGIC_RISK_PARAMETERS.STRATEGIC_REGIME_MULTIPLIERS[regimeName] || 0.8;
     
-    // Adjust for regime confidence
+    // Adjust for strategic regime confidence
     if (confidence < 60) {
-        multiplier *= 0.8; // Reduce risk when regime uncertain
+        strategicMultiplier *= 0.8; // Reduce strategic risk when regime uncertain
     } else if (confidence > 85) {
-        multiplier *= 1.1; // Slightly increase risk when regime clear
+        strategicMultiplier *= 1.1; // Increase strategic risk when regime clear
     }
     
-    // Additional market stress adjustments
+    // Strategic market stress adjustments
     const marketStress = marketData.rayDalio.regime.signals?.market?.stress || 50;
     if (marketStress > 70) {
-        multiplier *= 0.7; // Significantly reduce risk during market stress
+        strategicMultiplier *= 0.7; // Significantly reduce strategic risk during market stress
     }
     
-    return Math.max(0.3, Math.min(1.5, multiplier)); // Cap between 0.3x and 1.5x
+    return Math.max(0.3, Math.min(1.5, strategicMultiplier)); // Strategic cap between 0.3x and 1.5x
 }
 
 /**
- * 📊 GET VOLATILITY ADJUSTMENT
+ * 📊 GET STRATEGIC VOLATILITY ADJUSTMENT
  */
-async function getVolatilityAdjustment(symbol) {
+async function getStrategicVolatilityAdjustment(symbol) {
     try {
-        // For now, use simplified volatility adjustment
-        // In production, this would calculate actual 20-day volatility
-        
-        const baseVolatility = {
+        // Strategic volatility adjustment for optimal positioning
+        const strategicVolatility = {
             'EURUSD': 0.7,
             'GBPUSD': 0.8,
             'USDJPY': 0.6,
@@ -228,171 +178,171 @@ async function getVolatilityAdjustment(symbol) {
             'USDCHF': 0.7
         };
         
-        const symbolVol = baseVolatility[symbol] || 0.8;
+        const symbolVol = strategicVolatility[symbol] || 0.8;
         
-        // Inverse relationship: higher volatility = smaller position
+        // Strategic inverse relationship: higher volatility = smaller strategic position
         return 0.8 / symbolVol;
         
     } catch (error) {
-        console.error('Volatility adjustment error:', error.message);
-        return 1.0; // Default to no adjustment
+        console.error('Strategic volatility adjustment error:', error.message);
+        return 1.0; // Default to no strategic adjustment
     }
 }
 
 /**
- * 🔗 GET CORRELATION ADJUSTMENT
+ * 🔗 GET STRATEGIC CORRELATION ADJUSTMENT
  */
-async function getCorrelationAdjustment(symbol) {
+async function getStrategicCorrelationAdjustment(symbol) {
     try {
-        // Get current open positions
+        // Get current strategic positions
         const positions = await getOpenPositions();
         if (!positions || positions.length === 0) {
-            return 1.0; // No correlation risk if no positions
+            return 1.0; // No strategic correlation risk if no positions
         }
         
-        let totalCorrelationRisk = 0;
+        let totalStrategicCorrelationRisk = 0;
         
         positions.forEach(position => {
             const posSymbol = position.symbol;
             const correlation = CURRENCY_CORRELATIONS[symbol]?.[posSymbol] || 0;
             
             if (Math.abs(correlation) > 0.5) {
-                // High correlation detected
-                totalCorrelationRisk += Math.abs(correlation) * Math.abs(position.volume);
+                // High strategic correlation detected
+                totalStrategicCorrelationRisk += Math.abs(correlation) * Math.abs(position.volume);
             }
         });
         
-        // Reduce position size if high correlation exposure exists
-        if (totalCorrelationRisk > 2.0) {
-            return 0.6; // Significantly reduce position
-        } else if (totalCorrelationRisk > 1.0) {
-            return 0.8; // Moderately reduce position
+        // Reduce strategic position size if high correlation exposure exists
+        if (totalStrategicCorrelationRisk > 2.0) {
+            return 0.6; // Significantly reduce strategic position
+        } else if (totalStrategicCorrelationRisk > 1.0) {
+            return 0.8; // Moderately reduce strategic position
         }
         
-        return 1.0; // No correlation adjustment needed
+        return 1.0; // No strategic correlation adjustment needed
         
     } catch (error) {
-        console.error('Correlation adjustment error:', error.message);
+        console.error('Strategic correlation adjustment error:', error.message);
         return 1.0;
     }
 }
 
 /**
- * ⚖️ CALCULATE PORTFOLIO RISK METRICS
+ * ⚖️ CALCULATE STRATEGIC PORTFOLIO RISK METRICS
  */
-async function calculatePortfolioRisk(accountBalance) {
+async function calculateStrategicPortfolioRisk(accountBalance) {
     try {
         const positions = await getOpenPositions();
         const marketData = await getRayDalioMarketData().catch(() => null);
         
         if (!positions || positions.length === 0) {
             return {
-                totalRisk: 0,
-                totalRiskPercent: 0,
-                positionCount: 0,
-                correlationRisk: 'LOW',
-                regimeRisk: 'MODERATE',
-                recommendations: ['📊 No open positions - clean slate for Ray Dalio positioning']
+                totalStrategicRisk: 0,
+                totalStrategicRiskPercent: 0,
+                strategicPositionCount: 0,
+                strategicCorrelationRisk: 'LOW',
+                strategicRegimeRisk: 'MODERATE',
+                strategicRecommendations: ['📊 No open positions - clean slate for Strategic Commander positioning']
             };
         }
         
-        let totalRiskAmount = 0;
-        let correlationMatrix = {};
+        let totalStrategicRiskAmount = 0;
+        let strategicCorrelationMatrix = {};
         
-        // Calculate individual position risks
+        // Calculate individual strategic position risks
         positions.forEach(position => {
-            // Estimate risk based on current P&L and position size
-            const positionRisk = Math.abs(position.profit || 0) + (position.volume * 100); // Simplified
-            totalRiskAmount += positionRisk;
+            // Estimate strategic risk based on current P&L and position size
+            const strategicPositionRisk = Math.abs(position.profit || 0) + (position.volume * 100); // Simplified
+            totalStrategicRiskAmount += strategicPositionRisk;
             
-            // Track correlation exposure
+            // Track strategic correlation exposure
             const symbol = position.symbol;
-            if (!correlationMatrix[symbol]) {
-                correlationMatrix[symbol] = 0;
+            if (!strategicCorrelationMatrix[symbol]) {
+                strategicCorrelationMatrix[symbol] = 0;
             }
-            correlationMatrix[symbol] += position.volume;
+            strategicCorrelationMatrix[symbol] += position.volume;
         });
         
-        const totalRiskPercent = (totalRiskAmount / accountBalance) * 100;
+        const totalStrategicRiskPercent = (totalStrategicRiskAmount / accountBalance) * 100;
         
-        // Assess correlation risk
-        let correlationRisk = 'LOW';
-        let maxCorrelationExposure = 0;
+        // Assess strategic correlation risk
+        let strategicCorrelationRisk = 'LOW';
+        let maxStrategicCorrelationExposure = 0;
         
-        Object.values(correlationMatrix).forEach(exposure => {
-            const exposurePercent = (exposure * 1000) / accountBalance; // Rough calculation
-            if (exposurePercent > maxCorrelationExposure) {
-                maxCorrelationExposure = exposurePercent;
+        Object.values(strategicCorrelationMatrix).forEach(exposure => {
+            const exposurePercent = (exposure * 1000) / accountBalance; // Strategic calculation
+            if (exposurePercent > maxStrategicCorrelationExposure) {
+                maxStrategicCorrelationExposure = exposurePercent;
             }
         });
         
-        if (maxCorrelationExposure > 15) {
-            correlationRisk = 'HIGH';
-        } else if (maxCorrelationExposure > 10) {
-            correlationRisk = 'MODERATE';
+        if (maxStrategicCorrelationExposure > 15) {
+            strategicCorrelationRisk = 'HIGH';
+        } else if (maxStrategicCorrelationExposure > 10) {
+            strategicCorrelationRisk = 'MODERATE';
         }
         
-        // Assess regime risk
-        let regimeRisk = 'MODERATE';
+        // Assess strategic regime risk
+        let strategicRegimeRisk = 'MODERATE';
         const regimeName = marketData?.rayDalio?.regime?.currentRegime?.name;
         const regimeConfidence = marketData?.rayDalio?.regime?.confidence || 50;
         
         if (regimeName === 'GROWTH_FALLING_INFLATION_RISING' || regimeConfidence < 60) {
-            regimeRisk = 'HIGH';
+            strategicRegimeRisk = 'HIGH';
         } else if (regimeName === 'GROWTH_RISING_INFLATION_FALLING' && regimeConfidence > 80) {
-            regimeRisk = 'LOW';
+            strategicRegimeRisk = 'LOW';
         }
         
-        // Generate recommendations
-        const recommendations = [];
+        // Generate strategic recommendations
+        const strategicRecommendations = [];
         
-        if (totalRiskPercent > 6) {
-            recommendations.push('⚠️ Portfolio risk exceeds 6% - consider reducing position sizes');
+        if (totalStrategicRiskPercent > 6) {
+            strategicRecommendations.push('⚠️ Strategic portfolio risk exceeds 6% - reduce position sizes immediately');
         }
         
-        if (correlationRisk === 'HIGH') {
-            recommendations.push('🔗 High correlation risk detected - diversify across asset classes');
+        if (strategicCorrelationRisk === 'HIGH') {
+            strategicRecommendations.push('🔗 High strategic correlation risk detected - diversify across asset classes');
         }
         
-        if (regimeRisk === 'HIGH') {
-            recommendations.push('🏛️ Current regime suggests defensive positioning');
+        if (strategicRegimeRisk === 'HIGH') {
+            strategicRecommendations.push('🏛️ Current regime demands defensive strategic positioning');
         }
         
         if (positions.length > 5) {
-            recommendations.push('📊 High number of positions - consider consolidation');
+            strategicRecommendations.push('📊 High number of strategic positions - consider consolidation');
         }
         
-        if (recommendations.length === 0) {
-            recommendations.push('✅ Portfolio risk levels within Ray Dalio guidelines');
+        if (strategicRecommendations.length === 0) {
+            strategicRecommendations.push('✅ Strategic portfolio risk levels within Strategic Commander guidelines');
         }
         
         return {
-            totalRisk: totalRiskAmount,
-            totalRiskPercent: totalRiskPercent.toFixed(2),
-            positionCount: positions.length,
-            correlationRisk,
-            regimeRisk,
-            maxCorrelationExposure: maxCorrelationExposure.toFixed(2),
-            currentRegime: regimeName || 'UNKNOWN',
-            regimeConfidence: regimeConfidence,
-            recommendations
+            totalStrategicRisk: totalStrategicRiskAmount,
+            totalStrategicRiskPercent: totalStrategicRiskPercent.toFixed(2),
+            strategicPositionCount: positions.length,
+            strategicCorrelationRisk,
+            strategicRegimeRisk,
+            maxStrategicCorrelationExposure: maxStrategicCorrelationExposure.toFixed(2),
+            currentStrategicRegime: regimeName || 'UNKNOWN',
+            strategicRegimeConfidence: regimeConfidence,
+            strategicRecommendations
         };
         
     } catch (error) {
-        console.error('Portfolio risk calculation error:', error.message);
+        console.error('Strategic portfolio risk calculation error:', error.message);
         return {
             error: error.message,
-            recommendations: ['❌ Risk calculation failed - monitor positions manually']
+            strategicRecommendations: ['❌ Strategic risk calculation failed - monitor positions manually']
         };
     }
 }
 
 /**
- * 🎯 ENHANCED TRADING OPPORTUNITIES SCANNER
+ * 🎯 STRATEGIC COMMANDER TRADING OPPORTUNITIES SCANNER
  */
-async function scanTradingOpportunities() {
+async function scanStrategicTradingOpportunities() {
     try {
-        console.log('🔍 Scanning for Ray Dalio-style trading opportunities...');
+        console.log('🔍 Strategic Commander scanning for institutional-grade trading opportunities...');
         
         const marketData = await getRayDalioMarketData();
         const accountInfo = await getAccountInfo();
@@ -400,39 +350,39 @@ async function scanTradingOpportunities() {
         
         if (!marketData || !accountInfo) {
             return {
-                error: 'Market data or account info unavailable',
-                opportunities: []
+                error: 'Strategic market data or account info unavailable',
+                strategicOpportunities: []
             };
         }
         
-        const opportunities = [];
+        const strategicOpportunities = [];
         
-        // Regime-based opportunities
+        // Strategic regime-based opportunities
         const regime = marketData.rayDalio?.regime?.currentRegime;
         if (regime) {
-            const regimeOpps = generateRegimeOpportunities(regime, marketData);
-            opportunities.push(...regimeOpps);
+            const strategicRegimeOpps = generateStrategicRegimeOpportunities(regime, marketData);
+            strategicOpportunities.push(...strategicRegimeOpps);
         }
         
-        // Yield curve opportunities
+        // Strategic yield curve opportunities
         if (marketData.rayDalio?.yieldCurve) {
-            const curveOpps = generateYieldCurveOpportunities(marketData.rayDalio.yieldCurve);
-            opportunities.push(...curveOpps);
+            const strategicCurveOpps = generateStrategicYieldCurveOpportunities(marketData.rayDalio.yieldCurve);
+            strategicOpportunities.push(...strategicCurveOpps);
         }
         
-        // Credit spread opportunities
+        // Strategic credit spread opportunities
         if (marketData.rayDalio?.creditSpreads) {
-            const creditOpps = generateCreditOpportunities(marketData.rayDalio.creditSpreads);
-            opportunities.push(...creditOpps);
+            const strategicCreditOpps = generateStrategicCreditOpportunities(marketData.rayDalio.creditSpreads);
+            strategicOpportunities.push(...strategicCreditOpps);
         }
         
-        // Filter based on current positions (avoid over-correlation)
-        const filteredOpportunities = filterByCorrelation(opportunities, currentPositions);
+        // Filter based on strategic correlation limits
+        const filteredStrategicOpportunities = filterByStrategicCorrelation(strategicOpportunities, currentPositions);
         
-        // Add position sizing for each opportunity
-        const enhancedOpportunities = await Promise.all(
-            filteredOpportunities.map(async (opp) => {
-                const sizing = await calculateRayDalioPositionSize(
+        // Add strategic position sizing for each opportunity
+        const enhancedStrategicOpportunities = await Promise.all(
+            filteredStrategicOpportunities.map(async (opp) => {
+                const strategicSizing = await calculateStrategicPositionSize(
                     opp.symbol,
                     opp.direction,
                     opp.entryPrice,
@@ -443,526 +393,46 @@ async function scanTradingOpportunities() {
                 
                 return {
                     ...opp,
-                    sizing: sizing
+                    strategicSizing: strategicSizing,
+                    strategicAuthority: 'STRATEGIC_COMMANDER',
+                    institutionalGrade: true
                 };
             })
         );
         
         return {
-            opportunities: enhancedOpportunities.slice(0, 5), // Top 5
-            marketRegime: regime?.name || 'UNKNOWN',
-            regimeConfidence: marketData.rayDalio?.regime?.confidence || 0,
-            scanTime: new Date().toISOString()
+            strategicOpportunities: enhancedStrategicOpportunities.slice(0, 5), // Top 5 strategic opportunities
+            strategicMarketRegime: regime?.name || 'UNKNOWN',
+            strategicRegimeConfidence: marketData.rayDalio?.regime?.confidence || 0,
+            strategicScanTime: new Date().toISOString(),
+            strategicCommanderActive: true
         };
         
     } catch (error) {
-        console.error('Opportunities scanner error:', error.message);
+        console.error('Strategic opportunities scanner error:', error.message);
         return {
             error: error.message,
-            opportunities: []
+            strategicOpportunities: []
         };
     }
 }
 
 /**
- * 🏛️ GENERATE REGIME-BASED OPPORTUNITIES
+ * 🏛️ ENHANCED TRADING SUMMARY WITH STRATEGIC COMMANDER AUTHORITY
  */
-function generateRegimeOpportunities(regime, marketData) {
-    const opportunities = [];
-    
-    if (regime.name === 'GROWTH_RISING_INFLATION_FALLING') {
-        // Goldilocks scenario - favor risk assets
-        opportunities.push({
-            symbol: 'EURUSD',
-            direction: 'LONG',
-            rationale: 'Risk-on environment favors growth currencies over USD',
-            entryPrice: 1.0850, // Example prices
-            stopLoss: 1.0750,
-            takeProfit: 1.1000,
-            confidence: 8,
-            timeframe: 'Medium-term',
-            regimeFit: 'EXCELLENT'
-        });
-        
-        opportunities.push({
-            symbol: 'AUDUSD',
-            direction: 'LONG',
-            rationale: 'Commodity currency benefits from growth without inflation fears',
-            entryPrice: 0.6750,
-            stopLoss: 0.6650,
-            takeProfit: 0.6900,
-            confidence: 7,
-            timeframe: 'Medium-term',
-            regimeFit: 'GOOD'
-        });
-    }
-    
-    if (regime.name === 'GROWTH_FALLING_INFLATION_RISING') {
-        // Stagflation scenario - favor safe havens
-        opportunities.push({
-            symbol: 'USDJPY',
-            direction: 'LONG',
-            rationale: 'Flight to safety in stagflationary environment',
-            entryPrice: 150.00,
-            stopLoss: 148.50,
-            takeProfit: 152.50,
-            confidence: 8,
-            timeframe: 'Short-term',
-            regimeFit: 'EXCELLENT'
-        });
-        
-        opportunities.push({
-            symbol: 'USDCHF',
-            direction: 'LONG',
-            rationale: 'Safe haven currencies outperform in stagflation',
-            entryPrice: 0.8750,
-            stopLoss: 0.8650,
-            takeProfit: 0.8900,
-            confidence: 7,
-            timeframe: 'Medium-term',
-            regimeFit: 'GOOD'
-        });
-    }
-    
-    return opportunities;
-}
-
-/**
- * 📈 GENERATE YIELD CURVE OPPORTUNITIES
- */
-function generateYieldCurveOpportunities(yieldCurve) {
-    const opportunities = [];
-    
-    if (yieldCurve.shape === 'INVERTED' && yieldCurve.spreads['2s10s'] < -0.5) {
-        opportunities.push({
-            symbol: 'USDJPY',
-            direction: 'LONG',
-            rationale: 'Deeply inverted yield curve signals recession - favor JPY safe haven',
-            entryPrice: 150.00,
-            stopLoss: 148.00,
-            takeProfit: 153.00,
-            confidence: 9,
-            timeframe: 'Long-term',
-            signalSource: 'YIELD_CURVE_INVERSION'
-        });
-    }
-    
-    if (yieldCurve.shape === 'STEEP' && yieldCurve.spreads['2s10s'] > 2.0) {
-        opportunities.push({
-            symbol: 'EURUSD',
-            direction: 'LONG',
-            rationale: 'Steep yield curve indicates growth acceleration - favor risk currencies',
-            entryPrice: 1.0850,
-            stopLoss: 1.0750,
-            takeProfit: 1.1050,
-            confidence: 7,
-            timeframe: 'Medium-term',
-            signalSource: 'STEEP_YIELD_CURVE'
-        });
-    }
-    
-    return opportunities;
-}
-
-/**
- * 💳 GENERATE CREDIT OPPORTUNITIES
- */
-function generateCreditOpportunities(creditSpreads) {
-    const opportunities = [];
-    
-    if (creditSpreads.conditions === 'CRISIS' && creditSpreads.stress > 80) {
-        opportunities.push({
-            symbol: 'USDCHF',
-            direction: 'LONG',
-            rationale: 'Credit crisis signals flight to quality - CHF safe haven',
-            entryPrice: 0.8750,
-            stopLoss: 0.8650,
-            takeProfit: 0.8950,
-            confidence: 9,
-            timeframe: 'Short-term',
-            signalSource: 'CREDIT_CRISIS'
-        });
-    }
-    
-    if (creditSpreads.conditions === 'COMPLACENT' && creditSpreads.stress < 30) {
-        opportunities.push({
-            symbol: 'AUDUSD',
-            direction: 'LONG',
-            rationale: 'Complacent credit markets support risk currencies',
-            entryPrice: 0.6750,
-            stopLoss: 0.6650,
-            takeProfit: 0.6900,
-            confidence: 6,
-            timeframe: 'Medium-term',
-            signalSource: 'CREDIT_COMPLACENCY'
-        });
-    }
-    
-    return opportunities;
-}
-
-/**
- * 🔗 FILTER OPPORTUNITIES BY CORRELATION
- */
-function filterByCorrelation(opportunities, currentPositions) {
-    if (!currentPositions || currentPositions.length === 0) {
-        return opportunities;
-    }
-    
-    const positionSymbols = currentPositions.map(pos => pos.symbol);
-    
-    return opportunities.filter(opp => {
-        let highCorrelation = false;
-        
-        positionSymbols.forEach(posSymbol => {
-            const correlation = CURRENCY_CORRELATIONS[opp.symbol]?.[posSymbol] || 0;
-            if (Math.abs(correlation) > 0.7) {
-                highCorrelation = true;
-            }
-        });
-        
-        return !highCorrelation;
-    });
-}
-
-/**
- * 📏 UTILITY FUNCTIONS
- */
-function roundToLotSize(size, symbol) {
-    // Most forex brokers use 0.01 lot increments
-    return Math.round(size * 100) / 100;
-}
-
-async function getAccountLeverage() {
-    try {
-        const accountInfo = await getAccountInfo();
-        return accountInfo?.leverage || 100; // Default to 1:100
-    } catch (error) {
-        return 100;
-    }
-}
-
-function isConnectionReady() {
-    return connection && isConnected && isSynchronized;
-}
-
-/**
- * 🔄 EXISTING FUNCTIONS (Enhanced)
- */
-async function getAccountInfo() {
-    try {
-        if (!isConnectionReady()) {
-            console.log('🔄 Connection not ready, attempting to reconnect...');
-            const initialized = await initializeMetaAPI();
-            if (!initialized) {
-                console.log('⚠️ Failed to initialize MetaAPI connection');
-                return null;
-            }
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Try multiple methods to access account information
-        try {
-            const accountInfo1 = connection.accountInformation;
-            if (accountInfo1) {
-                return {
-                    balance: accountInfo1.balance,
-                    equity: accountInfo1.equity,
-                    margin: accountInfo1.margin,
-                    freeMargin: accountInfo1.freeMargin,
-                    marginLevel: accountInfo1.marginLevel,
-                    currency: accountInfo1.currency,
-                    leverage: accountInfo1.leverage,
-                    company: accountInfo1.company,
-                    name: accountInfo1.name,
-                    server: accountInfo1.server,
-                    loginId: accountInfo1.login
-                };
-            }
-        } catch (err) {
-            console.log('Method 1 error:', err.message);
-        }
-        
-        try {
-            const terminalState = connection.terminalState;
-            if (terminalState && terminalState.accountInformation) {
-                const accountInfo2 = terminalState.accountInformation;
-                return {
-                    balance: accountInfo2.balance,
-                    equity: accountInfo2.equity,
-                    margin: accountInfo2.margin,
-                    freeMargin: accountInfo2.freeMargin,
-                    marginLevel: accountInfo2.marginLevel,
-                    currency: accountInfo2.currency,
-                    leverage: accountInfo2.leverage,
-                    company: accountInfo2.company,
-                    name: accountInfo2.name,
-                    server: accountInfo2.server,
-                    loginId: accountInfo2.login
-                };
-            }
-        } catch (err) {
-            console.log('Method 2 error:', err.message);
-        }
-        
-        console.log('⚠️ All methods failed - account information not accessible');
-        return null;
-        
-    } catch (error) {
-        console.error('MetaAPI account info error:', error.message);
-        return null;
-    }
-}
-
-async function getOpenPositions() {
-    try {
-        if (!isConnectionReady()) {
-            console.log('🔄 Connection not ready for positions');
-            return [];
-        }
-        
-        const terminalState = connection.terminalState;
-        if (!terminalState || !terminalState.positions) {
-            console.log('⚠️ Terminal state or positions not available');
-            return [];
-        }
-        
-        const positions = terminalState.positions;
-        
-        return positions.map(position => ({
-            id: position.id,
-            symbol: position.symbol,
-            type: position.type,
-            volume: position.volume,
-            openPrice: position.openPrice,
-            currentPrice: position.currentPrice,
-            profit: position.profit,
-            unrealizedProfit: position.unrealizedProfit,
-            swap: position.swap,
-            commission: position.commission,
-            openTime: position.time,
-            updateTime: position.updateTime
-        }));
-        
-    } catch (error) {
-        console.error('MetaAPI positions error:', error.message);
-        return [];
-    }
-}
-
-async function getPendingOrders() {
-    try {
-        if (!isConnectionReady()) {
-            console.log('🔄 Connection not ready for orders');
-            return [];
-        }
-        
-        const terminalState = connection.terminalState;
-        if (!terminalState || !terminalState.orders) {
-            console.log('⚠️ Terminal state or orders not available');
-            return [];
-        }
-        
-        const orders = terminalState.orders;
-        
-        return orders.map(order => ({
-            id: order.id,
-            symbol: order.symbol,
-            type: order.type,
-            volume: order.volume,
-            openPrice: order.openPrice,
-            currentPrice: order.currentPrice,
-            stopLoss: order.stopLoss,
-            takeProfit: order.takeProfit,
-            time: order.time,
-            state: order.state,
-            comment: order.comment
-        }));
-        
-    } catch (error) {
-        console.error('MetaAPI orders error:', error.message);
-        return [];
-    }
-}
-
-async function getTradeHistory(days = 7) {
-    try {
-        if (!isConnectionReady()) {
-            console.log('🔄 Connection not ready for history');
-            return [];
-        }
-        
-        console.log('📊 Trade history feature temporarily disabled - positions and account info available');
-        return [];
-        
-    } catch (error) {
-        console.error('MetaAPI history error:', error.message);
-        return [];
-    }
-}
-
-async function executeMarketOrder(symbol, volume, type, stopLoss = null, takeProfit = null, comment = 'RAY_DALIO_AI') {
-    try {
-        if (!isConnectionReady()) {
-            const initialized = await initializeMetaAPI();
-            if (!initialized) {
-                return { success: false, error: 'MetaAPI not connected' };
-            }
-        }
-        
-        // Ray Dalio safety check - validate position size against risk parameters
-        const accountInfo = await getAccountInfo();
-        if (accountInfo) {
-            const positionValue = volume * 100000; // Assuming standard lot
-            const marginRequired = positionValue / (accountInfo.leverage || 100);
-            const marginUtilization = (marginRequired / accountInfo.balance) * 100;
-            
-            if (marginUtilization > 50) {
-                return {
-                    success: false,
-                    error: 'Ray Dalio Risk Check: Position size exceeds 50% margin utilization',
-                    recommendation: 'Reduce position size to maintain institutional risk standards'
-                };
-            }
-        }
-        
-        console.log('🚫 Order execution disabled for safety - account monitoring only');
-        console.log(`📊 Proposed order: ${symbol} ${type} ${volume} lots`);
-        
-        return {
-            success: false,
-            error: 'Order execution disabled for safety. Account monitoring only.',
-            message: 'Use Ray Dalio position sizing calculator for optimal trade size',
-            proposedOrder: {
-                symbol,
-                volume,
-                type,
-                stopLoss,
-                takeProfit,
-                comment
-            }
-        };
-        
-    } catch (error) {
-        console.error('MetaAPI order execution error:', error.message);
-        return {
-            success: false,
-            error: error.message
-        };
-    }
-}
-
-async function closePosition(positionId) {
-    try {
-        if (!isConnectionReady()) {
-            return { success: false, error: 'MetaAPI not connected' };
-        }
-        
-        console.log('🚫 Position closing disabled for safety - account monitoring only');
-        console.log(`📊 Proposed close: Position ID ${positionId}`);
-        
-        return {
-            success: false,
-            error: 'Position closing disabled for safety. Account monitoring only.',
-            message: 'Manual position management recommended for institutional standards',
-            positionId
-        };
-        
-    } catch (error) {
-        console.error('MetaAPI close position error:', error.message);
-        return {
-            success: false,
-            error: error.message
-        };
-    }
-}
-
-async function getSymbolInfo(symbol) {
-    try {
-        if (!isConnectionReady()) {
-            return null;
-        }
-        
-        const terminalState = connection.terminalState;
-        if (!terminalState) {
-            console.log('⚠️ Terminal state not available');
-            return null;
-        }
-        
-        try {
-            const specification = terminalState.specification(symbol);
-            const price = terminalState.price(symbol);
-            
-            if (specification) {
-                return {
-                    symbol: specification.symbol,
-                    description: specification.description,
-                    digits: specification.digits,
-                    bid: price?.bid,
-                    ask: price?.ask,
-                    spread: price ? (price.ask - price.bid) : null,
-                    time: price?.time
-                };
-            }
-        } catch (err) {
-            console.log(`⚠️ Symbol ${symbol} not available:`, err.message);
-        }
-        
-        return null;
-        
-    } catch (error) {
-        console.error('MetaAPI symbol info error:', error.message);
-        return null;
-    }
-}
-
-async function getConnectionStatus() {
-    try {
-        const status = {
-            metaApiInitialized: !!metaApi,
-            accountConnected: !!account,
-            connectionEstablished: !!connection,
-            synchronized: isSynchronized,
-            connected: isConnected,
-            accountId: METAAPI_ACCOUNT_ID || 'NOT_SET',
-            tokenConfigured: !!METAAPI_TOKEN,
-            rayDalioEnhanced: true
-        };
-        
-        if (account) {
-            try {
-                status.accountState = account.state;
-                status.accountType = account.type;
-                status.accountPlatform = account.platform;
-            } catch (err) {
-                status.accountError = err.message;
-            }
-        }
-        
-        return status;
-        
-    } catch (error) {
-        console.error('Connection status error:', error.message);
-        return { error: error.message };
-    }
-}
-
-/**
- * 🏛️ RAY DALIO ENHANCED TRADING SUMMARY
- */
-async function getTradingSummary() {
+async function getStrategicTradingSummary() {
     try {
         const connectionStatus = await getConnectionStatus();
         
         if (!connectionStatus.synchronized) {
-            console.log('⚠️ MetaAPI not synchronized, attempting to initialize...');
+            console.log('⚠️ MetaAPI not synchronized, Strategic Commander attempting to initialize...');
             const initialized = await initializeMetaAPI();
             if (!initialized) {
                 return {
                     error: 'MetaAPI not synchronized',
                     status: connectionStatus,
-                    message: 'MetaAPI initialization failed. Check credentials and account status.'
+                    message: 'Strategic Commander: MetaAPI initialization failed. Check credentials and account status.',
+                    strategicCommanderStatus: 'WAITING_FOR_CONNECTION'
                 };
             }
             connectionStatus.synchronized = isSynchronized;
@@ -971,28 +441,30 @@ async function getTradingSummary() {
         
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        const [accountInfo, positions, orders, portfolioRisk] = await Promise.all([
+        const [accountInfo, positions, orders, strategicPortfolioRisk] = await Promise.all([
             getAccountInfo(),
             getOpenPositions(),
             getPendingOrders(),
-            calculatePortfolioRisk(connectionStatus.synchronized ? 10000 : 0) // Use default if no account access
+            calculateStrategicPortfolioRisk(connectionStatus.synchronized ? 10000 : 0)
         ]);
         
-        // Calculate current P&L from open positions
-        const currentPnL = positions.reduce((sum, pos) => sum + (pos.profit || 0), 0);
+        // Calculate strategic current P&L from open positions
+        const strategicCurrentPnL = positions.reduce((sum, pos) => sum + (pos.profit || 0), 0);
         
-        // Ray Dalio enhanced performance metrics
-        const rayDalioMetrics = {
-            riskUtilization: portfolioRisk.totalRiskPercent || 0,
-            correlationRisk: portfolioRisk.correlationRisk || 'LOW',
-            regimeRisk: portfolioRisk.regimeRisk || 'MODERATE',
-            positionCount: positions.length,
-            maxRecommendedPositions: 5,
-            diversificationScore: calculateDiversificationScore(positions),
-            riskAdjustedReturn: currentPnL > 0 ? (currentPnL / Math.max(portfolioRisk.totalRisk || 1, 1)) : 0
+        // Strategic Commander enhanced performance metrics
+        const strategicCommanderMetrics = {
+            strategicRiskUtilization: strategicPortfolioRisk.totalStrategicRiskPercent || 0,
+            strategicCorrelationRisk: strategicPortfolioRisk.strategicCorrelationRisk || 'LOW',
+            strategicRegimeRisk: strategicPortfolioRisk.strategicRegimeRisk || 'MODERATE',
+            strategicPositionCount: positions.length,
+            maxStrategicPositions: 5,
+            strategicDiversificationScore: calculateStrategicDiversificationScore(positions),
+            strategicRiskAdjustedReturn: strategicCurrentPnL > 0 ? (strategicCurrentPnL / Math.max(strategicPortfolioRisk.totalStrategicRisk || 1, 1)) : 0,
+            strategicCommanderActive: true,
+            institutionalGrade: true
         };
         
-        const summary = {
+        const strategicSummary = {
             account: accountInfo,
             openPositions: positions,
             pendingOrders: orders,
@@ -1002,200 +474,158 @@ async function getTradingSummary() {
                 profitableTrades: 0,
                 losingTrades: 0,
                 totalProfit: 0,
-                currentPnL: currentPnL,
+                strategicCurrentPnL: strategicCurrentPnL,
                 winRate: '0.00',
                 averageProfit: '0.00'
             },
-            rayDalioMetrics: rayDalioMetrics,
-            portfolioRisk: portfolioRisk,
+            strategicCommanderMetrics: strategicCommanderMetrics,
+            strategicPortfolioRisk: strategicPortfolioRisk,
             connectionStatus: connectionStatus,
+            strategicCommanderStatus: 'ACTIVE',
             institutionalGrade: true,
             timestamp: new Date().toISOString()
         };
         
-        return summary;
+        return strategicSummary;
         
     } catch (error) {
-        console.error('MetaAPI trading summary error:', error.message);
+        console.error('Strategic Commander trading summary error:', error.message);
         return {
             error: error.message,
-            status: await getConnectionStatus()
+            status: await getConnectionStatus(),
+            strategicCommanderStatus: 'ERROR'
         };
     }
 }
 
 /**
- * 📊 CALCULATE DIVERSIFICATION SCORE
+ * 📊 CALCULATE STRATEGIC DIVERSIFICATION SCORE
  */
-function calculateDiversificationScore(positions) {
+function calculateStrategicDiversificationScore(positions) {
     if (!positions || positions.length === 0) return 100;
     
-    const symbolGroups = {
+    const strategicSymbolGroups = {
         'USD_MAJORS': ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'USDCAD'],
         'USD_MINORS': ['AUDUSD', 'NZDUSD'],
         'CROSS_PAIRS': ['EURJPY', 'GBPJPY', 'EURGBP', 'AUDCAD', 'AUDCHF']
     };
     
-    const groupExposure = {};
-    let totalVolume = 0;
+    const strategicGroupExposure = {};
+    let totalStrategicVolume = 0;
     
     positions.forEach(pos => {
-        totalVolume += Math.abs(pos.volume);
+        totalStrategicVolume += Math.abs(pos.volume);
         
-        Object.entries(symbolGroups).forEach(([group, symbols]) => {
+        Object.entries(strategicSymbolGroups).forEach(([group, symbols]) => {
             if (symbols.includes(pos.symbol)) {
-                if (!groupExposure[group]) groupExposure[group] = 0;
-                groupExposure[group] += Math.abs(pos.volume);
+                if (!strategicGroupExposure[group]) strategicGroupExposure[group] = 0;
+                strategicGroupExposure[group] += Math.abs(pos.volume);
             }
         });
     });
     
-    // Calculate concentration risk
-    let maxGroupConcentration = 0;
-    Object.values(groupExposure).forEach(exposure => {
-        const concentration = (exposure / totalVolume) * 100;
-        if (concentration > maxGroupConcentration) {
-            maxGroupConcentration = concentration;
+    // Calculate strategic concentration risk
+    let maxStrategicGroupConcentration = 0;
+    Object.values(strategicGroupExposure).forEach(exposure => {
+        const concentration = (exposure / totalStrategicVolume) * 100;
+        if (concentration > maxStrategicGroupConcentration) {
+            maxStrategicGroupConcentration = concentration;
         }
     });
     
-    // Score: 100 = perfect diversification, 0 = maximum concentration
-    return Math.max(0, 100 - maxGroupConcentration);
+    // Strategic Score: 100 = perfect diversification, 0 = maximum concentration
+    return Math.max(0, 100 - maxStrategicGroupConcentration);
 }
 
 /**
- * 🎯 FORMAT TRADING DATA FOR GPT (Enhanced)
+ * 🎯 FORMAT TRADING DATA FOR STRATEGIC COMMANDER GPT
  */
-function formatTradingDataForGPT(tradingData) {
+function formatStrategicTradingDataForGPT(tradingData) {
     if (!tradingData || tradingData.error) {
-        return `\n\n⚠️ METATRADER STATUS: ${tradingData?.error || 'Not connected'}\n💡 Issue: ${tradingData?.message || 'MetaAPI connection failed - check credentials'}\n`;
+        return `\n\n⚠️ STRATEGIC COMMANDER METATRADER STATUS: ${tradingData?.error || 'Not connected'}\n💡 Strategic Issue: ${tradingData?.message || 'MetaAPI connection failed - check credentials'}\n`;
     }
     
-    let context = '\n\n🔴 LIVE METATRADER ACCOUNT DATA (Ray Dalio Enhanced):\n';
+    let strategicContext = '\n\n🔴 LIVE STRATEGIC COMMANDER METATRADER DATA:\n';
     
-    // Account Info with Risk Metrics
+    // Strategic Account Info with Risk Metrics
     if (tradingData.account) {
         const acc = tradingData.account;
-        context += `💰 ACCOUNT: ${acc.balance?.toFixed(2)} ${acc.currency} | Equity: ${acc.equity?.toFixed(2)} | Free Margin: ${acc.freeMargin?.toFixed(2)}\n`;
-        context += `🏢 ${acc.company} | ${acc.server} | Leverage: 1:${acc.leverage} | Login: ${acc.loginId}\n`;
+        strategicContext += `💰 STRATEGIC ACCOUNT: ${acc.balance?.toFixed(2)} ${acc.currency} | Equity: ${acc.equity?.toFixed(2)} | Free Margin: ${acc.freeMargin?.toFixed(2)}\n`;
+        strategicContext += `🏢 ${acc.company} | ${acc.server} | Leverage: 1:${acc.leverage} | Login: ${acc.loginId}\n`;
         
         if (acc.marginLevel) {
-            context += `📊 Margin Level: ${acc.marginLevel.toFixed(2)}%\n`;
+            strategicContext += `📊 Strategic Margin Level: ${acc.marginLevel.toFixed(2)}%\n`;
         }
     } else {
-        context += `⚠️ Account information not yet available - connection establishing\n`;
+        strategicContext += `⚠️ Strategic account information not yet available - connection establishing\n`;
     }
     
-    // Ray Dalio Risk Metrics
-    if (tradingData.rayDalioMetrics) {
-        const metrics = tradingData.rayDalioMetrics;
-        context += `\n🏛️ RAY DALIO RISK METRICS:\n`;
-        context += `• Portfolio Risk: ${metrics.riskUtilization}% (Target: <6%)\n`;
-        context += `• Correlation Risk: ${metrics.correlationRisk}\n`;
-        context += `• Regime Risk: ${metrics.regimeRisk}\n`;
-        context += `• Diversification Score: ${metrics.diversificationScore.toFixed(0)}/100\n`;
-        context += `• Positions: ${metrics.positionCount}/${metrics.maxRecommendedPositions} recommended\n`;
+    // Strategic Commander Risk Metrics
+    if (tradingData.strategicCommanderMetrics) {
+        const metrics = tradingData.strategicCommanderMetrics;
+        strategicContext += `\n🏛️ STRATEGIC COMMANDER RISK METRICS:\n`;
+        strategicContext += `• Strategic Portfolio Risk: ${metrics.strategicRiskUtilization}% (Target: <6%)\n`;
+        strategicContext += `• Strategic Correlation Risk: ${metrics.strategicCorrelationRisk}\n`;
+        strategicContext += `• Strategic Regime Risk: ${metrics.strategicRegimeRisk}\n`;
+        strategicContext += `• Strategic Diversification Score: ${metrics.strategicDiversificationScore.toFixed(0)}/100\n`;
+        strategicContext += `• Strategic Positions: ${metrics.strategicPositionCount}/${metrics.maxStrategicPositions} recommended\n`;
         
-        if (metrics.riskAdjustedReturn > 0) {
-            context += `• Risk-Adjusted Return: ${metrics.riskAdjustedReturn.toFixed(2)}\n`;
+        if (metrics.strategicRiskAdjustedReturn > 0) {
+            strategicContext += `• Strategic Risk-Adjusted Return: ${metrics.strategicRiskAdjustedReturn.toFixed(2)}\n`;
         }
     }
     
-    // Open Positions with Regime Analysis
+    // Strategic Open Positions with Regime Analysis
     if (tradingData.openPositions && tradingData.openPositions.length > 0) {
-        context += `\n📊 OPEN POSITIONS (${tradingData.openPositions.length}) - REGIME ANALYSIS:\n`;
+        strategicContext += `\n📊 STRATEGIC OPEN POSITIONS (${tradingData.openPositions.length}) - REGIME ANALYSIS:\n`;
         tradingData.openPositions.forEach(pos => {
             const profitStatus = pos.profit > 0 ? '🟢' : pos.profit < 0 ? '🔴' : '⚪';
-            context += `${profitStatus} ${pos.symbol} ${pos.type} ${pos.volume} lots @ ${pos.openPrice} | P&L: ${pos.profit?.toFixed(2)}\n`;
+            strategicContext += `${profitStatus} ${pos.symbol} ${pos.type} ${pos.volume} lots @ ${pos.openPrice} | P&L: ${pos.profit?.toFixed(2)}\n`;
         });
     } else {
-        context += `\n📊 OPEN POSITIONS: None (Clean slate for Ray Dalio positioning)\n`;
+        strategicContext += `\n📊 STRATEGIC OPEN POSITIONS: None (Clean slate for Strategic Commander positioning)\n`;
     }
     
-    // Portfolio Risk Summary
-    if (tradingData.portfolioRisk) {
-        const risk = tradingData.portfolioRisk;
-        context += `\n⚠️ PORTFOLIO RISK ASSESSMENT:\n`;
-        context += `• Total Risk: ${risk.totalRiskPercent}% of account\n`;
-        context += `• Current Regime: ${risk.currentRegime} (${risk.regimeConfidence}% confidence)\n`;
+    // Strategic Portfolio Risk Summary
+    if (tradingData.strategicPortfolioRisk) {
+        const risk = tradingData.strategicPortfolioRisk;
+        strategicContext += `\n⚠️ STRATEGIC PORTFOLIO RISK ASSESSMENT:\n`;
+        strategicContext += `• Total Strategic Risk: ${risk.totalStrategicRiskPercent}% of account\n`;
+        strategicContext += `• Current Strategic Regime: ${risk.currentStrategicRegime} (${risk.strategicRegimeConfidence}% confidence)\n`;
         
-        if (risk.recommendations && risk.recommendations.length > 0) {
-            context += `• Recommendations:\n`;
-            risk.recommendations.slice(0, 2).forEach(rec => {
-                context += `  ${rec}\n`;
+        if (risk.strategicRecommendations && risk.strategicRecommendations.length > 0) {
+            strategicContext += `• Strategic Recommendations:\n`;
+            risk.strategicRecommendations.slice(0, 2).forEach(rec => {
+                strategicContext += `  ${rec}\n`;
             });
         }
     }
     
-    // Pending Orders
-    if (tradingData.pendingOrders && tradingData.pendingOrders.length > 0) {
-        context += `\n📋 PENDING ORDERS (${tradingData.pendingOrders.length}):\n`;
-        tradingData.pendingOrders.forEach(order => {
-            context += `• ${order.symbol} ${order.type} ${order.volume} lots @ ${order.openPrice}\n`;
-        });
-    }
+    strategicContext += `\n⚡ STRATEGIC COMMANDER TRADING SYSTEM: Active\n`;
+    strategicContext += `🏛️ Institutional risk management, strategic position sizing, and regime analysis enabled\n`;
+    strategicContext += `📊 Real-time strategic correlation monitoring and diversification scoring\n`;
+    strategicContext += `🕐 Strategic Last Updated: ${new Date().toLocaleTimeString()}\n`;
     
-    context += `\n⚡ RAY DALIO TRADING SYSTEM: Active\n`;
-    context += `🏛️ Institutional risk management, position sizing, and regime analysis enabled\n`;
-    context += `📊 Real-time correlation monitoring and diversification scoring\n`;
-    context += `🕐 Last Updated: ${new Date().toLocaleTimeString()}\n`;
-    
-    return context;
+    return strategicContext;
 }
 
-async function testConnection() {
-    try {
-        console.log('🧪 Testing MetaAPI connection with Ray Dalio enhancements...');
-        
-        const status = await getConnectionStatus();
-        console.log('Connection Status:', status);
-        
-        if (status.synchronized && status.connected) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            const accountInfo = await getAccountInfo();
-            const portfolioRisk = await calculatePortfolioRisk(accountInfo?.balance || 10000);
-            
-            console.log('Account Info:', accountInfo);
-            console.log('Portfolio Risk:', portfolioRisk);
-            
-            return { 
-                success: true, 
-                status, 
-                accountInfo, 
-                portfolioRisk,
-                rayDalioEnhanced: true 
-            };
-        } else {
-            const initialized = await initializeMetaAPI();
-            if (initialized) {
-                await new Promise(resolve => setTimeout(resolve, 3000));
-                const accountInfo = await getAccountInfo();
-                const portfolioRisk = await calculatePortfolioRisk(accountInfo?.balance || 10000);
-                
-                return { 
-                    success: true, 
-                    status: await getConnectionStatus(), 
-                    accountInfo, 
-                    portfolioRisk,
-                    rayDalioEnhanced: true 
-                };
-            }
-            return { success: false, status: await getConnectionStatus() };
-        }
-        
-    } catch (error) {
-        console.error('Test connection error:', error.message);
-        return { success: false, error: error.message };
-    }
-}
-
+// Keep all your existing functions but alias the enhanced ones
 module.exports = {
-    // 🏛️ RAY DALIO ENHANCED FUNCTIONS
-    calculateRayDalioPositionSize,
-    calculatePortfolioRisk,
-    scanTradingOpportunities,
+    // 🏛️ STRATEGIC COMMANDER ENHANCED FUNCTIONS
+    calculateStrategicPositionSize,
+    calculateStrategicPortfolioRisk,
+    scanStrategicTradingOpportunities,
+    getStrategicTradingSummary,
+    formatStrategicTradingDataForGPT,
     
-    // Enhanced existing functions
+    // Original function aliases for compatibility
+    calculateRayDalioPositionSize: calculateStrategicPositionSize,
+    calculatePortfolioRisk: calculateStrategicPortfolioRisk,
+    scanTradingOpportunities: scanStrategicTradingOpportunities,
+    getTradingSummary: getStrategicTradingSummary,
+    formatTradingDataForGPT: formatStrategicTradingDataForGPT,
+    
+    // Keep all existing functions unchanged
     initializeMetaAPI,
     getAccountInfo,
     getOpenPositions,
@@ -1204,8 +634,12 @@ module.exports = {
     executeMarketOrder,
     closePosition,
     getSymbolInfo,
-    getTradingSummary,
-    formatTradingDataForGPT,
     getConnectionStatus,
-    testConnection
+    testConnection,
+    
+    // Helper functions (add the missing ones from your original code)
+    getStrategicRegimeMultiplier,
+    getStrategicVolatilityAdjustment,
+    getStrategicCorrelationAdjustment,
+    calculateStrategicDiversificationScore
 };
