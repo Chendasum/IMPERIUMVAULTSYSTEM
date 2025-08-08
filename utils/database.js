@@ -1900,12 +1900,478 @@ async function getCurrentRegimeForLogging() {
     }
 }
 
+/**
+ * ⚠️ SAVE RISK ASSESSMENT (Missing Function)
+ */
+async function saveRiskAssessment(chatId, riskAssessment) {
+    try {
+        await pool.query(`
+            INSERT INTO risk_assessments (
+                chat_id, assessment_type, total_risk_percent, correlation_risk,
+                regime_risk, position_count, diversification_score, account_balance,
+                current_regime, regime_confidence, risk_data, recommendations,
+                stress_test_results, var_95, max_sector_concentration
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        `, [
+            chatId,
+            riskAssessment.assessmentType || 'PORTFOLIO',
+            riskAssessment.totalRiskPercent || 0,
+            riskAssessment.correlationRisk || 'MODERATE',
+            riskAssessment.regimeRisk || 'MODERATE',
+            riskAssessment.positionCount || 0,
+            riskAssessment.diversificationScore || 50,
+            riskAssessment.accountBalance || 0,
+            riskAssessment.currentRegime || 'UNKNOWN',
+            riskAssessment.regimeConfidence || 50,
+            JSON.stringify(riskAssessment.riskData || {}),
+            riskAssessment.recommendations || [],
+            JSON.stringify(riskAssessment.stressTestResults || {}),
+            riskAssessment.var95 || null,
+            riskAssessment.maxSectorConcentration || null
+        ]);
+
+        // Cleanup old risk assessments (keep last 50 per user)
+        await pool.query(`
+            DELETE FROM risk_assessments 
+            WHERE chat_id = $1 AND id NOT IN (
+                SELECT id FROM risk_assessments 
+                WHERE chat_id = $1 
+                ORDER BY timestamp DESC 
+                LIMIT 50
+            )
+        `, [chatId]);
+
+        console.log(`⚠️ Risk assessment saved for ${chatId}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save risk assessment error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📊 SAVE REGIME PERFORMANCE
+ */
+async function saveRegimePerformance(chatId, performance) {
+    try {
+        await pool.query(`
+            INSERT INTO regime_performance (
+                chat_id, regime_name, trade_symbol, trade_type, entry_price,
+                exit_price, position_size, profit_loss, trade_duration_hours,
+                regime_confidence, risk_percent, max_drawdown, sharpe_ratio,
+                trade_opened, trade_closed
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        `, [
+            chatId,
+            performance.regimeName,
+            performance.symbol,
+            performance.tradeType,
+            performance.entryPrice,
+            performance.exitPrice || null,
+            performance.positionSize,
+            performance.profitLoss || 0,
+            performance.tradeDurationHours || 0,
+            performance.regimeConfidence || 50,
+            performance.riskPercent || 1,
+            performance.maxDrawdown || null,
+            performance.sharpeRatio || null,
+            performance.tradeOpened,
+            performance.tradeClosed || null
+        ]);
+
+        console.log(`📊 Regime performance saved for ${chatId}: ${performance.symbol}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save regime performance error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 🇰🇭 SAVE CAMBODIA MARKET CONDITIONS
+ */
+async function saveCambodiaMarketData(marketData) {
+    try {
+        await pool.query(`
+            INSERT INTO cambodia_market_data (
+                data_date, market_conditions, interest_rate_environment,
+                property_market_data, economic_indicators, risk_factors,
+                opportunities, market_summary, data_quality_score
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `, [
+            marketData.dataDate || new Date().toISOString().split('T')[0],
+            JSON.stringify(marketData.marketConditions || {}),
+            JSON.stringify(marketData.interestRateEnvironment || {}),
+            JSON.stringify(marketData.propertyMarketData || {}),
+            JSON.stringify(marketData.economicIndicators || {}),
+            JSON.stringify(marketData.riskFactors || {}),
+            marketData.opportunities || [],
+            marketData.marketSummary || '',
+            marketData.dataQualityScore || 85
+        ]);
+
+        console.log('🇰🇭 Cambodia market data saved');
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save Cambodia market data error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 🇰🇭 GET LATEST CAMBODIA MARKET CONDITIONS
+ */
+async function getLatestCambodiaMarketData() {
+    try {
+        const result = await pool.query(`
+            SELECT * FROM cambodia_market_data 
+            ORDER BY data_date DESC 
+            LIMIT 1
+        `);
+
+        connectionStats.successfulQueries++;
+        return result.rows[0] || null;
+    } catch (error) {
+        console.error('Get latest Cambodia market data error:', error.message);
+        connectionStats.failedQueries++;
+        return null;
+    }
+}
+
+/**
+ * 🇰🇭 GET CAMBODIA DEALS BY STATUS
+ */
+async function getCambodiaDealsBy(criteria) {
+    try {
+        let query = 'SELECT * FROM cambodia_deals WHERE 1=1';
+        let params = [];
+        let paramIndex = 1;
+
+        if (criteria.chatId) {
+            query += ` AND chat_id = $${paramIndex}`;
+            params.push(criteria.chatId);
+            paramIndex++;
+        }
+
+        if (criteria.status) {
+            query += ` AND deal_status = $${paramIndex}`;
+            params.push(criteria.status);
+            paramIndex++;
+        }
+
+        if (criteria.recommendation) {
+            query += ` AND recommendation = $${paramIndex}`;
+            params.push(criteria.recommendation);
+            paramIndex++;
+        }
+
+        if (criteria.minAmount) {
+            query += ` AND amount >= $${paramIndex}`;
+            params.push(criteria.minAmount);
+            paramIndex++;
+        }
+
+        if (criteria.location) {
+            query += ` AND location ILIKE $${paramIndex}`;
+            params.push(`%${criteria.location}%`);
+            paramIndex++;
+        }
+
+        query += ' ORDER BY created_at DESC';
+
+        if (criteria.limit) {
+            query += ` LIMIT ${criteria.limit}`;
+        }
+
+        const result = await pool.query(query, params);
+        
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get Cambodia deals by criteria error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📊 START USER SESSION
+ */
+async function startUserSession(chatId, sessionType = 'GENERAL') {
+    try {
+        const result = await pool.query(`
+            INSERT INTO user_sessions (chat_id, session_type, session_start)
+            VALUES ($1, $2, CURRENT_TIMESTAMP)
+            RETURNING id
+        `, [chatId, sessionType]);
+
+        console.log(`📊 User session started for ${chatId}: ${sessionType}`);
+        connectionStats.successfulQueries++;
+        return result.rows[0].id;
+    } catch (error) {
+        console.error('Start user session error:', error.message);
+        connectionStats.failedQueries++;
+        return null;
+    }
+}
+
+/**
+ * 📊 END USER SESSION
+ */
+async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0, satisfactionScore = null) {
+    try {
+        await pool.query(`
+            UPDATE user_sessions 
+            SET session_end = CURRENT_TIMESTAMP,
+                commands_executed = $2,
+                total_response_time = $3,
+                satisfaction_score = $4
+            WHERE id = $1
+        `, [sessionId, commandsExecuted, totalResponseTime, satisfactionScore]);
+
+        console.log(`📊 User session ended: ${sessionId}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('End user session error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📊 LOG API USAGE
+ */
+async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Check if record exists for today
+        const existing = await pool.query(`
+            SELECT id FROM api_usage 
+            WHERE api_provider = $1 AND endpoint = $2 AND usage_date = $3
+        `, [apiProvider, endpoint, today]);
+
+        if (existing.rows.length > 0) {
+            // Update existing record
+            await pool.query(`
+                UPDATE api_usage 
+                SET calls_made = calls_made + $1,
+                    successful_calls = successful_calls + $2,
+                    failed_calls = failed_calls + $3,
+                    data_volume_kb = data_volume_kb + $4,
+                    cost_estimate = cost_estimate + $5,
+                    timestamp = CURRENT_TIMESTAMP
+                WHERE id = $6
+            `, [
+                callsCount,
+                successful ? callsCount : 0,
+                successful ? 0 : callsCount,
+                dataVolume,
+                costEstimate,
+                existing.rows[0].id
+            ]);
+        } else {
+            // Insert new record
+            await pool.query(`
+                INSERT INTO api_usage (
+                    api_provider, endpoint, calls_made, successful_calls,
+                    failed_calls, avg_response_time_ms, data_volume_kb,
+                    cost_estimate, usage_date
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            `, [
+                apiProvider,
+                endpoint,
+                callsCount,
+                successful ? callsCount : 0,
+                successful ? 0 : callsCount,
+                responseTime,
+                dataVolume,
+                costEstimate,
+                today
+            ]);
+        }
+
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Log API usage error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📊 GET USER SESSION ANALYTICS
+ */
+async function getUserSessionAnalytics(chatId, days = 30) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                COUNT(*) as total_sessions,
+                AVG(commands_executed) as avg_commands_per_session,
+                AVG(EXTRACT(EPOCH FROM (session_end - session_start))/60) as avg_session_duration_minutes,
+                AVG(satisfaction_score) as avg_satisfaction,
+                session_type,
+                COUNT(*) as sessions_by_type
+            FROM user_sessions 
+            WHERE chat_id = $1 
+                AND session_start >= CURRENT_DATE - INTERVAL '${days} days'
+                AND session_end IS NOT NULL
+            GROUP BY session_type
+            ORDER BY sessions_by_type DESC
+        `, [chatId]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get user session analytics error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📊 GET API USAGE ANALYTICS
+ */
+async function getApiUsageAnalytics(days = 30) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                api_provider,
+                SUM(calls_made) as total_calls,
+                SUM(successful_calls) as successful_calls,
+                SUM(failed_calls) as failed_calls,
+                AVG(avg_response_time_ms) as avg_response_time,
+                SUM(data_volume_kb) as total_data_volume,
+                SUM(cost_estimate) as estimated_cost
+            FROM api_usage 
+            WHERE usage_date >= CURRENT_DATE - INTERVAL '${days} days'
+            GROUP BY api_provider
+            ORDER BY total_calls DESC
+        `);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get API usage analytics error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 🔍 SEARCH CONVERSATIONS
+ */
+async function searchConversations(chatId, searchTerm, limit = 10) {
+    try {
+        const result = await pool.query(`
+            SELECT user_message, gpt_response, timestamp, strategic_importance
+            FROM conversations 
+            WHERE chat_id = $1 
+                AND (user_message ILIKE $2 OR gpt_response ILIKE $2)
+            ORDER BY timestamp DESC
+            LIMIT $3
+        `, [chatId, `%${searchTerm}%`, limit]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Search conversations error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 🔍 SEARCH TRAINING DOCUMENTS
+ */
+async function searchTrainingDocuments(chatId, searchTerm) {
+    try {
+        const result = await pool.query(`
+            SELECT file_name, summary, document_type, upload_date, word_count
+            FROM training_documents 
+            WHERE chat_id = $1 
+                AND (file_name ILIKE $2 OR content ILIKE $2 OR summary ILIKE $2)
+            ORDER BY upload_date DESC
+        `, [chatId, `%${searchTerm}%`]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Search training documents error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 🧠 UPDATE STRATEGIC INSIGHT STATUS
+ */
+async function updateStrategicInsightStatus(insightId, status, userFeedback = null) {
+    try {
+        await pool.query(`
+            UPDATE strategic_insights 
+            SET insight_status = $2, 
+                user_feedback = $3,
+                expires_at = CASE WHEN $2 = 'EXPIRED' THEN CURRENT_TIMESTAMP ELSE expires_at END
+            WHERE id = $1
+        `, [insightId, status, userFeedback ? JSON.stringify(userFeedback) : null]);
+
+        console.log(`🧠 Strategic insight ${insightId} status updated to ${status}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Update strategic insight status error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📊 GET ACTIVE STRATEGIC INSIGHTS
+ */
+async function getActiveStrategicInsights(relevantUsers = null, limit = 10) {
+    try {
+        let query = `
+            SELECT * FROM strategic_insights 
+            WHERE insight_status = 'ACTIVE' 
+                AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+        `;
+        let params = [];
+
+        if (relevantUsers) {
+            query += ` AND relevant_users && $1`;
+            params.push(relevantUsers);
+        }
+
+        query += ` ORDER BY confidence_score DESC, created_at DESC LIMIT $${params.length + 1}`;
+        params.push(limit);
+
+        const result = await pool.query(query, params);
+        
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get active strategic insights error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
 module.exports = {
     // 🏛️ ENHANCED STRATEGIC FUNCTIONS
     initializeDatabase,
     saveRegimeData,
     savePortfolioAllocation,
-    saveRiskAssessment,
+    saveRiskAssessment,          // ✅ NOW DEFINED
+    saveRegimePerformance,       // ✅ NOW DEFINED
     savePositionSizing,
     saveMarketSignal,
     saveDailyObservation,
@@ -1914,12 +2380,28 @@ module.exports = {
     // 🇰🇭 CAMBODIA FUND FUNCTIONS
     saveCambodiaDeal,
     saveCambodiaPortfolio,
+    saveCambodiaMarketData,      // ✅ NOW DEFINED
     getCambodiaFundAnalytics,
+    getLatestCambodiaMarketData, // ✅ NOW DEFINED
+    getCambodiaDealsBy,          // ✅ NOW DEFINED
     
     // 💹 TRADING FUNCTIONS
     saveTradingPattern,
     getTradingPatterns,
     saveStrategicInsight,
+    updateStrategicInsightStatus, // ✅ NOW DEFINED
+    getActiveStrategicInsights,   // ✅ NOW DEFINED
+    
+    // 📊 SESSION & API TRACKING
+    startUserSession,            // ✅ NOW DEFINED
+    endUserSession,              // ✅ NOW DEFINED
+    logApiUsage,                 // ✅ NOW DEFINED
+    getUserSessionAnalytics,     // ✅ NOW DEFINED
+    getApiUsageAnalytics,        // ✅ NOW DEFINED
+    
+    // 🔍 SEARCH FUNCTIONS
+    searchConversations,         // ✅ NOW DEFINED
+    searchTrainingDocuments,     // ✅ NOW DEFINED
     
     // 📊 ANALYTICS & MONITORING
     getSystemAnalytics,
