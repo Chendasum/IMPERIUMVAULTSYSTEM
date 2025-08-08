@@ -6,12 +6,14 @@ const { Pool } = require('pg');
 // Initialize PostgreSQL connection (Railway provides this for free)
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 30000,
-    max: 20, // Increased pool size for better performance
-    statement_timeout: 30000,
-    query_timeout: 30000
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false, sslmode: 'require' } : false,
+    connectionTimeoutMillis: 15000, // Railway-friendly timeout
+    idleTimeoutMillis: 60000,
+    max: 5, // Railway-optimized pool size
+    statement_timeout: 60000, // Increased for Railway
+    query_timeout: 60000, // Increased for Railway
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 0
 });
 
 // 📊 CONNECTION MONITORING
@@ -2372,22 +2374,55 @@ async function getCurrentRegimeForLogging() {
 
 // ✅ COMPLETE MODULE EXPORTS WITH ALL FUNCTIONS
 module.exports = {
-    // 🏛️ RAY DALIO ENHANCED FUNCTIONS
+    // 🏛️ ENHANCED STRATEGIC FUNCTIONS
     initializeDatabase,
     saveRegimeData,
     savePortfolioAllocation,
     saveRiskAssessment,
+    saveRegimePerformance,
     savePositionSizing,
     saveMarketSignal,
     saveDailyObservation,
     logCommandUsage,
+    
+    // 🇰🇭 CAMBODIA FUND FUNCTIONS
+    saveCambodiaDeal,
+    saveCambodiaPortfolio,
+    saveCambodiaMarketData,
+    getCambodiaFundAnalytics,
+    getLatestCambodiaMarketData,
+    getCambodiaDealsBy,
+    
+    // 💹 TRADING FUNCTIONS
+    saveTradingPattern,
+    getTradingPatterns,
+    saveStrategicInsight,
+    updateStrategicInsightStatus,
+    getActiveStrategicInsights,
+    
+    // 📊 SESSION & API TRACKING
+    startUserSession,
+    endUserSession,
+    logApiUsage,
+    getUserSessionAnalytics,
+    getApiUsageAnalytics,
+    
+    // 🔍 SEARCH FUNCTIONS
+    searchConversations,
+    searchTrainingDocuments,
+    
+    // 📊 ANALYTICS & MONITORING
+    getSystemAnalytics,
+    getRayDalioStats,
+    performDatabaseMaintenance,
+    performHealthCheck,
+    updateSystemMetrics,
     
     // Analytics Functions
     getRegimeTransitions,
     getPortfolioPerformanceByRegime,
     getPositionSizingAnalytics,
     getCommandUsageStats,
-    getRayDalioStats,
     
     // Helper Functions
     getCurrentRegime,
@@ -2398,7 +2433,7 @@ module.exports = {
     getRegimePerformanceSummary,
     getRiskTrendAnalysis,
     
-    // Original Functions (preserved)
+    // Original Functions (enhanced)
     saveConversationDB,
     getConversationHistoryDB,
     addPersistentMemoryDB,
@@ -2408,5 +2443,8 @@ module.exports = {
     saveTrainingDocumentDB,
     getTrainingDocumentsDB,
     getDatabaseStats,
-    clearUserDataDB
+    clearUserDataDB,
+    
+    // 📊 CONNECTION MONITORING
+    connectionStats
 };
