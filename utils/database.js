@@ -499,6 +499,257 @@ async function updateSystemMetrics(metricUpdates) {
     }
 }
 
+// 🔄 PRESERVE ALL EXISTING FUNCTIONS WITH ENHANCEMENTS (NO DUPLICATES)
+
+async function saveConversationDB(chatId, userMessage, gptResponse, messageType = 'text', contextData = null) {
+    try {
+        const startTime = Date.now();
+        
+        await pool.query(
+            `INSERT INTO conversations (chat_id, user_message, gpt_response, message_type, context_data, response_time_ms) 
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [chatId, userMessage, gptResponse, messageType, contextData, Date.now() - startTime]
+        );
+        
+        await pool.query(`
+            INSERT INTO user_profiles (chat_id, conversation_count, last_seen) 
+            VALUES ($1, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT (chat_id) 
+            DO UPDATE SET 
+                conversation_count = user_profiles.conversation_count + 1,
+                last_seen = CURRENT_TIMESTAMP
+        `, [chatId]);
+        
+        // Cleanup old conversations (keep last 200 per user)
+        await pool.query(`
+            DELETE FROM conversations 
+            WHERE chat_id = $1 AND id NOT IN (
+                SELECT id FROM conversations 
+                WHERE chat_id = $1 
+                ORDER BY timestamp DESC 
+                LIMIT 200
+            )
+        `, [chatId]);
+        
+        connectionStats.successfulQueries++;
+        await updateSystemMetrics({ total_queries: 1 });
+        
+        return true;
+    } catch (error) {
+        console.error('Save conversation error:', error);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+async function getConversationHistoryDB(chatId, limit = 10) {
+    try {
+        const result = await pool.query(
+            'SELECT user_message, gpt_response, message_type, timestamp FROM conversations WHERE chat_id = $1 ORDER BY timestamp DESC LIMIT $2',
+            [chatId, limit]
+        );
+        
+        connectionStats.successfulQueries++;
+        return result.rows.reverse();
+    } catch (error) {
+        console.error('Get history error:', error);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+async function addPersistentMemoryDB(chatId, fact, importance = 'medium') {
+    try {
+        // Generate hash for deduplication
+        const crypto = require('crypto');
+        const factHash = crypto.createHash('sha256').update(fact.toLowerCase().trim()).digest('hex');
+        
+        // Check for duplicates
+        const existing = await pool.query(
+            'SELECT id FROM persistent_memories WHERE chat_id = $1 AND fact_hash = $2',
+            [chatId, factHash]
+        );
+        
+        if (existing.rows.length > 0) {
+            // Update access count
+            await pool.query(
+                'UPDATE persistent_memories SET access_count = access_count + 1, last_accessed = CURRENT_TIMESTAMP WHERE id = $1',
+                [existing.rows[0].id]
+            );
+            return true;
+        }
+        
+        await pool.query(
+            'INSERT INTO persistent_memories (chat_id, fact, importance, fact_hash) VALUES ($1, $2, $3, $4)',
+            [chatId, fact, importance, factHash]
+        );
+        
+        // Cleanup - keep only most important memories (limit 100 per user)
+        await pool.query(`
+            DELETE FROM persistent_memories 
+            WHERE chat_id = $1 AND id NOT IN (
+                SELECT id FROM persistent_memories 
+                WHERE chat_id = $1 
+                ORDER BY 
+                    CASE importance 
+                        WHEN 'critical' THEN 4
+                        WHEN 'high' THEN 3 
+                        WHEN 'medium' THEN 2 
+                        WHEN 'low' THEN 1 
+                    END DESC, 
+                    access_count DESC,
+                    timestamp DESC 
+                LIMIT 100
+            )
+        `, [chatId]);
+        
+        console.log(`💾 Persistent memory saved to database for ${chatId}: ${fact}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Add persistent memory error:', error);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+async function getPersistentMemoryDB(chatId) {
+    try {
+        const result = await pool.query(
+            'SELECT fact, importance, timestamp, access_count FROM persistent_memories WHERE chat_id = $1 ORDER BY importance DESC, access_count DESC, timestamp DESC',
+            [chatId]
+        );
+        
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get persistent memory error:', error);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+async function getUserProfileDB(chatId) {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM user_profiles WHERE chat_id = $1',
+            [chatId]
+        );
+        
+        connectionStats.successfulQueries++;
+        return result.rows[0] || null;
+    } catch (error) {
+        console.error('Get user profile error:', error);
+        connectionStats.failedQueries++;
+        return null;
+    }
+}
+
+async function updateUserPreferencesDB(chatId, preferences) {
+    try {
+        await pool.query(
+            'UPDATE user_profiles SET preferences = $2, last_seen = CURRENT_TIMESTAMP WHERE chat_id = $1',
+            [chatId, JSON.stringify(preferences)]
+        );
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Update preferences error:', error);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+async function saveTrainingDocumentDB(chatId, fileName, content, documentType, wordCount, summary) {
+    try {
+        const crypto = require('crypto');
+        const fileHash = crypto.createHash('sha256').update(content).digest('hex');
+        
+        await pool.query(
+            'INSERT INTO training_documents (chat_id, file_name, content, document_type, word_count, summary, file_size, file_hash) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [chatId, fileName, content, documentType, wordCount, summary, content.length, fileHash]
+        );
+        
+        // Cleanup - keep only last 50 documents per user
+        await pool.query(`
+            DELETE FROM training_documents 
+            WHERE chat_id = $1 AND id NOT IN (
+                SELECT id FROM training_documents 
+                WHERE chat_id = $1 
+                ORDER BY upload_date DESC 
+                LIMIT 50
+            )
+        `, [chatId]);
+        
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save training document error:', error);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+async function getTrainingDocumentsDB(chatId) {
+    try {
+        const result = await pool.query(
+            'SELECT file_name, content, document_type, upload_date, word_count, summary, file_size FROM training_documents WHERE chat_id = $1 ORDER BY upload_date DESC',
+            [chatId]
+        );
+        
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get training documents error:', error);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+async function clearUserDataDB(chatId) {
+    try {
+        await Promise.all([
+            pool.query('DELETE FROM conversations WHERE chat_id = $1', [chatId]),
+            pool.query('DELETE FROM persistent_memories WHERE chat_id = $1', [chatId]),
+            pool.query('DELETE FROM training_documents WHERE chat_id = $1', [chatId]),
+            pool.query('DELETE FROM user_profiles WHERE chat_id = $1', [chatId]),
+            // Enhanced tables
+            pool.query('DELETE FROM portfolio_allocations WHERE chat_id = $1', [chatId]),
+            pool.query('DELETE FROM regime_performance WHERE chat_id = $1', [chatId]),
+            pool.query('DELETE FROM risk_assessments WHERE chat_id = $1', [chatId]),
+            pool.query('DELETE FROM position_sizing_history WHERE chat_id = $1', [chatId]),
+            pool.query('DELETE FROM command_analytics WHERE chat_id = $1', [chatId]),
+            pool.query('DELETE FROM cambodia_deals WHERE chat_id = $1', [chatId]),
+            pool.query('DELETE FROM trading_patterns WHERE chat_id = $1', [chatId])
+        ]);
+        
+        console.log(`🗑️ All strategic data cleared for user ${chatId}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Clear user data error:', error);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+async function getDatabaseStats() {
+    try {
+        return await getRayDalioStats();
+    } catch (error) {
+        console.error('Get database stats error:', error);
+        connectionStats.failedQueries++;
+        return {
+            totalUsers: 0,
+            totalConversations: 0,
+            totalMemories: 0,
+            totalDocuments: 0,
+            storage: 'Database Error',
+            error: error.message
+        };
+    }
+}
+
 /**
  * 🏛️ SAVE ECONOMIC REGIME DATA (Enhanced)
  */
@@ -689,6 +940,279 @@ async function getCambodiaFundAnalytics(days = 30) {
 }
 
 /**
+ * 📊 SAVE PORTFOLIO ALLOCATION
+ */
+async function savePortfolioAllocation(chatId, allocation) {
+    try {
+        await pool.query(`
+            INSERT INTO portfolio_allocations (
+                chat_id, allocation_type, regime_name, asset_class,
+                allocation_percent, allocation_amount, reasoning,
+                confidence_level, performance_attribution, rebalancing_trigger
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `, [
+            chatId,
+            allocation.type || 'RECOMMENDED',
+            allocation.regime || 'CURRENT',
+            allocation.assetClass,
+            allocation.percent,
+            allocation.amount || null,
+            allocation.reasoning || '',
+            allocation.confidence || 70,
+            allocation.performance || null,
+            allocation.trigger || 'MANUAL'
+        ]);
+
+        console.log(`📊 Portfolio allocation saved for ${chatId}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save portfolio allocation error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * ⚠️ SAVE RISK ASSESSMENT
+ */
+async function saveRiskAssessment(chatId, riskAssessment) {
+    try {
+        await pool.query(`
+            INSERT INTO risk_assessments (
+                chat_id, assessment_type, total_risk_percent, correlation_risk,
+                regime_risk, position_count, diversification_score, account_balance,
+                current_regime, regime_confidence, risk_data, recommendations,
+                stress_test_results, var_95, max_sector_concentration
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        `, [
+            chatId,
+            riskAssessment.assessmentType || 'PORTFOLIO',
+            riskAssessment.totalRiskPercent || 0,
+            riskAssessment.correlationRisk || 'MODERATE',
+            riskAssessment.regimeRisk || 'MODERATE',
+            riskAssessment.positionCount || 0,
+            riskAssessment.diversificationScore || 50,
+            riskAssessment.accountBalance || 0,
+            riskAssessment.currentRegime || 'UNKNOWN',
+            riskAssessment.regimeConfidence || 50,
+            JSON.stringify(riskAssessment.riskData || {}),
+            riskAssessment.recommendations || [],
+            JSON.stringify(riskAssessment.stressTestResults || {}),
+            riskAssessment.var95 || null,
+            riskAssessment.maxSectorConcentration || null
+        ]);
+
+        // Cleanup old risk assessments (keep last 50 per user)
+        await pool.query(`
+            DELETE FROM risk_assessments 
+            WHERE chat_id = $1 AND id NOT IN (
+                SELECT id FROM risk_assessments 
+                WHERE chat_id = $1 
+                ORDER BY timestamp DESC 
+                LIMIT 50
+            )
+        `, [chatId]);
+
+        console.log(`⚠️ Risk assessment saved for ${chatId}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save risk assessment error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📊 SAVE REGIME PERFORMANCE
+ */
+async function saveRegimePerformance(chatId, performance) {
+    try {
+        await pool.query(`
+            INSERT INTO regime_performance (
+                chat_id, regime_name, trade_symbol, trade_type, entry_price,
+                exit_price, position_size, profit_loss, trade_duration_hours,
+                regime_confidence, risk_percent, max_drawdown, sharpe_ratio,
+                trade_opened, trade_closed
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        `, [
+            chatId,
+            performance.regimeName,
+            performance.symbol,
+            performance.tradeType,
+            performance.entryPrice,
+            performance.exitPrice || null,
+            performance.positionSize,
+            performance.profitLoss || 0,
+            performance.tradeDurationHours || 0,
+            performance.regimeConfidence || 50,
+            performance.riskPercent || 1,
+            performance.maxDrawdown || null,
+            performance.sharpeRatio || null,
+            performance.tradeOpened,
+            performance.tradeClosed || null
+        ]);
+
+        console.log(`📊 Regime performance saved for ${chatId}: ${performance.symbol}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save regime performance error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📏 SAVE POSITION SIZING
+ */
+async function savePositionSizing(chatId, sizing) {
+    try {
+        await pool.query(`
+            INSERT INTO position_sizing_history (
+                chat_id, symbol, direction, recommended_size, actual_size,
+                risk_percent, regime_multiplier, volatility_multiplier,
+                correlation_multiplier, entry_price, stop_loss, take_profit,
+                account_balance, current_regime, sizing_rationale,
+                kelly_criterion, max_position_size
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        `, [
+            chatId,
+            sizing.symbol,
+            sizing.direction,
+            sizing.recommendedSize,
+            sizing.actualSize || null,
+            sizing.riskPercent,
+            sizing.regimeMultiplier || 1.0,
+            sizing.volatilityMultiplier || 1.0,
+            sizing.correlationMultiplier || 1.0,
+            sizing.entryPrice,
+            sizing.stopLoss,
+            sizing.takeProfit || null,
+            sizing.accountBalance,
+            sizing.currentRegime || 'UNKNOWN',
+            sizing.rationale || '',
+            sizing.kellyCriterion || null,
+            sizing.maxPositionSize || null
+        ]);
+
+        console.log(`📏 Position sizing saved for ${chatId}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save position sizing error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 🚨 SAVE MARKET SIGNAL
+ */
+async function saveMarketSignal(signal) {
+    try {
+        await pool.query(`
+            INSERT INTO market_signals (
+                signal_type, signal_strength, signal_description,
+                market_data, impact_level, actionable_insights,
+                false_positive, signal_accuracy
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
+            signal.type,
+            signal.strength || 'MODERATE',
+            signal.description,
+            JSON.stringify(signal.marketData || {}),
+            signal.impact || 'MODERATE',
+            signal.insights || [],
+            false,
+            signal.accuracy || null
+        ]);
+
+        console.log(`🚨 Market signal saved: ${signal.type}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save market signal error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📝 SAVE DAILY OBSERVATION
+ */
+async function saveDailyObservation(observation) {
+    try {
+        await pool.query(`
+            INSERT INTO daily_observations (
+                observation_date, market_regime, regime_confidence,
+                key_themes, market_moves, economic_data, outlook,
+                risk_factors, opportunities, position_recommendations,
+                market_stress_level, liquidity_conditions, sentiment_indicators
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        `, [
+            observation.date || new Date().toISOString().split('T')[0],
+            observation.marketRegime || 'UNKNOWN',
+            observation.regimeConfidence || 50,
+            observation.keyThemes || [],
+            JSON.stringify(observation.marketMoves || {}),
+            JSON.stringify(observation.economicData || {}),
+            observation.outlook || '',
+            observation.riskFactors || [],
+            observation.opportunities || [],
+            JSON.stringify(observation.positionRecommendations || {}),
+            observation.marketStressLevel || 50,
+            observation.liquidityConditions || 'NORMAL',
+            JSON.stringify(observation.sentimentIndicators || {})
+        ]);
+
+        console.log(`📝 Daily observation saved for ${observation.date}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Save daily observation error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📊 LOG COMMAND USAGE
+ */
+async function logCommandUsage(chatId, command, executionTime, success = true, errorMessage = null) {
+    try {
+        await pool.query(`
+            INSERT INTO command_analytics (
+                chat_id, command, command_type, execution_time_ms,
+                success, error_message, regime_context,
+                market_conditions, user_satisfaction, command_complexity,
+                data_sources_used
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        `, [
+            chatId,
+            command,
+            getCommandType(command),
+            executionTime,
+            success,
+            errorMessage,
+            await getCurrentRegimeForLogging(),
+            JSON.stringify({}), // Market conditions
+            null, // User satisfaction
+            getCommandComplexity(command),
+            getDataSourcesUsed(command)
+        ]);
+
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Log command usage error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
  * 💹 SAVE TRADING PATTERN
  */
 async function saveTradingPattern(chatId, pattern) {
@@ -787,6 +1311,687 @@ async function saveStrategicInsight(insight) {
         console.error('Save strategic insight error:', error.message);
         connectionStats.failedQueries++;
         return false;
+    }
+}
+
+// ✅ ALL MISSING FUNCTIONS ADDED BELOW
+
+/**
+ * 🧠 UPDATE STRATEGIC INSIGHT STATUS
+ */
+async function updateStrategicInsightStatus(insightId, status, userFeedback = null) {
+    try {
+        await pool.query(`
+            UPDATE strategic_insights 
+            SET insight_status = $2, 
+                user_feedback = $3,
+                expires_at = CASE WHEN $2 = 'EXPIRED' THEN CURRENT_TIMESTAMP ELSE expires_at END
+            WHERE id = $1
+        `, [insightId, status, userFeedback ? JSON.stringify(userFeedback) : null]);
+
+        console.log(`🧠 Strategic insight ${insightId} status updated to ${status}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Update strategic insight status error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📊 GET ACTIVE STRATEGIC INSIGHTS
+ */
+async function getActiveStrategicInsights(relevantUsers = null, limit = 10) {
+    try {
+        let query = `
+            SELECT * FROM strategic_insights 
+            WHERE insight_status = 'ACTIVE' 
+                AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+        `;
+        let params = [];
+
+        if (relevantUsers) {
+            query += ` AND relevant_users && $1`;
+            params.push(relevantUsers);
+        }
+
+        query += ` ORDER BY confidence_score DESC, created_at DESC LIMIT ${params.length + 1}`;
+        params.push(limit);
+
+        const result = await pool.query(query, params);
+        
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get active strategic insights error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📊 START USER SESSION
+ */
+async function startUserSession(chatId, sessionType = 'GENERAL') {
+    try {
+        const result = await pool.query(`
+            INSERT INTO user_sessions (chat_id, session_type, session_start)
+            VALUES ($1, $2, CURRENT_TIMESTAMP)
+            RETURNING id
+        `, [chatId, sessionType]);
+
+        console.log(`📊 User session started for ${chatId}: ${sessionType}`);
+        connectionStats.successfulQueries++;
+        return result.rows[0].id;
+    } catch (error) {
+        console.error('Start user session error:', error.message);
+        connectionStats.failedQueries++;
+        return null;
+    }
+}
+
+/**
+ * 📊 END USER SESSION
+ */
+async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0, satisfactionScore = null) {
+    try {
+        await pool.query(`
+            UPDATE user_sessions 
+            SET session_end = CURRENT_TIMESTAMP,
+                commands_executed = $2,
+                total_response_time = $3,
+                satisfaction_score = $4
+            WHERE id = $1
+        `, [sessionId, commandsExecuted, totalResponseTime, satisfactionScore]);
+
+        console.log(`📊 User session ended: ${sessionId}`);
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('End user session error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📊 LOG API USAGE
+ */
+async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Check if record exists for today
+        const existing = await pool.query(`
+            SELECT id FROM api_usage 
+            WHERE api_provider = $1 AND endpoint = $2 AND usage_date = $3
+        `, [apiProvider, endpoint, today]);
+
+        if (existing.rows.length > 0) {
+            // Update existing record
+            await pool.query(`
+                UPDATE api_usage 
+                SET calls_made = calls_made + $1,
+                    successful_calls = successful_calls + $2,
+                    failed_calls = failed_calls + $3,
+                    data_volume_kb = data_volume_kb + $4,
+                    cost_estimate = cost_estimate + $5,
+                    timestamp = CURRENT_TIMESTAMP
+                WHERE id = $6
+            `, [
+                callsCount,
+                successful ? callsCount : 0,
+                successful ? 0 : callsCount,
+                dataVolume,
+                costEstimate,
+                existing.rows[0].id
+            ]);
+        } else {
+            // Insert new record
+            await pool.query(`
+                INSERT INTO api_usage (
+                    api_provider, endpoint, calls_made, successful_calls,
+                    failed_calls, avg_response_time_ms, data_volume_kb,
+                    cost_estimate, usage_date
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            `, [
+                apiProvider,
+                endpoint,
+                callsCount,
+                successful ? callsCount : 0,
+                successful ? 0 : callsCount,
+                responseTime,
+                dataVolume,
+                costEstimate,
+                today
+            ]);
+        }
+
+        connectionStats.successfulQueries++;
+        return true;
+    } catch (error) {
+        console.error('Log API usage error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 📊 GET USER SESSION ANALYTICS
+ */
+async function getUserSessionAnalytics(chatId, days = 30) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                COUNT(*) as total_sessions,
+                AVG(commands_executed) as avg_commands_per_session,
+                AVG(EXTRACT(EPOCH FROM (session_end - session_start))/60) as avg_session_duration_minutes,
+                AVG(satisfaction_score) as avg_satisfaction,
+                session_type,
+                COUNT(*) as sessions_by_type
+            FROM user_sessions 
+            WHERE chat_id = $1 
+                AND session_start >= CURRENT_DATE - INTERVAL '${days} days'
+                AND session_end IS NOT NULL
+            GROUP BY session_type
+            ORDER BY sessions_by_type DESC
+        `, [chatId]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get user session analytics error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📊 GET API USAGE ANALYTICS
+ */
+async function getApiUsageAnalytics(days = 30) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                api_provider,
+                SUM(calls_made) as total_calls,
+                SUM(successful_calls) as successful_calls,
+                SUM(failed_calls) as failed_calls,
+                AVG(avg_response_time_ms) as avg_response_time,
+                SUM(data_volume_kb) as total_data_volume,
+                SUM(cost_estimate) as estimated_cost
+            FROM api_usage 
+            WHERE usage_date >= CURRENT_DATE - INTERVAL '${days} days'
+            GROUP BY api_provider
+            ORDER BY total_calls DESC
+        `);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get API usage analytics error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 🔍 SEARCH CONVERSATIONS
+ */
+async function searchConversations(chatId, searchTerm, limit = 10) {
+    try {
+        const result = await pool.query(`
+            SELECT user_message, gpt_response, timestamp, strategic_importance
+            FROM conversations 
+            WHERE chat_id = $1 
+                AND (user_message ILIKE $2 OR gpt_response ILIKE $2)
+            ORDER BY timestamp DESC
+            LIMIT $3
+        `, [chatId, `%${searchTerm}%`, limit]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Search conversations error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 🔍 SEARCH TRAINING DOCUMENTS
+ */
+async function searchTrainingDocuments(chatId, searchTerm) {
+    try {
+        const result = await pool.query(`
+            SELECT file_name, summary, document_type, upload_date, word_count
+            FROM training_documents 
+            WHERE chat_id = $1 
+                AND (file_name ILIKE $2 OR content ILIKE $2 OR summary ILIKE $2)
+            ORDER BY upload_date DESC
+        `, [chatId, `%${searchTerm}%`]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Search training documents error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 🇰🇭 SAVE CAMBODIA MARKET CONDITIONS
+ */
+async function saveCambodiaMarketData(marketData) {
+    try {
+        await pool.query(`
+            INSERT INTO cambodia_market_data (
+                data_date, market_conditions, interest_rate_environment,
+                property_market_data, economic_indicators, risk_factors,
+                opportunities, market_summary, data_quality_score
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `, [
+            marketData.dataDate || new Date().toISOString().split('T')[0],
+            JSON.stringify(marketData.marketConditions || {}),
+            JSON.stringify(marketData.interestRateEnvironment || {}),
+            JSON.stringify(marketData.propertyMarketData || {}),
+            JSON.stringify(marketData.economicIndicators || {}),
+            JSON.stringify(marketData.riskFactors || {}),
+            marketData.opportunities || [],
+            marketData.marketSummary || '',
+            marketData.dataQualityScore || 85
+        ]);
+
+        return true;
+    } catch (error) {
+        console.error('Save Cambodia market data error:', error.message);
+        connectionStats.failedQueries++;
+        return false;
+    }
+}
+
+/**
+ * 🇰🇭 GET LATEST CAMBODIA MARKET CONDITIONS
+ */
+async function getLatestCambodiaMarketData() {
+    try {
+        const result = await pool.query(`
+            SELECT * FROM cambodia_market_data 
+            ORDER BY data_date DESC 
+            LIMIT 1
+        `);
+
+        connectionStats.successfulQueries++;
+        return result.rows[0] || null;
+    } catch (error) {
+        console.error('Get latest Cambodia market data error:', error.message);
+        connectionStats.failedQueries++;
+        return null;
+    }
+}
+
+/**
+ * 🇰🇭 GET CAMBODIA DEALS BY STATUS
+ */
+async function getCambodiaDealsBy(criteria) {
+    try {
+        let query = 'SELECT * FROM cambodia_deals WHERE 1=1';
+        let params = [];
+        let paramIndex = 1;
+
+        if (criteria.chatId) {
+            query += ` AND chat_id = ${paramIndex}`;
+            params.push(criteria.chatId);
+            paramIndex++;
+        }
+
+        if (criteria.status) {
+            query += ` AND deal_status = ${paramIndex}`;
+            params.push(criteria.status);
+            paramIndex++;
+        }
+
+        if (criteria.recommendation) {
+            query += ` AND recommendation = ${paramIndex}`;
+            params.push(criteria.recommendation);
+            paramIndex++;
+        }
+
+        if (criteria.minAmount) {
+            query += ` AND amount >= ${paramIndex}`;
+            params.push(criteria.minAmount);
+            paramIndex++;
+        }
+
+        if (criteria.location) {
+            query += ` AND location ILIKE ${paramIndex}`;
+            params.push(`%${criteria.location}%`);
+            paramIndex++;
+        }
+
+        query += ' ORDER BY created_at DESC';
+
+        if (criteria.limit) {
+            query += ` LIMIT ${criteria.limit}`;
+        }
+
+        const result = await pool.query(query, params);
+        
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get Cambodia deals by criteria error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📈 GET REGIME TRANSITIONS
+ */
+async function getRegimeTransitions(days = 30) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                regime_name,
+                date_detected,
+                confidence,
+                LAG(regime_name) OVER (ORDER BY date_detected) as previous_regime,
+                LAG(date_detected) OVER (ORDER BY date_detected) as previous_date
+            FROM regime_history 
+            WHERE date_detected >= CURRENT_DATE - INTERVAL '${days} days'
+            ORDER BY date_detected DESC
+        `);
+
+        const transitions = result.rows.filter(row => 
+            row.previous_regime && row.regime_name !== row.previous_regime
+        );
+
+        connectionStats.successfulQueries++;
+        return transitions;
+    } catch (error) {
+        console.error('Get regime transitions error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📊 GET PORTFOLIO PERFORMANCE BY REGIME
+ */
+async function getPortfolioPerformanceByRegime(chatId) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                regime_name,
+                COUNT(*) as trade_count,
+                AVG(profit_loss) as avg_profit,
+                SUM(profit_loss) as total_profit,
+                AVG(regime_confidence) as avg_confidence,
+                MAX(profit_loss) as best_trade,
+                MIN(profit_loss) as worst_trade
+            FROM regime_performance 
+            WHERE chat_id = $1
+            GROUP BY regime_name
+            ORDER BY total_profit DESC
+        `, [chatId]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get portfolio performance by regime error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📏 GET POSITION SIZING ANALYTICS
+ */
+async function getPositionSizingAnalytics(chatId) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                symbol,
+                AVG(recommended_size) as avg_size,
+                AVG(risk_percent) as avg_risk,
+                COUNT(*) as sizing_count,
+                AVG(regime_multiplier) as avg_regime_multiplier,
+                current_regime
+            FROM position_sizing_history 
+            WHERE chat_id = $1
+            GROUP BY symbol, current_regime
+            ORDER BY sizing_count DESC
+        `, [chatId]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get position sizing analytics error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📊 GET COMMAND USAGE STATS
+ */
+async function getCommandUsageStats(days = 30) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                command,
+                command_type,
+                COUNT(*) as usage_count,
+                AVG(execution_time_ms) as avg_execution_time,
+                COUNT(CASE WHEN success = true THEN 1 END) as successful_count,
+                COUNT(CASE WHEN success = false THEN 1 END) as failed_count
+            FROM command_analytics 
+            WHERE timestamp >= CURRENT_DATE - INTERVAL '${days} days'
+            GROUP BY command, command_type
+            ORDER BY usage_count DESC
+        `);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get command usage stats error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 🎯 GET CURRENT REGIME
+ */
+async function getCurrentRegime() {
+    try {
+        const result = await pool.query(`
+            SELECT regime_name, confidence, growth_direction, inflation_direction, regime_duration, timestamp
+            FROM regime_history 
+            ORDER BY timestamp DESC 
+            LIMIT 1
+        `);
+        
+        connectionStats.successfulQueries++;
+        return result.rows[0] || null;
+    } catch (error) {
+        console.error('Get current regime error:', error.message);
+        connectionStats.failedQueries++;
+        return null;
+    }
+}
+
+/**
+ * ⚠️ GET LATEST RISK ASSESSMENT
+ */
+async function getLatestRiskAssessment(chatId) {
+    try {
+        const result = await pool.query(`
+            SELECT * FROM risk_assessments 
+            WHERE chat_id = $1 
+            ORDER BY timestamp DESC 
+            LIMIT 1
+        `, [chatId]);
+        
+        connectionStats.successfulQueries++;
+        return result.rows[0] || null;
+    } catch (error) {
+        console.error('Get latest risk assessment error:', error.message);
+        connectionStats.failedQueries++;
+        return null;
+    }
+}
+
+/**
+ * 🚨 GET ACTIVE MARKET SIGNALS
+ */
+async function getActiveMarketSignals() {
+    try {
+        const result = await pool.query(`
+            SELECT * FROM market_signals 
+            WHERE resolved_at IS NULL 
+                AND triggered_at >= CURRENT_DATE - INTERVAL '7 days'
+            ORDER BY 
+                CASE signal_strength 
+                    WHEN 'CRITICAL' THEN 4
+                    WHEN 'STRONG' THEN 3
+                    WHEN 'MODERATE' THEN 2
+                    WHEN 'WEAK' THEN 1
+                END DESC,
+                triggered_at DESC
+            LIMIT 10
+        `);
+        
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get active market signals error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📝 GET RECENT DAILY OBSERVATIONS
+ */
+async function getRecentDailyObservations(days = 7) {
+    try {
+        const result = await pool.query(`
+            SELECT * FROM daily_observations 
+            WHERE observation_date >= CURRENT_DATE - INTERVAL '${days} days'
+            ORDER BY observation_date DESC
+        `);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get recent daily observations error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 🧹 CLEANUP OLD DATA
+ */
+async function cleanupOldData() {
+    try {
+        const cleanupResults = {
+            conversationsDeleted: 0,
+            regimeHistoryDeleted: 0,
+            signalsResolved: 0
+        };
+
+        // Clean old conversations (keep last 6 months for high importance)
+        const conversationsResult = await pool.query(`
+            DELETE FROM conversations 
+            WHERE timestamp < NOW() - INTERVAL '6 months' 
+            AND strategic_importance = 'low'
+        `);
+        cleanupResults.conversationsDeleted = conversationsResult.rowCount;
+
+        // Clean old regime history (keep last 2 years)
+        const regimeResult = await pool.query(`
+            DELETE FROM regime_history 
+            WHERE timestamp < NOW() - INTERVAL '2 years'
+        `);
+        cleanupResults.regimeHistoryDeleted = regimeResult.rowCount;
+
+        // Auto-resolve old market signals
+        const signalsResult = await pool.query(`
+            UPDATE market_signals 
+            SET resolved_at = NOW() 
+            WHERE triggered_at < NOW() - INTERVAL '30 days' 
+            AND resolved_at IS NULL
+        `);
+        cleanupResults.signalsResolved = signalsResult.rowCount;
+
+        console.log('🧹 Data cleanup completed:', cleanupResults);
+        connectionStats.successfulQueries++;
+        return cleanupResults;
+    } catch (error) {
+        console.error('Cleanup old data error:', error.message);
+        connectionStats.failedQueries++;
+        return { error: error.message };
+    }
+}
+
+/**
+ * 📈 GET REGIME PERFORMANCE SUMMARY
+ */
+async function getRegimePerformanceSummary() {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                rh.regime_name,
+                rh.confidence as avg_confidence,
+                COUNT(rp.id) as trade_count,
+                AVG(rp.profit_loss) as avg_performance,
+                SUM(rp.profit_loss) as total_performance
+            FROM regime_history rh
+            LEFT JOIN regime_performance rp ON rh.regime_name = rp.regime_name
+            WHERE rh.timestamp >= NOW() - INTERVAL '1 year'
+            GROUP BY rh.regime_name, rh.confidence
+            ORDER BY total_performance DESC
+        `);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get regime performance summary error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
+    }
+}
+
+/**
+ * 📊 GET RISK TREND ANALYSIS  
+ */
+async function getRiskTrendAnalysis(chatId) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                DATE(timestamp) as date,
+                AVG(total_risk_percent) as avg_risk,
+                AVG(diversification_score) as avg_diversification,
+                correlation_risk,
+                regime_risk
+            FROM risk_assessments 
+            WHERE chat_id = $1 
+            AND timestamp >= NOW() - INTERVAL '90 days'
+            GROUP BY DATE(timestamp), correlation_risk, regime_risk
+            ORDER BY date DESC
+        `, [chatId]);
+
+        connectionStats.successfulQueries++;
+        return result.rows;
+    } catch (error) {
+        console.error('Get risk trend analysis error:', error.message);
+        connectionStats.failedQueries++;
+        return [];
     }
 }
 
@@ -1131,643 +2336,6 @@ async function performHealthCheck() {
     }
 }
 
-// 🔄 PRESERVE ALL EXISTING FUNCTIONS WITH ENHANCEMENTS (NO DUPLICATES)
-
-async function saveConversationDB(chatId, userMessage, gptResponse, messageType = 'text', contextData = null) {
-    try {
-        const startTime = Date.now();
-        
-        await pool.query(
-            `INSERT INTO conversations (chat_id, user_message, gpt_response, message_type, context_data, response_time_ms) 
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [chatId, userMessage, gptResponse, messageType, contextData, Date.now() - startTime]
-        );
-        
-        await pool.query(`
-            INSERT INTO user_profiles (chat_id, conversation_count, last_seen) 
-            VALUES ($1, 1, CURRENT_TIMESTAMP)
-            ON CONFLICT (chat_id) 
-            DO UPDATE SET 
-                conversation_count = user_profiles.conversation_count + 1,
-                last_seen = CURRENT_TIMESTAMP
-        `, [chatId]);
-        
-        // Cleanup old conversations (keep last 200 per user)
-        await pool.query(`
-            DELETE FROM conversations 
-            WHERE chat_id = $1 AND id NOT IN (
-                SELECT id FROM conversations 
-                WHERE chat_id = $1 
-                ORDER BY timestamp DESC 
-                LIMIT 200
-            )
-        `, [chatId]);
-        
-        connectionStats.successfulQueries++;
-        await updateSystemMetrics({ total_queries: 1 });
-        
-        return true;
-    } catch (error) {
-        console.error('Save conversation error:', error);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-async function getConversationHistoryDB(chatId, limit = 10) {
-    try {
-        const result = await pool.query(
-            'SELECT user_message, gpt_response, message_type, timestamp FROM conversations WHERE chat_id = $1 ORDER BY timestamp DESC LIMIT $2',
-            [chatId, limit]
-        );
-        
-        connectionStats.successfulQueries++;
-        return result.rows.reverse();
-    } catch (error) {
-        console.error('Get history error:', error);
-        connectionStats.failedQueries++;
-        return [];
-    }
-}
-
-async function addPersistentMemoryDB(chatId, fact, importance = 'medium') {
-    try {
-        // Generate hash for deduplication
-        const crypto = require('crypto');
-        const factHash = crypto.createHash('sha256').update(fact.toLowerCase().trim()).digest('hex');
-        
-        // Check for duplicates
-        const existing = await pool.query(
-            'SELECT id FROM persistent_memories WHERE chat_id = $1 AND fact_hash = $2',
-            [chatId, factHash]
-        );
-        
-        if (existing.rows.length > 0) {
-            // Update access count
-            await pool.query(
-                'UPDATE persistent_memories SET access_count = access_count + 1, last_accessed = CURRENT_TIMESTAMP WHERE id = $1',
-                [existing.rows[0].id]
-            );
-            return true;
-        }
-        
-        await pool.query(
-            'INSERT INTO persistent_memories (chat_id, fact, importance, fact_hash) VALUES ($1, $2, $3, $4)',
-            [chatId, fact, importance, factHash]
-        );
-        
-        // Cleanup - keep only most important memories (limit 100 per user)
-        await pool.query(`
-            DELETE FROM persistent_memories 
-            WHERE chat_id = $1 AND id NOT IN (
-                SELECT id FROM persistent_memories 
-                WHERE chat_id = $1 
-                ORDER BY 
-                    CASE importance 
-                        WHEN 'critical' THEN 4
-                        WHEN 'high' THEN 3 
-                        WHEN 'medium' THEN 2 
-                        WHEN 'low' THEN 1 
-                    END DESC, 
-                    access_count DESC,
-                    timestamp DESC 
-                LIMIT 100
-            )
-        `, [chatId]);
-        
-        console.log(`💾 Persistent memory saved to database for ${chatId}: ${fact}`);
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Add persistent memory error:', error);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-async function getPersistentMemoryDB(chatId) {
-    try {
-        const result = await pool.query(
-            'SELECT fact, importance, timestamp, access_count FROM persistent_memories WHERE chat_id = $1 ORDER BY importance DESC, access_count DESC, timestamp DESC',
-            [chatId]
-        );
-        
-        connectionStats.successfulQueries++;
-        return result.rows;
-    } catch (error) {
-        console.error('Get persistent memory error:', error);
-        connectionStats.failedQueries++;
-        return [];
-    }
-}
-
-async function getUserProfileDB(chatId) {
-    try {
-        const result = await pool.query(
-            'SELECT * FROM user_profiles WHERE chat_id = $1',
-            [chatId]
-        );
-        
-        connectionStats.successfulQueries++;
-        return result.rows[0] || null;
-    } catch (error) {
-        console.error('Get user profile error:', error);
-        connectionStats.failedQueries++;
-        return null;
-    }
-}
-
-async function updateUserPreferencesDB(chatId, preferences) {
-    try {
-        await pool.query(
-            'UPDATE user_profiles SET preferences = $2, last_seen = CURRENT_TIMESTAMP WHERE chat_id = $1',
-            [chatId, JSON.stringify(preferences)]
-        );
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Update preferences error:', error);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-async function saveTrainingDocumentDB(chatId, fileName, content, documentType, wordCount, summary) {
-    try {
-        const crypto = require('crypto');
-        const fileHash = crypto.createHash('sha256').update(content).digest('hex');
-        
-        await pool.query(
-            'INSERT INTO training_documents (chat_id, file_name, content, document_type, word_count, summary, file_size, file_hash) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-            [chatId, fileName, content, documentType, wordCount, summary, content.length, fileHash]
-        );
-        
-        // Cleanup - keep only last 50 documents per user
-        await pool.query(`
-            DELETE FROM training_documents 
-            WHERE chat_id = $1 AND id NOT IN (
-                SELECT id FROM training_documents 
-                WHERE chat_id = $1 
-                ORDER BY upload_date DESC 
-                LIMIT 50
-            )
-        `, [chatId]);
-        
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Save training document error:', error);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-async function getTrainingDocumentsDB(chatId) {
-    try {
-        const result = await pool.query(
-            'SELECT file_name, content, document_type, upload_date, word_count, summary, file_size FROM training_documents WHERE chat_id = $1 ORDER BY upload_date DESC',
-            [chatId]
-        );
-        
-        connectionStats.successfulQueries++;
-        return result.rows;
-    } catch (error) {
-        console.error('Get training documents error:', error);
-        connectionStats.failedQueries++;
-        return [];
-    }
-}
-
-async function clearUserDataDB(chatId) {
-    try {
-        await Promise.all([
-            pool.query('DELETE FROM conversations WHERE chat_id = $1', [chatId]),
-            pool.query('DELETE FROM persistent_memories WHERE chat_id = $1', [chatId]),
-            pool.query('DELETE FROM training_documents WHERE chat_id = $1', [chatId]),
-            pool.query('DELETE FROM user_profiles WHERE chat_id = $1', [chatId]),
-            // Enhanced tables
-            pool.query('DELETE FROM portfolio_allocations WHERE chat_id = $1', [chatId]),
-            pool.query('DELETE FROM regime_performance WHERE chat_id = $1', [chatId]),
-            pool.query('DELETE FROM risk_assessments WHERE chat_id = $1', [chatId]),
-            pool.query('DELETE FROM position_sizing_history WHERE chat_id = $1', [chatId]),
-            pool.query('DELETE FROM command_analytics WHERE chat_id = $1', [chatId]),
-            pool.query('DELETE FROM cambodia_deals WHERE chat_id = $1', [chatId]),
-            pool.query('DELETE FROM trading_patterns WHERE chat_id = $1', [chatId])
-        ]);
-        
-        console.log(`🗑️ All strategic data cleared for user ${chatId}`);
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Clear user data error:', error);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-async function getDatabaseStats() {
-    try {
-        return await getRayDalioStats();
-    } catch (error) {
-        console.error('Get database stats error:', error);
-        connectionStats.failedQueries++;
-        return {
-            totalUsers: 0,
-            totalConversations: 0,
-            totalMemories: 0,
-            totalDocuments: 0,
-            storage: 'Database Error',
-            error: error.message
-        };
-    }
-}
-
-// 🎯 RAY DALIO & STRATEGIC FUNCTIONS (NO DUPLICATES)
-
-/**
- * 📊 SAVE PORTFOLIO ALLOCATION
- */
-async function savePortfolioAllocation(chatId, allocation) {
-    try {
-        await pool.query(`
-            INSERT INTO portfolio_allocations (
-                chat_id, allocation_type, regime_name, asset_class,
-                allocation_percent, allocation_amount, reasoning,
-                confidence_level, performance_attribution, rebalancing_trigger
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        `, [
-            chatId,
-            allocation.type || 'RECOMMENDED',
-            allocation.regime || 'CURRENT',
-            allocation.assetClass,
-            allocation.percent,
-            allocation.amount || null,
-            allocation.reasoning || '',
-            allocation.confidence || 70,
-            allocation.performance || null,
-            allocation.trigger || 'MANUAL'
-        ]);
-
-        console.log(`📊 Portfolio allocation saved for ${chatId}`);
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Save portfolio allocation error:', error.message);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-/**
- * ⚠️ SAVE RISK ASSESSMENT
- */
-async function saveRiskAssessment(chatId, riskAssessment) {
-    try {
-        await pool.query(`
-            INSERT INTO risk_assessments (
-                chat_id, assessment_type, total_risk_percent, correlation_risk,
-                regime_risk, position_count, diversification_score, account_balance,
-                current_regime, regime_confidence, risk_data, recommendations,
-                stress_test_results, var_95, max_sector_concentration
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-        `, [
-            chatId,
-            riskAssessment.assessmentType || 'PORTFOLIO',
-            riskAssessment.totalRiskPercent || 0,
-            riskAssessment.correlationRisk || 'MODERATE',
-            riskAssessment.regimeRisk || 'MODERATE',
-            riskAssessment.positionCount || 0,
-            riskAssessment.diversificationScore || 50,
-            riskAssessment.accountBalance || 0,
-            riskAssessment.currentRegime || 'UNKNOWN',
-            riskAssessment.regimeConfidence || 50,
-            JSON.stringify(riskAssessment.riskData || {}),
-            riskAssessment.recommendations || [],
-            JSON.stringify(riskAssessment.stressTestResults || {}),
-            riskAssessment.var95 || null,
-            riskAssessment.maxSectorConcentration || null
-        ]);
-
-        // Cleanup old risk assessments (keep last 50 per user)
-        await pool.query(`
-            DELETE FROM risk_assessments 
-            WHERE chat_id = $1 AND id NOT IN (
-                SELECT id FROM risk_assessments 
-                WHERE chat_id = $1 
-                ORDER BY timestamp DESC 
-                LIMIT 50
-            )
-        `, [chatId]);
-
-        console.log(`⚠️ Risk assessment saved for ${chatId}`);
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Save risk assessment error:', error.message);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-/**
- * 📊 SAVE REGIME PERFORMANCE
- */
-async function saveRegimePerformance(chatId, performance) {
-    try {
-        await pool.query(`
-            INSERT INTO regime_performance (
-                chat_id, regime_name, trade_symbol, trade_type, entry_price,
-                exit_price, position_size, profit_loss, trade_duration_hours,
-                regime_confidence, risk_percent, max_drawdown, sharpe_ratio,
-                trade_opened, trade_closed
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-        `, [
-            chatId,
-            performance.regimeName,
-            performance.symbol,
-            performance.tradeType,
-            performance.entryPrice,
-            performance.exitPrice || null,
-            performance.positionSize,
-            performance.profitLoss || 0,
-            performance.tradeDurationHours || 0,
-            performance.regimeConfidence || 50,
-            performance.riskPercent || 1,
-            performance.maxDrawdown || null,
-            performance.sharpeRatio || null,
-            performance.tradeOpened,
-            performance.tradeClosed || null
-        ]);
-
-        console.log(`📊 Regime performance saved for ${chatId}: ${performance.symbol}`);
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Save regime performance error:', error.message);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-/**
- * 📏 SAVE POSITION SIZING
- */
-async function savePositionSizing(chatId, sizing) {
-    try {
-        await pool.query(`
-            INSERT INTO position_sizing_history (
-                chat_id, symbol, direction, recommended_size, actual_size,
-                risk_percent, regime_multiplier, volatility_multiplier,
-                correlation_multiplier, entry_price, stop_loss, take_profit,
-                account_balance, current_regime, sizing_rationale,
-                kelly_criterion, max_position_size
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-        `, [
-            chatId,
-            sizing.symbol,
-            sizing.direction,
-            sizing.recommendedSize,
-            sizing.actualSize || null,
-            sizing.riskPercent,
-            sizing.regimeMultiplier || 1.0,
-            sizing.volatilityMultiplier || 1.0,
-            sizing.correlationMultiplier || 1.0,
-            sizing.entryPrice,
-            sizing.stopLoss,
-            sizing.takeProfit || null,
-            sizing.accountBalance,
-            sizing.currentRegime || 'UNKNOWN',
-            sizing.rationale || '',
-            sizing.kellyCriterion || null,
-            sizing.maxPositionSize || null
-        ]);
-
-        console.log(`📏 Position sizing saved for ${chatId}`);
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Save position sizing error:', error.message);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-/**
- * 🚨 SAVE MARKET SIGNAL
- */
-async function saveMarketSignal(signal) {
-    try {
-        await pool.query(`
-            INSERT INTO market_signals (
-                signal_type, signal_strength, signal_description,
-                market_data, impact_level, actionable_insights,
-                false_positive, signal_accuracy
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        `, [
-            signal.type,
-            signal.strength || 'MODERATE',
-            signal.description,
-            JSON.stringify(signal.marketData || {}),
-            signal.impact || 'MODERATE',
-            signal.insights || [],
-            false,
-            signal.accuracy || null
-        ]);
-
-        console.log(`🚨 Market signal saved: ${signal.type}`);
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Save market signal error:', error.message);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-/**
- * 📝 SAVE DAILY OBSERVATION
- */
-async function saveDailyObservation(observation) {
-    try {
-        await pool.query(`
-            INSERT INTO daily_observations (
-                observation_date, market_regime, regime_confidence,
-                key_themes, market_moves, economic_data, outlook,
-                risk_factors, opportunities, position_recommendations,
-                market_stress_level, liquidity_conditions, sentiment_indicators
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        `, [
-            observation.date || new Date().toISOString().split('T')[0],
-            observation.marketRegime || 'UNKNOWN',
-            observation.regimeConfidence || 50,
-            observation.keyThemes || [],
-            JSON.stringify(observation.marketMoves || {}),
-            JSON.stringify(observation.economicData || {}),
-            observation.outlook || '',
-            observation.riskFactors || [],
-            observation.opportunities || [],
-            JSON.stringify(observation.positionRecommendations || {}),
-            observation.marketStressLevel || 50,
-            observation.liquidityConditions || 'NORMAL',
-            JSON.stringify(observation.sentimentIndicators || {})
-        ]);
-
-        console.log(`📝 Daily observation saved for ${observation.date}`);
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Save daily observation error:', error.message);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-/**
- * 📊 LOG COMMAND USAGE
- */
-async function logCommandUsage(chatId, command, executionTime, success = true, errorMessage = null) {
-    try {
-        await pool.query(`
-            INSERT INTO command_analytics (
-                chat_id, command, command_type, execution_time_ms,
-                success, error_message, regime_context,
-                market_conditions, user_satisfaction, command_complexity,
-                data_sources_used
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        `, [
-            chatId,
-            command,
-            getCommandType(command),
-            executionTime,
-            success,
-            errorMessage,
-            await getCurrentRegimeForLogging(),
-            JSON.stringify({}), // Market conditions
-            null, // User satisfaction
-            getCommandComplexity(command),
-            getDataSourcesUsed(command)
-        ]);
-
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Log command usage error:', error.message);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-// 🇰🇭 CAMBODIA LENDING FUND FUNCTIONS (NO DUPLICATES)
-
-/**
- * 🇰🇭 SAVE CAMBODIA MARKET CONDITIONS
- */
-async function saveCambodiaMarketData(marketData) {
-    try {
-        await pool.query(`
-            INSERT INTO cambodia_market_data (
-                data_date, market_conditions, interest_rate_environment,
-                property_market_data, economic_indicators, risk_factors,
-                opportunities, market_summary, data_quality_score
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        `, [
-            marketData.dataDate || new Date().toISOString().split('T')[0],
-            JSON.stringify(marketData.marketConditions || {}),
-            JSON.stringify(marketData.interestRateEnvironment || {}),
-            JSON.stringify(marketData.propertyMarketData || {}),
-            JSON.stringify(marketData.economicIndicators || {}),
-            JSON.stringify(marketData.riskFactors || {}),
-            marketData.opportunities || [],
-            marketData.marketSummary || '',
-            marketData.dataQualityScore || 85
-        ]);
-
-        console.log('🇰🇭 Cambodia market data saved');
-        connectionStats.successfulQueries++;
-        return true;
-    } catch (error) {
-        console.error('Save Cambodia market data error:', error.message);
-        connectionStats.failedQueries++;
-        return false;
-    }
-}
-
-/**
- * 🇰🇭 GET LATEST CAMBODIA MARKET CONDITIONS
- */
-async function getLatestCambodiaMarketData() {
-    try {
-        const result = await pool.query(`
-            SELECT * FROM cambodia_market_data 
-            ORDER BY data_date DESC 
-            LIMIT 1
-        `);
-
-        connectionStats.successfulQueries++;
-        return result.rows[0] || null;
-    } catch (error) {
-        console.error('Get latest Cambodia market data error:', error.message);
-        connectionStats.failedQueries++;
-        return null;
-    }
-}
-
-/**
- * 🇰🇭 GET CAMBODIA DEALS BY STATUS
- */
-async function getCambodiaDealsBy(criteria) {
-    try {
-        let query = 'SELECT * FROM cambodia_deals WHERE 1=1';
-        let params = [];
-        let paramIndex = 1;
-
-        if (criteria.chatId) {
-            query += ` AND chat_id = $${paramIndex}`;
-            params.push(criteria.chatId);
-            paramIndex++;
-        }
-
-        if (criteria.status) {
-            query += ` AND deal_status = $${paramIndex}`;
-            params.push(criteria.status);
-            paramIndex++;
-        }
-
-        if (criteria.recommendation) {
-            query += ` AND recommendation = $${paramIndex}`;
-            params.push(criteria.recommendation);
-            paramIndex++;
-        }
-
-        if (criteria.minAmount) {
-            query += ` AND amount >= $${paramIndex}`;
-            params.push(criteria.minAmount);
-            paramIndex++;
-        }
-
-        if (criteria.location) {
-            query += ` AND location ILIKE $${paramIndex}`;
-            params.push(`%${criteria.location}%`);
-            paramIndex++;
-        }
-
-        query += ' ORDER BY created_at DESC';
-
-        if (criteria.limit) {
-            query += ` LIMIT ${criteria.limit}`;
-        }
-
-        const result = await pool.query(query, params);
-        
-        connectionStats.successfulQueries++;
-        return result.rows;
-    } catch (error) {
-        console.error('Get Cambodia deals by criteria error:', error.message);
-        connectionStats.failedQueries++;
-        return [];
-    }
-}
-
 // HELPER FUNCTIONS
 function getCommandType(command) {
     if (command.startsWith('/regime') || command.startsWith('/cycle')) return 'REGIME_ANALYSIS';
@@ -1802,13 +2370,14 @@ async function getCurrentRegimeForLogging() {
     }
 }
 
+// ✅ COMPLETE MODULE EXPORTS WITH ALL FUNCTIONS
 module.exports = {
     // 🏛️ ENHANCED STRATEGIC FUNCTIONS
     initializeDatabase,
     saveRegimeData,
     savePortfolioAllocation,
-    saveRiskAssessment,          // ✅ NOW DEFINED
-    saveRegimePerformance,       // ✅ NOW DEFINED
+    saveRiskAssessment,
+    saveRegimePerformance,
     savePositionSizing,
     saveMarketSignal,
     saveDailyObservation,
@@ -1817,28 +2386,28 @@ module.exports = {
     // 🇰🇭 CAMBODIA FUND FUNCTIONS
     saveCambodiaDeal,
     saveCambodiaPortfolio,
-    saveCambodiaMarketData,      // ✅ NOW DEFINED
+    saveCambodiaMarketData,
     getCambodiaFundAnalytics,
-    getLatestCambodiaMarketData, // ✅ NOW DEFINED
-    getCambodiaDealsBy,          // ✅ NOW DEFINED
+    getLatestCambodiaMarketData,
+    getCambodiaDealsBy,
     
     // 💹 TRADING FUNCTIONS
     saveTradingPattern,
     getTradingPatterns,
     saveStrategicInsight,
-    updateStrategicInsightStatus, // ✅ NOW DEFINED
-    getActiveStrategicInsights,   // ✅ NOW DEFINED
+    updateStrategicInsightStatus,
+    getActiveStrategicInsights,
     
     // 📊 SESSION & API TRACKING
-    startUserSession,            // ✅ NOW DEFINED
-    endUserSession,              // ✅ NOW DEFINED
-    logApiUsage,                 // ✅ NOW DEFINED
-    getUserSessionAnalytics,     // ✅ NOW DEFINED
-    getApiUsageAnalytics,        // ✅ NOW DEFINED
+    startUserSession,
+    endUserSession,
+    logApiUsage,
+    getUserSessionAnalytics,
+    getApiUsageAnalytics,
     
     // 🔍 SEARCH FUNCTIONS
-    searchConversations,         // ✅ NOW DEFINED
-    searchTrainingDocuments,     // ✅ NOW DEFINED
+    searchConversations,
+    searchTrainingDocuments,
     
     // 📊 ANALYTICS & MONITORING
     getSystemAnalytics,
@@ -1847,13 +2416,13 @@ module.exports = {
     performHealthCheck,
     updateSystemMetrics,
     
-    // Analytics Functions (existing)
+    // Analytics Functions
     getRegimeTransitions,
     getPortfolioPerformanceByRegime,
     getPositionSizingAnalytics,
     getCommandUsageStats,
     
-    // Helper Functions (existing)
+    // Helper Functions
     getCurrentRegime,
     getLatestRiskAssessment,
     getActiveMarketSignals,
