@@ -2372,55 +2372,22 @@ async function getCurrentRegimeForLogging() {
 
 // ✅ COMPLETE MODULE EXPORTS WITH ALL FUNCTIONS
 module.exports = {
-    // 🏛️ ENHANCED STRATEGIC FUNCTIONS
+    // 🏛️ RAY DALIO ENHANCED FUNCTIONS
     initializeDatabase,
     saveRegimeData,
     savePortfolioAllocation,
     saveRiskAssessment,
-    saveRegimePerformance,
     savePositionSizing,
     saveMarketSignal,
     saveDailyObservation,
     logCommandUsage,
-    
-    // 🇰🇭 CAMBODIA FUND FUNCTIONS
-    saveCambodiaDeal,
-    saveCambodiaPortfolio,
-    saveCambodiaMarketData,
-    getCambodiaFundAnalytics,
-    getLatestCambodiaMarketData,
-    getCambodiaDealsBy,
-    
-    // 💹 TRADING FUNCTIONS
-    saveTradingPattern,
-    getTradingPatterns,
-    saveStrategicInsight,
-    updateStrategicInsightStatus,
-    getActiveStrategicInsights,
-    
-    // 📊 SESSION & API TRACKING
-    startUserSession,
-    endUserSession,
-    logApiUsage,
-    getUserSessionAnalytics,
-    getApiUsageAnalytics,
-    
-    // 🔍 SEARCH FUNCTIONS
-    searchConversations,
-    searchTrainingDocuments,
-    
-    // 📊 ANALYTICS & MONITORING
-    getSystemAnalytics,
-    getRayDalioStats,
-    performDatabaseMaintenance,
-    performHealthCheck,
-    updateSystemMetrics,
     
     // Analytics Functions
     getRegimeTransitions,
     getPortfolioPerformanceByRegime,
     getPositionSizingAnalytics,
     getCommandUsageStats,
+    getRayDalioStats,
     
     // Helper Functions
     getCurrentRegime,
@@ -2431,7 +2398,7 @@ module.exports = {
     getRegimePerformanceSummary,
     getRiskTrendAnalysis,
     
-    // Original Functions (enhanced)
+    // Original Functions (preserved)
     saveConversationDB,
     getConversationHistoryDB,
     addPersistentMemoryDB,
