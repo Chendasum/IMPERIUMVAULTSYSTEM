@@ -2441,8 +2441,5 @@ module.exports = {
     saveTrainingDocumentDB,
     getTrainingDocumentsDB,
     getDatabaseStats,
-    clearUserDataDB,
-    
-    // 📊 CONNECTION MONITORING
-    connectionStats
+    clearUserDataDB
 };
