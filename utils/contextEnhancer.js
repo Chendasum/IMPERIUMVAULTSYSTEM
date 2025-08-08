@@ -701,7 +701,7 @@ function getStrategicContextMetrics(context, generationTime) {
         efficiency: Math.round(context.length / generationTime),
         strategicScore: Math.min(100, Math.round(
             ((context.match(/⚡|🏛️|📊|💹|🏦|🎯|STRATEGIC|WARFARE|COMMAND/gi) || []).length * 5) / context.length) * 10000
-        ))
+        )
     };
 }
 
