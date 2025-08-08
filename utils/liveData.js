@@ -775,12 +775,18 @@ async function getForexRates(base = 'USD') {
 
 async function getFredData(seriesId) {
     try {
-        const response = await axios.get(`https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&api_key=${FRED_API_KEY}&file_type=json&limit=1&sort_order=desc`, {
-            timeout: 15000
-        });
+        // Check cache first
+        const cacheKey = `fred_${seriesId}`;
+        const cached = getCachedData(cacheKey);
+        if (cached) return cached;
+
+        console.log(`🔄 Fetching fresh FRED data for ${seriesId}...`);
+        const response = await optimizedAxios.get(`https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&api_key=${FRED_API_KEY}&file_type=json&limit=1&sort_order=desc`);
         
         if (response.data && response.data.observations && response.data.observations.length > 0) {
-            return response.data.observations[0];
+            const result = response.data.observations[0];
+            setCachedData(cacheKey, result); // Cache the result
+            return result;
         }
         return null;
     } catch (error) {
