@@ -1479,6 +1479,32 @@ async function savePortfolioAllocation(chatId, allocation) {
     }
 }
 
+async function saveRiskAssessment(chatId, assessment) {
+  try {
+    await pool.query(`
+      INSERT INTO risk_assessments (
+        chat_id,
+        risk_type,
+        exposure_level,
+        confidence,
+        notes,
+        created_at
+      ) VALUES ($1, $2, $3, $4, $5, NOW())
+    `, [
+      chatId,
+      assessment.riskType,
+      assessment.exposureLevel,
+      assessment.confidence,
+      assessment.notes
+    ]);
+    console.log(`✅ Risk assessment saved for ${chatId}`);
+    return true;
+  } catch (error) {
+    console.error('❌ saveRiskAssessment error:', error.message);
+    return false;
+  }
+}
+
 module.exports = {
     // 🏛️ ENHANCED STRATEGIC FUNCTIONS
     initializeDatabase,
