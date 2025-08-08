@@ -27,6 +27,379 @@ const STRATEGIC_RISK_PARAMETERS = {
     }
 };
 
+// 🔗 CURRENCY CORRELATIONS FOR STRATEGIC ANALYSIS
+const CURRENCY_CORRELATIONS = {
+    'EURUSD': {
+        'GBPUSD': 0.85,
+        'USDJPY': -0.75,
+        'USDCHF': -0.80,
+        'AUDUSD': 0.70,
+        'NZDUSD': 0.65
+    },
+    'GBPUSD': {
+        'EURUSD': 0.85,
+        'USDJPY': -0.70,
+        'USDCHF': -0.75,
+        'AUDUSD': 0.75,
+        'NZDUSD': 0.70
+    },
+    'USDJPY': {
+        'EURUSD': -0.75,
+        'GBPUSD': -0.70,
+        'USDCHF': 0.80,
+        'AUDUSD': -0.60,
+        'NZDUSD': -0.55
+    }
+};
+
+/**
+ * 🎯 INITIALIZE METAAPI CONNECTION
+ */
+async function initializeMetaAPI() {
+    try {
+        console.log('🚀 Initializing Strategic Commander MetaAPI connection...');
+        
+        if (!METAAPI_TOKEN) {
+            console.log('⚠️ METAAPI_TOKEN not configured - MetaAPI features disabled');
+            return false;
+        }
+        
+        if (!METAAPI_ACCOUNT_ID) {
+            console.log('⚠️ METAAPI_ACCOUNT_ID not configured - MetaAPI features disabled');
+            return false;
+        }
+        
+        // Initialize MetaAPI
+        metaApi = new MetaApi(METAAPI_TOKEN);
+        
+        // Get trading account
+        account = await metaApi.metatraderAccountApi.getAccount(METAAPI_ACCOUNT_ID);
+        
+        if (!account) {
+            console.error('❌ Strategic Commander: Account not found');
+            return false;
+        }
+        
+        console.log(`📊 Strategic Account found: ${account.name} (${account.server})`);
+        
+        // Deploy account
+        await account.deploy();
+        console.log('🚀 Strategic account deployment initiated...');
+        
+        // Wait for deployment
+        await account.waitDeployed();
+        console.log('✅ Strategic account deployed successfully');
+        
+        // Create connection
+        connection = account.getStreamingConnection();
+        await connection.connect();
+        console.log('🔗 Strategic streaming connection established');
+        
+        // Wait for synchronization
+        await connection.waitSynchronized();
+        console.log('⚡ Strategic account synchronized');
+        
+        isConnected = true;
+        isSynchronized = true;
+        
+        console.log('✅ Strategic Commander MetaAPI initialized successfully');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Strategic Commander MetaAPI initialization error:', error.message);
+        isConnected = false;
+        isSynchronized = false;
+        return false;
+    }
+}
+
+/**
+ * 💰 GET ACCOUNT INFORMATION
+ */
+async function getAccountInfo() {
+    try {
+        if (!isSynchronized || !connection) {
+            return null;
+        }
+        
+        const accountInfo = connection.accountInformation;
+        return {
+            balance: accountInfo.balance,
+            equity: accountInfo.equity,
+            margin: accountInfo.margin,
+            freeMargin: accountInfo.freeMargin,
+            marginLevel: accountInfo.marginLevel,
+            currency: accountInfo.currency,
+            company: accountInfo.company,
+            server: accountInfo.server,
+            leverage: accountInfo.leverage,
+            loginId: account.login,
+            name: account.name
+        };
+    } catch (error) {
+        console.error('Get account info error:', error.message);
+        return null;
+    }
+}
+
+/**
+ * 📊 GET OPEN POSITIONS
+ */
+async function getOpenPositions() {
+    try {
+        if (!isSynchronized || !connection) {
+            return [];
+        }
+        
+        const positions = connection.positions;
+        return positions.map(pos => ({
+            id: pos.id,
+            symbol: pos.symbol,
+            type: pos.type,
+            volume: pos.volume,
+            openPrice: pos.openPrice,
+            profit: pos.profit,
+            swap: pos.swap,
+            comment: pos.comment,
+            openTime: pos.openTime
+        }));
+    } catch (error) {
+        console.error('Get open positions error:', error.message);
+        return [];
+    }
+}
+
+/**
+ * 📋 GET PENDING ORDERS
+ */
+async function getPendingOrders() {
+    try {
+        if (!isSynchronized || !connection) {
+            return [];
+        }
+        
+        const orders = connection.orders;
+        return orders.map(order => ({
+            id: order.id,
+            symbol: order.symbol,
+            type: order.type,
+            volume: order.volume,
+            openPrice: order.openPrice,
+            stopLoss: order.stopLoss,
+            takeProfit: order.takeProfit,
+            comment: order.comment,
+            openTime: order.openTime
+        }));
+    } catch (error) {
+        console.error('Get pending orders error:', error.message);
+        return [];
+    }
+}
+
+/**
+ * 📈 GET TRADE HISTORY
+ */
+async function getTradeHistory(startTime = null, endTime = null) {
+    try {
+        if (!account) {
+            return [];
+        }
+        
+        const now = new Date();
+        const start = startTime || new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+        const end = endTime || now;
+        
+        const history = await account.getHistoryOrdersByTimeRange(start, end);
+        
+        return history.map(trade => ({
+            id: trade.id,
+            symbol: trade.symbol,
+            type: trade.type,
+            volume: trade.volume,
+            openPrice: trade.openPrice,
+            closePrice: trade.closePrice,
+            profit: trade.profit,
+            openTime: trade.openTime,
+            closeTime: trade.closeTime,
+            comment: trade.comment
+        }));
+    } catch (error) {
+        console.error('Get trade history error:', error.message);
+        return [];
+    }
+}
+
+/**
+ * 🎯 EXECUTE MARKET ORDER
+ */
+async function executeMarketOrder(symbol, volume, type, stopLoss = null, takeProfit = null, comment = '') {
+    try {
+        if (!isSynchronized || !connection) {
+            throw new Error('MetaAPI not synchronized');
+        }
+        
+        const trade = {
+            symbol: symbol,
+            volume: volume,
+            type: type, // 'buy' or 'sell'
+            stopLoss: stopLoss,
+            takeProfit: takeProfit,
+            comment: comment || 'Strategic Commander Trade'
+        };
+        
+        const result = await connection.createMarketOrder(trade);
+        console.log(`✅ Strategic order executed: ${symbol} ${type} ${volume} lots`);
+        
+        return {
+            success: true,
+            orderId: result.orderId,
+            message: `Order executed successfully`
+        };
+        
+    } catch (error) {
+        console.error('Execute market order error:', error.message);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+/**
+ * ❌ CLOSE POSITION
+ */
+async function closePosition(positionId) {
+    try {
+        if (!isSynchronized || !connection) {
+            throw new Error('MetaAPI not synchronized');
+        }
+        
+        const result = await connection.closePosition(positionId);
+        console.log(`✅ Strategic position closed: ${positionId}`);
+        
+        return {
+            success: true,
+            message: 'Position closed successfully'
+        };
+        
+    } catch (error) {
+        console.error('Close position error:', error.message);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+/**
+ * 📊 GET SYMBOL INFORMATION
+ */
+async function getSymbolInfo(symbol) {
+    try {
+        if (!isSynchronized || !connection) {
+            return null;
+        }
+        
+        const symbolInfo = connection.symbolSpecification(symbol);
+        return {
+            symbol: symbolInfo.symbol,
+            description: symbolInfo.description,
+            digits: symbolInfo.digits,
+            spread: symbolInfo.spread,
+            minVolume: symbolInfo.volumeMin,
+            maxVolume: symbolInfo.volumeMax,
+            volumeStep: symbolInfo.volumeStep
+        };
+    } catch (error) {
+        console.error('Get symbol info error:', error.message);
+        return null;
+    }
+}
+
+/**
+ * 🔗 GET CONNECTION STATUS
+ */
+async function getConnectionStatus() {
+    return {
+        metaApiInitialized: metaApi !== null,
+        connected: isConnected,
+        synchronized: isSynchronized,
+        accountId: METAAPI_ACCOUNT_ID || 'Not configured',
+        hasToken: !!METAAPI_TOKEN,
+        timestamp: new Date().toISOString()
+    };
+}
+
+/**
+ * 🧪 TEST CONNECTION
+ */
+async function testConnection() {
+    try {
+        console.log('🧪 Testing Strategic Commander MetaAPI connection...');
+        
+        if (!METAAPI_TOKEN || !METAAPI_ACCOUNT_ID) {
+            return {
+                success: false,
+                error: 'MetaAPI credentials not configured',
+                accountInfo: null
+            };
+        }
+        
+        if (!isSynchronized) {
+            console.log('⚠️ Connection not synchronized, attempting to initialize...');
+            const initialized = await initializeMetaAPI();
+            if (!initialized) {
+                return {
+                    success: false,
+                    error: 'Failed to initialize MetaAPI',
+                    accountInfo: null
+                };
+            }
+        }
+        
+        const accountInfo = await getAccountInfo();
+        
+        return {
+            success: true,
+            message: 'Strategic Commander MetaAPI connection successful',
+            accountInfo: accountInfo
+        };
+        
+    } catch (error) {
+        console.error('Test connection error:', error.message);
+        return {
+            success: false,
+            error: error.message,
+            accountInfo: null
+        };
+    }
+}
+
+/**
+ * ⚖️ GET ACCOUNT LEVERAGE
+ */
+async function getAccountLeverage() {
+    try {
+        const accountInfo = await getAccountInfo();
+        return accountInfo?.leverage || 100; // Default leverage
+    } catch (error) {
+        console.error('Get account leverage error:', error.message);
+        return 100; // Default fallback
+    }
+}
+
+/**
+ * 📏 ROUND TO LOT SIZE
+ */
+function roundToLotSize(size, symbol) {
+    // Standard forex lot sizing
+    const minLot = 0.01;
+    const lotStep = 0.01;
+    
+    const rounded = Math.round(size / lotStep) * lotStep;
+    return Math.max(minLot, rounded);
+}
+
 /**
  * 🎯 STRATEGIC COMMANDER POSITION SIZING CALCULATOR
  * Enhanced with institutional authority and strategic warfare principles
@@ -609,6 +982,111 @@ function formatStrategicTradingDataForGPT(tradingData) {
     return strategicContext;
 }
 
+// ======= HELPER FUNCTIONS FOR OPPORTUNITY GENERATION =======
+
+/**
+ * 🏛️ GENERATE STRATEGIC REGIME OPPORTUNITIES
+ */
+function generateStrategicRegimeOpportunities(regime, marketData) {
+    const opportunities = [];
+    
+    switch (regime.name) {
+        case 'GROWTH_RISING_INFLATION_FALLING':
+            // Goldilocks scenario - risk-on
+            opportunities.push({
+                symbol: 'EURUSD',
+                direction: 'BUY',
+                entryPrice: 1.0850,
+                stopLoss: 1.0800,
+                takeProfit: 1.0950,
+                confidence: 85,
+                rationale: 'Goldilocks regime favors risk currencies - EUR strength expected',
+                timeHorizon: '1-2 weeks'
+            });
+            break;
+            
+        case 'GROWTH_FALLING_INFLATION_RISING':
+            // Stagflation - defensive positioning
+            opportunities.push({
+                symbol: 'USDJPY',
+                direction: 'BUY',
+                entryPrice: 150.00,
+                stopLoss: 149.00,
+                takeProfit: 152.00,
+                confidence: 75,
+                rationale: 'Stagflation regime supports safe haven JPY vs risk assets',
+                timeHorizon: '2-4 weeks'
+            });
+            break;
+    }
+    
+    return opportunities;
+}
+
+/**
+ * 📈 GENERATE STRATEGIC YIELD CURVE OPPORTUNITIES
+ */
+function generateStrategicYieldCurveOpportunities(yieldCurve) {
+    const opportunities = [];
+    
+    if (yieldCurve.spreads && yieldCurve.spreads['2s10s'] < -0.5) {
+        // Deep inversion - recession risk
+        opportunities.push({
+            symbol: 'USDCHF',
+            direction: 'BUY',
+            entryPrice: 0.9200,
+            stopLoss: 0.9150,
+            takeProfit: 0.9300,
+            confidence: 80,
+            rationale: 'Deep yield curve inversion signals recession risk - safe haven CHF favored',
+            timeHorizon: '3-6 weeks'
+        });
+    }
+    
+    return opportunities;
+}
+
+/**
+ * 💰 GENERATE STRATEGIC CREDIT OPPORTUNITIES
+ */
+function generateStrategicCreditOpportunities(creditSpreads) {
+    const opportunities = [];
+    
+    if (creditSpreads.conditions === 'CRISIS') {
+        opportunities.push({
+            symbol: 'USDJPY',
+            direction: 'SELL',
+            entryPrice: 150.00,
+            stopLoss: 151.00,
+            takeProfit: 148.00,
+            confidence: 90,
+            rationale: 'Credit crisis drives flight to quality - JPY strength expected',
+            timeHorizon: '1-3 weeks'
+        });
+    }
+    
+    return opportunities;
+}
+
+/**
+ * 🔗 FILTER BY STRATEGIC CORRELATION
+ */
+function filterByStrategicCorrelation(opportunities, currentPositions) {
+    if (!currentPositions || currentPositions.length === 0) {
+        return opportunities;
+    }
+    
+    return opportunities.filter(opp => {
+        // Check if opportunity would create excessive correlation
+        const correlationRisk = currentPositions.some(pos => {
+            const correlation = CURRENCY_CORRELATIONS[opp.symbol]?.[pos.symbol] || 0;
+            return Math.abs(correlation) > 0.8; // High correlation threshold
+        });
+        
+        return !correlationRisk;
+    });
+}
+
 // Keep all your existing functions but alias the enhanced ones
 module.exports = {
     // 🏛️ STRATEGIC COMMANDER ENHANCED FUNCTIONS
@@ -625,7 +1103,7 @@ module.exports = {
     getTradingSummary: getStrategicTradingSummary,
     formatTradingDataForGPT: formatStrategicTradingDataForGPT,
     
-    // Keep all existing functions unchanged
+    // Core MetaAPI functions
     initializeMetaAPI,
     getAccountInfo,
     getOpenPositions,
@@ -637,9 +1115,17 @@ module.exports = {
     getConnectionStatus,
     testConnection,
     
-    // Helper functions (add the missing ones from your original code)
+    // Helper functions
     getStrategicRegimeMultiplier,
     getStrategicVolatilityAdjustment,
     getStrategicCorrelationAdjustment,
-    calculateStrategicDiversificationScore
+    calculateStrategicDiversificationScore,
+    getAccountLeverage,
+    roundToLotSize,
+    
+    // Opportunity generation helpers
+    generateStrategicRegimeOpportunities,
+    generateStrategicYieldCurveOpportunities,
+    generateStrategicCreditOpportunities,
+    filterByStrategicCorrelation
 };
