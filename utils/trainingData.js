@@ -356,7 +356,7 @@ function extractFinancialMetrics(content) {
     }
     
     // Interest rate patterns
-    const rateMatch = content.match /([\d.]+)%.*(?:interest|rate|yield)/i);
+    const rateMatch = content.match(/([\d.]+)%.*(?:interest|rate|yield)/i);
     if (rateMatch) {
         metrics.interestRate = rateMatch[1];
     }
