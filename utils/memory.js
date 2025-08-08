@@ -755,16 +755,354 @@ function generateMemoryInsights(conversations, persistentMemory) {
             confidence: 90
         });
     }
+    
+    if (conversations.length > 50) {
+        insights.push({
+            type: 'ENGAGEMENT_PATTERN',
+            description: 'High-frequency strategic interactions indicate power user status',
+            confidence: 85
+        });
+    }
+    
+    return insights;
+}
+
+/**
+ * 🚀 LEGACY COMPATIBILITY FUNCTIONS
+ */
+async function getConversationHistory(chatId, limit = 10) {
+    try {
+        const chatKey = String(chatId);
+        const userConversations = conversations.get(chatKey) || [];
+        console.log(`🔍 Retrieved ${userConversations.length} strategic conversations for ${chatId}`);
+        return userConversations.slice(-limit);
+    } catch (error) {
+        console.error('Get strategic history error:', error.message);
+        return [];
+    }
+}
+
+async function getUserProfile(chatId) {
+    try {
+        const chatKey = String(chatId);
+        const profile = userProfiles.get(chatKey) || null;
+        console.log(`👤 Retrieved strategic profile for ${chatId}:`, profile ? 'Found' : 'Not found');
+        return profile;
+    } catch (error) {
+        console.error('Get strategic user profile error:', error.message);
+        return null;
+    }
+}
+
+async function updateUserPreferences(chatId, preferences) {
+    try {
+        const chatKey = String(chatId);
+        if (userProfiles.has(chatKey)) {
+            userProfiles.get(chatKey).preferences = preferences;
+        }
+        console.log(`✅ Strategic preferences updated for ${chatId}`);
+        return true;
+    } catch (error) {
+        console.error('Update strategic preferences error:', error.message);
+        return false;
+    }
+}
+
+async function getPersistentMemory(chatId) {
+    try {
+        const chatKey = String(chatId);
+        const memories = persistentMemories.get(chatKey) || [];
+        console.log(`🧠 Retrieved ${memories.length} strategic persistent memories for ${chatId}`);
+        return memories;
+    } catch (error) {
+        console.error('Get strategic persistent memory error:', error.message);
+        return [];
+    }
+}
+
+async function getConversationStats() {
+    try {
+        const totalUsers = userProfiles.size;
+        let totalConversations = 0;
+        let totalMemories = 0;
+        let todayConversations = 0;
+        
+        const today = new Date().toDateString();
+        
+        for (const userConvs of conversations.values()) {
+            totalConversations += userConvs.length;
+            todayConversations += userConvs.filter(conv => 
+                new Date(conv.timestamp).toDateString() === today
+            ).length;
+        }
+        
+        for (const memories of persistentMemories.values()) {
+            totalMemories += memories.length;
+        }
+        
+        return {
+            totalUsers,
+            totalConversations,
+            totalMemories,
+            todayConversations,
+            avgConversationsPerUser: totalUsers > 0 ? (totalConversations / totalUsers).toFixed(1) : 0,
+            strategicInsightsGenerated: Array.from(strategicInsights.values()).reduce((sum, insights) => sum + insights.length, 0),
+            tradingPatternsIdentified: Array.from(tradingPatterns.values()).reduce((sum, patterns) => sum + patterns.length, 0)
+        };
+    } catch (error) {
+        console.error('Get strategic conversation stats error:', error.message);
+        return {
+            totalUsers: 0,
+            totalConversations: 0,
+            totalMemories: 0,
+            todayConversations: 0,
+            avgConversationsPerUser: 0,
+            strategicInsightsGenerated: 0,
+            tradingPatternsIdentified: 0
+        };
+    }
+}
+
+async function clearAllData(chatId = null) {
+    try {
+        if (chatId) {
+            const chatKey = String(chatId);
+            conversations.delete(chatKey);
+            userProfiles.delete(chatKey);
+            persistentMemories.delete(chatKey);
+            strategicInsights.delete(chatKey);
+            tradingPatterns.delete(chatKey);
+            console.log(`🗑️ Cleared all strategic data for user ${chatId}`);
+            return `Cleared strategic data for user ${chatId}`;
+        } else {
+            conversations.clear();
+            userProfiles.clear();
+            persistentMemories.clear();
+            strategicInsights.clear();
+            tradingPatterns.clear();
+            console.log('🗑️ Cleared all strategic user data');
+            return 'Cleared all strategic user data';
+        }
+    } catch (error) {
+        console.error('Clear strategic data error:', error.message);
+        return `Error clearing strategic data: ${error.message}`;
+    }
+}
+
+/**
+ * 🎯 STRATEGIC MEMORY SEARCH
+ */
+async function searchStrategicMemory(chatId, query) {
+    try {
+        const [conversations, persistentMemory] = await Promise.all([
+            getConversationHistory(chatId, 50),
+            getPersistentMemory(chatId)
+        ]);
+        
+        const queryLower = query.toLowerCase();
+        const results = {
+            conversations: [],
+            memories: [],
+            patterns: [],
+            relevanceScore: 0
+        };
+        
+        // Search conversations
+        conversations.forEach(conv => {
+            if (conv.userMessage?.toLowerCase().includes(queryLower) || 
+                conv.gptResponse?.toLowerCase().includes(queryLower)) {
+                results.conversations.push({
+                    ...conv,
+                    relevance: calculateRelevance(conv.userMessage + ' ' + conv.gptResponse, query)
+                });
+            }
+        });
+        
+        // Search persistent memory
+        persistentMemory.forEach(memory => {
+            const fact = memory.fact || memory;
+            if (fact.toLowerCase().includes(queryLower)) {
+                results.memories.push({
+                    ...memory,
+                    relevance: calculateRelevance(fact, query)
+                });
+            }
+        });
+        
+        // Search trading patterns
+        const patterns = getStoredTradingPatterns(chatId);
+        patterns.forEach(pattern => {
+            if (pattern.description?.toLowerCase().includes(queryLower)) {
+                results.patterns.push({
+                    ...pattern,
+                    relevance: calculateRelevance(pattern.description, query)
+                });
+            }
+        });
+        
+        // Calculate overall relevance
+        results.relevanceScore = (results.conversations.length + results.memories.length + results.patterns.length) / 3;
+        
+        // Sort by relevance
+        results.conversations.sort((a, b) => b.relevance - a.relevance);
+        results.memories.sort((a, b) => b.relevance - a.relevance);
+        results.patterns.sort((a, b) => b.relevance - a.relevance);
+        
+        return results;
+        
+    } catch (error) {
+        console.error('Strategic memory search error:', error.message);
+        return { conversations: [], memories: [], patterns: [], relevanceScore: 0 };
+    }
+}
+
+function calculateRelevance(text, query) {
+    const textLower = text.toLowerCase();
+    const queryLower = query.toLowerCase();
+    const queryWords = queryLower.split(' ');
+    
+    let score = 0;
+    queryWords.forEach(word => {
+        if (textLower.includes(word)) {
+            score += 1;
+        }
+    });
+    
+    return score / queryWords.length;
+}
+
+/**
+ * 📊 MEMORY PERFORMANCE OPTIMIZATION
+ */
+function optimizeMemoryPerformance() {
+    try {
+        let optimizedCount = 0;
+        
+        // Optimize conversations - keep only strategic ones
+        for (const [chatId, convs] of conversations.entries()) {
+            const strategicConvs = convs.filter(conv => 
+                conv.strategicImportance === 'high' || 
+                conv.strategicImportance === 'critical' ||
+                conv.extractedFacts?.length > 0
+            );
+            
+            if (strategicConvs.length !== convs.length) {
+                conversations.set(chatId, strategicConvs.slice(-50)); // Keep last 50 strategic
+                optimizedCount++;
+            }
+        }
+        
+        // Optimize persistent memories - merge similar facts
+        for (const [chatId, memories] of persistentMemories.entries()) {
+            const uniqueMemories = deduplicateMemories(memories);
+            if (uniqueMemories.length !== memories.length) {
+                persistentMemories.set(chatId, uniqueMemories);
+                optimizedCount++;
+            }
+        }
+        
+        console.log(`✅ Strategic memory optimized for ${optimizedCount} users`);
+        return optimizedCount;
+        
+    } catch (error) {
+        console.error('Memory optimization error:', error.message);
+        return 0;
+    }
+}
+
+function deduplicateMemories(memories) {
+    const unique = [];
+    const seen = new Set();
+    
+    memories.forEach(memory => {
+        const fact = memory.fact || memory;
+        const normalized = fact.toLowerCase().replace(/[^\w\s]/g, '').trim();
+        
+        if (!seen.has(normalized)) {
+            seen.add(normalized);
+            unique.push(memory);
+        }
+    });
+    
+    return unique;
+}
+
+/**
+ * 🎯 STRATEGIC MEMORY EXPORT
+ */
+async function exportStrategicMemory(chatId) {
+    try {
+        const [conversations, persistentMemory, userProfile, analytics] = await Promise.all([
+            getConversationHistory(chatId, 100),
+            getPersistentMemory(chatId),
+            getUserProfile(chatId),
+            getMemoryAnalytics(chatId)
+        ]);
+        
+        const export_data = {
+            exportId: `STRATEGIC_MEMORY_${Date.now()}`,
+            chatId: chatId,
+            exportDate: new Date().toISOString(),
+            
+            summary: {
+                totalConversations: conversations.length,
+                totalMemories: persistentMemory.length,
+                relationshipDuration: analytics?.relationshipDuration || 0,
+                engagementLevel: analytics?.engagementLevel || 'UNKNOWN'
+            },
+            
+            userProfile: userProfile,
+            conversations: conversations,
+            persistentMemory: persistentMemory,
+            tradingPatterns: getStoredTradingPatterns(chatId),
+            strategicInsights: strategicInsights.get(String(chatId)) || [],
+            analytics: analytics,
+            
+            metadata: {
+                systemVersion: 'IMPERIUM_VAULT_3.0',
+                memoryCategories: MEMORY_CATEGORIES,
+                importanceLevels: IMPORTANCE_LEVELS
+            }
+        };
+        
+        return export_data;
+        
+    } catch (error) {
+        console.error('Strategic memory export error:', error.message);
+        return null;
+    }
+}
 
 module.exports = {
+    // 🎯 ENHANCED STRATEGIC FUNCTIONS
     saveConversation,
     buildConversationContext,
+    extractAndSaveFacts,
+    addPersistentMemory,
+    
+    // 📊 STRATEGIC ANALYTICS
+    getMemoryAnalytics,
+    getStrategicUserProfile,
+    searchStrategicMemory,
+    exportStrategicMemory,
+    
+    // 🔧 OPTIMIZATION
+    optimizeMemoryPerformance,
+    
+    // 📈 TRADING PATTERNS
+    extractTradingPatterns,
+    getStoredTradingPatterns,
+    saveTradingPatterns,
+    
+    // 🏛️ STRATEGIC CATEGORIES
+    MEMORY_CATEGORIES,
+    IMPORTANCE_LEVELS,
+    
+    // 🔄 LEGACY COMPATIBILITY
     getConversationHistory,
     getConversationStats,
     getUserProfile,
     updateUserPreferences,
-    extractAndSaveFacts,
     getPersistentMemory,
-    addPersistentMemory,
     clearAllData
 };
