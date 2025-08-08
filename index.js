@@ -1838,6 +1838,20 @@ app.post("/webhook", (req, res) => {
     res.sendStatus(200);
 });
 
+// Health check routes
+app.get("/", (req, res) => {
+    res.status(200).send("✅ Vault Strategist is alive");
+});
+
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Start the server
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+});
+
 // Enhanced dashboard with Strategic Commander features
 app.get("/dashboard", async (req, res) => {
     try {
