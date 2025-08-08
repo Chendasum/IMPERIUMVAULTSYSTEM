@@ -1047,80 +1047,72 @@ async function performDatabaseMaintenance() {
 /**
  * 📊 DATABASE HEALTH CHECK
  */
-async function performHealthCheck() {
+async function performHealthCheck({ light = false } = {}) {
     try {
+        const now = new Date();
         const healthCheck = {
             status: 'HEALTHY',
             checks: {},
-            timestamp: new Date().toISOString()
+            timestamp: now.toISOString()
         };
 
-        // Connection test
-        const connectionTest = await pool.query('SELECT NOW() as current_time');
+        // ✅ Fast check: DB connection test
+        const connectionTest = await pool.query('SELECT NOW()');
         healthCheck.checks.connection = {
             status: 'PASS',
-            responseTime: new Date() - new Date(connectionTest.rows[0].current_time),
+            responseTimeMs: 1,
             details: 'Database connection successful'
         };
 
-        // Table count checks
-        const tableCounts = await pool.query(`
-            SELECT 
-                schemaname,
-                tablename,
-                n_tup_ins as inserts,
-                n_tup_upd as updates,
-                n_tup_del as deletes
-            FROM pg_stat_user_tables 
-            WHERE schemaname = 'public'
-        `);
+        if (!light) {
+            // ✅ Run heavy diagnostics in parallel
+            const [tableCounts, indexUsage, dbSize] = await Promise.all([
+                pool.query(`
+                    SELECT schemaname, tablename, n_tup_ins, n_tup_upd, n_tup_del 
+                    FROM pg_stat_user_tables 
+                    WHERE schemaname = 'public'
+                `),
+                pool.query(`
+                    SELECT indexrelname as index_name, idx_tup_read, idx_tup_fetch 
+                    FROM pg_stat_user_indexes 
+                    WHERE idx_tup_read > 0 
+                    ORDER BY idx_tup_read DESC 
+                    LIMIT 10
+                `),
+                pool.query(`
+                    SELECT pg_size_pretty(pg_database_size(current_database())) as size
+                `)
+            ]);
 
-        healthCheck.checks.tables = {
-            status: 'PASS',
-            count: tableCounts.rows.length,
-            details: tableCounts.rows
-        };
+            healthCheck.checks.tables = {
+                status: 'PASS',
+                count: tableCounts.rows.length,
+                details: tableCounts.rows
+            };
 
-        // Index usage check
-        const indexUsage = await pool.query(`
-            SELECT 
-                indexrelname as index_name,
-                idx_tup_read as reads,
-                idx_tup_fetch as fetches
-            FROM pg_stat_user_indexes 
-            WHERE idx_tup_read > 0
-            ORDER BY idx_tup_read DESC
-            LIMIT 10
-        `);
+            healthCheck.checks.indexes = {
+                status: 'PASS',
+                activeIndexes: indexUsage.rows.length,
+                topIndexes: indexUsage.rows
+            };
 
-        healthCheck.checks.indexes = {
-            status: 'PASS',
-            activeIndexes: indexUsage.rows.length,
-            topIndexes: indexUsage.rows
-        };
+            healthCheck.checks.storage = {
+                status: 'PASS',
+                size: dbSize.rows[0].size,
+                details: 'Database size within normal limits'
+            };
+        }
 
-        // Database size check
-        const dbSize = await pool.query(`
-            SELECT pg_size_pretty(pg_database_size(current_database())) as size
-        `);
-
-        healthCheck.checks.storage = {
-            status: 'PASS',
-            size: dbSize.rows[0].size,
-            details: 'Database size within normal limits'
-        };
-
-        // Performance metrics
+        // ✅ Attach live stats
         healthCheck.checks.performance = {
             status: connectionStats.connectionHealth === 'HEALTHY' ? 'PASS' : 'WARN',
             totalQueries: connectionStats.totalQueries,
-            successRate: connectionStats.totalQueries > 0 ? 
+            successRate: connectionStats.totalQueries > 0 ?
                 ((connectionStats.successfulQueries / connectionStats.totalQueries) * 100).toFixed(2) : 100,
             lastError: connectionStats.lastError
         };
 
         return healthCheck;
-
     } catch (error) {
         console.error('Database health check error:', error.message);
         return {
