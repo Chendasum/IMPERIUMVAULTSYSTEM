@@ -1,8 +1,8 @@
 {
     "name": "imperium-vault-system-ray-dalio",
-    "version": "5.0.0",
+    "version": "3.0.0",
     "private": true,
-    "description": "Ray Dalio Enhanced GPT-5 System - Institutional-grade market analysis",
+    "description": "Ray Dalio Enhanced GPT-4o System - Institutional-grade market analysis",
     "main": "index.js",
     "scripts": {
         "start": "node index.js"
