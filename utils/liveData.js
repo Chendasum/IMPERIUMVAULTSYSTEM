@@ -1,5 +1,34 @@
 // utils/liveData.js - COMPLETE RAY DALIO ENHANCED INSTITUTIONAL MARKET DATA SYSTEM
 const axios = require('axios');
+const marketDataCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+function getCachedData(key) {
+    const cached = marketDataCache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log(`📦 Using cached data for ${key}`);
+        return cached.data;
+    }
+    return null;
+}
+
+function setCachedData(key, data) {
+    marketDataCache.set(key, {
+        data: data,
+        timestamp: Date.now()
+    });
+}
+
+// Create optimized axios instance
+const optimizedAxios = axios.create({
+    timeout: 15000,
+    maxRedirects: 3,
+    headers: {
+        'User-Agent': 'IMPERIUM-VAULT-SYSTEM/3.0.0',
+        'Accept-Encoding': 'gzip, deflate',
+        'Connection': 'keep-alive'
+    }
+});
 
 // API KEYS - Your existing keys plus enhanced functionality
 const FRED_API_KEY = '4ac1a6dbcef67c4ae605b8630c67349e';
