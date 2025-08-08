@@ -1,17 +1,16 @@
 {
-  "name": "imperium-vault-strategic-commander-gpt5",
-  "version": "5.0.0",
-  "private": true,
-  "description": "GPT-5 Enhanced Vault System — Capital Warfare AI built on Imperium Codex by Sum Chenda",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "author": {
-    "name": "Sum Chenda",
-    "email": "contact@imperiumvault.com"
-  }
-}
+    "name": "imperium-vault-system-ray-dalio",
+    "version": "5.0.0",
+    "private": true,
+    "description": "Ray Dalio Enhanced GPT-5 System - Institutional-grade market analysis",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "author": {
+        "name": "Sum Chenda",
+        "email": "contact@imperiumvault.com"
+    },
     "license": "MIT",
     "dependencies": {
         "dotenv": "^16.4.5",
