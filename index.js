@@ -1847,11 +1847,6 @@ app.get("/health", (req, res) => {
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
-
 // Enhanced dashboard with Strategic Commander features
 app.get("/dashboard", async (req, res) => {
     try {
