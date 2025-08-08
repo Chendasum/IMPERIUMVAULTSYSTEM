@@ -796,9 +796,6 @@ class StrategicContextCacheManager {
     }
 }
 
-// Initialize strategic context cache manager
-const strategicContextCache = new StrategicContextCacheManager();
-
 /**
  * 📈 STRATEGIC CONTEXT ANALYTICS
  * Provides analytics on strategic context usage
