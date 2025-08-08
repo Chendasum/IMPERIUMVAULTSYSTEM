@@ -1,52 +1,105 @@
-// utils/cambodiaLending.js - PRIVATE LENDING FUND ENHANCEMENT SYSTEM
-// Integrates with Ray Dalio AI for institutional-grade Cambodia fund management
+// utils/cambodiaLending.js - STRATEGIC CAMBODIA LENDING FUND WARFARE SYSTEM
+// IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Complete institutional-grade Cambodia fund management
 
 const axios = require('axios');
 const moment = require('moment-timezone');
 const { getRayDalioMarketData, getFredData } = require('./liveData');
 const { saveConversationDB, addPersistentMemoryDB } = require('./database');
 
-// 🇰🇭 CAMBODIA MARKET DATA & CONSTANTS
+// 🇰🇭 STRATEGIC CAMBODIA MARKET WARFARE DATA & CONSTANTS
 const CAMBODIA_MARKET_DATA = {
-    // Interest Rate Environment
+    // Strategic Interest Rate Warfare Environment
     PRIME_LENDING_RATES: {
-        commercial: { min: 12, max: 18, average: 15 },
-        residential: { min: 8, max: 14, average: 11 },
-        bridge: { min: 15, max: 25, average: 20 },
-        development: { min: 18, max: 28, average: 22 }
+        commercial: { min: 12, max: 18, average: 15, strategic_premium: 2 },
+        residential: { min: 8, max: 14, average: 11, strategic_premium: 1.5 },
+        bridge: { min: 15, max: 25, average: 20, strategic_premium: 3 },
+        development: { min: 18, max: 28, average: 22, strategic_premium: 4 }
     },
     
-    // Phnom Penh Property Zones
+    // Strategic Phnom Penh Property Warfare Zones
     PROPERTY_ZONES: {
-        'Chamkar Mon': { risk: 'LOW', appreciation: 'HIGH', liquidity: 'HIGH' },
-        'Daun Penh': { risk: 'LOW', appreciation: 'MEDIUM', liquidity: 'HIGH' },
-        '7 Makara': { risk: 'MEDIUM', appreciation: 'HIGH', liquidity: 'MEDIUM' },
-        'Toul Kork': { risk: 'LOW', appreciation: 'MEDIUM', liquidity: 'HIGH' },
-        'Russey Keo': { risk: 'MEDIUM', appreciation: 'HIGH', liquidity: 'MEDIUM' },
-        'Sen Sok': { risk: 'MEDIUM', appreciation: 'MEDIUM', liquidity: 'MEDIUM' },
-        'Meanchey': { risk: 'HIGH', appreciation: 'LOW', liquidity: 'LOW' }
+        'Chamkar Mon': { 
+            risk: 'LOW', 
+            appreciation: 'HIGH', 
+            liquidity: 'HIGH',
+            strategic_multiplier: 0.9,
+            warfare_priority: 'ALPHA'
+        },
+        'Daun Penh': { 
+            risk: 'LOW', 
+            appreciation: 'MEDIUM', 
+            liquidity: 'HIGH',
+            strategic_multiplier: 0.95,
+            warfare_priority: 'ALPHA'
+        },
+        '7 Makara': { 
+            risk: 'MEDIUM', 
+            appreciation: 'HIGH', 
+            liquidity: 'MEDIUM',
+            strategic_multiplier: 1.0,
+            warfare_priority: 'BETA'
+        },
+        'Toul Kork': { 
+            risk: 'LOW', 
+            appreciation: 'MEDIUM', 
+            liquidity: 'HIGH',
+            strategic_multiplier: 0.92,
+            warfare_priority: 'ALPHA'
+        },
+        'Russey Keo': { 
+            risk: 'MEDIUM', 
+            appreciation: 'HIGH', 
+            liquidity: 'MEDIUM',
+            strategic_multiplier: 1.05,
+            warfare_priority: 'BETA'
+        },
+        'Sen Sok': { 
+            risk: 'MEDIUM', 
+            appreciation: 'MEDIUM', 
+            liquidity: 'MEDIUM',
+            strategic_multiplier: 1.1,
+            warfare_priority: 'GAMMA'
+        },
+        'Meanchey': { 
+            risk: 'HIGH', 
+            appreciation: 'LOW', 
+            liquidity: 'LOW',
+            strategic_multiplier: 1.3,
+            warfare_priority: 'DELTA'
+        }
     },
     
-    // Economic Indicators
+    // Strategic Economic Warfare Indicators
     ECONOMIC_BASELINE: {
         gdpGrowth: 7.0,
         inflation: 3.5,
-        currencyStability: 0.95, // USD peg strength
+        currencyStability: 0.95, // USD peg strategic strength
         politicalRisk: 'MODERATE',
-        regulatoryEnvironment: 'IMPROVING'
+        regulatoryEnvironment: 'IMPROVING',
+        strategicGrowthTrajectory: 'EXPANDING'
     },
     
-    // Risk Multipliers
+    // Strategic Risk Warfare Multipliers
     RISK_MULTIPLIERS: {
         'FIRST_TIME_BORROWER': 1.3,
         'REPEAT_CLIENT': 0.8,
         'LOCAL_DEVELOPER': 1.0,
         'FOREIGN_INVESTOR': 1.4,
-        'GOVERNMENT_CONNECTED': 0.7
+        'GOVERNMENT_CONNECTED': 0.7,
+        'STRATEGIC_PARTNER': 0.6
+    },
+    
+    // Strategic Deployment Limits
+    DEPLOYMENT_LIMITS: {
+        MAX_SINGLE_DEAL: 2000000,
+        MAX_BORROWER_EXPOSURE: 5000000,
+        MAX_LOCATION_EXPOSURE: 10000000,
+        MIN_YIELD_THRESHOLD: 12.0,
+        TARGET_YIELD: 18.0
     }
 };
 
-// 🏦 LENDING FUND CACHE
+// 🏦 STRATEGIC LENDING FUND WARFARE CACHE
 let fundCache = {
     lastUpdate: null,
     portfolioData: null,
@@ -55,11 +108,11 @@ let fundCache = {
 };
 
 /**
- * 🎯 1. DEAL ANALYSIS SYSTEM
+ * 🎯 1. STRATEGIC DEAL WARFARE ANALYSIS SYSTEM
  */
 async function analyzeLendingDeal(dealParams) {
     try {
-        console.log('🎯 Analyzing Cambodia lending deal...');
+        console.log('🎯 Executing Strategic Cambodia lending deal warfare analysis...');
         
         const {
             amount,
@@ -73,103 +126,114 @@ async function analyzeLendingDeal(dealParams) {
             loanToValue
         } = dealParams;
         
-        // Get current market data
+        // Deploy strategic market intelligence
         const marketData = await getRayDalioMarketData();
         const cambodiaConditions = await getCambodiaMarketConditions();
         
-        // Risk Assessment
+        // Execute strategic risk warfare assessment
         const riskScore = calculateDealRiskScore(dealParams, cambodiaConditions);
         const creditScore = assessBorrowerCredit(borrowerProfile);
         const collateralValue = evaluateCollateral(collateralType, location, amount);
         
-        // Market Analysis
+        // Execute strategic market warfare analysis
         const marketAnalysis = analyzeMarketTiming(marketData, cambodiaConditions);
         const competitiveRate = calculateCompetitiveRate(dealParams, cambodiaConditions);
         
-        // Ray Dalio Framework Application
+        // Deploy Strategic Commander Framework
         const rayDalioAssessment = applyRayDalioToLending(dealParams, marketData);
         
         const analysis = {
-            dealId: `DEAL_${Date.now()}`,
+            dealId: `STRATEGIC_DEAL_${Date.now()}`,
             timestamp: new Date().toISOString(),
+            commandStatus: 'ANALYSIS_COMPLETE',
             
-            // Deal Overview
+            // Strategic Deal Warfare Overview
             dealSummary: {
                 amount: parseFloat(amount),
                 rate: parseFloat(interestRate),
                 term: parseInt(term),
                 monthlyPayment: calculateMonthlyPayment(amount, interestRate, term),
                 totalReturn: calculateTotalReturn(amount, interestRate, term),
-                riskAdjustedReturn: 0 // Calculated below
+                riskAdjustedReturn: 0, // Calculated below
+                strategicROI: calculateStrategicROI(amount, interestRate, term),
+                strategicIRR: calculateStrategicIRR(amount, interestRate, term)
             },
             
-            // Risk Analysis
+            // Strategic Risk Warfare Assessment
             riskAssessment: {
                 overallScore: riskScore,
+                strategicRiskCategory: getRiskCategory(riskScore),
                 creditRisk: creditScore,
                 marketRisk: marketAnalysis.risk,
                 collateralRisk: collateralValue.risk,
-                currencyRisk: 'LOW', // USD denominated
+                currencyRisk: 'LOW', // USD denominated warfare
                 liquidityRisk: getLocationLiquidityRisk(location),
-                riskCategory: getRiskCategory(riskScore)
+                concentrationRisk: calculateConcentrationRisk(dealParams),
+                strategicTailRisk: calculateTailRisk(dealParams)
             },
             
-            // Market Context
+            // Strategic Market Warfare Context
             marketContext: {
                 currentConditions: cambodiaConditions.summary,
-                rateEnvironment: cambodiaConditions.interestRateEnvironment,
-                propertyMarket: cambodiaConditions.propertyMarket,
+                strategicRateEnvironment: cambodiaConditions.interestRateEnvironment,
+                strategicPropertyMarket: cambodiaConditions.propertyMarket,
                 competitiveRate: competitiveRate,
-                marketTiming: marketAnalysis.timing
+                strategicMarketTiming: marketAnalysis.timing,
+                strategicRegimeAlignment: marketAnalysis.regimeAlignment
             },
             
-            // Ray Dalio Analysis
+            // Strategic Commander Analysis
             rayDalioInsights: rayDalioAssessment,
             
-            // Recommendation
+            // Strategic Command Recommendation
             recommendation: generateLendingRecommendation(riskScore, marketAnalysis, rayDalioAssessment),
             
-            // Financial Metrics
+            // Strategic Financial Warfare Metrics
             metrics: {
                 expectedReturn: parseFloat(interestRate),
                 riskAdjustedReturn: (parseFloat(interestRate) * (100 - riskScore)) / 100,
-                capitalEfficiency: amount / 100000, // Capital efficiency ratio
-                portfolioImpact: calculatePortfolioImpact(amount, interestRate),
-                breakEvenDefault: calculateBreakEvenDefault(interestRate, term),
-                worstCaseScenario: calculateWorstCase(dealParams)
+                strategicCapitalEfficiency: amount / 100000,
+                strategicPortfolioImpact: calculatePortfolioImpact(amount, interestRate),
+                strategicBreakEvenDefault: calculateBreakEvenDefault(interestRate, term),
+                strategicWorstCaseScenario: calculateWorstCase(dealParams),
+                strategicSharpeRatio: calculateSharpeRatio(interestRate, riskScore),
+                strategicVaR: calculateValueAtRisk(amount, riskScore)
             },
             
-            // Action Items
+            // Strategic Action Warfare Items
             actionItems: generateActionItems(riskScore, marketAnalysis),
             
-            // Monitoring Alerts
-            monitoringAlerts: generateMonitoringAlerts(dealParams, riskScore)
+            // Strategic Monitoring Warfare Alerts
+            monitoringAlerts: generateMonitoringAlerts(dealParams, riskScore),
+            
+            // Strategic Exit Strategies
+            exitStrategies: generateExitStrategies(dealParams)
         };
         
-        // Calculate risk-adjusted return
+        // Calculate strategic risk-adjusted return
         analysis.dealSummary.riskAdjustedReturn = analysis.metrics.riskAdjustedReturn;
         
-        console.log(`✅ Deal analysis complete: ${analysis.recommendation.decision} (${riskScore}/100 risk)`);
+        console.log(`✅ Strategic deal warfare analysis complete: ${analysis.recommendation.decision} (${riskScore}/100 strategic risk)`);
         return analysis;
         
     } catch (error) {
-        console.error('Deal analysis error:', error.message);
+        console.error('Strategic deal warfare analysis error:', error.message);
         return {
             error: error.message,
-            dealId: `ERROR_${Date.now()}`,
-            recommendation: { decision: 'DECLINE', reason: 'Analysis failed' }
+            dealId: `STRATEGIC_ERROR_${Date.now()}`,
+            recommendation: { decision: 'STRATEGIC_DECLINE', reason: 'Strategic analysis failed' }
         };
     }
 }
 
 /**
- * 🏦 2. PORTFOLIO MANAGEMENT SYSTEM
+ * 🏦 2. STRATEGIC PORTFOLIO WARFARE MANAGEMENT SYSTEM
  */
 async function getPortfolioStatus(fundData = null) {
     try {
-        console.log('🏦 Generating portfolio status...');
+        console.log('🏦 Executing strategic portfolio warfare status analysis...');
         
-        // Update cache if needed
+        // Update strategic cache if needed
         const now = Date.now();
         if (!fundCache.lastUpdate || (now - fundCache.lastUpdate) > 30 * 60 * 1000) {
             await updateFundCache();
@@ -179,75 +243,87 @@ async function getPortfolioStatus(fundData = null) {
         
         const portfolio = {
             timestamp: new Date().toISOString(),
+            commandStatus: 'PORTFOLIO_ANALYSIS_COMPLETE',
             
-            // Fund Overview
+            // Strategic Fund Warfare Overview
             fundOverview: {
                 totalAUM: fundData?.totalAUM || calculateTotalAUM(),
                 availableCapital: fundData?.availableCapital || 0,
                 deployedCapital: fundData?.deployedCapital || 0,
                 deploymentRatio: calculateDeploymentRatio(fundData),
                 numberOfDeals: fundData?.activeDeals || 0,
-                averageDealSize: calculateAverageDealSize(fundData)
+                averageDealSize: calculateAverageDealSize(fundData),
+                strategicCapitalVelocity: calculateCapitalVelocity(fundData),
+                strategicDeploymentEfficiency: calculateDeploymentEfficiency(fundData)
             },
             
-            // Performance Metrics
+            // Strategic Performance Warfare Metrics
             performance: {
                 currentYieldRate: calculateCurrentYield(fundData),
-                targetYieldRate: 18.0, // Target for Cambodia market
+                targetYieldRate: CAMBODIA_MARKET_DATA.DEPLOYMENT_LIMITS.TARGET_YIELD,
                 actualVsTarget: calculateActualVsTarget(fundData),
                 riskAdjustedReturn: calculateRiskAdjustedReturn(fundData),
                 portfolioIRR: calculatePortfolioIRR(fundData),
                 monthlyIncome: calculateMonthlyIncome(fundData),
-                annualizedReturn: calculateAnnualizedReturn(fundData)
+                annualizedReturn: calculateAnnualizedReturn(fundData),
+                strategicSharpeRatio: calculatePortfolioSharpeRatio(fundData),
+                strategicVolatility: calculatePortfolioVolatility(fundData)
             },
             
-            // Risk Metrics
+            // Strategic Risk Warfare Metrics
             riskMetrics: {
                 concentrationRisk: calculateConcentrationRisk(fundData),
                 defaultRate: calculateDefaultRate(fundData),
                 portfolioVaR: calculateValueAtRisk(fundData),
                 stressTestResults: performStressTest(fundData),
                 diversificationScore: calculateDiversificationScore(fundData),
-                liquidity: assessPortfolioLiquidity(fundData)
+                liquidity: assessPortfolioLiquidity(fundData),
+                strategicCorrelationRisk: calculateCorrelationRisk(fundData)
             },
             
-            // Geographic Allocation
+            // Strategic Geographic Warfare Allocation
             geographicAllocation: {
                 phnomPenh: calculateGeographicAllocation(fundData, 'Phnom Penh'),
                 sihanoukville: calculateGeographicAllocation(fundData, 'Sihanoukville'),
                 siemReap: calculateGeographicAllocation(fundData, 'Siem Reap'),
+                battambang: calculateGeographicAllocation(fundData, 'Battambang'),
                 other: calculateGeographicAllocation(fundData, 'Other')
             },
             
-            // Sector Allocation
+            // Strategic Sector Warfare Allocation
             sectorAllocation: {
                 commercial: calculateSectorAllocation(fundData, 'commercial'),
                 residential: calculateSectorAllocation(fundData, 'residential'),
                 development: calculateSectorAllocation(fundData, 'development'),
                 bridge: calculateSectorAllocation(fundData, 'bridge'),
+                hospitality: calculateSectorAllocation(fundData, 'hospitality'),
                 other: calculateSectorAllocation(fundData, 'other')
             },
             
-            // Ray Dalio Assessment
+            // Strategic Commander Portfolio Assessment
             rayDalioPortfolioAnalysis: {
                 diversificationScore: assessRayDalioDiversification(fundData),
                 riskParityAlignment: assessRiskParityAlignment(fundData),
                 macroAlignment: assessMacroAlignment(fundData, marketData),
-                regimePositioning: assessRegimePositioning(fundData, marketData)
+                regimePositioning: assessRegimePositioning(fundData, marketData),
+                strategicCorrelationOptimization: assessCorrelationOptimization(fundData)
             },
             
-            // Recommendations
+            // Strategic Command Recommendations
             recommendations: generatePortfolioRecommendations(fundData, marketData),
             
-            // Alerts
-            alerts: generatePortfolioAlerts(fundData)
+            // Strategic Command Alerts
+            alerts: generatePortfolioAlerts(fundData),
+            
+            // Strategic Performance Attribution
+            performanceAttribution: calculatePerformanceAttribution(fundData)
         };
         
-        console.log(`✅ Portfolio analysis complete: ${portfolio.fundOverview.totalAUM} AUM`);
+        console.log(`✅ Strategic portfolio warfare analysis complete: ${portfolio.fundOverview.totalAUM} Strategic AUM`);
         return portfolio;
         
     } catch (error) {
-        console.error('Portfolio analysis error:', error.message);
+        console.error('Strategic portfolio warfare analysis error:', error.message);
         return {
             error: error.message,
             timestamp: new Date().toISOString()
@@ -256,117 +332,131 @@ async function getPortfolioStatus(fundData = null) {
 }
 
 /**
- * 🇰🇭 3. CAMBODIA MARKET INTELLIGENCE
+ * 🇰🇭 3. STRATEGIC CAMBODIA MARKET WARFARE INTELLIGENCE
  */
 async function getCambodiaMarketConditions() {
     try {
-        console.log('🇰🇭 Analyzing Cambodia market conditions...');
+        console.log('🇰🇭 Executing Strategic Cambodia market warfare intelligence analysis...');
         
-        // Get global market data for context
+        // Deploy strategic global market intelligence
         const globalData = await getRayDalioMarketData();
         
-        // Analyze Cambodia-specific factors
+        // Execute strategic Cambodia-specific warfare analysis
         const conditions = {
             timestamp: new Date().toISOString(),
+            commandStatus: 'MARKET_INTELLIGENCE_COMPLETE',
             
-            // Economic Environment
+            // Strategic Economic Warfare Environment
             economicEnvironment: {
-                gdpGrowth: 7.0, // Latest estimates
+                gdpGrowth: 7.0,
                 inflation: 3.5,
-                unemployment: 0.3, // Very low in Cambodia
+                unemployment: 0.3,
                 currencyStability: assessUSDKHRStability(),
                 politicalStability: 'STABLE',
-                regulatoryEnvironment: 'IMPROVING'
+                regulatoryEnvironment: 'IMPROVING',
+                strategicGrowthTrajectory: 'EXPANDING',
+                strategicBusinessClimate: 'FAVORABLE'
             },
             
-            // Interest Rate Environment
+            // Strategic Interest Rate Warfare Environment
             interestRateEnvironment: {
-                centralBankRate: 'N/A', // Cambodia uses USD
+                centralBankRate: 'N/A', // Cambodia uses strategic USD
                 commercialRates: CAMBODIA_MARKET_DATA.PRIME_LENDING_RATES,
                 trendDirection: 'STABLE',
                 fedImpact: analyzeFedImpactOnCambodia(globalData),
-                competitiveEnvironment: 'MODERATE'
+                competitiveEnvironment: 'MODERATE',
+                strategicRateVolatility: calculateRateVolatility(),
+                strategicYieldOpportunity: identifyYieldOpportunities()
             },
             
-            // Property Market
+            // Strategic Property Warfare Market
             propertyMarket: {
                 phnomPenhTrend: 'STABLE_GROWTH',
                 demandSupplyBalance: 'BALANCED',
                 foreignInvestment: 'MODERATE',
                 developmentActivity: 'HIGH',
                 priceAppreciation: 'MODERATE',
-                liquidity: 'GOOD'
+                liquidity: 'GOOD',
+                strategicMarketDepth: assessMarketDepth(),
+                strategicTransactionVolume: assessTransactionVolume()
             },
             
-            // Banking Sector
+            // Strategic Banking Warfare Sector
             bankingSector: {
                 liquidityConditions: 'ADEQUATE',
                 creditGrowth: 'MODERATE',
                 competitionLevel: 'HIGH',
                 regulatoryChanges: 'ONGOING',
-                digitalTransformation: 'ACCELERATING'
+                digitalTransformation: 'ACCELERATING',
+                strategicMarketConcentration: assessMarketConcentration()
             },
             
-            // Risk Factors
+            // Strategic Risk Warfare Factors
             riskFactors: {
                 politicalRisk: 'LOW',
                 economicRisk: 'MODERATE',
                 currencyRisk: 'LOW',
                 regulatoryRisk: 'MODERATE',
                 marketRisk: 'MODERATE',
-                liquidityRisk: 'LOW'
+                liquidityRisk: 'LOW',
+                strategicGeopoliticalRisk: 'MODERATE'
             },
             
-            // Opportunities
+            // Strategic Warfare Opportunities
             opportunities: [
-                'Bridge lending for development projects',
-                'Commercial property refinancing',
-                'Foreign investor bridge loans',
-                'Local business expansion financing',
-                'Tourism sector recovery financing'
+                'Strategic bridge lending for premium development projects',
+                'Strategic commercial property refinancing at premium rates',
+                'Strategic foreign investor bridge loans with currency hedging',
+                'Strategic local business expansion financing in growth sectors',
+                'Strategic tourism sector recovery financing with government backing',
+                'Strategic infrastructure development financing',
+                'Strategic renewable energy project financing'
             ],
             
-            // Global Context Impact
+            // Strategic Global Context Warfare Impact
             globalImpact: analyzeGlobalImpactOnCambodia(globalData),
             
-            // Market Timing
+            // Strategic Market Warfare Timing
             marketTiming: {
                 currentPhase: 'EXPANSION',
                 timeInCycle: 'MID_CYCLE',
                 nextPhaseExpected: 'LATE_EXPANSION',
-                timingForLending: 'FAVORABLE'
+                timingForLending: 'FAVORABLE',
+                strategicCyclePosition: assessCyclePosition(),
+                strategicOptimalEntryWindow: calculateOptimalEntryWindow()
             },
             
-            // Summary Assessment
+            // Strategic Summary Assessment
             summary: generateCambodiaMarketSummary(globalData)
         };
         
-        console.log(`✅ Cambodia market analysis complete: ${conditions.summary}`);
+        console.log(`✅ Strategic Cambodia market warfare intelligence complete: ${conditions.summary}`);
         return conditions;
         
     } catch (error) {
-        console.error('Cambodia market analysis error:', error.message);
+        console.error('Strategic Cambodia market warfare intelligence error:', error.message);
         return {
             error: error.message,
-            summary: 'Market analysis unavailable'
+            summary: 'Strategic market intelligence temporarily unavailable'
         };
     }
 }
 
 /**
- * 📊 4. RISK MANAGEMENT SYSTEM
+ * 📊 4. STRATEGIC RISK WARFARE MANAGEMENT SYSTEM
  */
 async function performRiskAssessment(portfolioData, newDeal = null) {
     try {
-        console.log('📊 Performing comprehensive risk assessment...');
+        console.log('📊 Executing comprehensive strategic risk warfare assessment...');
         
         const marketData = await getRayDalioMarketData();
         const cambodiaConditions = await getCambodiaMarketConditions();
         
         const riskAssessment = {
             timestamp: new Date().toISOString(),
+            commandStatus: 'RISK_ASSESSMENT_COMPLETE',
             
-            // Portfolio Risk Metrics
+            // Strategic Portfolio Risk Warfare Metrics
             portfolioRisk: {
                 overallRiskScore: calculateOverallRiskScore(portfolioData),
                 concentrationRisk: assessConcentrationRisk(portfolioData),
@@ -374,58 +464,64 @@ async function performRiskAssessment(portfolioData, newDeal = null) {
                 marketRisk: assessMarketRisk(portfolioData, cambodiaConditions),
                 liquidityRisk: assessLiquidityRisk(portfolioData),
                 operationalRisk: assessOperationalRisk(),
-                regulatoryRisk: assessRegulatoryRisk()
+                regulatoryRisk: assessRegulatoryRisk(),
+                strategicSystemicRisk: assessSystemicRisk(cambodiaConditions)
             },
             
-            // Ray Dalio Risk Framework
+            // Strategic Commander Risk Warfare Framework
             rayDalioRiskAnalysis: {
                 diversificationEffectiveness: assessDiversificationEffectiveness(portfolioData),
                 correlationRisks: identifyCorrelationRisks(portfolioData),
                 tailRisks: identifyTailRisks(portfolioData, cambodiaConditions),
                 hedgingRecommendations: generateHedgingRecommendations(portfolioData),
-                riskParityAlignment: assessRiskParityInLending(portfolioData)
+                riskParityAlignment: assessRiskParityInLending(portfolioData),
+                strategicRegimeRisk: assessRegimeRisk(portfolioData, marketData)
             },
             
-            // Stress Testing
+            // Strategic Stress Warfare Testing
             stressTesting: {
                 economicDownturn: simulateEconomicDownturn(portfolioData),
                 interestRateShock: simulateRateShock(portfolioData),
                 defaultScenarios: simulateDefaultScenarios(portfolioData),
                 liquidityCrisis: simulateLiquidityCrisis(portfolioData),
-                currencyDevaluation: simulateCurrencyShock(portfolioData)
+                currencyDevaluation: simulateCurrencyShock(portfolioData),
+                strategicPoliticalCrisis: simulatePoliticalCrisis(portfolioData),
+                strategicRegulatoryShock: simulateRegulatoryShock(portfolioData)
             },
             
-            // Early Warning Indicators
+            // Strategic Early Warning Warfare Indicators
             earlyWarning: {
                 macroIndicators: identifyMacroWarnings(marketData, cambodiaConditions),
                 portfolioIndicators: identifyPortfolioWarnings(portfolioData),
                 marketIndicators: identifyMarketWarnings(cambodiaConditions),
-                regulatoryIndicators: identifyRegulatoryWarnings()
+                regulatoryIndicators: identifyRegulatoryWarnings(),
+                strategicLiquidityIndicators: identifyLiquidityWarnings(portfolioData)
             },
             
-            // Risk Limits
+            // Strategic Risk Warfare Limits
             riskLimits: {
                 currentUtilization: calculateRiskLimitUtilization(portfolioData),
                 recommendations: generateRiskLimitRecommendations(portfolioData),
                 violations: identifyRiskLimitViolations(portfolioData),
-                adjustments: recommendRiskLimitAdjustments(portfolioData)
+                adjustments: recommendRiskLimitAdjustments(portfolioData),
+                strategicCapacityAnalysis: calculateRiskCapacity(portfolioData)
             },
             
-            // New Deal Impact (if provided)
+            // Strategic New Deal Warfare Impact
             newDealImpact: newDeal ? assessNewDealImpact(portfolioData, newDeal) : null,
             
-            // Action Items
+            // Strategic Action Warfare Items
             riskActionItems: generateRiskActionItems(portfolioData, cambodiaConditions),
             
-            // Monitoring Requirements
+            // Strategic Monitoring Warfare Requirements
             monitoringRequirements: generateMonitoringRequirements(portfolioData)
         };
         
-        console.log(`✅ Risk assessment complete: ${riskAssessment.portfolioRisk.overallRiskScore}/100`);
+        console.log(`✅ Strategic risk warfare assessment complete: ${riskAssessment.portfolioRisk.overallRiskScore}/100`);
         return riskAssessment;
         
     } catch (error) {
-        console.error('Risk assessment error:', error.message);
+        console.error('Strategic risk warfare assessment error:', error.message);
         return {
             error: error.message,
             timestamp: new Date().toISOString()
@@ -434,152 +530,175 @@ async function performRiskAssessment(portfolioData, newDeal = null) {
 }
 
 /**
- * 💼 5. LP/INVESTOR TOOLS
+ * 💼 5. STRATEGIC LP/INVESTOR WARFARE TOOLS
  */
 async function generateLPReport(reportType = 'monthly', lpData = null) {
     try {
-        console.log(`💼 Generating ${reportType} LP report...`);
+        console.log(`💼 Generating ${reportType} Strategic LP warfare report...`);
         
         const portfolioStatus = await getPortfolioStatus();
         const riskAssessment = await performRiskAssessment(lpData);
         const marketConditions = await getCambodiaMarketConditions();
         
         const report = {
-            reportId: `LP_REPORT_${Date.now()}`,
+            reportId: `STRATEGIC_LP_REPORT_${Date.now()}`,
             reportType: reportType.toUpperCase(),
             reportDate: new Date().toISOString(),
             reportPeriod: calculateReportPeriod(reportType),
+            commandStatus: 'REPORT_GENERATION_COMPLETE',
             
-            // Executive Summary
+            // Strategic Executive Summary
             executiveSummary: {
                 fundPerformance: generateExecutiveSummary(portfolioStatus, riskAssessment),
                 keyHighlights: generateKeyHighlights(portfolioStatus),
                 marketOutlook: generateMarketOutlook(marketConditions),
-                riskUpdate: generateRiskUpdate(riskAssessment)
+                riskUpdate: generateRiskUpdate(riskAssessment),
+                strategicPerformanceHighlights: generatePerformanceHighlights(portfolioStatus)
             },
             
-            // Financial Performance
+            // Strategic Financial Warfare Performance
             financialPerformance: {
                 returns: {
                     periodReturn: portfolioStatus.performance.actualVsTarget,
                     annualizedReturn: portfolioStatus.performance.annualizedReturn,
                     targetVsActual: portfolioStatus.performance.actualVsTarget,
-                    riskAdjustedReturn: portfolioStatus.performance.riskAdjustedReturn
+                    riskAdjustedReturn: portfolioStatus.performance.riskAdjustedReturn,
+                    strategicSharpeRatio: portfolioStatus.performance.strategicSharpeRatio,
+                    strategicAlpha: calculateAlpha(portfolioStatus)
                 },
                 income: {
                     interestIncome: portfolioStatus.performance.monthlyIncome * getMonthsInPeriod(reportType),
                     fees: calculateFeesForPeriod(portfolioStatus, reportType),
-                    totalIncome: calculateTotalIncomeForPeriod(portfolioStatus, reportType)
+                    totalIncome: calculateTotalIncomeForPeriod(portfolioStatus, reportType),
+                    strategicRecurringIncome: calculateRecurringIncome(portfolioStatus, reportType)
                 },
                 deploymentMetrics: {
                     capitalDeployed: portfolioStatus.fundOverview.deployedCapital,
                     deploymentRatio: portfolioStatus.fundOverview.deploymentRatio,
                     pipelineDeal: calculatePipelineValue(),
-                    targetDeployment: calculateTargetDeployment()
+                    targetDeployment: calculateTargetDeployment(),
+                    strategicCapitalVelocity: portfolioStatus.fundOverview.strategicCapitalVelocity
                 }
             },
             
-            // Portfolio Analytics
+            // Strategic Portfolio Warfare Analytics
             portfolioAnalytics: {
                 allocation: {
                     geographic: portfolioStatus.geographicAllocation,
                     sector: portfolioStatus.sectorAllocation,
-                    riskProfile: calculateRiskProfileAllocation(portfolioStatus)
+                    riskProfile: calculateRiskProfileAllocation(portfolioStatus),
+                    strategicDuration: calculateDurationAllocation(portfolioStatus)
                 },
                 diversification: {
                     score: portfolioStatus.riskMetrics.diversificationScore,
                     rayDalioAlignment: portfolioStatus.rayDalioPortfolioAnalysis.diversificationScore,
-                    recommendations: portfolioStatus.recommendations
+                    recommendations: portfolioStatus.recommendations,
+                    strategicCorrelationMatrix: calculateCorrelationMatrix(portfolioStatus)
                 },
                 dealMetrics: {
                     numberOfDeals: portfolioStatus.fundOverview.numberOfDeals,
                     averageDealSize: portfolioStatus.fundOverview.averageDealSize,
                     averageRate: calculateAverageRate(portfolioStatus),
-                    averageTerm: calculateAverageTerm(portfolioStatus)
+                    averageTerm: calculateAverageTerm(portfolioStatus),
+                    strategicDealVelocity: calculateDealVelocity(portfolioStatus)
                 }
             },
             
-            // Risk Reporting
+            // Strategic Risk Warfare Reporting
             riskReporting: {
                 overallRisk: riskAssessment.portfolioRisk.overallRiskScore,
                 riskBreakdown: riskAssessment.portfolioRisk,
                 stressTestResults: riskAssessment.stressTesting,
-                mitigation: riskAssessment.riskActionItems
+                mitigation: riskAssessment.riskActionItems,
+                strategicEarlyWarning: riskAssessment.earlyWarning
             },
             
-            // Market Commentary
+            // Strategic Market Warfare Commentary
             marketCommentary: {
                 cambodiaMarket: generateCambodiaMarketCommentary(marketConditions),
                 globalContext: generateGlobalMarketCommentary(marketConditions.globalImpact),
                 outlook: generateOutlookCommentary(marketConditions),
-                implications: generateImplicationsForFund(marketConditions)
+                implications: generateImplicationsForFund(marketConditions),
+                strategicOpportunities: generateOpportunitiesCommentary(marketConditions)
             },
             
-            // Deal Highlights
+            // Strategic Deal Warfare Highlights
             dealHighlights: generateDealHighlights(portfolioStatus, reportType),
             
-            // Looking Forward
+            // Strategic Forward Warfare Looking
             forwardLooking: {
                 pipeline: generatePipelineUpdate(),
                 strategy: generateStrategyUpdate(marketConditions),
                 targets: generateTargetsUpdate(portfolioStatus),
-                risks: generateForwardRisks(riskAssessment)
+                risks: generateForwardRisks(riskAssessment),
+                strategicOpportunities: generateForwardOpportunities(marketConditions)
             },
             
-            // Appendices
+            // Strategic Warfare Appendices
             appendices: {
                 detailedPositions: generateDetailedPositions(portfolioStatus),
                 riskMetrics: generateDetailedRiskMetrics(riskAssessment),
                 marketData: generateMarketDataAppendix(marketConditions),
-                glossary: generateGlossary()
+                glossary: generateGlossary(),
+                strategicMethodology: generateMethodology()
             }
         };
         
-        console.log(`✅ ${reportType} LP report generated: ${report.reportId}`);
+        console.log(`✅ ${reportType} Strategic LP warfare report generated: ${report.reportId}`);
         return report;
         
     } catch (error) {
-        console.error('LP report generation error:', error.message);
+        console.error('Strategic LP warfare report generation error:', error.message);
         return {
             error: error.message,
-            reportId: `ERROR_${Date.now()}`,
+            reportId: `STRATEGIC_ERROR_${Date.now()}`,
             reportType: reportType.toUpperCase()
         };
     }
 }
 
-// 🔧 HELPER FUNCTIONS
+// 🔧 STRATEGIC WARFARE HELPER FUNCTIONS - COMPLETE IMPLEMENTATION
 
 function calculateDealRiskScore(dealParams, conditions) {
     const { amount, borrowerType, location, loanToValue, term } = dealParams;
     
-    let baseScore = 50; // Start with neutral
+    let baseScore = 50; // Strategic neutral starting point
     
-    // Amount risk
-    if (amount > 1000000) baseScore += 10;
-    else if (amount < 100000) baseScore -= 5;
+    // Strategic amount warfare risk assessment
+    if (amount > CAMBODIA_MARKET_DATA.DEPLOYMENT_LIMITS.MAX_SINGLE_DEAL) {
+        baseScore += 25; // Exceeds strategic deployment limits
+    } else if (amount > 1000000) {
+        baseScore += 10;
+    } else if (amount < 100000) {
+        baseScore -= 5;
+    }
     
-    // Borrower type risk
+    // Strategic borrower type warfare risk
     const borrowerRisk = CAMBODIA_MARKET_DATA.RISK_MULTIPLIERS[borrowerType] || 1.0;
     baseScore *= borrowerRisk;
     
-    // Location risk
+    // Strategic location warfare risk
     const locationData = CAMBODIA_MARKET_DATA.PROPERTY_ZONES[location];
     if (locationData) {
+        baseScore *= locationData.strategic_multiplier;
         switch (locationData.risk) {
-            case 'LOW': baseScore -= 10; break;
+            case 'LOW': baseScore -= 15; break;
             case 'MEDIUM': baseScore += 0; break;
-            case 'HIGH': baseScore += 15; break;
+            case 'HIGH': baseScore += 20; break;
         }
     }
     
-    // LTV risk
-    if (loanToValue > 80) baseScore += 20;
+    // Strategic LTV warfare risk
+    if (loanToValue > 85) baseScore += 25;
+    else if (loanToValue > 75) baseScore += 15;
     else if (loanToValue < 60) baseScore -= 10;
+    else if (loanToValue < 50) baseScore -= 15;
     
-    // Term risk
-    if (term > 24) baseScore += 10;
-    else if (term < 6) baseScore += 5;
+    // Strategic term warfare risk
+    if (term > 36) baseScore += 15;
+    else if (term > 24) baseScore += 10;
+    else if (term < 6) baseScore += 8;
+    else if (term >= 12 && term <= 18) baseScore -= 5; // Sweet spot
     
     return Math.max(0, Math.min(100, Math.round(baseScore)));
 }
