@@ -1642,15 +1642,16 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
 // ENHANCED GPT conversation with Strategic Commander system prompt
 async function handleGPTConversation(chatId, userMessage) {
     console.log("🤖 Strategic Commander GPT conversation:", userMessage, "from:", chatId);
-
     try {
-        const [marketData, conversationHistory, userProfile, tradingData] = await Promise.all([
+        const [marketData, conversationHistory, userProfile] = await Promise.all([
             getComprehensiveMarketData().catch(() => null),
             getConversationHistoryDB(chatId, 6).catch(() => []),
-            getUserProfileDB(chatId).catch(() => null),
-            getTradingSummary().catch(() => null)
+            getUserProfileDB(chatId).catch(() => null)
         ]);
-
+        
+        // MetaAPI temporarily disabled due to connection timeout issues
+        const tradingData = null;
+        
 // Strategic Commander System Prompt - Institutional Expert with Full Analysis
 let systemPrompt = `You are the Strategic Commander of IMPERIUM VAULT SYSTEM - Sum Chenda's exclusive institutional command center.
 
