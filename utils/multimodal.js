@@ -1,20 +1,17 @@
-// utils/multimodal.js - Strategic Commander Multimodal Capabilities
+// utils/multimodal.js - Multimodal capabilities for GPT-4o
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const { OpenAI } = require('openai');
 
-const openai = new OpenAI({ 
-    apiKey: process.env.OPENAI_API_KEY,
-    timeout: 300000 // Extended timeout for GPT-5
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
- * 🎤 Process voice messages with Strategic Commander intelligence
+ * Process voice messages using Whisper API
  */
 async function processVoiceMessage(bot, fileId, chatId) {
     try {
-        console.log('🎤 Processing voice message with Strategic Commander...');
+        console.log('🎤 Processing voice message...');
         
         // Get file info from Telegram
         const file = await bot.getFile(fileId);
@@ -47,21 +44,21 @@ async function processVoiceMessage(bot, fileId, chatId) {
         // Clean up temp file
         fs.unlinkSync(tempFilePath);
         
-        console.log('✅ Voice transcribed for Strategic Commander:', transcription.text);
+        console.log('✅ Voice transcribed:', transcription.text);
         return transcription.text;
         
     } catch (error) {
-        console.error('Strategic Commander voice processing error:', error.message);
+        console.error('Voice processing error:', error.message);
         return null;
     }
 }
 
 /**
- * 🖼️ Process images with Strategic Commander financial analysis
+ * Process images using GPT-4o Vision
  */
 async function processImageMessage(bot, fileId, chatId, caption = '') {
     try {
-        console.log('🖼️ Processing image with Strategic Commander analysis...');
+        console.log('🖼️ Processing image message...');
         
         // Get file info from Telegram
         const file = await bot.getFile(fileId);
@@ -71,41 +68,18 @@ async function processImageMessage(bot, fileId, chatId, caption = '') {
         const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
         const base64Image = Buffer.from(response.data).toString('base64');
         
-        // Strategic Commander image analysis prompt
-        const strategicPrompt = caption ? 
-            `As Strategic Commander of IMPERIUM VAULT SYSTEM, analyze this image with institutional expertise. User caption: "${caption}". 
-
-Provide strategic analysis focusing on:
-- Financial charts, market data, or economic indicators if present
-- Strategic documents, reports, or deal structures
-- Investment opportunities or market intelligence
-- Risk factors or strategic considerations
-- Any actionable strategic insights for portfolio management
-
-Execute comprehensive institutional-grade analysis.` :
-            
-            `As Strategic Commander of IMPERIUM VAULT SYSTEM, analyze this image with institutional expertise.
-
-Focus on identifying:
-- Financial data, charts, or market information
-- Strategic documents or investment materials
-- Economic indicators or market signals
-- Investment opportunities or risks
-- Any strategic intelligence relevant to portfolio management
-
-Provide detailed strategic assessment with actionable insights.`;
+        // Analyze image with GPT-4o Vision
+        const prompt = caption ? 
+            `Analyze this image. User caption: "${caption}". Provide detailed analysis of what you see.` :
+            'Analyze this image in detail. Describe what you see, any text, objects, people, or important details.';
             
         const visionResponse = await openai.chat.completions.create({
-            model: "gpt-5",
+            model: "gpt-4o",
             messages: [
-                {
-                    role: "system",
-                    content: "You are the Strategic Commander providing institutional-quality analysis. Focus on financial, strategic, and investment insights from visual content."
-                },
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: strategicPrompt },
+                        { type: "text", text: prompt },
                         {
                             type: "image_url",
                             image_url: {
@@ -115,25 +89,24 @@ Provide detailed strategic assessment with actionable insights.`;
                     ],
                 },
             ],
-            max_completion_tokens: 2000, // GPT-5 compatible parameter
-            temperature: 1
+            max_tokens: 1000,
         });
         
-        console.log('✅ Image analyzed by Strategic Commander');
+        console.log('✅ Image analyzed');
         return visionResponse.choices[0].message.content;
         
     } catch (error) {
-        console.error('Strategic Commander image processing error:', error.message);
+        console.error('Image processing error:', error.message);
         return null;
     }
 }
 
 /**
- * 📄 Process documents with Strategic Commander analysis
+ * Process document files (PDF, DOCX, TXT)
  */
 async function processDocumentMessage(bot, fileId, chatId, fileName) {
     try {
-        console.log('📄 Processing document with Strategic Commander:', fileName);
+        console.log('📄 Processing document:', fileName);
         
         // Get file info from Telegram
         const file = await bot.getFile(fileId);
@@ -156,90 +129,50 @@ async function processDocumentMessage(bot, fileId, chatId, fileName) {
         if (ext === '.txt') {
             extractedText = fs.readFileSync(tempFilePath, 'utf8');
         } else if (ext === '.pdf') {
-            try {
-                const pdfParse = require('pdf-parse');
-                const pdfBuffer = fs.readFileSync(tempFilePath);
-                const pdfData = await pdfParse(pdfBuffer);
-                extractedText = pdfData.text;
-            } catch (pdfError) {
-                console.log('PDF parsing failed, treating as binary');
-                extractedText = 'PDF content could not be extracted for analysis.';
-            }
+            // For PDF processing, we'll need pdf-parse
+            const pdfParse = require('pdf-parse');
+            const pdfBuffer = fs.readFileSync(tempFilePath);
+            const pdfData = await pdfParse(pdfBuffer);
+            extractedText = pdfData.text;
         } else if (ext === '.docx') {
-            try {
-                const mammoth = require('mammoth');
-                const result = await mammoth.extractRawText({ path: tempFilePath });
-                extractedText = result.value;
-            } catch (docxError) {
-                console.log('DOCX parsing failed, treating as binary');
-                extractedText = 'DOCX content could not be extracted for analysis.';
-            }
+            // For DOCX processing, we'll need mammoth
+            const mammoth = require('mammoth');
+            const result = await mammoth.extractRawText({ path: tempFilePath });
+            extractedText = result.value;
         } else {
             // Try reading as text for other formats
-            try {
-                extractedText = fs.readFileSync(tempFilePath, 'utf8');
-            } catch (textError) {
-                extractedText = 'Document content could not be extracted as text.';
-            }
+            extractedText = fs.readFileSync(tempFilePath, 'utf8');
         }
         
         // Clean up temp file
         fs.unlinkSync(tempFilePath);
         
-        // Strategic Commander document analysis
+        // Analyze document with GPT-4o
         const analysis = await openai.chat.completions.create({
-            model: "gpt-5",
+            model: "gpt-4o",
             messages: [
                 {
                     role: "system",
-                    content: `You are the Strategic Commander of IMPERIUM VAULT SYSTEM providing institutional-quality document analysis.
-
-DOCUMENT ANALYSIS EXPERTISE:
-- Financial reports and investment documentation
-- Market research and economic analysis
-- Deal structures and investment opportunities
-- Risk assessments and due diligence materials
-- Strategic planning and portfolio management documents
-
-ANALYSIS REQUIREMENTS:
-- Provide comprehensive strategic insights
-- Identify key financial metrics and strategic data
-- Assess investment opportunities or risks
-- Extract actionable strategic intelligence
-- Offer specific strategic recommendations when appropriate
-
-Execute institutional-grade document analysis with strategic authority.`
+                    content: "You are analyzing a document. Provide a comprehensive summary and key insights."
                 },
                 {
                     role: "user",
-                    content: `Execute strategic analysis of this document:
-
-**Document:** ${fileName}
-**File Type:** ${ext.toUpperCase()}
-**Strategic Priority:** Extract key financial intelligence and strategic insights
-
-**Document Content:**
-${extractedText.substring(0, 60000)} ${extractedText.length > 60000 ? '\n\n[Content truncated for analysis...]' : ''}
-
-Provide comprehensive strategic analysis with actionable insights for portfolio management and investment decisions.`
+                    content: `Analyze this document content:\n\nFilename: ${fileName}\n\nContent:\n${extractedText.substring(0, 50000)}` // Limit content length
                 }
             ],
-            max_completion_tokens: 4000, // GPT-5 compatible parameter
-            temperature: 1
+            max_tokens: 2000,
         });
         
-        console.log('✅ Document analyzed by Strategic Commander');
+        console.log('✅ Document analyzed');
         return {
             analysis: analysis.choices[0].message.content,
-            extractedText: extractedText.substring(0, 2000) + (extractedText.length > 2000 ? '...' : ''),
-            wordCount: extractedText.split(/\s+/).filter(word => word.length > 0).length
+            extractedText: extractedText.substring(0, 1000) + (extractedText.length > 1000 ? '...' : '')
         };
         
     } catch (error) {
-        console.error('Strategic Commander document processing error:', error.message);
+        console.error('Document processing error:', error.message);
         // Clean up temp file if it exists
         try {
-            const tempFilePath = path.join(__dirname, '../temp', `doc_${Date.now()}_${fileName}`);
             if (fs.existsSync(tempFilePath)) {
                 fs.unlinkSync(tempFilePath);
             }
@@ -251,11 +184,11 @@ Provide comprehensive strategic analysis with actionable insights for portfolio 
 }
 
 /**
- * 🎥 Process video messages with Strategic Commander analysis
+ * Process video messages (extract frame and analyze)
  */
 async function processVideoMessage(bot, fileId, chatId, caption = '') {
     try {
-        console.log('🎥 Processing video with Strategic Commander...');
+        console.log('🎥 Processing video message...');
         
         // Get file info from Telegram
         const file = await bot.getFile(fileId);
@@ -272,7 +205,8 @@ async function processVideoMessage(bot, fileId, chatId, caption = '') {
         
         fs.writeFileSync(tempFilePath, response.data);
         
-        // Get video info
+        // For now, return basic video info
+        // Advanced video analysis would require ffmpeg for frame extraction
         const stats = fs.statSync(tempFilePath);
         const videoInfo = {
             size: Math.round(stats.size / 1024) + ' KB',
@@ -282,113 +216,26 @@ async function processVideoMessage(bot, fileId, chatId, caption = '') {
         // Clean up temp file
         fs.unlinkSync(tempFilePath);
         
-        // Strategic Commander video analysis prompt
-        const strategicPrompt = caption ? 
-            `As Strategic Commander of IMPERIUM VAULT SYSTEM, acknowledge receipt of video content (${videoInfo.size}) with caption: "${caption}".
-
-Strategic Analysis Protocol:
-- If the caption indicates financial content (charts, presentations, market data), provide strategic assessment guidance
-- If related to Cambodia business or investment opportunities, offer strategic market intelligence
-- If concerning portfolio management or trading, provide institutional-level strategic context
-- Focus on actionable strategic insights based on the described content
-
-Execute strategic response with institutional authority.` :
-            
-            `As Strategic Commander of IMPERIUM VAULT SYSTEM, acknowledge receipt of video content (${videoInfo.size}).
-
-Strategic Protocol:
-Video content received for strategic analysis. To provide comprehensive institutional-grade assessment, please describe the video content focus:
-
-- Financial charts or market analysis presentations?
-- Cambodia business or investment opportunity documentation?
-- Trading strategy or portfolio management content?
-- Economic analysis or strategic planning materials?
-
-Provide context for optimal strategic intelligence extraction.`;
+        const prompt = caption ? 
+            `User sent a video file (${videoInfo.size}) with caption: "${caption}". Provide relevant analysis or response about the video content based on the caption.` :
+            `User sent a video file (${videoInfo.size}). Let them know you received it and ask what they'd like to know about it.`;
             
         const analysis = await openai.chat.completions.create({
-            model: "gpt-5",
+            model: "gpt-4o",
             messages: [
                 {
-                    role: "system",
-                    content: "You are the Strategic Commander providing institutional-quality analysis. Focus on strategic intelligence and actionable insights."
-                },
-                {
                     role: "user",
-                    content: strategicPrompt
+                    content: prompt
                 }
             ],
-            max_completion_tokens: 1000,
-            temperature: 1
+            max_tokens: 500,
         });
         
-        console.log('✅ Video processed by Strategic Commander');
+        console.log('✅ Video processed');
         return analysis.choices[0].message.content;
         
     } catch (error) {
-        console.error('Strategic Commander video processing error:', error.message);
-        return null;
-    }
-}
-
-/**
- * 📊 Process financial charts and market data images
- */
-async function processFinancialChart(bot, fileId, chatId, chartType = 'market_data') {
-    try {
-        console.log('📊 Processing financial chart with Strategic Commander...');
-        
-        // Get file info from Telegram
-        const file = await bot.getFile(fileId);
-        const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
-        
-        // Download image
-        const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
-        const base64Image = Buffer.from(response.data).toString('base64');
-        
-        // Specialized financial chart analysis
-        const chartAnalysisPrompt = `As Strategic Commander of IMPERIUM VAULT SYSTEM, execute comprehensive analysis of this financial chart/market data.
-
-STRATEGIC CHART ANALYSIS PROTOCOL:
-- Identify chart type (price action, technical indicators, economic data, portfolio performance)
-- Extract key price levels, support/resistance, trends, and patterns
-- Assess strategic implications for portfolio positioning
-- Identify entry/exit opportunities or risk factors
-- Provide specific strategic trading or investment recommendations
-- Calculate risk/reward ratios where applicable
-- Suggest position sizing and timing considerations
-
-Execute institutional-grade technical and strategic analysis with specific actionable directives.`;
-            
-        const chartResponse = await openai.chat.completions.create({
-            model: "gpt-5",
-            messages: [
-                {
-                    role: "system",
-                    content: "You are the Strategic Commander specializing in financial chart analysis and market intelligence. Provide precise technical analysis with strategic positioning recommendations."
-                },
-                {
-                    role: "user",
-                    content: [
-                        { type: "text", text: chartAnalysisPrompt },
-                        {
-                            type: "image_url",
-                            image_url: {
-                                url: `data:image/jpeg;base64,${base64Image}`
-                            }
-                        }
-                    ],
-                },
-            ],
-            max_completion_tokens: 3000, // GPT-5 compatible parameter
-            temperature: 1
-        });
-        
-        console.log('✅ Financial chart analyzed by Strategic Commander');
-        return chartResponse.choices[0].message.content;
-        
-    } catch (error) {
-        console.error('Strategic Commander chart analysis error:', error.message);
+        console.error('Video processing error:', error.message);
         return null;
     }
 }
@@ -397,6 +244,5 @@ module.exports = {
     processVoiceMessage,
     processImageMessage,
     processDocumentMessage,
-    processVideoMessage,
-    processFinancialChart // New specialized function
+    processVideoMessage
 };
