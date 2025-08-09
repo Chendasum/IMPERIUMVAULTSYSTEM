@@ -1,39 +1,3 @@
-// utils/database.js - COMPLETE STRATEGIC ENHANCED PostgreSQL Memory & Analytics System
-// IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Institutional-grade database with Cambodia lending integration
-
-const { Pool } = require('pg');
-
-// Initialize PostgreSQL connection (Railway provides this for free)
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 30000,
-    max: 20, // Increased pool size for better performance
-    statement_timeout: 30000,
-    query_timeout: 30000
-});
-
-// 📊 CONNECTION MONITORING
-let connectionStats = {
-    totalQueries: 0,
-    successfulQueries: 0,
-    failedQueries: 0,
-    lastError: null,
-    connectionHealth: 'UNKNOWN'
-};
-
-// Suppress verbose connection logging but monitor health
-pool.on('error', (err) => {
-    console.error('Database connection error:', err.message);
-    connectionStats.lastError = err.message;
-    connectionStats.connectionHealth = 'ERROR';
-});
-
-pool.on('connect', () => {
-    connectionStats.connectionHealth = 'HEALTHY';
-});
-
 /**
  * 🏛️ INITIALIZE COMPLETE STRATEGIC DATABASE SCHEMA
  */
@@ -41,6 +5,46 @@ async function initializeDatabase() {
     try {
         console.log('🚀 Initializing Strategic Command Database Schema...');
         
+        // First, add missing columns to existing tables
+        await pool.query(`
+            -- Add missing columns to existing tables if they exist
+            DO $$ 
+            BEGIN
+                -- Add missing columns to conversations table
+                IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'conversations') THEN
+                    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'conversations' AND column_name = 'strategic_importance') THEN
+                        ALTER TABLE conversations ADD COLUMN strategic_importance VARCHAR(20) DEFAULT 'medium';
+                    END IF;
+                    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'conversations' AND column_name = 'response_time_ms') THEN
+                        ALTER TABLE conversations ADD COLUMN response_time_ms INTEGER;
+                    END IF;
+                    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'conversations' AND column_name = 'token_count') THEN
+                        ALTER TABLE conversations ADD COLUMN token_count INTEGER;
+                    END IF;
+                    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'conversations' AND column_name = 'user_satisfaction') THEN
+                        ALTER TABLE conversations ADD COLUMN user_satisfaction SMALLINT CHECK (user_satisfaction >= 1 AND user_satisfaction <= 5);
+                    END IF;
+                END IF;
+                
+                -- Add missing columns to persistent_memories table
+                IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'persistent_memories') THEN
+                    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'persistent_memories' AND column_name = 'access_count') THEN
+                        ALTER TABLE persistent_memories ADD COLUMN access_count INTEGER DEFAULT 0;
+                    END IF;
+                    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'persistent_memories' AND column_name = 'last_accessed') THEN
+                        ALTER TABLE persistent_memories ADD COLUMN last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+                    END IF;
+                    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'persistent_memories' AND column_name = 'fact_hash') THEN
+                        ALTER TABLE persistent_memories ADD COLUMN fact_hash VARCHAR(64);
+                    END IF;
+                    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'persistent_memories' AND column_name = 'source') THEN
+                        ALTER TABLE persistent_memories ADD COLUMN source VARCHAR(20) DEFAULT 'conversation';
+                    END IF;
+                END IF;
+            END $$;
+        `);
+        
+        // Now create tables with full schema
         await pool.query(`
             -- 📊 CORE SYSTEM TABLES (Enhanced)
             CREATE TABLE IF NOT EXISTS conversations (
@@ -386,7 +390,10 @@ async function initializeDatabase() {
                 usage_date DATE DEFAULT CURRENT_DATE,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+        `);
 
+        // Create indexes in a separate query to avoid conflicts
+        await pool.query(`
             -- 📊 CREATE COMPREHENSIVE INDEXES FOR PERFORMANCE
             
             -- Core table indexes
