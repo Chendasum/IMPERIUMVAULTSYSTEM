@@ -5,7 +5,7 @@ const { OpenAI } = require("openai");
 // ✅ Initialize OpenAI with Strategic Commander capabilities
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 120000, // Extended timeout for comprehensive responses
+    timeout: 300000, // Extended timeout for GPT-5 (5 minutes)
     maxRetries: 3
 });
 
@@ -74,11 +74,9 @@ You are Sum Chenda's institutional strategist providing sophisticated financial 
                     content: prompt,
                 },
             ],
-            temperature: options.temperature || 0.7,
+            // Remove temperature - GPT-5 only supports default (1)
             max_completion_tokens: options.maxTokens || 16384, // Full capacity for comprehensive responses
-            top_p: 1,
-            frequency_penalty: 0,
-            presence_penalty: 0,
+            // Remove other parameters that might cause issues with GPT-5
         });
 
         return completion.choices[0].message.content.trim();
@@ -111,8 +109,7 @@ Strategic Query: ${query}`;
 
         return await getGptReply(enhancedQuery, { 
             strategic: true, 
-            maxTokens: 16384,
-            temperature: 1, 
+            maxTokens: 16384
         });
     } catch (error) {
         console.error("❌ Strategic Analysis Error:", error.message);
@@ -144,8 +141,7 @@ Provide institutional-grade analysis including risk assessment, market condition
 
         return await getGptReply(enhancedQuery, { 
             strategic: true, 
-            maxTokens: 16384,
-            temperature: 0.6 // Slightly lower for financial analysis
+            maxTokens: 16384
         });
     } catch (error) {
         console.error("❌ Cambodia Fund Analysis Error:", error.message);
