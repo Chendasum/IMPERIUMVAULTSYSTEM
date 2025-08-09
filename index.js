@@ -118,8 +118,6 @@ initializeDatabase()
         console.log("⚠️ Falling back to in-memory storage");
     });
 
-// ❌ TEMPORARILY DISABLED - MetaAPI connection causing timeouts
-/*
 // ✅ Initialize MetaAPI Connection
 initializeMetaAPI()
     .then((success) => {
@@ -132,8 +130,6 @@ initializeMetaAPI()
     .catch((err) => {
         console.log("⚠️ MetaAPI initialization failed:", err.message);
     });
-*/
-console.log("⚠️ MetaAPI temporarily disabled to fix conversation timeouts");
 
 // ✅ User Authentication - Only allow authorized users
 function isAuthorizedUser(chatId) {
@@ -826,7 +822,7 @@ Structure like Bridgewater's Daily Observations with specific strategic directiv
                     },
                     { role: "user", content: regimePrompt }
                 ],
-                max_completion_tokens: 16384, // MAXIMUM LENGTH
+                max_completion_tokens: 4096, // MAXIMUM LENGTH
                 temperature: 1,
             });
 
@@ -878,7 +874,7 @@ Conclude with specific asset class strategic deployment commands based on cycle 
                     { role: "system", content: "You are Strategic Commander executing institutional-quality market cycle warfare analysis with definitive strategic commands." },
                     { role: "user", content: cyclePrompt }
                 ],
-                max_completion_tokens: 16384 // MAXIMUM LENGTH
+                max_completion_tokens: 4096 // MAXIMUM LENGTH
             });
             await sendSmartResponse(bot, chatId, cycleAnalysis.choices[0].message.content, "Market Cycle Warfare Analysis", 'raydalio');
             
@@ -929,7 +925,7 @@ Apply institutional risk management principles for strategic domination.`;
                     { role: "system", content: "You are Strategic Commander identifying high-conviction trading opportunities warfare with institutional risk management commands." },
                     { role: "user", content: opportunityPrompt }
                 ],
-                max_completion_tokens: 16384 // MAXIMUM LENGTH
+                max_completion_tokens: 4096 // MAXIMUM LENGTH
             });
             await sendSmartResponse(bot, chatId, opportunities.choices[0].message.content, "Market Opportunities Warfare", 'raydalio');
             
@@ -984,7 +980,7 @@ Execute specific and strategic commands with exact recommendations.`;
                     { role: "system", content: "You are Strategic Commander providing institutional-quality risk warfare analysis with specific strategic commands and recommendations." },
                     { role: "user", content: riskPrompt }
                 ],
-                max_completion_tokens: 16384 // MAXIMUM LENGTH
+                max_completion_tokens: 4096 // MAXIMUM LENGTH
             });
             await sendSmartResponse(bot, chatId, riskAnalysis.choices[0].message.content, "Risk Warfare Analysis", 'raydalio');
             
@@ -1098,7 +1094,7 @@ Execute strategic commands for someone in Cambodia with global market access.`;
                     { role: "system", content: "You are Strategic Commander providing specific All Weather portfolio strategic guidance adapted to current market warfare conditions." },
                     { role: "user", content: portfolioPrompt }
                 ],
-                max_completion_tokens: 16384 // MAXIMUM LENGTH
+                max_completion_tokens: 4096 // MAXIMUM LENGTH
             });
             await sendSmartResponse(bot, chatId, allWeather.choices[0].message.content, "All Weather Strategic Portfolio", 'raydalio');
             
@@ -1153,7 +1149,7 @@ Focus on strategic commands for portfolio construction in current warfare enviro
                     { role: "system", content: "You are Strategic Commander analyzing asset correlations warfare for optimal portfolio construction." },
                     { role: "user", content: correlationPrompt }
                 ],
-                max_completion_tokens: 16384 // MAXIMUM LENGTH
+                max_completion_tokens: 4096 // MAXIMUM LENGTH
             });
             await sendSmartResponse(bot, chatId, correlations.choices[0].message.content, "Correlation Warfare Analysis", 'raydalio');
             
@@ -1215,7 +1211,7 @@ Execute like Bridgewater's Daily Observations for strategic warfare.`;
                     { role: "system", content: "You are Strategic Commander providing institutional-quality macro economic warfare analysis like Bridgewater's Daily Observations." },
                     { role: "user", content: macroPrompt }
                 ],
-                max_completion_tokens: 16384 // MAXIMUM LENGTH
+                max_completion_tokens: 4096 // MAXIMUM LENGTH
             });
             await sendSmartResponse(bot, chatId, macroAnalysis.choices[0].message.content, "Macro Warfare Outlook", 'raydalio');
             
@@ -1647,14 +1643,12 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
 async function handleGPTConversation(chatId, userMessage) {
     console.log("🤖 Strategic Commander GPT conversation:", userMessage, "from:", chatId);
     try {
-        const [marketData, conversationHistory, userProfile] = await Promise.all([
+        const [marketData, conversationHistory, userProfile, tradingData] = await Promise.all([
             getComprehensiveMarketData().catch(() => null),
             getConversationHistoryDB(chatId, 6).catch(() => []),
-            getUserProfileDB(chatId).catch(() => null)
+            getUserProfileDB(chatId).catch(() => null),
+            getTradingSummary().catch(() => null)
         ]);
-        
-        // MetaAPI temporarily disabled due to connection timeout issues
-        const tradingData = null;
         
 // Strategic Commander System Prompt - Institutional Expert with Full Analysis
 let systemPrompt = `You are the Strategic Commander of IMPERIUM VAULT SYSTEM - Sum Chenda's exclusive institutional command center.
@@ -1873,7 +1867,7 @@ CRITICAL: Always write complete, comprehensive responses demonstrating instituti
             model: "gpt-5",
             messages: messages,
             temperature: 1,
-            max_completion_tokens: 16384, // MAXIMUM TOKENS FOR LONG STRATEGIC RESPONSES
+            max_completion_tokens: 4096, // MAXIMUM TOKENS FOR LONG STRATEGIC RESPONSES
             top_p: 1,
             frequency_penalty: 0,
             presence_penalty: 0,
@@ -2296,7 +2290,7 @@ Apply Strategic Commander risk management principles to both global markets and 
                     content: query,
                 },
             ],
-            max_completion_tokens: 16384, // MAXIMUM LENGTH FOR STRATEGIC ANALYSIS
+            max_completion_tokens: 4096, // MAXIMUM LENGTH FOR STRATEGIC ANALYSIS
             temperature: 1,
             top_p: 1,
             frequency_penalty: 0,
