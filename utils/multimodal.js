@@ -6,7 +6,7 @@ const { OpenAI } = require('openai');
 
 const openai = new OpenAI({ 
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 120000 // Extended timeout for comprehensive analysis
+    timeout: 300000 // Extended timeout for GPT-5
 });
 
 /**
@@ -96,7 +96,7 @@ Focus on identifying:
 Provide detailed strategic assessment with actionable insights.`;
             
         const visionResponse = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-5",
             messages: [
                 {
                     role: "system",
@@ -115,8 +115,8 @@ Provide detailed strategic assessment with actionable insights.`;
                     ],
                 },
             ],
-            max_tokens: 2000, // Increased for comprehensive strategic analysis
-            temperature: 0.7
+            max_completion_tokens: 2000, // GPT-5 compatible parameter
+            temperature: 1
         });
         
         console.log('✅ Image analyzed by Strategic Commander');
@@ -188,7 +188,7 @@ async function processDocumentMessage(bot, fileId, chatId, fileName) {
         
         // Strategic Commander document analysis
         const analysis = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-5",
             messages: [
                 {
                     role: "system",
@@ -224,8 +224,8 @@ ${extractedText.substring(0, 60000)} ${extractedText.length > 60000 ? '\n\n[Cont
 Provide comprehensive strategic analysis with actionable insights for portfolio management and investment decisions.`
                 }
             ],
-            max_tokens: 4000, // Increased for comprehensive strategic analysis
-            temperature: 0.6 // Slightly lower for document analysis precision
+            max_completion_tokens: 4000, // GPT-5 compatible parameter
+            temperature: 1
         });
         
         console.log('✅ Document analyzed by Strategic Commander');
@@ -307,7 +307,7 @@ Video content received for strategic analysis. To provide comprehensive institut
 Provide context for optimal strategic intelligence extraction.`;
             
         const analysis = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-5",
             messages: [
                 {
                     role: "system",
@@ -318,8 +318,8 @@ Provide context for optimal strategic intelligence extraction.`;
                     content: strategicPrompt
                 }
             ],
-            max_tokens: 1000,
-            temperature: 0.7
+            max_completion_tokens: 1000,
+            temperature: 1
         });
         
         console.log('✅ Video processed by Strategic Commander');
@@ -361,7 +361,7 @@ STRATEGIC CHART ANALYSIS PROTOCOL:
 Execute institutional-grade technical and strategic analysis with specific actionable directives.`;
             
         const chartResponse = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-5",
             messages: [
                 {
                     role: "system",
@@ -380,8 +380,8 @@ Execute institutional-grade technical and strategic analysis with specific actio
                     ],
                 },
             ],
-            max_tokens: 3000, // Extended for comprehensive chart analysis
-            temperature: 0.6 // Lower for technical precision
+            max_completion_tokens: 3000, // GPT-5 compatible parameter
+            temperature: 1
         });
         
         console.log('✅ Financial chart analyzed by Strategic Commander');
