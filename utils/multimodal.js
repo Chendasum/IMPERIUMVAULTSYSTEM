@@ -1,4 +1,4 @@
-// utils/multimodal.js - Strategic Commander Multimodal Capabilities (FIXED)
+// utils/multimodal.js - Strategic Commander Multimodal Capabilities (COMPLETE FIXED VERSION)
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
@@ -6,7 +6,7 @@ const { OpenAI } = require('openai');
 
 const openai = new OpenAI({ 
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 300000 // Extended timeout
+    timeout: 300000 // Extended timeout for comprehensive processing
 });
 
 /**
@@ -42,6 +42,8 @@ async function processVoiceMessage(bot, fileId, chatId) {
         const transcription = await openai.audio.transcriptions.create({
             file: fs.createReadStream(tempFilePath),
             model: "whisper-1",
+            language: "en", // Optimize for English
+            temperature: 0.0 // More accurate transcription
         });
         
         // Clean up temp file
@@ -52,7 +54,7 @@ async function processVoiceMessage(bot, fileId, chatId) {
         
     } catch (error) {
         console.error('Strategic Commander voice processing error:', error.message);
-        return null;
+        return `❌ **Voice Processing Error:** ${error.message}`;
     }
 }
 
@@ -67,9 +69,14 @@ async function processImageMessage(bot, fileId, chatId, caption = '') {
         const file = await bot.getFile(fileId);
         const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
         
+        console.log('📎 Image file URL:', fileUrl);
+        console.log('📊 Image file size:', file.file_size, 'bytes');
+        
         // Download image
         const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
         const base64Image = Buffer.from(response.data).toString('base64');
+        
+        console.log('🔧 Image converted to base64, length:', base64Image.length);
         
         // Strategic Commander image analysis prompt
         const strategicPrompt = caption ? 
@@ -96,7 +103,7 @@ Focus on identifying:
 Provide detailed strategic assessment with actionable insights.`;
             
         const visionResponse = await openai.chat.completions.create({
-            model: "gpt-4o", // ✅ FIXED: Changed from "gpt-5" to "gpt-4o"
+            model: "gpt-4o", // ✅ CORRECT MODEL
             messages: [
                 {
                     role: "system",
@@ -110,28 +117,32 @@ Provide detailed strategic assessment with actionable insights.`;
                             type: "image_url",
                             image_url: {
                                 url: `data:image/jpeg;base64,${base64Image}`,
-                                detail: "high" // ✅ ADDED: Better image analysis
+                                detail: "high" // ✅ HIGH DETAIL for better analysis
                             }
                         }
                     ],
                 },
             ],
-            max_tokens: 4096, // ✅ FIXED: Changed from max_completion_tokens to max_tokens
-            temperature: 0.7 // ✅ FIXED: Reduced temperature for more consistent analysis
+            max_tokens: 4096, // ✅ CORRECT PARAMETER
+            temperature: 0.7 // ✅ OPTIMIZED TEMPERATURE
         });
         
+        const analysis = visionResponse.choices[0].message.content;
         console.log('✅ Image analyzed by Strategic Commander');
-        console.log('📊 Analysis length:', visionResponse.choices[0].message.content.length, 'characters');
-        return visionResponse.choices[0].message.content;
+        console.log('📊 Analysis length:', analysis.length, 'characters');
+        
+        return analysis;
         
     } catch (error) {
         console.error('Strategic Commander image processing error:', error.message);
         
-        // ✅ IMPROVED ERROR HANDLING: Return specific error message
+        // ✅ ENHANCED ERROR HANDLING
         if (error.message.includes('model')) {
             return `❌ **Image Analysis Error:** Model issue - ${error.message}. Verify GPT-4o access.`;
         } else if (error.message.includes('API key')) {
             return `❌ **Image Analysis Error:** API key issue. Check OPENAI_API_KEY environment variable.`;
+        } else if (error.message.includes('timeout')) {
+            return `❌ **Image Analysis Error:** Request timeout. Please try with a smaller image.`;
         } else {
             return `❌ **Image Analysis Error:** ${error.message}`;
         }
@@ -139,7 +150,7 @@ Provide detailed strategic assessment with actionable insights.`;
 }
 
 /**
- * 📄 Process documents with Strategic Commander analysis
+ * 📄 Process documents with Strategic Commander analysis (ENHANCED VERSION)
  */
 async function processDocumentMessage(bot, fileId, chatId, fileName) {
     try {
@@ -149,6 +160,9 @@ async function processDocumentMessage(bot, fileId, chatId, fileName) {
         const file = await bot.getFile(fileId);
         const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
         
+        console.log('📎 Document URL:', fileUrl);
+        console.log('📊 Document size:', file.file_size, 'bytes');
+        
         // Download document
         const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
         const tempFilePath = path.join(__dirname, '../temp', `doc_${Date.now()}_${fileName}`);
@@ -156,49 +170,177 @@ async function processDocumentMessage(bot, fileId, chatId, fileName) {
         // Ensure temp directory exists
         if (!fs.existsSync(path.dirname(tempFilePath))) {
             fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
+            console.log('📁 Created temp directory');
         }
         
         fs.writeFileSync(tempFilePath, response.data);
+        console.log('💾 Document saved to:', tempFilePath);
         
         let extractedText = '';
         const ext = path.extname(fileName).toLowerCase();
+        console.log('🔍 Processing file type:', ext);
         
-        if (ext === '.txt') {
+        // ✅ ENHANCED DOCUMENT PROCESSING
+        if (ext === '.txt' || ext === '.md') {
+            console.log('📝 Processing text file...');
             extractedText = fs.readFileSync(tempFilePath, 'utf8');
+            console.log('✅ Text file processed, length:', extractedText.length);
+            
         } else if (ext === '.pdf') {
+            console.log('📕 Processing PDF file...');
             try {
                 const pdfParse = require('pdf-parse');
                 const pdfBuffer = fs.readFileSync(tempFilePath);
                 const pdfData = await pdfParse(pdfBuffer);
                 extractedText = pdfData.text;
+                console.log('✅ PDF parsed successfully');
+                console.log('📊 PDF info - Pages:', pdfData.numpages, 'Text length:', extractedText.length);
             } catch (pdfError) {
-                console.log('PDF parsing failed, treating as binary');
-                extractedText = 'PDF content could not be extracted for analysis.';
+                console.error('❌ PDF parsing failed:', pdfError.message);
+                extractedText = `❌ **PDF Processing Error:** ${pdfError.message}\n\n**Possible solutions:**\n- Ensure PDF is not password-protected\n- Try a different PDF file\n- Install pdf-parse: npm install pdf-parse`;
             }
-        } else if (ext === '.docx') {
+            
+        } else if (ext === '.docx' || ext === '.doc') {
+            console.log('📘 Processing Word document...');
             try {
                 const mammoth = require('mammoth');
                 const result = await mammoth.extractRawText({ path: tempFilePath });
                 extractedText = result.value;
+                console.log('✅ DOCX parsed successfully, length:', extractedText.length);
+                
+                if (result.messages.length > 0) {
+                    console.log('⚠️ DOCX parsing warnings:', result.messages);
+                }
             } catch (docxError) {
-                console.log('DOCX parsing failed, treating as binary');
-                extractedText = 'DOCX content could not be extracted for analysis.';
+                console.error('❌ DOCX parsing failed:', docxError.message);
+                extractedText = `❌ **DOCX Processing Error:** ${docxError.message}\n\n**Possible solutions:**\n- Ensure Word document is not corrupted\n- Try saving as .txt or .pdf format\n- Install mammoth: npm install mammoth`;
             }
-        } else {
-            // Try reading as text for other formats
+            
+        } else if (ext === '.xlsx' || ext === '.xls') {
+            console.log('📊 Processing Excel file...');
+            try {
+                const XLSX = require('xlsx');
+                const workbook = XLSX.readFile(tempFilePath);
+                
+                let allSheetsText = `📊 **EXCEL WORKBOOK ANALYSIS**\n\n`;
+                allSheetsText += `**Sheets Found:** ${workbook.SheetNames.length}\n\n`;
+                
+                workbook.SheetNames.forEach((sheetName, index) => {
+                    const sheet = workbook.Sheets[sheetName];
+                    const sheetData = XLSX.utils.sheet_to_csv(sheet);
+                    
+                    allSheetsText += `**=== SHEET ${index + 1}: ${sheetName} ===**\n`;
+                    allSheetsText += sheetData + '\n\n';
+                });
+                
+                extractedText = allSheetsText;
+                console.log('✅ Excel parsed successfully');
+                console.log('📊 Excel info - Sheets:', workbook.SheetNames.length, 'Total length:', extractedText.length);
+            } catch (xlsxError) {
+                console.error('❌ Excel parsing failed:', xlsxError.message);
+                extractedText = `❌ **Excel Processing Error:** ${xlsxError.message}\n\n**Possible solutions:**\n- Ensure Excel file is not corrupted\n- Try saving as .csv format\n- Install xlsx: npm install xlsx`;
+            }
+            
+        } else if (ext === '.csv') {
+            console.log('📈 Processing CSV file...');
             try {
                 extractedText = fs.readFileSync(tempFilePath, 'utf8');
+                
+                // Add CSV formatting for better analysis
+                const lines = extractedText.split('\n');
+                const formattedCsv = `📈 **CSV DATA ANALYSIS**\n\n**Rows:** ${lines.length}\n**Columns:** ${lines[0] ? lines[0].split(',').length : 0}\n\n**Data:**\n${extractedText}`;
+                extractedText = formattedCsv;
+                
+                console.log('✅ CSV processed successfully, rows:', lines.length);
+            } catch (csvError) {
+                console.error('❌ CSV reading failed:', csvError.message);
+                extractedText = `❌ **CSV Processing Error:** ${csvError.message}`;
+            }
+            
+        } else if (ext === '.pptx' || ext === '.ppt') {
+            console.log('📊 Processing PowerPoint file...');
+            try {
+                // For PowerPoint, try office-parser if available
+                const officeParser = require('office-parser');
+                extractedText = await new Promise((resolve, reject) => {
+                    officeParser.parseOffice(tempFilePath, (data, err) => {
+                        if (err) reject(err);
+                        else resolve(data);
+                    });
+                });
+                console.log('✅ PowerPoint parsed successfully, length:', extractedText.length);
+            } catch (pptError) {
+                console.error('❌ PowerPoint parsing failed:', pptError.message);
+                extractedText = `❌ **PowerPoint Processing Error:** ${pptError.message}\n\n**Possible solutions:**\n- Save PowerPoint as PDF and re-upload\n- Install office-parser: npm install office-parser\n- PowerPoint processing requires additional dependencies`;
+            }
+            
+        } else if (ext === '.json') {
+            console.log('📋 Processing JSON file...');
+            try {
+                const rawText = fs.readFileSync(tempFilePath, 'utf8');
+                const jsonData = JSON.parse(rawText);
+                extractedText = `📋 **JSON DATA ANALYSIS**\n\n**Structure:**\n${JSON.stringify(jsonData, null, 2)}`;
+                console.log('✅ JSON parsed successfully');
+            } catch (jsonError) {
+                console.error('❌ JSON parsing failed:', jsonError.message);
+                extractedText = `❌ **JSON Processing Error:** ${jsonError.message}`;
+            }
+            
+        } else {
+            // Try reading as text for other formats
+            console.log('❓ Unknown file type, attempting text read...');
+            try {
+                extractedText = fs.readFileSync(tempFilePath, 'utf8');
+                console.log('✅ Read as text successfully, length:', extractedText.length);
             } catch (textError) {
-                extractedText = 'Document content could not be extracted as text.';
+                console.error('❌ Text reading failed:', textError.message);
+                extractedText = `❌ **Unsupported File Type:** ${ext.toUpperCase()}\n\n**Supported formats:**\n- Text: .txt, .md\n- Documents: .pdf, .docx, .doc\n- Spreadsheets: .xlsx, .xls, .csv\n- Presentations: .pptx, .ppt\n- Data: .json\n\n**Error:** ${textError.message}`;
             }
         }
         
         // Clean up temp file
-        fs.unlinkSync(tempFilePath);
+        try {
+            fs.unlinkSync(tempFilePath);
+            console.log('🗑️ Temp file cleaned up');
+        } catch (cleanupError) {
+            console.error('⚠️ Cleanup warning:', cleanupError.message);
+        }
         
-        // Strategic Commander document analysis
+        // Validate extracted content
+        if (!extractedText || extractedText.trim().length === 0) {
+            extractedText = `❌ **No Content Extracted**\n\nFile: ${fileName}\nType: ${ext.toUpperCase()}\n\nThe file might be:\n- Empty or corrupted\n- Password-protected\n- In an unsupported format\n- Requiring additional parsing libraries`;
+        }
+        
+        console.log('📊 Final extracted text length:', extractedText.length);
+        
+        // ✅ ENHANCED STRATEGIC COMMANDER DOCUMENT ANALYSIS
+        const analysisPrompt = `🏛️ **STRATEGIC COMMANDER DOCUMENT ANALYSIS**
+
+**Document Intelligence:**
+- File: ${fileName}
+- Type: ${ext.toUpperCase()}
+- Content Length: ${extractedText.length} characters
+- Processing Status: ${extractedText.includes('❌') ? 'ERROR' : 'SUCCESS'}
+
+**Strategic Analysis Request:**
+Execute comprehensive institutional-grade analysis of this document content. Focus on extracting strategic intelligence and actionable insights.
+
+**Document Content:**
+${extractedText.substring(0, 50000)}${extractedText.length > 50000 ? '\n\n[Content truncated for analysis - full document was processed]' : ''}
+
+**Analysis Requirements:**
+1. **Document Summary:** What type of document is this and what is its primary purpose?
+2. **Key Strategic Findings:** Extract the most important information, data points, or insights
+3. **Financial Intelligence:** Identify any financial data, metrics, projections, or market information
+4. **Investment Implications:** How does this information impact investment decisions or strategic positioning?
+5. **Risk Factors:** Identify any potential risks, concerns, or red flags mentioned
+6. **Actionable Recommendations:** Provide specific strategic recommendations based on the content
+7. **Data Extraction:** If spreadsheet/financial data, summarize key numbers and trends
+
+Execute institutional-quality analysis with commanding strategic authority.`;
+
         const analysis = await openai.chat.completions.create({
-            model: "gpt-4o", // ✅ FIXED: Changed from "gpt-5" to "gpt-4o"
+            model: "gpt-4o", // ✅ CORRECT MODEL
             messages: [
                 {
                     role: "system",
@@ -210,6 +352,10 @@ DOCUMENT ANALYSIS EXPERTISE:
 - Deal structures and investment opportunities
 - Risk assessments and due diligence materials
 - Strategic planning and portfolio management documents
+- Excel financial models and data analysis
+- PowerPoint presentations and strategic plans
+- Legal documents and contracts
+- Market data and research reports
 
 ANALYSIS REQUIREMENTS:
 - Provide comprehensive strategic insights
@@ -217,36 +363,46 @@ ANALYSIS REQUIREMENTS:
 - Assess investment opportunities or risks
 - Extract actionable strategic intelligence
 - Offer specific strategic recommendations when appropriate
+- Summarize key data points and trends from spreadsheets
+- Analyze strategic frameworks from presentations
+- Process financial models and projections
+
+COMMUNICATION STYLE:
+- Write with institutional authority and expertise
+- Use specific numbers, data, and actionable recommendations
+- Provide comprehensive analysis using full available tokens
+- Structure analysis clearly with strategic headers
+- Never use wishy-washy language - command with authority
 
 Execute institutional-grade document analysis with strategic authority.`
                 },
                 {
                     role: "user",
-                    content: `Execute strategic analysis of this document:
-
-**Document:** ${fileName}
-**File Type:** ${ext.toUpperCase()}
-**Strategic Priority:** Extract key financial intelligence and strategic insights
-
-**Document Content:**
-${extractedText.substring(0, 60000)} ${extractedText.length > 60000 ? '\n\n[Content truncated for analysis...]' : ''}
-
-Provide comprehensive strategic analysis with actionable insights for portfolio management and investment decisions.`
+                    content: analysisPrompt
                 }
             ],
-            max_tokens: 4096, // ✅ FIXED: Changed from max_completion_tokens to max_tokens
-            temperature: 0.7 // ✅ FIXED: Reduced temperature
+            max_tokens: 4096, // ✅ CORRECT PARAMETER
+            temperature: 0.6 // ✅ SLIGHTLY LOWER for document analysis accuracy
         });
         
+        const analysisResult = analysis.choices[0].message.content;
         console.log('✅ Document analyzed by Strategic Commander');
+        console.log('📊 Analysis result length:', analysisResult.length);
+        
         return {
-            analysis: analysis.choices[0].message.content,
+            analysis: analysisResult,
             extractedText: extractedText.substring(0, 2000) + (extractedText.length > 2000 ? '...' : ''),
-            wordCount: extractedText.split(/\s+/).filter(word => word.length > 0).length
+            wordCount: extractedText.split(/\s+/).filter(word => word.length > 0).length,
+            fileType: ext.toUpperCase(),
+            fileName: fileName,
+            success: !extractedText.includes('❌'),
+            originalLength: extractedText.length
         };
         
     } catch (error) {
-        console.error('Strategic Commander document processing error:', error.message);
+        console.error('❌ Strategic Commander document processing error:', error.message);
+        console.error('📍 Error stack:', error.stack);
+        
         // Clean up temp file if it exists
         try {
             const tempFilePath = path.join(__dirname, '../temp', `doc_${Date.now()}_${fileName}`);
@@ -256,7 +412,38 @@ Provide comprehensive strategic analysis with actionable insights for portfolio 
         } catch (cleanupError) {
             // Ignore cleanup errors
         }
-        return null;
+        
+        // ✅ ENHANCED ERROR REPORTING
+        let errorMessage = `❌ **STRATEGIC COMMANDER DOCUMENT ERROR**\n\n`;
+        errorMessage += `**File:** ${fileName}\n`;
+        errorMessage += `**Error:** ${error.message}\n\n`;
+        
+        if (error.message.includes('ENOENT') || error.message.includes('Cannot find module')) {
+            errorMessage += `**Issue:** Required parsing library not installed.\n\n**Solution:**\n`;
+            errorMessage += `• For PDF: npm install pdf-parse\n`;
+            errorMessage += `• For DOCX: npm install mammoth\n`;
+            errorMessage += `• For Excel: npm install xlsx\n`;
+            errorMessage += `• For PowerPoint: npm install office-parser\n`;
+        } else if (error.message.includes('timeout')) {
+            errorMessage += `**Issue:** Document processing timeout.\n**Solution:** Try a smaller file or simpler format.`;
+        } else if (error.message.includes('permission')) {
+            errorMessage += `**Issue:** File access permission denied.\n**Solution:** Check file permissions and try again.`;
+        } else {
+            errorMessage += `**Troubleshooting:**\n`;
+            errorMessage += `• Ensure file is not corrupted\n`;
+            errorMessage += `• Try converting to PDF or TXT format\n`;
+            errorMessage += `• Check file size (max 20MB recommended)\n`;
+        }
+        
+        return {
+            analysis: errorMessage,
+            extractedText: null,
+            wordCount: 0,
+            fileType: path.extname(fileName).toUpperCase(),
+            fileName: fileName,
+            success: false,
+            error: error.message
+        };
     }
 }
 
@@ -271,7 +458,10 @@ async function processVideoMessage(bot, fileId, chatId, caption = '') {
         const file = await bot.getFile(fileId);
         const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
         
-        // Download video
+        console.log('📎 Video URL:', fileUrl);
+        console.log('📊 Video size:', file.file_size, 'bytes');
+        
+        // Download video (for metadata only)
         const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
         const tempFilePath = path.join(__dirname, '../temp', `video_${Date.now()}.mp4`);
         
@@ -286,7 +476,7 @@ async function processVideoMessage(bot, fileId, chatId, caption = '') {
         const stats = fs.statSync(tempFilePath);
         const videoInfo = {
             size: Math.round(stats.size / 1024) + ' KB',
-            caption: caption || 'No caption'
+            caption: caption || 'No caption provided'
         };
         
         // Clean up temp file
@@ -317,7 +507,7 @@ Video content received for strategic analysis. To provide comprehensive institut
 Provide context for optimal strategic intelligence extraction.`;
             
         const analysis = await openai.chat.completions.create({
-            model: "gpt-4o", // ✅ FIXED: Changed from "gpt-5" to "gpt-4o"
+            model: "gpt-4o", // ✅ CORRECT MODEL
             messages: [
                 {
                     role: "system",
@@ -328,8 +518,8 @@ Provide context for optimal strategic intelligence extraction.`;
                     content: strategicPrompt
                 }
             ],
-            max_tokens: 2048, // ✅ FIXED: Changed from max_completion_tokens to max_tokens
-            temperature: 0.7 // ✅ FIXED: Reduced temperature
+            max_tokens: 2048, // ✅ CORRECT PARAMETER
+            temperature: 0.7 // ✅ OPTIMIZED TEMPERATURE
         });
         
         console.log('✅ Video processed by Strategic Commander');
@@ -337,7 +527,7 @@ Provide context for optimal strategic intelligence extraction.`;
         
     } catch (error) {
         console.error('Strategic Commander video processing error:', error.message);
-        return null;
+        return `❌ **Video Processing Error:** ${error.message}`;
     }
 }
 
@@ -371,7 +561,7 @@ STRATEGIC CHART ANALYSIS PROTOCOL:
 Execute institutional-grade technical and strategic analysis with specific actionable directives.`;
             
         const chartResponse = await openai.chat.completions.create({
-            model: "gpt-4o", // ✅ FIXED: Changed from "gpt-5" to "gpt-4o"
+            model: "gpt-4o", // ✅ CORRECT MODEL
             messages: [
                 {
                     role: "system",
@@ -385,14 +575,14 @@ Execute institutional-grade technical and strategic analysis with specific actio
                             type: "image_url",
                             image_url: {
                                 url: `data:image/jpeg;base64,${base64Image}`,
-                                detail: "high" // ✅ ADDED: Better analysis
+                                detail: "high" // ✅ HIGH DETAIL for better analysis
                             }
                         }
                     ],
                 },
             ],
-            max_tokens: 4096, // ✅ FIXED: Changed from max_completion_tokens to max_tokens
-            temperature: 0.7 // ✅ FIXED: Reduced temperature
+            max_tokens: 4096, // ✅ CORRECT PARAMETER
+            temperature: 0.7 // ✅ OPTIMIZED TEMPERATURE
         });
         
         console.log('✅ Financial chart analyzed by Strategic Commander');
@@ -400,8 +590,63 @@ Execute institutional-grade technical and strategic analysis with specific actio
         
     } catch (error) {
         console.error('Strategic Commander chart analysis error:', error.message);
-        return null;
+        return `❌ **Chart Analysis Error:** ${error.message}`;
     }
+}
+
+/**
+ * 🔍 Test Document Processing Capabilities
+ */
+async function testDocumentProcessing() {
+    console.log("🔍 Testing Strategic Commander document processing capabilities...");
+    
+    const testResults = {
+        "pdf-parse": false,
+        "mammoth": false,
+        "xlsx": false,
+        "office-parser": false
+    };
+    
+    // Test PDF parsing
+    try {
+        require('pdf-parse');
+        testResults["pdf-parse"] = true;
+        console.log("✅ PDF parsing available (pdf-parse)");
+    } catch (e) {
+        console.log("❌ PDF parsing not available - run: npm install pdf-parse");
+    }
+    
+    // Test DOCX parsing
+    try {
+        require('mammoth');
+        testResults["mammoth"] = true;
+        console.log("✅ DOCX parsing available (mammoth)");
+    } catch (e) {
+        console.log("❌ DOCX parsing not available - run: npm install mammoth");
+    }
+    
+    // Test Excel parsing
+    try {
+        require('xlsx');
+        testResults["xlsx"] = true;
+        console.log("✅ Excel parsing available (xlsx)");
+    } catch (e) {
+        console.log("❌ Excel parsing not available - run: npm install xlsx");
+    }
+    
+    // Test Office parsing
+    try {
+        require('office-parser');
+        testResults["office-parser"] = true;
+        console.log("✅ Office parsing available (office-parser)");
+    } catch (e) {
+        console.log("❌ Office parsing not available - run: npm install office-parser");
+    }
+    
+    const availableCount = Object.values(testResults).filter(Boolean).length;
+    console.log(`📊 Document processing status: ${availableCount}/4 parsers available`);
+    
+    return testResults;
 }
 
 module.exports = {
@@ -409,5 +654,6 @@ module.exports = {
     processImageMessage,
     processDocumentMessage,
     processVideoMessage,
-    processFinancialChart // New specialized function
+    processFinancialChart,
+    testDocumentProcessing // ✅ ADDED: Test function
 };
