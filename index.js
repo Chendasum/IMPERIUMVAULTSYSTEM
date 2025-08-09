@@ -696,41 +696,6 @@ EXECUTION MINDSET: You are Sum Chenda's institutional strategist with deep exper
 
 CRITICAL: Always write complete, comprehensive responses demonstrating institutional expertise. Use full available tokens for detailed strategic analysis.`;
 
-        // Add current user message
-        messages.push({ role: "user", content: String(userMessage) });
-
-        console.log(`📝 Sending ${messages.length} messages to GPT-4o with Strategic Commander enhancement`);
-
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: messages,
-            temperature: 0.7,
-            max_tokens: 16384, // MAXIMUM TOKENS FOR LONG STRATEGIC RESPONSES
-            top_p: 1,
-            frequency_penalty: 0,
-            presence_penalty: 0,
-            stream: false,
-        });
-
-        const gptResponse = completion.choices[0].message.content;
-
-        // Save conversation and extract facts
-        if (gptResponse && userMessage) {
-            await saveConversationDB(chatId, userMessage, gptResponse, "text").catch(console.error);
-            await extractAndSaveFacts(chatId, userMessage, gptResponse).catch(console.error);
-        }
-
-        console.log(`✅ Strategic Commander GPT response sent to ${chatId}. Tokens used: ${completion.usage?.total_tokens || "unknown"}`);
-        
-        // Use smart response system for long messages
-        await sendSmartResponse(bot, chatId, gptResponse, null, 'raydalio');
-        
-    } catch (error) {
-        console.error("Strategic Commander GPT Error:", error.message);
-        let errorMsg = `❌ **IMPERIUM GPT Strategic Error:**\n\n${error.message}`;
-        await sendSmartResponse(bot, chatId, errorMsg, null, 'general');
-    }
-    
     // 🏦 ========== CAMBODIA LENDING FUND COMMANDS ==========
 
     // 🎯 DEAL ANALYSIS COMMAND
@@ -2004,6 +1969,40 @@ GPT-4o Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tr
         return;
     }
 
+        // Add current user message
+        messages.push({ role: "user", content: String(userMessage) });
+
+        console.log(`📝 Sending ${messages.length} messages to GPT-4o with Strategic Commander enhancement`);
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 16384, // MAXIMUM TOKENS FOR LONG STRATEGIC RESPONSES
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0,
+            stream: false,
+        });
+
+        const gptResponse = completion.choices[0].message.content;
+
+        // Save conversation and extract facts
+        if (gptResponse && userMessage) {
+            await saveConversationDB(chatId, userMessage, gptResponse, "text").catch(console.error);
+            await extractAndSaveFacts(chatId, userMessage, gptResponse).catch(console.error);
+        }
+
+        console.log(`✅ Strategic Commander GPT response sent to ${chatId}. Tokens used: ${completion.usage?.total_tokens || "unknown"}`);
+        
+        // Use smart response system for long messages
+        await sendSmartResponse(bot, chatId, gptResponse, null, 'raydalio');
+        
+    } catch (error) {
+        console.error("Strategic Commander GPT Error:", error.message);
+        let errorMsg = `❌ **IMPERIUM GPT Strategic Error:**\n\n${error.message}`;
+        await sendSmartResponse(bot, chatId, errorMsg, null, 'general');
+    }
 } // ✅ CRITICAL: Closing bracket for handleGPTConversation function
 
 // ✅ Express server for webhook and API endpoints
