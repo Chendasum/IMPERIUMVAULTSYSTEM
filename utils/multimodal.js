@@ -1,4 +1,4 @@
-// utils/multimodal.js - Strategic Commander Multimodal Capabilities
+// utils/multimodal.js - Strategic Commander Multimodal Capabilities (FIXED)
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
@@ -6,7 +6,7 @@ const { OpenAI } = require('openai');
 
 const openai = new OpenAI({ 
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 300000 // Extended timeout for GPT-5
+    timeout: 300000 // Extended timeout
 });
 
 /**
@@ -96,7 +96,7 @@ Focus on identifying:
 Provide detailed strategic assessment with actionable insights.`;
             
         const visionResponse = await openai.chat.completions.create({
-            model: "gpt-5",
+            model: "gpt-4o", // ✅ FIXED: Changed from "gpt-5" to "gpt-4o"
             messages: [
                 {
                     role: "system",
@@ -109,22 +109,32 @@ Provide detailed strategic assessment with actionable insights.`;
                         {
                             type: "image_url",
                             image_url: {
-                                url: `data:image/jpeg;base64,${base64Image}`
+                                url: `data:image/jpeg;base64,${base64Image}`,
+                                detail: "high" // ✅ ADDED: Better image analysis
                             }
                         }
                     ],
                 },
             ],
-            max_completion_tokens: 2000, // GPT-5 compatible parameter
-            temperature: 1
+            max_tokens: 4096, // ✅ FIXED: Changed from max_completion_tokens to max_tokens
+            temperature: 0.7 // ✅ FIXED: Reduced temperature for more consistent analysis
         });
         
         console.log('✅ Image analyzed by Strategic Commander');
+        console.log('📊 Analysis length:', visionResponse.choices[0].message.content.length, 'characters');
         return visionResponse.choices[0].message.content;
         
     } catch (error) {
         console.error('Strategic Commander image processing error:', error.message);
-        return null;
+        
+        // ✅ IMPROVED ERROR HANDLING: Return specific error message
+        if (error.message.includes('model')) {
+            return `❌ **Image Analysis Error:** Model issue - ${error.message}. Verify GPT-4o access.`;
+        } else if (error.message.includes('API key')) {
+            return `❌ **Image Analysis Error:** API key issue. Check OPENAI_API_KEY environment variable.`;
+        } else {
+            return `❌ **Image Analysis Error:** ${error.message}`;
+        }
     }
 }
 
@@ -188,7 +198,7 @@ async function processDocumentMessage(bot, fileId, chatId, fileName) {
         
         // Strategic Commander document analysis
         const analysis = await openai.chat.completions.create({
-            model: "gpt-5",
+            model: "gpt-4o", // ✅ FIXED: Changed from "gpt-5" to "gpt-4o"
             messages: [
                 {
                     role: "system",
@@ -224,8 +234,8 @@ ${extractedText.substring(0, 60000)} ${extractedText.length > 60000 ? '\n\n[Cont
 Provide comprehensive strategic analysis with actionable insights for portfolio management and investment decisions.`
                 }
             ],
-            max_completion_tokens: 4000, // GPT-5 compatible parameter
-            temperature: 1
+            max_tokens: 4096, // ✅ FIXED: Changed from max_completion_tokens to max_tokens
+            temperature: 0.7 // ✅ FIXED: Reduced temperature
         });
         
         console.log('✅ Document analyzed by Strategic Commander');
@@ -307,7 +317,7 @@ Video content received for strategic analysis. To provide comprehensive institut
 Provide context for optimal strategic intelligence extraction.`;
             
         const analysis = await openai.chat.completions.create({
-            model: "gpt-5",
+            model: "gpt-4o", // ✅ FIXED: Changed from "gpt-5" to "gpt-4o"
             messages: [
                 {
                     role: "system",
@@ -318,8 +328,8 @@ Provide context for optimal strategic intelligence extraction.`;
                     content: strategicPrompt
                 }
             ],
-            max_completion_tokens: 1000,
-            temperature: 1
+            max_tokens: 2048, // ✅ FIXED: Changed from max_completion_tokens to max_tokens
+            temperature: 0.7 // ✅ FIXED: Reduced temperature
         });
         
         console.log('✅ Video processed by Strategic Commander');
@@ -361,7 +371,7 @@ STRATEGIC CHART ANALYSIS PROTOCOL:
 Execute institutional-grade technical and strategic analysis with specific actionable directives.`;
             
         const chartResponse = await openai.chat.completions.create({
-            model: "gpt-5",
+            model: "gpt-4o", // ✅ FIXED: Changed from "gpt-5" to "gpt-4o"
             messages: [
                 {
                     role: "system",
@@ -374,14 +384,15 @@ Execute institutional-grade technical and strategic analysis with specific actio
                         {
                             type: "image_url",
                             image_url: {
-                                url: `data:image/jpeg;base64,${base64Image}`
+                                url: `data:image/jpeg;base64,${base64Image}`,
+                                detail: "high" // ✅ ADDED: Better analysis
                             }
                         }
                     ],
                 },
             ],
-            max_completion_tokens: 3000, // GPT-5 compatible parameter
-            temperature: 1
+            max_tokens: 4096, // ✅ FIXED: Changed from max_completion_tokens to max_tokens
+            temperature: 0.7 // ✅ FIXED: Reduced temperature
         });
         
         console.log('✅ Financial chart analyzed by Strategic Commander');
