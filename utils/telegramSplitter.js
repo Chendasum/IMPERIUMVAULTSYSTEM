@@ -70,7 +70,7 @@ async function sendSmartResponse(bot, chatId, message, title = null, messageType
         if (formattedMessage.length <= TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
             // Single message - send directly
             await bot.sendMessage(chatId, formattedMessage, {
-                parse_mode: 'Markdown',
+                // parse_mode: 'Markdown',  // ← Temporarily disabled due to formatting issues
                 disable_web_page_preview: options.disablePreview !== false
             });
             
@@ -93,7 +93,7 @@ async function sendSmartResponse(bot, chatId, message, title = null, messageType
             
             try {
                 await bot.sendMessage(chatId, chunk, {
-                    parse_mode: 'Markdown',
+                    // parse_mode: 'Markdown',  // ← Temporarily disabled due to formatting issues
                     disable_web_page_preview: options.disablePreview !== false
                 });
                 
@@ -146,7 +146,7 @@ function formatStrategicMessage(message, title, messageType, config) {
     // Add strategic header if title provided
     if (title) {
         const titleEmoji = config.emoji;
-        formatted += `${titleEmoji} **${title.toUpperCase()}**\n\n`;
+        formatted += `${titleEmoji} ${title.toUpperCase()}\n\n`;  // Removed ** markdown
     }
     
     // Add strategic timestamp for certain message types
@@ -155,7 +155,7 @@ function formatStrategicMessage(message, title, messageType, config) {
             timeZone: 'Asia/Phnom_Penh',
             hour12: false 
         });
-        formatted += `🕐 **Strategic Time:** ${timestamp} Cambodia\n\n`;
+        formatted += `🕐 Strategic Time: ${timestamp} Cambodia\n\n`;  // Removed ** markdown
     }
     
     // Add main message content
@@ -176,15 +176,15 @@ function formatStrategicMessage(message, title, messageType, config) {
 function getStrategicFooter(messageType, config) {
     switch (messageType) {
         case 'raydalio':
-            return '🏛️ *Strategic Commander • Institutional-Grade Analysis*';
+            return '🏛️ Strategic Commander • Institutional-Grade Analysis';  // Removed * markdown
         case 'cambodia':
-            return '🇰🇭 *Strategic Commander • Cambodia Fund Intelligence*';
+            return '🇰🇭 Strategic Commander • Cambodia Fund Intelligence';  // Removed * markdown
         case 'trading':
-            return '💹 *Strategic Commander • Live Trading Intelligence*';
+            return '💹 Strategic Commander • Live Trading Intelligence';  // Removed * markdown
         case 'analysis':
-            return '📊 *Strategic Commander • Market Warfare Analysis*';
+            return '📊 Strategic Commander • Market Warfare Analysis';  // Removed * markdown
         case 'alert':
-            return '🚨 *Strategic Commander • Urgent Alert*';
+            return '🚨 Strategic Commander • Urgent Alert';  // Removed * markdown
         default:
             return null;
     }
@@ -215,8 +215,8 @@ function splitStrategicMessage(message, title, messageType) {
         // Extract chunk
         let chunk = remainingMessage.substring(0, splitPoint).trim();
         
-        // Add strategic chunk header
-        const chunkHeader = `${config.emoji} **STRATEGIC COMMANDER** (Part ${partNumber})\n\n`;
+        // Add strategic chunk header (removed ** markdown)
+        const chunkHeader = `${config.emoji} STRATEGIC COMMANDER (Part ${partNumber})\n\n`;
         
         // Check if chunk with header fits
         if (chunk.length + chunkHeader.length > maxChunkSize) {
@@ -252,7 +252,7 @@ function splitStrategicMessage(message, title, messageType) {
     // Add remaining content as final chunk
     if (remainingMessage.length > 0) {
         const finalHeader = partNumber > 1 ? 
-            `${config.emoji} **STRATEGIC COMMANDER** (Part ${partNumber} - Final)\n\n` : '';
+            `${config.emoji} STRATEGIC COMMANDER (Part ${partNumber} - Final)\n\n` : '';  // Removed ** markdown
         
         chunks.push(finalHeader + remainingMessage);
     }
@@ -272,7 +272,7 @@ function findStrategicSplitPoint(text, maxLength) {
         /\n\n📊/g,           // Strategic data sections
         /\n\n💰/g,           // Strategic financial sections
         /\n\n⚠️/g,           // Strategic warning sections
-        /\n\n\*\*[A-Z]/g,    // Bold headers
+        /\n\n[A-Z]/g,        // Headers (removed ** markdown pattern)
         /\n\n/g,             // Double line breaks
         /\.\s+/g,            // End of sentences
         /\n/g,               // Single line breaks
@@ -336,7 +336,9 @@ async function sendLongMessage(bot, chatId, message, delay = TELEGRAM_LIMITS.STR
     
     for (let i = 0; i < chunks.length; i++) {
         try {
-            await bot.sendMessage(chatId, chunks[i], { parse_mode: 'Markdown' });
+            await bot.sendMessage(chatId, chunks[i], { 
+                // parse_mode: 'Markdown'  // ← Commented out
+            });
             
             if (i < chunks.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, delay));
@@ -351,20 +353,20 @@ async function sendLongMessage(bot, chatId, message, delay = TELEGRAM_LIMITS.STR
  * 🏛️ FORMAT RAY DALIO RESPONSE (Enhanced for Strategic Commander)
  */
 function formatRayDalioResponse(analysis, title = "Strategic Analysis") {
-    let formatted = `🏛️ **${title.toUpperCase()}**\n\n`;
+    let formatted = `🏛️ ${title.toUpperCase()}\n\n`;  // Removed ** markdown
     
     // Add strategic timestamp
     const timestamp = new Date().toLocaleTimeString('en-US', { 
         timeZone: 'Asia/Phnom_Penh',
         hour12: false 
     });
-    formatted += `🕐 **Strategic Time:** ${timestamp} Cambodia\n\n`;
+    formatted += `🕐 Strategic Time: ${timestamp} Cambodia\n\n`;  // Removed ** markdown
     
     // Add main analysis
     formatted += analysis;
     
     // Add strategic footer
-    formatted += '\n\n🏛️ *Strategic Commander • Institutional-Grade Market Intelligence*';
+    formatted += '\n\n🏛️ Strategic Commander • Institutional-Grade Market Intelligence';  // Removed * markdown
     
     return formatted;
 }
@@ -373,20 +375,20 @@ function formatRayDalioResponse(analysis, title = "Strategic Analysis") {
  * 🇰🇭 FORMAT CAMBODIA FUND RESPONSE
  */
 function formatCambodiaFundResponse(analysis, title = "Cambodia Fund Analysis") {
-    let formatted = `🇰🇭 **${title.toUpperCase()}**\n\n`;
+    let formatted = `🇰🇭 ${title.toUpperCase()}\n\n`;  // Removed ** markdown
     
     // Add strategic timestamp
     const timestamp = new Date().toLocaleTimeString('en-US', { 
         timeZone: 'Asia/Phnom_Penh',
         hour12: false 
     });
-    formatted += `🕐 **Strategic Time:** ${timestamp} Cambodia\n\n`;
+    formatted += `🕐 Strategic Time: ${timestamp} Cambodia\n\n`;  // Removed ** markdown
     
     // Add main analysis
     formatted += analysis;
     
     // Add strategic footer
-    formatted += '\n\n🇰🇭 *Strategic Commander • Cambodia Private Lending Intelligence*';
+    formatted += '\n\n🇰🇭 Strategic Commander • Cambodia Private Lending Intelligence';  // Removed * markdown
     
     return formatted;
 }
@@ -428,14 +430,14 @@ function getMessageStats(message) {
  * For urgent Strategic Commander alerts
  */
 async function sendStrategicAlert(bot, chatId, alertMessage, alertType = 'general') {
-    const alertHeader = '🚨 **STRATEGIC COMMANDER ALERT**\n\n';
+    const alertHeader = '🚨 STRATEGIC COMMANDER ALERT\n\n';  // Removed ** markdown
     const timestamp = new Date().toLocaleTimeString('en-US', { 
         timeZone: 'Asia/Phnom_Penh',
         hour12: false 
     });
-    const timeHeader = `🕐 **Alert Time:** ${timestamp} Cambodia\n\n`;
+    const timeHeader = `🕐 Alert Time: ${timestamp} Cambodia\n\n`;  // Removed ** markdown
     
-    const fullAlert = alertHeader + timeHeader + alertMessage + '\n\n🚨 *Strategic Commander • Urgent Alert System*';
+    const fullAlert = alertHeader + timeHeader + alertMessage + '\n\n🚨 Strategic Commander • Urgent Alert System';  // Removed * markdown
     
     return await sendSmartResponse(bot, chatId, fullAlert, null, 'alert', { 
         disablePreview: true,
