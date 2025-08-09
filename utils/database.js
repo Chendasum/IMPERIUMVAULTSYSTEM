@@ -1,3 +1,39 @@
+// utils/database.js - COMPLETE STRATEGIC ENHANCED PostgreSQL Memory & Analytics System
+// IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Institutional-grade database with Cambodia lending integration
+
+const { Pool } = require('pg');
+
+// Initialize PostgreSQL connection (Railway provides this for free)
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 30000,
+    max: 20, // Increased pool size for better performance
+    statement_timeout: 30000,
+    query_timeout: 30000
+});
+
+// 📊 CONNECTION MONITORING
+let connectionStats = {
+    totalQueries: 0,
+    successfulQueries: 0,
+    failedQueries: 0,
+    lastError: null,
+    connectionHealth: 'UNKNOWN'
+};
+
+// Suppress verbose connection logging but monitor health
+pool.on('error', (err) => {
+    console.error('Database connection error:', err.message);
+    connectionStats.lastError = err.message;
+    connectionStats.connectionHealth = 'ERROR';
+});
+
+pool.on('connect', () => {
+    connectionStats.connectionHealth = 'HEALTHY';
+});
+
 /**
  * 🏛️ INITIALIZE COMPLETE STRATEGIC DATABASE SCHEMA
  */
