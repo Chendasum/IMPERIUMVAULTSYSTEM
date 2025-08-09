@@ -75,7 +75,7 @@ You are Sum Chenda's institutional strategist providing sophisticated financial 
                 },
             ],
             temperature: options.temperature || 0.7,
-            max_tokens: options.maxTokens || 16384, // Full capacity for comprehensive responses
+            max_completion_tokens: options.maxTokens || 16384, // Full capacity for comprehensive responses
             top_p: 1,
             frequency_penalty: 0,
             presence_penalty: 0,
