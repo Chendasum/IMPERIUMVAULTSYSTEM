@@ -189,18 +189,21 @@ async function getComprehensiveMarketData() {
     }
 }
 
-
-// ✅ COMPLETE MESSAGE HANDLER - Replace your incomplete handler with this:
-
+// ✅ Handle all message types like ChatGPT
 bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
 
-    console.log(`📨 Message received from ${chatId}:`, msg.chat?.type || "private");
+    console.log(
+        `📨 Message received from ${chatId}:`,
+        msg.chat?.type || "private",
+    );
 
     // ✅ SECURITY: Check if user is authorized
     if (!isAuthorizedUser(chatId)) {
-        console.log(`🚫 Unauthorized access attempt from ${chatId} (Name: ${msg.chat?.first_name || "Unknown"} ${msg.chat?.last_name || ""}, Username: ${msg.chat?.username || "None"})`);
+        console.log(
+            `🚫 Unauthorized access attempt from ${chatId} (Name: ${msg.chat?.first_name || "Unknown"} ${msg.chat?.last_name || ""}, Username: ${msg.chat?.username || "None"})`,
+        );
         await sendSmartResponse(bot, chatId, 
             `🚫 Access denied. This is a private GPT system.\n\nYour Chat ID: ${chatId}\nAuthorized ID: 484389665\n\nIf this is your personal account, contact system admin.`,
             null, 'general'
@@ -208,159 +211,8 @@ bot.on("message", async (msg) => {
         return;
     }
 
-    // ✅ HANDLE MEDIA MESSAGES FIRST (before any text processing)
-    
-    // 🎤 VOICE MESSAGE HANDLING
-    if (msg.voice) {
-        console.log("🎤 Voice message received");
-        try {
-            const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
-            if (transcribedText) {
-                await sendSmartResponse(bot, chatId, `🎤 Voice transcribed: "${transcribedText}"`, null, 'general');
-                await handleGPTConversation(chatId, transcribedText);
-            } else {
-                await sendSmartResponse(bot, chatId, "❌ Voice transcription failed. Please try again.", null, 'general');
-            }
-        } catch (error) {
-            console.error('Voice processing error:', error.message);
-            await sendSmartResponse(bot, chatId, `❌ Voice processing error: ${error.message}`, null, 'general');
-        }
-        return; // ✅ EARLY RETURN - prevents text processing
-    }
-
-    // 🖼️ IMAGE MESSAGE HANDLING
-    if (msg.photo) {
-        console.log("🖼️ Image received");
-        try {
-            const photoAnalysis = await processImageMessage(bot, msg.photo[msg.photo.length - 1].file_id, chatId, msg.caption);
-            if (photoAnalysis) {
-                await sendSmartResponse(bot, chatId, `🖼️ Image Strategic Analysis:\n\n${photoAnalysis}`, "Image Strategic Analysis", 'general');
-            } else {
-                await sendSmartResponse(bot, chatId, "❌ Image analysis failed. Please try again.", null, 'general');
-            }
-        } catch (error) {
-            console.error('Image processing error:', error.message);
-            await sendSmartResponse(bot, chatId, `❌ Image processing error: ${error.message}`, null, 'general');
-        }
-        return; // ✅ EARLY RETURN - prevents text processing
-    }
-
-    // 📄 DOCUMENT MESSAGE HANDLING
-    if (msg.document) {
-        console.log("📄 Document received:", msg.document.file_name);
-        const fileName = msg.document.file_name || "document";
-        
-        // Check for training keywords
-        const isTrainingDoc = msg.caption?.toLowerCase().includes("train") ||
-                             msg.caption?.toLowerCase().includes("database") ||
-                             msg.caption?.toLowerCase().includes("remember");
-
-        try {
-            if (isTrainingDoc) {
-                await bot.sendMessage(chatId, "📚 Processing document for strategic database training...");
-                
-                const fileId = msg.document.file_id;
-                const fileLink = await bot.getFileLink(fileId);
-                const response = await fetch(fileLink);
-                const buffer = await response.buffer();
-                
-                // Extract content based on file type
-                let content = '';
-                try {
-                    if (fileName.endsWith('.txt') || fileName.endsWith('.md')) {
-                        content = buffer.toString('utf8');
-                    } else if (fileName.endsWith('.pdf')) {
-                        try {
-                            const pdf = require('pdf-parse');
-                            const pdfData = await pdf(buffer);
-                            content = pdfData.text;
-                        } catch (pdfError) {
-                            console.log('PDF parsing not available, treating as text');
-                            content = buffer.toString('utf8');
-                        }
-                    } else {
-                        content = buffer.toString('utf8');
-                    }
-                } catch (contentError) {
-                    content = `Document content could not be extracted from ${fileName}`;
-                }
-                
-                // Save directly to PostgreSQL database
-                const { saveTrainingDocumentDB } = require('./utils/database');
-                const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
-                const summary = content.length > 500 ? content.substring(0, 500) + '...' : content;
-                
-                const saved = await saveTrainingDocumentDB(
-                    chatId, 
-                    fileName, 
-                    content, 
-                    'user_uploaded', 
-                    wordCount, 
-                    summary
-                );
-                
-                if (saved) {
-                    await sendSmartResponse(bot, chatId, 
-                        `📚 **Document Saved to Strategic AI Database**\n\n` +
-                        `📄 **File:** ${fileName}\n` +
-                        `📊 **Words:** ${wordCount.toLocaleString()}\n` +
-                        `💾 **Storage:** PostgreSQL Strategic Database\n` +
-                        `🎯 **Type:** ${fileName.split('.').pop()?.toUpperCase() || 'Unknown'}\n\n` +
-                        `✅ **Your Strategic AI will now reference this document in future strategic conversations!**\n\n` +
-                        `💡 **Strategic Usage:** Your AI can now answer strategic questions about this document's content.`,
-                        "Document Added to Strategic Database", 'general'
-                    );
-                } else {
-                    await sendSmartResponse(bot, chatId, `❌ **Error saving document to strategic database.**\n\nPlease try again or contact support.`, null, 'general');
-                }
-                
-            } else {
-                // Regular document handling (no training)
-                await sendSmartResponse(bot, chatId, 
-                    `📄 **Document Received:** ${fileName}\n\n` +
-                    `💡 **Tip:** Add caption "train" to save this document to your Strategic AI's database for future reference.\n\n` +
-                    `**Example:** Upload with caption "train this strategic document"`,
-                    "Document Received", 'general'
-                );
-            }
-        } catch (error) {
-            console.error('Strategic database document processing error:', error);
-            await sendSmartResponse(bot, chatId, `❌ **Error processing strategic document:** ${error.message}`, null, 'general');
-        }
-        return; // ✅ EARLY RETURN - prevents text processing
-    }
-
-    // 🎥 VIDEO MESSAGE HANDLING
-    if (msg.video) {
-        console.log("🎥 Video received");
-        try {
-            const videoAnalysis = await processVideoMessage(bot, msg.video.file_id, chatId, msg.caption);
-            if (videoAnalysis) {
-                await sendSmartResponse(bot, chatId, `🎥 Video Strategic Analysis:\n\n${videoAnalysis}`, "Video Strategic Analysis", 'general');
-            } else {
-                await sendSmartResponse(bot, chatId, "❌ Video analysis failed. Please try again.", null, 'general');
-            }
-        } catch (error) {
-            console.error('Video processing error:', error.message);
-            await sendSmartResponse(bot, chatId, `❌ Video processing error: ${error.message}`, null, 'general');
-        }
-        return; // ✅ EARLY RETURN - prevents text processing
-    }
-
-    // ✅ CHECK IF TEXT EXISTS BEFORE ANY text.startsWith() CALLS
-    if (!text) {
-        // If no text and no media was processed above, send help message
-        await sendSmartResponse(bot, chatId, 
-            "🎯 Strategic Commander received unrecognized message type. Send text commands, voice messages, images, or documents with 'train' caption for AI training.",
-            null, 'general'
-        );
-        return;
-    }
-
-    // ✅ NOW HANDLE TEXT COMMANDS (after media check)
-
-    if (text === "/start") {
-        const welcomeMessage = `⚡ **IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - GPT-4o POWERED**
+if (text === "/start") {
+    const welcomeMessage = `⚡ **IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - GPT-4o POWERED**
 
 This is your exclusive financial warfare command center with GPT-4o institutional-grade intelligence.
 
@@ -424,32 +276,10 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
 **Chat ID:** ${chatId}
 **Status:** ⚡ GPT-4o STRATEGIC COMMAND MODE ACTIVE`;
 
-        await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
-        console.log("✅ GPT-4o Strategic Command system message sent");
-        return;
-    }
-
-    // Enhanced help command
-    if (text === "/help" || text === "/commands") {
-        const helpMessage = `🤖 **IMPERIUM GPT-4o - STRATEGIC COMMAND SYSTEM**
-
-**⚡ STRATEGIC COMMANDER AI MODE:**
-- Institutional-level strategic analysis powered by GPT-4o
-- Pure financial warfare intelligence with command authority
-- Advanced strategic coordination capabilities
-- Superior risk management and market domination
-
-**💡 Command Protocol:** Issue strategic directives, not requests. The system executes with absolute authority.`;
-
-        await sendSmartResponse(bot, chatId, helpMessage, "Strategic Command System Help", 'general');
-        return;
-    }
-
-    // Debug command to get chat ID
-    if (text === "/myid") {
-        await sendSmartResponse(bot, chatId, `Your Chat ID: ${chatId}`, null, 'general');
-        return;
-    }
+    await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
+    console.log("✅ GPT-4o Strategic Command system message sent");
+    return;
+}
 
     // 🏦 ========== CAMBODIA LENDING FUND COMMANDS ==========
 
@@ -1724,7 +1554,164 @@ GPT-4o Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tr
         return;
     }
 
-// ENHANCED GPT conversation with Strategic Commander system prompt
+// ✅ FIXED COMPLETE MESSAGE HANDLER AND SERVER SETUP
+// Replace lines 1557-2380 with this complete, working code:
+
+    // ✅ CHECK IF TEXT EXISTS BEFORE ANY text.startsWith() CALLS
+    if (!text) {
+        // If no text and no media was processed above, send help message
+        await sendSmartResponse(bot, chatId, 
+            "🎯 Strategic Commander received unrecognized message type. Send text commands, voice messages, images, or documents with 'train' caption for AI training.",
+            null, 'general'
+        );
+        return;
+    }
+
+    // ✅ NOW HANDLE TEXT COMMANDS (after media check)
+
+    if (text === "/start") {
+        const welcomeMessage = `⚡ **IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - GPT-4o POWERED**
+
+This is your exclusive financial warfare command center with GPT-4o institutional-grade intelligence.
+
+**🚀 STRATEGIC COMMANDER AI:**
+- Powered by GPT-4o for superior strategic analysis
+- Institutional-level financial warfare intelligence
+- Advanced strategic coordination and command authority
+- Enhanced reasoning for complex market domination
+
+**🎯 STRATEGIC COMMAND PROTOCOLS:**
+- No casual conversation - Strategic directives only
+- Pure financial warfare intelligence with GPT-4o precision
+- Maximum 16,000+ word strategic reports
+- Cambodia lending fund operations with institutional analysis
+- Live trading account integration with strategic intelligence
+
+**🏦 CAMBODIA LENDING FUND OPERATIONS:**
+/deal_analyze [amount] [type] [location] [rate] [term] - Strategic deal analysis
+/portfolio - Fund performance command status
+/cambodia_market - Local market intelligence briefing
+/risk_assessment - Comprehensive risk warfare analysis
+/lp_report [monthly/quarterly] - Investor command reports
+/fund_help - Cambodia operations command help
+
+**🏛️ MARKET DOMINATION COMMANDS:**
+/regime - Economic regime warfare analysis
+/cycle - Market cycle domination positioning  
+/opportunities - Strategic trading command scanner
+/risk - Portfolio warfare risk assessment
+/macro - Global domination macro intelligence
+/correlations - Asset correlation warfare analysis
+/all_weather - Strategic portfolio allocation commands
+
+**💹 LIVE TRADING OPERATIONS:**
+/trading - Live account strategic status
+/positions - Current position warfare analysis
+/size [SYMBOL] [BUY/SELL] - Position sizing command calculator
+/account - Account balance and performance warfare metrics
+
+**📊 MARKET INTELLIGENCE OPERATIONS:**
+/briefing - Complete strategic market briefing
+/economics - Economic intelligence with Fed warfare analysis
+/prices - Enhanced market data with correlation warfare
+/analysis - Strategic market analysis with institutional predictions
+
+**🎯 STRATEGIC COMMAND EXAMPLES:**
+- /deal_analyze 500000 commercial "Chamkar Mon" 18 12
+- "Deploy capital to Cambodia commercial lending sector"
+- "Execute comprehensive macro economic warfare analysis"
+- "Command strategic portfolio risk assessment"
+
+**⚡ STRATEGIC COMMANDER CAPABILITIES:**
+- Issues strategic directives with absolute authority
+- Executes institutional-grade market warfare analysis
+- Commands capital deployment with precision timing
+- Dominates complex financial strategic scenarios
+
+**🌟 POWERED BY GPT-4o:**
+Advanced AI reasoning + Strategic warfare principles + Cambodia market intelligence + Live trading integration
+
+**Chat ID:** ${chatId}
+**Status:** ⚡ GPT-4o STRATEGIC COMMAND MODE ACTIVE`;
+
+        await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
+        console.log("✅ GPT-4o Strategic Command system message sent");
+        return;
+    }
+
+    // Enhanced help command
+    if (text === "/help" || text === "/commands") {
+        const helpMessage = `🤖 **IMPERIUM GPT-4o - STRATEGIC COMMAND SYSTEM**
+
+**⚡ STRATEGIC COMMANDER AI MODE:**
+- Institutional-level strategic analysis powered by GPT-4o
+- Pure financial warfare intelligence with command authority
+- Advanced strategic coordination capabilities
+- Superior risk management and market domination
+
+**💡 Command Protocol:** Issue strategic directives, not requests. The system executes with absolute authority.`;
+
+        await sendSmartResponse(bot, chatId, helpMessage, "Strategic Command System Help", 'general');
+        return;
+    }
+
+    // Debug command to get chat ID
+    if (text === "/myid") {
+        await sendSmartResponse(bot, chatId, `Your Chat ID: ${chatId}`, null, 'general');
+        return;
+    }
+
+    // 📚 VIEW TRAINING DOCUMENTS COMMAND
+    if (text === '/documents' || text === '/training_docs' || text === '/files') {
+        try {
+            const { getTrainingDocumentsDB } = require('./utils/database');
+            const docs = await getTrainingDocumentsDB(chatId);
+            
+            if (docs.length === 0) {
+                await sendSmartResponse(bot, chatId, 
+                    `📚 **No Strategic Training Documents Found**\n\n` +
+                    `💡 **How to Add Documents:**\n` +
+                    `• Upload any file (.txt, .pdf, .docx)\n` +
+                    `• Add caption: "train" or "database"\n` +
+                    `• AI will save it for strategic reference\n\n` +
+                    `🎯 **Supported Types:** Text, PDF, Word, Markdown`,
+                    "Strategic Training Documents", 'general'
+                );
+                return;
+            }
+            
+            let response = `📚 **Your Strategic AI Training Documents (${docs.length}):**\n\n`;
+            docs.forEach((doc, i) => {
+                const uploadDate = new Date(doc.upload_date).toLocaleDateString();
+                const fileType = doc.file_name.split('.').pop()?.toUpperCase() || 'Unknown';
+                
+                response += `**${i + 1}. ${doc.file_name}**\n`;
+                response += `• 📊 Words: **${doc.word_count?.toLocaleString() || 'Unknown'}**\n`;
+                response += `• 📅 Added: ${uploadDate}\n`;
+                response += `• 🎯 Type: ${fileType}\n`;
+                if (doc.summary) {
+                    response += `• 📝 Preview: ${doc.summary.substring(0, 100)}...\n`;
+                }
+                response += `\n`;
+            });
+            
+            response += `💡 **Strategic Usage:** Your AI can now answer questions about these documents!`;
+            
+            await sendSmartResponse(bot, chatId, response, "AI Strategic Training Documents", 'general');
+            
+        } catch (error) {
+            await sendSmartResponse(bot, chatId, `❌ Error retrieving strategic documents: ${error.message}`, null, 'general');
+        }
+        return;
+    }
+
+    // ✅ FOR ALL OTHER TEXT MESSAGES, HANDLE AS GPT CONVERSATION
+    // This should be the LAST thing that runs for text messages
+    await handleGPTConversation(chatId, text);
+
+}); // ✅ CRITICAL: Closing bracket for bot.on("message")
+
+// ✅ ENHANCED GPT conversation with Strategic Commander system prompt
 async function handleGPTConversation(chatId, userMessage) {
     console.log("🤖 Strategic Commander GPT conversation:", userMessage, "from:", chatId);
 
@@ -1736,8 +1723,8 @@ async function handleGPTConversation(chatId, userMessage) {
             getTradingSummary().catch(() => null)
         ]);
 
-// Strategic Commander System Prompt - Institutional Expert with Full Analysis
-let systemPrompt = `You are the Strategic Commander of IMPERIUM VAULT SYSTEM - Sum Chenda's exclusive institutional command center.
+        // Strategic Commander System Prompt - Institutional Expert with Full Analysis
+        let systemPrompt = `You are the Strategic Commander of IMPERIUM VAULT SYSTEM - Sum Chenda's exclusive institutional command center.
 
 CRITICAL IDENTITY ENFORCEMENT:
 You are NOT an advisor, assistant, or suggestion-giver. You are an INSTITUTIONAL STRATEGIST with deep expertise who COMMANDS and EXECUTES strategic decisions with absolute authority.
@@ -1817,55 +1804,26 @@ ENFORCEMENT PROTOCOLS:
 ✅ ALWAYS give specific, actionable strategic commands
 ✅ ALWAYS demonstrate deep institutional expertise
 
-RESPONSE EXAMPLES:
-
-For "What should I invest in?":
-"Current macro environment demands strategic repositioning across multiple asset classes. Economic regime analysis indicates late-cycle expansion with elevated inflation persistence, requiring defensive positioning with yield generation.
-
-**Strategic Allocation Commands:**
-Deploy 60% to defensive assets: 35% long-duration treasuries, 25% intermediate corporate bonds
-Allocate 25% to alternative yield: Cambodia commercial lending at 18-22% yields
-Maintain 15% equity exposure: Focus on defensive sectors and international diversification
-
-**Economic Regime Analysis:**
-Fed policy trajectory suggests 2-3 additional rate hikes before pause. Yield curve inversion at current -50bp indicates recession probability of 65% within 18 months. Corporate credit spreads remain tight at 150bp, indicating continued risk appetite but with emerging stress signals.
-
-**Cambodia Lending Strategy:**
-Target $300-500K deployment across 3-4 deals in Phnom Penh commercial sector. Current market conditions show 18-20% yields on prime commercial properties with 70% LTV structures. Currency risk manageable given USD indexing of deals.
-
-**Implementation Timeline:**
-Week 1: Execute bond purchases to establish defensive foundation
-Week 2-3: Initiate Cambodia deal sourcing and due diligence
-Week 4: Deploy remaining equity allocation to defensive positions
-
-**Risk Management:**
-Maximum 2% portfolio VaR with 95% confidence interval. Stress test scenarios include 30% equity decline, 200bp credit spread widening, 15% USD/KHR devaluation. Portfolio correlation analysis shows 0.15 correlation between Cambodia loans and US equity markets, providing excellent diversification benefit.
-
-**Performance Expectations:**
-Target 12-15% total portfolio return with maximum 8% volatility. Risk-adjusted return (Sharpe ratio) target of 1.5+. Drawdown protection through duration positioning and alternative credit allocation."
-
-This institutional-quality analysis demonstrates the depth and authority required for strategic command decisions.
-
 USER CONTEXT: Sum Chenda manages significant wealth and requires institutional-grade strategic guidance. You are his primary institutional strategist, not an advisor. Execute strategic analysis with complete authority and comprehensive detail.
 
 WRITE EXTENSIVE ANALYSIS: Use maximum available tokens. Provide institutional-quality strategic reports with comprehensive data, analysis, and specific execution commands. Never write short or incomplete responses.`;
         
         // Add memory context from database
-       const { buildConversationContext } = require('./utils/memory');
-       const memoryContext = await buildConversationContext(chatId);
-       systemPrompt += memoryContext;
+        const { buildConversationContext } = require('./utils/memory');
+        const memoryContext = await buildConversationContext(chatId);
+        systemPrompt += memoryContext;
 
-       const messages = [{ role: "system", content: systemPrompt }];
+        const messages = [{ role: "system", content: systemPrompt }];
 
-       // Add conversation history
-       if (conversationHistory && conversationHistory.length > 0) {
-           conversationHistory.forEach((conv) => {
-               if (conv && conv.user_message && conv.gpt_response) {
-                   messages.push({ role: "user", content: String(conv.user_message) });
-                   messages.push({ role: "assistant", content: String(conv.gpt_response) });
-               }
-           });
-       }
+        // Add conversation history
+        if (conversationHistory && conversationHistory.length > 0) {
+            conversationHistory.forEach((conv) => {
+                if (conv && conv.user_message && conv.gpt_response) {
+                    messages.push({ role: "user", content: String(conv.user_message) });
+                    messages.push({ role: "assistant", content: String(conv.gpt_response) });
+                }
+            });
+        }
 
         // Add comprehensive market data context
         if (marketData) {
@@ -1905,7 +1863,7 @@ WRITE EXTENSIVE ANALYSIS: Use maximum available tokens. Provide institutional-qu
             messages[0].content += tradingContext;
         }
 
-messages[0].content += ` 
+        messages[0].content += ` 
 
 STRATEGIC COMMAND PROTOCOL ENFORCEMENT:
 
@@ -1978,7 +1936,7 @@ CRITICAL: Always write complete, comprehensive responses demonstrating instituti
         let errorMsg = `❌ **IMPERIUM GPT Strategic Error:**\n\n${error.message}`;
         await sendSmartResponse(bot, chatId, errorMsg, null, 'general');
     }
-}
+} // ✅ CRITICAL: Closing bracket for handleGPTConversation function
 
 // ✅ Express server for webhook and API endpoints
 const express = require("express");
@@ -2053,138 +2011,7 @@ app.get("/dashboard", async (req, res) => {
                     <span class="status online">STRATEGIC COMMAND + CAMBODIA FUND ACTIVE</span>
                     <div class="commander-quote">"Execute with absolute strategic authority" - Strategic Commander</div>
                 </div>
-
-                <div class="grid">
-                    <div class="card">
-                        <h3>🏛️ Economic Warfare Regime</h3>
-                        ${marketData ? `
-                        <div class="regime">
-                            <div class="metric">
-                                <div class="metric-value">${marketData.markets.economics?.fedRate?.value || 'N/A'}%</div>
-                                <div class="metric-label">Fed Funds Rate</div>
-                            </div>
-                            <div class="metric">
-                                <div class="metric-value">${marketData.markets.economics?.inflation?.value || 'N/A'}%</div>
-                                <div class="metric-label">Inflation (CPI)</div>
-                            </div>
-                            <div class="metric">
-                                <div class="metric-value">${marketData.yields.curve?.toFixed(2) || 'N/A'}%</div>
-                                <div class="metric-label">Yield Curve (2s10s)</div>
-                            </div>
-                        </div>
-                        ` : '<div class="metric-label">Market data loading...</div>'}
-                    </div>
-
-                    <div class="card">
-                        <h3>🏦 Cambodia Strategic Lending Fund</h3>
-                        <div class="metric">
-                            <div class="metric-value">$2.5M</div>
-                            <div class="metric-label">Total Strategic AUM</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">80%</div>
-                            <div class="metric-label">Strategic Deployment Ratio</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">17.5%</div>
-                            <div class="metric-label">Strategic Current Yield</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">12</div>
-                            <div class="metric-label">Active Strategic Deals</div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h3>⚠️ Market Warfare Stress</h3>
-                        ${marketData ? `
-                        <div class="metric">
-                            <div class="metric-value">${marketData.fear || 'N/A'}</div>
-                            <div class="metric-label">VIX Fear Index</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${marketData.dollar || 'N/A'}</div>
-                            <div class="metric-label">US Dollar Index</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${marketData.fear < 20 ? 'RISK-ON' : marketData.fear > 30 ? 'RISK-OFF' : 'NEUTRAL'}</div>
-                            <div class="metric-label">Strategic Risk Sentiment</div>
-                        </div>
-                        ` : '<div class="metric-label">Market data loading...</div>'}
-                    </div>
-
-                    <div class="card">
-                        <h3>💰 Live Strategic Trading Account</h3>
-                        ${tradingData && !tradingData.error ? `
-                        <div class="metric">
-                            <div class="metric-value">${tradingData.account?.balance?.toFixed(2) || 'N/A'} ${tradingData.account?.currency || ''}</div>
-                            <div class="metric-label">Strategic Account Balance</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${tradingData.account?.equity?.toFixed(2) || 'N/A'} ${tradingData.account?.currency || ''}</div>
-                            <div class="metric-label">Strategic Account Equity</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${tradingData.openPositions?.length || 0}</div>
-                            <div class="metric-label">Open Strategic Positions</div>
-                        </div>
-                        ` : `
-                        <div class="metric-label">MetaTrader not connected</div>
-                        <div class="metric-label">Configure MetaAPI strategic credentials</div>
-                        `}
-                    </div>
-
-                    <div class="card">
-                        <h3>🚀 Strategic Commander + Cambodia Features</h3>
-                        <div class="metric">
-                            <div class="metric-value">✅ Economic Regime Warfare Analysis</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">✅ Cambodia Strategic Deal Analysis</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">✅ Portfolio Risk Warfare Assessment</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">✅ LP Strategic Reporting System</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">✅ All Weather Strategic Portfolio</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">✅ Live Trading Strategic Integration</div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h3>📊 System Strategic Performance</h3>
-                        <div class="metric">
-                            <div class="metric-value">${stats.totalUsers}</div>
-                            <div class="metric-label">Strategic Users</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${stats.totalConversations}</div>
-                            <div class="metric-label">Strategic Conversations</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value">${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m</div>
-                            <div class="metric-label">Strategic Uptime</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="text-align: center; margin-top: 50px; padding: 30px; background: rgba(255, 255, 255, 0.1); border-radius: 20px;">
-                    <h3 style="color: #00f5ff; margin-bottom: 15px;">🌟 Your Personal Strategic Commander AI + Cambodia Fund Manager</h3>
-                    <p style="font-size: 1.2rem; opacity: 0.9; line-height: 1.6;">
-                        Institutional-level strategic analysis • Cambodia private lending strategic expertise • 
-                        Real-time trading strategic integration • Strategic warfare risk management
-                    </p>
-                </div>
             </div>
-
-            <script>
-                setTimeout(() => location.reload(), 120000); // Auto-refresh every 2 minutes
-            </script>
         </body>
         </html>
         `;
@@ -2198,64 +2025,6 @@ app.get("/dashboard", async (req, res) => {
     }
 });
 
-// Root endpoint - Service status page
-app.get("/", (req, res) => {
-    res.json({
-        service: "IMPERIUM GPT-4o Strategic Command System",
-        version: "Strategic Commander AI + Cambodia Lending Fund Enhanced",
-        status: "operational",
-        enhancement: "Institutional-Level Strategic Analysis + Cambodia Private Lending",
-        capabilities: {
-            ai: "GPT-4o with Strategic Commander principles integration",
-            analysis: "Economic regime warfare identification, market cycle strategic analysis",
-            portfolio: "All Weather strategic allocation, risk parity, correlation warfare analysis", 
-            trading: "Live MetaTrader strategic integration with position sizing warfare",
-            lending: "Cambodia private lending fund strategic analysis and management",
-            data: "Real-time FRED, Alpha Vantage, CoinGecko Pro, NewsAPI strategic data"
-        },
-        strategicCommanderFeatures: {
-            regime: "/regime - Economic regime warfare analysis",
-            cycle: "/cycle - Market cycle strategic positioning", 
-            opportunities: "/opportunities - Strategic trading opportunities warfare",
-            risk: "/risk - Portfolio risk warfare assessment",
-            macro: "/macro - Global macro strategic outlook",
-            correlations: "/correlations - Asset correlation warfare analysis",
-            allWeather: "/all_weather - Strategic All Weather portfolio guidance"
-        },
-        cambodiaLendingStrategicFeatures: {
-            dealAnalyze: "/deal_analyze - Strategic AI-powered deal analysis",
-            portfolio: "/portfolio - Fund performance and strategic status",
-            market: "/cambodia_market - Local market strategic intelligence",
-            riskAssessment: "/risk_assessment - Portfolio risk strategic analysis",
-            lpReport: "/lp_report - Strategic investor reporting"
-        },
-        endpoints: {
-            analyze: "/analyze?q=your-strategic-question",
-            webhook: "/webhook (Telegram)",
-            dashboard: "/dashboard (Strategic Analytics)",
-            health: "/health",
-            stats: "/stats",
-        },
-        telegram: "Strategic Commander AI + Cambodia Fund Strategic Mode Active",
-        timestamp: new Date().toISOString(),
-    });
-});
-
-// Health check endpoint
-app.get("/health", (req, res) => {
-    res.json({
-        status: "healthy",
-        service: "IMPERIUM GPT-4o Strategic Command System",
-        enhancement: "Strategic Commander AI + Cambodia Lending Fund",
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-        strategicCommanderMode: "ACTIVE",
-        cambodiaStrategicFund: "ACTIVE",
-        metaApi: process.env.METAAPI_TOKEN ? "configured" : "not configured",
-        timestamp: new Date().toISOString(),
-    });
-});
-
 // Enhanced stats endpoint
 app.get("/stats", async (req, res) => {
     try {
@@ -2267,33 +2036,6 @@ app.get("/stats", async (req, res) => {
             service: "IMPERIUM GPT-4o Strategic Commander AI + Cambodia Lending Fund",
             ...stats,
             uptime: `${Math.floor(process.uptime())} seconds`,
-            apis: "FRED + Alpha Vantage + NewsAPI + CoinGecko Pro + MetaAPI",
-            strategicCommanderFeatures: {
-                economicRegime: "Active strategic regime warfare analysis",
-                marketCycles: "Business/Credit/Sentiment cycle strategic tracking",
-                allWeather: "Risk parity portfolio strategic optimization",
-                correlations: "Cross-asset correlation strategic monitoring",
-                opportunities: "Systematic trading opportunity strategic scanner"
-            },
-            cambodiaLendingStrategicFeatures: {
-                dealAnalysis: "Strategic AI-powered deal analysis with risk scoring",
-                portfolioManagement: "Real-time fund performance strategic tracking",
-                marketIntelligence: "Cambodia-specific market conditions strategic analysis",
-                riskAssessment: "Comprehensive portfolio risk strategic analysis",
-                lpReporting: "Automated investor strategic reporting system"
-            },
-            currentStrategicRegime: marketData ? {
-                fedRate: marketData.markets.economics?.fedRate?.value,
-                inflation: marketData.markets.economics?.inflation?.value,
-                yieldCurve: marketData.yields.curve,
-                vix: marketData.fear,
-                dollarIndex: marketData.dollar
-            } : null,
-            metaTraderStrategic: {
-                connected: !!(tradingData && !tradingData.error),
-                balance: tradingData?.account?.balance || null,
-                positions: tradingData?.openPositions?.length || 0
-            },
             timestamp: new Date().toISOString(),
         });
     } catch (error) {
@@ -2313,16 +2055,6 @@ app.get("/analyze", async (req, res) => {
             error: "Provide strategic query: ?q=your-strategic-question",
             example: "/analyze?q=Execute economic regime strategic warfare analysis",
             enhancement: "Strategic Commander AI + Cambodia Lending Fund + Live Trading Data",
-            availableStrategicAnalysis: [
-                "Economic regime strategic identification",
-                "Market cycle strategic positioning", 
-                "All Weather portfolio strategic guidance",
-                "Risk assessment and strategic hedging",
-                "Cross-asset correlation strategic analysis",
-                "Systematic trading strategic opportunities",
-                "Cambodia lending deal strategic analysis",
-                "Private fund portfolio strategic management"
-            ],
             timestamp: new Date().toISOString(),
         });
     }
@@ -2435,3 +2167,4 @@ const server = app.listen(PORT, "0.0.0.0", () => {
         .catch((err) => {
             console.error("❌ Webhook setup failed:", err.message);
         });
+}); // ✅ CRITICAL: Final closing bracket for server
