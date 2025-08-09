@@ -101,6 +101,54 @@ if (!telegramToken || !openaiKey) {
 // ✅ Initialize Telegram Bot with webhook support for Railway
 const bot = new TelegramBot(telegramToken, { polling: false });
 
+
+// ===== BEGIN SAFETY HELPERS (added by auto-fix) =====
+
+// Escape for Telegram MarkdownV2 to avoid "can't parse entities" errors
+function escapeMarkdownV2(s = "") {
+  return String(s).replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
+}
+
+// Safe wrapper around sendSmartResponse: escapes MarkdownV2-sensitive chars.
+// Keeps your existing utils/telegramSplitter behavior; only text is escaped.
+async function safeSend(bot, chatId, text, title = null, channel = 'general') {
+  try {
+    const cleaned = escapeMarkdownV2(String(text));
+    return await safeSend(bot, chatId, cleaned, title, channel);
+  } catch (err) {
+    // Fallback: try sending without parse mode via bot.sendMessage to guarantee delivery
+    try {
+      await bot.sendMessage(chatId, cleaned);
+    } catch (e) {
+      console.error("Fallback send failed:", e.message);
+    }
+  }
+}
+
+// GPT-4/5 compatible token helper
+function applyMaxTokensForModel(params, model, n) {
+  const m = String(model || params.model || "").toLowerCase();
+  const copy = { ...params };
+  if (m.startsWith("gpt-5")) {
+    delete copy.max_tokens;
+    copy.max_completion_tokens = n;
+  } else {
+    delete copy.max_completion_tokens;
+    copy.max_tokens = n;
+  }
+  return copy;
+}
+
+// Wrapper for OpenAI chat completions: routes max_* tokens correctly.
+async function openAIChatCompat(client, params, maxTokens = null) {
+  let p = { ...params };
+  if (maxTokens != null) {
+    p = applyMaxTokensForModel(p, p.model, maxTokens);
+  }
+  return await client.chat.completions.create(p);
+}
+
+// ===== END SAFETY HELPERS =====
 // ✅ Initialize OpenAI API (latest SDK v4.38.1) - OPTIMIZED FOR MAXIMUM LENGTH
 const openai = new OpenAI({ 
     apiKey: openaiKey,
@@ -204,7 +252,7 @@ bot.on("message", async (msg) => {
         console.log(
             `🚫 Unauthorized access attempt from ${chatId} (Name: ${msg.chat?.first_name || "Unknown"} ${msg.chat?.last_name || ""}, Username: ${msg.chat?.username || "None"})`,
         );
-        await sendSmartResponse(bot, chatId, 
+        await safeSend(bot, chatId, 
             `🚫 Access denied. This is a private GPT system.\n\nYour Chat ID: ${chatId}\nAuthorized ID: 484389665\n\nIf this is your personal account, contact system admin.`,
             null, 'general'
         );
@@ -276,7 +324,7 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
 **Chat ID:** ${chatId}
 **Status:** ⚡ GPT-5 STRATEGIC COMMAND MODE ACTIVE`;
 
-    await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
+    await safeSend(bot, chatId, welcomeMessage, null, 'general');
     console.log("✅ GPT-5 Strategic Command system message sent");
     return;
 }
@@ -305,14 +353,14 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
 • Rate: Annual % yield (e.g., 18)
 • Term: Months deployment (e.g., 12)`;
 
-                await sendSmartResponse(bot, chatId, usageMessage, null, 'cambodia');
+                await safeSend(bot, chatId, usageMessage, null, 'cambodia');
                 return;
             }
             
             // Parse parameters
             const params = text.replace('/deal_analyze ', '').split(' ');
             if (params.length < 5) {
-                await sendSmartResponse(bot, chatId, "❌ Command format error. Execute: /deal_analyze [amount] [type] [location] [rate] [term]", null, 'general');
+                await safeSend(bot, chatId, "❌ Command format error. Execute: /deal_analyze [amount] [type] [location] [rate] [term]", null, 'general');
                 return;
             }
             
@@ -335,7 +383,7 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
             const analysis = await analyzeLendingDeal(dealParams);
             
             if (analysis.error) {
-                await sendSmartResponse(bot, chatId, `❌ Strategic analysis error: ${analysis.error}`, null, 'general');
+                await safeSend(bot, chatId, `❌ Strategic analysis error: ${analysis.error}`, null, 'general');
                 return;
             }
             
@@ -386,10 +434,10 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
             
             response += `🎯 **Strategic Deal ID:** ${analysis.dealId}`;
             
-            await sendSmartResponse(bot, chatId, response, "Cambodia Strategic Deal Analysis", 'cambodia');
+            await safeSend(bot, chatId, response, "Cambodia Strategic Deal Analysis", 'cambodia');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Strategic deal analysis error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Strategic deal analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -411,7 +459,7 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
             const portfolio = await getPortfolioStatus(sampleFundData);
             
             if (portfolio.error) {
-                await sendSmartResponse(bot, chatId, `❌ Portfolio strategic analysis error: ${portfolio.error}`, null, 'general');
+                await safeSend(bot, chatId, `❌ Portfolio strategic analysis error: ${portfolio.error}`, null, 'general');
                 return;
             }
             
@@ -473,10 +521,10 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
                 });
             }
             
-            await sendSmartResponse(bot, chatId, response, "Fund Strategic Portfolio Status", 'cambodia');
+            await safeSend(bot, chatId, response, "Fund Strategic Portfolio Status", 'cambodia');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Portfolio strategic status error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Portfolio strategic status error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -489,7 +537,7 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
             const conditions = await getCambodiaMarketConditions();
             
             if (conditions.error) {
-                await sendSmartResponse(bot, chatId, `❌ Market strategic intelligence error: ${conditions.error}`, null, 'general');
+                await safeSend(bot, chatId, `❌ Market strategic intelligence error: ${conditions.error}`, null, 'general');
                 return;
             }
             
@@ -544,10 +592,10 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
             
             response += `📋 **STRATEGIC MARKET SUMMARY:**\n${conditions.summary}`;
             
-            await sendSmartResponse(bot, chatId, response, "Cambodia Market Strategic Intelligence", 'cambodia');
+            await safeSend(bot, chatId, response, "Cambodia Market Strategic Intelligence", 'cambodia');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Cambodia market strategic intelligence error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Cambodia market strategic intelligence error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -569,7 +617,7 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
             const riskAssessment = await performRiskAssessment(samplePortfolioData);
             
             if (riskAssessment.error) {
-                await sendSmartResponse(bot, chatId, `❌ Strategic risk assessment error: ${riskAssessment.error}`, null, 'general');
+                await safeSend(bot, chatId, `❌ Strategic risk assessment error: ${riskAssessment.error}`, null, 'general');
                 return;
             }
             
@@ -611,10 +659,10 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
                 });
             }
             
-            await sendSmartResponse(bot, chatId, response, "Portfolio Strategic Risk Warfare Assessment", 'cambodia');
+            await safeSend(bot, chatId, response, "Portfolio Strategic Risk Warfare Assessment", 'cambodia');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Strategic risk assessment error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Strategic risk assessment error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -630,7 +678,7 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
             const report = await generateLPReport(reportType);
             
             if (report.error) {
-                await sendSmartResponse(bot, chatId, `❌ Strategic report generation error: ${report.error}`, null, 'general');
+                await safeSend(bot, chatId, `❌ Strategic report generation error: ${report.error}`, null, 'general');
                 return;
             }
             
@@ -677,10 +725,10 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
             response += `📎 **Full Strategic Report:** ${report.reportId}\n`;
             response += `📊 **Command Dashboard:** Available on request`;
             
-            await sendSmartResponse(bot, chatId, response, "LP Strategic Investor Report", 'cambodia');
+            await safeSend(bot, chatId, response, "LP Strategic Investor Report", 'cambodia');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ LP strategic report error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ LP strategic report error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -725,7 +773,7 @@ Command examples:
 
 🏛️ **Enhanced with Strategic AI for institutional-grade analysis!**`;
 
-        await sendSmartResponse(bot, chatId, helpMessage, "Cambodia Fund Strategic Help", 'cambodia');
+        await safeSend(bot, chatId, helpMessage, "Cambodia Fund Strategic Help", 'cambodia');
         return;
     }
 
@@ -736,7 +784,7 @@ Command examples:
             const docs = await getTrainingDocumentsDB(chatId);
             
             if (docs.length === 0) {
-                await sendSmartResponse(bot, chatId, 
+                await safeSend(bot, chatId, 
                     `📚 **No Strategic Training Documents Found**\n\n` +
                     `💡 **How to Add Documents:**\n` +
                     `• Upload any file (.txt, .pdf, .docx)\n` +
@@ -765,10 +813,10 @@ Command examples:
             
             response += `💡 **Strategic Usage:** Your AI can now answer questions about these documents!`;
             
-            await sendSmartResponse(bot, chatId, response, "AI Strategic Training Documents", 'general');
+            await safeSend(bot, chatId, response, "AI Strategic Training Documents", 'general');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Error retrieving strategic documents: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Error retrieving strategic documents: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -813,7 +861,7 @@ Execute institutional-grade strategic analysis:
 
 Structure like Bridgewater's Daily Observations with specific strategic directives.`;
 
-            const analysis = await openai.chat.completions.create({
+            const analysis = await openAIChatCompat(openai, {
                 model: "gpt-5",
                 messages: [
                     {
@@ -827,10 +875,10 @@ Structure like Bridgewater's Daily Observations with specific strategic directiv
             });
 
             const responseContent = analysis.choices[0].message.content;
-            await sendSmartResponse(bot, chatId, responseContent, "Economic Regime Warfare Analysis", 'raydalio');
+            await safeSend(bot, chatId, responseContent, "Economic Regime Warfare Analysis", 'raydalio');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Regime warfare analysis error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Regime warfare analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -868,7 +916,7 @@ For each cycle provide strategic commands:
 
 Conclude with specific asset class strategic deployment commands based on cycle positioning.`;
             
-            const cycleAnalysis = await openai.chat.completions.create({
+            const cycleAnalysis = await openAIChatCompat(openai, {
                 model: "gpt-5", 
                 messages: [
                     { role: "system", content: "You are Strategic Commander executing institutional-quality market cycle warfare analysis with definitive strategic commands." },
@@ -876,10 +924,10 @@ Conclude with specific asset class strategic deployment commands based on cycle 
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-            await sendSmartResponse(bot, chatId, cycleAnalysis.choices[0].message.content, "Market Cycle Warfare Analysis", 'raydalio');
+            await safeSend(bot, chatId, cycleAnalysis.choices[0].message.content, "Market Cycle Warfare Analysis", 'raydalio');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Cycle warfare analysis error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Cycle warfare analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -919,7 +967,7 @@ Consider correlation with existing positions if any.
 
 Apply institutional risk management principles for strategic domination.`;
 
-            const opportunities = await openai.chat.completions.create({
+            const opportunities = await openAIChatCompat(openai, {
                 model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander identifying high-conviction trading opportunities warfare with institutional risk management commands." },
@@ -927,10 +975,10 @@ Apply institutional risk management principles for strategic domination.`;
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-            await sendSmartResponse(bot, chatId, opportunities.choices[0].message.content, "Market Opportunities Warfare", 'raydalio');
+            await safeSend(bot, chatId, opportunities.choices[0].message.content, "Market Opportunities Warfare", 'raydalio');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Opportunities warfare scan error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Opportunities warfare scan error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -974,7 +1022,7 @@ Execute comprehensive strategic risk warfare analysis:
 
 Execute specific and strategic commands with exact recommendations.`;
             
-            const riskAnalysis = await openai.chat.completions.create({
+            const riskAnalysis = await openAIChatCompat(openai, {
                 model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander providing institutional-quality risk warfare analysis with specific strategic commands and recommendations." },
@@ -982,10 +1030,10 @@ Execute specific and strategic commands with exact recommendations.`;
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-            await sendSmartResponse(bot, chatId, riskAnalysis.choices[0].message.content, "Risk Warfare Analysis", 'raydalio');
+            await safeSend(bot, chatId, riskAnalysis.choices[0].message.content, "Risk Warfare Analysis", 'raydalio');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Risk warfare analysis error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Risk warfare analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -995,7 +1043,7 @@ Execute specific and strategic commands with exact recommendations.`;
         try {
             const params = text.split(' ');
             if (params.length < 3) {
-                await sendSmartResponse(bot, chatId, "Command Usage: /size SYMBOL DIRECTION\nExample: /size EURUSD buy", null, 'general');
+                await safeSend(bot, chatId, "Command Usage: /size SYMBOL DIRECTION\nExample: /size EURUSD buy", null, 'general');
                 return;
             }
             
@@ -1035,7 +1083,7 @@ Execute strategic commands:
 
 Execute exact numbers for strategic trade execution.`;
             
-            const sizing = await openai.chat.completions.create({
+            const sizing = await openAIChatCompat(openai, {
                 model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander providing precise position sizing warfare with exact execution parameters." },
@@ -1043,10 +1091,10 @@ Execute exact numbers for strategic trade execution.`;
                 ],
                 max_tokens: 4096
             });
-            await sendSmartResponse(bot, chatId, sizing.choices[0].message.content, `Position Sizing Warfare for ${symbol} ${direction.toUpperCase()}`, 'raydalio');
+            await safeSend(bot, chatId, sizing.choices[0].message.content, `Position Sizing Warfare for ${symbol} ${direction.toUpperCase()}`, 'raydalio');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Position sizing warfare error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Position sizing warfare error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1088,7 +1136,7 @@ Execute "ALL WEATHER" STRATEGIC ALLOCATION:
 
 Execute strategic commands for someone in Cambodia with global market access.`;
             
-            const allWeather = await openai.chat.completions.create({
+            const allWeather = await openAIChatCompat(openai, {
                 model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander providing specific All Weather portfolio strategic guidance adapted to current market warfare conditions." },
@@ -1096,10 +1144,10 @@ Execute strategic commands for someone in Cambodia with global market access.`;
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-            await sendSmartResponse(bot, chatId, allWeather.choices[0].message.content, "All Weather Strategic Portfolio", 'raydalio');
+            await safeSend(bot, chatId, allWeather.choices[0].message.content, "All Weather Strategic Portfolio", 'raydalio');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ All Weather strategic analysis error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ All Weather strategic analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1143,7 +1191,7 @@ STRATEGIC CORRELATION WARFARE ANALYSIS:
 
 Focus on strategic commands for portfolio construction in current warfare environment.`;
             
-            const correlations = await openai.chat.completions.create({
+            const correlations = await openAIChatCompat(openai, {
                 model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander analyzing asset correlations warfare for optimal portfolio construction." },
@@ -1151,10 +1199,10 @@ Focus on strategic commands for portfolio construction in current warfare enviro
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-            await sendSmartResponse(bot, chatId, correlations.choices[0].message.content, "Correlation Warfare Analysis", 'raydalio');
+            await safeSend(bot, chatId, correlations.choices[0].message.content, "Correlation Warfare Analysis", 'raydalio');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Correlation warfare analysis error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Correlation warfare analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1205,7 +1253,7 @@ Execute BRIDGEWATER-STYLE MACRO WARFARE ANALYSIS:
 
 Execute like Bridgewater's Daily Observations for strategic warfare.`;
             
-            const macroAnalysis = await openai.chat.completions.create({
+            const macroAnalysis = await openAIChatCompat(openai, {
                 model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander providing institutional-quality macro economic warfare analysis like Bridgewater's Daily Observations." },
@@ -1213,10 +1261,10 @@ Execute like Bridgewater's Daily Observations for strategic warfare.`;
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-            await sendSmartResponse(bot, chatId, macroAnalysis.choices[0].message.content, "Macro Warfare Outlook", 'raydalio');
+            await safeSend(bot, chatId, macroAnalysis.choices[0].message.content, "Macro Warfare Outlook", 'raydalio');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Macro warfare analysis error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Macro warfare analysis error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1278,12 +1326,12 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
 
 **💡 Command Protocol:** Issue strategic directives, not requests. The system executes with absolute authority.`;
     
-    await sendSmartResponse(bot, chatId, helpMessage, "Strategic Command System Help", 'general');
+    await safeSend(bot, chatId, helpMessage, "Strategic Command System Help", 'general');
     return;
 }
     // Debug command to get chat ID
     if (text === "/myid") {
-        await sendSmartResponse(bot, chatId, `Your Chat ID: ${chatId}`, null, 'general');
+        await safeSend(bot, chatId, `Your Chat ID: ${chatId}`, null, 'general');
         return;
     }
 
@@ -1335,10 +1383,10 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
             }
             
             debugMsg += `\n🕐 **Strategic Test Time:** ${new Date().toLocaleString()}`;
-            await sendSmartResponse(bot, chatId, debugMsg, "MetaAPI Strategic Debug Report", 'general');
+            await safeSend(bot, chatId, debugMsg, "MetaAPI Strategic Debug Report", 'general');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Strategic debug test failed: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Strategic debug test failed: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1350,12 +1398,12 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
             const tradingData = await getTradingSummary();
             if (tradingData && !tradingData.error) {
                 const formattedData = formatTradingDataForGPT(tradingData);
-                await sendSmartResponse(bot, chatId, formattedData, "Trading Account Strategic Summary", 'general');
+                await safeSend(bot, chatId, formattedData, "Trading Account Strategic Summary", 'general');
             } else {
-                await sendSmartResponse(bot, chatId, "❌ MetaTrader strategic connection error. Check your MetaAPI credentials or use /test_metaapi for strategic diagnostics.", null, 'general');
+                await safeSend(bot, chatId, "❌ MetaTrader strategic connection error. Check your MetaAPI credentials or use /test_metaapi for strategic diagnostics.", null, 'general');
             }
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ MetaTrader strategic error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ MetaTrader strategic error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1372,12 +1420,12 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
                     msg += `   Open: ${pos.openPrice} | Current P&L: ${pos.profit?.toFixed(2)}\n`;
                     msg += `   Time: ${new Date(pos.openTime).toLocaleString()}\n\n`;
                 });
-                await sendSmartResponse(bot, chatId, msg, "Open Strategic Positions", 'general');
+                await safeSend(bot, chatId, msg, "Open Strategic Positions", 'general');
             } else {
-                await sendSmartResponse(bot, chatId, "📊 No open strategic positions found or MetaAPI not connected.", null, 'general');
+                await safeSend(bot, chatId, "📊 No open strategic positions found or MetaAPI not connected.", null, 'general');
             }
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Strategic positions error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Strategic positions error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1439,10 +1487,10 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
             briefing += `🤖 **Strategic AI Analysis Ready**\n`;
             briefing += `💡 Command: "Execute strategic analysis of these conditions" or "/opportunities"`;
             
-            await sendSmartResponse(bot, chatId, briefing, "Daily Strategic Market Briefing", 'raydalio');
+            await safeSend(bot, chatId, briefing, "Daily Strategic Market Briefing", 'raydalio');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Strategic briefing error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Strategic briefing error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1474,10 +1522,10 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
                 (marketData.markets.economics.fedRate.value - marketData.markets.economics.inflation.value).toFixed(2) + '%' : 'N/A'}\n`;
             economicsMsg += `• Policy Stance: ${marketData.markets.economics?.fedRate?.value > marketData.markets.economics?.inflation?.value ? 'RESTRICTIVE' : 'ACCOMMODATIVE'}\n`;
             
-            await sendSmartResponse(bot, chatId, economicsMsg, "Economic Strategic Indicators", 'general');
+            await safeSend(bot, chatId, economicsMsg, "Economic Strategic Indicators", 'general');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Economic strategic data error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Economic strategic data error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1519,10 +1567,10 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
             pricesMsg += `• VIX Fear Index: ${marketData.fear}\n`;
             pricesMsg += `• US Dollar Index: ${marketData.dollar}\n`;
             
-            await sendSmartResponse(bot, chatId, pricesMsg, "Market Prices Strategic Data", 'general');
+            await safeSend(bot, chatId, pricesMsg, "Market Prices Strategic Data", 'general');
             
         } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Strategic market prices error: ${error.message}`, null, 'general');
+            await safeSend(bot, chatId, `❌ Strategic market prices error: ${error.message}`, null, 'general');
         }
         return;
     }
@@ -1537,7 +1585,7 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
         console.log("🎤 Voice message received");
         const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
         if (transcribedText) {
-            await sendSmartResponse(bot, chatId, `🎤 Voice transcribed: "${transcribedText}"`, null, 'general');
+            await safeSend(bot, chatId, `🎤 Voice transcribed: "${transcribedText}"`, null, 'general');
             await handleGPTConversation(chatId, transcribedText);
         }
         return;
@@ -1547,7 +1595,7 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
         console.log("🖼️ Image received");
         const photoAnalysis = await processImageMessage(bot, msg.photo[msg.photo.length - 1].file_id, chatId, msg.caption);
         if (photoAnalysis) {
-            await sendSmartResponse(bot, chatId, `🖼️ Image Strategic Analysis:\n\n${photoAnalysis}`, "Image Strategic Analysis", 'general');
+            await safeSend(bot, chatId, `🖼️ Image Strategic Analysis:\n\n${photoAnalysis}`, "Image Strategic Analysis", 'general');
         }
         return;
     }
@@ -1608,7 +1656,7 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
                 );
                 
                 if (saved) {
-                    await sendSmartResponse(bot, chatId, 
+                    await safeSend(bot, chatId, 
                         `📚 **Document Saved to Strategic AI Database**\n\n` +
                         `📄 **File:** ${fileName}\n` +
                         `📊 **Words:** ${wordCount.toLocaleString()}\n` +
@@ -1619,16 +1667,16 @@ GPT-5 Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tra
                         "Document Added to Strategic Database", 'general'
                     );
                 } else {
-                    await sendSmartResponse(bot, chatId, `❌ **Error saving document to strategic database.**\n\nPlease try again or contact support.`, null, 'general');
+                    await safeSend(bot, chatId, `❌ **Error saving document to strategic database.**\n\nPlease try again or contact support.`, null, 'general');
                 }
                 
             } catch (error) {
                 console.error('Strategic database document processing error:', error);
-                await sendSmartResponse(bot, chatId, `❌ **Error processing strategic document:** ${error.message}`, null, 'general');
+                await safeSend(bot, chatId, `❌ **Error processing strategic document:** ${error.message}`, null, 'general');
             }
         } else {
             // Regular document handling (no training)
-            await sendSmartResponse(bot, chatId, 
+            await safeSend(bot, chatId, 
                 `📄 **Document Received:** ${fileName}\n\n` +
                 `💡 **Tip:** Add caption "train" to save this document to your Strategic AI's database for future reference.\n\n` +
                 `**Example:** Upload with caption "train this strategic document"`,
@@ -1864,7 +1912,7 @@ CRITICAL: Always write complete, comprehensive responses demonstrating instituti
 
         console.log(`📝 Sending ${messages.length} messages to GPT-5 with Strategic Commander enhancement`);
 
-        const completion = await openai.chat.completions.create({
+        const completion = await openAIChatCompat(openai, {
             model: "gpt-5",
             messages: messages,
             temperature: 0.7,
@@ -1886,12 +1934,12 @@ CRITICAL: Always write complete, comprehensive responses demonstrating instituti
         console.log(`✅ Strategic Commander GPT response sent to ${chatId}. Tokens used: ${completion.usage?.total_tokens || "unknown"}`);
         
         // Use smart response system for long messages
-        await sendSmartResponse(bot, chatId, gptResponse, null, 'raydalio');
+        await safeSend(bot, chatId, gptResponse, null, 'raydalio');
         
     } catch (error) {
         console.error("Strategic Commander GPT Error:", error.message);
         let errorMsg = `❌ **IMPERIUM GPT Strategic Error:**\n\n${error.message}`;
-        await sendSmartResponse(bot, chatId, errorMsg, null, 'general');
+        await safeSend(bot, chatId, errorMsg, null, 'general');
     }
 }
 
@@ -2279,7 +2327,7 @@ Assets: S&P ${marketData.markets.stocks?.sp500?.['05. price']}, BTC ${marketData
 You also manage a private lending fund in Cambodia with institutional-grade strategic analysis capabilities.
 Apply Strategic Commander risk management principles to both global markets and local strategic lending opportunities.`;
 
-        const response = await openai.chat.completions.create({
+        const response = await openAIChatCompat(openai, {
             model: "gpt-5",
             messages: [
                 {
