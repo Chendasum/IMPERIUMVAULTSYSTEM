@@ -212,19 +212,19 @@ bot.on("message", async (msg) => {
     }
 
 if (text === "/start") {
-    const welcomeMessage = `⚡ **IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - GPT-4o POWERED**
+    const welcomeMessage = `⚡ **IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - GPT-5 POWERED**
 
-This is your exclusive financial warfare command center with GPT-4o institutional-grade intelligence.
+This is your exclusive financial warfare command center with GPT-5 institutional-grade intelligence.
 
 **🚀 STRATEGIC COMMANDER AI:**
-- Powered by GPT-4o for superior strategic analysis
+- Powered by GPT-5 for superior strategic analysis
 - Institutional-level financial warfare intelligence
 - Advanced strategic coordination and command authority
 - Enhanced reasoning for complex market domination
 
 **🎯 STRATEGIC COMMAND PROTOCOLS:**
 - No casual conversation - Strategic directives only
-- Pure financial warfare intelligence with GPT-4o precision
+- Pure financial warfare intelligence with GPT-5 precision
 - Maximum 16,000+ word strategic reports
 - Cambodia lending fund operations with institutional analysis
 - Live trading account integration with strategic intelligence
@@ -270,14 +270,14 @@ This is your exclusive financial warfare command center with GPT-4o institutiona
 - Commands capital deployment with precision timing
 - Dominates complex financial strategic scenarios
 
-**🌟 POWERED BY GPT-4o:**
+**🌟 POWERED BY GPT-5:**
 Advanced AI reasoning + Strategic warfare principles + Cambodia market intelligence + Live trading integration
 
 **Chat ID:** ${chatId}
-**Status:** ⚡ GPT-4o STRATEGIC COMMAND MODE ACTIVE`;
+**Status:** ⚡ GPT-5 STRATEGIC COMMAND MODE ACTIVE`;
 
     await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
-    console.log("✅ GPT-4o Strategic Command system message sent");
+    console.log("✅ GPT-5 Strategic Command system message sent");
     return;
 }
 
@@ -814,7 +814,7 @@ Execute institutional-grade strategic analysis:
 Structure like Bridgewater's Daily Observations with specific strategic directives.`;
 
             const analysis = await openai.chat.completions.create({
-                model: "gpt-4o",
+                model: "gpt-5",
                 messages: [
                     {
                         role: "system", 
@@ -835,7 +835,7 @@ Structure like Bridgewater's Daily Observations with specific strategic directiv
         return;
     }
 
-    // Market Cycle Analysis
+// Market Cycle Analysis
     if (text === '/cycle' || text === '/market_cycle') {
         try {
             await bot.sendMessage(chatId, "🔄 Executing market cycle warfare analysis like Bridgewater Associates...");
@@ -867,16 +867,15 @@ For each cycle provide strategic commands:
 - Risk factors for strategic management
 
 Conclude with specific asset class strategic deployment commands based on cycle positioning.`;
-
+            
             const cycleAnalysis = await openai.chat.completions.create({
-                model: "gpt-4o", 
+                model: "gpt-5", 
                 messages: [
                     { role: "system", content: "You are Strategic Commander executing institutional-quality market cycle warfare analysis with definitive strategic commands." },
                     { role: "user", content: cyclePrompt }
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-
             await sendSmartResponse(bot, chatId, cycleAnalysis.choices[0].message.content, "Market Cycle Warfare Analysis", 'raydalio');
             
         } catch (error) {
@@ -885,7 +884,7 @@ Conclude with specific asset class strategic deployment commands based on cycle 
         return;
     }
 
-    // Market Opportunities Scanner - Enhanced AI Analysis
+// Market Opportunities Scanner - Enhanced AI Analysis
     if (text === '/opportunities' || text === '/scan') {
         try {
             await bot.sendMessage(chatId, "🎯 Executing strategic trading opportunities warfare scan with institutional-grade analysis...");
@@ -913,24 +912,21 @@ Execute TOP 3 STRATEGIC OPPORTUNITIES with command authority:
    - Time Horizon: [Days/weeks/months strategic deployment]
    - Strategic Rationale: [Why this dominates in current regime]
    - Risk/Reward: [Specific ratio for warfare]
-
 2. **STRATEGIC OPPORTUNITY 2:** [Same command format]
-
 3. **STRATEGIC OPPORTUNITY 3:** [Same command format]
-
 Focus on opportunities suitable for Cambodia timezone (US evening = Cambodia morning).
 Consider correlation with existing positions if any.
+
 Apply institutional risk management principles for strategic domination.`;
 
             const opportunities = await openai.chat.completions.create({
-                model: "gpt-4o",
+                model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander identifying high-conviction trading opportunities warfare with institutional risk management commands." },
                     { role: "user", content: opportunityPrompt }
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-
             await sendSmartResponse(bot, chatId, opportunities.choices[0].message.content, "Market Opportunities Warfare", 'raydalio');
             
         } catch (error) {
@@ -939,7 +935,7 @@ Apply institutional risk management principles for strategic domination.`;
         return;
     }
 
-    // Risk Analysis Command - Enhanced
+// Risk Analysis Command - Enhanced
     if (text === '/risk' || text === '/portfolio_risk') {
         try {
             const marketData = await getComprehensiveMarketData();
@@ -963,7 +959,6 @@ ACCOUNT BATTLEFIELD METRICS:
 ${marketData.trading ? `Balance: ${marketData.trading.account?.balance} ${marketData.trading.account?.currency}, Equity: ${marketData.trading.account?.equity}` : 'No account data'}
 
 Execute comprehensive strategic risk warfare analysis:
-
 1. **OVERALL PORTFOLIO RISK WARFARE LEVEL** (1-10 scale)
 2. **KEY STRATEGIC RISK FACTORS:**
    - Market risk (volatility, correlations)
@@ -971,7 +966,6 @@ Execute comprehensive strategic risk warfare analysis:
    - Liquidity risk (market stress scenarios)
    - Currency risk (dollar movements)
    - Geopolitical risk (current tensions)
-
 3. **TAIL RISKS** (low probability, high impact strategic events)
 4. **CORRELATION RISKS** (when diversification fails in warfare)
 5. **HEDGE STRATEGIC RECOMMENDATIONS** (specific instruments and sizes)
@@ -979,16 +973,15 @@ Execute comprehensive strategic risk warfare analysis:
 7. **EARLY WARNING STRATEGIC INDICATORS** (what to monitor)
 
 Execute specific and strategic commands with exact recommendations.`;
-
+            
             const riskAnalysis = await openai.chat.completions.create({
-                model: "gpt-4o",
+                model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander providing institutional-quality risk warfare analysis with specific strategic commands and recommendations." },
                     { role: "user", content: riskPrompt }
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-
             await sendSmartResponse(bot, chatId, riskAnalysis.choices[0].message.content, "Risk Warfare Analysis", 'raydalio');
             
         } catch (error) {
@@ -997,7 +990,7 @@ Execute specific and strategic commands with exact recommendations.`;
         return;
     }
 
-    // Position Sizing Calculator - New Feature
+// Position Sizing Calculator - New Feature
     if (text.startsWith('/size ')) {
         try {
             const params = text.split(' ');
@@ -1026,7 +1019,6 @@ TRADE WARFARE REQUEST:
 MARKET BATTLEFIELD CONDITIONS:
 - VIX (Volatility): ${marketData.fear}
 - Market Regime: Current economic warfare environment
-
 Execute STRATEGIC RISK MANAGEMENT with institutional authority:
 1. Never risk more than 1-2% of account per strategic trade
 2. Adjust for market volatility (higher VIX = smaller strategic size)
@@ -1042,16 +1034,15 @@ Execute strategic commands:
 - **Volatility Adjustment Strategic Factor**
 
 Execute exact numbers for strategic trade execution.`;
-
+            
             const sizing = await openai.chat.completions.create({
-                model: "gpt-4o",
+                model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander providing precise position sizing warfare with exact execution parameters." },
                     { role: "user", content: sizingPrompt }
                 ],
                 max_tokens: 4096
             });
-
             await sendSmartResponse(bot, chatId, sizing.choices[0].message.content, `Position Sizing Warfare for ${symbol} ${direction.toUpperCase()}`, 'raydalio');
             
         } catch (error) {
@@ -1059,8 +1050,8 @@ Execute exact numbers for strategic trade execution.`;
         }
         return;
     }
-
-    // All Weather Portfolio Command - Ray Dalio's signature strategy
+    
+// All Weather Portfolio Command - Ray Dalio's signature strategy
     if (text === '/all_weather' || text === '/portfolio') {
         try {
             const marketData = await getComprehensiveMarketData();
@@ -1076,41 +1067,35 @@ CURRENT BATTLEFIELD ENVIRONMENT ANALYSIS:
 - Risk Assets: S&P 500 ${marketData.markets.stocks?.sp500?.['05. price']}, Bitcoin ${marketData.markets.crypto?.bitcoin?.usd}
 
 Execute "ALL WEATHER" STRATEGIC ALLOCATION:
-
 1. **TRADITIONAL ALL WEATHER** (Original Strategic Framework):
    - 30% Stocks (which regions/sectors for warfare)
    - 40% Long-term Bonds (duration/type strategic allocation)  
    - 15% Intermediate Bonds
    - 7.5% Commodities (specific strategic ones)
    - 7.5% TIPS/Inflation protection
-
 2. **MODERN ALL WEATHER** (adapted for 2025 strategic warfare):
    - Include crypto strategic allocation
    - International diversification warfare
    - Factor tilts based on current strategic regime
-
 3. **CURRENT REGIME STRATEGIC ADJUSTMENTS**:
    - What to overweight/underweight now
    - Specific ETFs/instruments for strategic execution
    - Hedge positions for current strategic risks
-
 4. **REBALANCING STRATEGIC TRIGGERS**:
    - When to adjust strategic allocations
    - Key indicators to monitor for strategic advantage
-
 5. **EXPECTED STRATEGIC RETURNS** by asset class in current environment
 
 Execute strategic commands for someone in Cambodia with global market access.`;
-
+            
             const allWeather = await openai.chat.completions.create({
-                model: "gpt-4o",
+                model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander providing specific All Weather portfolio strategic guidance adapted to current market warfare conditions." },
                     { role: "user", content: portfolioPrompt }
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-
             await sendSmartResponse(bot, chatId, allWeather.choices[0].message.content, "All Weather Strategic Portfolio", 'raydalio');
             
         } catch (error) {
@@ -1118,8 +1103,8 @@ Execute strategic commands for someone in Cambodia with global market access.`;
         }
         return;
     }
-
-    // Correlations Analysis - Key for diversification
+    
+// Correlations Analysis - Key for diversification
     if (text === '/correlations' || text === '/corr') {
         try {
             const marketData = await getComprehensiveMarketData();
@@ -1139,38 +1124,33 @@ STRATEGIC CORRELATION WARFARE ANALYSIS:
    - Which asset relationships are changing in warfare?
    - Stock-bond correlation strategic shifts
    - Risk-on/risk-off strategic dynamics
-
 2. **CURRENT CORRELATION REGIME:**
    - How correlated are major assets right now?
    - What's driving correlation changes in strategic warfare?
    - Flight-to-quality still working for strategic positioning?
-
 3. **DIVERSIFICATION STRATEGIC EFFECTIVENESS:**
    - Where can we find true strategic diversification?
    - Which assets are still uncorrelated for strategic advantage?
    - Hidden correlation risks in strategic portfolios
-
 4. **HEDGE STRATEGIC RELATIONSHIPS:**
    - What hedging relationships are working/failing strategically?
    - Currency hedges strategic effectiveness
    - Volatility hedges strategic performance
-
 5. **PORTFOLIO CONSTRUCTION STRATEGIC IMPLICATIONS:**
    - How should correlation changes affect strategic allocation?
    - Position sizing strategic adjustments needed
    - New diversification strategic opportunities
 
 Focus on strategic commands for portfolio construction in current warfare environment.`;
-
+            
             const correlations = await openai.chat.completions.create({
-                model: "gpt-4o",
+                model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander analyzing asset correlations warfare for optimal portfolio construction." },
                     { role: "user", content: correlationPrompt }
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-
             await sendSmartResponse(bot, chatId, correlations.choices[0].message.content, "Correlation Warfare Analysis", 'raydalio');
             
         } catch (error) {
@@ -1178,8 +1158,8 @@ Focus on strategic commands for portfolio construction in current warfare enviro
         }
         return;
     }
-
-    // Enhanced macro analysis
+    
+// Enhanced macro analysis
     if (text === '/macro' || text === '/outlook') {
         try {
             const marketData = await getComprehensiveMarketData();
@@ -1198,48 +1178,41 @@ RECENT NEWS BATTLEFIELD CONTEXT:
 ${marketData.markets.news?.financial?.slice(0, 2).map(article => `- ${article.title}`).join('\n')}
 
 Execute BRIDGEWATER-STYLE MACRO WARFARE ANALYSIS:
-
 1. **ECONOMIC REGIME STRATEGIC ASSESSMENT:**
    - Growth trajectory warfare (accelerating/decelerating)
    - Inflation dynamics warfare (transitory/persistent)
    - Policy response warfare (Fed's next strategic moves)
-
 2. **GLOBAL STRATEGIC CONTEXT:**
    - US vs other major economies warfare
    - Trade and capital flows strategic analysis
    - Geopolitical influences on strategic warfare
-
 3. **MARKET STRATEGIC IMPLICATIONS:**
    - How macro environment affects asset class warfare
    - Sector rotation strategic opportunities
    - Currency strategic implications
-
 4. **SCENARIO STRATEGIC ANALYSIS:**
    - Base case warfare (70% probability)
    - Upside scenario warfare (15% probability)  
    - Downside scenario warfare (15% probability)
-
 5. **INVESTMENT STRATEGIC WARFARE:**
    - Asset allocation strategic recommendations
    - Specific positioning strategic advice
    - Risk management strategic priorities
-
 6. **KEY CATALYSTS FOR STRATEGIC MONITORING:**
    - Economic data releases
    - Policy decisions for strategic advantage
    - Market technical strategic levels
 
 Execute like Bridgewater's Daily Observations for strategic warfare.`;
-
+            
             const macroAnalysis = await openai.chat.completions.create({
-                model: "gpt-4o",
+                model: "gpt-5",
                 messages: [
                     { role: "system", content: "You are Strategic Commander providing institutional-quality macro economic warfare analysis like Bridgewater's Daily Observations." },
                     { role: "user", content: macroPrompt }
                 ],
                 max_tokens: 16384 // MAXIMUM LENGTH
             });
-
             await sendSmartResponse(bot, chatId, macroAnalysis.choices[0].message.content, "Macro Warfare Outlook", 'raydalio');
             
         } catch (error) {
@@ -1247,7 +1220,7 @@ Execute like Bridgewater's Daily Observations for strategic warfare.`;
         }
         return;
     }
-
+    
     // Enhanced help command with new features
 if (text === "/help" || text === "/commands") {
     const helpMessage = `🤖 **IMPERIUM GPT-4o - STRATEGIC COMMAND SYSTEM**
@@ -1886,13 +1859,13 @@ EXECUTION MINDSET: You are Sum Chenda's institutional strategist with deep exper
 
 CRITICAL: Always write complete, comprehensive responses demonstrating institutional expertise. Use full available tokens for detailed strategic analysis.`;
 
-        // Add current user message
+// Add current user message
         messages.push({ role: "user", content: String(userMessage) });
 
-        console.log(`📝 Sending ${messages.length} messages to GPT-4o with Strategic Commander enhancement`);
+        console.log(`📝 Sending ${messages.length} messages to GPT-5 with Strategic Commander enhancement`);
 
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-5",
             messages: messages,
             temperature: 0.7,
             max_tokens: 16384, // MAXIMUM TOKENS FOR LONG STRATEGIC RESPONSES
@@ -1990,7 +1963,7 @@ app.get("/dashboard", async (req, res) => {
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>⚡ IMPERIUM VAULT STRATEGIC COMMAND SYSTEM</h1>
+                    <h1>⚡ IMPERIUM GPT-5 - Strategic Command System </h1>
                     <div class="subtitle">Strategic Commander AI • Institutional-Level Analysis • Cambodia Lending Fund</div>
                     <span class="status online">STRATEGIC COMMAND + CAMBODIA FUND ACTIVE</span>
                     <div class="commander-quote">"Execute with absolute strategic authority" - Strategic Commander</div>
@@ -2143,12 +2116,12 @@ app.get("/dashboard", async (req, res) => {
 // Root endpoint - Service status page
 app.get("/", (req, res) => {
     res.json({
-        service: "IMPERIUM GPT-4o Strategic Command System",
+        service: "IMPERIUM GPT-5 Strategic Command System",
         version: "Strategic Commander AI + Cambodia Lending Fund Enhanced",
         status: "operational",
         enhancement: "Institutional-Level Strategic Analysis + Cambodia Private Lending",
         capabilities: {
-            ai: "GPT-4o with Strategic Commander principles integration",
+            ai: "GPT-5 with Strategic Commander principles integration",
             analysis: "Economic regime warfare identification, market cycle strategic analysis",
             portfolio: "All Weather strategic allocation, risk parity, correlation warfare analysis", 
             trading: "Live MetaTrader strategic integration with position sizing warfare",
@@ -2187,7 +2160,7 @@ app.get("/", (req, res) => {
 app.get("/health", (req, res) => {
     res.json({
         status: "healthy",
-        service: "IMPERIUM GPT-4o Strategic Command System",
+        service: "IMPERIUM GPT-5 Strategic Command System",
         enhancement: "Strategic Commander AI + Cambodia Lending Fund",
         uptime: process.uptime(),
         memory: process.memoryUsage(),
@@ -2206,7 +2179,7 @@ app.get("/stats", async (req, res) => {
         const tradingData = await getTradingSummary().catch(() => null);
         
         res.json({
-            service: "IMPERIUM GPT-4o Strategic Commander AI + Cambodia Lending Fund",
+            service: "IMPERIUM GPT-5 Strategic Commander AI + Cambodia Lending Fund",
             ...stats,
             uptime: `${Math.floor(process.uptime())} seconds`,
             apis: "FRED + Alpha Vantage + NewsAPI + CoinGecko Pro + MetaAPI",
@@ -2247,7 +2220,7 @@ app.get("/stats", async (req, res) => {
     }
 });
 
-// Enhanced GPT-4o API endpoint with Strategic Commander analysis
+// Enhanced GPT-5 API endpoint with Strategic Commander analysis
 app.get("/analyze", async (req, res) => {
     const query = req.query.q;
     if (!query) {
@@ -2307,7 +2280,7 @@ You also manage a private lending fund in Cambodia with institutional-grade stra
 Apply Strategic Commander risk management principles to both global markets and local strategic lending opportunities.`;
 
         const response = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-5",
             messages: [
                 {
                     role: "system",
@@ -2330,7 +2303,7 @@ Apply Strategic Commander risk management principles to both global markets and 
             query: query,
             response: analysis,
             timestamp: new Date().toISOString(),
-            model: "gpt-4o",
+            model: "gpt-5",
             tokens_used: response.usage?.total_tokens || "unknown",
             enhancement: "Strategic Commander AI + Cambodia Lending Fund + Live Market Data",
             regime_data_included: !!marketData,
@@ -2354,7 +2327,7 @@ Apply Strategic Commander risk management principles to both global markets and 
 });
 
 const server = app.listen(PORT, "0.0.0.0", () => {
-    console.log("✅ IMPERIUM GPT-4o Strategic Command System running on port " + PORT);
+    console.log("✅ IMPERIUM GPT-5 Strategic Command System running on port " + PORT);
     console.log("⚡ STRATEGIC COMMANDER AI MODE: Institutional-Level Strategic Analysis");
     console.log("🏦 CAMBODIA LENDING FUND: Private lending strategic analysis and portfolio management");
     console.log("🏛️ Economic Regime Strategic Analysis | 🔄 Market Cycle Strategic Positioning");
