@@ -189,247 +189,6 @@ async function getComprehensiveMarketData() {
     }
 }
 
-// ✅ Handle all message types like ChatGPT
-bot.on("message", async (msg) => {
-    const chatId = msg.chat.id;
-    const text = msg.text;
-    console.log(
-        `📨 Message received from ${chatId}:`,
-        msg.chat?.type || "private",
-    );
-    // ✅ SECURITY: Check if user is authorized
-    if (!isAuthorizedUser(chatId)) {
-        console.log(
-            `🚫 Unauthorized access attempt from ${chatId} (Name: ${msg.chat?.first_name || "Unknown"} ${msg.chat?.last_name || ""}, Username: ${msg.chat?.username || "None"})`,
-        );
-        await sendSmartResponse(bot, chatId, 
-            `🚫 Access denied. This is a private GPT system.\n\nYour Chat ID: ${chatId}\nAuthorized ID: 484389665\n\nIf this is your personal account, contact system admin.`,
-            null, 'general'
-        );
-        return;
-    }
-
-    // ✅ HANDLE MEDIA MESSAGES FIRST (before any text processing)
-    
-    // 🎤 VOICE MESSAGE HANDLING
-    if (msg.voice) {
-        console.log("🎤 Voice message received");
-        try {
-            const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
-            if (transcribedText) {
-                await sendSmartResponse(bot, chatId, `🎤 Voice transcribed: "${transcribedText}"`, null, 'general');
-                await handleGPTConversation(chatId, transcribedText);
-            } else {
-                await sendSmartResponse(bot, chatId, "❌ Voice transcription failed. Please try again.", null, 'general');
-            }
-        } catch (error) {
-            console.error('Voice processing error:', error.message);
-            await sendSmartResponse(bot, chatId, `❌ Voice processing error: ${error.message}`, null, 'general');
-        }
-        return; // ✅ EARLY RETURN - prevents text processing
-    }
-
-    // 🖼️ IMAGE MESSAGE HANDLING
-    if (msg.photo) {
-        console.log("🖼️ Image received");
-        try {
-            const photoAnalysis = await processImageMessage(bot, msg.photo[msg.photo.length - 1].file_id, chatId, msg.caption);
-            if (photoAnalysis) {
-                await sendSmartResponse(bot, chatId, `🖼️ Image Strategic Analysis:\n\n${photoAnalysis}`, "Image Strategic Analysis", 'general');
-            } else {
-                await sendSmartResponse(bot, chatId, "❌ Image analysis failed. Please try again.", null, 'general');
-            }
-        } catch (error) {
-            console.error('Image processing error:', error.message);
-            await sendSmartResponse(bot, chatId, `❌ Image processing error: ${error.message}`, null, 'general');
-        }
-        return; // ✅ EARLY RETURN - prevents text processing
-    }
-
-    // 📄 DOCUMENT MESSAGE HANDLING
-    if (msg.document) {
-        console.log("📄 Document received:", msg.document.file_name);
-        const fileName = msg.document.file_name || "document";
-        
-        // Check for training keywords
-        const isTrainingDoc = msg.caption?.toLowerCase().includes("train") ||
-                             msg.caption?.toLowerCase().includes("database") ||
-                             msg.caption?.toLowerCase().includes("remember");
-
-        try {
-            if (isTrainingDoc) {
-                await bot.sendMessage(chatId, "📚 Processing document for strategic database training...");
-                
-                const fileId = msg.document.file_id;
-                const fileLink = await bot.getFileLink(fileId);
-                const response = await fetch(fileLink);
-                const buffer = await response.buffer();
-                
-                // Extract content based on file type
-                let content = '';
-                try {
-                    if (fileName.endsWith('.txt') || fileName.endsWith('.md')) {
-                        content = buffer.toString('utf8');
-                    } else if (fileName.endsWith('.pdf')) {
-                        try {
-                            const pdf = require('pdf-parse');
-                            const pdfData = await pdf(buffer);
-                            content = pdfData.text;
-                        } catch (pdfError) {
-                            console.log('PDF parsing not available, treating as text');
-                            content = buffer.toString('utf8');
-                        }
-                    } else {
-                        content = buffer.toString('utf8');
-                    }
-                } catch (contentError) {
-                    content = `Document content could not be extracted from ${fileName}`;
-                }
-                
-                // Save directly to PostgreSQL database
-                const { saveTrainingDocumentDB } = require('./utils/database');
-                const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
-                const summary = content.length > 500 ? content.substring(0, 500) + '...' : content;
-                
-                const saved = await saveTrainingDocumentDB(
-                    chatId, 
-                    fileName, 
-                    content, 
-                    'user_uploaded', 
-                    wordCount, 
-                    summary
-                );
-                
-                if (saved) {
-                    await sendSmartResponse(bot, chatId, 
-                        `📚 **Document Saved to Strategic AI Database**\n\n` +
-                        `📄 **File:** ${fileName}\n` +
-                        `📊 **Words:** ${wordCount.toLocaleString()}\n` +
-                        `💾 **Storage:** PostgreSQL Strategic Database\n` +
-                        `🎯 **Type:** ${fileName.split('.').pop()?.toUpperCase() || 'Unknown'}\n\n` +
-                        `✅ **Your Strategic AI will now reference this document in future strategic conversations!**\n\n` +
-                        `💡 **Strategic Usage:** Your AI can now answer strategic questions about this document's content.`,
-                        "Document Added to Strategic Database", 'general'
-                    );
-                } else {
-                    await sendSmartResponse(bot, chatId, `❌ **Error saving document to strategic database.**\n\nPlease try again or contact support.`, null, 'general');
-                }
-                
-            } else {
-                // Regular document handling (no training)
-                await sendSmartResponse(bot, chatId, 
-                    `📄 **Document Received:** ${fileName}\n\n` +
-                    `💡 **Tip:** Add caption "train" to save this document to your Strategic AI's database for future reference.\n\n` +
-                    `**Example:** Upload with caption "train this strategic document"`,
-                    "Document Received", 'general'
-                );
-            }
-        } catch (error) {
-            console.error('Strategic database document processing error:', error);
-            await sendSmartResponse(bot, chatId, `❌ **Error processing strategic document:** ${error.message}`, null, 'general');
-        }
-        return; // ✅ EARLY RETURN - prevents text processing
-    }
-
-    // 🎥 VIDEO MESSAGE HANDLING
-    if (msg.video) {
-        console.log("🎥 Video received");
-        try {
-            const videoAnalysis = await processVideoMessage(bot, msg.video.file_id, chatId, msg.caption);
-            if (videoAnalysis) {
-                await sendSmartResponse(bot, chatId, `🎥 Video Strategic Analysis:\n\n${videoAnalysis}`, "Video Strategic Analysis", 'general');
-            } else {
-                await sendSmartResponse(bot, chatId, "❌ Video analysis failed. Please try again.", null, 'general');
-            }
-        } catch (error) {
-            console.error('Video processing error:', error.message);
-            await sendSmartResponse(bot, chatId, `❌ Video processing error: ${error.message}`, null, 'general');
-        }
-        return; // ✅ EARLY RETURN - prevents text processing
-    }
-
-    // ✅ CHECK IF TEXT EXISTS BEFORE ANY text.startsWith() CALLS
-    if (!text) {
-        // If no text and no media was processed above, send help message
-        await sendSmartResponse(bot, chatId, 
-            "🎯 Strategic Commander received unrecognized message type. Send text commands, voice messages, images, or documents with 'train' caption for AI training.",
-            null, 'general'
-        );
-        return;
-    }
-
-    // ✅ NOW HANDLE TEXT COMMANDS (after media check)
-
-    if (text === "/start") {
-        const welcomeMessage = `⚡ **IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - GPT-4o POWERED**
-
-This is your exclusive financial warfare command center with GPT-4o institutional-grade intelligence.
-
-**🚀 STRATEGIC COMMANDER AI:**
-- Powered by GPT-4o for superior strategic analysis
-- Institutional-level financial warfare intelligence
-- Advanced strategic coordination and command authority
-- Enhanced reasoning for complex market domination
-
-**🎯 STRATEGIC COMMAND PROTOCOLS:**
-- No casual conversation - Strategic directives only
-- Pure financial warfare intelligence with GPT-4o precision
-- Maximum 16,000+ word strategic reports
-- Cambodia lending fund operations with institutional analysis
-- Live trading account integration with strategic intelligence
-
-**🏦 CAMBODIA LENDING FUND OPERATIONS:**
-/deal_analyze [amount] [type] [location] [rate] [term] - Strategic deal analysis
-/portfolio - Fund performance command status
-/cambodia_market - Local market intelligence briefing
-/risk_assessment - Comprehensive risk warfare analysis
-/lp_report [monthly/quarterly] - Investor command reports
-/fund_help - Cambodia operations command help
-
-**🏛️ MARKET DOMINATION COMMANDS:**
-/regime - Economic regime warfare analysis
-/cycle - Market cycle domination positioning  
-/opportunities - Strategic trading command scanner
-/risk - Portfolio warfare risk assessment
-/macro - Global domination macro intelligence
-/correlations - Asset correlation warfare analysis
-/all_weather - Strategic portfolio allocation commands
-
-**💹 LIVE TRADING OPERATIONS:**
-/trading - Live account strategic status
-/positions - Current position warfare analysis
-/size [SYMBOL] [BUY/SELL] - Position sizing command calculator
-/account - Account balance and performance warfare metrics
-
-**📊 MARKET INTELLIGENCE OPERATIONS:**
-/briefing - Complete strategic market briefing
-/economics - Economic intelligence with Fed warfare analysis
-/prices - Enhanced market data with correlation warfare
-/analysis - Strategic market analysis with institutional predictions
-
-**🎯 STRATEGIC COMMAND EXAMPLES:**
-- /deal_analyze 500000 commercial "Chamkar Mon" 18 12
-- "Deploy capital to Cambodia commercial lending sector"
-- "Execute comprehensive macro economic warfare analysis"
-- "Command strategic portfolio risk assessment"
-
-**⚡ STRATEGIC COMMANDER CAPABILITIES:**
-- Issues strategic directives with absolute authority
-- Executes institutional-grade market warfare analysis
-- Commands capital deployment with precision timing
-- Dominates complex financial strategic scenarios
-
-**🌟 POWERED BY GPT-4o:**
-Advanced AI reasoning + Strategic warfare principles + Cambodia market intelligence + Live trading integration
-
-**Chat ID:** ${chatId}
-**Status:** ⚡ GPT-4o STRATEGIC COMMAND MODE ACTIVE`;
-
-        await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
-        console.log("✅ GPT-4o Strategic Command system message sent");
-        return;
-    }
-
     // 🏦 ========== CAMBODIA LENDING FUND COMMANDS ==========
 
     // 🎯 DEAL ANALYSIS COMMAND
@@ -1703,8 +1462,164 @@ GPT-4o Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tr
         return;
     }
 
-// ✅ FIXED COMPLETE MESSAGE HANDLER AND SERVER SETUP
-// Replace lines 1557-2380 with this complete, working code:
+// ✅ Handle all message types like ChatGPT
+bot.on("message", async (msg) => {
+    const chatId = msg.chat.id;
+    const text = msg.text;
+    console.log(
+        `📨 Message received from ${chatId}:`,
+        msg.chat?.type || "private",
+    );
+    // ✅ SECURITY: Check if user is authorized
+    if (!isAuthorizedUser(chatId)) {
+        console.log(
+            `🚫 Unauthorized access attempt from ${chatId} (Name: ${msg.chat?.first_name || "Unknown"} ${msg.chat?.last_name || ""}, Username: ${msg.chat?.username || "None"})`,
+        );
+        await sendSmartResponse(bot, chatId, 
+            `🚫 Access denied. This is a private GPT system.\n\nYour Chat ID: ${chatId}\nAuthorized ID: 484389665\n\nIf this is your personal account, contact system admin.`,
+            null, 'general'
+        );
+        return;
+    }
+
+    // ✅ HANDLE MEDIA MESSAGES FIRST (before any text processing)
+    
+    // 🎤 VOICE MESSAGE HANDLING
+    if (msg.voice) {
+        console.log("🎤 Voice message received");
+        try {
+            const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
+            if (transcribedText) {
+                await sendSmartResponse(bot, chatId, `🎤 Voice transcribed: "${transcribedText}"`, null, 'general');
+                await handleGPTConversation(chatId, transcribedText);
+            } else {
+                await sendSmartResponse(bot, chatId, "❌ Voice transcription failed. Please try again.", null, 'general');
+            }
+        } catch (error) {
+            console.error('Voice processing error:', error.message);
+            await sendSmartResponse(bot, chatId, `❌ Voice processing error: ${error.message}`, null, 'general');
+        }
+        return; // ✅ EARLY RETURN - prevents text processing
+    }
+
+    // 🖼️ IMAGE MESSAGE HANDLING
+    if (msg.photo) {
+        console.log("🖼️ Image received");
+        try {
+            const photoAnalysis = await processImageMessage(bot, msg.photo[msg.photo.length - 1].file_id, chatId, msg.caption);
+            if (photoAnalysis) {
+                await sendSmartResponse(bot, chatId, `🖼️ Image Strategic Analysis:\n\n${photoAnalysis}`, "Image Strategic Analysis", 'general');
+            } else {
+                await sendSmartResponse(bot, chatId, "❌ Image analysis failed. Please try again.", null, 'general');
+            }
+        } catch (error) {
+            console.error('Image processing error:', error.message);
+            await sendSmartResponse(bot, chatId, `❌ Image processing error: ${error.message}`, null, 'general');
+        }
+        return; // ✅ EARLY RETURN - prevents text processing
+    }
+
+    // 📄 DOCUMENT MESSAGE HANDLING
+    if (msg.document) {
+        console.log("📄 Document received:", msg.document.file_name);
+        const fileName = msg.document.file_name || "document";
+        
+        // Check for training keywords
+        const isTrainingDoc = msg.caption?.toLowerCase().includes("train") ||
+                             msg.caption?.toLowerCase().includes("database") ||
+                             msg.caption?.toLowerCase().includes("remember");
+
+        try {
+            if (isTrainingDoc) {
+                await bot.sendMessage(chatId, "📚 Processing document for strategic database training...");
+                
+                const fileId = msg.document.file_id;
+                const fileLink = await bot.getFileLink(fileId);
+                const response = await fetch(fileLink);
+                const buffer = await response.buffer();
+                
+                // Extract content based on file type
+                let content = '';
+                try {
+                    if (fileName.endsWith('.txt') || fileName.endsWith('.md')) {
+                        content = buffer.toString('utf8');
+                    } else if (fileName.endsWith('.pdf')) {
+                        try {
+                            const pdf = require('pdf-parse');
+                            const pdfData = await pdf(buffer);
+                            content = pdfData.text;
+                        } catch (pdfError) {
+                            console.log('PDF parsing not available, treating as text');
+                            content = buffer.toString('utf8');
+                        }
+                    } else {
+                        content = buffer.toString('utf8');
+                    }
+                } catch (contentError) {
+                    content = `Document content could not be extracted from ${fileName}`;
+                }
+                
+                // Save directly to PostgreSQL database
+                const { saveTrainingDocumentDB } = require('./utils/database');
+                const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+                const summary = content.length > 500 ? content.substring(0, 500) + '...' : content;
+                
+                const saved = await saveTrainingDocumentDB(
+                    chatId, 
+                    fileName, 
+                    content, 
+                    'user_uploaded', 
+                    wordCount, 
+                    summary
+                );
+                
+                if (saved) {
+                    await sendSmartResponse(bot, chatId, 
+                        `📚 **Document Saved to Strategic AI Database**\n\n` +
+                        `📄 **File:** ${fileName}\n` +
+                        `📊 **Words:** ${wordCount.toLocaleString()}\n` +
+                        `💾 **Storage:** PostgreSQL Strategic Database\n` +
+                        `🎯 **Type:** ${fileName.split('.').pop()?.toUpperCase() || 'Unknown'}\n\n` +
+                        `✅ **Your Strategic AI will now reference this document in future strategic conversations!**\n\n` +
+                        `💡 **Strategic Usage:** Your AI can now answer strategic questions about this document's content.`,
+                        "Document Added to Strategic Database", 'general'
+                    );
+                } else {
+                    await sendSmartResponse(bot, chatId, `❌ **Error saving document to strategic database.**\n\nPlease try again or contact support.`, null, 'general');
+                }
+                
+            } else {
+                // Regular document handling (no training)
+                await sendSmartResponse(bot, chatId, 
+                    `📄 **Document Received:** ${fileName}\n\n` +
+                    `💡 **Tip:** Add caption "train" to save this document to your Strategic AI's database for future reference.\n\n` +
+                    `**Example:** Upload with caption "train this strategic document"`,
+                    "Document Received", 'general'
+                );
+            }
+        } catch (error) {
+            console.error('Strategic database document processing error:', error);
+            await sendSmartResponse(bot, chatId, `❌ **Error processing strategic document:** ${error.message}`, null, 'general');
+        }
+        return; // ✅ EARLY RETURN - prevents text processing
+    }
+
+    // 🎥 VIDEO MESSAGE HANDLING
+    if (msg.video) {
+        console.log("🎥 Video received");
+        try {
+            const videoAnalysis = await processVideoMessage(bot, msg.video.file_id, chatId, msg.caption);
+            if (videoAnalysis) {
+                await sendSmartResponse(bot, chatId, `🎥 Video Strategic Analysis:\n\n${videoAnalysis}`, "Video Strategic Analysis", 'general');
+            } else {
+                await sendSmartResponse(bot, chatId, "❌ Video analysis failed. Please try again.", null, 'general');
+            }
+        } catch (error) {
+            console.error('Video processing error:', error.message);
+            await sendSmartResponse(bot, chatId, `❌ Video processing error: ${error.message}`, null, 'general');
+        }
+        return; // ✅ EARLY RETURN - prevents text processing
+    }
 
     // ✅ CHECK IF TEXT EXISTS BEFORE ANY text.startsWith() CALLS
     if (!text) {
