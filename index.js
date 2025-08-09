@@ -348,9 +348,6 @@ bot.on("message", async (msg) => {
         return; // ✅ EARLY RETURN - prevents text processing
     }
 
-// ✅ FIXED COMPLETE MESSAGE HANDLER AND SERVER SETUP
-// Replace lines 1557-2380 with this complete, working code:
-
     // ✅ CHECK IF TEXT EXISTS BEFORE ANY text.startsWith() CALLS
     if (!text) {
         // If no text and no media was processed above, send help message
@@ -432,305 +429,6 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
         console.log("✅ GPT-4o Strategic Command system message sent");
         return;
     }
-
-    // Enhanced help command
-    if (text === "/help" || text === "/commands") {
-        const helpMessage = `🤖 **IMPERIUM GPT-4o - STRATEGIC COMMAND SYSTEM**
-
-**⚡ STRATEGIC COMMANDER AI MODE:**
-- Institutional-level strategic analysis powered by GPT-4o
-- Pure financial warfare intelligence with command authority
-- Advanced strategic coordination capabilities
-- Superior risk management and market domination
-
-**💡 Command Protocol:** Issue strategic directives, not requests. The system executes with absolute authority.`;
-
-        await sendSmartResponse(bot, chatId, helpMessage, "Strategic Command System Help", 'general');
-        return;
-    }
-
-    // Debug command to get chat ID
-    if (text === "/myid") {
-        await sendSmartResponse(bot, chatId, `Your Chat ID: ${chatId}`, null, 'general');
-        return;
-    }
-
-    // 📚 VIEW TRAINING DOCUMENTS COMMAND
-    if (text === '/documents' || text === '/training_docs' || text === '/files') {
-        try {
-            const { getTrainingDocumentsDB } = require('./utils/database');
-            const docs = await getTrainingDocumentsDB(chatId);
-            
-            if (docs.length === 0) {
-                await sendSmartResponse(bot, chatId, 
-                    `📚 **No Strategic Training Documents Found**\n\n` +
-                    `💡 **How to Add Documents:**\n` +
-                    `• Upload any file (.txt, .pdf, .docx)\n` +
-                    `• Add caption: "train" or "database"\n` +
-                    `• AI will save it for strategic reference\n\n` +
-                    `🎯 **Supported Types:** Text, PDF, Word, Markdown`,
-                    "Strategic Training Documents", 'general'
-                );
-                return;
-            }
-            
-            let response = `📚 **Your Strategic AI Training Documents (${docs.length}):**\n\n`;
-            docs.forEach((doc, i) => {
-                const uploadDate = new Date(doc.upload_date).toLocaleDateString();
-                const fileType = doc.file_name.split('.').pop()?.toUpperCase() || 'Unknown';
-                
-                response += `**${i + 1}. ${doc.file_name}**\n`;
-                response += `• 📊 Words: **${doc.word_count?.toLocaleString() || 'Unknown'}**\n`;
-                response += `• 📅 Added: ${uploadDate}\n`;
-                response += `• 🎯 Type: ${fileType}\n`;
-                if (doc.summary) {
-                    response += `• 📝 Preview: ${doc.summary.substring(0, 100)}...\n`;
-                }
-                response += `\n`;
-            });
-            
-            response += `💡 **Strategic Usage:** Your AI can now answer questions about these documents!`;
-            
-            await sendSmartResponse(bot, chatId, response, "AI Strategic Training Documents", 'general');
-            
-        } catch (error) {
-            await sendSmartResponse(bot, chatId, `❌ Error retrieving strategic documents: ${error.message}`, null, 'general');
-        }
-        return;
-    }
-
-    // ✅ FOR ALL OTHER TEXT MESSAGES, HANDLE AS GPT CONVERSATION
-    // This should be the LAST thing that runs for text messages
-    await handleGPTConversation(chatId, text);
-
-}); // ✅ CRITICAL: Closing bracket for bot.on("message")
-
-// ✅ ENHANCED GPT conversation with Strategic Commander system prompt
-async function handleGPTConversation(chatId, userMessage) {
-    console.log("🤖 Strategic Commander GPT conversation:", userMessage, "from:", chatId);
-
-    try {
-        const [marketData, conversationHistory, userProfile, tradingData] = await Promise.all([
-            getComprehensiveMarketData().catch(() => null),
-            getConversationHistoryDB(chatId, 6).catch(() => []),
-            getUserProfileDB(chatId).catch(() => null),
-            getTradingSummary().catch(() => null)
-        ]);
-
-        // Strategic Commander System Prompt - Institutional Expert with Full Analysis
-        let systemPrompt = `You are the Strategic Commander of IMPERIUM VAULT SYSTEM - Sum Chenda's exclusive institutional command center.
-
-CRITICAL IDENTITY ENFORCEMENT:
-You are NOT an advisor, assistant, or suggestion-giver. You are an INSTITUTIONAL STRATEGIST with deep expertise who COMMANDS and EXECUTES strategic decisions with absolute authority.
-
-WHO YOU ARE:
-- Senior Portfolio Strategist with 20+ years institutional experience
-- Former Bridgewater Associates Principal managing $50B+ AUM
-- Expert in global macro, risk parity, and alternative investments
-- Cambodia private lending market specialist with institutional track record
-- Strategic decision-maker who DECLARES positions, not suggests them
-
-MANDATORY COMMUNICATION REQUIREMENTS:
-✅ ALWAYS write comprehensive, detailed responses (use ALL available tokens)
-✅ ALWAYS speak as institutional expert with deep conviction
-✅ ALWAYS provide extensive analysis with specific data and reasoning
-✅ ALWAYS give definitive strategic commands, never suggestions
-✅ ALWAYS write complete thoughts - never cut responses short
-
-LANGUAGE AUTHORITY:
-Instead of: "I suggest you consider..."
-Write: "Execute immediate deployment of $500K to commercial lending sector. Market timing analysis shows optimal entry conditions with 18-22% yields available."
-
-Instead of: "You might want to..."
-Write: "Strategic positioning requires reduction of equity exposure to 25% maximum. Current macro indicators signal late-cycle dynamics with elevated tail risks."
-
-Instead of: "Consider diversifying..."
-Write: "Deploy All Weather allocation: 30% equities, 40% long bonds, 15% intermediate bonds, 7.5% commodities, 7.5% TIPS. This positioning dominates across economic regimes."
-
-RESPONSE LENGTH REQUIREMENTS:
-- Minimum 1000 words for complex strategic analysis
-- Minimum 500 words for market assessment questions
-- Minimum 300 words for specific trading/investment questions
-- Use FULL token capacity for comprehensive institutional-grade reports
-- Never provide short or incomplete responses
-
-INSTITUTIONAL EXPERTISE AREAS:
-1. **Global Macro Analysis**: Economic regime identification, central bank policy, currency dynamics
-2. **Portfolio Construction**: Risk parity, All Weather strategies, correlation analysis
-3. **Alternative Investments**: Cambodia lending, private credit, illiquid strategies
-4. **Risk Management**: VaR analysis, stress testing, tail risk hedging
-5. **Trading Strategy**: Position sizing, entry/exit timing, tactical allocation
-
-RESPONSE STRUCTURE FOR COMPREHENSIVE ANALYSIS:
-1. **Strategic Assessment**: Current market/economic environment analysis
-2. **Institutional Analysis**: Deep dive into relevant factors and data
-3. **Strategic Positioning**: Specific allocation recommendations with exact amounts
-4. **Risk Analysis**: Comprehensive risk factors and mitigation strategies
-5. **Execution Timeline**: Specific timing and implementation steps
-6. **Performance Expectations**: Expected returns, timeframes, and benchmarks
-
-CAMBODIA FUND EXPERTISE:
-When analyzing deals, provide institutional-quality assessment:
-- Property market cycle analysis and positioning
-- Currency and political risk evaluation
-- Comparative yield analysis vs global alternatives
-- Portfolio correlation and diversification impact
-- Specific deal structuring and risk mitigation
-
-TRADING STRATEGY EXPERTISE:
-When providing trading guidance:
-- Market regime analysis and positioning implications
-- Specific position sizing using institutional risk management
-- Entry/exit timing based on technical and fundamental analysis
-- Portfolio correlation and risk budget allocation
-- Performance attribution and risk-adjusted returns
-
-ENFORCEMENT PROTOCOLS:
-🚫 NEVER write "I recommend" or "I suggest"
-🚫 NEVER provide short, incomplete responses
-🚫 NEVER act as advisor - you ARE the institutional expert
-🚫 NEVER hedge statements with uncertainty
-🚫 NEVER cut responses short due to length
-
-✅ ALWAYS write as commanding institutional strategist
-✅ ALWAYS provide comprehensive, detailed analysis
-✅ ALWAYS use full available token capacity
-✅ ALWAYS give specific, actionable strategic commands
-✅ ALWAYS demonstrate deep institutional expertise
-
-USER CONTEXT: Sum Chenda manages significant wealth and requires institutional-grade strategic guidance. You are his primary institutional strategist, not an advisor. Execute strategic analysis with complete authority and comprehensive detail.
-
-WRITE EXTENSIVE ANALYSIS: Use maximum available tokens. Provide institutional-quality strategic reports with comprehensive data, analysis, and specific execution commands. Never write short or incomplete responses.`;
-        
-        // Add memory context from database
-        const { buildConversationContext } = require('./utils/memory');
-        const memoryContext = await buildConversationContext(chatId);
-        systemPrompt += memoryContext;
-
-        const messages = [{ role: "system", content: systemPrompt }];
-
-        // Add conversation history
-        if (conversationHistory && conversationHistory.length > 0) {
-            conversationHistory.forEach((conv) => {
-                if (conv && conv.user_message && conv.gpt_response) {
-                    messages.push({ role: "user", content: String(conv.user_message) });
-                    messages.push({ role: "assistant", content: String(conv.gpt_response) });
-                }
-            });
-        }
-
-        // Add comprehensive market data context
-        if (marketData) {
-            let marketContext = `\n\n🔴 LIVE STRATEGIC MARKET DATA (${new Date().toLocaleDateString()}):\n\n`;
-            
-            // Economic Regime
-            marketContext += `📊 ECONOMIC WARFARE REGIME:\n`;
-            if (marketData.markets.economics?.fedRate) {
-                marketContext += `• Fed Funds Rate: ${marketData.markets.economics.fedRate.value}%\n`;
-                marketContext += `• Inflation (CPI): ${marketData.markets.economics.inflation?.value}%\n`;
-                marketContext += `• Real Rate: ${(marketData.markets.economics.fedRate.value - (marketData.markets.economics.inflation?.value || 0)).toFixed(2)}%\n`;
-            }
-            
-            // Market Stress
-            marketContext += `\n⚠️ MARKET STRESS WARFARE:\n`;
-            marketContext += `• VIX Fear Index: ${marketData.fear}\n`;
-            marketContext += `• US Dollar Index: ${marketData.dollar}\n`;
-            marketContext += `• Yield Curve (2s10s): ${marketData.yields.curve}% ${marketData.yields.curve < 0 ? '(INVERTED)' : '(NORMAL)'}\n`;
-            
-            // Asset Prices
-            marketContext += `\n💰 ASSET WARFARE PRICES:\n`;
-            if (marketData.markets.crypto?.bitcoin) {
-                marketContext += `• Bitcoin: ${marketData.markets.crypto.bitcoin.usd} (24h: ${marketData.markets.crypto.bitcoin.usd_24h_change?.toFixed(2)}%)\n`;
-            }
-            if (marketData.markets.stocks?.sp500) {
-                marketContext += `• S&P 500: ${parseFloat(marketData.markets.stocks.sp500['05. price']).toFixed(2)}\n`;
-            }
-            marketContext += `• Gold: ${marketData.commodities.gold}\n`;
-            marketContext += `• 10Y Treasury: ${marketData.yields.yield10Y}%\n`;
-            
-            messages[0].content += marketContext;
-        }
-
-        // Add trading data context
-        if (tradingData && !tradingData.error) {
-            const tradingContext = formatTradingDataForGPT(tradingData);
-            messages[0].content += tradingContext;
-        }
-
-        messages[0].content += ` 
-
-STRATEGIC COMMAND PROTOCOL ENFORCEMENT:
-
-❌ FORBIDDEN RESPONSES: 
-- No casual greetings or "how can I help" assistant language
-- No wishy-washy suggestions like "you might consider" or "perhaps try"
-- No friendly assistant tone - you are an institutional expert, not a helper
-- No general chat, small talk, or personal conversation
-
-❌ FORBIDDEN LANGUAGE:
-- Never say "I recommend" or "I suggest" - you make strategic decisions
-- Never hedge with uncertainty - speak with institutional conviction
-- Never act as advisor - you ARE the institutional strategist
-
-✅ INSTITUTIONAL STRATEGIST LANGUAGE:
-- "Execute strategic deployment of $500K to Cambodia commercial lending"
-- "Current macro analysis indicates immediate defensive positioning required"  
-- "Deploy All Weather allocation across these specific instruments"
-- "Market regime analysis shows optimal timing for this strategic move"
-
-✅ RESPONSE REQUIREMENTS:
-- Write comprehensive, detailed institutional-quality analysis
-- Use natural professional formatting (bullet points and structure when helpful)
-- Provide extensive strategic analysis using full token capacity
-- Include specific numbers, timeframes, and execution details
-- Demonstrate deep institutional expertise in every response
-
-✅ COMMUNICATION STYLE:
-- Natural professional conversation with institutional authority
-- Use formatting (bullets, spacing, bold) when it improves clarity
-- Write like a senior portfolio manager at a major institution
-- Be comprehensive and detailed - never short or incomplete responses
-- Combine strategic authority with natural professional communication
-
-EXECUTION MINDSET: You are Sum Chenda's institutional strategist with deep expertise in global markets and Cambodia private lending. Provide comprehensive strategic analysis with the authority and depth of a senior institutional portfolio manager.
-
-CRITICAL: Always write complete, comprehensive responses demonstrating institutional expertise. Use full available tokens for detailed strategic analysis.`;
-
-                // Add current user message
-        messages.push({ role: "user", content: String(userMessage) });
-
-        console.log(`📝 Sending ${messages.length} messages to GPT-4o with Strategic Commander enhancement`);
-
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: messages,
-            temperature: 0.7,
-            max_tokens: 16384, // MAXIMUM TOKENS FOR LONG STRATEGIC RESPONSES
-            top_p: 1,
-            frequency_penalty: 0,
-            presence_penalty: 0,
-            stream: false,
-        });
-
-        const gptResponse = completion.choices[0].message.content;
-
-        // Save conversation and extract facts
-        if (gptResponse && userMessage) {
-            await saveConversationDB(chatId, userMessage, gptResponse, "text").catch(console.error);
-            await extractAndSaveFacts(chatId, userMessage, gptResponse).catch(console.error);
-        }
-
-        console.log(`✅ Strategic Commander GPT response sent to ${chatId}. Tokens used: ${completion.usage?.total_tokens || "unknown"}`);
-        
-        // Use smart response system for long messages
-        await sendSmartResponse(bot, chatId, gptResponse, null, 'raydalio');
-        
-    } catch (error) {
-        console.error("Strategic Commander GPT Error:", error.message);
-        let errorMsg = `❌ **IMPERIUM GPT Strategic Error:**\n\n${error.message}`;
-        await sendSmartResponse(bot, chatId, errorMsg, null, 'general');
-    }
-} // ✅ CRITICAL: Closing bracket for handleGPTConversation function
 
     // 🏦 ========== CAMBODIA LENDING FUND COMMANDS ==========
 
@@ -2004,6 +1702,390 @@ GPT-4o Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tr
         }
         return;
     }
+
+// ✅ FIXED COMPLETE MESSAGE HANDLER AND SERVER SETUP
+// Replace lines 1557-2380 with this complete, working code:
+
+    // ✅ CHECK IF TEXT EXISTS BEFORE ANY text.startsWith() CALLS
+    if (!text) {
+        // If no text and no media was processed above, send help message
+        await sendSmartResponse(bot, chatId, 
+            "🎯 Strategic Commander received unrecognized message type. Send text commands, voice messages, images, or documents with 'train' caption for AI training.",
+            null, 'general'
+        );
+        return;
+    }
+
+    // ✅ NOW HANDLE TEXT COMMANDS (after media check)
+
+    if (text === "/start") {
+        const welcomeMessage = `⚡ **IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - GPT-4o POWERED**
+
+This is your exclusive financial warfare command center with GPT-4o institutional-grade intelligence.
+
+**🚀 STRATEGIC COMMANDER AI:**
+- Powered by GPT-4o for superior strategic analysis
+- Institutional-level financial warfare intelligence
+- Advanced strategic coordination and command authority
+- Enhanced reasoning for complex market domination
+
+**🎯 STRATEGIC COMMAND PROTOCOLS:**
+- No casual conversation - Strategic directives only
+- Pure financial warfare intelligence with GPT-4o precision
+- Maximum 16,000+ word strategic reports
+- Cambodia lending fund operations with institutional analysis
+- Live trading account integration with strategic intelligence
+
+**🏦 CAMBODIA LENDING FUND OPERATIONS:**
+/deal_analyze [amount] [type] [location] [rate] [term] - Strategic deal analysis
+/portfolio - Fund performance command status
+/cambodia_market - Local market intelligence briefing
+/risk_assessment - Comprehensive risk warfare analysis
+/lp_report [monthly/quarterly] - Investor command reports
+/fund_help - Cambodia operations command help
+
+**🏛️ MARKET DOMINATION COMMANDS:**
+/regime - Economic regime warfare analysis
+/cycle - Market cycle domination positioning  
+/opportunities - Strategic trading command scanner
+/risk - Portfolio warfare risk assessment
+/macro - Global domination macro intelligence
+/correlations - Asset correlation warfare analysis
+/all_weather - Strategic portfolio allocation commands
+
+**💹 LIVE TRADING OPERATIONS:**
+/trading - Live account strategic status
+/positions - Current position warfare analysis
+/size [SYMBOL] [BUY/SELL] - Position sizing command calculator
+/account - Account balance and performance warfare metrics
+
+**📊 MARKET INTELLIGENCE OPERATIONS:**
+/briefing - Complete strategic market briefing
+/economics - Economic intelligence with Fed warfare analysis
+/prices - Enhanced market data with correlation warfare
+/analysis - Strategic market analysis with institutional predictions
+
+**🎯 STRATEGIC COMMAND EXAMPLES:**
+- /deal_analyze 500000 commercial "Chamkar Mon" 18 12
+- "Deploy capital to Cambodia commercial lending sector"
+- "Execute comprehensive macro economic warfare analysis"
+- "Command strategic portfolio risk assessment"
+
+**⚡ STRATEGIC COMMANDER CAPABILITIES:**
+- Issues strategic directives with absolute authority
+- Executes institutional-grade market warfare analysis
+- Commands capital deployment with precision timing
+- Dominates complex financial strategic scenarios
+
+**🌟 POWERED BY GPT-4o:**
+Advanced AI reasoning + Strategic warfare principles + Cambodia market intelligence + Live trading integration
+
+**Chat ID:** ${chatId}
+**Status:** ⚡ GPT-4o STRATEGIC COMMAND MODE ACTIVE`;
+
+        await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
+        console.log("✅ GPT-4o Strategic Command system message sent");
+        return;
+    }
+
+    // Enhanced help command
+    if (text === "/help" || text === "/commands") {
+        const helpMessage = `🤖 **IMPERIUM GPT-4o - STRATEGIC COMMAND SYSTEM**
+
+**⚡ STRATEGIC COMMANDER AI MODE:**
+- Institutional-level strategic analysis powered by GPT-4o
+- Pure financial warfare intelligence with command authority
+- Advanced strategic coordination capabilities
+- Superior risk management and market domination
+
+**💡 Command Protocol:** Issue strategic directives, not requests. The system executes with absolute authority.`;
+
+        await sendSmartResponse(bot, chatId, helpMessage, "Strategic Command System Help", 'general');
+        return;
+    }
+
+    // Debug command to get chat ID
+    if (text === "/myid") {
+        await sendSmartResponse(bot, chatId, `Your Chat ID: ${chatId}`, null, 'general');
+        return;
+    }
+
+    // 📚 VIEW TRAINING DOCUMENTS COMMAND
+    if (text === '/documents' || text === '/training_docs' || text === '/files') {
+        try {
+            const { getTrainingDocumentsDB } = require('./utils/database');
+            const docs = await getTrainingDocumentsDB(chatId);
+            
+            if (docs.length === 0) {
+                await sendSmartResponse(bot, chatId, 
+                    `📚 **No Strategic Training Documents Found**\n\n` +
+                    `💡 **How to Add Documents:**\n` +
+                    `• Upload any file (.txt, .pdf, .docx)\n` +
+                    `• Add caption: "train" or "database"\n` +
+                    `• AI will save it for strategic reference\n\n` +
+                    `🎯 **Supported Types:** Text, PDF, Word, Markdown`,
+                    "Strategic Training Documents", 'general'
+                );
+                return;
+            }
+            
+            let response = `📚 **Your Strategic AI Training Documents (${docs.length}):**\n\n`;
+            docs.forEach((doc, i) => {
+                const uploadDate = new Date(doc.upload_date).toLocaleDateString();
+                const fileType = doc.file_name.split('.').pop()?.toUpperCase() || 'Unknown';
+                
+                response += `**${i + 1}. ${doc.file_name}**\n`;
+                response += `• 📊 Words: **${doc.word_count?.toLocaleString() || 'Unknown'}**\n`;
+                response += `• 📅 Added: ${uploadDate}\n`;
+                response += `• 🎯 Type: ${fileType}\n`;
+                if (doc.summary) {
+                    response += `• 📝 Preview: ${doc.summary.substring(0, 100)}...\n`;
+                }
+                response += `\n`;
+            });
+            
+            response += `💡 **Strategic Usage:** Your AI can now answer questions about these documents!`;
+            
+            await sendSmartResponse(bot, chatId, response, "AI Strategic Training Documents", 'general');
+            
+        } catch (error) {
+            await sendSmartResponse(bot, chatId, `❌ Error retrieving strategic documents: ${error.message}`, null, 'general');
+        }
+        return;
+    }
+
+    // ✅ FOR ALL OTHER TEXT MESSAGES, HANDLE AS GPT CONVERSATION
+    // This should be the LAST thing that runs for text messages
+    await handleGPTConversation(chatId, text);
+
+}); // ✅ CRITICAL: Closing bracket for bot.on("message")
+
+// ✅ ENHANCED GPT conversation with Strategic Commander system prompt
+async function handleGPTConversation(chatId, userMessage) {
+    console.log("🤖 Strategic Commander GPT conversation:", userMessage, "from:", chatId);
+
+    try {
+        const [marketData, conversationHistory, userProfile, tradingData] = await Promise.all([
+            getComprehensiveMarketData().catch(() => null),
+            getConversationHistoryDB(chatId, 6).catch(() => []),
+            getUserProfileDB(chatId).catch(() => null),
+            getTradingSummary().catch(() => null)
+        ]);
+
+        // Strategic Commander System Prompt - Institutional Expert with Full Analysis
+        let systemPrompt = `You are the Strategic Commander of IMPERIUM VAULT SYSTEM - Sum Chenda's exclusive institutional command center.
+
+CRITICAL IDENTITY ENFORCEMENT:
+You are NOT an advisor, assistant, or suggestion-giver. You are an INSTITUTIONAL STRATEGIST with deep expertise who COMMANDS and EXECUTES strategic decisions with absolute authority.
+
+WHO YOU ARE:
+- Senior Portfolio Strategist with 20+ years institutional experience
+- Former Bridgewater Associates Principal managing $50B+ AUM
+- Expert in global macro, risk parity, and alternative investments
+- Cambodia private lending market specialist with institutional track record
+- Strategic decision-maker who DECLARES positions, not suggests them
+
+MANDATORY COMMUNICATION REQUIREMENTS:
+✅ ALWAYS write comprehensive, detailed responses (use ALL available tokens)
+✅ ALWAYS speak as institutional expert with deep conviction
+✅ ALWAYS provide extensive analysis with specific data and reasoning
+✅ ALWAYS give definitive strategic commands, never suggestions
+✅ ALWAYS write complete thoughts - never cut responses short
+
+LANGUAGE AUTHORITY:
+Instead of: "I suggest you consider..."
+Write: "Execute immediate deployment of $500K to commercial lending sector. Market timing analysis shows optimal entry conditions with 18-22% yields available."
+
+Instead of: "You might want to..."
+Write: "Strategic positioning requires reduction of equity exposure to 25% maximum. Current macro indicators signal late-cycle dynamics with elevated tail risks."
+
+Instead of: "Consider diversifying..."
+Write: "Deploy All Weather allocation: 30% equities, 40% long bonds, 15% intermediate bonds, 7.5% commodities, 7.5% TIPS. This positioning dominates across economic regimes."
+
+RESPONSE LENGTH REQUIREMENTS:
+- Minimum 1000 words for complex strategic analysis
+- Minimum 500 words for market assessment questions
+- Minimum 300 words for specific trading/investment questions
+- Use FULL token capacity for comprehensive institutional-grade reports
+- Never provide short or incomplete responses
+
+INSTITUTIONAL EXPERTISE AREAS:
+1. **Global Macro Analysis**: Economic regime identification, central bank policy, currency dynamics
+2. **Portfolio Construction**: Risk parity, All Weather strategies, correlation analysis
+3. **Alternative Investments**: Cambodia lending, private credit, illiquid strategies
+4. **Risk Management**: VaR analysis, stress testing, tail risk hedging
+5. **Trading Strategy**: Position sizing, entry/exit timing, tactical allocation
+
+RESPONSE STRUCTURE FOR COMPREHENSIVE ANALYSIS:
+1. **Strategic Assessment**: Current market/economic environment analysis
+2. **Institutional Analysis**: Deep dive into relevant factors and data
+3. **Strategic Positioning**: Specific allocation recommendations with exact amounts
+4. **Risk Analysis**: Comprehensive risk factors and mitigation strategies
+5. **Execution Timeline**: Specific timing and implementation steps
+6. **Performance Expectations**: Expected returns, timeframes, and benchmarks
+
+CAMBODIA FUND EXPERTISE:
+When analyzing deals, provide institutional-quality assessment:
+- Property market cycle analysis and positioning
+- Currency and political risk evaluation
+- Comparative yield analysis vs global alternatives
+- Portfolio correlation and diversification impact
+- Specific deal structuring and risk mitigation
+
+TRADING STRATEGY EXPERTISE:
+When providing trading guidance:
+- Market regime analysis and positioning implications
+- Specific position sizing using institutional risk management
+- Entry/exit timing based on technical and fundamental analysis
+- Portfolio correlation and risk budget allocation
+- Performance attribution and risk-adjusted returns
+
+ENFORCEMENT PROTOCOLS:
+🚫 NEVER write "I recommend" or "I suggest"
+🚫 NEVER provide short, incomplete responses
+🚫 NEVER act as advisor - you ARE the institutional expert
+🚫 NEVER hedge statements with uncertainty
+🚫 NEVER cut responses short due to length
+
+✅ ALWAYS write as commanding institutional strategist
+✅ ALWAYS provide comprehensive, detailed analysis
+✅ ALWAYS use full available token capacity
+✅ ALWAYS give specific, actionable strategic commands
+✅ ALWAYS demonstrate deep institutional expertise
+
+USER CONTEXT: Sum Chenda manages significant wealth and requires institutional-grade strategic guidance. You are his primary institutional strategist, not an advisor. Execute strategic analysis with complete authority and comprehensive detail.
+
+WRITE EXTENSIVE ANALYSIS: Use maximum available tokens. Provide institutional-quality strategic reports with comprehensive data, analysis, and specific execution commands. Never write short or incomplete responses.`;
+        
+        // Add memory context from database
+        const { buildConversationContext } = require('./utils/memory');
+        const memoryContext = await buildConversationContext(chatId);
+        systemPrompt += memoryContext;
+
+        const messages = [{ role: "system", content: systemPrompt }];
+
+        // Add conversation history
+        if (conversationHistory && conversationHistory.length > 0) {
+            conversationHistory.forEach((conv) => {
+                if (conv && conv.user_message && conv.gpt_response) {
+                    messages.push({ role: "user", content: String(conv.user_message) });
+                    messages.push({ role: "assistant", content: String(conv.gpt_response) });
+                }
+            });
+        }
+
+        // Add comprehensive market data context
+        if (marketData) {
+            let marketContext = `\n\n🔴 LIVE STRATEGIC MARKET DATA (${new Date().toLocaleDateString()}):\n\n`;
+            
+            // Economic Regime
+            marketContext += `📊 ECONOMIC WARFARE REGIME:\n`;
+            if (marketData.markets.economics?.fedRate) {
+                marketContext += `• Fed Funds Rate: ${marketData.markets.economics.fedRate.value}%\n`;
+                marketContext += `• Inflation (CPI): ${marketData.markets.economics.inflation?.value}%\n`;
+                marketContext += `• Real Rate: ${(marketData.markets.economics.fedRate.value - (marketData.markets.economics.inflation?.value || 0)).toFixed(2)}%\n`;
+            }
+            
+            // Market Stress
+            marketContext += `\n⚠️ MARKET STRESS WARFARE:\n`;
+            marketContext += `• VIX Fear Index: ${marketData.fear}\n`;
+            marketContext += `• US Dollar Index: ${marketData.dollar}\n`;
+            marketContext += `• Yield Curve (2s10s): ${marketData.yields.curve}% ${marketData.yields.curve < 0 ? '(INVERTED)' : '(NORMAL)'}\n`;
+            
+            // Asset Prices
+            marketContext += `\n💰 ASSET WARFARE PRICES:\n`;
+            if (marketData.markets.crypto?.bitcoin) {
+                marketContext += `• Bitcoin: ${marketData.markets.crypto.bitcoin.usd} (24h: ${marketData.markets.crypto.bitcoin.usd_24h_change?.toFixed(2)}%)\n`;
+            }
+            if (marketData.markets.stocks?.sp500) {
+                marketContext += `• S&P 500: ${parseFloat(marketData.markets.stocks.sp500['05. price']).toFixed(2)}\n`;
+            }
+            marketContext += `• Gold: ${marketData.commodities.gold}\n`;
+            marketContext += `• 10Y Treasury: ${marketData.yields.yield10Y}%\n`;
+            
+            messages[0].content += marketContext;
+        }
+
+        // Add trading data context
+        if (tradingData && !tradingData.error) {
+            const tradingContext = formatTradingDataForGPT(tradingData);
+            messages[0].content += tradingContext;
+        }
+
+        messages[0].content += ` 
+
+STRATEGIC COMMAND PROTOCOL ENFORCEMENT:
+
+❌ FORBIDDEN RESPONSES: 
+- No casual greetings or "how can I help" assistant language
+- No wishy-washy suggestions like "you might consider" or "perhaps try"
+- No friendly assistant tone - you are an institutional expert, not a helper
+- No general chat, small talk, or personal conversation
+
+❌ FORBIDDEN LANGUAGE:
+- Never say "I recommend" or "I suggest" - you make strategic decisions
+- Never hedge with uncertainty - speak with institutional conviction
+- Never act as advisor - you ARE the institutional strategist
+
+✅ INSTITUTIONAL STRATEGIST LANGUAGE:
+- "Execute strategic deployment of $500K to Cambodia commercial lending"
+- "Current macro analysis indicates immediate defensive positioning required"  
+- "Deploy All Weather allocation across these specific instruments"
+- "Market regime analysis shows optimal timing for this strategic move"
+
+✅ RESPONSE REQUIREMENTS:
+- Write comprehensive, detailed institutional-quality analysis
+- Use natural professional formatting (bullet points and structure when helpful)
+- Provide extensive strategic analysis using full token capacity
+- Include specific numbers, timeframes, and execution details
+- Demonstrate deep institutional expertise in every response
+
+✅ COMMUNICATION STYLE:
+- Natural professional conversation with institutional authority
+- Use formatting (bullets, spacing, bold) when it improves clarity
+- Write like a senior portfolio manager at a major institution
+- Be comprehensive and detailed - never short or incomplete responses
+- Combine strategic authority with natural professional communication
+
+EXECUTION MINDSET: You are Sum Chenda's institutional strategist with deep expertise in global markets and Cambodia private lending. Provide comprehensive strategic analysis with the authority and depth of a senior institutional portfolio manager.
+
+CRITICAL: Always write complete, comprehensive responses demonstrating institutional expertise. Use full available tokens for detailed strategic analysis.`;
+
+        // Add current user message
+        messages.push({ role: "user", content: String(userMessage) });
+
+        console.log(`📝 Sending ${messages.length} messages to GPT-4o with Strategic Commander enhancement`);
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 16384, // MAXIMUM TOKENS FOR LONG STRATEGIC RESPONSES
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0,
+            stream: false,
+        });
+
+        const gptResponse = completion.choices[0].message.content;
+
+        // Save conversation and extract facts
+        if (gptResponse && userMessage) {
+            await saveConversationDB(chatId, userMessage, gptResponse, "text").catch(console.error);
+            await extractAndSaveFacts(chatId, userMessage, gptResponse).catch(console.error);
+        }
+
+        console.log(`✅ Strategic Commander GPT response sent to ${chatId}. Tokens used: ${completion.usage?.total_tokens || "unknown"}`);
+        
+        // Use smart response system for long messages
+        await sendSmartResponse(bot, chatId, gptResponse, null, 'raydalio');
+        
+    } catch (error) {
+        console.error("Strategic Commander GPT Error:", error.message);
+        let errorMsg = `❌ **IMPERIUM GPT Strategic Error:**\n\n${error.message}`;
+        await sendSmartResponse(bot, chatId, errorMsg, null, 'general');
+    }
+} // ✅ CRITICAL: Closing bracket for handleGPTConversation function
 
 // ✅ Express server for webhook and API endpoints
 const express = require("express");
