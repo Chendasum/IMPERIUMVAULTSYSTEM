@@ -190,7 +190,7 @@ async function getComprehensiveMarketData() {
 }
 
 
-// ✅ SINGLE COMPLETE MESSAGE HANDLER - Replace BOTH message handlers with this ONE
+// ✅ COMPLETE MESSAGE HANDLER - Replace your incomplete handler with this:
 
 bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
@@ -426,6 +426,28 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
 
         await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
         console.log("✅ GPT-4o Strategic Command system message sent");
+        return;
+    }
+
+    // Enhanced help command
+    if (text === "/help" || text === "/commands") {
+        const helpMessage = `🤖 **IMPERIUM GPT-4o - STRATEGIC COMMAND SYSTEM**
+
+**⚡ STRATEGIC COMMANDER AI MODE:**
+- Institutional-level strategic analysis powered by GPT-4o
+- Pure financial warfare intelligence with command authority
+- Advanced strategic coordination capabilities
+- Superior risk management and market domination
+
+**💡 Command Protocol:** Issue strategic directives, not requests. The system executes with absolute authority.`;
+
+        await sendSmartResponse(bot, chatId, helpMessage, "Strategic Command System Help", 'general');
+        return;
+    }
+
+    // Debug command to get chat ID
+    if (text === "/myid") {
+        await sendSmartResponse(bot, chatId, `Your Chat ID: ${chatId}`, null, 'general');
         return;
     }
 
