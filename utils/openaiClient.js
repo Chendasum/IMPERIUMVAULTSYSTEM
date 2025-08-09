@@ -75,7 +75,7 @@ You are Sum Chenda's institutional strategist providing sophisticated financial 
                 },
             ],
             // Remove temperature - GPT-5 only supports default (1)
-            max_completion_tokens: options.maxTokens || 16384, // Full capacity for comprehensive responses
+            max_completion_tokens: options.maxTokens || 4096, // Full capacity for comprehensive responses
             // Remove other parameters that might cause issues with GPT-5
         });
 
@@ -109,7 +109,7 @@ Strategic Query: ${query}`;
 
         return await getGptReply(enhancedQuery, { 
             strategic: true, 
-            maxTokens: 16384
+            maxTokens: 4096
         });
     } catch (error) {
         console.error("❌ Strategic Analysis Error:", error.message);
@@ -141,7 +141,7 @@ Provide institutional-grade analysis including risk assessment, market condition
 
         return await getGptReply(enhancedQuery, { 
             strategic: true, 
-            maxTokens: 16384
+            maxTokens: 4096
         });
     } catch (error) {
         console.error("❌ Cambodia Fund Analysis Error:", error.message);
