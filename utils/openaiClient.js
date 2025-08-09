@@ -112,7 +112,7 @@ Strategic Query: ${query}`;
         return await getGptReply(enhancedQuery, { 
             strategic: true, 
             maxTokens: 16384,
-            temperature: 0.7 
+            temperature: 1, 
         });
     } catch (error) {
         console.error("❌ Strategic Analysis Error:", error.message);
