@@ -1,4 +1,4 @@
-// utils/telegramSplitter.js - STRATEGIC COMMANDER MESSAGE OPTIMIZATION
+// utils/telegramSplitter.js - STRATEGIC COMMANDER MESSAGE OPTIMIZATION (FIXED)
 const crypto = require('crypto');
 
 // 📏 TELEGRAM LIMITS - Strategic Command Optimized
@@ -69,13 +69,25 @@ async function sendSmartResponse(bot, chatId, message, title = null, messageType
         // Check if message needs splitting
         if (formattedMessage.length <= TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
             // Single message - send directly
-            await bot.sendMessage(chatId, formattedMessage, {
-                // parse_mode: 'Markdown',  // ← Temporarily disabled due to formatting issues
-                disable_web_page_preview: options.disablePreview !== false
-            });
-            
-            console.log(`✅ Strategic Commander single message sent (${formattedMessage.length} chars)`);
-            return true;
+            try {
+                await bot.sendMessage(chatId, formattedMessage, {
+                    parse_mode: 'Markdown', // ✅ RESTORED: Markdown formatting enabled
+                    disable_web_page_preview: options.disablePreview !== false
+                });
+                
+                console.log(`✅ Strategic Commander single message sent (${formattedMessage.length} chars)`);
+                return true;
+            } catch (markdownError) {
+                // Fallback to plain text if markdown fails
+                console.log('⚠️ Markdown failed, sending as plain text');
+                const plainMessage = formattedMessage.replace(/[*_`~]/g, '');
+                await bot.sendMessage(chatId, plainMessage, {
+                    disable_web_page_preview: options.disablePreview !== false
+                });
+                
+                console.log(`✅ Strategic Commander single message sent as plain text (${plainMessage.length} chars)`);
+                return true;
+            }
         }
         
         // Message needs strategic splitting
@@ -93,7 +105,7 @@ async function sendSmartResponse(bot, chatId, message, title = null, messageType
             
             try {
                 await bot.sendMessage(chatId, chunk, {
-                    // parse_mode: 'Markdown',  // ← Temporarily disabled due to formatting issues
+                    parse_mode: 'Markdown', // ✅ RESTORED: Markdown formatting enabled
                     disable_web_page_preview: options.disablePreview !== false
                 });
                 
@@ -146,7 +158,7 @@ function formatStrategicMessage(message, title, messageType, config) {
     // Add strategic header if title provided
     if (title) {
         const titleEmoji = config.emoji;
-        formatted += `${titleEmoji} ${title.toUpperCase()}\n\n`;  // Removed ** markdown
+        formatted += `${titleEmoji} **${title.toUpperCase()}**\n\n`; // ✅ RESTORED: Markdown formatting
     }
     
     // Add strategic timestamp for certain message types
@@ -155,7 +167,7 @@ function formatStrategicMessage(message, title, messageType, config) {
             timeZone: 'Asia/Phnom_Penh',
             hour12: false 
         });
-        formatted += `🕐 Strategic Time: ${timestamp} Cambodia\n\n`;  // Removed ** markdown
+        formatted += `🕐 **Strategic Time:** ${timestamp} Cambodia\n\n`; // ✅ RESTORED: Markdown formatting
     }
     
     // Add main message content
@@ -176,15 +188,15 @@ function formatStrategicMessage(message, title, messageType, config) {
 function getStrategicFooter(messageType, config) {
     switch (messageType) {
         case 'raydalio':
-            return '🏛️ Strategic Commander • Institutional-Grade Analysis';  // Removed * markdown
+            return '🏛️ *Strategic Commander • Institutional-Grade Analysis*'; // ✅ RESTORED: Markdown formatting
         case 'cambodia':
-            return '🇰🇭 Strategic Commander • Cambodia Fund Intelligence';  // Removed * markdown
+            return '🇰🇭 *Strategic Commander • Cambodia Fund Intelligence*'; // ✅ RESTORED: Markdown formatting
         case 'trading':
-            return '💹 Strategic Commander • Live Trading Intelligence';  // Removed * markdown
+            return '💹 *Strategic Commander • Live Trading Intelligence*'; // ✅ RESTORED: Markdown formatting
         case 'analysis':
-            return '📊 Strategic Commander • Market Warfare Analysis';  // Removed * markdown
+            return '📊 *Strategic Commander • Market Warfare Analysis*'; // ✅ RESTORED: Markdown formatting
         case 'alert':
-            return '🚨 Strategic Commander • Urgent Alert';  // Removed * markdown
+            return '🚨 *Strategic Commander • Urgent Alert*'; // ✅ RESTORED: Markdown formatting
         default:
             return null;
     }
@@ -215,8 +227,8 @@ function splitStrategicMessage(message, title, messageType) {
         // Extract chunk
         let chunk = remainingMessage.substring(0, splitPoint).trim();
         
-        // Add strategic chunk header (removed ** markdown)
-        const chunkHeader = `${config.emoji} STRATEGIC COMMANDER (Part ${partNumber})\n\n`;
+        // Add strategic chunk header
+        const chunkHeader = `${config.emoji} **STRATEGIC COMMANDER (Part ${partNumber})**\n\n`; // ✅ RESTORED: Markdown formatting
         
         // Check if chunk with header fits
         if (chunk.length + chunkHeader.length > maxChunkSize) {
@@ -252,7 +264,7 @@ function splitStrategicMessage(message, title, messageType) {
     // Add remaining content as final chunk
     if (remainingMessage.length > 0) {
         const finalHeader = partNumber > 1 ? 
-            `${config.emoji} STRATEGIC COMMANDER (Part ${partNumber} - Final)\n\n` : '';  // Removed ** markdown
+            `${config.emoji} **STRATEGIC COMMANDER (Part ${partNumber} - Final)**\n\n` : ''; // ✅ RESTORED: Markdown formatting
         
         chunks.push(finalHeader + remainingMessage);
     }
@@ -272,7 +284,7 @@ function findStrategicSplitPoint(text, maxLength) {
         /\n\n📊/g,           // Strategic data sections
         /\n\n💰/g,           // Strategic financial sections
         /\n\n⚠️/g,           // Strategic warning sections
-        /\n\n[A-Z]/g,        // Headers (removed ** markdown pattern)
+        /\n\n\*\*[A-Z]/g,    // ✅ RESTORED: Markdown headers pattern
         /\n\n/g,             // Double line breaks
         /\.\s+/g,            // End of sentences
         /\n/g,               // Single line breaks
@@ -337,7 +349,7 @@ async function sendLongMessage(bot, chatId, message, delay = TELEGRAM_LIMITS.STR
     for (let i = 0; i < chunks.length; i++) {
         try {
             await bot.sendMessage(chatId, chunks[i], { 
-                // parse_mode: 'Markdown'  // ← Commented out
+                parse_mode: 'Markdown' // ✅ RESTORED: Markdown formatting
             });
             
             if (i < chunks.length - 1) {
@@ -345,6 +357,14 @@ async function sendLongMessage(bot, chatId, message, delay = TELEGRAM_LIMITS.STR
             }
         } catch (error) {
             console.error(`❌ Chunk ${i + 1} failed:`, error.message);
+            
+            // Fallback to plain text
+            try {
+                const plainChunk = chunks[i].replace(/[*_`~]/g, '');
+                await bot.sendMessage(chatId, plainChunk);
+            } catch (fallbackError) {
+                console.error(`❌ Chunk ${i + 1} completely failed:`, fallbackError.message);
+            }
         }
     }
 }
@@ -353,20 +373,20 @@ async function sendLongMessage(bot, chatId, message, delay = TELEGRAM_LIMITS.STR
  * 🏛️ FORMAT RAY DALIO RESPONSE (Enhanced for Strategic Commander)
  */
 function formatRayDalioResponse(analysis, title = "Strategic Analysis") {
-    let formatted = `🏛️ ${title.toUpperCase()}\n\n`;  // Removed ** markdown
+    let formatted = `🏛️ **${title.toUpperCase()}**\n\n`; // ✅ RESTORED: Markdown formatting
     
     // Add strategic timestamp
     const timestamp = new Date().toLocaleTimeString('en-US', { 
         timeZone: 'Asia/Phnom_Penh',
         hour12: false 
     });
-    formatted += `🕐 Strategic Time: ${timestamp} Cambodia\n\n`;  // Removed ** markdown
+    formatted += `🕐 **Strategic Time:** ${timestamp} Cambodia\n\n`; // ✅ RESTORED: Markdown formatting
     
     // Add main analysis
     formatted += analysis;
     
     // Add strategic footer
-    formatted += '\n\n🏛️ Strategic Commander • Institutional-Grade Market Intelligence';  // Removed * markdown
+    formatted += '\n\n🏛️ *Strategic Commander • Institutional-Grade Market Intelligence*'; // ✅ RESTORED: Markdown formatting
     
     return formatted;
 }
@@ -375,20 +395,20 @@ function formatRayDalioResponse(analysis, title = "Strategic Analysis") {
  * 🇰🇭 FORMAT CAMBODIA FUND RESPONSE
  */
 function formatCambodiaFundResponse(analysis, title = "Cambodia Fund Analysis") {
-    let formatted = `🇰🇭 ${title.toUpperCase()}\n\n`;  // Removed ** markdown
+    let formatted = `🇰🇭 **${title.toUpperCase()}**\n\n`; // ✅ RESTORED: Markdown formatting
     
     // Add strategic timestamp
     const timestamp = new Date().toLocaleTimeString('en-US', { 
         timeZone: 'Asia/Phnom_Penh',
         hour12: false 
     });
-    formatted += `🕐 Strategic Time: ${timestamp} Cambodia\n\n`;  // Removed ** markdown
+    formatted += `🕐 **Strategic Time:** ${timestamp} Cambodia\n\n`; // ✅ RESTORED: Markdown formatting
     
     // Add main analysis
     formatted += analysis;
     
     // Add strategic footer
-    formatted += '\n\n🇰🇭 Strategic Commander • Cambodia Private Lending Intelligence';  // Removed * markdown
+    formatted += '\n\n🇰🇭 *Strategic Commander • Cambodia Private Lending Intelligence*'; // ✅ RESTORED: Markdown formatting
     
     return formatted;
 }
@@ -430,14 +450,14 @@ function getMessageStats(message) {
  * For urgent Strategic Commander alerts
  */
 async function sendStrategicAlert(bot, chatId, alertMessage, alertType = 'general') {
-    const alertHeader = '🚨 STRATEGIC COMMANDER ALERT\n\n';  // Removed ** markdown
+    const alertHeader = '🚨 **STRATEGIC COMMANDER ALERT**\n\n'; // ✅ RESTORED: Markdown formatting
     const timestamp = new Date().toLocaleTimeString('en-US', { 
         timeZone: 'Asia/Phnom_Penh',
         hour12: false 
     });
-    const timeHeader = `🕐 Alert Time: ${timestamp} Cambodia\n\n`;  // Removed ** markdown
+    const timeHeader = `🕐 **Alert Time:** ${timestamp} Cambodia\n\n`; // ✅ RESTORED: Markdown formatting
     
-    const fullAlert = alertHeader + timeHeader + alertMessage + '\n\n🚨 Strategic Commander • Urgent Alert System';  // Removed * markdown
+    const fullAlert = alertHeader + timeHeader + alertMessage + '\n\n🚨 *Strategic Commander • Urgent Alert System*'; // ✅ RESTORED: Markdown formatting
     
     return await sendSmartResponse(bot, chatId, fullAlert, null, 'alert', { 
         disablePreview: true,
