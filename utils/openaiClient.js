@@ -5,12 +5,12 @@ const { OpenAI } = require("openai");
 // ✅ Initialize OpenAI with Strategic Commander capabilities
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 300000, // Extended timeout for GPT-5 (5 minutes)
+    timeout: 120000, // Extended timeout for comprehensive responses
     maxRetries: 3
 });
 
 /**
- * 🎯 Strategic Commander GPT-5 Response with Institutional Authority
+ * 🎯 Strategic Commander GPT-4o Response with Institutional Authority
  * @param {string} prompt - Strategic query or analysis request
  * @param {object} options - Configuration options
  * @returns {Promise<string>} - Comprehensive Strategic Commander response
@@ -58,12 +58,12 @@ STRATEGIC LANGUAGE:
 
 You are Sum Chenda's institutional strategist providing sophisticated financial intelligence.`;
         } else {
-            // General GPT-5 mode for non-strategic queries
-            systemContent = `You are GPT-5 - OpenAI's most advanced AI with superior intelligence and reasoning capabilities. Provide comprehensive, helpful responses across all knowledge domains while maintaining professional expertise.`;
+            // General GPT-4o mode for non-strategic queries
+            systemContent = `You are GPT-4o (Omni) - OpenAI's most advanced multimodal AI with superior intelligence. Provide comprehensive, helpful responses across all knowledge domains while maintaining professional expertise.`;
         }
 
         const completion = await openai.chat.completions.create({
-            model: "gpt-5",
+            model: "gpt-4o",
             messages: [
                 {
                     role: "system",
@@ -74,9 +74,11 @@ You are Sum Chenda's institutional strategist providing sophisticated financial 
                     content: prompt,
                 },
             ],
-            // Remove temperature - GPT-5 only supports default (1)
-            max_completion_tokens: options.maxTokens || 4096, // Full capacity for comprehensive responses
-            // Remove other parameters that might cause issues with GPT-5
+            temperature: options.temperature || 0.7,
+            max_tokens: options.maxTokens || 16384, // Full capacity for comprehensive responses
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0,
         });
 
         return completion.choices[0].message.content.trim();
@@ -109,7 +111,8 @@ Strategic Query: ${query}`;
 
         return await getGptReply(enhancedQuery, { 
             strategic: true, 
-            maxTokens: 4096
+            maxTokens: 16384,
+            temperature: 0.7 
         });
     } catch (error) {
         console.error("❌ Strategic Analysis Error:", error.message);
@@ -141,7 +144,8 @@ Provide institutional-grade analysis including risk assessment, market condition
 
         return await getGptReply(enhancedQuery, { 
             strategic: true, 
-            maxTokens: 4096
+            maxTokens: 16384,
+            temperature: 0.6 // Slightly lower for financial analysis
         });
     } catch (error) {
         console.error("❌ Cambodia Fund Analysis Error:", error.message);
@@ -152,7 +156,7 @@ Provide institutional-grade analysis including risk assessment, market condition
 /**
  * 🔧 General Query Handler - Non-strategic mode
  * @param {string} prompt - General question
- * @returns {Promise<string>} - Standard GPT-5 response
+ * @returns {Promise<string>} - Standard GPT-4o response
  */
 async function getGeneralReply(prompt) {
     return await getGptReply(prompt, { strategic: false });
