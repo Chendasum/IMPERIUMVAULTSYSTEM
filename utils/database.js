@@ -67,6 +67,9 @@ async function initializeDatabase() {
                     IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'persistent_memories' AND column_name = 'access_count') THEN
                         ALTER TABLE persistent_memories ADD COLUMN access_count INTEGER DEFAULT 0;
                     END IF;
+                    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'persistent_memories' AND column_name = 'category') THEN
+                        ALTER TABLE persistent_memories ADD COLUMN category VARCHAR(30) DEFAULT 'general';
+                    END IF;
                     IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'persistent_memories' AND column_name = 'last_accessed') THEN
                         ALTER TABLE persistent_memories ADD COLUMN last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
                     END IF;
