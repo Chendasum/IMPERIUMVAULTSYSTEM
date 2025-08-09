@@ -1678,6 +1678,152 @@ GPT-4o Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tr
         }
         return;
     }
+// ✅ HANDLE MEDIA MESSAGES FIRST (before any text processing)
+    
+    // 🎤 VOICE MESSAGE HANDLING
+    if (msg.voice) {
+        console.log("🎤 Voice message received");
+        try {
+            const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
+            if (transcribedText) {
+                await sendSmartResponse(bot, chatId, `🎤 Voice transcribed: "${transcribedText}"`, null, 'general');
+                await handleGPTConversation(chatId, transcribedText);
+            } else {
+                await sendSmartResponse(bot, chatId, "❌ Voice transcription failed. Please try again.", null, 'general');
+            }
+        } catch (error) {
+            console.error('Voice processing error:', error.message);
+            await sendSmartResponse(bot, chatId, "❌ Voice processing error. Please try again.", null, 'general');
+        }
+        return; // ✅ EARLY RETURN - prevents text processing
+    }
+
+    // 🖼️ IMAGE MESSAGE HANDLING
+    if (msg.photo) {
+        console.log("🖼️ Image received");
+        try {
+            const photoAnalysis = await processImageMessage(bot, msg.photo[msg.photo.length - 1].file_id, chatId, msg.caption);
+            if (photoAnalysis) {
+                await sendSmartResponse(bot, chatId, `🖼️ Image Strategic Analysis:\n\n${photoAnalysis}`, "Image Strategic Analysis", 'general');
+            } else {
+                await sendSmartResponse(bot, chatId, "❌ Image analysis failed. Please try again.", null, 'general');
+            }
+        } catch (error) {
+            console.error('Image processing error:', error.message);
+            await sendSmartResponse(bot, chatId, "❌ Image processing error. Please try again.", null, 'general');
+        }
+        return; // ✅ EARLY RETURN - prevents text processing
+    }
+
+    // 📄 DOCUMENT MESSAGE HANDLING
+    if (msg.document) {
+        console.log("📄 Document received:", msg.document.file_name);
+        const fileName = msg.document.file_name || "document";
+        
+        // Check for training keywords
+        const isTrainingDoc = msg.caption?.toLowerCase().includes("train") ||
+                             msg.caption?.toLowerCase().includes("database") ||
+                             msg.caption?.toLowerCase().includes("remember");
+
+        if (isTrainingDoc) {
+            try {
+                await bot.sendMessage(chatId, "📚 Processing document for strategic database training...");
+                
+                const fileId = msg.document.file_id;
+                const fileLink = await bot.getFileLink(fileId);
+                const response = await fetch(fileLink);
+                const buffer = await response.buffer();
+                
+                // Extract content based on file type
+                let content = '';
+                try {
+                    if (fileName.endsWith('.txt') || fileName.endsWith('.md')) {
+                        content = buffer.toString('utf8');
+                    } else if (fileName.endsWith('.pdf')) {
+                        // Try to extract PDF text (requires pdf-parse: npm install pdf-parse)
+                        try {
+                            const pdf = require('pdf-parse');
+                            const pdfData = await pdf(buffer);
+                            content = pdfData.text;
+                        } catch (pdfError) {
+                            console.log('PDF parsing not available, treating as text');
+                            content = buffer.toString('utf8');
+                        }
+                    } else {
+                        // Try as plain text for other formats
+                        content = buffer.toString('utf8');
+                    }
+                } catch (contentError) {
+                    content = `Document content could not be extracted from ${fileName}`;
+                }
+                
+                // Save directly to PostgreSQL database
+                const { saveTrainingDocumentDB } = require('./utils/database');
+                const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+                const summary = content.length > 500 ? content.substring(0, 500) + '...' : content;
+                
+                const saved = await saveTrainingDocumentDB(
+                    chatId, 
+                    fileName, 
+                    content, 
+                    'user_uploaded', 
+                    wordCount, 
+                    summary
+                );
+                
+                if (saved) {
+                    await sendSmartResponse(bot, chatId, 
+                        `📚 **Document Saved to Strategic AI Database**\n\n` +
+                        `📄 **File:** ${fileName}\n` +
+                        `📊 **Words:** ${wordCount.toLocaleString()}\n` +
+                        `💾 **Storage:** PostgreSQL Strategic Database\n` +
+                        `🎯 **Type:** ${fileName.split('.').pop()?.toUpperCase() || 'Unknown'}\n\n` +
+                        `✅ **Your Strategic AI will now reference this document in future strategic conversations!**\n\n` +
+                        `💡 **Strategic Usage:** Your AI can now answer strategic questions about this document's content.`,
+                        "Document Added to Strategic Database", 'general'
+                    );
+                } else {
+                    await sendSmartResponse(bot, chatId, `❌ **Error saving document to strategic database.**\n\nPlease try again or contact support.`, null, 'general');
+                }
+                
+            } catch (error) {
+                console.error('Strategic database document processing error:', error);
+                await sendSmartResponse(bot, chatId, `❌ **Error processing strategic document:** ${error.message}`, null, 'general');
+            }
+        } else {
+            // Regular document handling (no training)
+            await sendSmartResponse(bot, chatId, 
+                `📄 **Document Received:** ${fileName}\n\n` +
+                `💡 **Tip:** Add caption "train" to save this document to your Strategic AI's database for future reference.\n\n` +
+                `**Example:** Upload with caption "train this strategic document"`,
+                "Document Received", 'general'
+            );
+        }
+        return; // ✅ EARLY RETURN - prevents text processing
+    }
+
+    // 🎥 VIDEO MESSAGE HANDLING (if you have this)
+    if (msg.video) {
+        console.log("🎥 Video received");
+        try {
+            const videoAnalysis = await processVideoMessage(bot, msg.video.file_id, chatId, msg.caption);
+            if (videoAnalysis) {
+                await sendSmartResponse(bot, chatId, videoAnalysis, "Strategic Video Analysis", 'analysis');
+            } else {
+                await sendSmartResponse(bot, chatId, "❌ Video processing failed. Please try again.", null, 'general');
+            }
+        } catch (error) {
+            console.error('Video processing error:', error.message);
+            await sendSmartResponse(bot, chatId, "❌ Video processing error. Please try again.", null, 'general');
+        }
+        return; // ✅ EARLY RETURN - prevents text processing
+    }
+
+    // ✅ NOW HANDLE TEXT MESSAGES (only after media has been checked)
+    // This is now SAFE because media messages returned early above
+    if (text) {
+        await handleGPTConversation(chatId, text);
+    }
 
 // Continue with your handleGPTConversation function...
 async function handleGPTConversation(chatId, userMessage) {
@@ -1698,7 +1844,7 @@ async function handleGPTConversation(chatId, userMessage) {
         await sendSmartResponse(bot, chatId, errorMsg, null, 'general');
     }
 }
-    
+  
 // Strategic Commander System Prompt - Institutional Expert with Full Analysis
 let systemPrompt = `You are the Strategic Commander of IMPERIUM VAULT SYSTEM - Sum Chenda's exclusive institutional command center.
 
