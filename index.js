@@ -2435,4 +2435,3 @@ const server = app.listen(PORT, "0.0.0.0", () => {
         .catch((err) => {
             console.error("❌ Webhook setup failed:", err.message);
         });
-});
