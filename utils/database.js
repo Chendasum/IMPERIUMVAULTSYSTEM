@@ -2451,5 +2451,8 @@ module.exports = {
     clearUserDataDB,
     
     // 📊 CONNECTION MONITORING
-    connectionStats
+    connectionStats,  // ← Make sure this line exists!
+    
+    // 🔧 DATABASE UTILITIES
+    pool  // Export pool if other files need direct access
 };
