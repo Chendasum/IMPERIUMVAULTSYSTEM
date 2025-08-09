@@ -118,6 +118,8 @@ initializeDatabase()
         console.log("⚠️ Falling back to in-memory storage");
     });
 
+// ❌ TEMPORARILY DISABLED - MetaAPI connection causing timeouts
+/*
 // ✅ Initialize MetaAPI Connection
 initializeMetaAPI()
     .then((success) => {
@@ -130,6 +132,8 @@ initializeMetaAPI()
     .catch((err) => {
         console.log("⚠️ MetaAPI initialization failed:", err.message);
     });
+*/
+console.log("⚠️ MetaAPI temporarily disabled to fix conversation timeouts");
 
 // ✅ User Authentication - Only allow authorized users
 function isAuthorizedUser(chatId) {
