@@ -823,7 +823,7 @@ Structure like Bridgewater's Daily Observations with specific strategic directiv
                     { role: "user", content: regimePrompt }
                 ],
                 max_completion_tokens: 16384, // MAXIMUM LENGTH
-                temperature: 0.7
+                temperature: 1,
             });
 
             const responseContent = analysis.choices[0].message.content;
@@ -1867,7 +1867,7 @@ CRITICAL: Always write complete, comprehensive responses demonstrating instituti
         const completion = await openai.chat.completions.create({
             model: "gpt-5",
             messages: messages,
-            temperature: 0.7,
+            temperature: 1,
             max_completion_tokens: 16384, // MAXIMUM TOKENS FOR LONG STRATEGIC RESPONSES
             top_p: 1,
             frequency_penalty: 0,
@@ -2292,7 +2292,7 @@ Apply Strategic Commander risk management principles to both global markets and 
                 },
             ],
             max_completion_tokens: 16384, // MAXIMUM LENGTH FOR STRATEGIC ANALYSIS
-            temperature: 0.7,
+            temperature: 1,
             top_p: 1,
             frequency_penalty: 0,
             presence_penalty: 0,
