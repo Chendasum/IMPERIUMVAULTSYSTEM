@@ -1222,62 +1222,73 @@ Execute like Bridgewater's Daily Observations for strategic warfare.`;
     }
     
     // Enhanced help command with new features
-if (text === "/help" || text === "/commands") {
-    const helpMessage = `🤖 **IMPERIUM GPT-4o - STRATEGIC COMMAND SYSTEM**
+if (text === "/start") {
+    const welcomeMessage = `⚡ **IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - GPT-5 POWERED**
 
-**⚡ STRATEGIC COMMANDER AI MODE:**
-- Institutional-level strategic analysis powered by GPT-4o
-- Pure financial warfare intelligence with command authority
-- Advanced strategic coordination capabilities
-- Superior risk management and market domination
+This is your exclusive financial warfare command center with GPT-5 institutional-grade intelligence.
 
-**🏦 CAMBODIA LENDING FUND STRATEGIC COMMANDS:**
+**🚀 STRATEGIC COMMANDER AI:**
+- Powered by GPT-5 for superior strategic analysis
+- Institutional-level financial warfare intelligence
+- Advanced strategic coordination and command authority
+- Enhanced reasoning for complex market domination
+
+**🎯 STRATEGIC COMMAND PROTOCOLS:**
+- No casual conversation - Strategic directives only
+- Pure financial warfare intelligence with GPT-5 precision
+- Maximum 16,000+ word strategic reports
+- Cambodia lending fund operations with institutional analysis
+- Live trading account integration with strategic intelligence
+
+**🏦 CAMBODIA LENDING FUND OPERATIONS:**
 /deal_analyze [amount] [type] [location] [rate] [term] - Strategic deal analysis
-/portfolio - Current fund strategic status and performance  
-/cambodia_market - Local market strategic intelligence
-/risk_assessment - Portfolio risk warfare analysis
-/lp_report [monthly/quarterly] - Investor strategic reports
-/fund_help - Detailed lending commands strategic help
+/portfolio - Fund performance command status
+/cambodia_market - Local market intelligence briefing
+/risk_assessment - Comprehensive risk warfare analysis
+/lp_report [monthly/quarterly] - Investor command reports
+/fund_help - Cambodia operations command help
 
-**🏛️ STRATEGIC INSTITUTIONAL ANALYSIS:**
-/regime - Economic regime warfare analysis (Growth/Inflation matrix)
-/cycle - Market cycle positioning warfare (Business/Credit/Sentiment cycles) 
-/opportunities - Strategic trading opportunities warfare scanner
-/risk - Comprehensive portfolio risk warfare assessment
-/macro - Global macro warfare outlook like Bridgewater Associates
-/correlations - Asset correlation breakdown warfare analysis
-/all_weather - Strategic All Weather portfolio guidance
-/size [SYMBOL] [BUY/SELL] - Position sizing warfare calculator
+**🏛️ MARKET DOMINATION COMMANDS:**
+/regime - Economic regime warfare analysis
+/cycle - Market cycle domination positioning  
+/opportunities - Strategic trading command scanner
+/risk - Portfolio warfare risk assessment
+/macro - Global domination macro intelligence
+/correlations - Asset correlation warfare analysis
+/all_weather - Strategic portfolio allocation commands
 
-**📊 ENHANCED MARKET STRATEGIC INTELLIGENCE:**
-/briefing - Complete daily market strategic briefing
-/economics - US economic data with Fed policy strategic implications
-/news - Latest financial news with market impact strategic analysis  
-/prices - Enhanced crypto + market data with correlations warfare
-/analysis - Strategic market analysis with institutional insights
+**💹 LIVE TRADING OPERATIONS:**
+/trading - Live account strategic status
+/positions - Current position warfare analysis
+/size [SYMBOL] [BUY/SELL] - Position sizing command calculator
+/account - Account balance and performance warfare metrics
 
-**💹 METATRADER STRATEGIC INTEGRATION:**
-/trading - Live trading account strategic summary with performance
-/positions - Current open positions with strategic P&L analysis
-/account - Account balance, equity, and risk strategic metrics
-/orders - Pending orders with risk/reward strategic analysis
-/test_metaapi - MetaAPI connection strategic diagnostics
+**📊 MARKET INTELLIGENCE OPERATIONS:**
+/briefing - Complete strategic market briefing
+/economics - Economic intelligence with Fed warfare analysis
+/prices - Enhanced market data with correlation warfare
+/analysis - Strategic market analysis with institutional predictions
 
 **🎯 STRATEGIC COMMAND EXAMPLES:**
 - /deal_analyze 500000 commercial "Chamkar Mon" 18 12
-- "Deploy strategic capital to Cambodia commercial lending sector"
-- "Execute comprehensive Fed policy and market regime strategic analysis"
-- "Command strategic positioning for next economic cycle phase"
-- "Execute correlation risk strategic analysis in current portfolio"
+- "Deploy capital to Cambodia commercial lending sector"
+- "Execute comprehensive macro economic warfare analysis"
+- "Command strategic portfolio risk assessment"
 
-**🚀 STRATEGIC COMMAND POWERED BY:**
-GPT-4o Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Trading Data + Real-time Market Warfare Data + Institutional-Grade Analysis
+**⚡ STRATEGIC COMMANDER CAPABILITIES:**
+- Issues strategic directives with absolute authority
+- Executes institutional-grade market warfare analysis
+- Commands capital deployment with precision timing
+- Dominates complex financial strategic scenarios
 
-**⚡ Your personal Strategic Commander now rivals institutional hedge fund capabilities! 🌟**
+**🌟 POWERED BY GPT-5:**
+Advanced AI reasoning + Strategic warfare principles + Cambodia market intelligence + Live trading integration
 
-**💡 Command Protocol:** Issue strategic directives, not requests. The system executes with absolute authority.`;
+**Chat ID:** ${chatId}
+**Status:** ⚡ GPT-5 STRATEGIC COMMAND MODE ACTIVE`;
 
-    await sendSmartResponse(bot, chatId, helpMessage, "Strategic Command System Help", 'general');
+    await sendSmartResponse(bot, chatId, welcomeMessage, null, 'general');
+    console.log("✅ GPT-5 Strategic Command system message sent");
     return;
 }
 
