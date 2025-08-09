@@ -1574,7 +1574,7 @@ GPT-4o Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tr
         console.log("🖼️ Image received");
         const photoAnalysis = await processImageMessage(bot, msg.photo[msg.photo.length - 1].file_id, chatId, msg.caption);
         if (photoAnalysis) {
-            await sendSmartResponse(bot, chatId, `🖼️ Image Analysis:\n\n${photoAnalysis}`, "Image Analysis", 'general');
+            await sendSmartResponse(bot, chatId, `🖼️ Image Strategic Analysis:\n\n${photoAnalysis}`, "Image Strategic Analysis", 'general');
         }
         return;
     }
@@ -1582,29 +1582,20 @@ GPT-4o Strategic Commander AI + Cambodia Market Strategic Intelligence + Live Tr
     if (msg.document) {
         console.log("📄 Document received:", msg.document.file_name);
         const fileName = msg.document.file_name || "document";
-        const isTrainingDoc = msg.caption?.toLowerCase().includes("train");
+        
+        // Check for training keywords
+        const isTrainingDoc = msg.caption?.toLowerCase().includes("train") ||
+                             msg.caption?.toLowerCase().includes("database") ||
+                             msg.caption?.toLowerCase().includes("remember");
 
         if (isTrainingDoc) {
-            // Process as training document
             try {
+                await bot.sendMessage(chatId, "📚 Processing document for strategic database training...");
+                
                 const fileId = msg.document.file_id;
                 const fileLink = await bot.getFileLink(fileId);
                 const response = await fetch(fileLink);
                 const buffer = await response.buffer();
-                const tempPath = `./temp_${Date.now()}_${fileName}`;
-                require("fs").writeFileSync(tempPath, buffer);
-
-                const result = await processTrainingDocument(chatId, tempPath, fileName, "uploaded");
-                if (result.success) {
-                    await sendSmartResponse(bot, chatId, `📚 **Document Added to Your GPT Training:**\n\n📄 File: ${fileName}\n📊 Words: ${result.wordCount.toLocaleString()}\n\n✅ Your AI will now reference this document!`, "Training Document Added", 'general');
-                }
-            } catch (error) {
-                await sendSmartResponse(bot, chatId, `❌ Error processing document: ${error.message}`, null, 'general');
-            }
-        }
-        return;
-    }
-});
                 
                 // Extract content based on file type
                 let content = '';
