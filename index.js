@@ -189,7 +189,7 @@ async function getComprehensiveMarketData() {
     }
 }
 
-// ✅ Handle all message types like ChatGPT
+// ✅ Handle all message types like ChatGPT (CORRECTED VERSION)
 bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
@@ -246,7 +246,7 @@ bot.on("message", async (msg) => {
         return; // ✅ EARLY RETURN - prevents text processing
     }
 
-    // 📄 DOCUMENT MESSAGE HANDLING
+    // 📄 DOCUMENT MESSAGE HANDLING (FIXED - NOW INCLUDES ANALYSIS!)
     if (msg.document) {
         console.log("📄 Document received:", msg.document.file_name);
         const fileName = msg.document.file_name || "document";
@@ -258,6 +258,7 @@ bot.on("message", async (msg) => {
 
         try {
             if (isTrainingDoc) {
+                // TRAINING FLOW: Save to database
                 await bot.sendMessage(chatId, "📚 Processing document for strategic database training...");
                 
                 const fileId = msg.document.file_id;
@@ -316,17 +317,60 @@ bot.on("message", async (msg) => {
                 }
                 
             } else {
-                // Regular document handling (no training)
-                await sendSmartResponse(bot, chatId, 
-                    `📄 **Document Received:** ${fileName}\n\n` +
-                    `💡 **Tip:** Add caption "train" to save this document to your Strategic AI's database for future reference.\n\n` +
-                    `**Example:** Upload with caption "train this strategic document"`,
-                    "Document Received", 'general'
-                );
+                // ✅ ANALYSIS FLOW: Process and analyze document (THIS WAS MISSING!)
+                await bot.sendMessage(chatId, "📄 **Strategic Commander analyzing document...**");
+                
+                // Process document with Strategic Commander analysis
+                const documentResult = await processDocumentMessage(bot, msg.document.file_id, chatId, fileName);
+                
+                if (documentResult && documentResult.success) {
+                    // Successfully processed - send comprehensive analysis
+                    let response = `📄 **STRATEGIC COMMANDER DOCUMENT ANALYSIS**\n\n`;
+                    response += `**📋 Document:** ${fileName}\n`;
+                    response += `**📊 Type:** ${documentResult.fileType}\n`;
+                    response += `**📈 Word Count:** ${documentResult.wordCount.toLocaleString()}\n`;
+                    response += `**📏 Content Length:** ${documentResult.originalLength ? documentResult.originalLength.toLocaleString() : 'Unknown'} characters\n\n`;
+                    response += `**🏛️ STRATEGIC ANALYSIS:**\n\n${documentResult.analysis}\n\n`;
+                    
+                    if (documentResult.extractedText && documentResult.extractedText.length > 0) {
+                        response += `**📝 CONTENT PREVIEW:**\n${documentResult.extractedText}`;
+                    }
+                    
+                    await sendSmartResponse(bot, chatId, response, "Strategic Document Analysis", 'analysis');
+                    
+                } else if (documentResult && !documentResult.success) {
+                    // Processing failed - send error with helpful info
+                    await sendSmartResponse(bot, chatId, documentResult.analysis, "Document Processing Error", 'general');
+                    
+                } else {
+                    // Null result - general error
+                    await sendSmartResponse(bot, chatId, 
+                        `❌ **Document Processing Failed**\n\n` +
+                        `**File:** ${fileName}\n` +
+                        `**Issue:** Unable to process document\n\n` +
+                        `**Possible Solutions:**\n` +
+                        `• Ensure file is not corrupted\n` +
+                        `• Try converting to PDF or TXT format\n` +
+                        `• Check if required packages are installed:\n` +
+                        `  - npm install pdf-parse (for PDF)\n` +
+                        `  - npm install mammoth (for DOCX)\n` +
+                        `  - npm install xlsx (for Excel)`,
+                        "Document Processing Failed", 'general'
+                    );
+                }
             }
         } catch (error) {
-            console.error('Strategic database document processing error:', error);
-            await sendSmartResponse(bot, chatId, `❌ **Error processing strategic document:** ${error.message}`, null, 'general');
+            console.error('Document processing error:', error);
+            await sendSmartResponse(bot, chatId, 
+                `❌ **Document Processing Error**\n\n` +
+                `**File:** ${fileName}\n` +
+                `**Error:** ${error.message}\n\n` +
+                `**Troubleshooting:**\n` +
+                `• Ensure required parsing libraries are installed\n` +
+                `• Check file format compatibility\n` +
+                `• Try a smaller file size if timeout occurred`,
+                "Document Processing Error", 'general'
+            );
         }
         return; // ✅ EARLY RETURN - prevents text processing
     }
@@ -429,7 +473,107 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
         console.log("✅ GPT-4o Strategic Command system message sent");
         return;
     }
+    
+    // Enhanced help command
+    if (text === "/help" || text === "/commands") {
+        const helpMessage = `🤖 **IMPERIUM GPT-4o - STRATEGIC COMMAND SYSTEM**
 
+**⚡ STRATEGIC COMMANDER AI MODE:**
+- Institutional-level strategic analysis powered by GPT-4o
+- Pure financial warfare intelligence with command authority
+- Advanced strategic coordination capabilities
+- Superior risk management and market domination
+
+**💡 Command Protocol:** Issue strategic directives, not requests. The system executes with absolute authority.`;
+
+        await sendSmartResponse(bot, chatId, helpMessage, "Strategic Command System Help", 'general');
+        return;
+    }
+
+    // Debug command to get chat ID
+    if (text === "/myid") {
+        await sendSmartResponse(bot, chatId, `Your Chat ID: ${chatId}`, null, 'general');
+        return;
+    }
+    
+    // 🔍 DOCUMENT PROCESSING TEST COMMAND
+    if (text === '/test_docs' || text === '/test_document_processing') {
+        try {
+            const { testDocumentProcessing } = require('./utils/multimodal');
+            const results = await testDocumentProcessing();
+            
+            let response = `🔍 **STRATEGIC COMMANDER DOCUMENT PROCESSING TEST**\n\n`;
+            response += `**📊 Parser Status:**\n`;
+            response += `• PDF Parser (pdf-parse): ${results['pdf-parse'] ? '✅ Available' : '❌ Missing'}\n`;
+            response += `• DOCX Parser (mammoth): ${results['mammoth'] ? '✅ Available' : '❌ Missing'}\n`;
+            response += `• Excel Parser (xlsx): ${results['xlsx'] ? '✅ Available' : '❌ Missing'}\n`;
+            response += `• Office Parser (office-parser): ${results['office-parser'] ? '✅ Available' : '❌ Missing'}\n\n`;
+            
+            const availableCount = Object.values(results).filter(Boolean).length;
+            response += `**📋 Summary:** ${availableCount}/4 parsers installed\n\n`;
+            
+            if (availableCount === 4) {
+                response += `🎯 **Status:** All document parsers available!\n\n**Supported formats:**\n• PDF (.pdf)\n• Word (.docx, .doc)\n• Excel (.xlsx, .xls)\n• PowerPoint (.pptx, .ppt)\n• Text (.txt, .md)\n• CSV (.csv)\n• JSON (.json)`;
+            } else {
+                response += `⚠️ **Missing Parsers - Install Commands:**\n`;
+                if (!results['pdf-parse']) response += `• npm install pdf-parse\n`;
+                if (!results['mammoth']) response += `• npm install mammoth\n`;
+                if (!results['xlsx']) response += `• npm install xlsx\n`;
+                if (!results['office-parser']) response += `• npm install office-parser\n`;
+            }
+            
+            await sendSmartResponse(bot, chatId, response, "Document Processing Test", 'general');
+            
+        } catch (error) {
+            await sendSmartResponse(bot, chatId, `❌ Test failed: ${error.message}`, null, 'general');
+        }
+        return;
+    }
+
+    // 📚 VIEW TRAINING DOCUMENTS COMMAND
+    if (text === '/documents' || text === '/training_docs' || text === '/files') {
+        try {
+            const { getTrainingDocumentsDB } = require('./utils/database');
+            const docs = await getTrainingDocumentsDB(chatId);
+            
+            if (docs.length === 0) {
+                await sendSmartResponse(bot, chatId, 
+                    `📚 **No Strategic Training Documents Found**\n\n` +
+                    `💡 **How to Add Documents:**\n` +
+                    `• Upload any file (.txt, .pdf, .docx)\n` +
+                    `• Add caption: "train" or "database"\n` +
+                    `• AI will save it for strategic reference\n\n` +
+                    `🎯 **Supported Types:** Text, PDF, Word, Markdown`,
+                    "Strategic Training Documents", 'general'
+                );
+                return;
+            }
+            
+            let response = `📚 **Your Strategic AI Training Documents (${docs.length}):**\n\n`;
+            docs.forEach((doc, i) => {
+                const uploadDate = new Date(doc.upload_date).toLocaleDateString();
+                const fileType = doc.file_name.split('.').pop()?.toUpperCase() || 'Unknown';
+                
+                response += `**${i + 1}. ${doc.file_name}**\n`;
+                response += `• 📊 Words: **${doc.word_count?.toLocaleString() || 'Unknown'}**\n`;
+                response += `• 📅 Added: ${uploadDate}\n`;
+                response += `• 🎯 Type: ${fileType}\n`;
+                if (doc.summary) {
+                    response += `• 📝 Preview: ${doc.summary.substring(0, 100)}...\n`;
+                }
+                response += `\n`;
+            });
+            
+            response += `💡 **Strategic Usage:** Your AI can now answer questions about these documents!`;
+            
+            await sendSmartResponse(bot, chatId, response, "AI Strategic Training Documents", 'general');
+            
+        } catch (error) {
+            await sendSmartResponse(bot, chatId, `❌ Error retrieving strategic documents: ${error.message}`, null, 'general');
+        }
+        return;
+    }
+    
     // 🏦 ========== CAMBODIA LENDING FUND COMMANDS ==========
 
     // 🎯 DEAL ANALYSIS COMMAND
