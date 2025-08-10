@@ -2015,7 +2015,109 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
         return;
     }
 
-    // ✅ FOR ALL OTHER TEXT MESSAGES, HANDLE AS GPT CONVERSATION
+// 🔧 CLAUDE HEALTH CHECK COMMAND
+    if (text === '/test_claude' || text === '/claude_health') {
+        try {
+            console.log('🔍 Testing Claude Intelligence Chief...');
+            
+            const isHealthy = await testClaudeConnection();
+            
+            if (isHealthy) {
+                await sendSmartResponse(bot, chatId, 
+                    '✅ **CLAUDE STRATEGIC INTELLIGENCE CHIEF**\n\n' +
+                    '🎯 **Status:** OPERATIONAL\n' +
+                    '⚡ **Capabilities:** Live market intelligence, superior reasoning, complex analysis\n' +
+                    '🔗 **Model:** claude-3-sonnet-20240229\n\n' +
+                    '**Ready for strategic warfare intelligence!**',
+                    'Claude Intelligence Chief Status', 'analysis'
+                );
+            } else {
+                await sendSmartResponse(bot, chatId, 
+                    '❌ **CLAUDE STRATEGIC INTELLIGENCE CHIEF**\n\n' +
+                    '🎯 **Status:** OFFLINE\n' +
+                    '⚠️ **Issue:** Connection failed\n\n' +
+                    '**Troubleshooting:**\n' +
+                    '• Check ANTHROPIC_API_KEY environment variable\n' +
+                    '• Verify Claude API billing and quota\n' +
+                    '• Test network connectivity\n\n' +
+                    '**Fallback:** GPT Strategic Commander remains operational',
+                    'Claude Intelligence Chief Status', 'alert'
+                );
+            }
+        } catch (error) {
+            await sendSmartResponse(bot, chatId, `❌ Claude test failed: ${error.message}`, null, 'alert');
+        }
+        return;
+    }
+
+    // 🎯 DUAL COMMAND TEST
+    if (text === '/test_dual' || text === '/dual_test') {
+        try {
+            console.log('🎯 Testing Dual Command routing...');
+            
+            const testMessage = "Execute strategic test analysis with current market intelligence";
+            await sendSmartResponse(bot, chatId, 
+                '🎯 **DUAL COMMAND SYSTEM TEST**\n\n' +
+                'Executing strategic routing test...\n\n' +
+                '**Test Query:** "Execute strategic test analysis with current market intelligence"',
+                'Dual Command System Test', 'analysis'
+            );
+            
+            await handleStrategicDualCommand(chatId, testMessage);
+            
+        } catch (error) {
+            await sendSmartResponse(bot, chatId, `❌ Dual command test failed: ${error.message}`, null, 'alert');
+        }
+        return;
+    }
+
+    // 🎯 SYSTEM STATUS COMMAND
+    if (text === '/system_status' || text === '/status') {
+        try {
+            console.log('📊 Checking system status...');
+            
+            const health = await checkDualCommandHealth();
+            
+            let statusMessage = '📊 **STRATEGIC COMMAND CENTER STATUS**\n\n';
+            
+            statusMessage += '**🤖 AI COMMANDERS:**\n';
+            statusMessage += `🏛️ GPT Strategic Commander: ${health.gptCommander ? '✅ OPERATIONAL' : '❌ OFFLINE'}\n`;
+            statusMessage += `⚡ Claude Intelligence Chief: ${health.claudeIntelligence ? '✅ OPERATIONAL' : '❌ OFFLINE'}\n`;
+            statusMessage += `🎯 Dual Command System: ${health.dualSystem ? '✅ READY' : '⚠️ DEGRADED'}\n\n`;
+            
+            statusMessage += '**📊 SYSTEM CAPABILITIES:**\n';
+            statusMessage += '• Live market data integration\n';
+            statusMessage += '• Cambodia fund analysis\n';
+            statusMessage += '• MetaTrader integration\n';
+            statusMessage += '• Document processing\n';
+            statusMessage += '• Voice/image analysis\n\n';
+            
+            if (health.dualSystem) {
+                statusMessage += '🚀 **STRATEGIC READINESS:** MAXIMUM WARFARE CAPABILITY';
+            } else if (health.gptCommander) {
+                statusMessage += '⚠️ **STRATEGIC READINESS:** SINGLE COMMAND MODE';
+            } else {
+                statusMessage += '❌ **STRATEGIC READINESS:** SYSTEM DEGRADED';
+            }
+            
+            await sendSmartResponse(bot, chatId, statusMessage, 'Strategic Command Center Status', 'analysis');
+            
+        } catch (error) {
+            await sendSmartResponse(bot, chatId, `❌ Status check failed: ${error.message}`, null, 'alert');
+        }
+        return;
+    }
+
+    // ✅ FOR ALL OTHER TEXT MESSAGES - Route to Dual Command System
+    await handleStrategicDualCommand(chatId, text);
+    
+}); // ✅ CRITICAL: Closing bracket for bot.on("message")
+
+// ========================================================================
+// 🎯 DUAL COMMAND SYSTEM FUNCTIONS - DEFINED OUTSIDE MESSAGE HANDLER
+// ========================================================================
+
+// ✅ MOVE THIS FUNCTION OUTSIDE bot.on("message") - CRITICAL FIX!
 async function handleStrategicDualCommand(chatId, userMessage) {
     console.log("🎯 Strategic Dual Command conversation:", userMessage, "from:", chatId);
 
@@ -2049,7 +2151,7 @@ async function handleStrategicDualCommand(chatId, userMessage) {
         // Fallback to your existing GPT system
         try {
             console.log('🔄 Falling back to single GPT Strategic Commander...');
-await handleGPTConversationFallback(chatId, userMessage);
+            await handleGPTConversationFallback(chatId, userMessage);
         } catch (fallbackError) {
             console.error('❌ Complete system failure:', fallbackError.message);
             await sendSmartResponse(bot, chatId, 
@@ -2058,7 +2160,6 @@ await handleGPTConversationFallback(chatId, userMessage);
         }
     }
 }
-}); // ✅ CRITICAL: Closing bracket for bot.on("message")
 
 // ✅ ENHANCED GPT conversation with Strategic Commander system prompt
 async function handleGPTConversationFallback(chatId, userMessage) {
@@ -2322,122 +2423,6 @@ Always write complete, comprehensive responses demonstrating institutional exper
         let errorMsg = `❌ **IMPERIUM GPT Strategic Error (Fallback Mode):**\n\n${error.message}`;
         await sendSmartResponse(bot, chatId, errorMsg, null, 'general');
     }
-}
-
-// 🎯 STEP 4: UPDATE YOUR VOICE MESSAGE HANDLER (find this in your existing code and replace)
-
-// 🎤 VOICE MESSAGE HANDLING - Updated for GPT-4o + Claude dual command
-if (msg.voice) {
-    console.log("🎤 Voice message received for Dual Command System");
-    try {
-        const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
-        if (transcribedText) {
-            await sendSmartResponse(bot, chatId, `🎤 Voice transcribed: "${transcribedText}"`, null, 'general');
-            // Route to Dual Command System (GPT-4o + Claude)
-            await handleStrategicDualCommand(chatId, transcribedText);
-        } else {
-            await sendSmartResponse(bot, chatId, "❌ Voice transcription failed. Please try again.", null, 'general');
-        }
-    } catch (error) {
-        console.error('Voice processing error in Dual Command System:', error.message);
-        await sendSmartResponse(bot, chatId, `❌ Voice processing error: ${error.message}`, null, 'general');
-    }
-    return; // ✅ EARLY RETURN - prevents text processing
-}
-
-// 🎯 STEP 5: ADD THESE NEW TEST COMMANDS (add after your existing commands)
-
-// 🔧 CLAUDE HEALTH CHECK COMMAND
-if (text === '/test_claude' || text === '/claude_health') {
-    try {
-        console.log('🔍 Testing Claude Intelligence Chief...');
-        
-        const isHealthy = await testClaudeConnection();
-        
-        if (isHealthy) {
-            await sendSmartResponse(bot, chatId, 
-                '✅ **CLAUDE STRATEGIC INTELLIGENCE CHIEF**\n\n' +
-                '🎯 **Status:** OPERATIONAL\n' +
-                '⚡ **Capabilities:** Live market intelligence, superior reasoning, complex analysis\n' +
-                '🔗 **Model:** claude-3-sonnet-20240229\n\n' +
-                '**Ready for strategic warfare intelligence!**',
-                'Claude Intelligence Chief Status', 'analysis'
-            );
-        } else {
-            await sendSmartResponse(bot, chatId, 
-                '❌ **CLAUDE STRATEGIC INTELLIGENCE CHIEF**\n\n' +
-                '🎯 **Status:** OFFLINE\n' +
-                '⚠️ **Issue:** Connection failed\n\n' +
-                '**Troubleshooting:**\n' +
-                '• Check ANTHROPIC_API_KEY environment variable\n' +
-                '• Verify Claude API billing and quota\n' +
-                '• Test network connectivity\n\n' +
-                '**Fallback:** GPT Strategic Commander remains operational',
-                'Claude Intelligence Chief Status', 'alert'
-            );
-        }
-    } catch (error) {
-        await sendSmartResponse(bot, chatId, `❌ Claude test failed: ${error.message}`, null, 'alert');
-    }
-    return;
-}
-
-// 🎯 DUAL COMMAND TEST
-if (text === '/test_dual' || text === '/dual_test') {
-    try {
-        console.log('🎯 Testing Dual Command routing...');
-        
-        const testMessage = "Execute strategic test analysis with current market intelligence";
-        await sendSmartResponse(bot, chatId, 
-            '🎯 **DUAL COMMAND SYSTEM TEST**\n\n' +
-            'Executing strategic routing test...\n\n' +
-            '**Test Query:** "Execute strategic test analysis with current market intelligence"',
-            'Dual Command System Test', 'analysis'
-        );
-        
-        await handleStrategicDualCommand(chatId, testMessage);
-        
-    } catch (error) {
-        await sendSmartResponse(bot, chatId, `❌ Dual command test failed: ${error.message}`, null, 'alert');
-    }
-    return;
-}
-
-// 🎯 SYSTEM STATUS COMMAND
-if (text === '/system_status' || text === '/status') {
-    try {
-        console.log('📊 Checking system status...');
-        
-        const health = await checkDualCommandHealth();
-        
-        let statusMessage = '📊 **STRATEGIC COMMAND CENTER STATUS**\n\n';
-        
-        statusMessage += '**🤖 AI COMMANDERS:**\n';
-        statusMessage += `🏛️ GPT Strategic Commander: ${health.gptCommander ? '✅ OPERATIONAL' : '❌ OFFLINE'}\n`;
-        statusMessage += `⚡ Claude Intelligence Chief: ${health.claudeIntelligence ? '✅ OPERATIONAL' : '❌ OFFLINE'}\n`;
-        statusMessage += `🎯 Dual Command System: ${health.dualSystem ? '✅ READY' : '⚠️ DEGRADED'}\n\n`;
-        
-        statusMessage += '**📊 SYSTEM CAPABILITIES:**\n';
-        statusMessage += '• Live market data integration\n';
-        statusMessage += '• Cambodia fund analysis\n';
-        statusMessage += '• MetaTrader integration\n';
-        statusMessage += '• Document processing\n';
-        statusMessage += '• Voice/image analysis\n\n';
-        
-        if (health.dualSystem) {
-            statusMessage += '🚀 **STRATEGIC READINESS:** MAXIMUM WARFARE CAPABILITY';
-        } else if (health.gptCommander) {
-            statusMessage += '⚠️ **STRATEGIC READINESS:** SINGLE COMMAND MODE';
-        } else {
-            statusMessage += '❌ **STRATEGIC READINESS:** SYSTEM DEGRADED';
-        }
-        
-        await sendSmartResponse(bot, chatId, statusMessage, 'Strategic Command Center Status', 'analysis');
-        
-    } catch (error) {
-        await sendSmartResponse(bot, chatId, `❌ Status check failed: ${error.message}`, null, 'alert');
-    }
-    return;
 }
 
 // ✅ Express server for webhook and API endpoints
