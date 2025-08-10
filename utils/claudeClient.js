@@ -1,5 +1,5 @@
 // utils/claudeClient.js - STRATEGIC INTELLIGENCE CHIEF IMPLEMENTATION
-const Anthropic = require('@anthropic-ai/sdk');
+const { Anthropic } = require('@anthropic-ai/sdk');
 
 // ⚡ Initialize Claude Strategic Intelligence Chief
 const anthropic = new Anthropic({
