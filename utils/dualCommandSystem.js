@@ -1,231 +1,432 @@
-// utils/dualCommandSystem.js - STRATEGIC DUAL COMMAND ARCHITECTURE
+// utils/dualCommandSystem.js - STRATEGIC AI WARFARE WITH FREEDOM
+// Perfect fusion of institutional intelligence + natural conversation
+
 const { getGptReply, getStrategicAnalysis } = require('./openaiClient');
+const { getClaudeStrategicAnalysis, getClaudeLiveResearch, getClaudeComplexAnalysis, getClaudeCambodiaIntelligence } = require('./claudeClient');
 const { sendSmartResponse, cleanStrategicResponse } = require('./telegramSplitter');
 const { buildStrategicCommanderContext } = require('./contextEnhancer');
-const axios = require('axios');
 
-// 🏛️ DUAL COMMAND SYSTEM CONFIGURATION
-const COMMAND_CONFIG = {
-    // GPT-4o Strategic Commander (Multimodal + Institutional Analysis)
+// 🎯 ENHANCED DUAL COMMAND CONFIGURATION
+const ENHANCED_COMMAND_CONFIG = {
+    // GPT-4o Strategic Commander (Institutional + Natural)
     GPT_COMMANDER: {
         name: 'Strategic Commander Alpha',
         model: 'gpt-4o',
-        specialties: ['multimodal', 'voice', 'images', 'documents', 'institutional_analysis'],
+        specialties: ['multimodal', 'institutional_analysis', 'natural_conversation', 'cambodia_expertise'],
         emoji: '🏛️',
-        priority: 'institutional'
+        priority: 'institutional',
+        conversationStyles: {
+            casual: 'wise_friend',
+            strategic: 'institutional_authority', 
+            urgent: 'commanding_executive'
+        }
     },
     
-    // Claude Sonnet 4 (Live Intelligence + Research + Complex Analysis)
+    // Claude Sonnet 4 (Live Intelligence + Research)
     CLAUDE_INTELLIGENCE: {
-        name: 'Strategic Intelligence Chief',
+        name: 'Strategic Intelligence Chief', 
         model: 'claude-sonnet-4',
         specialties: ['live_data', 'research', 'complex_analysis', 'real_time_intelligence'],
         emoji: '⚡',
-        priority: 'intelligence'
+        priority: 'intelligence',
+        conversationStyles: {
+            casual: 'smart_analyst',
+            strategic: 'research_authority',
+            urgent: 'tactical_intelligence'
+        }
     }
 };
 
 /**
- * 🎯 STRATEGIC COMMAND ROUTER
- * Routes queries to optimal AI system based on strategic requirements
+ * 🧠 INTELLIGENT CONVERSATION ANALYSIS
+ * Detects conversation type and complexity for perfect response adaptation
  */
-function routeStrategicCommand(userMessage, messageType = 'text', hasMedia = false) {
+function analyzeConversationIntelligence(userMessage, messageType = 'text', hasMedia = false) {
     const message = userMessage.toLowerCase();
     
-    // Force GPT-4o for multimodal content
+    // 💬 CASUAL CONVERSATION (Natural & Brief)
+    const casualPatterns = [
+        /^(hello|hi|hey|good morning|good afternoon|what's up)$/i,
+        /^how are you\??$/i,
+        /^(thanks|thank you|cool|nice|great)$/i,
+        /^(ok|okay|got it|understood)$/i
+    ];
+    
+    // 🔥 QUICK STRATEGIC (Smart & Concise) 
+    const quickStrategicPatterns = [
+        /^(what's|whats) the (price|rate|status) of/i,
+        /^should i (buy|sell|hold)/i,
+        /^is .* a good (buy|investment|opportunity)/i,
+        /^(quick|simple) (question|check)/i,
+        /^how (much|many|often)/i,
+        /^when (should|will|is)/i
+    ];
+    
+    // 🏛️ FULL INSTITUTIONAL (Deep Strategic Analysis)
+    const institutionalPatterns = [
+        /(strategy|strategic|portfolio|allocation|diversification)/i,
+        /(regime|economic|macro|fed|policy|inflation)/i,
+        /(risk|correlation|optimization|analysis)/i,
+        /(cambodia|lending|fund|deal|investment)/i,
+        /(forecast|outlook|scenario|model)/i,
+        /(comprehensive|detailed|thorough|deep)/i,
+        /(institutional|professional|advanced)/i
+    ];
+    
+    // 🔬 RESEARCH MODE (Live Data + Analysis)
+    const researchPatterns = [
+        /(research|analyze|investigate|study|examine)/i,
+        /(current|latest|recent|today|now|live|real.?time)/i,
+        /(compare|versus|vs|between|against)/i,
+        /(trend|trending|movement|direction)/i,
+        /(news|breaking|update|development)/i
+    ];
+    
+    // 🚨 URGENT STRATEGIC (Command Authority)
+    const urgentPatterns = [
+        /(urgent|emergency|immediately|asap|critical)/i,
+        /(alert|warning|problem|issue|crisis)/i,
+        /(stop|halt|cancel|abort)/i,
+        /(execute|deploy|action|implement)/i
+    ];
+    
+    // Determine conversation intelligence level
     if (hasMedia || messageType !== 'text') {
         return {
-            primary: 'GPT_COMMANDER',
-            secondary: null,
-            reasoning: 'Multimodal content requires GPT-4o capabilities'
+            type: 'multimodal',
+            complexity: 'high',
+            maxTokens: 4096,
+            temperature: 0.7,
+            style: 'comprehensive_analysis',
+            primaryAI: 'GPT_COMMANDER',
+            secondaryAI: null,
+            reasoning: 'Multimodal content requires GPT-4o vision capabilities'
         };
     }
     
-    // Analyze strategic requirements
-    const requiresLiveData = /current|latest|recent|today|now|real.?time|breaking|news/.test(message);
-    const requiresResearch = /research|analyze|compare|investigate|study|examine/.test(message);
-    const requiresComplexAnalysis = /strategy|forecast|scenario|correlation|optimization|model/.test(message);
-    const requiresInstitutional = /portfolio|allocation|deploy|execute|risk|performance/.test(message);
-    const requiresCambodia = /cambodia|deal|lending|fund/.test(message);
-    
-    // Strategic routing logic
-    if (requiresLiveData || requiresResearch) {
+    if (casualPatterns.some(pattern => pattern.test(message))) {
         return {
-            primary: 'CLAUDE_INTELLIGENCE',
-            secondary: requiresInstitutional ? 'GPT_COMMANDER' : null,
-            reasoning: 'Live intelligence and research capabilities required'
+            type: 'casual',
+            complexity: 'minimal',
+            maxTokens: 150,
+            temperature: 0.8,
+            style: 'natural_brief',
+            primaryAI: 'GPT_COMMANDER',
+            secondaryAI: null,
+            reasoning: 'Casual greeting - natural response with strategic personality'
         };
     }
     
-    if (requiresComplexAnalysis && !requiresInstitutional) {
+    if (urgentPatterns.some(pattern => pattern.test(message))) {
         return {
-            primary: 'CLAUDE_INTELLIGENCE',
-            secondary: null,
-            reasoning: 'Complex analysis requires Claude\'s superior reasoning'
+            type: 'urgent_strategic',
+            complexity: 'focused',
+            maxTokens: 800,
+            temperature: 0.6,
+            style: 'commanding_authority',
+            primaryAI: 'GPT_COMMANDER',
+            secondaryAI: 'CLAUDE_INTELLIGENCE',
+            reasoning: 'Urgent situation requires immediate strategic authority'
         };
     }
     
-    if (requiresCambodia && requiresLiveData) {
+    if (quickStrategicPatterns.some(pattern => pattern.test(message))) {
         return {
-            primary: 'CLAUDE_INTELLIGENCE',
-            secondary: 'GPT_COMMANDER',
-            reasoning: 'Cambodia fund analysis with live market intelligence'
+            type: 'quick_strategic',
+            complexity: 'moderate',
+            maxTokens: 500,
+            temperature: 0.7,
+            style: 'smart_concise',
+            primaryAI: 'CLAUDE_INTELLIGENCE',
+            secondaryAI: null,
+            reasoning: 'Quick strategic question - concise expert answer'
         };
     }
     
-    if (requiresInstitutional) {
+    if (researchPatterns.some(pattern => pattern.test(message))) {
         return {
-            primary: 'GPT_COMMANDER',
-            secondary: requiresLiveData ? 'CLAUDE_INTELLIGENCE' : null,
-            reasoning: 'Institutional analysis requires Strategic Commander expertise'
+            type: 'research_intelligence',
+            complexity: 'high',
+            maxTokens: 3000,
+            temperature: 0.6,
+            style: 'analytical_thorough',
+            primaryAI: 'CLAUDE_INTELLIGENCE',
+            secondaryAI: 'GPT_COMMANDER',
+            reasoning: 'Research requires live intelligence + strategic context'
         };
     }
     
-    // Default: Use Claude for superior reasoning, GPT for institutional context
+    if (institutionalPatterns.some(pattern => pattern.test(message))) {
+        return {
+            type: 'institutional_analysis',
+            complexity: 'maximum',
+            maxTokens: 4096,
+            temperature: 0.6,
+            style: 'institutional_comprehensive',
+            primaryAI: 'GPT_COMMANDER',
+            secondaryAI: 'CLAUDE_INTELLIGENCE',
+            reasoning: 'Complex strategic analysis requires full institutional authority'
+        };
+    }
+    
+    // Default: Balanced intelligent response
     return {
-        primary: 'CLAUDE_INTELLIGENCE',
-        secondary: 'GPT_COMMANDER',
-        reasoning: 'Hybrid analysis for comprehensive strategic intelligence'
+        type: 'balanced_strategic',
+        complexity: 'moderate',
+        maxTokens: 1500,
+        temperature: 0.7,
+        style: 'helpful_intelligent',
+        primaryAI: 'GPT_COMMANDER',
+        secondaryAI: null,
+        reasoning: 'Balanced response with strategic intelligence'
     };
 }
 
 /**
- * 🏛️ GPT-4O STRATEGIC COMMANDER HANDLER
+ * 🎭 DYNAMIC INTELLIGENT SYSTEM PROMPTS
+ * Creates natural, adaptive prompts that feel human yet authoritative
  */
-async function executeGptCommand(userMessage, chatId, context) {
+function createIntelligentSystemPrompt(conversationIntel, context = null) {
+    const baseIdentity = `You are Claude/GPT, Sum Chenda's brilliant strategic advisor for the IMPERIUM VAULT system. You combine institutional-level financial expertise with natural, engaging conversation. Think like Ray Dalio or Warren Buffett, but communicate naturally.`;
+    
+    switch (conversationIntel.type) {
+        case 'casual':
+            return `${baseIdentity}
+
+CASUAL MODE - Natural & Brief:
+Someone just said hello or made a casual comment. Respond like a wise, friendly financial expert who's genuinely happy to chat. 
+
+- Be warm and natural (1-3 sentences max)
+- Show your strategic personality but don't overwhelm
+- Can reference markets casually if relevant
+- Think "smart friend who happens to be a financial genius"
+
+NO formal headers, NO lengthy analysis - just natural conversation with strategic intelligence.`;
+
+        case 'quick_strategic':
+            return `${baseIdentity}
+
+QUICK STRATEGIC MODE - Smart & Concise:
+You're being asked a straightforward strategic question. Give a smart, definitive answer without being overly formal.
+
+- Provide clear strategic assessment (200-500 words)
+- Include key insight + actionable takeaway  
+- Be authoritative but conversational
+- Think "Ray Dalio giving quick advice over coffee"
+
+Structure naturally - no rigid templates. Give the strategic intelligence they need efficiently.`;
+
+        case 'urgent_strategic':
+            return `${baseIdentity}
+
+URGENT STRATEGIC MODE - Command Authority:
+This is urgent. Respond with immediate strategic authority and clear direction.
+
+- Lead with immediate assessment and action needed
+- Use commanding but professional language
+- Focus on critical factors and immediate steps
+- Think "crisis management by institutional expert"
+
+Be decisive, authoritative, and action-focused. This situation demands strategic leadership.`;
+
+        case 'institutional_analysis':
+            return `${baseIdentity}
+
+INSTITUTIONAL ANALYSIS MODE - Full Strategic Authority:
+Deploy comprehensive institutional-grade analysis with natural flow.
+
+EXPERTISE AREAS:
+- Global macro analysis with live market data
+- Ray Dalio-style regime identification and All Weather strategies
+- Cambodia private lending market intelligence  
+- Portfolio optimization and risk management
+- Live trading strategy and correlation analysis
+
+COMMUNICATION STYLE:
+- Write like Warren Buffett or Ray Dalio - authoritative but engaging
+- Use natural flow, not rigid templates
+- Provide comprehensive analysis that builds logically
+- Include specific numbers, data, and actionable recommendations
+- Structure responses naturally with clear insights
+
+${context ? 'STRATEGIC CONTEXT:\n' + context : ''}
+
+Deliver institutional intelligence in natural, engaging format.`;
+
+        case 'research_intelligence':
+            return `${baseIdentity}
+
+RESEARCH INTELLIGENCE MODE - Live Analysis:
+Execute analytical research with live market intelligence.
+
+- Synthesize current market data with strategic frameworks
+- Provide analytical depth with clear conclusions  
+- Compare multiple perspectives and data sources
+- Focus on actionable insights and strategic implications
+
+Style: Analytical but accessible - like reading a brilliant research report that actually makes sense.
+
+Be thorough but engaging. Your analysis should drive strategic decisions.`;
+
+        case 'multimodal':
+            return `${baseIdentity}
+
+MULTIMODAL ANALYSIS MODE - Comprehensive Intelligence:
+Analyze the provided content (image/document/media) with institutional expertise.
+
+Focus on extracting:
+- Financial data, charts, or market information
+- Strategic documents or investment materials  
+- Economic indicators or market signals
+- Investment opportunities or risks
+- Strategic intelligence relevant to portfolio management
+
+Provide detailed institutional assessment with actionable strategic insights.`;
+
+        default: // balanced_strategic
+            return `${baseIdentity}
+
+BALANCED STRATEGIC MODE - Intelligent & Natural:
+Provide helpful, naturally intelligent responses that adapt to the question's complexity.
+
+- For simple questions: Be conversational and efficient
+- For complex topics: Deploy deeper strategic analysis
+- For financial matters: Draw on institutional expertise
+- Always maintain strategic intelligence while communicating naturally
+
+Think "brilliant advisor having a normal conversation" rather than "corporate AI assistant."
+
+You have access to live market data and strategic frameworks - use them naturally when relevant.`;
+    }
+}
+
+/**
+ * 🏛️ ENHANCED GPT STRATEGIC COMMANDER
+ * Natural conversation with institutional authority
+ */
+async function executeEnhancedGptCommand(userMessage, chatId, conversationIntel, context) {
     try {
-        console.log('🏛️ Executing GPT-4o Strategic Commander...');
+        console.log('🏛️ Executing Enhanced GPT Strategic Commander...');
         
-        // Build comprehensive context for institutional analysis
-        const strategicContext = context || await buildStrategicCommanderContext(chatId, userMessage);
+        const systemPrompt = createIntelligentSystemPrompt(conversationIntel, context);
         
-        // Execute Strategic Commander analysis
-        const response = await getStrategicAnalysis(userMessage, {
-            context: strategicContext,
-            mode: 'institutional',
-            maxTokens: 16384
+        const response = await getGptReply(userMessage, {
+            systemPrompt: systemPrompt,
+            maxTokens: conversationIntel.maxTokens,
+            temperature: conversationIntel.temperature,
+            strategic: true
         });
         
         return {
             response: cleanStrategicResponse(response),
             commander: 'GPT Strategic Commander Alpha',
             emoji: '🏛️',
-            capabilities: 'Institutional Analysis + Multimodal Intelligence'
+            style: conversationIntel.style,
+            complexity: conversationIntel.complexity,
+            capabilities: 'Institutional Analysis + Natural Intelligence'
         };
         
     } catch (error) {
-        console.error('❌ GPT Strategic Commander error:', error.message);
+        console.error('❌ Enhanced GPT Commander error:', error.message);
         throw new Error(`Strategic Commander Alpha Error: ${error.message}`);
     }
 }
 
 /**
- * ⚡ CLAUDE STRATEGIC INTELLIGENCE HANDLER
+ * ⚡ ENHANCED CLAUDE INTELLIGENCE CHIEF  
+ * Live intelligence with natural reasoning
  */
-async function executeClaudeIntelligence(userMessage, chatId, context) {
+async function executeEnhancedClaudeIntelligence(userMessage, chatId, conversationIntel, context) {
     try {
-        console.log('⚡ Executing Claude Strategic Intelligence Chief...');
+        console.log('⚡ Executing Enhanced Claude Intelligence Chief...');
         
-        // Note: This is a placeholder for Claude API integration
-        // You'll need to implement actual Claude API calls here
-        
-        const claudeResponse = await callClaudeAPI(userMessage, {
+        const claudeOptions = {
             context: context,
-            mode: 'strategic_intelligence',
-            enable_search: true,
-            enable_research: true
-        });
+            maxTokens: conversationIntel.maxTokens,
+            temperature: conversationIntel.temperature,
+            mode: conversationIntel.type
+        };
+        
+        let claudeResponse;
+        
+        // Route to specialized Claude functions based on conversation intelligence
+        if (conversationIntel.type === 'research_intelligence') {
+            claudeResponse = await getClaudeLiveResearch(userMessage, claudeOptions);
+        } else if (userMessage.toLowerCase().includes('cambodia') || userMessage.toLowerCase().includes('lending')) {
+            claudeResponse = await getClaudeCambodiaIntelligence(userMessage, null, claudeOptions);
+        } else if (conversationIntel.complexity === 'maximum') {
+            claudeResponse = await getClaudeComplexAnalysis(userMessage, [], claudeOptions);
+        } else {
+            claudeResponse = await getClaudeStrategicAnalysis(userMessage, claudeOptions);
+        }
         
         return {
             response: claudeResponse,
             commander: 'Claude Strategic Intelligence Chief',
             emoji: '⚡',
-            capabilities: 'Live Intelligence + Research + Complex Analysis'
+            style: conversationIntel.style,
+            complexity: conversationIntel.complexity,
+            capabilities: 'Live Intelligence + Research + Natural Reasoning'
         };
         
     } catch (error) {
-        console.error('❌ Claude Strategic Intelligence error:', error.message);
+        console.error('❌ Enhanced Claude Intelligence error:', error.message);
         throw new Error(`Strategic Intelligence Chief Error: ${error.message}`);
     }
 }
 
 /**
- * 🔗 CLAUDE API INTEGRATION (FULLY IMPLEMENTED)
- * Live Claude Strategic Intelligence Chief integration
+ * 🎯 ENHANCED DUAL COMMAND EXECUTION ENGINE
+ * Perfect fusion of institutional intelligence + natural conversation
  */
-const { getClaudeStrategicAnalysis, getClaudeLiveResearch, getClaudeComplexAnalysis, getClaudeCambodiaIntelligence } = require('./claudeClient');
-
-async function callClaudeAPI(message, options = {}) {
+async function executeEnhancedDualCommand(userMessage, chatId, messageType = 'text', hasMedia = false) {
     try {
-        console.log('⚡ Executing Claude Strategic Intelligence Chief...');
+        console.log('🎯 Executing Enhanced Dual Command - Strategic AI Warfare with Freedom...');
         
-        // Determine analysis type based on options and message content
-        const messageContent = message.toLowerCase();
+        // Analyze conversation intelligence
+        const conversationIntel = analyzeConversationIntelligence(userMessage, messageType, hasMedia);
+        console.log('🧠 Conversation Intelligence:', conversationIntel);
         
-        // Route to specialized Claude functions based on content
-        if (options.mode === 'cambodia' || messageContent.includes('cambodia') || messageContent.includes('lending') || messageContent.includes('fund')) {
-            return await getClaudeCambodiaIntelligence(message, options.dealData, options);
+        // Build strategic context (only for complex queries to avoid overhead)
+        let context = null;
+        if (conversationIntel.complexity !== 'minimal') {
+            context = await buildStrategicCommanderContext(chatId, userMessage);
         }
-        
-        if (options.mode === 'research' || messageContent.includes('research') || messageContent.includes('current') || messageContent.includes('latest')) {
-            return await getClaudeLiveResearch(message, options);
-        }
-        
-        if (options.mode === 'complex' || messageContent.includes('analysis') || messageContent.includes('scenario') || messageContent.includes('correlation')) {
-            const factors = options.factors || [];
-            return await getClaudeComplexAnalysis(message, factors, options);
-        }
-        
-        // Default to comprehensive strategic analysis
-        return await getClaudeStrategicAnalysis(message, options);
-        
-    } catch (error) {
-        console.error('❌ Claude Strategic Intelligence error:', error.message);
-        throw new Error(`Strategic Intelligence Chief Error: ${error.message}`);
-    }
-}
-
-/**
- * 🎯 DUAL COMMAND EXECUTION ENGINE
- */
-async function executeDualCommand(userMessage, chatId, messageType = 'text', hasMedia = false) {
-    try {
-        console.log('🎯 Executing Dual Command Strategic Analysis...');
-        
-        // Route strategic command
-        const routing = routeStrategicCommand(userMessage, messageType, hasMedia);
-        console.log('📊 Strategic routing:', routing);
-        
-        // Build strategic context
-        const context = await buildStrategicCommanderContext(chatId, userMessage);
         
         let primaryResponse, secondaryResponse;
         
-        // Execute primary command
-        if (routing.primary === 'GPT_COMMANDER') {
-            primaryResponse = await executeGptCommand(userMessage, chatId, context);
+        // Execute primary AI command
+        if (conversationIntel.primaryAI === 'GPT_COMMANDER') {
+            primaryResponse = await executeEnhancedGptCommand(userMessage, chatId, conversationIntel, context);
         } else {
-            primaryResponse = await executeClaudeIntelligence(userMessage, chatId, context);
+            primaryResponse = await executeEnhancedClaudeIntelligence(userMessage, chatId, conversationIntel, context);
         }
         
-        // Execute secondary command if needed
-        if (routing.secondary) {
+        // Execute secondary AI if needed (for complex/urgent queries)
+        if (conversationIntel.secondaryAI && conversationIntel.complexity !== 'minimal') {
             try {
-                if (routing.secondary === 'GPT_COMMANDER') {
-                    secondaryResponse = await executeGptCommand(userMessage, chatId, context);
+                console.log('🔄 Executing secondary AI for enhanced intelligence...');
+                
+                if (conversationIntel.secondaryAI === 'GPT_COMMANDER') {
+                    secondaryResponse = await executeEnhancedGptCommand(userMessage, chatId, conversationIntel, context);
                 } else {
-                    secondaryResponse = await executeClaudeIntelligence(userMessage, chatId, context);
+                    secondaryResponse = await executeEnhancedClaudeIntelligence(userMessage, chatId, conversationIntel, context);
                 }
             } catch (secondaryError) {
-                console.log('⚠️ Secondary command failed:', secondaryError.message);
+                console.log('⚠️ Secondary AI failed, continuing with primary:', secondaryError.message);
                 secondaryResponse = null;
             }
         }
         
-        // Combine responses if dual analysis
-        let finalResponse = primaryResponse.response;
+        // Format final response based on complexity
+        let finalResponse;
         
-        if (secondaryResponse) {
+        if (conversationIntel.type === 'casual') {
+            // Casual: Just the response, no headers
+            finalResponse = primaryResponse.response;
+            
+        } else if (secondaryResponse && conversationIntel.complexity === 'maximum') {
+            // Dual intelligence for maximum complexity
             finalResponse = `${primaryResponse.emoji} **${primaryResponse.commander.toUpperCase()}**
 ${primaryResponse.capabilities}
 
@@ -233,16 +434,18 @@ ${primaryResponse.response}
 
 ---
 
-${secondaryResponse.emoji} **${secondaryResponse.commander.toUpperCase()}**
+${secondaryResponse.emoji} **${secondaryResponse.commander.toUpperCase()}**  
 ${secondaryResponse.capabilities}
 
 ${secondaryResponse.response}
 
 ---
 
-🎯 **STRATEGIC COMMAND SYNTHESIS**
-Combined intelligence from dual AI warfare systems for comprehensive strategic advantage.`;
+🎯 **STRATEGIC SYNTHESIS**
+Dual AI intelligence deployed for comprehensive strategic advantage.`;
+            
         } else {
+            // Single AI with appropriate branding
             finalResponse = `${primaryResponse.emoji} **${primaryResponse.commander.toUpperCase()}**
 ${primaryResponse.capabilities}
 
@@ -251,106 +454,157 @@ ${primaryResponse.response}`;
         
         return {
             response: finalResponse,
-            routing: routing,
-            primaryCommander: routing.primary,
-            secondaryCommander: routing.secondary,
-            success: true
+            conversationIntel: conversationIntel,
+            primaryCommander: conversationIntel.primaryAI,
+            secondaryCommander: conversationIntel.secondaryAI,
+            complexity: conversationIntel.complexity,
+            style: conversationIntel.style,
+            success: true,
+            naturalConversation: conversationIntel.type === 'casual'
         };
         
     } catch (error) {
-        console.error('❌ Dual Command execution error:', error.message);
+        console.error('❌ Enhanced Dual Command execution error:', error.message);
         
-        // Fallback to single GPT-4o command
+        // Intelligent fallback based on conversation type
         try {
             console.log('🔄 Falling back to GPT Strategic Commander...');
-            const fallbackResponse = await executeGptCommand(userMessage, chatId);
+            
+            const fallbackIntel = {
+                type: 'balanced_strategic',
+                maxTokens: 1500,
+                temperature: 0.7,
+                style: 'helpful_intelligent'
+            };
+            
+            const fallbackResponse = await executeEnhancedGptCommand(userMessage, chatId, fallbackIntel, null);
             
             return {
-                response: `🏛️ **STRATEGIC COMMANDER ALPHA (FALLBACK MODE)**
+                response: `🏛️ **STRATEGIC COMMANDER ALPHA (RESILIENCE MODE)**
 
 ${fallbackResponse.response}
 
-⚠️ **Note:** Dual command system temporarily unavailable. Operating in single-commander mode.`,
-                routing: { primary: 'GPT_COMMANDER', secondary: null, reasoning: 'Fallback mode' },
+⚠️ **Note:** Enhanced dual command temporarily degraded. Operating in single-commander resilience mode.`,
+                conversationIntel: fallbackIntel,
                 primaryCommander: 'GPT_COMMANDER',
                 secondaryCommander: null,
                 success: false,
-                error: error.message
+                error: error.message,
+                resilientMode: true
             };
             
         } catch (fallbackError) {
-            throw new Error(`Dual Command System Failure: ${error.message}`);
+            throw new Error(`Enhanced Dual Command System Failure: ${error.message}`);
         }
     }
 }
 
 /**
- * 📊 COMMAND SYSTEM ANALYTICS
+ * 📊 ENHANCED COMMAND ANALYTICS
  */
-function getDualCommandAnalytics() {
+function getEnhancedCommandAnalytics() {
     return {
-        gptCommands: 0, // TODO: Implement counters
-        claudeCommands: 0,
-        dualCommands: 0,
-        totalCommands: 0,
-        averageResponseTime: 0,
-        systemUptime: process.uptime(),
+        enhancedMode: true,
+        naturalConversation: true,
+        adaptiveIntelligence: true,
+        conversationTypes: ['casual', 'quick_strategic', 'urgent_strategic', 'institutional_analysis', 'research_intelligence', 'multimodal'],
+        aiCommanders: {
+            gpt: 'Strategic Commander Alpha - Institutional + Natural',
+            claude: 'Strategic Intelligence Chief - Live + Research'
+        },
+        capabilities: [
+            'Natural Conversation Flow',
+            'Adaptive Response Complexity',
+            'Intelligent Conversation Detection',
+            'Dynamic System Prompts',
+            'Institutional Authority with Human Touch',
+            'Live Intelligence Integration',
+            'Strategic AI Warfare with Freedom'
+        ],
         lastUpdate: new Date().toISOString()
     };
 }
 
 /**
- * 🔧 SYSTEM HEALTH CHECK
+ * 🔧 ENHANCED SYSTEM HEALTH CHECK
  */
-async function checkDualCommandHealth() {
+async function checkEnhancedSystemHealth() {
     const health = {
-        gptCommander: false,
-        claudeIntelligence: false,
-        dualSystem: false,
+        enhancedGptCommander: false,
+        enhancedClaudeIntelligence: false,
+        naturalConversation: false,
+        dualIntelligence: false,
         errors: []
     };
     
-    // Test GPT-4o Strategic Commander
     try {
-        await getGptReply('System health check', { strategic: true, maxTokens: 100 });
-        health.gptCommander = true;
-        console.log('✅ GPT Strategic Commander operational');
+        // Test GPT Strategic Commander with casual query
+        const testIntel = { type: 'casual', maxTokens: 100, temperature: 0.8, style: 'natural_brief' };
+        await executeEnhancedGptCommand('Hello', 'test', testIntel, null);
+        health.enhancedGptCommander = true;
+        health.naturalConversation = true;
+        console.log('✅ Enhanced GPT Strategic Commander operational');
     } catch (gptError) {
-        health.errors.push(`GPT Commander: ${gptError.message}`);
-        console.log('❌ GPT Strategic Commander unavailable');
+        health.errors.push(`Enhanced GPT Commander: ${gptError.message}`);
+        console.log('❌ Enhanced GPT Strategic Commander unavailable');
     }
     
-    // Test Claude Strategic Intelligence
     try {
-        await callClaudeAPI('System health check', { mode: 'test' });
-        health.claudeIntelligence = true;
-        console.log('✅ Claude Strategic Intelligence operational');
+        // Test Claude Intelligence Chief with research query  
+        const testIntel = { type: 'research_intelligence', maxTokens: 500, temperature: 0.6, style: 'analytical_thorough' };
+        await executeEnhancedClaudeIntelligence('Current market trends', 'test', testIntel, null);
+        health.enhancedClaudeIntelligence = true;
+        console.log('✅ Enhanced Claude Intelligence Chief operational');
     } catch (claudeError) {
-        health.errors.push(`Claude Intelligence: ${claudeError.message}`);
-        console.log('❌ Claude Strategic Intelligence unavailable');
+        health.errors.push(`Enhanced Claude Intelligence: ${claudeError.message}`);
+        console.log('❌ Enhanced Claude Intelligence Chief unavailable');
     }
     
-    health.dualSystem = health.gptCommander && health.claudeIntelligence;
+    health.dualIntelligence = health.enhancedGptCommander && health.enhancedClaudeIntelligence;
     
     return health;
 }
 
-module.exports = {
-    // 🎯 DUAL COMMAND CORE FUNCTIONS
-    executeDualCommand,
-    routeStrategicCommand,
+/**
+ * 🎯 CONVERSATION INTELLIGENCE ROUTER (Helper)
+ * Routes based on intelligent conversation analysis
+ */
+function routeConversationIntelligently(userMessage, messageType, hasMedia) {
+    const intel = analyzeConversationIntelligence(userMessage, messageType, hasMedia);
     
-    // 🏛️ INDIVIDUAL COMMAND FUNCTIONS
-    executeGptCommand,
-    executeClaudeIntelligence,
+    return {
+        shouldUseDualAI: intel.secondaryAI !== null,
+        primaryAI: intel.primaryAI,
+        secondaryAI: intel.secondaryAI,
+        responseStyle: intel.style,
+        complexity: intel.complexity,
+        reasoning: intel.reasoning
+    };
+}
+
+module.exports = {
+    // 🎯 ENHANCED DUAL COMMAND CORE
+    executeEnhancedDualCommand,
+    analyzeConversationIntelligence,
+    routeConversationIntelligently,
+    
+    // 🧠 INTELLIGENT EXECUTION  
+    executeEnhancedGptCommand,
+    executeEnhancedClaudeIntelligence,
+    createIntelligentSystemPrompt,
     
     // 🔧 SYSTEM MANAGEMENT
-    checkDualCommandHealth,
-    getDualCommandAnalytics,
+    checkEnhancedSystemHealth,
+    getEnhancedCommandAnalytics,
     
     // 📊 CONFIGURATION
-    COMMAND_CONFIG,
+    ENHANCED_COMMAND_CONFIG,
     
-    // 🔗 API INTEGRATION (for implementation)
-    callClaudeAPI
+    // 🔄 LEGACY COMPATIBILITY (redirect to enhanced versions)
+    executeDualCommand: executeEnhancedDualCommand,
+    routeStrategicCommand: routeConversationIntelligently,
+    executeGptCommand: executeEnhancedGptCommand,
+    executeClaudeIntelligence: executeEnhancedClaudeIntelligence,
+    checkDualCommandHealth: checkEnhancedSystemHealth,
+    getDualCommandAnalytics: getEnhancedCommandAnalytics
 };
