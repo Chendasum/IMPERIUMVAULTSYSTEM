@@ -11,7 +11,7 @@ const anthropic = new Anthropic({
 // 🔍 Debug Claude configuration
 console.log("⚡ Claude Strategic Intelligence Configuration:");
 console.log(`   API Key: ${process.env.ANTHROPIC_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
-console.log(`   Model: ${process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514'}`);
+console.log(`   Model: ${process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805'}`);
 console.log(`   Timeout: 300 seconds`);
 console.log(`   Max Retries: 3`);
 
@@ -203,7 +203,7 @@ async function getClaudeStrategicAnalysis(prompt, options = {}) {
         const finalOptions = {
             maxTokens: options.maxTokens || conversationType.maxTokens,
             temperature: options.temperature || conversationType.temperature,
-            model: options.model || process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514'
+            model: options.model || process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805'
         };
         
         // 📝 Enhanced prompt with context if provided
@@ -414,7 +414,7 @@ async function testClaudeConnection() {
         console.log('🔍 Testing Claude Strategic Intelligence connection...');
         
         const testResponse = await anthropic.messages.create({
-            model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+            model: process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805',
             max_tokens: 100,
             messages: [
                 {
@@ -482,7 +482,7 @@ Provide strategic analysis with current market intelligence advantage in engagin
  */
 function getClaudeMetrics() {
     return {
-        model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+        model: process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805',
         apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY,
         maxTokens: 4096,
         defaultTemperature: 0.7,
