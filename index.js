@@ -89,6 +89,23 @@ const {
     scanTradingOpportunities
 } = require("./utils/metaTrader");
 
+// 🎯 DUAL COMMAND SYSTEM IMPORTS - Add these after your existing imports
+const { 
+    getClaudeStrategicAnalysis, 
+    getClaudeLiveResearch, 
+    testClaudeConnection,
+    getClaudeComplexAnalysis,
+    getClaudeCambodiaIntelligence 
+} = require('./utils/claudeClient');
+
+const { 
+    executeDualCommand, 
+    routeStrategicCommand,
+    checkDualCommandHealth,
+    executeGptCommand,
+    executeClaudeIntelligence 
+} = require('./utils/dualCommandSystem');
+
 // ✅ Load credentials
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
