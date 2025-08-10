@@ -2332,19 +2332,20 @@ Always write complete, comprehensive responses demonstrating institutional exper
 const handleVoice = async () => {
     const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
     if (transcribedText) {
-        await sendSmartResponse(bot, chatId, 🎤 Voice transcribed: "${transcribedText}", null, 'general');
+        await sendSmartResponse(bot, chatId, `🎤 Voice transcribed: "${transcribedText}"`, null, 'general');
         await handleStrategicDualCommand(chatId, transcribedText);
     } else {
         await sendSmartResponse(bot, chatId, "❌ Voice transcription failed. Please try again.", null, 'general');
     }
 };
+
 if (msg.voice) {
     console.log("🎤 Voice message received");
     try {
         await handleVoice();
     } catch (error) {
         console.error('Voice processing error:', error.message);
-        await sendSmartResponse(bot, chatId, ❌ Voice processing error: ${error.message}, null, 'general');
+        await sendSmartResponse(bot, chatId, `❌ Voice processing error: ${error.message}`, null, 'general');
     }
     return;
 }
