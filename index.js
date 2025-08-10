@@ -2328,22 +2328,23 @@ Always write complete, comprehensive responses demonstrating institutional exper
 
 // 🎯 STEP 4: UPDATE YOUR VOICE MESSAGE HANDLER (find this in your existing code and replace)
 
-// 🎤 VOICE MESSAGE HANDLING - Updated for dual command
+// 🎤 VOICE MESSAGE HANDLING - Updated for GPT-4o + Claude dual command
 if (msg.voice) {
-    console.log("🎤 Voice message received");
+    console.log("🎤 Voice message received for Dual Command System");
     try {
         const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
         if (transcribedText) {
             await sendSmartResponse(bot, chatId, `🎤 Voice transcribed: "${transcribedText}"`, null, 'general');
+            // Route to Dual Command System (GPT-4o + Claude)
             await handleStrategicDualCommand(chatId, transcribedText);
         } else {
             await sendSmartResponse(bot, chatId, "❌ Voice transcription failed. Please try again.", null, 'general');
         }
     } catch (error) {
-        console.error('Voice processing error:', error.message);
+        console.error('Voice processing error in Dual Command System:', error.message);
         await sendSmartResponse(bot, chatId, `❌ Voice processing error: ${error.message}`, null, 'general');
     }
-    return;
+    return; // ✅ EARLY RETURN - prevents text processing
 }
 
 // 🎯 STEP 5: ADD THESE NEW TEST COMMANDS (add after your existing commands)
