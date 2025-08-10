@@ -3660,7 +3660,7 @@ module.exports = {
     getMasterEnhancedDualSystemAnalytics,
     getLatestRealtimeMetrics,
     saveEnhancedDualConversation,
-    updateRealtimeMetrics
+    updateRealtimeMetrics,
     
     // 📊 CONNECTION MONITORING
     connectionStats,  // ← Make sure this line exists!
