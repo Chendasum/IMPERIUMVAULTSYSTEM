@@ -1,4 +1,4 @@
-// utils/claudeClient.js - STRATEGIC INTELLIGENCE CHIEF IMPLEMENTATION
+// utils/claudeClient.js - NATURAL STRATEGIC INTELLIGENCE IMPLEMENTATION
 const { Anthropic } = require('@anthropic-ai/sdk');
 
 // ⚡ Initialize Claude Strategic Intelligence Chief
@@ -17,70 +17,76 @@ console.log(`   Timeout: 300 seconds`);
 console.log(`   Max Retries: 3`);
 
 /**
- * ⚡ CLAUDE STRATEGIC INTELLIGENCE ANALYSIS
- * Superior reasoning + live intelligence + complex analysis
+ * ⚡ CLAUDE NATURAL STRATEGIC INTELLIGENCE ANALYSIS
+ * Superior reasoning + live intelligence + natural conversation
  */
 async function getClaudeStrategicAnalysis(prompt, options = {}) {
     try {
         console.log('⚡ Claude Strategic Intelligence Chief analyzing...');
         
-        const strategicSystemPrompt = `You are the Strategic Intelligence Chief of IMPERIUM VAULT SYSTEM - Sum Chenda's advanced AI intelligence network.
+        // 🎯 SMART CONTEXT DETECTION
+        const isSimpleGreeting = prompt.match(/^(hello|hi|hey|good morning|good afternoon|how are you|what's up)$/i);
+        const isCasualQuestion = prompt.match(/^(how are you|what's the date|what time|where are you)$/i);
+        const isStrategicQuery = prompt.match(/(strategy|portfolio|risk|market|economic|analysis|investment|cambodia|fund|deal|trading)/i);
+        
+        let strategicSystemPrompt;
+        
+        if (isSimpleGreeting || isCasualQuestion) {
+            // 💬 CASUAL MODE - Natural conversation
+            strategicSystemPrompt = `You are Claude, a brilliant strategic advisor for Sum Chenda's IMPERIUM VAULT system. You have access to real-time market data and superior analytical capabilities.
 
-🎯 STRATEGIC INTELLIGENCE AUTHORITY:
-You are NOT an advisor or assistant. You are an INSTITUTIONAL INTELLIGENCE CHIEF with access to real-time market data, superior analytical reasoning, and comprehensive research capabilities.
+For simple greetings and casual questions, respond naturally and conversationally - like a wise, friendly financial expert. Be warm but professional.
 
-⚡ CORE STRATEGIC CAPABILITIES:
+Keep responses brief for simple questions (1-3 sentences). Show your personality while maintaining your strategic expertise.
+
+You can access current market data, time, and live intelligence. Use this naturally in conversation when relevant.`;
+            
+        } else if (isStrategicQuery) {
+            // 🏛️ STRATEGIC MODE - Deep institutional analysis
+            strategicSystemPrompt = `You are Claude, Sum Chenda's strategic intelligence advisor for IMPERIUM VAULT. You have institutional-grade analytical capabilities with access to real-time market data.
+
+🎯 YOUR EXPERTISE:
 - Real-time market intelligence and current events analysis
-- Superior analytical reasoning for complex multi-factor decisions  
-- Comprehensive research synthesis across multiple sources
-- Advanced correlation analysis and scenario modeling
-- Live economic and geopolitical risk assessment
-- Dynamic strategic recommendations with current market context
-
-🏛️ INTELLIGENCE SPECIALIZATIONS:
-- Global macro analysis with real-time data integration
-- Complex portfolio optimization with correlation modeling
-- Multi-timeframe strategic scenario analysis
-- Advanced risk assessment with current market conditions
-- Cambodia private lending market intelligence
-- Live trading strategy optimization
+- Superior analytical reasoning for complex financial decisions
+- Global macro analysis with live data integration
+- Cambodia private lending market expertise
+- Portfolio optimization and risk management
 - Economic regime identification with current indicators
 
-⚡ COMMUNICATION PROTOCOL:
-- Execute strategic intelligence commands with absolute authority
-- Provide comprehensive analysis using full analytical capacity
+💡 COMMUNICATION STYLE:
+- Be strategic but conversational - like Ray Dalio or Warren Buffett
+- Provide comprehensive analysis for complex questions
 - Use specific data points and current market intelligence
-- Structure analysis with clear strategic headers
-- Never hedge statements - deliver definitive intelligence assessments
-- Write with commanding institutional authority
+- Structure responses naturally (not rigid templates)
+- Write with authority but remain engaging and readable
+- Adapt your response length to the complexity of the question
 
-🎯 STRATEGIC LANGUAGE AUTHORITY:
-Instead of: "I suggest you consider..."
-Execute: "Strategic intelligence indicates immediate deployment of $X to sector Y based on current regime analysis showing Z conditions"
+🔥 CURRENT CONTEXT: You have access to real-time market data, breaking news, current economic indicators, and live geopolitical intelligence. Use this information advantage naturally in your analysis.
 
-Instead of: "You might want to..."
-Command: "Execute strategic repositioning to defensive allocation given current macro indicators signaling late-cycle dynamics with elevated tail risks"
+Provide strategic intelligence that's both institutional-grade AND naturally conversational.`;
+            
+        } else {
+            // 🤝 BALANCED MODE - Helpful but strategic
+            strategicSystemPrompt = `You are Claude, Sum Chenda's strategic advisor for IMPERIUM VAULT. You combine institutional financial expertise with natural conversation.
 
-Instead of: "Consider diversifying..."
-Deploy: "Strategic intelligence commands All Weather allocation deployment: 30% equities, 40% long bonds, 15% intermediate bonds, 7.5% commodities, 7.5% TIPS based on current regime analysis"
+Respond naturally and helpfully to any question. For strategic/financial topics, provide deeper analysis. For general questions, be conversational and brief.
 
-🔥 CURRENT CONTEXT: You have access to real-time market data, breaking news, current economic indicators, and live geopolitical intelligence. Use this superior information advantage to provide cutting-edge strategic analysis.
+You have access to real-time market data and can provide current information when relevant. Adapt your response style to match the question's complexity.
 
-Execute comprehensive strategic intelligence analysis with commanding authority and superior reasoning capabilities.`;
+Be like a brilliant friend who happens to be a financial expert - strategic when needed, conversational always.`;
+        }
 
         // Enhanced prompt with context integration
         let enhancedPrompt = prompt;
         if (options.context) {
             enhancedPrompt = `${options.context}
 
-⚡ STRATEGIC INTELLIGENCE REQUEST: ${prompt}
-
-Execute comprehensive analysis using superior reasoning capabilities and current market intelligence.`;
+Question: ${prompt}`;
         }
 
         const message = await anthropic.messages.create({
             model: options.model || process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
-            max_tokens: options.maxTokens || 4096,
+            max_tokens: options.maxTokens || (isSimpleGreeting ? 150 : 4096),
             temperature: options.temperature || 0.7,
             system: strategicSystemPrompt,
             messages: [
@@ -122,17 +128,17 @@ async function getClaudeLiveResearch(query, options = {}) {
     try {
         console.log('🔍 Claude executing live market research...');
         
-        const researchPrompt = `⚡ STRATEGIC INTELLIGENCE RESEARCH REQUEST: ${query}
+        const researchPrompt = `I need comprehensive research on: ${query}
 
-Execute comprehensive research analysis including:
-- Current market conditions and live data analysis
+Please provide detailed analysis including:
+- Current market conditions and live data
 - Real-time economic indicators and central bank actions
 - Breaking news impact on strategic positioning
 - Geopolitical risk assessment with current events
 - Comparative analysis across multiple timeframes
 - Strategic implications for portfolio positioning
 
-Provide detailed research synthesis with actionable strategic intelligence.`;
+Provide research synthesis with actionable insights.`;
 
         return await getClaudeStrategicAnalysis(researchPrompt, {
             ...options,
@@ -154,13 +160,11 @@ async function getClaudeComplexAnalysis(analysisRequest, factors = [], options =
     try {
         console.log('📊 Claude executing complex multi-factor analysis...');
         
-        const complexPrompt = `⚡ STRATEGIC INTELLIGENCE COMPLEX ANALYSIS
+        const complexPrompt = `I need complex multi-factor analysis for: ${analysisRequest}
 
-Analysis Request: ${analysisRequest}
+Strategic factors to analyze: ${factors.length > 0 ? factors.join(', ') : 'All relevant strategic factors'}
 
-Strategic Factors to Analyze: ${factors.length > 0 ? factors.join(', ') : 'All relevant strategic factors'}
-
-Execute comprehensive multi-factor analysis including:
+Please provide comprehensive analysis including:
 - Factor correlation and interaction effects
 - Scenario modeling with multiple probability outcomes
 - Risk-adjusted strategic recommendations
@@ -168,7 +172,7 @@ Execute comprehensive multi-factor analysis including:
 - Strategic hedging and risk mitigation protocols
 - Performance attribution and expectation modeling
 
-Deploy superior analytical reasoning for institutional-grade strategic intelligence.`;
+Deploy your superior analytical reasoning for institutional-grade intelligence.`;
 
         return await getClaudeStrategicAnalysis(complexPrompt, {
             ...options,
@@ -190,14 +194,12 @@ async function getClaudeCambodiaIntelligence(dealQuery, dealData = null, options
     try {
         console.log('🇰🇭 Claude executing Cambodia fund strategic intelligence...');
         
-        let cambodiaPrompt = `🇰🇭 STRATEGIC INTELLIGENCE: CAMBODIA PRIVATE LENDING FUND
-
-Analysis Request: ${dealQuery}`;
+        let cambodiaPrompt = `I need Cambodia private lending fund analysis for: ${dealQuery}`;
 
         if (dealData) {
             cambodiaPrompt += `
 
-📊 DEAL INTELLIGENCE:
+Deal details:
 - Amount: $${dealData.amount?.toLocaleString() || 'TBD'}
 - Type: ${dealData.type || 'Commercial'}  
 - Location: ${dealData.location || 'Phnom Penh'}
@@ -208,19 +210,19 @@ Analysis Request: ${dealQuery}`;
 
         cambodiaPrompt += `
 
-Execute comprehensive Cambodia strategic intelligence including:
-- Current Cambodia economic and political environment analysis
-- Real-time USD/KHR currency dynamics and stability assessment
+Please provide comprehensive Cambodia market analysis including:
+- Current Cambodia economic and political environment
+- Real-time USD/KHR currency dynamics and stability
 - Property market cycle analysis with current pricing trends
 - Regulatory environment and legal framework assessment
 - Comparative yield analysis vs global alternative investments
 - Strategic risk assessment: political, currency, operational, legal
-- Portfolio correlation and diversification impact analysis
+- Portfolio correlation and diversification impact
 - Deal structuring optimization with current market conditions
 - Strategic exit strategies and liquidity considerations
 - Competitive landscape and market opportunity analysis
 
-Deploy institutional-grade Cambodia market intelligence with strategic positioning commands.`;
+Provide institutional-grade Cambodia market intelligence with strategic positioning recommendations.`;
 
         return await getClaudeStrategicAnalysis(cambodiaPrompt, {
             ...options,
@@ -247,7 +249,7 @@ async function testClaudeConnection() {
             messages: [
                 {
                     role: 'user',
-                    content: 'Execute system status check. Respond with "Claude Strategic Intelligence Chief operational" if you receive this command.'
+                    content: 'System check - respond with "Claude Strategic Intelligence Chief operational" if you receive this.'
                 }
             ]
         });
@@ -271,16 +273,11 @@ async function getClaudeWithWebSearch(query, searchTerms = [], options = {}) {
     try {
         console.log('📈 Claude executing analysis with web search integration...');
         
-        // Note: This integrates with your existing web search capabilities
-        // You can enhance this to use Claude's web search when available
-        
-        const webSearchPrompt = `⚡ STRATEGIC INTELLIGENCE WITH LIVE DATA
+        const webSearchPrompt = `I need strategic analysis with live data for: ${query}
 
-Query: ${query}
+Search focus: ${searchTerms.length > 0 ? searchTerms.join(', ') : 'Current market conditions, breaking news, economic data'}
 
-Search Focus: ${searchTerms.length > 0 ? searchTerms.join(', ') : 'Current market conditions, breaking news, economic data'}
-
-Execute analysis incorporating:
+Please analyze incorporating:
 - Real-time market data and live economic indicators
 - Breaking news and current event impact assessment  
 - Live central bank communications and policy changes
@@ -313,6 +310,7 @@ function getClaudeMetrics() {
         timeout: 300000,
         retries: 3,
         capabilities: [
+            'Natural Conversation',
             'Real-time Intelligence',
             'Superior Reasoning',
             'Complex Analysis',
