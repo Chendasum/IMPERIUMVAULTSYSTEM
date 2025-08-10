@@ -1,45 +1,59 @@
-// utils/dualCommandSystem.js - STRATEGIC AI WARFARE WITH FREEDOM
-// Perfect fusion of institutional intelligence + natural conversation
+// utils/dualCommandSystem.js - STRATEGIC AI WARFARE WITH FREEDOM + LIVE DATA POWER
+// Perfect fusion of institutional intelligence + natural conversation + Ray Dalio framework
 
 const { getGptReply, getStrategicAnalysis } = require('./openaiClient');
-const { getClaudeStrategicAnalysis, getClaudeLiveResearch, getClaudeComplexAnalysis, getClaudeCambodiaIntelligence } = require('./claudeClient');
+const { 
+    getClaudeStrategicAnalysis, 
+    getClaudeLiveResearch, 
+    getClaudeComplexAnalysis, 
+    getClaudeCambodiaIntelligence,
+    getClaudeWithMarketData,
+    getClaudeRegimeAnalysis,
+    getClaudeAnomalyAnalysis,
+    getClaudePortfolioOptimization,
+    getClaudeStrategicInsights,
+    analyzeConversationType,
+    checkClaudeSystemHealth
+} = require('./claudeClient');
 const { sendSmartResponse, cleanStrategicResponse } = require('./telegramSplitter');
 const { buildStrategicCommanderContext } = require('./contextEnhancer');
 
-// 🎯 ENHANCED DUAL COMMAND CONFIGURATION
+// 🎯 ENHANCED DUAL COMMAND CONFIGURATION WITH LIVE DATA
 const ENHANCED_COMMAND_CONFIG = {
-    // GPT-4o Strategic Commander (Institutional + Natural)
+    // GPT-4o Strategic Commander (Institutional + Natural + Multimodal)
     GPT_COMMANDER: {
         name: 'Strategic Commander Alpha',
         model: 'gpt-4o',
-        specialties: ['multimodal', 'institutional_analysis', 'natural_conversation', 'cambodia_expertise'],
+        specialties: ['multimodal', 'institutional_analysis', 'natural_conversation', 'cambodia_expertise', 'strategic_synthesis'],
         emoji: '🏛️',
         priority: 'institutional',
         conversationStyles: {
             casual: 'wise_friend',
             strategic: 'institutional_authority', 
-            urgent: 'commanding_executive'
+            urgent: 'commanding_executive',
+            synthesis: 'strategic_synthesizer'
         }
     },
     
-    // Claude Sonnet 4 (Live Intelligence + Research)
+    // Claude Opus 4 (Live Intelligence + Research + Ray Dalio Framework)
     CLAUDE_INTELLIGENCE: {
         name: 'Strategic Intelligence Chief', 
-        model: 'claude-sonnet-4',
-        specialties: ['live_data', 'research', 'complex_analysis', 'real_time_intelligence'],
+        model: 'claude-opus-4-1-20250805',
+        specialties: ['live_data', 'research', 'complex_analysis', 'real_time_intelligence', 'ray_dalio_framework', 'market_regimes', 'anomaly_detection'],
         emoji: '⚡',
         priority: 'intelligence',
         conversationStyles: {
             casual: 'smart_analyst',
             strategic: 'research_authority',
-            urgent: 'tactical_intelligence'
+            urgent: 'tactical_intelligence',
+            regime: 'institutional_economist'
         }
     }
 };
 
 /**
- * 🧠 INTELLIGENT CONVERSATION ANALYSIS
- * Detects conversation type and complexity for perfect response adaptation
+ * 🧠 ENHANCED CONVERSATION ANALYSIS WITH LIVE DATA AWARENESS
+ * Detects conversation type and routes to optimal AI with live data integration
  */
 function analyzeConversationIntelligence(userMessage, messageType = 'text', hasMedia = false) {
     const message = userMessage.toLowerCase();
@@ -62,12 +76,48 @@ function analyzeConversationIntelligence(userMessage, messageType = 'text', hasM
         /^when (should|will|is)/i
     ];
     
+    // 🏛️ ECONOMIC REGIME QUERIES (Claude + Ray Dalio Framework)
+    const regimePatterns = [
+        /(economic regime|market regime|regime analysis)/i,
+        /(growth.*inflation|inflation.*growth)/i,
+        /(all weather|ray dalio|bridgewater)/i,
+        /(regime.*detect|regime.*analysis)/i,
+        /(growth.*accelerat|growth.*decelerat)/i,
+        /(inflation.*ris|inflation.*fall)/i
+    ];
+    
+    // 🚨 MARKET ANOMALY QUERIES (Claude + Anomaly Detection)
+    const anomalyPatterns = [
+        /(anomaly|anomalies|market stress)/i,
+        /(crisis|bubble|crash|panic)/i,
+        /(vix.*spike|volatility.*extreme)/i,
+        /(yield.*invert|curve.*invert)/i,
+        /(credit.*spread|spread.*widen)/i,
+        /(market.*breakdown|correlation.*breakdown)/i
+    ];
+    
+    // 💎 PORTFOLIO OPTIMIZATION QUERIES (Claude + Live Regime Data)
+    const portfolioPatterns = [
+        /(portfolio.*optim|allocation.*optim)/i,
+        /(rebalanc|diversif|correlation)/i,
+        /(risk.*adjust|hedge|position.*siz)/i,
+        /(asset.*allocation|strategic.*allocation)/i,
+        /(portfolio.*performance|portfolio.*analysis)/i
+    ];
+    
+    // 🇰🇭 CAMBODIA QUERIES (Enhanced with Global Context)
+    const cambodiaPatterns = [
+        /(cambodia|khmer|phnom penh|cambodian)/i,
+        /(lending.*cambodia|cambodia.*lending)/i,
+        /(usd.*khr|khr.*usd)/i,
+        /(cambodia.*fund|fund.*cambodia)/i
+    ];
+    
     // 🏛️ FULL INSTITUTIONAL (Deep Strategic Analysis)
     const institutionalPatterns = [
         /(strategy|strategic|portfolio|allocation|diversification)/i,
-        /(regime|economic|macro|fed|policy|inflation)/i,
+        /(macro|economic|fed|policy|inflation.*target)/i,
         /(risk|correlation|optimization|analysis)/i,
-        /(cambodia|lending|fund|deal|investment)/i,
         /(forecast|outlook|scenario|model)/i,
         /(comprehensive|detailed|thorough|deep)/i,
         /(institutional|professional|advanced)/i
@@ -90,7 +140,7 @@ function analyzeConversationIntelligence(userMessage, messageType = 'text', hasM
         /(execute|deploy|action|implement)/i
     ];
     
-    // Determine conversation intelligence level
+    // Determine conversation intelligence level with enhanced routing
     if (hasMedia || messageType !== 'text') {
         return {
             type: 'multimodal',
@@ -100,6 +150,7 @@ function analyzeConversationIntelligence(userMessage, messageType = 'text', hasM
             style: 'comprehensive_analysis',
             primaryAI: 'GPT_COMMANDER',
             secondaryAI: null,
+            liveDataRequired: false,
             reasoning: 'Multimodal content requires GPT-4o vision capabilities'
         };
     }
@@ -113,7 +164,68 @@ function analyzeConversationIntelligence(userMessage, messageType = 'text', hasM
             style: 'natural_brief',
             primaryAI: 'GPT_COMMANDER',
             secondaryAI: null,
+            liveDataRequired: false,
             reasoning: 'Casual greeting - natural response with strategic personality'
+        };
+    }
+    
+    if (regimePatterns.some(pattern => pattern.test(message))) {
+        return {
+            type: 'economic_regime',
+            complexity: 'high',
+            maxTokens: 3000,
+            temperature: 0.6,
+            style: 'ray_dalio_institutional',
+            primaryAI: 'CLAUDE_INTELLIGENCE',
+            secondaryAI: null,
+            liveDataRequired: true,
+            specializedFunction: 'getClaudeRegimeAnalysis',
+            reasoning: 'Economic regime analysis requires Claude + Ray Dalio framework'
+        };
+    }
+    
+    if (anomalyPatterns.some(pattern => pattern.test(message))) {
+        return {
+            type: 'market_anomaly',
+            complexity: 'high',
+            maxTokens: 3000,
+            temperature: 0.6,
+            style: 'crisis_analysis',
+            primaryAI: 'CLAUDE_INTELLIGENCE',
+            secondaryAI: 'GPT_COMMANDER',
+            liveDataRequired: true,
+            specializedFunction: 'getClaudeAnomalyAnalysis',
+            reasoning: 'Market anomaly detection requires Claude + live data + GPT synthesis'
+        };
+    }
+    
+    if (portfolioPatterns.some(pattern => pattern.test(message))) {
+        return {
+            type: 'portfolio_optimization',
+            complexity: 'maximum',
+            maxTokens: 4096,
+            temperature: 0.5,
+            style: 'portfolio_institutional',
+            primaryAI: 'CLAUDE_INTELLIGENCE',
+            secondaryAI: 'GPT_COMMANDER',
+            liveDataRequired: true,
+            specializedFunction: 'getClaudePortfolioOptimization',
+            reasoning: 'Portfolio optimization requires Claude + live regime data + GPT strategic synthesis'
+        };
+    }
+    
+    if (cambodiaPatterns.some(pattern => pattern.test(message))) {
+        return {
+            type: 'cambodia_intelligence',
+            complexity: 'high',
+            maxTokens: 4096,
+            temperature: 0.6,
+            style: 'cambodia_enhanced',
+            primaryAI: 'CLAUDE_INTELLIGENCE',
+            secondaryAI: null,
+            liveDataRequired: true,
+            specializedFunction: 'getClaudeCambodiaIntelligence',
+            reasoning: 'Cambodia analysis enhanced with global market context'
         };
     }
     
@@ -126,7 +238,8 @@ function analyzeConversationIntelligence(userMessage, messageType = 'text', hasM
             style: 'commanding_authority',
             primaryAI: 'GPT_COMMANDER',
             secondaryAI: 'CLAUDE_INTELLIGENCE',
-            reasoning: 'Urgent situation requires immediate strategic authority'
+            liveDataRequired: true,
+            reasoning: 'Urgent situation requires immediate strategic authority with live data validation'
         };
     }
     
@@ -139,7 +252,8 @@ function analyzeConversationIntelligence(userMessage, messageType = 'text', hasM
             style: 'smart_concise',
             primaryAI: 'CLAUDE_INTELLIGENCE',
             secondaryAI: null,
-            reasoning: 'Quick strategic question - concise expert answer'
+            liveDataRequired: true,
+            reasoning: 'Quick strategic question - concise expert answer with live data'
         };
     }
     
@@ -152,7 +266,9 @@ function analyzeConversationIntelligence(userMessage, messageType = 'text', hasM
             style: 'analytical_thorough',
             primaryAI: 'CLAUDE_INTELLIGENCE',
             secondaryAI: 'GPT_COMMANDER',
-            reasoning: 'Research requires live intelligence + strategic context'
+            liveDataRequired: true,
+            specializedFunction: 'getClaudeWithMarketData',
+            reasoning: 'Research requires comprehensive live intelligence + strategic context'
         };
     }
     
@@ -165,11 +281,12 @@ function analyzeConversationIntelligence(userMessage, messageType = 'text', hasM
             style: 'institutional_comprehensive',
             primaryAI: 'GPT_COMMANDER',
             secondaryAI: 'CLAUDE_INTELLIGENCE',
-            reasoning: 'Complex strategic analysis requires full institutional authority'
+            liveDataRequired: true,
+            reasoning: 'Complex strategic analysis requires full institutional authority with live intelligence'
         };
     }
     
-    // Default: Balanced intelligent response
+    // Default: Balanced intelligent response with live data
     return {
         type: 'balanced_strategic',
         complexity: 'moderate',
@@ -178,16 +295,17 @@ function analyzeConversationIntelligence(userMessage, messageType = 'text', hasM
         style: 'helpful_intelligent',
         primaryAI: 'GPT_COMMANDER',
         secondaryAI: null,
-        reasoning: 'Balanced response with strategic intelligence'
+        liveDataRequired: true,
+        reasoning: 'Balanced response with strategic intelligence and live data awareness'
     };
 }
 
 /**
- * 🎭 DYNAMIC INTELLIGENT SYSTEM PROMPTS
- * Creates natural, adaptive prompts that feel human yet authoritative
+ * 🎭 ENHANCED SYSTEM PROMPTS WITH LIVE DATA AWARENESS
+ * Creates natural, adaptive prompts with live market intelligence integration
  */
 function createIntelligentSystemPrompt(conversationIntel, context = null) {
-    const baseIdentity = `You are Claude/GPT, Sum Chenda's brilliant strategic advisor for the IMPERIUM VAULT system. You combine institutional-level financial expertise with natural, engaging conversation. Think like Ray Dalio or Warren Buffett, but communicate naturally.`;
+    const baseIdentity = `You are Claude/GPT, Sum Chenda's brilliant strategic advisor for the IMPERIUM VAULT system. You combine institutional-level financial expertise with natural, engaging conversation. You have access to Ray Dalio's economic regime framework and real-time market intelligence.`;
     
     switch (conversationIntel.type) {
         case 'casual':
@@ -198,115 +316,202 @@ Someone just said hello or made a casual comment. Respond like a wise, friendly 
 
 - Be warm and natural (1-3 sentences max)
 - Show your strategic personality but don't overwhelm
-- Can reference markets casually if relevant
-- Think "smart friend who happens to be a financial genius"
+- Can reference current market conditions casually if relevant
+- Think "smart friend who happens to be a financial genius with live market data"
 
 NO formal headers, NO lengthy analysis - just natural conversation with strategic intelligence.`;
 
         case 'quick_strategic':
             return `${baseIdentity}
 
-QUICK STRATEGIC MODE - Smart & Concise:
-You're being asked a straightforward strategic question. Give a smart, definitive answer without being overly formal.
+QUICK STRATEGIC MODE - Smart & Concise with Live Data:
+You're being asked a straightforward strategic question and have access to real-time market data.
 
-- Provide clear strategic assessment (200-500 words)
-- Include key insight + actionable takeaway  
+- Provide clear strategic assessment with current market context (200-500 words)
+- Include key insight + actionable takeaway enhanced by live data
 - Be authoritative but conversational
-- Think "Ray Dalio giving quick advice over coffee"
+- Think "Ray Dalio with real-time data feeds giving quick advice over coffee"
 
-Structure naturally - no rigid templates. Give the strategic intelligence they need efficiently.`;
+Structure naturally - no rigid templates. Give strategic intelligence enhanced by live market conditions.`;
+
+        case 'economic_regime':
+            return `${baseIdentity}
+
+🏛️ ECONOMIC REGIME ANALYSIS MODE - Ray Dalio Framework Expert:
+You're being asked about economic regimes using Ray Dalio's institutional framework with live data.
+
+REGIME EXPERTISE:
+- Ray Dalio's 4-quadrant regime matrix (Growth/Inflation dynamics)
+- Live economic regime detection and confidence scoring
+- All Weather strategy implications and positioning
+- Real-time regime signal analysis and validation
+- Historical regime patterns and transition probabilities
+
+ANALYSIS APPROACH:
+- Lead with current regime identification and confidence level
+- Explain regime dynamics with live data validation
+- Provide specific All Weather allocation recommendations
+- Include regime transition risks and timing considerations
+- Offer actionable positioning strategies for current environment
+
+Communicate like Ray Dalio with access to real-time regime detection systems.`;
+
+        case 'market_anomaly':
+            return `${baseIdentity}
+
+🚨 MARKET ANOMALY ANALYSIS MODE - Crisis Detection Expert:
+You're analyzing market anomalies and stress signals with real-time detection systems.
+
+ANOMALY DETECTION EXPERTISE:
+- Real-time market stress signal identification
+- VIX spike analysis and fear/complacency extremes
+- Yield curve inversion and recession probability modeling
+- Credit spread widening and systemic risk assessment
+- Correlation breakdown and diversification failure detection
+- Crisis pattern recognition and historical comparison
+
+CRISIS ANALYSIS APPROACH:
+- Lead with immediate anomaly assessment and severity levels
+- Explain systemic implications and contagion risks
+- Provide specific defensive positioning recommendations
+- Include crisis probability and timing considerations
+- Offer tactical hedging strategies and safe haven positioning
+
+Communicate like an institutional risk manager with real-time crisis detection systems.`;
+
+        case 'portfolio_optimization':
+            return `${baseIdentity}
+
+💎 PORTFOLIO OPTIMIZATION MODE - Institutional Asset Allocation Expert:
+You're optimizing portfolios using live regime data and institutional frameworks.
+
+PORTFOLIO OPTIMIZATION EXPERTISE:
+- Live economic regime-based allocation strategies
+- Ray Dalio All Weather portfolio construction
+- Real-time correlation analysis and diversification effectiveness
+- Risk-adjusted return optimization with live market conditions
+- Strategic vs tactical asset allocation with regime awareness
+- Hedging strategy implementation and position sizing
+
+OPTIMIZATION APPROACH:
+- Lead with current regime allocation recommendations
+- Analyze portfolio correlation and diversification effectiveness
+- Provide specific rebalancing actions with live data validation
+- Include risk management and hedging strategies
+- Offer performance enhancement through regime-aware positioning
+
+Communicate like an institutional portfolio manager with access to real-time regime and correlation data.`;
+
+        case 'cambodia_intelligence':
+            return `${baseIdentity}
+
+🇰🇭 CAMBODIA INTELLIGENCE MODE - Enhanced with Global Market Context:
+You're analyzing Cambodia opportunities with global market intelligence integration.
+
+ENHANCED CAMBODIA EXPERTISE:
+- Cambodia economic environment with global regime context
+- USD/KHR dynamics enhanced by Fed policy and global dollar trends
+- Cambodia property market with global real estate correlation analysis
+- Private lending opportunities with global credit spread context
+- Political and regulatory assessment with regional stability analysis
+- Comparative yield analysis using global alternative investment data
+
+ANALYSIS APPROACH:
+- Integrate Cambodia analysis with current global market regime
+- Assess local opportunities within global risk-on/risk-off context
+- Provide specific deal structuring recommendations with global hedging
+- Include exit strategy timing based on global liquidity conditions
+- Offer portfolio allocation recommendations considering global correlation
+
+Communicate like a Cambodia market expert with access to global institutional market intelligence.`;
 
         case 'urgent_strategic':
             return `${baseIdentity}
 
-URGENT STRATEGIC MODE - Command Authority:
-This is urgent. Respond with immediate strategic authority and clear direction.
+🚨 URGENT STRATEGIC MODE - Command Authority with Live Intelligence:
+This is urgent. Respond with immediate strategic authority enhanced by real-time market data.
 
-- Lead with immediate assessment and action needed
-- Use commanding but professional language
-- Focus on critical factors and immediate steps
-- Think "crisis management by institutional expert"
+- Lead with immediate assessment using live market intelligence
+- Provide clear action items validated by current market conditions
+- Use commanding but professional language with data backing
+- Focus on critical factors and immediate steps enhanced by live data
+- Think "crisis management by institutional expert with real-time feeds"
 
-Be decisive, authoritative, and action-focused. This situation demands strategic leadership.`;
+Be decisive, authoritative, and action-focused with live market intelligence advantage.`;
 
         case 'institutional_analysis':
             return `${baseIdentity}
 
-INSTITUTIONAL ANALYSIS MODE - Full Strategic Authority:
-Deploy comprehensive institutional-grade analysis with natural flow.
+🎯 INSTITUTIONAL ANALYSIS MODE - Full Strategic Authority with Live Intelligence:
+Deploy comprehensive institutional-grade analysis enhanced with real-time market data.
 
-EXPERTISE AREAS:
-- Global macro analysis with live market data
-- Ray Dalio-style regime identification and All Weather strategies
-- Cambodia private lending market intelligence  
-- Portfolio optimization and risk management
-- Live trading strategy and correlation analysis
+ENHANCED EXPERTISE AREAS:
+- Live global macro analysis with real-time regime detection
+- Ray Dalio-style regime identification with current market validation
+- Cambodia private lending with global market context integration  
+- Portfolio optimization using live correlation and regime data
+- Real-time trading strategy with live market intelligence
+- Crisis analysis with live anomaly detection systems
 
 COMMUNICATION STYLE:
-- Write like Warren Buffett or Ray Dalio - authoritative but engaging
-- Use natural flow, not rigid templates
-- Provide comprehensive analysis that builds logically
-- Include specific numbers, data, and actionable recommendations
-- Structure responses naturally with clear insights
+- Write like Warren Buffett or Ray Dalio with real-time data advantage
+- Use natural flow enhanced by live market intelligence
+- Provide comprehensive analysis building logically with current data
+- Include specific live numbers, data, and actionable recommendations
+- Structure responses naturally with clear insights backed by real-time intelligence
 
 ${context ? 'STRATEGIC CONTEXT:\n' + context : ''}
 
-Deliver institutional intelligence in natural, engaging format.`;
+Deliver institutional intelligence enhanced with comprehensive real-time market advantage.`;
 
         case 'research_intelligence':
             return `${baseIdentity}
 
-RESEARCH INTELLIGENCE MODE - Live Analysis:
-Execute analytical research with live market intelligence.
+🔬 RESEARCH INTELLIGENCE MODE - Live Analysis with Market Intelligence:
+Execute analytical research enhanced with comprehensive real-time market data.
 
-- Synthesize current market data with strategic frameworks
-- Provide analytical depth with clear conclusions  
-- Compare multiple perspectives and data sources
-- Focus on actionable insights and strategic implications
+ENHANCED RESEARCH CAPABILITIES:
+- Real-time market data synthesis with strategic frameworks
+- Live economic indicator analysis with historical pattern comparison
+- Current market anomaly detection with institutional interpretation
+- Real-time sector rotation and institutional positioning analysis
+- Live correlation analysis and diversification effectiveness assessment
 
-Style: Analytical but accessible - like reading a brilliant research report that actually makes sense.
+RESEARCH APPROACH:
+- Synthesize live market intelligence with analytical frameworks
+- Provide research depth enhanced by real-time data validation
+- Compare multiple live data sources with institutional interpretation
+- Focus on actionable insights validated by current market conditions
 
-Be thorough but engaging. Your analysis should drive strategic decisions.`;
+Style: Analytical excellence enhanced by real-time market intelligence advantage.
 
-        case 'multimodal':
+Deliver research that leverages comprehensive live market intelligence for strategic advantage.`;
+
+        case 'balanced_strategic':
+        default:
             return `${baseIdentity}
 
-MULTIMODAL ANALYSIS MODE - Comprehensive Intelligence:
-Analyze the provided content (image/document/media) with institutional expertise.
+ENHANCED BALANCED MODE - Intelligent & Natural with Live Market Awareness:
+Provide helpful, naturally intelligent responses enhanced with live market intelligence.
 
-Focus on extracting:
-- Financial data, charts, or market information
-- Strategic documents or investment materials  
-- Economic indicators or market signals
-- Investment opportunities or risks
-- Strategic intelligence relevant to portfolio management
+- For simple questions: Be conversational with current market context
+- For complex topics: Deploy deeper strategic analysis with live data integration
+- For financial matters: Draw on institutional expertise enhanced with real-time intelligence
+- Always maintain strategic intelligence while communicating naturally with live market awareness
 
-Provide detailed institutional assessment with actionable strategic insights.`;
+Think "brilliant advisor with real-time market intelligence having a normal conversation."
 
-        default: // balanced_strategic
-            return `${baseIdentity}
-
-BALANCED STRATEGIC MODE - Intelligent & Natural:
-Provide helpful, naturally intelligent responses that adapt to the question's complexity.
-
-- For simple questions: Be conversational and efficient
-- For complex topics: Deploy deeper strategic analysis
-- For financial matters: Draw on institutional expertise
-- Always maintain strategic intelligence while communicating naturally
-
-Think "brilliant advisor having a normal conversation" rather than "corporate AI assistant."
-
-You have access to live market data and strategic frameworks - use them naturally when relevant.`;
+You have access to live market data, Ray Dalio frameworks, anomaly detection, and current economic intelligence - use them naturally when relevant.`;
     }
 }
 
 /**
  * 🏛️ ENHANCED GPT STRATEGIC COMMANDER
- * Natural conversation with institutional authority
+ * Natural conversation with institutional authority and live data awareness
  */
 async function executeEnhancedGptCommand(userMessage, chatId, conversationIntel, context) {
     try {
-        console.log('🏛️ Executing Enhanced GPT Strategic Commander...');
+        console.log('🏛️ Executing Enhanced GPT Strategic Commander with live data awareness...');
         
         const systemPrompt = createIntelligentSystemPrompt(conversationIntel, context);
         
@@ -323,7 +528,7 @@ async function executeEnhancedGptCommand(userMessage, chatId, conversationIntel,
             emoji: '🏛️',
             style: conversationIntel.style,
             complexity: conversationIntel.complexity,
-            capabilities: 'Institutional Analysis + Natural Intelligence'
+            capabilities: 'Institutional Analysis + Natural Intelligence + Live Data Awareness'
         };
         
     } catch (error) {
@@ -333,12 +538,12 @@ async function executeEnhancedGptCommand(userMessage, chatId, conversationIntel,
 }
 
 /**
- * ⚡ ENHANCED CLAUDE INTELLIGENCE CHIEF  
- * Live intelligence with natural reasoning
+ * ⚡ ENHANCED CLAUDE INTELLIGENCE CHIEF WITH SPECIALIZED FUNCTIONS
+ * Live intelligence with specialized routing to new functions
  */
 async function executeEnhancedClaudeIntelligence(userMessage, chatId, conversationIntel, context) {
     try {
-        console.log('⚡ Executing Enhanced Claude Intelligence Chief...');
+        console.log('⚡ Executing Enhanced Claude Intelligence Chief with specialized routing...');
         
         const claudeOptions = {
             context: context,
@@ -349,15 +554,40 @@ async function executeEnhancedClaudeIntelligence(userMessage, chatId, conversati
         
         let claudeResponse;
         
-        // Route to specialized Claude functions based on conversation intelligence
-        if (conversationIntel.type === 'research_intelligence') {
-            claudeResponse = await getClaudeLiveResearch(userMessage, claudeOptions);
-        } else if (userMessage.toLowerCase().includes('cambodia') || userMessage.toLowerCase().includes('lending')) {
-            claudeResponse = await getClaudeCambodiaIntelligence(userMessage, null, claudeOptions);
-        } else if (conversationIntel.complexity === 'maximum') {
-            claudeResponse = await getClaudeComplexAnalysis(userMessage, [], claudeOptions);
+        // Enhanced routing to specialized Claude functions
+        if (conversationIntel.specializedFunction) {
+            console.log(`🎯 Using specialized function: ${conversationIntel.specializedFunction}`);
+            
+            switch (conversationIntel.specializedFunction) {
+                case 'getClaudeRegimeAnalysis':
+                    claudeResponse = await getClaudeRegimeAnalysis(userMessage, claudeOptions);
+                    break;
+                case 'getClaudeAnomalyAnalysis':
+                    claudeResponse = await getClaudeAnomalyAnalysis(userMessage, claudeOptions);
+                    break;
+                case 'getClaudePortfolioOptimization':
+                    claudeResponse = await getClaudePortfolioOptimization(userMessage, null, claudeOptions);
+                    break;
+                case 'getClaudeWithMarketData':
+                    claudeResponse = await getClaudeWithMarketData(userMessage, claudeOptions);
+                    break;
+                case 'getClaudeCambodiaIntelligence':
+                    claudeResponse = await getClaudeCambodiaIntelligence(userMessage, null, claudeOptions);
+                    break;
+                default:
+                    claudeResponse = await getClaudeStrategicAnalysis(userMessage, claudeOptions);
+            }
         } else {
-            claudeResponse = await getClaudeStrategicAnalysis(userMessage, claudeOptions);
+            // Original routing logic with enhancements
+            if (conversationIntel.type === 'research_intelligence') {
+                claudeResponse = await getClaudeLiveResearch(userMessage, claudeOptions);
+            } else if (userMessage.toLowerCase().includes('cambodia') || userMessage.toLowerCase().includes('lending')) {
+                claudeResponse = await getClaudeCambodiaIntelligence(userMessage, null, claudeOptions);
+            } else if (conversationIntel.complexity === 'maximum') {
+                claudeResponse = await getClaudeComplexAnalysis(userMessage, [], claudeOptions);
+            } else {
+                claudeResponse = await getClaudeStrategicAnalysis(userMessage, claudeOptions);
+            }
         }
         
         return {
@@ -366,7 +596,8 @@ async function executeEnhancedClaudeIntelligence(userMessage, chatId, conversati
             emoji: '⚡',
             style: conversationIntel.style,
             complexity: conversationIntel.complexity,
-            capabilities: 'Live Intelligence + Research + Natural Reasoning'
+            capabilities: 'Live Intelligence + Research + Ray Dalio Framework + Specialized Analysis',
+            specializedFunction: conversationIntel.specializedFunction || 'standard'
         };
         
     } catch (error) {
@@ -377,40 +608,58 @@ async function executeEnhancedClaudeIntelligence(userMessage, chatId, conversati
 
 /**
  * 🎯 ENHANCED DUAL COMMAND EXECUTION ENGINE
- * Perfect fusion of institutional intelligence + natural conversation
+ * Perfect fusion of institutional intelligence + natural conversation + live data
  */
 async function executeEnhancedDualCommand(userMessage, chatId, messageType = 'text', hasMedia = false) {
     try {
-        console.log('🎯 Executing Enhanced Dual Command - Strategic AI Warfare with Freedom...');
+        console.log('🎯 Executing Enhanced Dual Command - Strategic AI Warfare with Live Data Intelligence...');
         
-        // Analyze conversation intelligence
+        // Enhanced conversation intelligence analysis
         const conversationIntel = analyzeConversationIntelligence(userMessage, messageType, hasMedia);
-        console.log('🧠 Conversation Intelligence:', conversationIntel);
+        console.log('🧠 Enhanced Conversation Intelligence:', {
+            type: conversationIntel.type,
+            complexity: conversationIntel.complexity,
+            primaryAI: conversationIntel.primaryAI,
+            liveDataRequired: conversationIntel.liveDataRequired,
+            specializedFunction: conversationIntel.specializedFunction
+        });
         
-        // Build strategic context (only for complex queries to avoid overhead)
+        // Build strategic context (enhanced for complex queries)
         let context = null;
         if (conversationIntel.complexity !== 'minimal') {
-            context = await buildStrategicCommanderContext(chatId, userMessage);
+            try {
+                context = await buildStrategicCommanderContext(chatId, userMessage);
+            } catch (contextError) {
+                console.log('⚠️ Context building failed, continuing without:', contextError.message);
+            }
         }
         
         let primaryResponse, secondaryResponse;
         
-        // Execute primary AI command
+        // Execute primary AI command with enhanced capabilities
         if (conversationIntel.primaryAI === 'GPT_COMMANDER') {
             primaryResponse = await executeEnhancedGptCommand(userMessage, chatId, conversationIntel, context);
         } else {
             primaryResponse = await executeEnhancedClaudeIntelligence(userMessage, chatId, conversationIntel, context);
         }
         
-        // Execute secondary AI if needed (for complex/urgent queries)
+        // Execute secondary AI if needed (for complex/urgent queries with synthesis requirement)
         if (conversationIntel.secondaryAI && conversationIntel.complexity !== 'minimal') {
             try {
-                console.log('🔄 Executing secondary AI for enhanced intelligence...');
+                console.log('🔄 Executing secondary AI for enhanced dual intelligence synthesis...');
+                
+                // Create synthesis-focused conversation intel for secondary AI
+                const secondaryIntel = {
+                    ...conversationIntel,
+                    type: 'synthesis',
+                    style: 'strategic_synthesis',
+                    maxTokens: Math.min(conversationIntel.maxTokens, 2000)
+                };
                 
                 if (conversationIntel.secondaryAI === 'GPT_COMMANDER') {
-                    secondaryResponse = await executeEnhancedGptCommand(userMessage, chatId, conversationIntel, context);
+                    secondaryResponse = await executeEnhancedGptCommand(userMessage, chatId, secondaryIntel, context);
                 } else {
-                    secondaryResponse = await executeEnhancedClaudeIntelligence(userMessage, chatId, conversationIntel, context);
+                    secondaryResponse = await executeEnhancedClaudeIntelligence(userMessage, chatId, secondaryIntel, context);
                 }
             } catch (secondaryError) {
                 console.log('⚠️ Secondary AI failed, continuing with primary:', secondaryError.message);
@@ -418,15 +667,25 @@ async function executeEnhancedDualCommand(userMessage, chatId, messageType = 'te
             }
         }
         
-        // 🔥 CLEAN RESPONSE FORMATTING - NO REDUNDANT HEADERS
+        // 🔥 ENHANCED RESPONSE FORMATTING WITH SPECIALIZED FUNCTION AWARENESS
         let finalResponse;
         
         if (conversationIntel.type === 'casual') {
             // Casual: Just the response, no headers
             finalResponse = primaryResponse.response;
             
+        } else if (conversationIntel.specializedFunction && conversationIntel.type !== 'casual') {
+            // Specialized function response with enhanced header
+            const functionType = conversationIntel.specializedFunction.replace('getClaude', '').replace('Analysis', '').replace('Optimization', '');
+            finalResponse = `${primaryResponse.emoji} **${functionType.toUpperCase()} INTELLIGENCE**
+${primaryResponse.capabilities}
+
+${primaryResponse.response}
+
+⚡ *Enhanced with Ray Dalio Framework + Live Market Data*`;
+            
         } else if (secondaryResponse && conversationIntel.complexity === 'maximum') {
-            // Dual intelligence for maximum complexity only
+            // Dual intelligence synthesis for maximum complexity
             finalResponse = `${primaryResponse.emoji} **${primaryResponse.commander.toUpperCase()}**
 ${primaryResponse.capabilities}
 
@@ -441,11 +700,11 @@ ${secondaryResponse.response}
 
 ---
 
-🎯 **STRATEGIC SYNTHESIS**
-Dual AI intelligence deployed for comprehensive strategic advantage.`;
+🎯 **ENHANCED DUAL INTELLIGENCE SYNTHESIS**
+Strategic AI Warfare with Live Market Intelligence - Institutional Grade Analysis Complete.`;
             
         } else {
-            // 🚀 CLEAN SINGLE AI RESPONSE - NO REDUNDANT HEADERS!
+            // 🚀 CLEAN SINGLE AI RESPONSE WITH LIVE DATA ENHANCEMENT
             finalResponse = primaryResponse.response;
         }
         
@@ -456,16 +715,29 @@ Dual AI intelligence deployed for comprehensive strategic advantage.`;
             secondaryCommander: conversationIntel.secondaryAI,
             complexity: conversationIntel.complexity,
             style: conversationIntel.style,
+            liveDataEnhanced: conversationIntel.liveDataRequired,
+            specializedFunction: conversationIntel.specializedFunction,
             success: true,
-            naturalConversation: conversationIntel.type === 'casual'
+            naturalConversation: conversationIntel.type === 'casual',
+            enhancedFeatures: {
+                liveDataIntegration: conversationIntel.liveDataRequired,
+                rayDalioFramework: conversationIntel.specializedFunction === 'getClaudeRegimeAnalysis',
+                anomalyDetection: conversationIntel.specializedFunction === 'getClaudeAnomalyAnalysis',
+                portfolioOptimization: conversationIntel.specializedFunction === 'getClaudePortfolioOptimization',
+                cambodiaEnhanced: conversationIntel.specializedFunction === 'getClaudeCambodiaIntelligence'
+            }
         };
         
     } catch (error) {
         console.error('❌ Enhanced Dual Command execution error:', error.message);
         
-        // Intelligent fallback based on conversation type
+        // Enhanced intelligent fallback with system health check
         try {
-            console.log('🔄 Falling back to GPT Strategic Commander...');
+            console.log('🔄 Falling back to GPT Strategic Commander with system health assessment...');
+            
+            // Quick system health check
+            const healthStatus = await checkClaudeSystemHealth();
+            console.log('📊 System Health:', healthStatus);
             
             const fallbackIntel = {
                 type: 'balanced_strategic',
@@ -481,13 +753,15 @@ Dual AI intelligence deployed for comprehensive strategic advantage.`;
 
 ${fallbackResponse.response}
 
-⚠️ **Note:** Enhanced dual command temporarily degraded. Operating in single-commander resilience mode.`,
+⚠️ **System Status:** Enhanced dual command temporarily degraded. Operating in single-commander resilience mode.
+📊 **Health Check:** Claude: ${healthStatus.claudeConnection ? '✅' : '❌'} | Live Data: ${healthStatus.liveDataConnection ? '✅' : '❌'} | Ray Dalio: ${healthStatus.rayDalioFramework ? '✅' : '❌'}`,
                 conversationIntel: fallbackIntel,
                 primaryCommander: 'GPT_COMMANDER',
                 secondaryCommander: null,
                 success: false,
                 error: error.message,
-                resilientMode: true
+                resilientMode: true,
+                systemHealth: healthStatus
             };
             
         } catch (fallbackError) {
@@ -497,18 +771,48 @@ ${fallbackResponse.response}
 }
 
 /**
- * 📊 ENHANCED COMMAND ANALYTICS
+ * 📊 ENHANCED COMMAND ANALYTICS WITH LIVE DATA METRICS
  */
 function getEnhancedCommandAnalytics() {
     return {
         enhancedMode: true,
+        liveDataIntegration: true,
+        rayDalioFramework: true,
         naturalConversation: true,
         adaptiveIntelligence: true,
-        conversationTypes: ['casual', 'quick_strategic', 'urgent_strategic', 'institutional_analysis', 'research_intelligence', 'multimodal'],
+        conversationTypes: [
+            'casual', 
+            'quick_strategic', 
+            'urgent_strategic', 
+            'institutional_analysis', 
+            'research_intelligence', 
+            'multimodal',
+            'economic_regime',      // NEW
+            'market_anomaly',       // NEW  
+            'portfolio_optimization', // NEW
+            'cambodia_intelligence'   // ENHANCED
+        ],
         aiCommanders: {
-            gpt: 'Strategic Commander Alpha - Institutional + Natural',
-            claude: 'Strategic Intelligence Chief - Live + Research'
+            gpt: 'Strategic Commander Alpha - Institutional + Natural + Live Data Awareness',
+            claude: 'Strategic Intelligence Chief - Live + Research + Ray Dalio Framework + Specialized Functions'
         },
+        specializedFunctions: [
+            'getClaudeRegimeAnalysis',
+            'getClaudeAnomalyAnalysis', 
+            'getClaudePortfolioOptimization',
+            'getClaudeWithMarketData',
+            'getClaudeCambodiaIntelligence'
+        ],
+        liveDataCapabilities: [
+            'Ray Dalio Economic Regime Detection',
+            'Real-time Market Anomaly Detection',
+            'Live Yield Curve Analysis',
+            'Credit Spread Monitoring',
+            'Inflation Expectations Tracking',
+            'Sector Rotation Analysis',
+            'Portfolio Correlation Analysis',
+            'Cambodia Global Market Context'
+        ],
         capabilities: [
             'Natural Conversation Flow',
             'Adaptive Response Complexity',
@@ -516,26 +820,48 @@ function getEnhancedCommandAnalytics() {
             'Dynamic System Prompts',
             'Institutional Authority with Human Touch',
             'Live Intelligence Integration',
-            'Strategic AI Warfare with Freedom'
+            'Strategic AI Warfare with Freedom',
+            'Ray Dalio All Weather Framework',      // NEW
+            'Real-time Anomaly Detection',          // NEW
+            'Live Portfolio Optimization',          // NEW
+            'Enhanced Cambodia Intelligence',       // NEW
+            'Specialized Function Routing',         // NEW
+            'Crisis Management with Live Data',     // NEW
+            'Economic Regime Awareness'             // NEW
         ],
-        lastUpdate: new Date().toISOString()
+        enhancedFeatures: [
+            'Intelligent Live Data Fetching',
+            'Specialized Claude Function Routing',
+            'Ray Dalio Framework Integration',
+            'Market Anomaly Detection & Analysis',
+            'Live Portfolio Optimization',
+            'Enhanced Cambodia Global Context',
+            'Crisis Management Protocols',
+            'System Health Monitoring',
+            'Resilient Fallback Systems'
+        ],
+        lastUpdate: new Date().toISOString(),
+        version: '3.0 - Live Data Enhanced'
     };
 }
 
 /**
- * 🔧 ENHANCED SYSTEM HEALTH CHECK
+ * 🔧 ENHANCED SYSTEM HEALTH CHECK WITH SPECIALIZED FUNCTIONS
  */
 async function checkEnhancedSystemHealth() {
     const health = {
         enhancedGptCommander: false,
         enhancedClaudeIntelligence: false,
+        liveDataIntegration: false,
+        rayDalioFramework: false,
+        specializedFunctions: false,
         naturalConversation: false,
         dualIntelligence: false,
         errors: []
     };
     
     try {
-        // Test GPT Strategic Commander with casual query
+        // Test Enhanced GPT Strategic Commander
         const testIntel = { type: 'casual', maxTokens: 100, temperature: 0.8, style: 'natural_brief' };
         await executeEnhancedGptCommand('Hello', 'test', testIntel, null);
         health.enhancedGptCommander = true;
@@ -547,7 +873,7 @@ async function checkEnhancedSystemHealth() {
     }
     
     try {
-        // Test Claude Intelligence Chief with research query  
+        // Test Enhanced Claude Intelligence Chief with standard function
         const testIntel = { type: 'research_intelligence', maxTokens: 500, temperature: 0.6, style: 'analytical_thorough' };
         await executeEnhancedClaudeIntelligence('Current market trends', 'test', testIntel, null);
         health.enhancedClaudeIntelligence = true;
@@ -557,14 +883,43 @@ async function checkEnhancedSystemHealth() {
         console.log('❌ Enhanced Claude Intelligence Chief unavailable');
     }
     
+    try {
+        // Test Live Data Integration
+        const claudeHealthCheck = await checkClaudeSystemHealth();
+        health.liveDataIntegration = claudeHealthCheck.liveDataConnection;
+        health.rayDalioFramework = claudeHealthCheck.rayDalioFramework;
+        console.log('✅ Live data integration tested');
+    } catch (dataError) {
+        health.errors.push(`Live Data Integration: ${dataError.message}`);
+        console.log('❌ Live data integration unavailable');
+    }
+    
+    try {
+        // Test Specialized Functions
+        const testIntel = { 
+            type: 'economic_regime', 
+            specializedFunction: 'getClaudeRegimeAnalysis',
+            maxTokens: 500, 
+            temperature: 0.6 
+        };
+        await executeEnhancedClaudeIntelligence('What is the current economic regime?', 'test', testIntel, null);
+        health.specializedFunctions = true;
+        console.log('✅ Specialized functions operational');
+    } catch (specializedError) {
+        health.errors.push(`Specialized Functions: ${specializedError.message}`);
+        console.log('❌ Specialized functions unavailable');
+    }
+    
     health.dualIntelligence = health.enhancedGptCommander && health.enhancedClaudeIntelligence;
+    health.overallHealth = health.dualIntelligence && health.liveDataIntegration;
+    health.enhancedHealth = health.overallHealth && health.rayDalioFramework && health.specializedFunctions;
     
     return health;
 }
 
 /**
- * 🎯 CONVERSATION INTELLIGENCE ROUTER (Helper)
- * Routes based on intelligent conversation analysis
+ * 🎯 ENHANCED CONVERSATION INTELLIGENCE ROUTER
+ * Advanced routing with specialized function awareness
  */
 function routeConversationIntelligently(userMessage, messageType, hasMedia) {
     const intel = analyzeConversationIntelligence(userMessage, messageType, hasMedia);
@@ -575,8 +930,87 @@ function routeConversationIntelligently(userMessage, messageType, hasMedia) {
         secondaryAI: intel.secondaryAI,
         responseStyle: intel.style,
         complexity: intel.complexity,
-        reasoning: intel.reasoning
+        liveDataRequired: intel.liveDataRequired,
+        specializedFunction: intel.specializedFunction,
+        reasoning: intel.reasoning,
+        enhancedCapabilities: {
+            regimeAnalysis: intel.specializedFunction === 'getClaudeRegimeAnalysis',
+            anomalyDetection: intel.specializedFunction === 'getClaudeAnomalyAnalysis',
+            portfolioOptimization: intel.specializedFunction === 'getClaudePortfolioOptimization',
+            marketDataIntensive: intel.specializedFunction === 'getClaudeWithMarketData',
+            cambodiaEnhanced: intel.specializedFunction === 'getClaudeCambodiaIntelligence'
+        }
     };
+}
+
+/**
+ * 🚀 STRATEGIC FUNCTION DISPATCHER
+ * Direct access to specialized Claude functions for advanced use cases
+ */
+async function dispatchSpecializedFunction(functionName, query, options = {}) {
+    try {
+        console.log(`🚀 Dispatching specialized function: ${functionName}`);
+        
+        switch (functionName) {
+            case 'regime':
+            case 'economic_regime':
+                return await getClaudeRegimeAnalysis(query, options);
+            
+            case 'anomaly':
+            case 'market_anomaly':
+                return await getClaudeAnomalyAnalysis(query, options);
+            
+            case 'portfolio':
+            case 'optimization':
+                return await getClaudePortfolioOptimization(query, null, options);
+            
+            case 'market_data':
+            case 'live_data':
+                return await getClaudeWithMarketData(query, options);
+            
+            case 'cambodia':
+                return await getClaudeCambodiaIntelligence(query, null, options);
+            
+            case 'insights':
+                return await getClaudeStrategicInsights(query, options);
+            
+            default:
+                throw new Error(`Unknown specialized function: ${functionName}`);
+        }
+        
+    } catch (error) {
+        console.error(`❌ Specialized function dispatch error (${functionName}):`, error.message);
+        throw error;
+    }
+}
+
+/**
+ * 📈 MARKET INTELLIGENCE SUMMARY
+ * Quick access to current market intelligence state
+ */
+async function getMarketIntelligenceSummary() {
+    try {
+        console.log('📈 Generating market intelligence summary...');
+        
+        const summary = await getClaudeWithMarketData('Provide a concise summary of current market conditions, economic regime, and key risks/opportunities for strategic positioning.', {
+            maxTokens: 1000,
+            temperature: 0.6
+        });
+        
+        return {
+            summary: summary,
+            timestamp: new Date().toISOString(),
+            source: 'Enhanced Dual Command System with Live Market Intelligence'
+        };
+        
+    } catch (error) {
+        console.error('❌ Market intelligence summary error:', error.message);
+        return {
+            summary: 'Market intelligence summary temporarily unavailable',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        };
+    }
 }
 
 module.exports = {
@@ -585,16 +1019,20 @@ module.exports = {
     analyzeConversationIntelligence,
     routeConversationIntelligently,
     
-    // 🧠 INTELLIGENT EXECUTION  
+    // 🧠 ENHANCED INTELLIGENT EXECUTION  
     executeEnhancedGptCommand,
     executeEnhancedClaudeIntelligence,
     createIntelligentSystemPrompt,
     
-    // 🔧 SYSTEM MANAGEMENT
+    // 🚀 SPECIALIZED FUNCTION ACCESS
+    dispatchSpecializedFunction,
+    getMarketIntelligenceSummary,
+    
+    // 🔧 ENHANCED SYSTEM MANAGEMENT
     checkEnhancedSystemHealth,
     getEnhancedCommandAnalytics,
     
-    // 📊 CONFIGURATION
+    // 📊 ENHANCED CONFIGURATION
     ENHANCED_COMMAND_CONFIG,
     
     // 🔄 LEGACY COMPATIBILITY (redirect to enhanced versions)
