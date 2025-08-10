@@ -34,6 +34,90 @@ pool.on('connect', () => {
     connectionStats.connectionHealth = 'HEALTHY';
 });
 
+-- 🎯 ADD THESE TABLES TO YOUR EXISTING SCHEMA (After your existing CREATE TABLE statements)
+
+-- Enhanced Dual AI Conversation Tracking
+CREATE TABLE IF NOT EXISTS dual_ai_conversations (
+    id SERIAL PRIMARY KEY,
+    chat_id VARCHAR(50) NOT NULL,
+    conversation_type VARCHAR(30) NOT NULL, -- 'casual', 'economic_regime', 'simple_datetime', etc.
+    complexity VARCHAR(20) NOT NULL, -- 'minimal', 'moderate', 'high', 'maximum'
+    primary_ai VARCHAR(30) NOT NULL, -- 'GPT_COMMANDER', 'CLAUDE_INTELLIGENCE'
+    secondary_ai VARCHAR(30), -- NULL if single AI
+    specialized_function VARCHAR(50), -- 'getClaudeRegimeAnalysis', etc.
+    live_data_required BOOLEAN DEFAULT FALSE,
+    response_style VARCHAR(30),
+    reasoning TEXT,
+    success BOOLEAN DEFAULT TRUE,
+    response_time_ms INTEGER,
+    user_message_length INTEGER,
+    ai_response_length INTEGER,
+    token_usage INTEGER,
+    enhancement_level VARCHAR(20) DEFAULT 'ENHANCED', -- 'BASIC', 'ENHANCED', 'MAXIMUM'
+    datetime_query BOOLEAN DEFAULT FALSE,
+    market_context JSONB,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- AI Performance Head-to-Head Comparison
+CREATE TABLE IF NOT EXISTS ai_head_to_head (
+    id SERIAL PRIMARY KEY,
+    chat_id VARCHAR(50) NOT NULL,
+    query_hash VARCHAR(64), -- For duplicate query comparison
+    gpt_response TEXT,
+    claude_response TEXT,
+    gpt_response_time_ms INTEGER,
+    claude_response_time_ms INTEGER,
+    gpt_success BOOLEAN DEFAULT TRUE,
+    claude_success BOOLEAN DEFAULT TRUE,
+    user_preferred_ai VARCHAR(30), -- Which AI user preferred
+    user_satisfaction_gpt SMALLINT CHECK (user_satisfaction_gpt >= 1 AND user_satisfaction_gpt <= 5),
+    user_satisfaction_claude SMALLINT CHECK (user_satisfaction_claude >= 1 AND user_satisfaction_claude <= 5),
+    query_complexity VARCHAR(20),
+    specialized_function_used VARCHAR(50),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Enhanced Function Performance Tracking  
+CREATE TABLE IF NOT EXISTS enhanced_function_performance (
+    id SERIAL PRIMARY KEY,
+    chat_id VARCHAR(50) NOT NULL,
+    function_name VARCHAR(50) NOT NULL,
+    function_category VARCHAR(30), -- 'REGIME_ANALYSIS', 'CAMBODIA_INTELLIGENCE', 'DATETIME', etc.
+    input_complexity VARCHAR(20),
+    execution_time_ms INTEGER,
+    memory_usage_mb DECIMAL(8,2),
+    api_calls_made INTEGER DEFAULT 0,
+    live_data_fetched BOOLEAN DEFAULT FALSE,
+    success BOOLEAN DEFAULT TRUE,
+    error_type VARCHAR(50),
+    result_accuracy SMALLINT CHECK (result_accuracy >= 1 AND result_accuracy <= 5),
+    cache_hit BOOLEAN DEFAULT FALSE,
+    regime_context VARCHAR(100),
+    market_volatility DECIMAL(5,2),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Real-time System Performance Metrics
+CREATE TABLE IF NOT EXISTS realtime_system_metrics (
+    id SERIAL PRIMARY KEY,
+    metric_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    active_users_count INTEGER DEFAULT 0,
+    concurrent_queries INTEGER DEFAULT 0,
+    gpt_api_latency_ms INTEGER,
+    claude_api_latency_ms INTEGER,
+    database_latency_ms INTEGER,
+    memory_usage_percent DECIMAL(5,2),
+    cpu_usage_percent DECIMAL(5,2),
+    error_rate_percent DECIMAL(5,2),
+    dual_ai_usage_rate DECIMAL(5,2),
+    specialized_function_rate DECIMAL(5,2),
+    live_data_success_rate DECIMAL(5,2),
+    enhancement_level_distribution JSONB,
+    top_conversation_types JSONB,
+    system_health_score DECIMAL(4,2) -- Overall system health 0-100
+);
+
 /**
  * 🏛️ INITIALIZE COMPLETE STRATEGIC DATABASE SCHEMA
  */
@@ -430,91 +514,7 @@ async function initializeDatabase() {
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
-
-        -- 🎯 ADD THESE TABLES TO YOUR EXISTING SCHEMA (After your existing CREATE TABLE statements)
-
--- Enhanced Dual AI Conversation Tracking
-CREATE TABLE IF NOT EXISTS dual_ai_conversations (
-    id SERIAL PRIMARY KEY,
-    chat_id VARCHAR(50) NOT NULL,
-    conversation_type VARCHAR(30) NOT NULL, -- 'casual', 'economic_regime', 'simple_datetime', etc.
-    complexity VARCHAR(20) NOT NULL, -- 'minimal', 'moderate', 'high', 'maximum'
-    primary_ai VARCHAR(30) NOT NULL, -- 'GPT_COMMANDER', 'CLAUDE_INTELLIGENCE'
-    secondary_ai VARCHAR(30), -- NULL if single AI
-    specialized_function VARCHAR(50), -- 'getClaudeRegimeAnalysis', etc.
-    live_data_required BOOLEAN DEFAULT FALSE,
-    response_style VARCHAR(30),
-    reasoning TEXT,
-    success BOOLEAN DEFAULT TRUE,
-    response_time_ms INTEGER,
-    user_message_length INTEGER,
-    ai_response_length INTEGER,
-    token_usage INTEGER,
-    enhancement_level VARCHAR(20) DEFAULT 'ENHANCED', -- 'BASIC', 'ENHANCED', 'MAXIMUM'
-    datetime_query BOOLEAN DEFAULT FALSE,
-    market_context JSONB,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- AI Performance Head-to-Head Comparison
-CREATE TABLE IF NOT EXISTS ai_head_to_head (
-    id SERIAL PRIMARY KEY,
-    chat_id VARCHAR(50) NOT NULL,
-    query_hash VARCHAR(64), -- For duplicate query comparison
-    gpt_response TEXT,
-    claude_response TEXT,
-    gpt_response_time_ms INTEGER,
-    claude_response_time_ms INTEGER,
-    gpt_success BOOLEAN DEFAULT TRUE,
-    claude_success BOOLEAN DEFAULT TRUE,
-    user_preferred_ai VARCHAR(30), -- Which AI user preferred
-    user_satisfaction_gpt SMALLINT CHECK (user_satisfaction_gpt >= 1 AND user_satisfaction_gpt <= 5),
-    user_satisfaction_claude SMALLINT CHECK (user_satisfaction_claude >= 1 AND user_satisfaction_claude <= 5),
-    query_complexity VARCHAR(20),
-    specialized_function_used VARCHAR(50),
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Enhanced Function Performance Tracking  
-CREATE TABLE IF NOT EXISTS enhanced_function_performance (
-    id SERIAL PRIMARY KEY,
-    chat_id VARCHAR(50) NOT NULL,
-    function_name VARCHAR(50) NOT NULL,
-    function_category VARCHAR(30), -- 'REGIME_ANALYSIS', 'CAMBODIA_INTELLIGENCE', 'DATETIME', etc.
-    input_complexity VARCHAR(20),
-    execution_time_ms INTEGER,
-    memory_usage_mb DECIMAL(8,2),
-    api_calls_made INTEGER DEFAULT 0,
-    live_data_fetched BOOLEAN DEFAULT FALSE,
-    success BOOLEAN DEFAULT TRUE,
-    error_type VARCHAR(50),
-    result_accuracy SMALLINT CHECK (result_accuracy >= 1 AND result_accuracy <= 5),
-    cache_hit BOOLEAN DEFAULT FALSE,
-    regime_context VARCHAR(100),
-    market_volatility DECIMAL(5,2),
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Real-time System Performance Metrics
-CREATE TABLE IF NOT EXISTS realtime_system_metrics (
-    id SERIAL PRIMARY KEY,
-    metric_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    active_users_count INTEGER DEFAULT 0,
-    concurrent_queries INTEGER DEFAULT 0,
-    gpt_api_latency_ms INTEGER,
-    claude_api_latency_ms INTEGER,
-    database_latency_ms INTEGER,
-    memory_usage_percent DECIMAL(5,2),
-    cpu_usage_percent DECIMAL(5,2),
-    error_rate_percent DECIMAL(5,2),
-    dual_ai_usage_rate DECIMAL(5,2),
-    specialized_function_rate DECIMAL(5,2),
-    live_data_success_rate DECIMAL(5,2),
-    enhancement_level_distribution JSONB,
-    top_conversation_types JSONB,
-    system_health_score DECIMAL(4,2) -- Overall system health 0-100
-);
-        
+    
         // Create indexes in a separate query to avoid conflicts
         await pool.query(`
             -- 📊 CREATE COMPREHENSIVE INDEXES FOR PERFORMANCE
