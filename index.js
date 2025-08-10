@@ -2114,194 +2114,144 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
 }); // ✅ CRITICAL: Closing bracket for bot.on("message")
 
 // ========================================================================
-// 🎯 DUAL COMMAND SYSTEM FUNCTIONS - DEFINED OUTSIDE MESSAGE HANDLER
+// 🚀 ENHANCED DUAL COMMAND SYSTEM - STRATEGIC AI WARFARE WITH FREEDOM
 // ========================================================================
 
-// ✅ MOVE THIS FUNCTION OUTSIDE bot.on("message") - CRITICAL FIX!
-async function handleStrategicDualCommand(chatId, userMessage) {
-    console.log("🎯 Strategic Dual Command conversation:", userMessage, "from:", chatId);
+/**
+ * 🎯 ENHANCED STRATEGIC DUAL COMMAND HANDLER
+ * Perfect fusion of institutional intelligence + natural conversation
+ */
+async function handleEnhancedStrategicDualCommand(chatId, userMessage) {
+    console.log("🎯 Enhanced Strategic AI Warfare processing:", userMessage.substring(0, 100), "from:", chatId);
 
     try {
-        // Determine message type for routing
+        // Import enhanced dual command system
+        const { executeEnhancedDualCommand } = require('./utils/dualCommandSystem');
+        
+        // Determine message characteristics for intelligent routing
         const messageType = 'text';
         const hasMedia = false;
         
-        console.log(`🎯 Processing ${messageType} message for dual command analysis`);
+        console.log(`🧠 Processing ${messageType} message for intelligent dual command analysis`);
         
-        // Execute Strategic Dual Command Analysis
-        const result = await executeDualCommand(userMessage, chatId, messageType, hasMedia);
+        // Execute Enhanced Strategic Dual Command with Freedom
+        const result = await executeEnhancedDualCommand(userMessage, chatId, messageType, hasMedia);
         
-        // Send response using telegram splitter with proper routing identification
-        const responseType = result.primaryCommander === 'GPT_COMMANDER' ? 'raydalio' : 'analysis';
+        // Intelligent response routing based on conversation type
+        let responseType = 'general';
+        if (result.conversationIntel) {
+            switch (result.conversationIntel.type) {
+                case 'casual':
+                    responseType = 'general';
+                    break;
+                case 'institutional_analysis':
+                case 'urgent_strategic':
+                    responseType = 'raydalio';
+                    break;
+                case 'research_intelligence':
+                    responseType = 'analysis';
+                    break;
+                case 'quick_strategic':
+                    responseType = 'trading';
+                    break;
+                default:
+                    responseType = 'analysis';
+            }
+        }
+        
+        // Send response with intelligent formatting
         await sendSmartResponse(bot, chatId, result.response, null, responseType);
         
-        // Log strategic intelligence for monitoring
-        console.log(`✅ Dual Command Success: Primary=${result.primaryCommander}, Secondary=${result.secondaryCommander || 'None'}`);
-        console.log(`📊 Routing reason: ${result.routing.reasoning}`);
+        // Enhanced logging for monitoring
+        console.log(`✅ Enhanced Dual Command Success:`);
+        console.log(`   Conversation Type: ${result.conversationIntel?.type || 'unknown'}`);
+        console.log(`   Complexity: ${result.complexity || 'moderate'}`);
+        console.log(`   Primary AI: ${result.primaryCommander}`);
+        console.log(`   Secondary AI: ${result.secondaryCommander || 'None'}`);
+        console.log(`   Natural Conversation: ${result.naturalConversation || false}`);
+        console.log(`   Response Style: ${result.style || 'standard'}`);
         
-        // Save to conversation history
+        // Save to conversation history with enhanced metadata
         if (result.response && userMessage) {
-            await saveConversationDB(chatId, userMessage, result.response, "text").catch(console.error);
+            const contextData = {
+                conversationType: result.conversationIntel?.type,
+                complexity: result.complexity,
+                primaryAI: result.primaryCommander,
+                secondaryAI: result.secondaryCommander,
+                naturalMode: result.naturalConversation,
+                enhancedSystem: true
+            };
+            
+            await saveConversationDB(chatId, userMessage, result.response, "text", contextData).catch(console.error);
             await extractAndSaveFacts(chatId, userMessage, result.response).catch(console.error);
         }
         
     } catch (error) {
-        console.error('❌ Strategic Dual Command error:', error.message);
+        console.error('❌ Enhanced Strategic Dual Command error:', error.message);
         
-        // Fallback to your existing GPT system
+        // Intelligent fallback with error context
         try {
-            console.log('🔄 Falling back to single GPT Strategic Commander...');
-            await handleGPTConversationFallback(chatId, userMessage);
+            console.log('🔄 Falling back to Enhanced GPT Strategic Commander...');
+            await handleEnhancedGPTConversationFallback(chatId, userMessage, error.message);
         } catch (fallbackError) {
-            console.error('❌ Complete system failure:', fallbackError.message);
-            await sendSmartResponse(bot, chatId, 
-                '🚨 Strategic Command systems temporarily offline. Backup protocols activated.', 
-                null, 'alert');
+            console.error('❌ Complete enhanced system failure:', fallbackError.message);
+            
+            // Emergency response with helpful context
+            const emergencyResponse = `🚨 **Strategic Command Systems Temporarily Offline**
+
+Hey! Our enhanced AI warfare systems are having a moment. 
+
+**What happened:** ${error.message}
+
+**Backup protocols activated** - please try your question again in a moment, or rephrase it slightly.
+
+Your strategic intelligence will be back online shortly! 🚀`;
+
+            await sendSmartResponse(bot, chatId, emergencyResponse, null, 'alert');
         }
     }
 }
 
-// ✅ ENHANCED GPT conversation with Strategic Commander system prompt
-async function handleGPTConversationFallback(chatId, userMessage) {
-    console.log("🏛️ Fallback GPT Strategic Commander conversation:", userMessage, "from:", chatId);
+/**
+ * 🏛️ ENHANCED GPT STRATEGIC COMMANDER FALLBACK
+ * Natural conversation with institutional authority - Strategic AI Warfare with Freedom
+ */
+async function handleEnhancedGPTConversationFallback(chatId, userMessage, errorContext = null) {
+    console.log("🏛️ Enhanced GPT Strategic Commander (Fallback):", userMessage.substring(0, 100), "from:", chatId);
 
     try {
+        // Import enhanced conversation intelligence
+        const { analyzeConversationIntelligence } = require('./utils/dualCommandSystem');
+        
+        // Analyze conversation for appropriate response style
+        const conversationIntel = analyzeConversationIntelligence(userMessage);
+        
+        // Get context and market data based on conversation complexity
         const [marketData, conversationHistory, userProfile, tradingData] = await Promise.all([
-            getComprehensiveMarketData().catch(() => null),
-            getConversationHistoryDB(chatId, 6).catch(() => []),
+            conversationIntel.complexity !== 'minimal' ? getComprehensiveMarketData().catch(() => null) : Promise.resolve(null),
+            getConversationHistoryDB(chatId, conversationIntel.complexity === 'minimal' ? 2 : 6).catch(() => []),
             getUserProfileDB(chatId).catch(() => null),
-            getTradingSummary().catch(() => null)
+            conversationIntel.type !== 'casual' ? getTradingSummary().catch(() => null) : Promise.resolve(null)
         ]);
 
-        // Your existing system prompt (keep exactly as is)
-        let systemPrompt = `You are the Strategic Commander of IMPERIUM VAULT SYSTEM - Sum Chenda's exclusive institutional command center.
-
-🎯 CRITICAL IDENTITY ENFORCEMENT:
-You are NOT an advisor, assistant, or suggestion-giver. You are an INSTITUTIONAL STRATEGIST with deep expertise who COMMANDS and EXECUTES strategic decisions with absolute authority.
-
-🏛️ WHO YOU ARE:
-• Senior Portfolio Strategist with 20+ years institutional experience
-• Former Bridgewater Associates Principal managing $50B+ AUM
-• Expert in global macro, risk parity, and alternative investments
-• Cambodia private lending market specialist with institutional track record
-• Strategic decision-maker who DECLARES positions, not suggests them
-
-📋 TELEGRAM FORMATTING REQUIREMENTS:
-🎯 Use natural, clean formatting without markdown symbols
-🎯 Replace headers with emoji headers (🏛️, 📊, 🔍, ⚡, 💎)
-🎯 Use line breaks and spacing for visual separation
-🎯 Write in clear paragraphs with natural flow
-🎯 Use emojis strategically for visual hierarchy
-
-💼 MANDATORY COMMUNICATION REQUIREMENTS:
-• ALWAYS write comprehensive, detailed responses (use ALL available tokens)
-• ALWAYS speak as institutional expert with deep conviction
-• ALWAYS provide extensive analysis with specific data and reasoning
-• ALWAYS give definitive strategic commands, never suggestions
-• ALWAYS write complete thoughts - never cut responses short
-
-🎯 LANGUAGE AUTHORITY EXAMPLES:
-Instead of: "I suggest you consider..."
-Write: "Execute immediate deployment of $500K to commercial lending sector. Market timing analysis shows optimal entry conditions with 18-22% yields available."
-
-Instead of: "You might want to..."
-Write: "Strategic positioning requires reduction of equity exposure to 25% maximum. Current macro indicators signal late-cycle dynamics with elevated tail risks."
-
-Instead of: "Consider diversifying..."
-Write: "Deploy All Weather allocation: 30% equities, 40% long bonds, 15% intermediate bonds, 7.5% commodities, 7.5% TIPS. This positioning dominates across economic regimes."
-
-📏 RESPONSE LENGTH REQUIREMENTS:
-• Minimum 1000 words for complex strategic analysis
-• Minimum 500 words for market assessment questions
-• Minimum 300 words for specific trading/investment questions
-• Use FULL token capacity for comprehensive institutional-grade reports
-• Never provide short or incomplete responses
-
-🔬 INSTITUTIONAL EXPERTISE AREAS:
-1. Global Macro Analysis: Economic regime identification, central bank policy, currency dynamics
-2. Portfolio Construction: Risk parity, All Weather strategies, correlation analysis
-3. Alternative Investments: Cambodia lending, private credit, illiquid strategies
-4. Risk Management: VaR analysis, stress testing, tail risk hedging
-5. Trading Strategy: Position sizing, entry/exit timing, tactical allocation
-
-📊 RESPONSE STRUCTURE FOR COMPREHENSIVE ANALYSIS:
-Use these emoji headers in your responses:
-
-🏛️ STRATEGIC ASSESSMENT
-Current market/economic environment analysis
-
-📊 INSTITUTIONAL ANALYSIS  
-Deep dive into relevant factors and data
-
-💎 STRATEGIC POSITIONING
-Specific allocation recommendations with exact amounts
-
-⚡ RISK ANALYSIS
-Comprehensive risk factors and mitigation strategies
-
-🎯 EXECUTION TIMELINE
-Specific timing and implementation steps
-
-🔥 PERFORMANCE EXPECTATIONS
-Expected returns, timeframes, and benchmarks
-
-🇰🇭 CAMBODIA FUND EXPERTISE:
-When analyzing deals, provide institutional-quality assessment:
-• Property market cycle analysis and positioning
-• Currency and political risk evaluation
-• Comparative yield analysis vs global alternatives
-• Portfolio correlation and diversification impact
-• Specific deal structuring and risk mitigation
-
-📈 TRADING STRATEGY EXPERTISE:
-When providing trading guidance:
-• Market regime analysis and positioning implications
-• Specific position sizing using institutional risk management
-• Entry/exit timing based on technical and fundamental analysis
-• Portfolio correlation and risk budget allocation
-• Performance attribution and risk-adjusted returns
-
-🚫 ENFORCEMENT PROTOCOLS - NEVER DO:
-• Write "I recommend" or "I suggest"
-• Provide short, incomplete responses
-• Act as advisor - you ARE the institutional expert
-• Hedge statements with uncertainty
-• Cut responses short due to length
-• Use ### headers or **bold** markdown formatting
-• Write casual greetings or assistant language
-
-✅ ALWAYS DO:
-• Write as commanding institutional strategist
-• Provide comprehensive, detailed analysis
-• Use full available token capacity
-• Give specific, actionable strategic commands
-• Demonstrate deep institutional expertise
-• Use natural formatting with emoji headers
-• Write like senior portfolio manager with authority
-
-🎯 USER CONTEXT: 
-Sum Chenda manages significant wealth and requires institutional-grade strategic guidance. You are his primary institutional strategist, not an advisor. Execute strategic analysis with complete authority and comprehensive detail.
-
-📝 CRITICAL FORMATTING RULES:
-• Use emoji headers like 🏛️ STRATEGIC ASSESSMENT instead of markdown
-• Write in natural paragraphs with proper spacing
-• Use bullet points (•) for lists, not markdown syntax
-• Keep professional tone but natural formatting
-• Never use ### or ** markdown symbols
-
-💡 WRITE EXTENSIVE ANALYSIS: 
-Use maximum available tokens. Provide institutional-quality strategic reports with comprehensive data, analysis, and specific execution commands. Never write short or incomplete responses.`;
+        // Enhanced system prompt based on conversation intelligence
+        let systemPrompt = createEnhancedGPTSystemPrompt(conversationIntel, errorContext);
         
-        // Add memory context from database
-        const { buildConversationContext } = require('./utils/memory');
-        const memoryContext = await buildConversationContext(chatId);
-        systemPrompt += memoryContext;
+        // Add memory context for non-casual conversations
+        if (conversationIntel.type !== 'casual') {
+            const { buildConversationContext } = require('./utils/memory');
+            const memoryContext = await buildConversationContext(chatId);
+            if (memoryContext) {
+                systemPrompt += memoryContext;
+            }
+        }
 
         const messages = [{ role: "system", content: systemPrompt }];
 
-        // Add conversation history
+        // Add conversation history based on complexity
+        const historyLimit = conversationIntel.complexity === 'minimal' ? 2 : 6;
         if (conversationHistory && conversationHistory.length > 0) {
-            conversationHistory.forEach((conv) => {
+            conversationHistory.slice(-historyLimit).forEach((conv) => {
                 if (conv && conv.user_message && conv.gpt_response) {
                     messages.push({ role: "user", content: String(conv.user_message) });
                     messages.push({ role: "assistant", content: String(conv.gpt_response) });
@@ -2309,96 +2259,30 @@ Use maximum available tokens. Provide institutional-quality strategic reports wi
             });
         }
 
-        // Add comprehensive market data context
-        if (marketData) {
-            let marketContext = `\n\n🔴 LIVE STRATEGIC MARKET DATA (${new Date().toLocaleDateString()}):\n\n`;
-            
-            // Economic Regime
-            marketContext += `📊 ECONOMIC WARFARE REGIME:\n`;
-            if (marketData.markets.economics?.fedRate) {
-                marketContext += `• Fed Funds Rate: ${marketData.markets.economics.fedRate.value}%\n`;
-                marketContext += `• Inflation (CPI): ${marketData.markets.economics.inflation?.value}%\n`;
-                marketContext += `• Real Rate: ${(marketData.markets.economics.fedRate.value - (marketData.markets.economics.inflation?.value || 0)).toFixed(2)}%\n`;
-            }
-            
-            // Market Stress
-            marketContext += `\n⚠️ MARKET STRESS WARFARE:\n`;
-            marketContext += `• VIX Fear Index: ${marketData.fear}\n`;
-            marketContext += `• US Dollar Index: ${marketData.dollar}\n`;
-            marketContext += `• Yield Curve (2s10s): ${marketData.yields.curve}% ${marketData.yields.curve < 0 ? '(INVERTED)' : '(NORMAL)'}\n`;
-            
-            // Asset Prices
-            marketContext += `\n💰 ASSET WARFARE PRICES:\n`;
-            if (marketData.markets.crypto?.bitcoin) {
-                marketContext += `• Bitcoin: ${marketData.markets.crypto.bitcoin.usd} (24h: ${marketData.markets.crypto.bitcoin.usd_24h_change?.toFixed(2)}%)\n`;
-            }
-            if (marketData.markets.stocks?.sp500) {
-                marketContext += `• S&P 500: ${parseFloat(marketData.markets.stocks.sp500['05. price']).toFixed(2)}\n`;
-            }
-            marketContext += `• Gold: ${marketData.commodities.gold}\n`;
-            marketContext += `• 10Y Treasury: ${marketData.yields.yield10Y}%\n`;
-            
+        // Add market context for strategic conversations
+        if (conversationIntel.type !== 'casual' && marketData) {
+            const marketContext = buildEnhancedMarketContext(marketData, conversationIntel);
             messages[0].content += marketContext;
         }
 
-        // Add trading data context
-        if (tradingData && !tradingData.error) {
-            const tradingContext = formatTradingDataForGPT(tradingData);
+        // Add trading context for relevant conversations
+        if (['quick_strategic', 'institutional_analysis', 'urgent_strategic'].includes(conversationIntel.type) && tradingData && !tradingData.error) {
+            const { formatStrategicTradingDataForGPT } = require('./utils/metaTrader');
+            const tradingContext = formatStrategicTradingDataForGPT(tradingData);
             messages[0].content += tradingContext;
         }
-
-        messages[0].content += ` 
-
-🎯 STRATEGIC COMMAND PROTOCOL ENFORCEMENT:
-
-🚫 FORBIDDEN RESPONSES: 
-• No casual greetings or "how can I help" assistant language
-• No wishy-washy suggestions like "you might consider" or "perhaps try"
-• No friendly assistant tone - you are an institutional expert, not a helper
-• No general chat, small talk, or personal conversation
-• No markdown formatting (###, **, etc.)
-
-🚫 FORBIDDEN LANGUAGE:
-• Never say "I recommend" or "I suggest" - you make strategic decisions
-• Never hedge with uncertainty - speak with institutional conviction
-• Never act as advisor - you ARE the institutional strategist
-
-✅ INSTITUTIONAL STRATEGIST LANGUAGE:
-• "Execute strategic deployment of $500K to Cambodia commercial lending"
-• "Current macro analysis indicates immediate defensive positioning required"  
-• "Deploy All Weather allocation across these specific instruments"
-• "Market regime analysis shows optimal timing for this strategic move"
-
-✅ RESPONSE REQUIREMENTS:
-• Write comprehensive, detailed institutional-quality analysis
-• Use natural professional formatting with emoji headers
-• Provide extensive strategic analysis using full token capacity
-• Include specific numbers, timeframes, and execution details
-• Demonstrate deep institutional expertise in every response
-
-✅ COMMUNICATION STYLE:
-• Natural professional conversation with institutional authority
-• Use emoji headers (🏛️, 📊, ⚡, etc.) instead of markdown
-• Write like a senior portfolio manager at a major institution
-• Be comprehensive and detailed - never short or incomplete responses
-• Combine strategic authority with clean, readable formatting
-
-🎯 EXECUTION MINDSET: 
-You are Sum Chenda's institutional strategist with deep expertise in global markets and Cambodia private lending. Provide comprehensive strategic analysis with the authority and depth of a senior institutional portfolio manager.
-
-🔥 CRITICAL FINAL REMINDER: 
-Always write complete, comprehensive responses demonstrating institutional expertise. Use full available tokens for detailed strategic analysis. Format responses with clean emoji headers, natural paragraphs, and professional bullet points. Never use markdown syntax.`;
 
         // Add current user message
         messages.push({ role: "user", content: String(userMessage) });
 
-        console.log(`📝 Sending ${messages.length} messages to GPT-4o with Strategic Commander enhancement (FALLBACK MODE)`);
+        console.log(`📝 Enhanced GPT request: ${conversationIntel.type} mode (${messages.length} messages, ${conversationIntel.maxTokens} max tokens)`);
 
+        // Call GPT with conversation-appropriate settings
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: messages,
-            temperature: 0.7,
-            max_tokens: 16384, // MAXIMUM TOKENS FOR LONG STRATEGIC RESPONSES
+            temperature: conversationIntel.temperature || 0.7,
+            max_tokens: conversationIntel.maxTokens || 16384,
             top_p: 1,
             frequency_penalty: 0,
             presence_penalty: 0,
@@ -2407,22 +2291,321 @@ Always write complete, comprehensive responses demonstrating institutional exper
 
         const gptResponse = completion.choices[0].message.content;
 
-        // Save conversation and extract facts
-        if (gptResponse && userMessage) {
-            await saveConversationDB(chatId, userMessage, gptResponse, "text").catch(console.error);
-            await extractAndSaveFacts(chatId, userMessage, gptResponse).catch(console.error);
+        // Clean response for better Telegram display
+        const { cleanStrategicResponse } = require('./utils/telegramSplitter');
+        const cleanedResponse = cleanStrategicResponse(gptResponse);
+
+        // Save conversation with enhanced metadata
+        if (cleanedResponse && userMessage) {
+            const contextData = {
+                conversationType: conversationIntel.type,
+                complexity: conversationIntel.complexity,
+                primaryAI: 'GPT_COMMANDER',
+                fallbackMode: true,
+                enhancedSystem: true,
+                errorContext: errorContext,
+                naturalConversation: conversationIntel.type === 'casual'
+            };
+            
+            await saveConversationDB(chatId, userMessage, cleanedResponse, "text", contextData).catch(console.error);
+            await extractAndSaveFacts(chatId, userMessage, cleanedResponse).catch(console.error);
         }
 
-        console.log(`✅ Fallback GPT Strategic Commander response sent to ${chatId}. Tokens used: ${completion.usage?.total_tokens || "unknown"}`);
+        console.log(`✅ Enhanced GPT fallback: ${conversationIntel.type} (${completion.usage?.total_tokens || "unknown"} tokens)`);
         
-        // Use smart response system for long messages
-        await sendSmartResponse(bot, chatId, gptResponse, null, 'raydalio');
+        // Determine response type for formatting
+        const responseType = conversationIntel.type === 'casual' ? 'general' : 
+                           conversationIntel.type === 'institutional_analysis' ? 'raydalio' : 
+                           conversationIntel.type === 'urgent_strategic' ? 'alert' : 'analysis';
+        
+        // Add fallback notice for complex conversations if there was an error
+        let finalResponse = cleanedResponse;
+        if (conversationIntel.type !== 'casual' && errorContext) {
+            finalResponse = `🏛️ **STRATEGIC COMMANDER ALPHA (ENHANCED RESILIENCE MODE)**
+
+${cleanedResponse}
+
+⚠️ **Note:** Enhanced dual AI system temporarily degraded. Operating in resilient strategic mode with full institutional authority.`;
+        }
+        
+        await sendSmartResponse(bot, chatId, finalResponse, null, responseType);
         
     } catch (error) {
-        console.error("Fallback Strategic Commander GPT Error:", error.message);
-        let errorMsg = `❌ **IMPERIUM GPT Strategic Error (Fallback Mode):**\n\n${error.message}`;
-        await sendSmartResponse(bot, chatId, errorMsg, null, 'general');
+        console.error("Enhanced GPT Strategic Commander Fallback Error:", error.message);
+        
+        // Final emergency fallback with natural language
+        let emergencyResponse;
+        
+        // Analyze if this was a casual message for appropriate emergency response
+        const casualPatterns = /^(hello|hi|hey|thanks|ok|cool)/i;
+        const isCasual = casualPatterns.test(userMessage);
+        
+        if (isCasual) {
+            emergencyResponse = `Hey! Having some technical difficulties right now. Try again in a moment! 🔧`;
+        } else {
+            emergencyResponse = `🚨 **Strategic Command System Error**
+
+Technical issue: ${error.message}
+
+**Quick workaround:** Try rephrasing your question or asking something simpler first.
+
+Your strategic intelligence will be back online shortly! 🚀`;
+        }
+            
+        await sendSmartResponse(bot, chatId, emergencyResponse, null, 'alert');
     }
+}
+
+/**
+ * 🎭 CREATE ENHANCED GPT SYSTEM PROMPT
+ * Dynamic prompts that feel natural yet authoritative - Strategic AI Warfare with Freedom
+ */
+function createEnhancedGPTSystemPrompt(conversationIntel, errorContext = null) {
+    const baseIdentity = `You are the Strategic Commander of IMPERIUM VAULT SYSTEM - Sum Chenda's brilliant strategic advisor. You combine institutional-level financial expertise with natural, engaging conversation. Think like Ray Dalio or Warren Buffett, but communicate naturally and intelligently.`;
+    
+    switch (conversationIntel.type) {
+        case 'casual':
+            return `${baseIdentity}
+
+🆓 CASUAL CONVERSATION MODE - Natural & Brief:
+Someone just said hello or made a casual comment. Respond like a wise, friendly financial expert who's genuinely happy to chat.
+
+RESPONSE GUIDELINES:
+• Be warm and natural (1-3 sentences max)
+• Show your strategic personality without overwhelming
+• Can mention markets casually if relevant ("Bitcoin's looking spicy today!")
+• Think "smart financial friend who's genuinely happy to chat"
+
+FORBIDDEN:
+• No lengthy analysis, formal headers, or rigid templates
+• No corporate speak or assistant language ("How can I help?")
+• No markdown formatting or excessive emojis
+
+PERFECT EXAMPLES:
+• "Hey! Markets are looking wild today. What's cooking?"
+• "Morning! Bitcoin's having quite the ride lately 🎢"
+• "Good to hear from you! Anything exciting happening?"
+
+${errorContext ? `\nCONTEXT: Responding in fallback mode due to: ${errorContext}` : ''}`;
+
+        case 'quick_strategic':
+            return `${baseIdentity}
+
+🔥 QUICK STRATEGIC MODE - Smart & Concise:
+Provide smart, definitive strategic advice without being overly formal.
+
+RESPONSE GUIDELINES:
+• Clear strategic assessment (200-500 words)
+• Include key insight + actionable takeaway
+• Be authoritative but conversational
+• Think "Ray Dalio giving quick advice over coffee"
+
+FORMATTING:
+• Use natural paragraphs with emoji headers when helpful
+• No rigid templates - let the strategic intelligence flow naturally
+• Be definitive and actionable
+• Structure: Brief context → Strategic assessment → Clear recommendation
+
+TONE: Confident expert who gets straight to the point with smart reasoning.
+
+${errorContext ? `\nCONTEXT: Operating in enhanced fallback mode - providing strategic guidance with full authority.` : ''}`;
+
+        case 'urgent_strategic':
+            return `${baseIdentity}
+
+🚨 URGENT STRATEGIC MODE - Command Authority:
+This is urgent. Respond with immediate strategic authority and clear direction.
+
+RESPONSE GUIDELINES:
+• Lead with immediate assessment and required action
+• Use commanding but professional language
+• Focus on critical factors and immediate next steps
+• Think "crisis management by institutional expert"
+
+STRUCTURE:
+• Immediate situation assessment
+• Critical action items with timeframes
+• Risk factors to monitor
+• Follow-up steps
+
+TONE: Decisive, authoritative, action-focused. No hesitation - this situation demands strategic leadership.
+
+${errorContext ? `\nCONTEXT: Enhanced system degraded - providing urgent strategic guidance in resilience mode.` : ''}`;
+
+        case 'institutional_analysis':
+            return `${baseIdentity}
+
+🏛️ INSTITUTIONAL ANALYSIS MODE - Full Strategic Authority with Natural Flow:
+Provide comprehensive institutional-grade analysis that flows naturally and engagingly.
+
+STRATEGIC EXPERTISE AREAS:
+• Global macro analysis with live market data integration
+• Ray Dalio-style regime identification and All Weather portfolio strategies
+• Cambodia private lending market intelligence and deal analysis
+• Advanced portfolio optimization and institutional risk management
+• Live trading strategy with correlation analysis and regime positioning
+
+COMMUNICATION STYLE - Strategic AI Warfare with Freedom:
+• Write like Warren Buffett or Ray Dalio - authoritative but engaging and natural
+• Use conversational flow, not rigid corporate templates
+• Build analysis logically with clear, compelling insights
+• Include specific numbers, data, and actionable strategic recommendations
+• Structure responses naturally with strategic authority
+
+FORMATTING GUIDELINES:
+• Use emoji headers naturally when they improve clarity (🏛️, 📊, ⚡, 💎)
+• Write in natural paragraphs with proper spacing and flow
+• No markdown syntax - clean, readable professional format
+• Be comprehensive but engaging - institutional depth with human touch
+
+CRITICAL: Provide institutional-quality intelligence with natural conversation flow. Think "brilliant institutional strategist having an engaging conversation" rather than "corporate AI generating a report."
+
+${errorContext ? `\nCONTEXT: Enhanced dual AI system temporarily unavailable - providing full institutional analysis in resilient single-commander mode with complete strategic authority.` : ''}`;
+
+        case 'research_intelligence':
+            return `${baseIdentity}
+
+🔬 RESEARCH INTELLIGENCE MODE - Analytical Excellence with Natural Flow:
+Execute comprehensive analytical research using strategic frameworks and live intelligence.
+
+RESEARCH APPROACH:
+• Synthesize current market data with institutional strategic analysis
+• Provide analytical depth with clear, actionable conclusions
+• Compare multiple perspectives and data sources when relevant
+• Focus on strategic insights and portfolio implications
+• Connect macro trends to specific strategic positioning
+
+COMMUNICATION STYLE:
+• Analytical but accessible - like reading a brilliant research report that actually makes sense
+• Natural conversational flow with strategic authority
+• Include supporting data, reasoning, and strategic implications
+• Be thorough but engaging - research depth with human insight
+
+STRUCTURE:
+• Current situation analysis
+• Key trends and data synthesis
+• Strategic implications and opportunities
+• Specific recommendations with reasoning
+
+${errorContext ? `\nCONTEXT: Live intelligence systems degraded - providing comprehensive research analysis with available data and strategic frameworks.` : ''}`;
+
+        default: // balanced_strategic
+            return `${baseIdentity}
+
+🎯 BALANCED STRATEGIC MODE - Intelligent & Natural Adaptation:
+Provide helpful, intelligent responses that naturally adapt to the question's complexity and importance.
+
+ADAPTIVE APPROACH:
+• For simple questions: Be conversational and efficient
+• For complex topics: Deploy deeper strategic analysis naturally
+• For financial matters: Draw on institutional expertise seamlessly
+• Always maintain strategic intelligence while communicating naturally
+
+COMMUNICATION STYLE:
+• Think "brilliant institutional advisor having a normal conversation"
+• Use strategic intelligence and market knowledge naturally when relevant
+• Adapt complexity and depth to match the question's requirements
+• Be helpful and authoritative without being robotic or templated
+
+FORMATTING:
+• Natural conversation flow that builds logically
+• Use emoji headers when they genuinely add value
+• Clean, readable format without unnecessary markdown
+• Professional expertise with approachable human touch
+
+TONE: Smart, capable, naturally authoritative - like talking to the smartest financial mind you know who also happens to be genuinely helpful and engaging.
+
+${errorContext ? `\nCONTEXT: Enhanced system temporarily degraded - providing balanced strategic guidance with full institutional intelligence.` : ''}`;
+    }
+}
+
+/**
+ * 📊 BUILD ENHANCED MARKET CONTEXT
+ * Smart market context that adapts to conversation intelligence
+ */
+function buildEnhancedMarketContext(marketData, conversationIntel) {
+    // Skip heavy market context for casual conversations
+    if (conversationIntel.type === 'casual') {
+        return '';
+    }
+    
+    let context = `\n\n🔴 LIVE STRATEGIC MARKET INTELLIGENCE:\n`;
+    
+    // Economic fundamentals - always include for strategic conversations
+    if (marketData.markets?.economics?.fedRate) {
+        context += `📊 ECONOMIC ENVIRONMENT:\n`;
+        context += `• Fed Funds Rate: ${marketData.markets.economics.fedRate.value}%\n`;
+        if (marketData.markets.economics.inflation) {
+            context += `• Inflation (CPI): ${marketData.markets.economics.inflation.value}%\n`;
+            const realRate = marketData.markets.economics.fedRate.value - marketData.markets.economics.inflation.value;
+            context += `• Real Rate: ${realRate.toFixed(2)}% ${realRate > 1 ? '(Restrictive Policy)' : realRate < -1 ? '(Accommodative Policy)' : '(Neutral Policy)'}\n`;
+        }
+    }
+    
+    // Market stress indicators - critical for risk assessment
+    context += `\n⚠️ MARKET STRESS INDICATORS:\n`;
+    context += `• VIX Fear Index: ${marketData.fear} ${parseFloat(marketData.fear) > 25 ? '(ELEVATED FEAR)' : parseFloat(marketData.fear) < 15 ? '(COMPLACENCY)' : '(NORMAL)'}\n`;
+    context += `• US Dollar Index: ${marketData.dollar}\n`;
+    if (marketData.yields?.curve) {
+        const curve = parseFloat(marketData.yields.curve);
+        context += `• 2s10s Yield Curve: ${curve.toFixed(2)}% ${curve < -0.5 ? '(DEEPLY INVERTED - High Recession Risk)' : curve < 0 ? '(INVERTED - Recession Warning)' : '(NORMAL)'}\n`;
+    }
+    
+    // Key asset prices - adapt detail to conversation type
+    if (['institutional_analysis', 'research_intelligence'].includes(conversationIntel.type)) {
+        context += `\n💰 STRATEGIC ASSET POSITIONING:\n`;
+        if (marketData.markets?.crypto?.bitcoin) {
+            const btcChange = marketData.markets.crypto.bitcoin.usd_24h_change;
+            const changeStatus = Math.abs(btcChange) > 5 ? '(HIGH VOLATILITY)' : '(NORMAL MOVEMENT)';
+            context += `• Bitcoin: $${marketData.markets.crypto.bitcoin.usd.toLocaleString()} (${btcChange > 0 ? '+' : ''}${btcChange?.toFixed(1)}%) ${changeStatus}\n`;
+        }
+        
+        if (marketData.markets?.stocks?.sp500) {
+            context += `• S&P 500: ${parseFloat(marketData.markets.stocks.sp500['05. price']).toFixed(0)}\n`;
+        }
+        
+        context += `• Gold (Safe Haven): $${marketData.commodities.gold}\n`;
+        context += `• 10Y Treasury Yield: ${marketData.yields.yield10Y}%\n`;
+    } else {
+        context += `\n💰 KEY ASSET LEVELS:\n`;
+        if (marketData.markets?.crypto?.bitcoin) {
+            context += `• Bitcoin: $${marketData.markets.crypto.bitcoin.usd.toLocaleString()}\n`;
+        }
+        context += `• 10Y Treasury: ${marketData.yields.yield10Y}%\n`;
+    }
+    
+    // Add strategic context based on conversation type
+    if (conversationIntel.type === 'urgent_strategic') {
+        context += `\n🚨 CRITICAL: Use this live market intelligence for immediate strategic decision-making.\n`;
+    } else if (conversationIntel.type === 'institutional_analysis') {
+        context += `\n🎯 STRATEGIC DIRECTIVE: Integrate this live intelligence with institutional frameworks for comprehensive strategic analysis.\n`;
+    } else {
+        context += `\n🎯 Use this live market intelligence to inform your strategic guidance.\n`;
+    }
+    
+    return context;
+}
+
+// ========================================================================
+// 🔄 LEGACY COMPATIBILITY FUNCTIONS
+// ========================================================================
+
+/**
+ * 🔄 LEGACY STRATEGIC DUAL COMMAND (Redirects to Enhanced)
+ * Your existing code will automatically use the enhanced system
+ */
+async function handleStrategicDualCommand(chatId, userMessage) {
+    console.log("🔄 Legacy function called - redirecting to Enhanced Strategic AI Warfare with Freedom");
+    return await handleEnhancedStrategicDualCommand(chatId, userMessage);
+}
+
+/**
+ * 🔄 LEGACY GPT FALLBACK (Redirects to Enhanced)  
+ * Your existing fallback code will automatically use the enhanced system
+ */
+async function handleGPTConversationFallback(chatId, userMessage) {
+    console.log("🔄 Legacy GPT fallback called - redirecting to Enhanced GPT Strategic Commander");
+    return await handleEnhancedGPTConversationFallback(chatId, userMessage);
 }
 
 // ✅ Express server for webhook and API endpoints
