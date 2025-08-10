@@ -12,7 +12,7 @@ const anthropic = new Anthropic({
 // 🔍 Debug Claude configuration
 console.log("⚡ Claude Strategic Intelligence Configuration:");
 console.log(`   API Key: ${process.env.ANTHROPIC_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
-console.log(`   Model: ${process.env.CLAUDE_MODEL || 'claude-3-sonnet-20240229'}`);
+console.log(`   Model: ${process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514'}`);
 console.log(`   Timeout: 300 seconds`);
 console.log(`   Max Retries: 3`);
 
