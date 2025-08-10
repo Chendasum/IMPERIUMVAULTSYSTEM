@@ -2027,7 +2027,7 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
                     '✅ **CLAUDE STRATEGIC INTELLIGENCE CHIEF**\n\n' +
                     '🎯 **Status:** OPERATIONAL\n' +
                     '⚡ **Capabilities:** Live market intelligence, superior reasoning, complex analysis\n' +
-                    '🔗 **Model:** claude-3-sonnet-20240229\n\n' +
+                    '🔗 **Model:** claude-sonnet-4-20250514\n\n' +
                     '**Ready for strategic warfare intelligence!**',
                     'Claude Intelligence Chief Status', 'analysis'
                 );
@@ -2710,7 +2710,7 @@ Geographic Focus: Phnom Penh, Siem Reap, Sihanoukville strategic opportunities`;
             response: claudeResponse,
             commander: "⚡ Claude Strategic Intelligence Chief",
             timestamp: new Date().toISOString(),
-            model: "claude-3-sonnet-20240229",
+            model: "claude-sonnet-4-20250514",
             enhancement: "Superior Reasoning + Live Intelligence + Real-time Analysis",
             capabilities: [
                 "Real-time market intelligence",
@@ -2827,7 +2827,7 @@ app.get("/claude-health", async (req, res) => {
         const claudeMetrics = {
             connection: isHealthy ? "✅ Operational" : "❌ Failed",
             api_key: process.env.ANTHROPIC_API_KEY ? "✅ Configured" : "❌ Missing",
-            model: process.env.CLAUDE_MODEL || "claude-3-sonnet-20240229",
+            model: process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514",
             capabilities: [
                 "Real-time market intelligence",
                 "Superior analytical reasoning",
@@ -2898,7 +2898,7 @@ app.get("/system-status", async (req, res) => {
                 },
                 claude_intelligence_chief: {
                     status: claudeHealth ? "✅ OPERATIONAL" : "❌ OFFLINE",
-                    model: process.env.CLAUDE_MODEL || "claude-3-sonnet-20240229", 
+                    model: process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514", 
                     specialties: ["Live Intelligence", "Superior Reasoning", "Complex Analysis"]
                 }
             },
