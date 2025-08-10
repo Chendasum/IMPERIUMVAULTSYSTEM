@@ -418,7 +418,7 @@ async function executeEnhancedDualCommand(userMessage, chatId, messageType = 'te
             }
         }
         
-        // Format final response based on complexity
+        // 🔥 CLEAN RESPONSE FORMATTING - NO REDUNDANT HEADERS
         let finalResponse;
         
         if (conversationIntel.type === 'casual') {
@@ -426,7 +426,7 @@ async function executeEnhancedDualCommand(userMessage, chatId, messageType = 'te
             finalResponse = primaryResponse.response;
             
         } else if (secondaryResponse && conversationIntel.complexity === 'maximum') {
-            // Dual intelligence for maximum complexity
+            // Dual intelligence for maximum complexity only
             finalResponse = `${primaryResponse.emoji} **${primaryResponse.commander.toUpperCase()}**
 ${primaryResponse.capabilities}
 
@@ -445,11 +445,8 @@ ${secondaryResponse.response}
 Dual AI intelligence deployed for comprehensive strategic advantage.`;
             
         } else {
-            // Single AI with appropriate branding
-            finalResponse = `${primaryResponse.emoji} **${primaryResponse.commander.toUpperCase()}**
-${primaryResponse.capabilities}
-
-${primaryResponse.response}`;
+            // 🚀 CLEAN SINGLE AI RESPONSE - NO REDUNDANT HEADERS!
+            finalResponse = primaryResponse.response;
         }
         
         return {
