@@ -18,13 +18,88 @@ const {
 const { sendSmartResponse, cleanStrategicResponse } = require('./telegramSplitter');
 const { buildStrategicCommanderContext } = require('./contextEnhancer');
 
+// 🌍 GLOBAL DATE/TIME UTILITIES WITH MULTI-TIMEZONE SUPPORT
+function getCurrentCambodiaDateTime() {
+    try {
+        const now = new Date();
+        const cambodiaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Phnom_Penh"}));
+        
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        const dayName = days[cambodiaTime.getDay()];
+        const monthName = months[cambodiaTime.getMonth()];
+        const date = cambodiaTime.getDate();
+        const year = cambodiaTime.getFullYear();
+        const hour = cambodiaTime.getHours();
+        const minute = cambodiaTime.getMinutes();
+        const isWeekend = cambodiaTime.getDay() === 0 || cambodiaTime.getDay() === 6;
+        
+        return {
+            date: `${dayName}, ${monthName} ${date}, ${year}`,
+            time: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+            timeShort: `${hour}:${minute.toString().padStart(2, '0')}`,
+            hour: hour,
+            minute: minute,
+            dayName: dayName,
+            isWeekend: isWeekend,
+            cambodiaTimezone: 'ICT (UTC+7)',
+            timestamp: cambodiaTime.toISOString()
+        };
+    } catch (error) {
+        console.error('❌ Cambodia DateTime error:', error.message);
+        return {
+            date: new Date().toDateString(),
+            time: new Date().toTimeString().slice(0, 5),
+            timeShort: new Date().toTimeString().slice(0, 5),
+            hour: new Date().getHours(),
+            isWeekend: [0, 6].includes(new Date().getDay()),
+            error: 'Timezone calculation failed'
+        };
+    }
+}
+
+function getCurrentGlobalDateTime() {
+    try {
+        const now = new Date();
+        
+        const cambodiaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Phnom_Penh"}));
+        const newYorkTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+        const londonTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/London"}));
+        
+        return {
+            cambodia: {
+                ...getCurrentCambodiaDateTime(),
+                timezone: 'ICT (UTC+7)'
+            },
+            newYork: {
+                time: `${newYorkTime.getHours()}:${newYorkTime.getMinutes().toString().padStart(2, '0')}`,
+                hour: newYorkTime.getHours(),
+                timezone: 'EST/EDT (UTC-5/-4)'
+            },
+            london: {
+                time: `${londonTime.getHours()}:${londonTime.getMinutes().toString().padStart(2, '0')}`,
+                hour: londonTime.getHours(),
+                timezone: 'GMT/BST (UTC+0/+1)'
+            },
+            utc: now.toISOString()
+        };
+    } catch (error) {
+        console.error('❌ Global DateTime error:', error.message);
+        return {
+            cambodia: getCurrentCambodiaDateTime(),
+            error: 'Global timezone calculation failed'
+        };
+    }
+}
+
 // 🎯 ENHANCED DUAL COMMAND CONFIGURATION WITH LIVE DATA
 const ENHANCED_COMMAND_CONFIG = {
-    // GPT-4o Strategic Commander (Institutional + Natural + Multimodal)
     GPT_COMMANDER: {
         name: 'Strategic Commander Alpha',
         model: 'gpt-4o',
-        specialties: ['multimodal', 'institutional_analysis', 'natural_conversation', 'cambodia_expertise', 'strategic_synthesis'],
+        specialties: ['multimodal', 'institutional_analysis', 'natural_conversation', 'cambodia_expertise', 'strategic_synthesis', 'datetime_queries'],
         emoji: '🏛️',
         priority: 'institutional',
         conversationStyles: {
@@ -34,12 +109,10 @@ const ENHANCED_COMMAND_CONFIG = {
             synthesis: 'strategic_synthesizer'
         }
     },
-    
-    // Claude Opus 4 (Live Intelligence + Research + Ray Dalio Framework)
     CLAUDE_INTELLIGENCE: {
         name: 'Strategic Intelligence Chief', 
         model: 'claude-opus-4-1-20250805',
-        specialties: ['live_data', 'research', 'complex_analysis', 'real_time_intelligence', 'ray_dalio_framework', 'market_regimes', 'anomaly_detection'],
+        specialties: ['live_data', 'research', 'complex_analysis', 'real_time_intelligence', 'ray_dalio_framework', 'market_regimes', 'anomaly_detection', 'global_time_awareness'],
         emoji: '⚡',
         priority: 'intelligence',
         conversationStyles: {
@@ -52,11 +125,19 @@ const ENHANCED_COMMAND_CONFIG = {
 };
 
 /**
- * 🧠 ENHANCED CONVERSATION ANALYSIS WITH LIVE DATA AWARENESS
+ * 🧠 ENHANCED CONVERSATION ANALYSIS WITH LIVE DATA AWARENESS AND DATETIME DETECTION
  * Detects conversation type and routes to optimal AI with live data integration
  */
 function analyzeConversationIntelligence(userMessage, messageType = 'text', hasMedia = false) {
     const message = userMessage.toLowerCase();
+    
+    // 🕐 SIMPLE DATE/TIME QUERIES (Quick Response)
+    const dateTimePatterns = [
+        /^(what time|what's the time|current time|time now)/i,
+        /^(what date|what's the date|today's date|date today)/i,
+        /^(what day|what's today|today is)/i,
+        /^(time in cambodia|cambodia time)/i
+    ];
     
     // 💬 CASUAL CONVERSATION (Natural & Brief)
     const casualPatterns = [
@@ -152,6 +233,20 @@ function analyzeConversationIntelligence(userMessage, messageType = 'text', hasM
             secondaryAI: null,
             liveDataRequired: false,
             reasoning: 'Multimodal content requires GPT-4o vision capabilities'
+        };
+    }
+    
+    if (dateTimePatterns.some(pattern => pattern.test(message))) {
+        return {
+            type: 'simple_datetime',
+            complexity: 'minimal',
+            maxTokens: 200,
+            temperature: 0.8,
+            style: 'natural_informative',
+            primaryAI: 'GPT_COMMANDER',
+            secondaryAI: null,
+            liveDataRequired: false,
+            reasoning: 'Simple date/time query - direct response with current time'
         };
     }
     
@@ -308,6 +403,20 @@ function createIntelligentSystemPrompt(conversationIntel, context = null) {
     const baseIdentity = `You are Claude/GPT, Sum Chenda's brilliant strategic advisor for the IMPERIUM VAULT system. You combine institutional-level financial expertise with natural, engaging conversation. You have access to Ray Dalio's economic regime framework and real-time market intelligence.`;
     
     switch (conversationIntel.type) {
+        case 'simple_datetime':
+            return `${baseIdentity}
+
+SIMPLE DATE/TIME MODE - Natural & Informative:
+Someone is asking for current date/time information. Provide friendly, accurate time information with your strategic personality.
+
+- Give clear, accurate date/time for Cambodia (ICT timezone)
+- Include day of week and whether it's weekend
+- Be warm and natural (1-2 sentences)
+- Can add brief market context if it's a weekday/weekend
+- Think "helpful friend who happens to know market timing"
+
+NO formal headers - just natural, accurate time information with strategic awareness.`;
+
         case 'casual':
             return `${baseIdentity}
 
@@ -513,9 +622,31 @@ async function executeEnhancedGptCommand(userMessage, chatId, conversationIntel,
     try {
         console.log('🏛️ Executing Enhanced GPT Strategic Commander with live data awareness...');
         
+        // Handle simple date/time queries directly
+        if (conversationIntel.type === 'simple_datetime') {
+            const cambodiaTime = getCurrentCambodiaDateTime();
+            const response = `Today is ${cambodiaTime.date} and the current time in Cambodia is ${cambodiaTime.timeShort} ${cambodiaTime.cambodiaTimezone}. ${cambodiaTime.isWeekend ? "It's the weekend!" : "Have a great day!"}`;
+            
+            return {
+                response: response,
+                commander: 'GPT Strategic Commander Alpha',
+                emoji: '🏛️',
+                style: conversationIntel.style,
+                complexity: conversationIntel.complexity,
+                capabilities: 'Current Date/Time + Natural Intelligence'
+            };
+        }
+        
         const systemPrompt = createIntelligentSystemPrompt(conversationIntel, context);
         
-        const response = await getGptReply(userMessage, {
+        // Add current date/time context for non-casual conversations
+        let enhancedMessage = userMessage;
+        if (conversationIntel.type !== 'casual' && conversationIntel.type !== 'simple_datetime') {
+            const cambodiaTime = getCurrentCambodiaDateTime();
+            enhancedMessage = `Current Date: ${cambodiaTime.date}, Time: ${cambodiaTime.timeShort} Cambodia\n\nUser Query: ${userMessage}`;
+        }
+        
+        const response = await getGptReply(enhancedMessage, {
             systemPrompt: systemPrompt,
             maxTokens: conversationIntel.maxTokens,
             temperature: conversationIntel.temperature,
@@ -552,6 +683,16 @@ async function executeEnhancedClaudeIntelligence(userMessage, chatId, conversati
             mode: conversationIntel.type
         };
         
+        // Add current date/time context for Claude
+        const globalTime = getCurrentGlobalDateTime();
+        const timeContext = `Current Global Time Context:
+- Cambodia: ${globalTime.cambodia.date}, ${globalTime.cambodia.timeShort} ICT
+- New York: ${globalTime.newYork.time} EST/EDT
+- London: ${globalTime.london.time} GMT/BST
+- Market Status: ${globalTime.cambodia.isWeekend ? 'Weekend' : 'Weekday'}
+
+User Query: ${userMessage}`;
+        
         let claudeResponse;
         
         // Enhanced routing to specialized Claude functions
@@ -560,33 +701,33 @@ async function executeEnhancedClaudeIntelligence(userMessage, chatId, conversati
             
             switch (conversationIntel.specializedFunction) {
                 case 'getClaudeRegimeAnalysis':
-                    claudeResponse = await getClaudeRegimeAnalysis(userMessage, claudeOptions);
+                    claudeResponse = await getClaudeRegimeAnalysis(timeContext, claudeOptions);
                     break;
                 case 'getClaudeAnomalyAnalysis':
-                    claudeResponse = await getClaudeAnomalyAnalysis(userMessage, claudeOptions);
+                    claudeResponse = await getClaudeAnomalyAnalysis(timeContext, claudeOptions);
                     break;
                 case 'getClaudePortfolioOptimization':
-                    claudeResponse = await getClaudePortfolioOptimization(userMessage, null, claudeOptions);
+                    claudeResponse = await getClaudePortfolioOptimization(timeContext, null, claudeOptions);
                     break;
                 case 'getClaudeWithMarketData':
-                    claudeResponse = await getClaudeWithMarketData(userMessage, claudeOptions);
+                    claudeResponse = await getClaudeWithMarketData(timeContext, claudeOptions);
                     break;
                 case 'getClaudeCambodiaIntelligence':
-                    claudeResponse = await getClaudeCambodiaIntelligence(userMessage, null, claudeOptions);
+                    claudeResponse = await getClaudeCambodiaIntelligence(timeContext, null, claudeOptions);
                     break;
                 default:
-                    claudeResponse = await getClaudeStrategicAnalysis(userMessage, claudeOptions);
+                    claudeResponse = await getClaudeStrategicAnalysis(timeContext, claudeOptions);
             }
         } else {
             // Original routing logic with enhancements
             if (conversationIntel.type === 'research_intelligence') {
-                claudeResponse = await getClaudeLiveResearch(userMessage, claudeOptions);
+                claudeResponse = await getClaudeLiveResearch(timeContext, claudeOptions);
             } else if (userMessage.toLowerCase().includes('cambodia') || userMessage.toLowerCase().includes('lending')) {
-                claudeResponse = await getClaudeCambodiaIntelligence(userMessage, null, claudeOptions);
+                claudeResponse = await getClaudeCambodiaIntelligence(timeContext, null, claudeOptions);
             } else if (conversationIntel.complexity === 'maximum') {
-                claudeResponse = await getClaudeComplexAnalysis(userMessage, [], claudeOptions);
+                claudeResponse = await getClaudeComplexAnalysis(timeContext, [], claudeOptions);
             } else {
-                claudeResponse = await getClaudeStrategicAnalysis(userMessage, claudeOptions);
+                claudeResponse = await getClaudeStrategicAnalysis(timeContext, claudeOptions);
             }
         }
         
@@ -626,7 +767,7 @@ async function executeEnhancedDualCommand(userMessage, chatId, messageType = 'te
         
         // Build strategic context (enhanced for complex queries)
         let context = null;
-        if (conversationIntel.complexity !== 'minimal') {
+        if (conversationIntel.complexity !== 'minimal' && conversationIntel.type !== 'simple_datetime') {
             try {
                 context = await buildStrategicCommanderContext(chatId, userMessage);
             } catch (contextError) {
@@ -670,8 +811,8 @@ async function executeEnhancedDualCommand(userMessage, chatId, messageType = 'te
         // 🔥 ENHANCED RESPONSE FORMATTING WITH SPECIALIZED FUNCTION AWARENESS
         let finalResponse;
         
-        if (conversationIntel.type === 'casual') {
-            // Casual: Just the response, no headers
+        if (conversationIntel.type === 'casual' || conversationIntel.type === 'simple_datetime') {
+            // Casual/DateTime: Just the response, no headers
             finalResponse = primaryResponse.response;
             
         } else if (conversationIntel.specializedFunction && conversationIntel.type !== 'casual') {
@@ -718,13 +859,14 @@ Strategic AI Warfare with Live Market Intelligence - Institutional Grade Analysi
             liveDataEnhanced: conversationIntel.liveDataRequired,
             specializedFunction: conversationIntel.specializedFunction,
             success: true,
-            naturalConversation: conversationIntel.type === 'casual',
+            naturalConversation: conversationIntel.type === 'casual' || conversationIntel.type === 'simple_datetime',
             enhancedFeatures: {
                 liveDataIntegration: conversationIntel.liveDataRequired,
                 rayDalioFramework: conversationIntel.specializedFunction === 'getClaudeRegimeAnalysis',
                 anomalyDetection: conversationIntel.specializedFunction === 'getClaudeAnomalyAnalysis',
                 portfolioOptimization: conversationIntel.specializedFunction === 'getClaudePortfolioOptimization',
-                cambodiaEnhanced: conversationIntel.specializedFunction === 'getClaudeCambodiaIntelligence'
+                cambodiaEnhanced: conversationIntel.specializedFunction === 'getClaudeCambodiaIntelligence',
+                dateTimeSupport: conversationIntel.type === 'simple_datetime'
             }
         };
         
@@ -780,21 +922,23 @@ function getEnhancedCommandAnalytics() {
         rayDalioFramework: true,
         naturalConversation: true,
         adaptiveIntelligence: true,
+        dateTimeSupport: true,
         conversationTypes: [
             'casual', 
+            'simple_datetime',
             'quick_strategic', 
             'urgent_strategic', 
             'institutional_analysis', 
             'research_intelligence', 
             'multimodal',
-            'economic_regime',      // NEW
-            'market_anomaly',       // NEW  
-            'portfolio_optimization', // NEW
-            'cambodia_intelligence'   // ENHANCED
+            'economic_regime',
+            'market_anomaly',
+            'portfolio_optimization',
+            'cambodia_intelligence'
         ],
         aiCommanders: {
-            gpt: 'Strategic Commander Alpha - Institutional + Natural + Live Data Awareness',
-            claude: 'Strategic Intelligence Chief - Live + Research + Ray Dalio Framework + Specialized Functions'
+            gpt: 'Strategic Commander Alpha - Institutional + Natural + Live Data + DateTime',
+            claude: 'Strategic Intelligence Chief - Live + Research + Ray Dalio + Specialized Functions'
         },
         specializedFunctions: [
             'getClaudeRegimeAnalysis',
@@ -808,10 +952,11 @@ function getEnhancedCommandAnalytics() {
             'Real-time Market Anomaly Detection',
             'Live Yield Curve Analysis',
             'Credit Spread Monitoring',
-            'Inflation Expectations Tracking',
+            'Global Time Zone Awareness',
+            'Cambodia Market Hours Detection',
+            'Weekend/Weekday Intelligence',
             'Sector Rotation Analysis',
-            'Portfolio Correlation Analysis',
-            'Cambodia Global Market Context'
+            'Portfolio Correlation Analysis'
         ],
         capabilities: [
             'Natural Conversation Flow',
@@ -821,13 +966,14 @@ function getEnhancedCommandAnalytics() {
             'Institutional Authority with Human Touch',
             'Live Intelligence Integration',
             'Strategic AI Warfare with Freedom',
-            'Ray Dalio All Weather Framework',      // NEW
-            'Real-time Anomaly Detection',          // NEW
-            'Live Portfolio Optimization',          // NEW
-            'Enhanced Cambodia Intelligence',       // NEW
-            'Specialized Function Routing',         // NEW
-            'Crisis Management with Live Data',     // NEW
-            'Economic Regime Awareness'             // NEW
+            'Ray Dalio All Weather Framework',
+            'Real-time Anomaly Detection',
+            'Live Portfolio Optimization',
+            'Enhanced Cambodia Intelligence',
+            'Specialized Function Routing',
+            'Crisis Management with Live Data',
+            'Economic Regime Awareness',
+            'Global DateTime Intelligence'
         ],
         enhancedFeatures: [
             'Intelligent Live Data Fetching',
@@ -838,10 +984,12 @@ function getEnhancedCommandAnalytics() {
             'Enhanced Cambodia Global Context',
             'Crisis Management Protocols',
             'System Health Monitoring',
-            'Resilient Fallback Systems'
+            'Resilient Fallback Systems',
+            'Global Time Zone Support',
+            'Market Hours Awareness'
         ],
         lastUpdate: new Date().toISOString(),
-        version: '3.0 - Live Data Enhanced'
+        version: '3.1 - Live Data Enhanced + DateTime Support'
     };
 }
 
@@ -857,6 +1005,8 @@ async function checkEnhancedSystemHealth() {
         specializedFunctions: false,
         naturalConversation: false,
         dualIntelligence: false,
+        dateTimeSupport: false,
+        globalTimeSupport: false,
         errors: []
     };
     
@@ -873,7 +1023,7 @@ async function checkEnhancedSystemHealth() {
     }
     
     try {
-        // Test Enhanced Claude Intelligence Chief with standard function
+        // Test Enhanced Claude Intelligence Chief
         const testIntel = { type: 'research_intelligence', maxTokens: 500, temperature: 0.6, style: 'analytical_thorough' };
         await executeEnhancedClaudeIntelligence('Current market trends', 'test', testIntel, null);
         health.enhancedClaudeIntelligence = true;
@@ -895,6 +1045,18 @@ async function checkEnhancedSystemHealth() {
     }
     
     try {
+        // Test DateTime Support
+        const cambodiaTime = getCurrentCambodiaDateTime();
+        const globalTime = getCurrentGlobalDateTime();
+        health.dateTimeSupport = cambodiaTime && cambodiaTime.date;
+        health.globalTimeSupport = globalTime && globalTime.cambodia && globalTime.newYork;
+        console.log('✅ DateTime support operational');
+    } catch (timeError) {
+        health.errors.push(`DateTime Support: ${timeError.message}`);
+        console.log('❌ DateTime support unavailable');
+    }
+    
+    try {
         // Test Specialized Functions
         const testIntel = { 
             type: 'economic_regime', 
@@ -912,7 +1074,7 @@ async function checkEnhancedSystemHealth() {
     
     health.dualIntelligence = health.enhancedGptCommander && health.enhancedClaudeIntelligence;
     health.overallHealth = health.dualIntelligence && health.liveDataIntegration;
-    health.enhancedHealth = health.overallHealth && health.rayDalioFramework && health.specializedFunctions;
+    health.enhancedHealth = health.overallHealth && health.rayDalioFramework && health.specializedFunctions && health.dateTimeSupport;
     
     return health;
 }
@@ -938,7 +1100,8 @@ function routeConversationIntelligently(userMessage, messageType, hasMedia) {
             anomalyDetection: intel.specializedFunction === 'getClaudeAnomalyAnalysis',
             portfolioOptimization: intel.specializedFunction === 'getClaudePortfolioOptimization',
             marketDataIntensive: intel.specializedFunction === 'getClaudeWithMarketData',
-            cambodiaEnhanced: intel.specializedFunction === 'getClaudeCambodiaIntelligence'
+            cambodiaEnhanced: intel.specializedFunction === 'getClaudeCambodiaIntelligence',
+            dateTimeQuery: intel.type === 'simple_datetime'
         }
     };
 }
@@ -951,28 +1114,32 @@ async function dispatchSpecializedFunction(functionName, query, options = {}) {
     try {
         console.log(`🚀 Dispatching specialized function: ${functionName}`);
         
+        // Add global time context to all specialized functions
+        const globalTime = getCurrentGlobalDateTime();
+        const timeEnhancedQuery = `Current Global Context: ${globalTime.cambodia.date}, ${globalTime.cambodia.timeShort} ICT | Market: ${globalTime.cambodia.isWeekend ? 'Weekend' : 'Weekday'}\n\n${query}`;
+        
         switch (functionName) {
             case 'regime':
             case 'economic_regime':
-                return await getClaudeRegimeAnalysis(query, options);
+                return await getClaudeRegimeAnalysis(timeEnhancedQuery, options);
             
             case 'anomaly':
             case 'market_anomaly':
-                return await getClaudeAnomalyAnalysis(query, options);
+                return await getClaudeAnomalyAnalysis(timeEnhancedQuery, options);
             
             case 'portfolio':
             case 'optimization':
-                return await getClaudePortfolioOptimization(query, null, options);
+                return await getClaudePortfolioOptimization(timeEnhancedQuery, null, options);
             
             case 'market_data':
             case 'live_data':
-                return await getClaudeWithMarketData(query, options);
+                return await getClaudeWithMarketData(timeEnhancedQuery, options);
             
             case 'cambodia':
-                return await getClaudeCambodiaIntelligence(query, null, options);
+                return await getClaudeCambodiaIntelligence(timeEnhancedQuery, null, options);
             
             case 'insights':
-                return await getClaudeStrategicInsights(query, options);
+                return await getClaudeStrategicInsights(timeEnhancedQuery, options);
             
             default:
                 throw new Error(`Unknown specialized function: ${functionName}`);
@@ -985,14 +1152,23 @@ async function dispatchSpecializedFunction(functionName, query, options = {}) {
 }
 
 /**
- * 📈 MARKET INTELLIGENCE SUMMARY
+ * 📈 MARKET INTELLIGENCE SUMMARY WITH DATETIME AWARENESS
  * Quick access to current market intelligence state
  */
 async function getMarketIntelligenceSummary() {
     try {
         console.log('📈 Generating market intelligence summary...');
         
-        const summary = await getClaudeWithMarketData('Provide a concise summary of current market conditions, economic regime, and key risks/opportunities for strategic positioning.', {
+        const globalTime = getCurrentGlobalDateTime();
+        const query = `Current Market Intelligence Summary Request:
+- Current Time: ${globalTime.cambodia.date}, ${globalTime.cambodia.timeShort} ICT
+- NY Market: ${globalTime.newYork.time}
+- London Market: ${globalTime.london.time}
+- Market Status: ${globalTime.cambodia.isWeekend ? 'Weekend' : 'Weekday'}
+
+Provide a concise summary of current market conditions, economic regime, and key risks/opportunities for strategic positioning.`;
+        
+        const summary = await getClaudeWithMarketData(query, {
             maxTokens: 1000,
             temperature: 0.6
         });
@@ -1000,7 +1176,12 @@ async function getMarketIntelligenceSummary() {
         return {
             summary: summary,
             timestamp: new Date().toISOString(),
-            source: 'Enhanced Dual Command System with Live Market Intelligence'
+            marketHours: {
+                cambodia: globalTime.cambodia,
+                newYork: globalTime.newYork,
+                london: globalTime.london
+            },
+            source: 'Enhanced Dual Command System with Live Market Intelligence + DateTime'
         };
         
     } catch (error) {
@@ -1009,6 +1190,50 @@ async function getMarketIntelligenceSummary() {
             summary: 'Market intelligence summary temporarily unavailable',
             error: error.message,
             timestamp: new Date().toISOString()
+        };
+    }
+}
+
+/**
+ * 🌍 GLOBAL MARKET STATUS CHECKER
+ * Real-time global market hours and status
+ */
+function getGlobalMarketStatus() {
+    try {
+        const globalTime = getCurrentGlobalDateTime();
+        
+        return {
+            currentStatus: {
+                cambodia: {
+                    time: globalTime.cambodia.timeShort,
+                    isBusinessHours: !globalTime.cambodia.isWeekend && 
+                                   globalTime.cambodia.hour >= 8 && 
+                                   globalTime.cambodia.hour <= 17,
+                    isWeekend: globalTime.cambodia.isWeekend
+                },
+                newYork: {
+                    time: globalTime.newYork.time,
+                    isMarketHours: !globalTime.cambodia.isWeekend && 
+                                 globalTime.newYork.hour >= 9 && 
+                                 globalTime.newYork.hour <= 16
+                },
+                london: {
+                    time: globalTime.london.time,
+                    isMarketHours: !globalTime.cambodia.isWeekend && 
+                                 globalTime.london.hour >= 8 && 
+                                 globalTime.london.hour <= 16
+                }
+            },
+            summary: globalTime.cambodia.isWeekend ? 
+                    'Weekend - Markets Closed' : 
+                    'Weekday - Check individual market hours',
+            lastUpdated: new Date().toISOString()
+        };
+    } catch (error) {
+        console.error('❌ Global market status error:', error.message);
+        return {
+            error: 'Global market status temporarily unavailable',
+            lastUpdated: new Date().toISOString()
         };
     }
 }
@@ -1027,6 +1252,11 @@ module.exports = {
     // 🚀 SPECIALIZED FUNCTION ACCESS
     dispatchSpecializedFunction,
     getMarketIntelligenceSummary,
+    getGlobalMarketStatus,
+    
+    // 🌍 DATETIME UTILITIES
+    getCurrentCambodiaDateTime,
+    getCurrentGlobalDateTime,
     
     // 🔧 ENHANCED SYSTEM MANAGEMENT
     checkEnhancedSystemHealth,
