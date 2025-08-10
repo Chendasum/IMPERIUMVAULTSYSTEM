@@ -80,7 +80,7 @@
                 ]
             },
             "claudeIntelligenceChief": {
-                "model": "claude-3-sonnet-20240229",
+                "model": "claude-sonnet-4-20250514",
                 "specialties": [
                     "Real-time market intelligence",
                     "Superior analytical reasoning",
