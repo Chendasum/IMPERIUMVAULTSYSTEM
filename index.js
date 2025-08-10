@@ -2439,7 +2439,6 @@ if (text === '/system_status' || text === '/status') {
     }
     return;
 }
-} // ✅ CRITICAL: Closing bracket for handleGPTConversation function
 
 // ✅ Express server for webhook and API endpoints
 const express = require("express");
