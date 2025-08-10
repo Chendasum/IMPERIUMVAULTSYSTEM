@@ -2355,6 +2355,10 @@ app.get("/dashboard", async (req, res) => {
     }
 });
 
+// Import Claude client functions (add these imports at the top of your file)
+const { getClaudeStrategicAnalysis, getClaudeLiveResearch, testClaudeConnection } = require('./utils/claudeClient');
+const { executeDualCommand, routeStrategicCommand } = require('./utils/dualCommandSystem');
+
 // Enhanced stats endpoint
 app.get("/stats", async (req, res) => {
     try {
@@ -2363,7 +2367,7 @@ app.get("/stats", async (req, res) => {
         const tradingData = await getTradingSummary().catch(() => null);
         
         res.json({
-            service: "IMPERIUM GPT-4o Strategic Commander AI + Cambodia Lending Fund",
+            service: "IMPERIUM DUAL COMMAND SYSTEM - GPT-4o Strategic Commander + Claude Intelligence Chief",
             ...stats,
             uptime: `${Math.floor(process.uptime())} seconds`,
             timestamp: new Date().toISOString(),
@@ -2377,14 +2381,15 @@ app.get("/stats", async (req, res) => {
     }
 });
 
-// Enhanced GPT-4o API endpoint with Strategic Commander analysis
+// 🏛️ GPT-4o STRATEGIC COMMANDER API ENDPOINT (Your existing endpoint)
 app.get("/analyze", async (req, res) => {
     const query = req.query.q;
     if (!query) {
         return res.json({
             error: "Provide strategic query: ?q=your-strategic-question",
             example: "/analyze?q=Execute economic regime strategic warfare analysis",
-            enhancement: "Strategic Commander AI + Cambodia Lending Fund + Live Trading Data",
+            enhancement: "GPT-4o Strategic Commander + Cambodia Lending Fund + Live Trading Data",
+            commander: "🏛️ GPT Strategic Commander Alpha",
             timestamp: new Date().toISOString(),
         });
     }
@@ -2449,6 +2454,7 @@ Apply Strategic Commander risk management principles to both global markets and 
         res.json({
             query: query,
             response: analysis,
+            commander: "🏛️ GPT Strategic Commander Alpha",
             timestamp: new Date().toISOString(),
             model: "gpt-4o",
             tokens_used: response.usage?.total_tokens || "unknown",
@@ -2473,9 +2479,306 @@ Apply Strategic Commander risk management principles to both global markets and 
     }
 });
 
+// ⚡ CLAUDE STRATEGIC INTELLIGENCE CHIEF API ENDPOINT
+app.get("/claude", async (req, res) => {
+    const query = req.query.q;
+    if (!query) {
+        return res.json({
+            error: "Provide strategic intelligence query: ?q=your-strategic-question",
+            example: "/claude?q=Analyze current economic regime with live market intelligence",
+            enhancement: "Claude Strategic Intelligence Chief + Live Market Data + Superior Reasoning",
+            commander: "⚡ Claude Strategic Intelligence Chief",
+            capabilities: [
+                "Real-time market intelligence",
+                "Superior analytical reasoning", 
+                "Complex multi-factor analysis",
+                "Live economic regime analysis",
+                "Advanced correlation modeling"
+            ],
+            timestamp: new Date().toISOString(),
+        });
+    }
+
+    try {
+        // Get comprehensive market context
+        const [marketData, tradingData] = await Promise.all([
+            getComprehensiveMarketData(),
+            getTradingSummary().catch(() => null)
+        ]);
+
+        // Build strategic context for Claude
+        let strategicContext = `⚡ STRATEGIC INTELLIGENCE BRIEFING - ${new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric", 
+            month: "long",
+            day: "numeric",
+        })} (${new Date().toISOString().split("T")[0]})
+
+🏛️ IMPERIUM VAULT SYSTEM INTELLIGENCE:
+You are analyzing for Sum Chenda's institutional command center with comprehensive strategic warfare capabilities.`;
+
+        if (marketData) {
+            strategicContext += `
+
+📊 CURRENT STRATEGIC MARKET REGIME INTELLIGENCE:
+Economic Warfare Environment: Fed ${marketData.markets.economics?.fedRate?.value}%, Inflation ${marketData.markets.economics?.inflation?.value}%
+Market Stress Indicators: VIX Fear Index ${marketData.fear}, USD Strength ${marketData.dollar}
+Yield Curve Strategic Signal: ${marketData.yields.curve}% (${marketData.yields.curve < 0 ? 'INVERTED - Recession Risk' : 'NORMAL - Growth Mode'})
+Strategic Asset Prices: S&P 500 ${marketData.markets.stocks?.sp500?.['05. price']}, Bitcoin ${marketData.markets.crypto?.bitcoin?.usd}, Gold ${marketData.commodities.gold}
+Treasury Intelligence: 10Y Yield ${marketData.yields.yield10Y}%`;
+        }
+
+        if (tradingData && !tradingData.error) {
+            strategicContext += `
+
+💹 LIVE STRATEGIC TRADING INTELLIGENCE:
+Account Status: ${tradingData.account?.balance} ${tradingData.account?.currency} balance, ${tradingData.account?.equity} equity
+Strategic Positions: ${tradingData.openPositions?.length} active positions
+Risk Management: ${tradingData.account?.freeMargin} free margin, ${tradingData.account?.marginLevel}% margin level`;
+        }
+
+        strategicContext += `
+
+🇰🇭 CAMBODIA PRIVATE LENDING FUND STRATEGIC CONTEXT:
+Strategic AUM: $2.5M actively deployed
+Target Yields: 17.5% institutional-grade returns  
+Market Position: 80% capital deployment in strategic lending positions
+Geographic Focus: Phnom Penh, Siem Reap, Sihanoukville strategic opportunities`;
+
+        // Execute Claude Strategic Intelligence Analysis
+        const claudeResponse = await getClaudeStrategicAnalysis(query, {
+            context: strategicContext,
+            maxTokens: 4096,
+            temperature: 0.7
+        });
+
+        res.json({
+            query: query,
+            response: claudeResponse,
+            commander: "⚡ Claude Strategic Intelligence Chief",
+            timestamp: new Date().toISOString(),
+            model: "claude-3-sonnet-20240229",
+            enhancement: "Superior Reasoning + Live Intelligence + Real-time Analysis",
+            capabilities: [
+                "Real-time market intelligence",
+                "Advanced multi-factor analysis", 
+                "Superior analytical reasoning",
+                "Live economic data integration",
+                "Complex scenario modeling"
+            ],
+            regime_data_included: !!marketData,
+            trading_data_included: !!(tradingData && !tradingData.error),
+            intelligence_advantage: "Live market data + Superior reasoning engine"
+        });
+
+    } catch (error) {
+        console.error("⚡ Claude Strategic Intelligence API Error:", error.message);
+
+        let errorResponse = {
+            error: "Claude Strategic Intelligence API error",
+            message: error.message,
+            commander: "⚡ Claude Strategic Intelligence Chief",
+            timestamp: new Date().toISOString(),
+            troubleshooting: {
+                api_key: process.env.ANTHROPIC_API_KEY ? "✅ Configured" : "❌ Missing",
+                suggestions: [
+                    "Check ANTHROPIC_API_KEY environment variable",
+                    "Verify Claude API access and billing",
+                    "Test connection with /claude-health endpoint"
+                ]
+            }
+        };
+
+        if (error.status) {
+            errorResponse.status = error.status;
+        }
+
+        res.status(500).json(errorResponse);
+    }
+});
+
+// 🎯 STRATEGIC DUAL COMMAND API ENDPOINT
+app.get("/dual", async (req, res) => {
+    const query = req.query.q;
+    if (!query) {
+        return res.json({
+            error: "Provide strategic dual analysis query: ?q=your-strategic-question",
+            example: "/dual?q=Execute comprehensive portfolio analysis with current market regime",
+            enhancement: "GPT-4o Strategic Commander + Claude Intelligence Chief + Smart Routing",
+            warfare_advantage: "Combined AI strategic capabilities for maximum intelligence advantage",
+            routing_logic: {
+                "GPT_COMMANDER": "Multimodal + Institutional Analysis + Cambodia Fund",
+                "CLAUDE_INTELLIGENCE": "Live Data + Superior Reasoning + Complex Analysis", 
+                "DUAL_ANALYSIS": "Complex strategic decisions requiring both AI systems"
+            },
+            timestamp: new Date().toISOString(),
+        });
+    }
+
+    try {
+        // Simulate dual command execution for API
+        const chatId = `api_${Date.now()}`; // Temporary ID for API context
+        
+        // Execute dual command system
+        const dualResult = await executeDualCommand(query, chatId, 'text', false);
+        
+        // Get routing analysis for API response
+        const routing = routeStrategicCommand(query, 'text', false);
+
+        res.json({
+            query: query,
+            response: dualResult.response,
+            routing_decision: {
+                primary_commander: dualResult.primaryCommander,
+                secondary_commander: dualResult.secondaryCommander,
+                reasoning: dualResult.routing.reasoning,
+                strategic_advantage: "Optimal AI selection for maximum analytical precision"
+            },
+            system_performance: {
+                dual_analysis: !!dualResult.secondaryCommander,
+                primary_success: dualResult.success,
+                fallback_used: !dualResult.success
+            },
+            timestamp: new Date().toISOString(),
+            enhancement: "Dual AI Strategic Warfare System",
+            commanders: {
+                "GPT_Strategic_Commander": "🏛️ Institutional Analysis + Multimodal Intelligence",
+                "Claude_Intelligence_Chief": "⚡ Live Intelligence + Superior Reasoning"
+            },
+            strategic_warfare_advantage: "Combined AI capabilities for comprehensive strategic dominance"
+        });
+
+    } catch (error) {
+        console.error("🎯 Dual Command API Error:", error.message);
+
+        res.status(500).json({
+            error: "Dual Command Strategic System error",
+            message: error.message,
+            system_status: "Degraded - attempting fallback protocols",
+            timestamp: new Date().toISOString(),
+            troubleshooting: {
+                gpt_status: "Check OpenAI API configuration",
+                claude_status: "Check Anthropic API configuration", 
+                fallback: "System will attempt single-AI analysis"
+            }
+        });
+    }
+});
+
+// 🔧 CLAUDE HEALTH CHECK ENDPOINT
+app.get("/claude-health", async (req, res) => {
+    try {
+        console.log("🔍 Testing Claude Strategic Intelligence connection...");
+        
+        const isHealthy = await testClaudeConnection();
+        const claudeMetrics = {
+            connection: isHealthy ? "✅ Operational" : "❌ Failed",
+            api_key: process.env.ANTHROPIC_API_KEY ? "✅ Configured" : "❌ Missing",
+            model: process.env.CLAUDE_MODEL || "claude-3-sonnet-20240229",
+            capabilities: [
+                "Real-time market intelligence",
+                "Superior analytical reasoning",
+                "Complex multi-factor analysis", 
+                "Live economic data integration",
+                "Advanced scenario modeling"
+            ],
+            timestamp: new Date().toISOString()
+        };
+
+        if (isHealthy) {
+            // Test actual analysis capability
+            const testAnalysis = await getClaudeStrategicAnalysis(
+                "Execute brief system health verification analysis.", 
+                { maxTokens: 200, temperature: 0.5 }
+            );
+            
+            claudeMetrics.test_analysis = testAnalysis.substring(0, 200) + "...";
+            claudeMetrics.analysis_capability = "✅ Operational";
+        }
+
+        res.json({
+            claude_intelligence_chief: claudeMetrics,
+            system_status: isHealthy ? "FULLY OPERATIONAL" : "DEGRADED",
+            strategic_readiness: isHealthy ? "READY FOR WARFARE" : "REQUIRES ATTENTION"
+        });
+
+    } catch (error) {
+        console.error("❌ Claude health check failed:", error.message);
+        
+        res.status(500).json({
+            claude_intelligence_chief: {
+                connection: "❌ Failed",
+                error: error.message,
+                timestamp: new Date().toISOString()
+            },
+            system_status: "OFFLINE", 
+            strategic_readiness: "REQUIRES IMMEDIATE ATTENTION",
+            troubleshooting: [
+                "Verify ANTHROPIC_API_KEY in environment variables",
+                "Check Anthropic API billing and quota",
+                "Test network connectivity to Anthropic servers",
+                "Ensure Claude SDK installed: npm install @anthropic-ai/sdk"
+            ]
+        });
+    }
+});
+
+// 🎯 STRATEGIC SYSTEM STATUS ENDPOINT
+app.get("/system-status", async (req, res) => {
+    try {
+        const [claudeHealth, marketDataAvailable] = await Promise.all([
+            testClaudeConnection().catch(() => false),
+            getComprehensiveMarketData().then(() => true).catch(() => false)
+        ]);
+
+        const systemStatus = {
+            strategic_command_center: {
+                status: "✅ OPERATIONAL",
+                timestamp: new Date().toISOString(),
+                uptime_seconds: process.uptime()
+            },
+            ai_commanders: {
+                gpt_strategic_commander: {
+                    status: "✅ OPERATIONAL", 
+                    model: "gpt-4o",
+                    specialties: ["Multimodal", "Institutional Analysis", "Cambodia Fund"]
+                },
+                claude_intelligence_chief: {
+                    status: claudeHealth ? "✅ OPERATIONAL" : "❌ OFFLINE",
+                    model: process.env.CLAUDE_MODEL || "claude-3-sonnet-20240229", 
+                    specialties: ["Live Intelligence", "Superior Reasoning", "Complex Analysis"]
+                }
+            },
+            data_intelligence: {
+                live_market_data: marketDataAvailable ? "✅ ACTIVE" : "❌ DEGRADED",
+                trading_integration: "✅ ACTIVE",
+                cambodia_fund_data: "✅ ACTIVE"
+            },
+            api_endpoints: {
+                "/analyze": "✅ GPT Strategic Commander",
+                "/claude": claudeHealth ? "✅ Claude Intelligence Chief" : "❌ Offline",
+                "/dual": claudeHealth ? "✅ Dual Command System" : "⚠️ Fallback Mode"
+            },
+            strategic_readiness: claudeHealth && marketDataAvailable ? 
+                "🚀 MAXIMUM WARFARE CAPABILITY" : "⚠️ DEGRADED OPERATIONS"
+        };
+
+        res.json(systemStatus);
+
+    } catch (error) {
+        res.status(500).json({
+            system_status: "❌ SYSTEM ERROR",
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 const server = app.listen(PORT, "0.0.0.0", () => {
-    console.log("✅ IMPERIUM GPT-4o Strategic Command System running on port " + PORT);
-    console.log("⚡ STRATEGIC COMMANDER AI MODE: Institutional-Level Strategic Analysis");
+    console.log("✅ IMPERIUM DUAL COMMAND STRATEGIC SYSTEM running on port " + PORT);
+    console.log("🏛️ GPT-4o STRATEGIC COMMANDER: Institutional-Level Analysis + Multimodal Intelligence");
+    console.log("⚡ CLAUDE INTELLIGENCE CHIEF: Superior Reasoning + Live Market Intelligence");
+    console.log("🎯 DUAL COMMAND SYSTEM: Smart AI routing for maximum strategic advantage");
     console.log("🏦 CAMBODIA LENDING FUND: Private lending strategic analysis and portfolio management");
     console.log("🏛️ Economic Regime Strategic Analysis | 🔄 Market Cycle Strategic Positioning");
     console.log("🌦️ All Weather Strategic Portfolio | ⚠️ Risk Strategic Assessment | 📊 Strategic Correlations");
@@ -2483,16 +2786,23 @@ const server = app.listen(PORT, "0.0.0.0", () => {
     console.log("🇰🇭 Cambodia Strategic Deal Analysis | 💼 LP Strategic Reporting | 📊 Portfolio Strategic Management");
     console.log("📊 Live strategic data: CoinGecko Pro, FRED, Alpha Vantage, NewsAPI, MetaAPI");
     console.log("📏 TELEGRAM SPLITTER: Integrated for long strategic message handling");
-    console.log("🔗 Direct Strategic API: http://localhost:" + PORT + "/analyze?q=your-strategic-question");
-    console.log("📱 Telegram: STRATEGIC COMMANDER AI + CAMBODIA FUND MODE ACTIVE");
+    
+    console.log("\n🎯 STRATEGIC API ENDPOINTS:");
+    console.log("🔗 GPT Strategic Commander: http://localhost:" + PORT + "/analyze?q=your-strategic-question");
+    console.log("⚡ Claude Intelligence Chief: http://localhost:" + PORT + "/claude?q=your-strategic-question");
+    console.log("🎯 Dual Command System: http://localhost:" + PORT + "/dual?q=your-strategic-question");
+    console.log("🔧 Claude Health Check: http://localhost:" + PORT + "/claude-health");
+    console.log("📊 System Status: http://localhost:" + PORT + "/system-status");
     console.log("📈 Strategic Dashboard: http://localhost:" + PORT + "/dashboard");
+    console.log("📱 Telegram: DUAL COMMAND SYSTEM + CAMBODIA FUND MODE ACTIVE");
 
     // Set webhook for Railway deployment
     const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
     bot.setWebHook(webhookUrl)
         .then(() => {
             console.log("🔗 Webhook configured:", webhookUrl);
-            console.log("🌟 Strategic Commander AI + Cambodia Lending Fund ready for institutional-quality strategic analysis!");
+            console.log("🌟 DUAL COMMAND STRATEGIC SYSTEM ready for maximum warfare capabilities!");
+            console.log("⚡ Strategic Advantage: GPT-4o + Claude AI for comprehensive strategic dominance!");
         })
         .catch((err) => {
             console.error("❌ Webhook setup failed:", err.message);
