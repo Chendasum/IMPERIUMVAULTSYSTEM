@@ -2512,10 +2512,6 @@ app.get("/dashboard", async (req, res) => {
     }
 });
 
-// Import Claude client functions (add these imports at the top of your file)
-const { getClaudeStrategicAnalysis, getClaudeLiveResearch, testClaudeConnection } = require('./utils/claudeClient');
-const { executeDualCommand, routeStrategicCommand } = require('./utils/dualCommandSystem');
-
 // Enhanced stats endpoint
 app.get("/stats", async (req, res) => {
     try {
