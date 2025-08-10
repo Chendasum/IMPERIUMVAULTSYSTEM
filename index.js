@@ -2016,7 +2016,6 @@ Advanced AI reasoning + Strategic warfare principles + Cambodia market intellige
     }
 
     // ✅ FOR ALL OTHER TEXT MESSAGES, HANDLE AS GPT CONVERSATION
-    // This should be the LAST thing that runs for text messages
 async function handleStrategicDualCommand(chatId, userMessage) {
     console.log("🎯 Strategic Dual Command conversation:", userMessage, "from:", chatId);
 
@@ -2050,7 +2049,7 @@ async function handleStrategicDualCommand(chatId, userMessage) {
         // Fallback to your existing GPT system
         try {
             console.log('🔄 Falling back to single GPT Strategic Commander...');
-            await handleGPTConversation(chatId, userMessage);
+await handleGPTConversationFallback(chatId, userMessage);
         } catch (fallbackError) {
             console.error('❌ Complete system failure:', fallbackError.message);
             await sendSmartResponse(bot, chatId, 
@@ -2059,7 +2058,6 @@ async function handleStrategicDualCommand(chatId, userMessage) {
         }
     }
 }
-
 }); // ✅ CRITICAL: Closing bracket for bot.on("message")
 
 // ✅ ENHANCED GPT conversation with Strategic Commander system prompt
