@@ -79,7 +79,7 @@ Execute comprehensive analysis using superior reasoning capabilities and current
         }
 
         const message = await anthropic.messages.create({
-            model: options.model || process.env.CLAUDE_MODEL || 'claude-3-sonnet-20240229',
+            model: options.model || process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
             max_tokens: options.maxTokens || 4096,
             temperature: options.temperature || 0.7,
             system: strategicSystemPrompt,
@@ -242,7 +242,7 @@ async function testClaudeConnection() {
         console.log('🔍 Testing Claude Strategic Intelligence connection...');
         
         const testResponse = await anthropic.messages.create({
-            model: process.env.CLAUDE_MODEL || 'claude-3-sonnet-20240229',
+            model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
             max_tokens: 100,
             messages: [
                 {
@@ -306,7 +306,7 @@ Provide comprehensive strategic analysis with current market intelligence advant
  */
 function getClaudeMetrics() {
     return {
-        model: process.env.CLAUDE_MODEL || 'claude-3-sonnet-20240229',
+        model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
         apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY,
         maxTokens: 4096,
         defaultTemperature: 0.7,
