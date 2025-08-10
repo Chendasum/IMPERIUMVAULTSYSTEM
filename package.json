@@ -1,8 +1,8 @@
 {
-    "name": "imperium-vault-system-ray-dalio",
-    "version": "3.0.0",
+    "name": "imperium-vault-system-strategic-dual-command",
+    "version": "4.0.0",
     "private": true,
-    "description": "Ray Dalio Enhanced GPT-4o System - Institutional-grade market analysis",
+    "description": "Strategic Dual Command System - GPT-4o + Claude AI institutional warfare capabilities",
     "main": "index.js",
     "scripts": {
         "start": "node index.js"
@@ -16,6 +16,7 @@
         "dotenv": "^16.4.5",
         "node-telegram-bot-api": "^0.61.0",
         "openai": "^4.38.1",
+        "@anthropic-ai/sdk": "^0.24.3",
         "express": "^4.18.2",
         "axios": "^1.6.7",
         "pg": "^8.11.3",
@@ -61,15 +62,52 @@
         "node": ">=18.0.0",
         "npm": ">=8.0.0"
     },
-    "rayDalio": {
+    "strategicDualCommand": {
+        "aiCommanders": {
+            "gptStrategicCommander": {
+                "model": "gpt-4o",
+                "specialties": [
+                    "Multimodal intelligence",
+                    "Institutional analysis", 
+                    "Cambodia fund expertise",
+                    "Voice/image/document processing"
+                ],
+                "capabilities": [
+                    "Strategic portfolio management",
+                    "Economic regime analysis",
+                    "Risk parity allocation",
+                    "All Weather strategies"
+                ]
+            },
+            "claudeIntelligenceChief": {
+                "model": "claude-3-sonnet-20240229",
+                "specialties": [
+                    "Real-time market intelligence",
+                    "Superior analytical reasoning",
+                    "Complex multi-factor analysis",
+                    "Live economic data integration"
+                ],
+                "capabilities": [
+                    "Advanced scenario modeling",
+                    "Live research synthesis",
+                    "Current event analysis", 
+                    "Dynamic risk assessment"
+                ]
+            }
+        },
         "principles": [
             "Diversification is the only free lunch",
             "Don't fight the Fed",
             "Cash is trash (in inflationary environments)",
             "Think like a machine",
-            "Understand the machine"
+            "Understand the machine",
+            "Superior AI reasoning for strategic advantage",
+            "Live intelligence beats static knowledge"
         ],
         "features": {
+            "dualCommandSystem": true,
+            "smartAIRouting": true,
+            "realtimeIntelligence": true,
             "economicRegimeDetection": true,
             "marketCycleAnalysis": true,
             "allWeatherPortfolio": true,
@@ -77,18 +115,35 @@
             "correlationAnalysis": true,
             "systematicOpportunities": true,
             "institutionalRiskManagement": true,
-            "bridgewaterStyleReporting": true
+            "bridgewaterStyleReporting": true,
+            "multimodalProcessing": true,
+            "liveMarketData": true,
+            "cambodiaFundAnalysis": true
         },
         "dataProviders": {
+            "openAI": "GPT-4o multimodal capabilities",
+            "anthropic": "Claude superior reasoning",
             "newsAPI": "Financial news analysis",
-            "metaAPI": "Live trading integration"
+            "metaAPI": "Live trading integration",
+            "coinGecko": "Cryptocurrency data",
+            "alphaVantage": "Stock market data",
+            "fred": "Economic indicators"
         },
         "riskManagement": {
             "maxRiskPerTrade": "2%",
             "maxPortfolioRisk": "6%",
             "maxCorrelationExposure": "15%",
             "volatilityAdjustment": true,
-            "regimeAwarePositioning": true
+            "regimeAwarePositioning": true,
+            "dualAIValidation": true,
+            "liveRiskMonitoring": true
+        },
+        "apiEndpoints": {
+            "/analyze": "GPT Strategic Commander analysis",
+            "/claude": "Claude Intelligence Chief analysis", 
+            "/dual": "Dual command smart routing system",
+            "/claude-health": "Claude system health monitoring",
+            "/system-status": "Complete system status overview"
         }
     }
 }
