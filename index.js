@@ -2328,7 +2328,7 @@ Always write complete, comprehensive responses demonstrating institutional exper
 
 // 🎯 STEP 4: UPDATE YOUR VOICE MESSAGE HANDLER (find this in your existing code and replace)
 
-// 🎤 VOICE MESSAGE HANDLING - REVERT TO ORIGINAL
+// 🎤 VOICE MESSAGE HANDLING - SIMPLE VERSION
 if (msg.voice) {
     console.log("🎤 Voice message received");
     try {
