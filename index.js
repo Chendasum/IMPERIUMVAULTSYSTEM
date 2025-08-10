@@ -51,7 +51,6 @@ const {
     processDocumentMessage,
     processVideoMessage,
 } = require("./utils/multimodal");
-
 const {
     saveConversationDB,
     getConversationHistoryDB,
@@ -63,7 +62,6 @@ const {
     clearUserDataDB,
     initializeDatabase,
 } = require("./utils/database");
-
 const {
     buildConversationContext,
     extractAndSaveFacts,
@@ -75,7 +73,6 @@ const {
     buildTrainingContext,
     clearTrainingDocuments,
 } = require("./utils/trainingData");
-
 const {
     getTradingSummary,
     formatTradingDataForGPT,
@@ -92,6 +89,7 @@ const {
     scanTradingOpportunities
 } = require("./utils/metaTrader");
 
+// 🎯 DUAL COMMAND SYSTEM IMPORTS
 const { 
     getClaudeStrategicAnalysis, 
     getClaudeLiveResearch, 
