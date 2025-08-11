@@ -12,6 +12,15 @@ const {
 } = require('./claudeClient');
 const { buildConversationContext } = require('./memory');
 
+async function buildStrategicCommanderContext(chatId, userMessage) {
+    try {
+        return await buildConversationContext(chatId);
+    } catch (error) {
+        console.error('Context enhancer error:', error.message);
+        return null;
+    }
+}
+
 // 🌍 DATETIME UTILITIES
 function getCurrentCambodiaDateTime() {
     try {
