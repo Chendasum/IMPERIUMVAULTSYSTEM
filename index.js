@@ -379,7 +379,7 @@ async function handleStartCommand(chatId) {
     const welcome = `🤖 **Enhanced AI Assistant System v3.1**
 
 **🎯 Core Features:**
-- Dual AI: GPT-4o + Claude Opus 4.1
+- Dual AI: gpt-5 + Claude Opus 4.1
 - Enhanced Database Integration
 - Live market data & Ray Dalio framework
 - Cambodia fund analysis
@@ -443,7 +443,7 @@ async function handleHelpCommand(chatId) {
 **Examples:**
 - "What's the current market regime?" (Claude Analysis)
 - "Analyze this Cambodia lending opportunity" (Specialized)
-- "Tell me a joke" (GPT-4o)
+- "Tell me a joke" (gpt-5)
 - "/analytics" for comprehensive system analytics`;
 
     await sendSmartMessage(bot, chatId, help);
@@ -466,7 +466,7 @@ async function handleEnhancedSystemStatus(chatId) {
         
         // AI Models Status
         status += `**AI Models:**\n`;
-        status += `• GPT-4o: ${health.gptAnalysis ? '✅ Online' : '❌ Offline'}\n`;
+        status += `• gpt-5: ${health.gptAnalysis ? '✅ Online' : '❌ Offline'}\n`;
         status += `• Claude Opus 4.1: ${health.claudeAnalysis ? '✅ Online' : '❌ Offline'}\n\n`;
         
         // Enhanced Database Status
@@ -1450,7 +1450,7 @@ app.get("/health", async (req, res) => {
         status: "healthy", 
         version: "3.1 Enhanced",
         timestamp: new Date().toISOString(),
-        models: ["GPT-4o", "Claude Opus 4.1"],
+        models: ["gpt-5", "Claude Opus 4.1"],
         features: ["Enhanced Database", "Market Analysis", "Cambodia Fund", "Document Processing"],
         database: {
             status: connectionStats.connectionHealth,
@@ -1469,7 +1469,7 @@ app.get("/analyze", async (req, res) => {
         return res.json({
             error: "Provide query: ?q=your-question",
             example: "/analyze?q=What's the current market outlook?",
-            models: ["GPT-4o", "Claude Opus 4.1"],
+            models: ["gpt-5", "Claude Opus 4.1"],
             database: "Enhanced PostgreSQL Integration"
         });
     }
@@ -1483,7 +1483,7 @@ app.get("/analyze", async (req, res) => {
         res.json({
             query: query,
             response: response,
-            model: "GPT-4o Enhanced",
+            model: "gpt-5 Enhanced",
             database: "Integrated",
             timestamp: new Date().toISOString()
         });
@@ -1669,7 +1669,7 @@ app.get("/database", async (req, res) => {
 const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log("🚀 Enhanced AI Assistant v3.1 starting...");
     console.log("✅ Server running on port " + PORT);
-    console.log("🤖 Models: GPT-4o + Claude Opus 4.1");
+    console.log("🤖 Models: gpt-5 + Claude Opus 4.1");
     console.log("🏦 Features: Enhanced Database + Cambodia Fund + Ray Dalio Framework");
     
     // Initialize enhanced database
@@ -1682,7 +1682,7 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
     }
     
     console.log("🔗 Enhanced API Endpoints:");
-    console.log(`   GPT-4o: http://localhost:${PORT}/analyze?q=your-question`);
+    console.log(`   gpt-5: http://localhost:${PORT}/analyze?q=your-question`);
     console.log(`   Claude: http://localhost:${PORT}/claude?q=your-question`);
     console.log(`   Dual AI: http://localhost:${PORT}/dual?q=your-question`);
     console.log(`   Status: http://localhost:${PORT}/status`);
