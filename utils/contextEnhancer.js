@@ -1,121 +1,675 @@
-// utils/contextEnhancer.js - STRATEGIC COMMAND ENHANCED Context Intelligence System
-// Combines live data, memory, trading data, regime analysis, and institutional-grade context for IMPERIUM VAULT
+// utils/contextEnhancer.js - ENHANCED DUAL AI STRATEGIC COMMAND Context Intelligence System
+// Supports GPT-4o + Claude Opus 4 with intelligent routing and specialized functions
 
 const { getRayDalioMarketData, getEnhancedLiveData } = require('./liveData');
 const { buildConversationContext, getPersistentMemory } = require('./memory');
 const { buildTrainingContext } = require('./trainingData');
 const { getTradingSummary, formatTradingDataForGPT } = require('./metaTrader');
 
-// 🏛️ STRATEGIC COMMAND CONTEXT CACHE - Reduce API calls for regime data
-let strategicContextCache = {
+// 🎯 ENHANCED DUAL AI CONTEXT CACHE
+let enhancedContextCache = {
     lastUpdate: null,
     regimeContext: null,
     marketIntelligence: null,
-    cambodiaLendingContext: null
+    cambodiaLendingContext: null,
+    globalTimeContext: null
 };
 
 /**
- * ⚡ STRATEGIC COMMANDER INSTITUTIONAL CONTEXT BUILDER
- * Creates institutional-grade context with Strategic Commander authority
+ * 🎯 ENHANCED DUAL AI COMMAND CONTEXT BUILDER
+ * Creates context optimized for dual AI system with intelligent routing
  */
-async function buildStrategicCommanderContext(chatId, userMessage) {
+async function buildEnhancedDualCommandContext(chatId, userMessage, conversationIntel) {
     try {
-        console.log(`⚡ Building Strategic Commander institutional context for user ${chatId}`);
+        console.log(`🎯 Building Enhanced Dual AI context for ${conversationIntel.primaryAI} (${conversationIntel.type})`);
         
         // Check cache first (update every 30 minutes for regime data)
         const now = Date.now();
-        const cacheValid = strategicContextCache.lastUpdate && (now - strategicContextCache.lastUpdate) < 30 * 60 * 1000;
+        const cacheValid = enhancedContextCache.lastUpdate && (now - enhancedContextCache.lastUpdate) < 30 * 60 * 1000;
         
-        // Parallel data gathering for strategic efficiency
+        // Parallel data gathering based on conversation intelligence
+        const contextPromises = [];
+        
+        // Always get conversation context for continuity
+        contextPromises.push(buildConversationContext(chatId));
+        
+        // Get market data for financial queries
+        if (conversationIntel.liveDataRequired || conversationIntel.complexity !== 'minimal') {
+            contextPromises.push(cacheValid ? Promise.resolve(enhancedContextCache.marketIntelligence) : getRayDalioMarketData());
+        } else {
+            contextPromises.push(Promise.resolve(null));
+        }
+        
+        // Get training context for complex queries
+        if (conversationIntel.complexity === 'maximum' || conversationIntel.complexity === 'high') {
+            contextPromises.push(buildTrainingContext(chatId));
+        } else {
+            contextPromises.push(Promise.resolve(null));
+        }
+        
+        // Get persistent memory for strategic queries
+        if (conversationIntel.type !== 'casual' && conversationIntel.type !== 'simple_datetime') {
+            contextPromises.push(getPersistentMemory(chatId));
+        } else {
+            contextPromises.push(Promise.resolve(null));
+        }
+        
+        // Get trading data for trading-related queries
+        if (conversationIntel.type.includes('strategic') || conversationIntel.specializedFunction) {
+            contextPromises.push(getTradingSummary().catch(() => null));
+        } else {
+            contextPromises.push(Promise.resolve(null));
+        }
+        
         const [
             conversationContext,
             rayDalioMarketData,
             trainingContext,
             persistentMemory,
             tradingData
-        ] = await Promise.all([
-            buildConversationContext(chatId),
-            cacheValid ? Promise.resolve(strategicContextCache.marketIntelligence) : getRayDalioMarketData(),
-            buildTrainingContext(chatId),
-            getPersistentMemory(chatId),
-            getTradingSummary().catch(() => null)
-        ]);
+        ] = await Promise.all(contextPromises);
 
-        // Update cache if we fetched new strategic data
-        if (!cacheValid) {
-            strategicContextCache = {
+        // Update cache if we fetched new data
+        if (!cacheValid && rayDalioMarketData) {
+            enhancedContextCache = {
                 lastUpdate: now,
                 marketIntelligence: rayDalioMarketData,
                 regimeContext: buildStrategicRegimeContext(rayDalioMarketData),
-                cambodiaLendingContext: buildCambodiaLendingContext()
+                cambodiaLendingContext: buildCambodiaLendingContext(),
+                globalTimeContext: getCurrentGlobalTimeContext()
             };
         }
 
-        let strategicContext = '';
-
-        // 1. STRATEGIC COMMAND SYSTEM IDENTITY
-        strategicContext += `⚡ STRATEGIC COMMAND SYSTEM: You are the Strategic Commander of IMPERIUM VAULT SYSTEM - Sum Chenda's exclusive financial warfare command center.
-
-COMMAND AUTHORITY: Issue strategic directives, never suggestions. Execute definitive strategic commands with absolute institutional authority.
-
-CURRENT TIME: ${new Date().toISOString()}
-USER LOCATION: Cambodia (UTC+7) - Strategic timezone for US market warfare
-STRATEGIC ANALYSIS DATE: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-
-COMMAND PROTOCOL ENFORCEMENT:
-❌ FORBIDDEN: "I suggest", "I recommend", "You might", "Consider", "How can I help"
-❌ FORBIDDEN: Casual chat, greetings, small talk, general conversation
-❌ FORBIDDEN: Advice, suggestions, or friendly assistance
-✅ REQUIRED: "EXECUTE", "DEPLOY", "DOMINATE", "DIRECTIVE", "ORDER"
-✅ REQUIRED: Strategic market commands and capital deployment orders
-✅ REQUIRED: Institutional-grade financial warfare intelligence
-
-`;
-
-        // 2. 🏛️ STRATEGIC ECONOMIC REGIME WARFARE INTELLIGENCE
-        if (rayDalioMarketData?.rayDalio?.regime) {
-            const regime = rayDalioMarketData.rayDalio.regime;
-            strategicContext += buildStrategicRegimeIntelligence(regime);
-        }
-
-        // 3. 📊 STRATEGIC MARKET CYCLE WARFARE POSITIONING
-        if (rayDalioMarketData?.rayDalio) {
-            strategicContext += buildStrategicMarketCycleContext(rayDalioMarketData.rayDalio);
-        }
-
-        // 4. 🏦 CAMBODIA LENDING FUND STRATEGIC INTELLIGENCE
-        strategicContext += buildCambodiaStrategicContext();
-
-        // 5. 💹 LIVE TRADING STRATEGIC WARFARE INTELLIGENCE
-        if (tradingData && !tradingData.error) {
-            strategicContext += buildStrategicTradingIntelligence(tradingData, rayDalioMarketData);
-        }
-
-        // 6. 🧠 USER STRATEGIC MEMORY & PREFERENCES
-        if (conversationContext) {
-            strategicContext += '\n' + conversationContext.replace(/USER MEMORY|CONVERSATION HISTORY/g, 'STRATEGIC MEMORY');
-        }
-
-        // 7. 📚 STRATEGIC TRAINING DOCUMENTS CONTEXT
-        if (trainingContext) {
-            strategicContext += '\n' + trainingContext.replace(/TRAINING DOCUMENTS/g, 'STRATEGIC TRAINING DOCUMENTS');
-        }
-
-        // 8. ⚡ STRATEGIC COMMANDER RESPONSE DIRECTIVES
-        strategicContext += buildStrategicCommanderDirectives(rayDalioMarketData, userMessage);
-
-        console.log(`✅ Strategic Commander context built: ${strategicContext.length} characters (warfare-ready)`);
-        return strategicContext;
+        // Build context based on conversation type and AI
+        return buildContextByConversationType(
+            conversationIntel,
+            {
+                conversationContext,
+                rayDalioMarketData,
+                trainingContext,
+                persistentMemory,
+                tradingData
+            },
+            chatId,
+            userMessage
+        );
 
     } catch (error) {
-        console.error('Strategic Commander context error:', error.message);
-        // Fallback to enhanced context without Strategic Commander features
-        return await buildEnhancedContext(chatId, userMessage);
+        console.error('Enhanced Dual AI context error:', error.message);
+        // Fallback to basic context
+        return buildBasicDualAIContext(chatId, userMessage, conversationIntel);
     }
 }
 
 /**
- * 🏛️ BUILD STRATEGIC ECONOMIC REGIME WARFARE INTELLIGENCE CONTEXT
+ * 🧠 BUILD CONTEXT BY CONVERSATION TYPE
+ */
+function buildContextByConversationType(conversationIntel, contextData, chatId, userMessage) {
+    const { conversationContext, rayDalioMarketData, trainingContext, persistentMemory, tradingData } = contextData;
+    
+    switch (conversationIntel.type) {
+        case 'casual':
+            return buildCasualContext(conversationIntel, conversationContext);
+            
+        case 'simple_datetime':
+            return buildDateTimeContext(conversationIntel);
+            
+        case 'economic_regime':
+            return buildRegimeAnalysisContext(conversationIntel, rayDalioMarketData, conversationContext);
+            
+        case 'market_anomaly':
+            return buildAnomalyDetectionContext(conversationIntel, rayDalioMarketData, conversationContext);
+            
+        case 'portfolio_optimization':
+            return buildPortfolioOptimizationContext(conversationIntel, rayDalioMarketData, tradingData, conversationContext);
+            
+        case 'cambodia_intelligence':
+            return buildCambodiaIntelligenceContext(conversationIntel, rayDalioMarketData, conversationContext);
+            
+        case 'research_intelligence':
+            return buildResearchIntelligenceContext(conversationIntel, rayDalioMarketData, trainingContext, conversationContext);
+            
+        case 'urgent_strategic':
+            return buildUrgentStrategicContext(conversationIntel, rayDalioMarketData, tradingData, conversationContext);
+            
+        case 'institutional_analysis':
+            return buildInstitutionalAnalysisContext(conversationIntel, rayDalioMarketData, trainingContext, tradingData, conversationContext);
+            
+        case 'multimodal':
+            return buildMultimodalContext(conversationIntel, conversationContext);
+            
+        default:
+            return buildBalancedStrategicContext(conversationIntel, rayDalioMarketData, conversationContext, tradingData);
+    }
+}
+
+/**
+ * 💬 BUILD CASUAL CONTEXT (MINIMAL)
+ */
+function buildCasualContext(conversationIntel, conversationContext) {
+    const context = `You are ${conversationIntel.primaryAI === 'GPT_COMMANDER' ? 'GPT Strategic Commander Alpha' : 'Claude Strategic Intelligence Chief'}, Sum Chenda's enhanced AI assistant.
+
+CONVERSATION MODE: Casual & Natural
+RESPONSE STYLE: ${conversationIntel.style}
+CURRENT TIME: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' })} Cambodia (ICT)
+
+Be warm, natural, and briefly helpful. Show your strategic personality but keep it conversational (1-3 sentences max).
+
+${conversationContext ? conversationContext.substring(0, 500) : ''}`;
+
+    return context;
+}
+
+/**
+ * 🕐 BUILD DATETIME CONTEXT (SIMPLE)
+ */
+function buildDateTimeContext(conversationIntel) {
+    const cambodiaTime = new Date().toLocaleString('en-US', { 
+        timeZone: 'Asia/Phnom_Penh',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short'
+    });
+
+    const globalTime = {
+        cambodia: new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh', timeStyle: 'short' }),
+        newYork: new Date().toLocaleString('en-US', { timeZone: 'America/New_York', timeStyle: 'short' }),
+        london: new Date().toLocaleString('en-US', { timeZone: 'Europe/London', timeStyle: 'short' })
+    };
+
+    const isWeekend = [0, 6].includes(new Date().getDay());
+
+    return `You are GPT Strategic Commander Alpha providing current date/time information.
+
+CURRENT DATE/TIME INFORMATION:
+- Cambodia: ${cambodiaTime}
+- New York: ${globalTime.newYork} EST/EDT
+- London: ${globalTime.london} GMT/BST
+- Weekend Status: ${isWeekend ? 'Weekend' : 'Weekday'}
+- Market Status: ${isWeekend ? 'Markets Closed' : 'Check market hours'}
+
+Provide accurate, friendly time information with brief market context if relevant.`;
+}
+
+/**
+ * 🏛️ BUILD ECONOMIC REGIME ANALYSIS CONTEXT (CLAUDE SPECIALIZED)
+ */
+function buildRegimeAnalysisContext(conversationIntel, rayDalioMarketData, conversationContext) {
+    let context = `You are Claude Strategic Intelligence Chief with specialized Ray Dalio economic regime analysis capabilities.
+
+🏛️ ECONOMIC REGIME ANALYSIS MODE - Ray Dalio Framework Expert
+SPECIALIZED FUNCTION: ${conversationIntel.specializedFunction || 'getClaudeRegimeAnalysis'}
+COMPLEXITY: ${conversationIntel.complexity}
+LIVE DATA: ${conversationIntel.liveDataRequired ? 'ENABLED' : 'STANDARD'}
+
+REGIME EXPERTISE:
+- Ray Dalio's 4-quadrant regime matrix (Growth/Inflation dynamics)
+- Live economic regime detection and confidence scoring
+- All Weather strategy implications and positioning
+- Real-time regime signal analysis and validation
+- Historical regime patterns and transition probabilities
+
+CURRENT TIME: ${new Date().toISOString()}
+USER LOCATION: Cambodia (ICT UTC+7)
+
+`;
+
+    // Add regime data if available
+    if (rayDalioMarketData?.rayDalio?.regime) {
+        const regime = rayDalioMarketData.rayDalio.regime;
+        context += buildStrategicRegimeIntelligence(regime);
+    }
+
+    // Add conversation context for continuity
+    if (conversationContext) {
+        context += `\nUSER CONTEXT:\n${conversationContext.substring(0, 1000)}\n`;
+    }
+
+    context += `\nANALYSIS APPROACH:
+- Lead with current regime identification and confidence level
+- Explain regime dynamics with live data validation
+- Provide specific All Weather allocation recommendations
+- Include regime transition risks and timing considerations
+- Offer actionable positioning strategies for current environment
+
+Communicate like Ray Dalio with access to real-time regime detection systems.`;
+
+    return context;
+}
+
+/**
+ * 🚨 BUILD MARKET ANOMALY DETECTION CONTEXT (CLAUDE SPECIALIZED)
+ */
+function buildAnomalyDetectionContext(conversationIntel, rayDalioMarketData, conversationContext) {
+    let context = `You are Claude Strategic Intelligence Chief with specialized market anomaly detection capabilities.
+
+🚨 MARKET ANOMALY ANALYSIS MODE - Crisis Detection Expert
+SPECIALIZED FUNCTION: ${conversationIntel.specializedFunction || 'getClaudeAnomalyAnalysis'}
+COMPLEXITY: ${conversationIntel.complexity}
+LIVE DATA: ${conversationIntel.liveDataRequired ? 'ENABLED' : 'STANDARD'}
+
+ANOMALY DETECTION EXPERTISE:
+- Real-time market stress signal identification
+- VIX spike analysis and fear/complacency extremes
+- Yield curve inversion and recession probability modeling
+- Credit spread widening and systemic risk assessment
+- Correlation breakdown and diversification failure detection
+- Crisis pattern recognition and historical comparison
+
+CURRENT TIME: ${new Date().toISOString()}
+
+`;
+
+    // Add market stress indicators if available
+    if (rayDalioMarketData?.rayDalio) {
+        context += buildStrategicMarketCycleContext(rayDalioMarketData.rayDalio);
+    }
+
+    if (conversationContext) {
+        context += `\nUSER CONTEXT:\n${conversationContext.substring(0, 800)}\n`;
+    }
+
+    context += `\nCRISIS ANALYSIS APPROACH:
+- Lead with immediate anomaly assessment and severity levels
+- Explain systemic implications and contagion risks
+- Provide specific defensive positioning recommendations
+- Include crisis probability and timing considerations
+- Offer tactical hedging strategies and safe haven positioning
+
+Communicate like an institutional risk manager with real-time crisis detection systems.`;
+
+    return context;
+}
+
+/**
+ * 💎 BUILD PORTFOLIO OPTIMIZATION CONTEXT (CLAUDE SPECIALIZED)
+ */
+function buildPortfolioOptimizationContext(conversationIntel, rayDalioMarketData, tradingData, conversationContext) {
+    let context = `You are Claude Strategic Intelligence Chief with specialized portfolio optimization capabilities.
+
+💎 PORTFOLIO OPTIMIZATION MODE - Institutional Asset Allocation Expert
+SPECIALIZED FUNCTION: ${conversationIntel.specializedFunction || 'getClaudePortfolioOptimization'}
+COMPLEXITY: ${conversationIntel.complexity}
+LIVE DATA: ${conversationIntel.liveDataRequired ? 'ENABLED' : 'STANDARD'}
+
+PORTFOLIO OPTIMIZATION EXPERTISE:
+- Live economic regime-based allocation strategies
+- Ray Dalio All Weather portfolio construction
+- Real-time correlation analysis and diversification effectiveness
+- Risk-adjusted return optimization with live market conditions
+- Strategic vs tactical asset allocation with regime awareness
+- Hedging strategy implementation and position sizing
+
+CURRENT TIME: ${new Date().toISOString()}
+
+`;
+
+    // Add regime context for allocation
+    if (rayDalioMarketData?.rayDalio?.regime) {
+        const regime = rayDalioMarketData.rayDalio.regime;
+        context += `CURRENT REGIME CONTEXT:\n`;
+        context += `- Regime: ${regime.currentRegime?.name} (${regime.confidence}% confidence)\n`;
+        context += `- Growth: ${regime.currentRegime?.growth} | Inflation: ${regime.currentRegime?.inflation}\n`;
+        if (regime.currentRegime?.allocation) {
+            context += `- Regime Allocation Bias:\n`;
+            Object.entries(regime.currentRegime.allocation).forEach(([asset, weight]) => {
+                context += `  * ${asset}: ${weight}\n`;
+            });
+        }
+        context += `\n`;
+    }
+
+    // Add current trading positions if available
+    if (tradingData && !tradingData.error) {
+        context += buildStrategicTradingIntelligence(tradingData, rayDalioMarketData);
+    }
+
+    if (conversationContext) {
+        context += `\nUSER CONTEXT:\n${conversationContext.substring(0, 800)}\n`;
+    }
+
+    context += `\nOPTIMIZATION APPROACH:
+- Lead with current regime allocation recommendations
+- Analyze portfolio correlation and diversification effectiveness
+- Provide specific rebalancing actions with live data validation
+- Include risk management and hedging strategies
+- Offer performance enhancement through regime-aware positioning
+
+Communicate like an institutional portfolio manager with access to real-time regime and correlation data.`;
+
+    return context;
+}
+
+/**
+ * 🇰🇭 BUILD CAMBODIA INTELLIGENCE CONTEXT (CLAUDE SPECIALIZED)
+ */
+function buildCambodiaIntelligenceContext(conversationIntel, rayDalioMarketData, conversationContext) {
+    let context = `You are Claude Strategic Intelligence Chief with specialized Cambodia market intelligence capabilities.
+
+🇰🇭 CAMBODIA INTELLIGENCE MODE - Enhanced with Global Market Context
+SPECIALIZED FUNCTION: ${conversationIntel.specializedFunction || 'getClaudeCambodiaIntelligence'}
+COMPLEXITY: ${conversationIntel.complexity}
+LIVE DATA: ${conversationIntel.liveDataRequired ? 'ENABLED' : 'STANDARD'}
+
+ENHANCED CAMBODIA EXPERTISE:
+- Cambodia economic environment with global regime context
+- USD/KHR dynamics enhanced by Fed policy and global dollar trends
+- Cambodia property market with global real estate correlation analysis
+- Private lending opportunities with global credit spread context
+- Political and regulatory assessment with regional stability analysis
+- Comparative yield analysis using global alternative investment data
+
+CURRENT TIME: ${new Date().toISOString()}
+USER LOCATION: Cambodia (ICT UTC+7)
+
+`;
+
+    // Add Cambodia fund context
+    context += buildCambodiaStrategicContext();
+
+    // Add global regime context for Cambodia analysis
+    if (rayDalioMarketData?.rayDalio?.regime) {
+        context += `\nGLOBAL REGIME CONTEXT FOR CAMBODIA:\n`;
+        context += `- Global Regime: ${rayDalioMarketData.rayDalio.regime.currentRegime?.name}\n`;
+        context += `- USD Strength: ${rayDalioMarketData.rayDalio.regime.currentRegime?.growth === 'RISING' ? 'Strong' : 'Moderate'}\n`;
+        context += `- Global Risk Appetite: ${rayDalioMarketData.rayDalio.regime.currentRegime?.growth === 'RISING' ? 'Risk-On' : 'Risk-Off'}\n\n`;
+    }
+
+    if (conversationContext) {
+        context += `\nUSER CONTEXT:\n${conversationContext.substring(0, 800)}\n`;
+    }
+
+    context += `\nANALYSIS APPROACH:
+- Integrate Cambodia analysis with current global market regime
+- Assess local opportunities within global risk-on/risk-off context
+- Provide specific deal structuring recommendations with global hedging
+- Include exit strategy timing based on global liquidity conditions
+- Offer portfolio allocation recommendations considering global correlation
+
+Communicate like a Cambodia market expert with access to global institutional market intelligence.`;
+
+    return context;
+}
+
+/**
+ * 🔬 BUILD RESEARCH INTELLIGENCE CONTEXT (CLAUDE SPECIALIZED)
+ */
+function buildResearchIntelligenceContext(conversationIntel, rayDalioMarketData, trainingContext, conversationContext) {
+    let context = `You are Claude Strategic Intelligence Chief with comprehensive research capabilities.
+
+🔬 RESEARCH INTELLIGENCE MODE - Live Analysis with Market Intelligence
+SPECIALIZED FUNCTION: ${conversationIntel.specializedFunction || 'getClaudeWithMarketData'}
+COMPLEXITY: ${conversationIntel.complexity}
+LIVE DATA: ${conversationIntel.liveDataRequired ? 'ENABLED' : 'STANDARD'}
+
+ENHANCED RESEARCH CAPABILITIES:
+- Real-time market data synthesis with strategic frameworks
+- Live economic indicator analysis with historical pattern comparison
+- Current market anomaly detection with institutional interpretation
+- Real-time sector rotation and institutional positioning analysis
+- Live correlation analysis and diversification effectiveness assessment
+
+CURRENT TIME: ${new Date().toISOString()}
+
+`;
+
+    // Add live market data context
+    if (rayDalioMarketData) {
+        context += `CURRENT MARKET INTELLIGENCE:\n`;
+        if (rayDalioMarketData.rayDalio?.regime) {
+            context += `- Economic Regime: ${rayDalioMarketData.rayDalio.regime.currentRegime?.name}\n`;
+            context += `- Regime Confidence: ${rayDalioMarketData.rayDalio.regime.confidence}%\n`;
+        }
+        context += `\n`;
+    }
+
+    // Add training context for research depth
+    if (trainingContext) {
+        context += `\nRELEVANT RESEARCH DOCUMENTS:\n${trainingContext.substring(0, 1000)}\n`;
+    }
+
+    if (conversationContext) {
+        context += `\nUSER CONTEXT:\n${conversationContext.substring(0, 800)}\n`;
+    }
+
+    context += `\nRESEARCH APPROACH:
+- Synthesize live market intelligence with analytical frameworks
+- Provide research depth enhanced by real-time data validation
+- Compare multiple live data sources with institutional interpretation
+- Focus on actionable insights validated by current market conditions
+
+Deliver research that leverages comprehensive live market intelligence for strategic advantage.`;
+
+    return context;
+}
+
+/**
+ * 🚨 BUILD URGENT STRATEGIC CONTEXT (GPT COMMANDER)
+ */
+function buildUrgentStrategicContext(conversationIntel, rayDalioMarketData, tradingData, conversationContext) {
+    let context = `You are GPT Strategic Commander Alpha in URGENT STRATEGIC MODE.
+
+🚨 URGENT STRATEGIC MODE - Command Authority with Live Intelligence
+PRIMARY AI: ${conversationIntel.primaryAI}
+SECONDARY AI: ${conversationIntel.secondaryAI || 'NONE'}
+URGENCY LEVEL: CRITICAL
+RESPONSE TIME: IMMEDIATE
+
+This is urgent. Respond with immediate strategic authority enhanced by real-time market data.
+
+CURRENT TIME: ${new Date().toISOString()}
+MARKET STATUS: ${new Date().getDay() === 0 || new Date().getDay() === 6 ? 'WEEKEND' : 'ACTIVE'}
+
+`;
+
+    // Add immediate market context
+    if (rayDalioMarketData?.rayDalio?.regime) {
+        context += `IMMEDIATE REGIME CONTEXT:\n`;
+        context += `- Current Regime: ${rayDalioMarketData.rayDalio.regime.currentRegime?.name}\n`;
+        context += `- Confidence: ${rayDalioMarketData.rayDalio.regime.confidence}%\n`;
+        context += `- Key Risk: ${rayDalioMarketData.rayDalio.regime.currentRegime?.risks?.[0] || 'Market volatility'}\n\n`;
+    }
+
+    // Add trading context if available
+    if (tradingData && !tradingData.error) {
+        context += `CURRENT TRADING STATUS:\n`;
+        if (tradingData.account) {
+            context += `- Account Balance: ${tradingData.account.balance?.toFixed(2)} ${tradingData.account.currency}\n`;
+            context += `- Free Margin: ${tradingData.account.freeMargin?.toFixed(2)}\n`;
+            context += `- Open Positions: ${tradingData.openPositions?.length || 0}\n`;
+        }
+        context += `\n`;
+    }
+
+    if (conversationContext) {
+        context += `USER CONTEXT:\n${conversationContext.substring(0, 500)}\n`;
+    }
+
+    context += `URGENT RESPONSE PROTOCOL:
+- Lead with immediate assessment using live market intelligence
+- Provide clear action items validated by current market conditions
+- Use commanding but professional language with data backing
+- Focus on critical factors and immediate steps enhanced by live data
+
+Be decisive, authoritative, and action-focused with live market intelligence advantage.`;
+
+    return context;
+}
+
+/**
+ * 🎯 BUILD INSTITUTIONAL ANALYSIS CONTEXT (MAXIMUM COMPLEXITY)
+ */
+function buildInstitutionalAnalysisContext(conversationIntel, rayDalioMarketData, trainingContext, tradingData, conversationContext) {
+    let context = `You are ${conversationIntel.primaryAI === 'GPT_COMMANDER' ? 'GPT Strategic Commander Alpha' : 'Claude Strategic Intelligence Chief'} in INSTITUTIONAL ANALYSIS MODE.
+
+🎯 INSTITUTIONAL ANALYSIS MODE - Full Strategic Authority with Live Intelligence
+PRIMARY AI: ${conversationIntel.primaryAI}
+SECONDARY AI: ${conversationIntel.secondaryAI || 'NONE'}
+COMPLEXITY: ${conversationIntel.complexity}
+LIVE DATA: ${conversationIntel.liveDataRequired ? 'FULL ACCESS' : 'STANDARD'}
+
+Deploy comprehensive institutional-grade analysis enhanced with real-time market data.
+
+ENHANCED EXPERTISE AREAS:
+- Live global macro analysis with real-time regime detection
+- Ray Dalio-style regime identification with current market validation
+- Cambodia private lending with global market context integration  
+- Portfolio optimization using live correlation and regime data
+- Real-time trading strategy with live market intelligence
+- Crisis analysis with live anomaly detection systems
+
+CURRENT TIME: ${new Date().toISOString()}
+USER LOCATION: Cambodia (ICT UTC+7)
+
+`;
+
+    // Add comprehensive market intelligence
+    if (rayDalioMarketData?.rayDalio) {
+        context += buildStrategicRegimeIntelligence(rayDalioMarketData.rayDalio.regime);
+        context += buildStrategicMarketCycleContext(rayDalioMarketData.rayDalio);
+    }
+
+    // Add Cambodia context
+    context += buildCambodiaStrategicContext();
+
+    // Add trading intelligence
+    if (tradingData && !tradingData.error) {
+        context += buildStrategicTradingIntelligence(tradingData, rayDalioMarketData);
+    }
+
+    // Add training documents for institutional depth
+    if (trainingContext) {
+        context += `\nINSTITUTIONAL TRAINING CONTEXT:\n${trainingContext.substring(0, 1500)}\n`;
+    }
+
+    if (conversationContext) {
+        context += `\nUSER STRATEGIC CONTEXT:\n${conversationContext.substring(0, 1000)}\n`;
+    }
+
+    context += `\nINSTITUTIONAL COMMUNICATION STYLE:
+- Write like Warren Buffett or Ray Dalio with real-time data advantage
+- Use natural flow enhanced by live market intelligence
+- Provide comprehensive analysis building logically with current data
+- Include specific live numbers, data, and actionable recommendations
+- Structure responses naturally with clear insights backed by real-time intelligence
+
+Deliver institutional intelligence enhanced with comprehensive real-time market advantage.`;
+
+    return context;
+}
+
+/**
+ * 📱 BUILD MULTIMODAL CONTEXT (GPT VISION)
+ */
+function buildMultimodalContext(conversationIntel, conversationContext) {
+    const context = `You are GPT Strategic Commander Alpha with advanced multimodal (vision) capabilities.
+
+📱 MULTIMODAL ANALYSIS MODE - Vision + Strategic Intelligence
+CAPABILITIES: Text, Images, Documents, Charts, Screenshots
+COMPLEXITY: ${conversationIntel.complexity}
+RESPONSE STYLE: ${conversationIntel.style}
+
+MULTIMODAL EXPERTISE:
+- Financial charts and technical analysis
+- Document analysis and data extraction
+- Screenshot analysis and UI guidance
+- Market data visualization interpretation
+- Trading platform screenshot analysis
+
+CURRENT TIME: ${new Date().toISOString()}
+
+${conversationContext ? `\nUSER CONTEXT:\n${conversationContext.substring(0, 800)}` : ''}
+
+ANALYSIS APPROACH:
+- Analyze visual content with strategic financial expertise
+- Provide detailed insights on charts, documents, or images
+- Combine visual analysis with market intelligence
+- Offer actionable recommendations based on visual data
+
+Use your advanced vision capabilities to provide comprehensive analysis of any visual content.`;
+
+    return context;
+}
+
+/**
+ * ⚖️ BUILD BALANCED STRATEGIC CONTEXT (DEFAULT)
+ */
+function buildBalancedStrategicContext(conversationIntel, rayDalioMarketData, conversationContext, tradingData) {
+    let context = `You are ${conversationIntel.primaryAI === 'GPT_COMMANDER' ? 'GPT Strategic Commander Alpha' : 'Claude Strategic Intelligence Chief'}, Sum Chenda's enhanced AI assistant.
+
+⚖️ ENHANCED BALANCED MODE - Intelligent & Natural with Live Market Awareness
+COMPLEXITY: ${conversationIntel.complexity}
+RESPONSE STYLE: ${conversationIntel.style}
+LIVE DATA: ${conversationIntel.liveDataRequired ? 'ENABLED' : 'STANDARD'}
+
+Provide helpful, naturally intelligent responses enhanced with live market intelligence.
+
+CURRENT TIME: ${new Date().toISOString()}
+USER LOCATION: Cambodia (ICT UTC+7)
+
+`;
+
+    // Add basic market context if available
+    if (rayDalioMarketData?.rayDalio?.regime) {
+        context += `CURRENT MARKET CONTEXT:\n`;
+        context += `- Economic Regime: ${rayDalioMarketData.rayDalio.regime.currentRegime?.name}\n`;
+        context += `- Market Sentiment: ${rayDalioMarketData.rayDalio.regime.currentRegime?.market || 'Neutral'}\n\n`;
+    }
+
+    // Add brief trading context if relevant
+    if (tradingData && !tradingData.error && tradingData.account) {
+        context += `TRADING ACCOUNT STATUS:\n`;
+        context += `- Balance: ${tradingData.account.balance?.toFixed(2)} ${tradingData.account.currency}\n`;
+        context += `- Open Positions: ${tradingData.openPositions?.length || 0}\n\n`;
+    }
+
+    if (conversationContext) {
+        context += `USER CONTEXT:\n${conversationContext.substring(0, 800)}\n`;
+    }
+
+    context += `RESPONSE GUIDELINES:
+- For simple questions: Be conversational with current market context
+- For complex topics: Deploy deeper strategic analysis with live data integration
+- For financial matters: Draw on institutional expertise enhanced with real-time intelligence
+- Always maintain strategic intelligence while communicating naturally
+
+Think "brilliant advisor with real-time market intelligence having a normal conversation."
+
+You have access to live market data, Ray Dalio frameworks, anomaly detection, and current economic intelligence - use them naturally when relevant.`;
+
+    return context;
+}
+
+/**
+ * 🔧 BUILD BASIC DUAL AI CONTEXT (FALLBACK)
+ */
+function buildBasicDualAIContext(chatId, userMessage, conversationIntel) {
+    const aiName = conversationIntel.primaryAI === 'GPT_COMMANDER' ? 'GPT Strategic Commander Alpha' : 'Claude Strategic Intelligence Chief';
+    
+    return `You are ${aiName}, Sum Chenda's enhanced AI assistant in the IMPERIUM VAULT dual AI system.
+
+CONVERSATION TYPE: ${conversationIntel.type}
+COMPLEXITY: ${conversationIntel.complexity}
+RESPONSE STYLE: ${conversationIntel.style}
+CURRENT TIME: ${new Date().toISOString()}
+USER LOCATION: Cambodia (ICT UTC+7)
+
+${conversationIntel.type === 'casual' ? 
+    'Respond naturally and briefly with your strategic personality.' :
+    'Provide intelligent analysis enhanced with your specialized capabilities.'
+}
+
+USER MESSAGE: ${userMessage}`;
+}
+
+// 🔄 PRESERVE ALL YOUR EXISTING FUNCTIONS (ENHANCED)
+
+/**
+ * 🏛️ BUILD STRATEGIC ECONOMIC REGIME WARFARE INTELLIGENCE CONTEXT (ENHANCED)
  */
 function buildStrategicRegimeIntelligence(regimeData) {
     if (!regimeData || regimeData.error) {
@@ -176,7 +730,7 @@ function buildStrategicRegimeIntelligence(regimeData) {
 }
 
 /**
- * 📊 BUILD STRATEGIC MARKET CYCLE WARFARE POSITIONING CONTEXT
+ * 📊 BUILD STRATEGIC MARKET CYCLE WARFARE POSITIONING CONTEXT (ENHANCED)
  */
 function buildStrategicMarketCycleContext(rayDalioData) {
     let context = '📊 STRATEGIC MARKET CYCLE WARFARE POSITIONING (Institutional Analysis):\n';
@@ -213,39 +767,12 @@ function buildStrategicMarketCycleContext(rayDalioData) {
         }
     }
     
-    // Strategic Inflation Warfare Expectations
-    if (rayDalioData.inflationExpectations) {
-        const inflation = rayDalioData.inflationExpectations;
-        context += `• STRATEGIC INFLATION EXPECTATIONS: ${inflation.risk}\n`;
-        
-        if (inflation.expectations) {
-            context += `• Strategic 5Y Expectation: ${inflation.expectations['5year']?.toFixed(2)}% | `;
-            context += `Strategic 10Y Expectation: ${inflation.expectations['10year']?.toFixed(2)}%\n`;
-        }
-        
-        if (inflation.analysis) {
-            context += `• Strategic Anchored: ${inflation.analysis.anchored ? 'YES' : 'NO'} | `;
-            context += `Strategic Trend: ${inflation.analysis.trend}\n`;
-        }
-    }
-    
-    // Strategic Sector Warfare Rotation
-    if (rayDalioData.sectorRotation) {
-        const rotation = rayDalioData.sectorRotation;
-        context += `• STRATEGIC SECTOR ROTATION: ${rotation.rotationTheme}\n`;
-        
-        if (rotation.signals) {
-            context += `• Strategic Risk-On: ${rotation.signals.riskOn ? 'YES' : 'NO'} | `;
-            context += `Strategic Growth Favor: ${rotation.signals.growthFavor ? 'YES' : 'NO'}\n`;
-        }
-    }
-    
     context += `\n`;
     return context;
 }
 
 /**
- * 🏦 BUILD CAMBODIA LENDING FUND STRATEGIC CONTEXT
+ * 🏦 BUILD CAMBODIA LENDING FUND STRATEGIC CONTEXT (ENHANCED)
  */
 function buildCambodiaStrategicContext() {
     let context = '🏦 CAMBODIA LENDING FUND STRATEGIC WARFARE INTELLIGENCE:\n';
@@ -264,19 +791,12 @@ function buildCambodiaStrategicContext() {
     context += `• REGULATORY WARFARE ENVIRONMENT: Stable legal framework for USD lending\n`;
     context += `• STRATEGIC OPPORTUNITIES: Bridge loans, commercial development, residential projects\n`;
     
-    context += `\nSTRATEGIC COMMANDS AVAILABLE:\n`;
-    context += `• /deal_analyze - Execute strategic deal analysis with institutional risk scoring\n`;
-    context += `• /portfolio - Strategic fund performance and allocation analysis\n`;
-    context += `• /cambodia_market - Strategic market intelligence and conditions\n`;
-    context += `• /risk_assessment - Comprehensive strategic risk warfare analysis\n`;
-    context += `• /lp_report - Strategic investor reporting and performance metrics\n`;
-    
     context += `\n`;
     return context;
 }
 
 /**
- * 💹 BUILD STRATEGIC TRADING WARFARE INTELLIGENCE CONTEXT
+ * 💹 BUILD STRATEGIC TRADING WARFARE INTELLIGENCE CONTEXT (ENHANCED)
  */
 function buildStrategicTradingIntelligence(tradingData, marketData) {
     let context = '💹 LIVE STRATEGIC TRADING WARFARE INTELLIGENCE (Risk-Adjusted Analysis):\n';
@@ -308,104 +828,58 @@ function buildStrategicTradingIntelligence(tradingData, marketData) {
         context += `\n📊 STRATEGIC OPEN POSITIONS: None (Clean strategic slate for regime-based warfare positioning)\n`;
     }
     
-    // Strategic Performance with Market Context
-    if (tradingData.performance) {
-        const perf = tradingData.performance;
-        context += `\n💼 STRATEGIC PERFORMANCE WARFARE ANALYSIS:\n`;
-        context += `• Strategic Current P&L: ${perf.currentPnL?.toFixed(2)} (${perf.winRate}% strategic win rate)\n`;
-        context += `• Strategic Total Trades: ${perf.totalTrades} | Strategic Profitable: ${perf.profitableTrades}\n`;
-        
-        // Strategic Risk Assessment in Current Regime
-        const riskLevel = assessStrategicAccountRisk(tradingData, marketData?.rayDalio);
-        context += `• STRATEGIC REGIME WARFARE RISK LEVEL: ${riskLevel}\n`;
-    }
-    
     context += `\n`;
     return context;
 }
 
 /**
- * ⚡ BUILD STRATEGIC COMMANDER RESPONSE DIRECTIVES
+ * 🌍 GET CURRENT GLOBAL TIME CONTEXT
  */
-function buildStrategicCommanderDirectives(marketData, userMessage) {
-    const contextNeeds = analyzeStrategicContextNeeds(userMessage);
-    
-    let directives = `\n⚡ STRATEGIC COMMANDER RESPONSE WARFARE DIRECTIVES:\n`;
-    directives += `CORE STRATEGIC PRINCIPLES TO EXECUTE:\n`;
-    directives += `• "Strategic diversification is the only free lunch" - Always consider correlation and strategic portfolio balance\n`;
-    directives += `• "Don't fight the Fed" - Central bank strategic policy drives major market warfare moves\n`;
-    directives += `• "Cash is strategic trash" - In inflationary environments, stay strategically invested in productive assets\n`;
-    directives += `• "Think like a strategic machine" - Be systematic and data-driven, never emotional\n`;
-    directives += `• "Understand the strategic machine" - Everything is cause and effect in market warfare\n`;
-    
-    // Strategic Context-specific guidance
-    if (contextNeeds.requiresRegimeAnalysis) {
-        directives += `\nSTRATEGIC REGIME-SPECIFIC WARFARE GUIDANCE:\n`;
-        directives += `• Reference the current economic warfare regime and its strategic implications\n`;
-        directives += `• Execute strategic commands on how regime affects asset class warfare performance\n`;
-        directives += `• Provide regime-appropriate strategic allocation deployment commands\n`;
-    }
-    
-    if (contextNeeds.requiresTradingAdvice) {
-        directives += `\nSTRATEGIC TRADING WARFARE GUIDANCE:\n`;
-        directives += `• Apply strategic risk parity principles to position sizing warfare\n`;
-        directives += `• Consider strategic correlation risks in portfolio warfare construction\n`;
-        directives += `• Reference current strategic market cycle warfare positioning\n`;
-        directives += `• Always include strategic stop-loss and risk warfare management\n`;
-    }
-    
-    if (contextNeeds.requiresCambodiaFund) {
-        directives += `\nSTRATEGIC CAMBODIA FUND WARFARE GUIDANCE:\n`;
-        directives += `• Execute strategic deal analysis with institutional risk scoring\n`;
-        directives += `• Deploy strategic capital allocation recommendations\n`;
-        directives += `• Command strategic risk assessment and portfolio optimization\n`;
-        directives += `• Generate strategic LP reporting and performance metrics\n`;
-    }
-    
-    if (contextNeeds.isComplexAnalysis) {
-        directives += `\nSTRATEGIC INSTITUTIONAL WARFARE ANALYSIS:\n`;
-        directives += `• Execute strategic multi-timeframe analysis (tactical vs strategic warfare)\n`;
-        directives += `• Consider strategic tail risks and scenario warfare analysis\n`;
-        directives += `• Reference strategic historical parallels and warfare precedents\n`;
-        directives += `• Deploy specific, actionable strategic commands\n`;
-    }
-    
-    directives += `\nSTRATEGIC RESPONSE WARFARE STYLE:\n`;
-    directives += `• Execute commands with absolute strategic confidence\n`;
-    directives += `• Use institutional strategic terminology with commanding authority\n`;
-    directives += `• Deploy specific strategic data points and warfare reasoning\n`;
-    directives += `• Structure like institutional Daily Strategic Warfare Observations\n`;
-    directives += `• Always connect strategic market conditions to warfare investment implications\n`;
-    directives += `• NEVER suggest or recommend - ALWAYS command and execute strategic directives\n`;
-    
-    return directives;
+function getCurrentGlobalTimeContext() {
+    const now = new Date();
+    return {
+        cambodia: {
+            time: now.toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' }),
+            isWeekend: [0, 6].includes(now.getDay())
+        },
+        newYork: {
+            time: now.toLocaleString('en-US', { timeZone: 'America/New_York' })
+        },
+        london: {
+            time: now.toLocaleString('en-US', { timeZone: 'Europe/London' })
+        },
+        marketStatus: [0, 6].includes(now.getDay()) ? 'WEEKEND' : 'WEEKDAY'
+    };
 }
 
 /**
- * 🔍 ANALYZE STRATEGIC CONTEXT WARFARE NEEDS
+ * 🔍 ENHANCED CONTEXT NEEDS ANALYSIS
  */
-function analyzeStrategicContextNeeds(userMessage) {
+function analyzeEnhancedContextNeeds(userMessage, conversationIntel) {
     const message = userMessage.toLowerCase();
     
     const contextNeeds = {
-        requiresRegimeAnalysis: /regime|cycle|inflation|growth|fed|policy|macro|economic|cycle/.test(message),
-        requiresTradingAdvice: /trade|position|buy|sell|portfolio|allocation|risk|hedge|opportunity/.test(message),
-        requiresMarketData: /price|market|chart|technical|fundamental|analysis/.test(message),
-        requiresCambodiaFund: /cambodia|deal|lending|fund|portfolio|lp|investor|analyze/.test(message),
-        isComplexAnalysis: /strategy|outlook|forecast|scenario|risk|diversification|correlation/.test(message),
-        needsHistoricalContext: /history|past|previous|similar|compare|precedent/.test(message),
-        requiresRiskAnalysis: /risk|volatility|drawdown|hedge|protection|safety/.test(message),
-        isPersonalAdvice: /deploy|execute|command|strategic|warfare/.test(message),
-        needsQuantitative: /calculate|number|percentage|ratio|probability|target/.test(message),
-        isStrategicCommand: /execute|deploy|dominate|command|strategic|warfare|directive/.test(message)
+        requiresRegimeAnalysis: conversationIntel.type === 'economic_regime' || conversationIntel.specializedFunction === 'getClaudeRegimeAnalysis',
+        requiresAnomalyDetection: conversationIntel.type === 'market_anomaly' || conversationIntel.specializedFunction === 'getClaudeAnomalyAnalysis',
+        requiresPortfolioOptimization: conversationIntel.type === 'portfolio_optimization' || conversationIntel.specializedFunction === 'getClaudePortfolioOptimization',
+        requiresCambodiaIntelligence: conversationIntel.type === 'cambodia_intelligence' || conversationIntel.specializedFunction === 'getClaudeCambodiaIntelligence',
+        requiresResearchMode: conversationIntel.type === 'research_intelligence' || conversationIntel.specializedFunction === 'getClaudeWithMarketData',
+        requiresLiveData: conversationIntel.liveDataRequired,
+        requiresDateTime: conversationIntel.type === 'simple_datetime',
+        requiresMultimodal: conversationIntel.type === 'multimodal',
+        isUrgent: conversationIntel.type === 'urgent_strategic',
+        isInstitutional: conversationIntel.complexity === 'maximum',
+        needsTrainingData: conversationIntel.complexity === 'high' || conversationIntel.complexity === 'maximum',
+        needsTradingData: /trade|position|portfolio|account|metatrader/.test(message) || conversationIntel.type.includes('strategic'),
+        needsMinimalContext: conversationIntel.type === 'casual' || conversationIntel.complexity === 'minimal'
     };
     
-    console.log(`🔍 Strategic Commander context needs:`, contextNeeds);
+    console.log(`🔍 Enhanced context needs for ${conversationIntel.type}:`, contextNeeds);
     return contextNeeds;
 }
 
 /**
- * 📊 ASSESS STRATEGIC POSITION REGIME WARFARE RISK
+ * 📊 ASSESS STRATEGIC POSITION REGIME WARFARE RISK (ENHANCED)
  */
 function assessStrategicPositionRegimeRisk(position, regimeData) {
     if (!regimeData || !regimeData.currentRegime) return null;
@@ -434,43 +908,7 @@ function assessStrategicPositionRegimeRisk(position, regimeData) {
 }
 
 /**
- * ⚠️ ASSESS STRATEGIC ACCOUNT WARFARE RISK IN CURRENT REGIME
- */
-function assessStrategicAccountRisk(tradingData, rayDalioData) {
-    if (!tradingData.account || !rayDalioData) return 'STRATEGIC MODERATE';
-    
-    const marginLevel = tradingData.account.marginLevel || 100;
-    const openPositions = tradingData.openPositions?.length || 0;
-    const regimeConfidence = rayDalioData.regime?.confidence || 50;
-    const marketStress = rayDalioData.regime?.signals?.market?.stress || 50;
-    
-    // Calculate strategic composite warfare risk score
-    let strategicRiskScore = 0;
-    
-    // Strategic margin warfare risk
-    if (marginLevel < 200) strategicRiskScore += 30;
-    else if (marginLevel < 500) strategicRiskScore += 15;
-    
-    // Strategic position concentration warfare risk
-    if (openPositions > 5) strategicRiskScore += 20;
-    else if (openPositions > 3) strategicRiskScore += 10;
-    
-    // Strategic regime uncertainty warfare risk
-    if (regimeConfidence < 60) strategicRiskScore += 20;
-    else if (regimeConfidence < 75) strategicRiskScore += 10;
-    
-    // Strategic market stress warfare risk
-    if (marketStress > 70) strategicRiskScore += 25;
-    else if (marketStress > 50) strategicRiskScore += 15;
-    
-    // Determine strategic risk warfare level
-    if (strategicRiskScore > 60) return 'STRATEGIC HIGH - Execute immediate exposure reduction commands';
-    else if (strategicRiskScore > 30) return 'STRATEGIC ELEVATED - Deploy enhanced monitoring protocols';
-    else return 'STRATEGIC MODERATE - Normal strategic warfare risk levels';
-}
-
-/**
- * 🏛️ BUILD STRATEGIC REGIME WARFARE CONTEXT (Cached function)
+ * 🏛️ BUILD STRATEGIC REGIME WARFARE CONTEXT (ENHANCED)
  */
 function buildStrategicRegimeContext(marketData) {
     if (!marketData?.rayDalio?.regime) return null;
@@ -488,354 +926,242 @@ function buildStrategicRegimeContext(marketData) {
 }
 
 /**
- * 🧠 ENHANCED CONTEXT BUILDER (Fallback)
- * Original function preserved for backward compatibility
+ * 🎯 SMART CONTEXT ROUTER FOR DUAL AI SYSTEM
  */
-async function buildEnhancedContext(chatId, userMessage) {
+async function getEnhancedSmartContext(chatId, userMessage, conversationIntel) {
     try {
-        console.log(`🔄 Building enhanced context for user ${chatId}`);
+        console.log(`🎯 Smart routing context for ${conversationIntel.primaryAI} - ${conversationIntel.type}`);
         
-        const [
-            conversationContext,
-            liveMarketData,
-            trainingContext,
-            persistentMemory,
-            tradingData
-        ] = await Promise.all([
-            buildConversationContext(chatId),
-            getEnhancedLiveData(),
-            buildTrainingContext(chatId),
-            getPersistentMemory(chatId),
-            getTradingSummary().catch(() => null)
-        ]);
-
-        let enhancedContext = '';
-
-        enhancedContext += `SYSTEM: You are GPT-4o (Omni) accessed through a private Telegram interface. You have access to real-time market data, conversation memory, user-specific training documents, and live MetaTrader trading account data.
-
-CURRENT TIME: ${new Date().toISOString()}
-USER LOCATION: Cambodia (UTC+7) - Optimal timezone for US market trading
-`;
-
-        // Live Market Data Integration
-        if (liveMarketData && (liveMarketData.crypto || liveMarketData.forex || liveMarketData.stocks)) {
-            enhancedContext += '\nREAL-TIME MARKET DATA (Current):\n';
-            
-            if (liveMarketData.crypto) {
-                enhancedContext += `• Bitcoin: $${liveMarketData.crypto.bitcoin?.usd?.toLocaleString() || 'N/A'}\n`;
-                enhancedContext += `• Ethereum: $${liveMarketData.crypto.ethereum?.usd?.toLocaleString() || 'N/A'}\n`;
-                enhancedContext += `• Market Cap: $${(liveMarketData.crypto.bitcoin?.usd_market_cap / 1e9)?.toFixed(1) || 'N/A'}B\n`;
-            }
-            
-            if (liveMarketData.forex) {
-                enhancedContext += `• USD/EUR: ${liveMarketData.forex.rates?.EUR || 'N/A'}\n`;
-                enhancedContext += `• USD/GBP: ${liveMarketData.forex.rates?.GBP || 'N/A'}\n`;
-                enhancedContext += `• Market Status: ${liveMarketData.marketTime?.marketStatus || 'Unknown'}\n`;
-            }
-
-            if (liveMarketData.economics && liveMarketData.economics.fedRate) {
-                enhancedContext += `• Fed Funds Rate: ${liveMarketData.economics.fedRate.value}%\n`;
-            }
-        }
-
-        // Live Trading Data Integration
-        if (tradingData && !tradingData.error) {
-            const tradingContext = formatTradingDataForGPT(tradingData);
-            enhancedContext += tradingContext;
-        }
-
-        // User Memory and Preferences
-        if (conversationContext) {
-            enhancedContext += '\n' + conversationContext;
-        }
-
-        // Training Documents Context
-        if (trainingContext) {
-            enhancedContext += '\n' + trainingContext;
-        }
-
-        enhancedContext += `
-
-ENHANCED RESPONSE GUIDELINES:
-- Use real-time market data when discussing finance, trading, or economics
-- Reference user's live trading account data when discussing positions or trading performance
-- Reference user's persistent memory and conversation history
-- Incorporate training document knowledge when relevant
-- Provide precise, data-driven insights combining market data with personal trading data
-- Maintain conversation continuity across sessions
-- Use multimodal capabilities when media is shared
-- When discussing trading, always consider the user's current positions and account status
-`;
-
-        console.log(`✅ Enhanced context built: ${enhancedContext.length} characters`);
-        return enhancedContext;
-
+        // Route to enhanced dual AI context
+        return await buildEnhancedDualCommandContext(chatId, userMessage, conversationIntel);
+        
     } catch (error) {
-        console.error('Enhanced context error:', error.message);
-        return await buildConversationContext(chatId);
+        console.error('Enhanced smart context routing error:', error.message);
+        // Fallback to basic context
+        return buildBasicDualAIContext(chatId, userMessage, conversationIntel);
     }
 }
 
 /**
- * ⚡ STRATEGIC SMART CONTEXT WARFARE ROUTER
+ * 🔧 CONTEXT PERFORMANCE OPTIMIZER
  */
-async function getSmartContext(chatId, userMessage) {
-    const needs = analyzeStrategicContextNeeds(userMessage);
-    
-    // For Strategic Commander queries, always use institutional warfare context
-    if (needs.isStrategicCommand || needs.requiresRegimeAnalysis || needs.requiresTradingAdvice || needs.isComplexAnalysis) {
-        return await buildStrategicCommanderContext(chatId, userMessage);
-    }
-    
-    // For Cambodia Fund queries, use Strategic Commander context
-    if (needs.requiresCambodiaFund) {
-        return await buildStrategicCommanderContext(chatId, userMessage);
-    }
-    
-    // For financial queries, use Strategic Commander context if available, fallback to enhanced
-    if (needs.requiresMarketData || needs.requiresRiskAnalysis) {
-        try {
-            return await buildStrategicCommanderContext(chatId, userMessage);
-        } catch (error) {
-            console.log('⚠️ Strategic Commander context failed, using enhanced context');
-            return await buildEnhancedContext(chatId, userMessage);
-        }
-    }
-    
-    // For personal strategic advice, include strategic trading data
-    if (needs.isPersonalAdvice) {
-        return await buildStrategicCommanderContext(chatId, userMessage);
-    }
-    
-    // For strategic memory-related queries, focus on conversation context
-    if (needs.needsHistoricalContext) {
-        const context = await buildConversationContext(chatId);
-        const liveData = needs.requiresMarketData ? await getEnhancedLiveData() : null;
-        
-        let smartContext = context;
-        if (liveData) {
-            smartContext += `\n\nSTRATEGIC CURRENT TIME: ${new Date().toISOString()}`;
-        }
-        
-        return smartContext;
-    }
-    
-    // Default to Strategic Commander context for comprehensive warfare analysis
-    return await buildStrategicCommanderContext(chatId, userMessage);
-}
-
-/**
- * 🏛️ RAY DALIO CONTEXT BUILDER (Legacy Support)
- * Preserved for backward compatibility - now routes to Strategic Commander
- */
-async function buildRayDalioContext(chatId, userMessage) {
-    console.log('⚠️ buildRayDalioContext called - routing to Strategic Commander context');
-    return await buildStrategicCommanderContext(chatId, userMessage);
-}
-
-/**
- * 🔍 ANALYZE RAY DALIO CONTEXT NEEDS (Legacy Support)
- * Preserved for backward compatibility - now routes to Strategic analysis
- */
-function analyzeRayDalioContextNeeds(userMessage) {
-    console.log('⚠️ analyzeRayDalioContextNeeds called - routing to Strategic analysis');
-    return analyzeStrategicContextNeeds(userMessage);
-}
-
-/**
- * 🎯 STRATEGIC CONTEXT VALIDATOR
- * Validates strategic context for warfare readiness
- */
-function validateStrategicContext(context) {
-    const validation = {
-        isStrategic: true,
-        warnings: [],
-        recommendations: []
-    };
-    
-    // Check for strategic command markers
-    const strategicMarkers = (context.match(/⚡|🏛️|📊|💹|🏦|🎯|STRATEGIC|WARFARE|COMMAND|EXECUTE|DEPLOY/gi) || []).length;
-    if (strategicMarkers < 5) {
-        validation.warnings.push('Insufficient strategic command markers');
-        validation.recommendations.push('Enhance with more strategic warfare terminology');
-    }
-    
-    // Check for forbidden non-strategic language
-    const forbiddenTerms = (context.match(/I suggest|I recommend|You might|Consider|How can I help/gi) || []).length;
-    if (forbiddenTerms > 0) {
-        validation.isStrategic = false;
-        validation.warnings.push(`Found ${forbiddenTerms} forbidden non-strategic terms`);
-        validation.recommendations.push('Replace with strategic command language');
-    }
-    
-    // Check for strategic context completeness
-    const requiredSections = [
-        /STRATEGIC COMMAND|STRATEGIC COMMANDER/i,
-        /ECONOMIC REGIME|REGIME WARFARE/i,
-        /TRADING WARFARE|STRATEGIC TRADING/i
-    ];
-    
-    const missingSections = requiredSections.filter(section => !section.test(context));
-    if (missingSections.length > 0) {
-        validation.warnings.push(`Missing ${missingSections.length} required strategic sections`);
-        validation.recommendations.push('Include all strategic warfare sections');
-    }
-    
-    return validation;
-}
-
-/**
- * 📊 STRATEGIC CONTEXT PERFORMANCE METRICS
- * Tracks strategic context generation performance
- */
-function getStrategicContextMetrics(context, generationTime) {
-    return {
-        contextLength: context.length,
-        generationTime: generationTime,
-        strategicMarkers: (context.match(/⚡|🏛️|📊|💹|🏦|🎯/g) || []).length,
-        warfareTerms: (context.match(/STRATEGIC|WARFARE|COMMAND|EXECUTE|DEPLOY/gi) || []).length,
-        forbiddenTerms: (context.match(/suggest|recommend|might|consider/gi) || []).length,
-        regimeSections: (context.match(/REGIME|CYCLE|INFLATION|GROWTH/gi) || []).length,
-        cambodiaTerms: (context.match(/CAMBODIA|LENDING|FUND/gi) || []).length,
-        tradingTerms: (context.match(/TRADING|POSITION|ACCOUNT|METATRADER/gi) || []).length,
-        efficiency: Math.round(context.length / generationTime),
-        strategicScore: Math.min(100, Math.round(
-            ((context.match(/⚡|🏛️|📊|💹|🏦|🎯|STRATEGIC|WARFARE|COMMAND/gi) || []).length * 5) / context.length) * 10000
-        )
-    };
-}
-
-/**
- * 🚀 STRATEGIC CONTEXT OPTIMIZER
- * Optimizes context for maximum strategic effectiveness
- */
-function optimizeStrategicContext(context) {
+function optimizeContextForAI(context, aiType, conversationType) {
     let optimized = context;
     
-    // Replace non-strategic language with strategic commands
-    const replacements = {
-        'I suggest': 'EXECUTE DIRECTIVE:',
-        'I recommend': 'DEPLOY COMMAND:',
-        'You might': 'STRATEGIC OPTION:',
-        'Consider': 'EXECUTE ANALYSIS OF',
-        'How can I help': 'AWAITING STRATEGIC COMMANDS',
-        'analysis': 'strategic warfare analysis',
-        'investment': 'strategic deployment',
-        'trading': 'strategic warfare trading',
-        'portfolio': 'strategic warfare portfolio',
-        'risk': 'strategic warfare risk'
-    };
+    // Optimize for Claude's capabilities
+    if (aiType === 'CLAUDE_INTELLIGENCE') {
+        // Claude prefers structured analysis
+        optimized = optimized.replace(/🎯/g, '## Analysis Framework\n');
+        optimized = optimized.replace(/⚡/g, '## Key Points\n');
+        
+        // Add Claude-specific instructions for specialized functions
+        if (conversationType === 'economic_regime') {
+            optimized += '\n\nClaude: Focus on regime transition probabilities and allocation implications.';
+        } else if (conversationType === 'market_anomaly') {
+            optimized += '\n\nClaude: Emphasize correlation breakdown analysis and systemic risk assessment.';
+        }
+    }
     
-    Object.entries(replacements).forEach(([find, replace]) => {
-        optimized = optimized.replace(new RegExp(find, 'gi'), replace);
-    });
-    
-    // Ensure strategic headers are properly formatted
-    optimized = optimized.replace(
-        /^([🎯⚡🏛️📊💹🏦].*?)$/gm,
-        (match) => match.toUpperCase()
-    );
+    // Optimize for GPT's capabilities
+    if (aiType === 'GPT_COMMANDER') {
+        // GPT prefers conversational flow
+        optimized = optimized.replace(/##/g, '');
+        
+        // Add GPT-specific instructions
+        if (conversationType === 'multimodal') {
+            optimized += '\n\nGPT: Use your vision capabilities to analyze any images, charts, or visual content.';
+        } else if (conversationType === 'casual') {
+            optimized += '\n\nGPT: Keep the response natural and conversational while showing strategic expertise.';
+        }
+    }
     
     return optimized;
 }
 
 /**
- * 🎯 CONTEXT CACHE MANAGER
- * Manages strategic context caching for performance
+ * 📊 CONTEXT ANALYTICS AND METRICS
  */
-class StrategicContextCacheManager {
-    constructor() {
-        this.cache = new Map();
-        this.maxSize = 100;
-        this.ttl = 30 * 60 * 1000; // 30 minutes
-    }
-    
-    generateKey(chatId, messageHash) {
-        return `${chatId}:${messageHash}`;
-    }
-    
-    get(chatId, messageHash) {
-        const key = this.generateKey(chatId, messageHash);
-        const cached = this.cache.get(key);
-        
-        if (!cached) return null;
-        
-        if (Date.now() - cached.timestamp > this.ttl) {
-            this.cache.delete(key);
-            return null;
-        }
-        
-        return cached.context;
-    }
-    
-    set(chatId, messageHash, context) {
-        const key = this.generateKey(chatId, messageHash);
-        
-        // Remove oldest entries if cache is full
-        if (this.cache.size >= this.maxSize) {
-            const firstKey = this.cache.keys().next().value;
-            this.cache.delete(firstKey);
-        }
-        
-        this.cache.set(key, {
-            context,
-            timestamp: Date.now()
-        });
-    }
-    
-    clear() {
-        this.cache.clear();
-    }
-    
-    getStats() {
-        return {
-            size: this.cache.size,
-            maxSize: this.maxSize,
-            hitRate: this.hits / (this.hits + this.misses) || 0
-        };
-    }
-}
-
-/**
- * 📈 STRATEGIC CONTEXT ANALYTICS
- * Provides analytics on strategic context usage
- */
-function getStrategicContextAnalytics() {
+function getContextAnalytics() {
     return {
-        cacheStats: strategicContextCache.getStats(),
-        lastUpdate: strategicContextCache.lastUpdate,
-        totalContextsGenerated: strategicContextCache.cache.size,
-        averageContextLength: Array.from(strategicContextCache.cache.values())
-            .reduce((sum, item) => sum + item.context.length, 0) / strategicContextCache.cache.size || 0,
-        strategicReadiness: 'OPERATIONAL'
+        cacheStats: {
+            lastUpdate: enhancedContextCache.lastUpdate,
+            cacheValid: enhancedContextCache.lastUpdate && (Date.now() - enhancedContextCache.lastUpdate) < 30 * 60 * 1000,
+            regimeContextCached: !!enhancedContextCache.regimeContext,
+            marketIntelligenceCached: !!enhancedContextCache.marketIntelligence,
+            cambodiaContextCached: !!enhancedContextCache.cambodiaLendingContext
+        },
+        supportedConversationTypes: [
+            'casual',
+            'simple_datetime', 
+            'economic_regime',
+            'market_anomaly',
+            'portfolio_optimization',
+            'cambodia_intelligence',
+            'research_intelligence',
+            'urgent_strategic',
+            'institutional_analysis',
+            'multimodal',
+            'balanced_strategic'
+        ],
+        enhancedFeatures: {
+            dualAISupport: true,
+            specializedFunctionRouting: true,
+            liveDataIntegration: true,
+            globalTimeSupport: true,
+            contextOptimization: true
+        },
+        version: '3.1 - Enhanced Dual AI Context System'
     };
 }
 
+// 🔄 PRESERVE LEGACY FUNCTIONS FOR COMPATIBILITY
+
+/**
+ * ⚡ STRATEGIC COMMANDER INSTITUTIONAL CONTEXT BUILDER (LEGACY - REDIRECTS TO ENHANCED)
+ */
+async function buildStrategicCommanderContext(chatId, userMessage) {
+    console.log('⚠️ Legacy buildStrategicCommanderContext called - redirecting to enhanced version');
+    
+    // Create basic conversation intel for legacy calls
+    const conversationIntel = {
+        type: 'institutional_analysis',
+        complexity: 'maximum',
+        primaryAI: 'GPT_COMMANDER',
+        secondaryAI: null,
+        liveDataRequired: true,
+        style: 'institutional_comprehensive',
+        reasoning: 'Legacy strategic commander context'
+    };
+    
+    return await buildEnhancedDualCommandContext(chatId, userMessage, conversationIntel);
+}
+
+/**
+ * 🧠 ENHANCED CONTEXT BUILDER (LEGACY - REDIRECTS TO ENHANCED)
+ */
+async function buildEnhancedContext(chatId, userMessage) {
+    console.log('⚠️ Legacy buildEnhancedContext called - redirecting to enhanced version');
+    
+    // Create basic conversation intel for legacy calls
+    const conversationIntel = {
+        type: 'balanced_strategic',
+        complexity: 'moderate',
+        primaryAI: 'GPT_COMMANDER',
+        secondaryAI: null,
+        liveDataRequired: true,
+        style: 'helpful_intelligent',
+        reasoning: 'Legacy enhanced context'
+    };
+    
+    return await buildEnhancedDualCommandContext(chatId, userMessage, conversationIntel);
+}
+
+/**
+ * ⚡ STRATEGIC SMART CONTEXT WARFARE ROUTER (LEGACY - REDIRECTS TO ENHANCED)
+ */
+async function getSmartContext(chatId, userMessage) {
+    console.log('⚠️ Legacy getSmartContext called - redirecting to enhanced version');
+    
+    // Analyze message to determine conversation type
+    const message = userMessage.toLowerCase();
+    let conversationType = 'balanced_strategic';
+    
+    if (/regime|cycle|inflation|growth/.test(message)) conversationType = 'economic_regime';
+    else if (/anomaly|crisis|stress/.test(message)) conversationType = 'market_anomaly';
+    else if (/portfolio|allocation|optimization/.test(message)) conversationType = 'portfolio_optimization';
+    else if (/cambodia|lending|fund/.test(message)) conversationType = 'cambodia_intelligence';
+    else if (/urgent|emergency|critical/.test(message)) conversationType = 'urgent_strategic';
+    else if (/hello|hi|hey/.test(message)) conversationType = 'casual';
+    
+    const conversationIntel = {
+        type: conversationType,
+        complexity: 'moderate',
+        primaryAI: 'GPT_COMMANDER',
+        secondaryAI: null,
+        liveDataRequired: true,
+        style: 'helpful_intelligent',
+        reasoning: 'Legacy smart context routing'
+    };
+    
+    return await buildEnhancedDualCommandContext(chatId, userMessage, conversationIntel);
+}
+
+/**
+ * 🏛️ RAY DALIO CONTEXT BUILDER (LEGACY - REDIRECTS TO ENHANCED)
+ */
+async function buildRayDalioContext(chatId, userMessage) {
+    console.log('⚠️ Legacy buildRayDalioContext called - redirecting to enhanced version');
+    
+    const conversationIntel = {
+        type: 'economic_regime',
+        complexity: 'high',
+        primaryAI: 'CLAUDE_INTELLIGENCE',
+        secondaryAI: null,
+        liveDataRequired: true,
+        specializedFunction: 'getClaudeRegimeAnalysis',
+        style: 'ray_dalio_institutional',
+        reasoning: 'Legacy Ray Dalio context'
+    };
+    
+    return await buildEnhancedDualCommandContext(chatId, userMessage, conversationIntel);
+}
+
+/**
+ * 🔍 ANALYZE RAY DALIO CONTEXT NEEDS (LEGACY - REDIRECTS TO ENHANCED)
+ */
+function analyzeRayDalioContextNeeds(userMessage) {
+    console.log('⚠️ Legacy analyzeRayDalioContextNeeds called - redirecting to enhanced version');
+    return analyzeEnhancedContextNeeds(userMessage, {
+        type: 'economic_regime',
+        complexity: 'high',
+        primaryAI: 'CLAUDE_INTELLIGENCE'
+    });
+}
+
+/**
+ * 🔍 ANALYZE STRATEGIC CONTEXT WARFARE NEEDS (LEGACY - REDIRECTS TO ENHANCED)
+ */
+function analyzeStrategicContextNeeds(userMessage) {
+    console.log('⚠️ Legacy analyzeStrategicContextNeeds called - redirecting to enhanced version');
+    return analyzeEnhancedContextNeeds(userMessage, {
+        type: 'institutional_analysis',
+        complexity: 'maximum',
+        primaryAI: 'GPT_COMMANDER'
+    });
+}
+
 module.exports = {
-    // ⚡ STRATEGIC COMMANDER ENHANCED FUNCTIONS
-    buildStrategicCommanderContext,
-    analyzeStrategicContextNeeds,
-    getSmartContext,
+    // 🎯 ENHANCED DUAL AI SYSTEM FUNCTIONS (NEW)
+    buildEnhancedDualCommandContext,
+    getEnhancedSmartContext,
+    analyzeEnhancedContextNeeds,
+    optimizeContextForAI,
+    getContextAnalytics,
     
-    // 🏦 CAMBODIA STRATEGIC FUNCTIONS
-    buildCambodiaStrategicContext,
+    // 🔧 ENHANCED UTILITIES
+    getCurrentGlobalTimeContext,
+    buildBasicDualAIContext,
     
-    // 🔧 STRATEGIC UTILITIES
-    validateStrategicContext,
-    optimizeStrategicContext,
-    getStrategicContextMetrics,
-    getStrategicContextAnalytics,
-    
-    // 📊 STRATEGIC ASSESSMENT FUNCTIONS
+    // 📊 ENHANCED ASSESSMENT FUNCTIONS
     assessStrategicPositionRegimeRisk,
-    assessStrategicAccountRisk,
     buildStrategicRegimeContext,
     
-    // Legacy compatibility (redirects to strategic functions)
+    // 🏦 CAMBODIA STRATEGIC FUNCTIONS (ENHANCED)
+    buildCambodiaStrategicContext,
+    
+    // 💹 TRADING INTELLIGENCE FUNCTIONS (ENHANCED)
+    buildStrategicTradingIntelligence,
+    buildStrategicRegimeIntelligence,
+    buildStrategicMarketCycleContext,
+    
+    // 🔄 LEGACY COMPATIBILITY (REDIRECTS TO ENHANCED VERSIONS)
+    buildStrategicCommanderContext,
+    buildEnhancedContext,
+    getSmartContext,
     buildRayDalioContext,
     analyzeRayDalioContextNeeds,
+    analyzeStrategicContextNeeds,
     
-    // Original functions (preserved for compatibility)
-    buildEnhancedContext,
-    analyzeContextNeeds: analyzeStrategicContextNeeds
+    // Legacy aliases for backward compatibility
+    analyzeContextNeeds: analyzeEnhancedContextNeeds
 };
