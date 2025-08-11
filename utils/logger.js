@@ -48,8 +48,8 @@ async function handleGPTConversation(chatId, userMessage) {
         // Replace: console.log(`🧠 Adding ${conversationHistory.length} previous conversations to context`);
         logger.info(`🧠 Adding ${conversationHistory.length} previous conversations to context for user ${chatId}`);
         
-        // Replace: console.log(`📝 Sending ${messages.length} messages to GPT-4o (including ${conversationHistory.length} previous conversations)`);
-        logger.info(`📝 Sending ${messages.length} messages to GPT-4o (including ${conversationHistory.length} previous conversations) for user ${chatId}`);
+        // Replace: console.log(`📝 Sending ${messages.length} messages to gpt-5 (including ${conversationHistory.length} previous conversations)`);
+        logger.info(`📝 Sending ${messages.length} messages to gpt-5 (including ${conversationHistory.length} previous conversations) for user ${chatId}`);
         
         const completion = await openai.chat.completions.create({
             // ... your existing API call ...
@@ -79,9 +79,9 @@ async function handleGPTConversation(chatId, userMessage) {
 
 // ✅ In your server startup, replace console.log with:
 app.listen(PORT, '0.0.0.0', () => {
-    logger.success("✅ GPT-4o (Omni) API Service running on port " + PORT);
+    logger.success("✅ gpt-5 (Omni) API Service running on port " + PORT);
     logger.info("🧠 128K context | 4096 max tokens | Full multimodal capabilities");
-    logger.info("🎤 Voice: Whisper transcription | 🖼️ Images: GPT-4o Vision");
+    logger.info("🎤 Voice: Whisper transcription | 🖼️ Images: gpt-5 Vision");
     logger.info("📄 Documents: PDF, DOCX, TXT | 🎥 Videos: Content analysis");
     logger.info("📊 Live data: Crypto prices, Forex rates, Market times");
     logger.info("🔗 Direct API: http://localhost:" + PORT + "/analyze?q=your-question");
@@ -116,7 +116,7 @@ app.get('/logs', (req, res) => {
         if (fs.existsSync(logFile)) {
             const logs = fs.readFileSync(logFile, 'utf-8');
             res.json({
-                service: 'GPT-4o System Logs',
+                service: 'gpt-5 System Logs',
                 type: type,
                 date: date,
                 logs: logs.split('\n').slice(-50), // Last 50 lines
@@ -124,7 +124,7 @@ app.get('/logs', (req, res) => {
             });
         } else {
             res.json({
-                service: 'GPT-4o System Logs', 
+                service: 'gpt-5 System Logs', 
                 message: `No ${type} logs found for ${date}`,
                 available_types: ['info', 'success', 'warn', 'error', 'debug'],
                 timestamp: new Date().toISOString()
