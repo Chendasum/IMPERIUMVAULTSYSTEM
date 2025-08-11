@@ -6,7 +6,6 @@ console.log(`ADMIN_CHAT_ID: ${process.env.ADMIN_CHAT_ID}`);
 console.log(`TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? "SET" : "NOT SET"}`);
 console.log(`OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "SET" : "NOT SET"}`);
 console.log(`ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "SET" : "NOT SET"}`);
-console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
 
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
@@ -97,16 +96,10 @@ const openai = new OpenAI({
     maxRetries: 3
 });
 
-// ✅ Initialize Database Connection
+// Initialize Database
 initializeDatabase()
-    .then(() => {
-        console.log("✅ PostgreSQL database connected and tables initialized");
-    })
-    .catch((err) => {
-        console.error("❌ Database connection failed:", err.message);
-        console.log("⚠️ Falling back to in-memory storage");
-    });
-
+    .then(() => console.log("✅ Database connected"))
+    .catch((err) => console.log("⚠️ Database connection failed:", err.message));
 
 // User Authentication
 function isAuthorizedUser(chatId) {
@@ -764,17 +757,6 @@ app.get("/health", (req, res) => {
         features: ["Market Analysis", "Cambodia Fund", "Document Processing"]
     });
 });
-
-// Simple DB ping to verify connectivity
-app.get("/dbping", async (req, res) => {
-    try {
-        const stats = await getDatabaseStats();
-        res.status(200).json({ ok: true, stats });
-    } catch (e) {
-        res.status(500).json({ ok: false, error: e.message });
-    }
-});
-
 
 // API endpoints
 app.get("/analyze", async (req, res) => {
