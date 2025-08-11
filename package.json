@@ -1,8 +1,8 @@
 {
     "name": "imperium-vault-system-strategic-dual-command",
-    "version": "4.1.0",
+    "version": "5.0.0",
     "private": true,
-    "description": "Strategic Dual Command System - GPT-4o + Claude Opus 4.1 institutional intelligence capabilities",
+    "description": "Strategic Dual Command System - GPT-5 + Claude Opus 4.1 institutional intelligence capabilities",
     "main": "index.js",
     "scripts": {
         "start": "node index.js",
@@ -69,23 +69,28 @@
     "strategicDualCommand": {
         "aiCommanders": {
             "gptStrategicCommander": {
-                "model": "gpt-4o",
-                "apiModel": "gpt-4o",
-                "latestVersion": "gpt-4o-2024-11-20",
+                "model": "gpt-5",
+                "apiModel": "gpt-5",
+                "latestVersion": "gpt-5-2025-08-07",
                 "specialties": [
-                    "Multimodal intelligence (text, vision, audio)",
-                    "Real-time financial analysis", 
-                    "Cambodia fund expertise",
-                    "Voice/image/document processing",
-                    "Strategic coding and automation"
+                    "Enhanced multimodal intelligence (text, vision, audio)",
+                    "Advanced real-time financial analysis", 
+                    "Superior Cambodia fund expertise",
+                    "Enhanced voice/image/document processing",
+                    "Strategic coding with improved capabilities",
+                    "Reduced hallucinations and improved reliability",
+                    "Better instruction following and reasoning"
                 ],
                 "capabilities": [
-                    "Strategic portfolio management",
-                    "Economic analysis with 128K context",
-                    "Risk assessment and allocation",
-                    "Advanced vision processing",
-                    "Audio transcription and TTS",
-                    "Institutional-grade reasoning"
+                    "Strategic portfolio management with enhanced accuracy",
+                    "Economic analysis with improved context understanding",
+                    "Advanced risk assessment and allocation",
+                    "Superior vision processing capabilities",
+                    "Enhanced audio transcription and TTS",
+                    "Institutional-grade reasoning with reduced errors",
+                    "Improved coding collaboration and debugging",
+                    "Better natural language understanding",
+                    "Enhanced health knowledge and analysis"
                 ]
             },
             "claudeIntelligenceChief": {
@@ -113,15 +118,24 @@
         },
         "modelVersioning": {
             "gpt": {
-                "primary": "gpt-4o",
-                "fallback": "gpt-4o-mini",
-                "latestUpdate": "2024-11-20",
-                "contextWindow": "128K tokens",
-                "maxOutput": "16,384 tokens",
+                "primary": "gpt-5",
+                "fallback": "gpt-5-mini",
+                "alternatives": ["gpt-5-nano", "gpt-5-pro"],
+                "latestUpdate": "2025-08-07",
+                "contextWindow": "Enhanced context handling",
+                "maxOutput": "Improved token limits",
                 "pricing": {
-                    "input": "$2.50 per 1M tokens",
-                    "output": "$10.00 per 1M tokens"
-                }
+                    "input": "Competitive pricing",
+                    "output": "Enhanced value"
+                },
+                "improvements": [
+                    "Faster response times",
+                    "Better reasoning capabilities",
+                    "Reduced hallucinations",
+                    "Enhanced coding performance",
+                    "Improved instruction following",
+                    "Better multimodal understanding"
+                ]
             },
             "claude": {
                 "primary": "claude-opus-4-1-20250805",
@@ -143,12 +157,20 @@
             "Understand the machine",
             "Superior AI reasoning for strategic advantage",
             "Live intelligence beats static knowledge",
-            "Extended thinking enables deeper insights"
+            "Extended thinking enables deeper insights",
+            "Enhanced AI capabilities drive better outcomes",
+            "Reliability and accuracy are paramount"
         ],
         "features": {
             "dualCommandSystem": true,
             "smartAIRouting": true,
             "naturalResponses": true,
+            "enhancedGPT5Capabilities": true,
+            "improvedReliability": true,
+            "betterInstructionFollowing": true,
+            "reducedHallucinations": true,
+            "enhancedCodingSupport": true,
+            "improvedHealthKnowledge": true,
             "extendedThinking": true,
             "toolUseDuringThinking": true,
             "realtimeIntelligence": true,
@@ -164,16 +186,18 @@
             "liveMarketData": true,
             "cambodiaFundAnalysis": true,
             "agenticTaskExecution": true,
-            "advancedCodingSupport": true
+            "advancedCodingSupport": true,
+            "enhancedDatabaseIntegration": true
         },
         "dataProviders": {
-            "openAI": "GPT-4o multimodal capabilities (text, vision, audio)",
+            "openAI": "GPT-5 enhanced multimodal capabilities (text, vision, audio) with improved reliability",
             "anthropic": "Claude Opus 4.1 superior reasoning with extended thinking",
             "newsAPI": "Financial news analysis",
             "metaAPI": "Live trading integration",
             "coinGecko": "Cryptocurrency data",
             "alphaVantage": "Stock market data",
-            "fred": "Economic indicators"
+            "fred": "Economic indicators",
+            "postgresql": "Enhanced database integration"
         },
         "riskManagement": {
             "maxRiskPerTrade": "2%",
@@ -183,22 +207,39 @@
             "regimeAwarePositioning": true,
             "dualAIValidation": true,
             "liveRiskMonitoring": true,
-            "extendedThinkingValidation": true
+            "extendedThinkingValidation": true,
+            "enhancedGPT5Validation": true,
+            "improvedAccuracyChecks": true
         },
         "apiEndpoints": {
-            "/analyze": "GPT-4o multimodal analysis",
+            "/analyze": "GPT-5 enhanced multimodal analysis",
             "/claude": "Claude Opus 4.1 extended reasoning", 
-            "/dual": "Dual command smart routing system",
+            "/dual": "Dual command smart routing system with GPT-5",
             "/claude-health": "Claude system health monitoring",
-            "/gpt-health": "GPT-4o system health monitoring",
+            "/gpt-health": "GPT-5 system health monitoring",
             "/system-status": "Complete system status overview",
-            "/natural-test": "Test natural AI responses"
+            "/natural-test": "Test natural AI responses with GPT-5",
+            "/analytics": "Master system analytics dashboard",
+            "/database": "Enhanced database statistics",
+            "/maintenance": "Database maintenance operations"
         },
         "testCommands": {
             "healthCheck": "npm run test",
             "claudeTest": "npm run claude-test",
-            "gptTest": "npm run gpt-test",
+            "gptTest": "npm run gpt-test (now tests GPT-5)",
             "naturalResponseTest": "node test/natural-response-test.js"
+        },
+        "gpt5Enhancements": {
+            "smarterReasoning": "Significant leap in intelligence over GPT-4o",
+            "fasterResponses": "Improved response times across all queries",
+            "betterCoding": "State-of-the-art coding capabilities (74.9% on SWE-bench)",
+            "reducedHallucinations": "Meaningful reduction in false information",
+            "improvedInstructions": "Better instruction following and task completion",
+            "enhancedHealth": "Best model yet for health-related questions",
+            "betterWriting": "Enhanced writing skills with more depth and rhythm",
+            "improvedMath": "Superior mathematical reasoning and problem-solving",
+            "betterScience": "Enhanced scientific knowledge and analysis",
+            "naturalConversation": "Feels more like talking to a smart colleague"
         }
     },
     "repository": {
@@ -209,7 +250,7 @@
         "ai",
         "finance",
         "trading",
-        "gpt-4o",
+        "gpt-5",
         "claude-opus-4-1",
         "strategic-analysis",
         "portfolio-management",
@@ -217,7 +258,11 @@
         "dual-ai-system",
         "institutional-intelligence",
         "extended-thinking",
-        "multimodal-ai"
+        "multimodal-ai",
+        "enhanced-reasoning",
+        "improved-reliability",
+        "advanced-coding",
+        "database-integration"
     ],
     "devDependencies": {
         "nodemon": "^3.1.4",
