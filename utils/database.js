@@ -519,7 +519,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-    pool: databasePool,
     runDatabaseDiagnostic,
     fixDatabaseConnection,
     initializeDatabase,
