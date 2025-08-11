@@ -4,9 +4,7 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-/**
- * 🔍 COMPREHENSIVE DATABASE DIAGNOSTIC
- */
+// FIXED DATABASE CONNECTION CONFIGURATION
 const createDatabasePool = () => {
     if (!process.env.DATABASE_URL) {
         console.error('❌ DATABASE_URL not found in environment');
@@ -16,6 +14,17 @@ const createDatabasePool = () => {
 
     const pool = new Pool({
         connectionString: process.env.DATABASE_URL,
+
+/**
+ * 🔍 COMPREHENSIVE DATABASE DIAGNOSTIC
+ */
+async function runDatabaseDiagnostic() {
+    console.log('🔍 IMPERIUM VAULT DATABASE DIAGNOSTIC');
+    console.log('=' .repeat(50));
+    
+    // Step 1: Check environment variables
+    console.log('\n📋 STEP 1: Environment Variables Check');
+    const dbUrl = process.env.DATABASE_URL;
     
     if (!dbUrl) {
         console.log('❌ DATABASE_URL not found in environment');
