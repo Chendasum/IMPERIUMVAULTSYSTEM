@@ -2620,7 +2620,7 @@ async function getMasterEnhancedDualSystemAnalytics(chatId = null, days = 30) {
             dualAICapabilities: {
                 gptCommander: {
                     name: 'Strategic Commander Alpha',
-                    model: 'gpt-4o',
+                    model: 'gpt-5',
                     specialties: ['institutional_analysis', 'natural_conversation', 'multimodal', 'datetime_queries'],
                     performance: dualAIPerformance.dashboard?.aiComparison?.find(ai => ai.primary_ai === 'GPT_COMMANDER') || {}
                 },
