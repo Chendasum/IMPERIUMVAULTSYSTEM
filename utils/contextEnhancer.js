@@ -381,7 +381,7 @@ async function executeDualCommand(userMessage, chatId, messageType = 'text', has
         let context = null;
         if (queryAnalysis.complexity !== 'low') {
             try {
-                context = await buildStrategicCommanderContext(chatId, userMessage);
+                context = await buildConversationContext(chatId);
             } catch (contextError) {
                 console.log('⚠️ Context building failed, continuing without:', contextError.message);
             }
