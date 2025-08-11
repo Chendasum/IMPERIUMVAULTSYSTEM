@@ -1,4 +1,4 @@
-// utils/openaiClient.js - Clean OpenAI Client with Natural GPT-4o Responses
+// utils/openaiClient.js - Clean OpenAI Client with Natural GPT-5 Responses
 require("dotenv").config();
 const { OpenAI } = require("openai");
 
@@ -12,7 +12,7 @@ const openai = new OpenAI({
 // Debug configuration
 console.log("🔧 OpenAI Client Configuration:");
 console.log(`   API Key: ${process.env.OPENAI_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
-console.log(`   Model: GPT-4o`);
+console.log(`   Model: GPT-5`);
 console.log(`   Timeout: 120 seconds`);
 
 /**
@@ -97,7 +97,7 @@ function analyzeQueryType(prompt) {
  * Create natural system prompt based on query type
  */
 function createSystemPrompt(queryType, options = {}) {
-    let systemPrompt = "You are GPT-4o, OpenAI's advanced AI assistant with strong capabilities in analysis and reasoning.";
+    let systemPrompt = "You are GPT-5, OpenAI's most advanced AI assistant with enhanced capabilities in analysis, reasoning, and problem-solving.";
     
     switch (queryType.type) {
         case 'casual':
@@ -136,11 +136,11 @@ function createSystemPrompt(queryType, options = {}) {
 }
 
 /**
- * Main GPT-4o analysis function
+ * Main GPT-5 analysis function
  */
 async function getGptAnalysis(prompt, options = {}) {
     try {
-        console.log('🔍 GPT-4o analyzing query...');
+        console.log('🔍 GPT-5 analyzing query...');
         
         // Analyze query type
         const queryType = analyzeQueryType(prompt);
@@ -151,7 +151,7 @@ async function getGptAnalysis(prompt, options = {}) {
         
         // Prepare request options
         const requestOptions = {
-            model: "gpt-4o",
+            model: "gpt-5",
             messages: [
                 {
                     role: "system",
@@ -173,14 +173,14 @@ async function getGptAnalysis(prompt, options = {}) {
         const completion = await openai.chat.completions.create(requestOptions);
         const response = completion.choices[0].message.content.trim();
         
-        console.log(`✅ GPT-4o analysis complete: ${queryType.type} (${response.length} chars, ${completion.usage?.total_tokens || 'unknown'} tokens)`);
+        console.log(`✅ GPT-5 analysis complete: ${queryType.type} (${response.length} chars, ${completion.usage?.total_tokens || 'unknown'} tokens)`);
         return response;
         
     } catch (error) {
-        console.error('❌ GPT-4o analysis error:', error.message);
+        console.error('❌ GPT-5 analysis error:', error.message);
         
         if (error.message.includes('model')) {
-            throw new Error(`GPT Model Error: ${error.message}. Verify GPT-4o access.`);
+            throw new Error(`GPT Model Error: ${error.message}. Verify GPT-5 access.`);
         } else if (error.message.includes('API key')) {
             throw new Error('GPT API Key Error: Check OPENAI_API_KEY environment variable.');
         } else if (error.message.includes('timeout')) {
@@ -207,7 +207,7 @@ async function getQuickReply(prompt, options = {}) {
 // Financial market analysis
 async function getMarketAnalysis(query, marketData = null, options = {}) {
     try {
-        console.log('📈 GPT-4o market analysis...');
+        console.log('📈 GPT-5 market analysis...');
         
         let enhancedQuery = `Market analysis request: ${query}`;
         
@@ -237,7 +237,7 @@ async function getMarketAnalysis(query, marketData = null, options = {}) {
 // Strategic business analysis
 async function getStrategicAnalysis(query, options = {}) {
     try {
-        console.log('🎯 GPT-4o strategic analysis...');
+        console.log('🎯 GPT-5 strategic analysis...');
         
         const strategicQuery = `Strategic business analysis: ${query}
         
@@ -262,7 +262,7 @@ Please provide comprehensive analysis including:
 // Cambodia market analysis
 async function getCambodiaAnalysis(dealQuery, dealData = null, options = {}) {
     try {
-        console.log('🇰🇭 GPT-4o Cambodia analysis...');
+        console.log('🇰🇭 GPT-5 Cambodia analysis...');
         
         let enhancedQuery = `Cambodia market analysis: ${dealQuery}`;
         
@@ -300,14 +300,14 @@ async function getCambodiaAnalysis(dealQuery, dealData = null, options = {}) {
 // Vision analysis for images
 async function getVisionAnalysis(base64Image, prompt, options = {}) {
     try {
-        console.log('🖼️ GPT-4o vision analysis...');
+        console.log('🖼️ GPT-5 vision analysis...');
         
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-5",
             messages: [
                 {
                     role: "system",
-                    content: "You are GPT-4o with vision capabilities. Analyze images thoroughly and provide detailed, accurate descriptions and insights."
+                    content: "You are GPT-5 with enhanced vision capabilities. Analyze images thoroughly and provide detailed, accurate descriptions and insights."
                 },
                 {
                     role: "user",
@@ -336,7 +336,7 @@ async function getVisionAnalysis(base64Image, prompt, options = {}) {
         console.error('❌ Vision analysis error:', error.message);
         
         if (error.message.includes('model')) {
-            throw new Error(`Vision Model Error: ${error.message}. Verify GPT-4o vision access.`);
+            throw new Error(`Vision Model Error: ${error.message}. Verify GPT-5 vision access.`);
         } else {
             throw new Error(`Vision Analysis Error: ${error.message}`);
         }
@@ -346,7 +346,7 @@ async function getVisionAnalysis(base64Image, prompt, options = {}) {
 // Audio transcription
 async function getAudioTranscription(audioFile, options = {}) {
     try {
-        console.log('🎤 GPT-4o audio transcription...');
+        console.log('🎤 GPT-5 audio transcription...');
         
         const transcription = await openai.audio.transcriptions.create({
             file: audioFile,
@@ -367,7 +367,7 @@ async function getAudioTranscription(audioFile, options = {}) {
 // Text-to-speech
 async function getTextToSpeech(text, options = {}) {
     try {
-        console.log('🗣️ GPT-4o text-to-speech...');
+        console.log('🗣️ GPT-5 text-to-speech...');
         
         const mp3 = await openai.audio.speech.create({
             model: "tts-1",
@@ -389,13 +389,13 @@ async function getTextToSpeech(text, options = {}) {
  * Test functions
  */
 
-// Test natural GPT-4o response
+// Test natural GPT-5 response
 async function testNaturalGPT() {
     try {
-        console.log('🔍 Testing natural GPT-4o response...');
+        console.log('🔍 Testing natural GPT-5 response...');
         
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-5",
             messages: [
                 {
                     role: "user",
@@ -407,7 +407,7 @@ async function testNaturalGPT() {
         });
         
         const response = completion.choices[0].message.content;
-        console.log('✅ Natural GPT-4o response:', response);
+        console.log('✅ Natural GPT-5 response:', response);
         return response;
         
     } catch (error) {
@@ -419,14 +419,14 @@ async function testNaturalGPT() {
 // Test connection
 async function testConnection() {
     try {
-        console.log('🔍 Testing GPT-4o connection...');
+        console.log('🔍 Testing GPT-5 connection...');
         
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-5",
             messages: [
                 {
                     role: "user",
-                    content: "Respond with 'GPT-4o connection successful' if you receive this."
+                    content: "Respond with 'GPT-5 connection successful' if you receive this."
                 }
             ],
             max_tokens: 50,
@@ -472,7 +472,7 @@ async function checkSystemHealth() {
     
     try {
         const response = await testNaturalGPT();
-        health.naturalResponses = response.includes('GPT-4o') && response.includes('vision');
+        health.naturalResponses = response.includes('GPT-5') && response.includes('vision');
     } catch (error) {
         health.errors.push(`Natural Response: ${error.message}`);
     }
@@ -488,7 +488,7 @@ async function checkSystemHealth() {
 // Get client metrics
 function getMetrics() {
     return {
-        model: "gpt-4o",
+        model: "gpt-5",
         apiKeyConfigured: !!process.env.OPENAI_API_KEY,
         maxTokens: 4096,
         timeout: 120000,
@@ -496,14 +496,16 @@ function getMetrics() {
         queryTypes: ['casual', 'financial', 'complex', 'cambodia', 'general'],
         naturalResponses: true,
         capabilities: [
-            'Natural language understanding',
-            'Financial analysis',
-            'Strategic planning',
-            'Vision analysis (images)',
+            'Enhanced natural language understanding',
+            'Advanced financial analysis',
+            'Strategic planning and reasoning',
+            'Enhanced vision analysis (images)',
             'Audio transcription',
             'Text-to-speech',
             'Cambodia market expertise',
-            'Multi-language support'
+            'Multi-language support',
+            'Improved coding capabilities',
+            'Reduced hallucinations'
         ],
         multimodal: {
             vision: true,
