@@ -4,17 +4,6 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// FIXED DATABASE CONNECTION CONFIGURATION
-const createDatabasePool = () => {
-    if (!process.env.DATABASE_URL) {
-        console.error('❌ DATABASE_URL not found in environment');
-        console.log('💡 Check your .env file or Railway environment variables');
-        return null;
-    }
-
-    const pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-
 /**
  * 🔍 COMPREHENSIVE DATABASE DIAGNOSTIC
  */
