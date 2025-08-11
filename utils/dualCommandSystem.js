@@ -16,7 +16,7 @@ const {
     checkClaudeSystemHealth
 } = require('./claudeClient');
 const { sendSmartResponse, cleanStrategicResponse } = require('./telegramSplitter');
-const { buildStrategicCommanderContext } = require('./contextEnhancer');
+const { buildConversationContext } = require('./memory');
 
 // 🌍 GLOBAL DATE/TIME UTILITIES WITH MULTI-TIMEZONE SUPPORT
 function getCurrentCambodiaDateTime() {
@@ -769,7 +769,7 @@ async function executeEnhancedDualCommand(userMessage, chatId, messageType = 'te
         let context = null;
         if (conversationIntel.complexity !== 'minimal' && conversationIntel.type !== 'simple_datetime') {
             try {
-                context = await buildStrategicCommanderContext(chatId, userMessage);
+                context = await buildConversationContext(chatId);
             } catch (contextError) {
                 console.log('⚠️ Context building failed, continuing without:', contextError.message);
             }
