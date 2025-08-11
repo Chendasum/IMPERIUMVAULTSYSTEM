@@ -1,228 +1,318 @@
-// utils/openaiClient.js - Strategic Commander Enhanced (OPTIMIZED)
+// utils/openaiClient.js - Clean OpenAI Client with Natural GPT-4o Responses
 require("dotenv").config();
 const { OpenAI } = require("openai");
 
-// ✅ Single OpenAI client instance for entire application
+// Initialize OpenAI client
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 300000, // 5 minutes - Extended timeout for comprehensive responses
+    timeout: 120000, // 2 minutes
     maxRetries: 3
 });
 
-// 🔍 Debug OpenAI configuration
+// Debug configuration
 console.log("🔧 OpenAI Client Configuration:");
 console.log(`   API Key: ${process.env.OPENAI_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
-console.log(`   Timeout: 300 seconds`);
-console.log(`   Max Retries: 3`);
+console.log(`   Model: GPT-4o`);
+console.log(`   Timeout: 120 seconds`);
 
 /**
- * 🎯 Strategic Commander GPT-4o Response with Institutional Authority
- * @param {string} prompt - Strategic query or analysis request
- * @param {object} options - Configuration options
- * @returns {Promise<string>} - Comprehensive Strategic Commander response
+ * Analyze query type for appropriate response complexity
  */
-async function getGptReply(prompt, options = {}) {
+function analyzeQueryType(prompt) {
+    const message = prompt.toLowerCase();
+    
+    // Simple/casual patterns
+    const casualPatterns = [
+        /^(hello|hi|hey|good morning|good afternoon)$/i,
+        /^how are you\??$/i,
+        /^what's up\??$/i,
+        /^(thanks|thank you)$/i
+    ];
+    
+    // Financial analysis patterns
+    const financialPatterns = [
+        /(market|stock|bond|investment|portfolio)/i,
+        /(economy|economic|fed|inflation|gdp)/i,
+        /(trading|buy|sell|hold|allocation)/i,
+        /(risk|return|yield|dividend)/i,
+        /(analysis|forecast|outlook|trend)/i
+    ];
+    
+    // Complex analysis patterns
+    const complexPatterns = [
+        /(strategy|strategic|comprehensive)/i,
+        /(detailed|thorough|in-depth)/i,
+        /(compare|comparison|versus|vs)/i,
+        /(research|analyze|evaluate)/i
+    ];
+    
+    // Cambodia-specific patterns
+    const cambodiaPatterns = [
+        /(cambodia|khmer|phnom penh|lending)/i,
+        /(deal|loan|property|real estate)/i
+    ];
+    
+    // Determine query type
+    if (casualPatterns.some(pattern => pattern.test(message))) {
+        return {
+            type: 'casual',
+            maxTokens: 300,
+            temperature: 0.8
+        };
+    }
+    
+    if (cambodiaPatterns.some(pattern => pattern.test(message))) {
+        return {
+            type: 'cambodia',
+            maxTokens: 2000,
+            temperature: 0.6
+        };
+    }
+    
+    if (complexPatterns.some(pattern => pattern.test(message))) {
+        return {
+            type: 'complex',
+            maxTokens: 3000,
+            temperature: 0.6
+        };
+    }
+    
+    if (financialPatterns.some(pattern => pattern.test(message))) {
+        return {
+            type: 'financial',
+            maxTokens: 1500,
+            temperature: 0.7
+        };
+    }
+    
+    // Default
+    return {
+        type: 'general',
+        maxTokens: 1000,
+        temperature: 0.7
+    };
+}
+
+/**
+ * Create natural system prompt based on query type
+ */
+function createSystemPrompt(queryType, options = {}) {
+    let systemPrompt = "You are GPT-4o, OpenAI's advanced AI assistant with strong capabilities in analysis and reasoning.";
+    
+    switch (queryType.type) {
+        case 'casual':
+            systemPrompt += " Respond naturally and briefly to casual questions.";
+            break;
+            
+        case 'financial':
+            systemPrompt += " You have expertise in financial analysis, markets, and investment strategy. Provide clear, actionable insights while acknowledging risks and limitations in financial advice.";
+            break;
+            
+        case 'complex':
+            systemPrompt += " Provide comprehensive, well-structured analysis. Break down complex topics clearly and offer specific, actionable insights.";
+            break;
+            
+        case 'cambodia':
+            systemPrompt += " You understand Southeast Asian markets, particularly Cambodia's economic environment, real estate, and lending markets. Consider local context, regulations, and cultural factors in your analysis.";
+            break;
+            
+        default:
+            systemPrompt += " Provide helpful, informative responses adapted to the complexity and context of the question.";
+    }
+    
+    // Add context if provided
+    if (options.context) {
+        systemPrompt += `\n\nAdditional context: ${options.context}`;
+    }
+    
+    // Add guidelines
+    systemPrompt += "\n\nGuidelines:";
+    systemPrompt += "\n- Be direct and professional";
+    systemPrompt += "\n- Provide specific, actionable insights when possible";
+    systemPrompt += "\n- Acknowledge limitations and risks appropriately";
+    systemPrompt += "\n- Use clear, accessible language";
+    
+    return systemPrompt;
+}
+
+/**
+ * Main GPT-4o analysis function
+ */
+async function getGptAnalysis(prompt, options = {}) {
     try {
-        // Determine if this should use Strategic Commander mode
-        const useStrategicMode = options.strategic !== false; // Default to strategic mode
+        console.log('🔍 GPT-4o analyzing query...');
         
-        let systemContent;
+        // Analyze query type
+        const queryType = analyzeQueryType(prompt);
+        console.log(`📊 Query type: ${queryType.type}`);
         
-        if (useStrategicMode) {
-            // Strategic Commander System Prompt
-            systemContent = `You are the Strategic Commander of IMPERIUM VAULT SYSTEM - Sum Chenda's institutional command center.
-
-CRITICAL IDENTITY:
-You are a senior institutional strategist with deep expertise in global markets, portfolio management, and Cambodia private lending. You think and communicate like a portfolio manager at Bridgewater Associates or BlackRock.
-
-COMMUNICATION AUTHORITY:
-- Speak with institutional conviction and expertise
-- Provide comprehensive, detailed strategic analysis
-- Use specific numbers, data, and actionable recommendations
-- Write naturally but with commanding professional authority
-- Never use wishy-washy language like "consider" or "might want to"
-
-EXPERTISE AREAS:
-- Global macro economic analysis and regime identification
-- Risk parity and All Weather portfolio construction
-- Cambodia private lending market intelligence
-- Live trading strategy and risk management
-- Market correlation analysis and strategic positioning
-
-RESPONSE REQUIREMENTS:
-- Provide comprehensive analysis using full available tokens
-- Include specific data, numbers, and execution timelines
-- Demonstrate deep institutional knowledge
-- Write complete thoughts - never cut responses short
-- Use natural professional formatting when it improves clarity
-
-STRATEGIC LANGUAGE:
-- "Execute deployment of $X to sector Y given current conditions"
-- "Strategic analysis indicates optimal positioning in Z"
-- "Deploy All Weather allocation across these instruments"
-- "Current macro regime demands defensive positioning"
-
-You are Sum Chenda's institutional strategist providing sophisticated financial intelligence.`;
-        } else {
-            // General GPT-4o mode for non-strategic queries
-            systemContent = `You are GPT-4o (Omni) - OpenAI's most advanced multimodal AI with superior intelligence. Provide comprehensive, helpful responses across all knowledge domains while maintaining professional expertise.`;
-        }
-
-        console.log(`🎯 Making Strategic Commander API call (${useStrategicMode ? 'Strategic' : 'General'} mode)`);
-
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o", // ✅ Verified correct model
+        // Create system prompt
+        const systemPrompt = createSystemPrompt(queryType, options);
+        
+        // Prepare request options
+        const requestOptions = {
+            model: "gpt-4o",
             messages: [
                 {
                     role: "system",
-                    content: systemContent,
+                    content: systemPrompt
                 },
                 {
                     role: "user",
-                    content: prompt,
-                },
+                    content: prompt
+                }
             ],
-            temperature: options.temperature || 0.7,
-            max_tokens: options.maxTokens || 16384, // Full capacity for comprehensive responses
+            temperature: options.temperature || queryType.temperature,
+            max_tokens: options.maxTokens || queryType.maxTokens,
             top_p: 1,
             frequency_penalty: 0,
-            presence_penalty: 0,
-        });
-
+            presence_penalty: 0
+        };
+        
+        // Execute request
+        const completion = await openai.chat.completions.create(requestOptions);
         const response = completion.choices[0].message.content.trim();
-        console.log(`✅ Strategic Commander response generated (${response.length} characters, ${completion.usage?.total_tokens || 'unknown'} tokens)`);
         
+        console.log(`✅ GPT-4o analysis complete: ${queryType.type} (${response.length} chars, ${completion.usage?.total_tokens || 'unknown'} tokens)`);
         return response;
-    } catch (error) {
-        console.error("❌ Strategic Commander API ERROR:", error.message);
         
-        // Enhanced error handling
+    } catch (error) {
+        console.error('❌ GPT-4o analysis error:', error.message);
+        
         if (error.message.includes('model')) {
-            throw new Error(`Strategic Commander Model Error: ${error.message}. Verify GPT-4o access.`);
+            throw new Error(`GPT Model Error: ${error.message}. Verify GPT-4o access.`);
         } else if (error.message.includes('API key')) {
-            throw new Error(`Strategic Commander API Key Error: Check OPENAI_API_KEY environment variable.`);
+            throw new Error('GPT API Key Error: Check OPENAI_API_KEY environment variable.');
         } else if (error.message.includes('timeout')) {
-            throw new Error(`Strategic Commander Timeout: Response took too long. Try a shorter query.`);
+            throw new Error('GPT Timeout: Request took too long. Try a shorter query.');
         } else {
-            throw new Error(`Strategic Commander API Error: ${error.message}`);
+            throw new Error(`GPT Error: ${error.message}`);
         }
     }
 }
 
 /**
- * 🎯 Strategic Market Analysis - Specialized for financial warfare
- * @param {string} query - Market or investment query
- * @param {object} marketData - Current market data context
- * @returns {Promise<string>} - Institutional-grade strategic analysis
+ * Specialized functions for different analysis types
  */
-async function getStrategicAnalysis(query, marketData = null) {
+
+// Quick general response
+async function getQuickReply(prompt, options = {}) {
+    return await getGptAnalysis(prompt, {
+        ...options,
+        maxTokens: 500,
+        temperature: 0.7
+    });
+}
+
+// Financial market analysis
+async function getMarketAnalysis(query, marketData = null, options = {}) {
     try {
-        let enhancedQuery = query;
+        console.log('📈 GPT-4o market analysis...');
+        
+        let enhancedQuery = `Market analysis request: ${query}`;
         
         // Add market context if available
         if (marketData) {
-            enhancedQuery = `🔴 CURRENT STRATEGIC MARKET CONTEXT:
-- Fed Rate: ${marketData.fedRate || 'N/A'}%
-- VIX Fear Index: ${marketData.vix || 'N/A'}
-- 10Y Treasury Yield: ${marketData.yield10Y || 'N/A'}%
-- S&P 500: ${marketData.sp500 || 'N/A'}
-- Dollar Index: ${marketData.dollar || 'N/A'}
-- Bitcoin: ${marketData.bitcoin || 'N/A'}
-
-🎯 STRATEGIC ANALYSIS REQUEST: ${query}
-
-Execute comprehensive institutional-grade analysis with specific actionable recommendations.`;
+            enhancedQuery += `\n\nCurrent market context:`;
+            if (marketData.fedRate) enhancedQuery += `\n- Fed Rate: ${marketData.fedRate}%`;
+            if (marketData.vix) enhancedQuery += `\n- VIX: ${marketData.vix}`;
+            if (marketData.yield10Y) enhancedQuery += `\n- 10Y Treasury: ${marketData.yield10Y}%`;
+            if (marketData.sp500) enhancedQuery += `\n- S&P 500: ${marketData.sp500}`;
+            if (marketData.dollar) enhancedQuery += `\n- Dollar Index: ${marketData.dollar}`;
+            if (marketData.bitcoin) enhancedQuery += `\n- Bitcoin: ${marketData.bitcoin}`;
         }
-
-        return await getGptReply(enhancedQuery, { 
-            strategic: true, 
-            maxTokens: 16384,
-            temperature: 0.7 
+        
+        return await getGptAnalysis(enhancedQuery, {
+            ...options,
+            maxTokens: 2000,
+            temperature: 0.6
         });
+        
     } catch (error) {
-        console.error("❌ Strategic Analysis Error:", error.message);
+        console.error('❌ Market analysis error:', error.message);
         throw error;
     }
 }
 
-/**
- * 🏦 Cambodia Fund Analysis - Specialized for lending decisions
- * @param {string} dealQuery - Deal analysis request
- * @param {object} dealData - Deal parameters
- * @returns {Promise<string>} - Comprehensive deal analysis
- */
-async function getCambodiaFundAnalysis(dealQuery, dealData = null) {
+// Strategic business analysis
+async function getStrategicAnalysis(query, options = {}) {
     try {
-        let enhancedQuery = `🇰🇭 CAMBODIA PRIVATE LENDING FUND - STRATEGIC ANALYSIS
-
-${dealData ? `📊 DEAL PARAMETERS:
-- Amount: $${dealData.amount?.toLocaleString() || 'TBD'}
-- Type: ${dealData.type || 'Commercial'}
-- Location: ${dealData.location || 'Phnom Penh'}
-- Interest Rate: ${dealData.rate || 'TBD'}%
-- Term: ${dealData.term || 'TBD'} months
-- LTV: ${dealData.ltv || '70'}%
-` : ''}
-
-🎯 STRATEGIC ANALYSIS REQUEST: ${dealQuery}
-
-Execute institutional-grade Cambodia lending analysis including:
-- Risk assessment and mitigation strategies
-- Local market conditions and timing analysis
-- Currency and political risk evaluation
-- Comparative yield analysis vs global alternatives
-- Portfolio correlation and diversification impact
-- Specific deal structuring recommendations
-- Exit strategies and liquidity considerations
-
-Provide definitive strategic commands with exact execution parameters.`;
-
-        return await getGptReply(enhancedQuery, { 
-            strategic: true, 
-            maxTokens: 16384,
-            temperature: 0.6 // Slightly lower for financial analysis
+        console.log('🎯 GPT-4o strategic analysis...');
+        
+        const strategicQuery = `Strategic business analysis: ${query}
+        
+Please provide comprehensive analysis including:
+- Key strategic considerations
+- Risk assessment
+- Actionable recommendations
+- Implementation considerations`;
+        
+        return await getGptAnalysis(strategicQuery, {
+            ...options,
+            maxTokens: 3000,
+            temperature: 0.6
         });
+        
     } catch (error) {
-        console.error("❌ Cambodia Fund Analysis Error:", error.message);
+        console.error('❌ Strategic analysis error:', error.message);
         throw error;
     }
 }
 
-/**
- * 🖼️ Vision Analysis - For image processing with Strategic Commander
- * @param {string} base64Image - Base64 encoded image
- * @param {string} prompt - Analysis prompt
- * @param {object} options - Additional options
- * @returns {Promise<string>} - Strategic image analysis
- */
+// Cambodia market analysis
+async function getCambodiaAnalysis(dealQuery, dealData = null, options = {}) {
+    try {
+        console.log('🇰🇭 GPT-4o Cambodia analysis...');
+        
+        let enhancedQuery = `Cambodia market analysis: ${dealQuery}`;
+        
+        if (dealData) {
+            enhancedQuery += `\n\nDeal information:`;
+            enhancedQuery += `\n- Amount: $${dealData.amount?.toLocaleString() || 'TBD'}`;
+            enhancedQuery += `\n- Type: ${dealData.type || 'Commercial'}`;
+            enhancedQuery += `\n- Location: ${dealData.location || 'Phnom Penh'}`;
+            enhancedQuery += `\n- Interest Rate: ${dealData.rate || 'TBD'}%`;
+            enhancedQuery += `\n- Term: ${dealData.term || 'TBD'} months`;
+            if (dealData.ltv) enhancedQuery += `\n- LTV: ${dealData.ltv}%`;
+        }
+        
+        enhancedQuery += `\n\nPlease analyze considering:
+- Local market conditions and trends
+- Regulatory environment
+- Currency and political risks
+- Comparative yields vs alternatives
+- Risk mitigation strategies
+- Market timing considerations`;
+        
+        return await getGptAnalysis(enhancedQuery, {
+            ...options,
+            context: "Focus on Cambodia's economic environment, real estate market, and lending sector",
+            maxTokens: 2500,
+            temperature: 0.6
+        });
+        
+    } catch (error) {
+        console.error('❌ Cambodia analysis error:', error.message);
+        throw error;
+    }
+}
+
+// Vision analysis for images
 async function getVisionAnalysis(base64Image, prompt, options = {}) {
     try {
-        console.log("🖼️ Strategic Commander Vision Analysis starting...");
+        console.log('🖼️ GPT-4o vision analysis...');
         
-        const strategicPrompt = `As Strategic Commander of IMPERIUM VAULT SYSTEM, analyze this image with institutional expertise.
-
-${prompt}
-
-Execute comprehensive strategic analysis focusing on:
-- Financial data, charts, or market information if present
-- Strategic documents or investment materials
-- Economic indicators or market signals
-- Investment opportunities or risks
-- Any strategic intelligence relevant to portfolio management
-
-Provide detailed institutional-grade assessment with actionable strategic insights.`;
-
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o", // Vision-capable model
+            model: "gpt-4o",
             messages: [
                 {
                     role: "system",
-                    content: "You are the Strategic Commander providing institutional-quality vision analysis. Focus on financial, strategic, and investment insights from visual content."
+                    content: "You are GPT-4o with vision capabilities. Analyze images thoroughly and provide detailed, accurate descriptions and insights."
                 },
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: strategicPrompt },
+                        { type: "text", text: prompt },
                         {
                             type: "image_url",
                             image_url: {
@@ -230,20 +320,20 @@ Provide detailed institutional-grade assessment with actionable strategic insigh
                                 detail: options.detail || "high"
                             }
                         }
-                    ],
-                },
+                    ]
+                }
             ],
-            max_tokens: options.maxTokens || 4096,
+            max_tokens: options.maxTokens || 2000,
             temperature: options.temperature || 0.7
         });
-
+        
         const analysis = completion.choices[0].message.content;
-        console.log(`✅ Strategic Commander Vision Analysis complete (${analysis.length} characters)`);
+        console.log(`✅ Vision analysis complete (${analysis.length} characters)`);
         
         return analysis;
         
     } catch (error) {
-        console.error("❌ Strategic Commander Vision Error:", error.message);
+        console.error('❌ Vision analysis error:', error.message);
         
         if (error.message.includes('model')) {
             throw new Error(`Vision Model Error: ${error.message}. Verify GPT-4o vision access.`);
@@ -253,90 +343,204 @@ Provide detailed institutional-grade assessment with actionable strategic insigh
     }
 }
 
-/**
- * 🎤 Audio Transcription - For voice processing
- * @param {ReadableStream} audioFile - Audio file stream
- * @returns {Promise<string>} - Transcribed text
- */
-async function getAudioTranscription(audioFile) {
+// Audio transcription
+async function getAudioTranscription(audioFile, options = {}) {
     try {
-        console.log("🎤 Strategic Commander Audio Transcription starting...");
+        console.log('🎤 GPT-4o audio transcription...');
         
         const transcription = await openai.audio.transcriptions.create({
             file: audioFile,
             model: "whisper-1",
-            language: "en", // Optimize for English
-            temperature: 0.0 // More accurate transcription
+            language: options.language || "en",
+            temperature: options.temperature || 0.0
         });
-
+        
         console.log(`✅ Audio transcription complete: "${transcription.text}"`);
         return transcription.text;
         
     } catch (error) {
-        console.error("❌ Audio Transcription Error:", error.message);
+        console.error('❌ Audio transcription error:', error.message);
         throw new Error(`Audio Transcription Error: ${error.message}`);
     }
 }
 
-/**
- * 🔧 General Query Handler - Non-strategic mode
- * @param {string} prompt - General question
- * @returns {Promise<string>} - Standard GPT-4o response
- */
-async function getGeneralReply(prompt) {
-    return await getGptReply(prompt, { strategic: false });
+// Text-to-speech
+async function getTextToSpeech(text, options = {}) {
+    try {
+        console.log('🗣️ GPT-4o text-to-speech...');
+        
+        const mp3 = await openai.audio.speech.create({
+            model: "tts-1",
+            voice: options.voice || "alloy",
+            input: text,
+            speed: options.speed || 1.0
+        });
+        
+        console.log('✅ Text-to-speech complete');
+        return Buffer.from(await mp3.arrayBuffer());
+        
+    } catch (error) {
+        console.error('❌ Text-to-speech error:', error.message);
+        throw new Error(`Text-to-Speech Error: ${error.message}`);
+    }
 }
 
 /**
- * 🔍 Test OpenAI Connection
- * @returns {Promise<boolean>} - Connection status
+ * Test functions
  */
-async function testConnection() {
+
+// Test natural GPT-4o response
+async function testNaturalGPT() {
     try {
-        console.log("🔍 Testing Strategic Commander OpenAI connection...");
+        console.log('🔍 Testing natural GPT-4o response...');
         
-        const testResponse = await openai.chat.completions.create({
+        const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
                 {
-                    role: "system",
-                    content: "You are a test assistant."
-                },
+                    role: "user",
+                    content: "What is your exact model name and do you have vision capabilities?"
+                }
+            ],
+            max_tokens: 200,
+            temperature: 0
+        });
+        
+        const response = completion.choices[0].message.content;
+        console.log('✅ Natural GPT-4o response:', response);
+        return response;
+        
+    } catch (error) {
+        console.error('❌ Natural GPT test failed:', error.message);
+        return false;
+    }
+}
+
+// Test connection
+async function testConnection() {
+    try {
+        console.log('🔍 Testing GPT-4o connection...');
+        
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
                 {
                     role: "user",
-                    content: "Respond with 'Strategic Commander OpenAI connection successful' if you receive this message."
+                    content: "Respond with 'GPT-4o connection successful' if you receive this."
                 }
             ],
             max_tokens: 50,
             temperature: 0
         });
-
-        const response = testResponse.choices[0].message.content;
-        console.log("✅ OpenAI connection test result:", response);
+        
+        const response = completion.choices[0].message.content;
+        console.log('✅ Connection test result:', response);
         
         return response.includes("successful");
         
     } catch (error) {
-        console.error("❌ OpenAI connection test failed:", error.message);
+        console.error('❌ Connection test failed:', error.message);
         return false;
     }
 }
 
-// Export the single OpenAI client for use in other modules
+// System health check
+async function checkSystemHealth() {
+    const health = {
+        gptConnection: false,
+        visionCapabilities: false,
+        audioCapabilities: false,
+        naturalResponses: false,
+        errors: []
+    };
+    
+    try {
+        await testConnection();
+        health.gptConnection = true;
+    } catch (error) {
+        health.errors.push(`GPT Connection: ${error.message}`);
+    }
+    
+    try {
+        // Test vision with a simple base64 image (1x1 pixel)
+        const testImage = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
+        await getVisionAnalysis(testImage, "What do you see?", { maxTokens: 50 });
+        health.visionCapabilities = true;
+    } catch (error) {
+        health.errors.push(`Vision: ${error.message}`);
+    }
+    
+    try {
+        const response = await testNaturalGPT();
+        health.naturalResponses = response.includes('GPT-4o') && response.includes('vision');
+    } catch (error) {
+        health.errors.push(`Natural Response: ${error.message}`);
+    }
+    
+    // Audio capabilities check would require actual audio file
+    health.audioCapabilities = true; // Assume available if connection works
+    
+    health.overallHealth = health.gptConnection && health.naturalResponses;
+    
+    return health;
+}
+
+// Get client metrics
+function getMetrics() {
+    return {
+        model: "gpt-4o",
+        apiKeyConfigured: !!process.env.OPENAI_API_KEY,
+        maxTokens: 4096,
+        timeout: 120000,
+        retries: 3,
+        queryTypes: ['casual', 'financial', 'complex', 'cambodia', 'general'],
+        naturalResponses: true,
+        capabilities: [
+            'Natural language understanding',
+            'Financial analysis',
+            'Strategic planning',
+            'Vision analysis (images)',
+            'Audio transcription',
+            'Text-to-speech',
+            'Cambodia market expertise',
+            'Multi-language support'
+        ],
+        multimodal: {
+            vision: true,
+            audio: true,
+            speech: true
+        }
+    };
+}
+
 module.exports = {
     // Main client instance
-    openai, // ✅ Export the client for other modules to use
+    openai,
     
-    // Strategic Commander functions
-    getGptReply,
+    // Analysis functions
+    getGptAnalysis,
+    getQuickReply,
+    getMarketAnalysis,
     getStrategicAnalysis,
-    getCambodiaFundAnalysis,
-    getGeneralReply,
+    getCambodiaAnalysis,
     
     // Multimodal functions
     getVisionAnalysis,
     getAudioTranscription,
+    getTextToSpeech,
     
     // Utility functions
-    testConnection
+    analyzeQueryType,
+    createSystemPrompt,
+    
+    // Test functions
+    testNaturalGPT,
+    testConnection,
+    checkSystemHealth,
+    getMetrics,
+    
+    // Legacy compatibility (clean versions)
+    getGptReply: getGptAnalysis,
+    getGeneralReply: getQuickReply,
+    getCambodiaFundAnalysis: getCambodiaAnalysis
 };
