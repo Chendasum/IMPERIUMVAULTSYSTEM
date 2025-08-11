@@ -497,6 +497,5 @@ module.exports = {
     getDatabaseStats,
     runDatabaseDiagnostic,
     fixDatabaseConnection,
-    initializeDatabase,
-    generateRailwayFixes
+    generateRailwayFixes,
 };
