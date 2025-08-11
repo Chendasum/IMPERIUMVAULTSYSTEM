@@ -97,10 +97,8 @@ const openai = new OpenAI({
 
 // Initialize Database
 initializeDatabase()
-    .then(() => console.log("✅ PostgreSQL database connected and tables initialized")
-    .catch((err) => {
-        console.error("❌ Database connection failed:", err.message);
-        console.log("⚠️ Falling back to in-memory storage");
+    .then(() => console.log("✅ Database connected"))
+    .catch((err) => console.log("⚠️ Database connection failed:", err.message));
 
 // User Authentication
 function isAuthorizedUser(chatId) {
@@ -109,6 +107,17 @@ function isAuthorizedUser(chatId) {
         : [];
     return authorizedUsers.includes(parseInt(chatId));
 }
+
+// FIXED DATABASE CONNECTION CONFIGURATION
+const createDatabasePool = () => {
+    if (!process.env.DATABASE_URL) {
+        console.error('❌ DATABASE_URL not found in environment');
+        console.log('💡 Check your .env file or Railway environment variables');
+        return null;
+    }
+
+    const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
 
 // Comprehensive market data
 async function getComprehensiveMarketData() {
