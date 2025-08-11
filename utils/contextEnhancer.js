@@ -1,5 +1,5 @@
 // utils/contextEnhancer.js - Clean Dual AI System with Natural Responses
-// Smart routing between GPT-4o and Claude Opus 4.1 with live data integration
+// Smart routing between gpt-5 and Claude Opus 4.1 with live data integration
 
 const { getGptAnalysis, getMarketAnalysis, getCambodiaAnalysis } = require('./openaiClient');
 const { 
@@ -168,7 +168,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         return {
             type: 'multimodal',
             bestAI: 'gpt',
-            reason: 'GPT-4o has vision capabilities',
+            reason: 'gpt-5 has vision capabilities',
             complexity: 'medium',
             maxTokens: 2000,
             needsLiveData: false
@@ -278,10 +278,10 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
     };
 }
 
-// 🎯 EXECUTE GPT-4O ANALYSIS
+// 🎯 EXECUTE gpt-5 ANALYSIS
 async function executeGptAnalysis(userMessage, queryAnalysis, context = null) {
     try {
-        console.log('🔍 Executing GPT-4o analysis...');
+        console.log('🔍 Executing gpt-5 analysis...');
         
         // Handle simple date/time queries directly
         if (queryAnalysis.type === 'datetime') {
@@ -401,7 +401,7 @@ async function executeDualCommand(userMessage, chatId, messageType = 'text', has
             let finalResponse = '';
             
             if (gptResponse.status === 'fulfilled') {
-                finalResponse += `**GPT-4o Analysis:**\n${gptResponse.value}\n\n`;
+                finalResponse += `**gpt-5 Analysis:**\n${gptResponse.value}\n\n`;
             }
             
             if (claudeResponse.status === 'fulfilled') {
@@ -437,9 +437,9 @@ async function executeDualCommand(userMessage, chatId, messageType = 'text', has
     } catch (error) {
         console.error('❌ Dual command execution error:', error.message);
         
-        // Fallback to GPT-4o
+        // Fallback to gpt-5
         try {
-            console.log('🔄 Falling back to GPT-4o...');
+            console.log('🔄 Falling back to gpt-5...');
             
             const fallbackAnalysis = {
                 type: 'fallback',
@@ -477,13 +477,13 @@ async function checkSystemHealth() {
     };
     
     try {
-        // Test GPT-4o
+        // Test gpt-5
         await executeGptAnalysis('Hello', { type: 'casual', maxTokens: 100 });
         health.gptAnalysis = true;
-        console.log('✅ GPT-4o analysis operational');
+        console.log('✅ gpt-5 analysis operational');
     } catch (error) {
         health.errors.push(`GPT: ${error.message}`);
-        console.log('❌ GPT-4o analysis unavailable');
+        console.log('❌ gpt-5 analysis unavailable');
     }
     
     try {
@@ -580,7 +580,7 @@ function getSystemAnalytics() {
     return {
         version: '2.0 - Clean Natural Responses',
         aiModels: {
-            gpt: 'GPT-4o (multimodal, natural conversation)',
+            gpt: 'gpt-5 (multimodal, natural conversation)',
             claude: 'Claude Opus 4.1 (advanced reasoning, live data)'
         },
         capabilities: [
