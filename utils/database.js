@@ -7,13 +7,15 @@ require('dotenv').config();
 /**
  * 🔍 COMPREHENSIVE DATABASE DIAGNOSTIC
  */
-async function runDatabaseDiagnostic() {
-    console.log('🔍 IMPERIUM VAULT DATABASE DIAGNOSTIC');
-    console.log('=' .repeat(50));
-    
-    // Step 1: Check environment variables
-    console.log('\n📋 STEP 1: Environment Variables Check');
-    const dbUrl = process.env.DATABASE_URL;
+const createDatabasePool = () => {
+    if (!process.env.DATABASE_URL) {
+        console.error('❌ DATABASE_URL not found in environment');
+        console.log('💡 Check your .env file or Railway environment variables');
+        return null;
+    }
+
+    const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
     
     if (!dbUrl) {
         console.log('❌ DATABASE_URL not found in environment');
@@ -163,19 +165,22 @@ async function fixDatabaseConnection() {
         ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
         
         // Optimized connection settings
-        connectionTimeoutMillis: 15000,  // 15 seconds
-        idleTimeoutMillis: 60000,        // 1 minute
-        max: 10,                         // Max connections
-        min: 2,                          // Min connections
+        connectionTimeoutMillis: 30000,  // 30 seconds (was 5000)
+        idleTimeoutMillis: 30000,        // 30 seconds (was 30000)
+        max: 5,                          // Max 5 connections (was 20)
+        min: 1,                          // Min 1 connection
         
-        // Query timeouts
-        statement_timeout: 30000,        // 30 seconds
-        query_timeout: 30000,
+        // QUERY TIMEOUTS
+        statement_timeout: 60000,        // 60 seconds (was 30000)
+        query_timeout: 60000,           // 60 seconds (was 30000)
         
-        // Keepalive settings
+        // KEEPALIVE (important for Railway)
         keepAlive: true,
         keepAliveInitialDelayMillis: 10000,
-    };
+        
+        // RETRY SETTINGS
+        acquireTimeoutMillis: 30000,
+    });
     
     console.log('✅ Optimized connection configuration created');
     
@@ -183,20 +188,24 @@ async function fixDatabaseConnection() {
     
     // Add connection event handlers
     pool.on('connect', (client) => {
-        console.log('🔗 Database client connected');
+        console.log('✅ Database client connected to Railway PostgreSQL');
     });
-    
+
     pool.on('error', (err, client) => {
         console.error('❌ Database connection error:', err.message);
+        // Don't crash the app on connection errors
     });
-    
+
     pool.on('acquire', (client) => {
         console.log('📡 Database client acquired from pool');
     });
-    
+
     pool.on('remove', (client) => {
         console.log('🗑️ Database client removed from pool');
     });
+
+    return pool;
+};
     
     try {
         // Test the fixed connection
@@ -222,15 +231,30 @@ async function fixDatabaseConnection() {
     }
 }
 
+// CREATE THE POOL
+const databasePool = createDatabasePool();
+
 /**
  * 🏗️ INITIALIZE DATABASE SCHEMA
  */
-async function initializeDatabase(pool) {
+async function initializeDatabase() {
     try {
-        console.log('Creating core tables...');
+        if (!databasePool) {
+            console.error('❌ Database pool not available - check DATABASE_URL');
+            return false;
+        }
+
+        console.log('🚀 Initializing Strategic Command Database Schema...');
         
-        // Create essential tables only (minimal for testing)
-        await pool.query(`
+        // Test connection first
+        const client = await databasePool.connect();
+        const testResult = await client.query('SELECT NOW() as current_time');
+        console.log('✅ Database connection test successful:', testResult.rows[0].current_time);
+        client.release();
+        
+        // Create essential tables with simplified schema
+        await databasePool.query(`
+            -- Core conversations table
             CREATE TABLE IF NOT EXISTS conversations (
                 id SERIAL PRIMARY KEY,
                 chat_id VARCHAR(50) NOT NULL,
@@ -239,38 +263,149 @@ async function initializeDatabase(pool) {
                 message_type VARCHAR(20) DEFAULT 'text',
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 context_data JSONB,
-                strategic_importance VARCHAR(20) DEFAULT 'medium'
+                strategic_importance VARCHAR(20) DEFAULT 'medium',
+                response_time_ms INTEGER,
+                token_count INTEGER,
+                user_satisfaction SMALLINT CHECK (user_satisfaction >= 1 AND user_satisfaction <= 5)
             );
             
+            -- User profiles table
             CREATE TABLE IF NOT EXISTS user_profiles (
                 chat_id VARCHAR(50) PRIMARY KEY,
                 conversation_count INTEGER DEFAULT 0,
                 first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                preferences JSONB DEFAULT '{}'
+                preferences JSONB DEFAULT '{}',
+                strategic_profile JSONB DEFAULT '{}',
+                risk_tolerance VARCHAR(20) DEFAULT 'MODERATE',
+                communication_style VARCHAR(30) DEFAULT 'STRATEGIC',
+                timezone VARCHAR(50) DEFAULT 'UTC',
+                total_session_time INTEGER DEFAULT 0
             );
             
+            -- Persistent memories table
             CREATE TABLE IF NOT EXISTS persistent_memories (
                 id SERIAL PRIMARY KEY,
                 chat_id VARCHAR(50) NOT NULL,
                 fact TEXT NOT NULL,
                 importance VARCHAR(10) DEFAULT 'medium',
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                category VARCHAR(30) DEFAULT 'general',
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                access_count INTEGER DEFAULT 0,
+                last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                fact_hash VARCHAR(64),
+                source VARCHAR(20) DEFAULT 'conversation'
+            );
+            
+            -- Training documents table
+            CREATE TABLE IF NOT EXISTS training_documents (
+                id SERIAL PRIMARY KEY,
+                chat_id VARCHAR(50) NOT NULL,
+                file_name VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                document_type VARCHAR(50) DEFAULT 'general',
+                upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                word_count INTEGER,
+                summary TEXT,
+                file_size INTEGER,
+                file_hash VARCHAR(64),
+                processing_status VARCHAR(20) DEFAULT 'completed'
             );
         `);
         
-        // Create indexes
-        await pool.query(`
-            CREATE INDEX IF NOT EXISTS idx_conversations_chat_id ON conversations(chat_id);
-            CREATE INDEX IF NOT EXISTS idx_conversations_timestamp ON conversations(timestamp DESC);
-            CREATE INDEX IF NOT EXISTS idx_memories_chat_id ON persistent_memories(chat_id);
+        // Create essential indexes
+        await databasePool.query(`
+            CREATE INDEX IF NOT EXISTS idx_conversations_chat_id_time ON conversations(chat_id, timestamp DESC);
+            CREATE INDEX IF NOT EXISTS idx_memories_chat_id_category ON persistent_memories(chat_id, category);
+            CREATE INDEX IF NOT EXISTS idx_training_chat_id ON training_documents(chat_id);
         `);
         
-        console.log('✅ Database schema initialized');
+        console.log('✅ Strategic Command Database schema initialized successfully');
+        return true;
         
-    } catch (initError) {
-        console.error('❌ Database initialization failed:', initError.message);
-        throw initError;
+    } catch (error) {
+        console.error('❌ Database initialization error:', error.message);
+        console.error('Stack trace:', error.stack);
+        return false;
+    }
+}
+
+// Update your saveConversationDB function
+async function saveConversationDB(chatId, userMessage, gptResponse, messageType = 'text', contextData = null) {
+    try {
+        if (!databasePool) {
+            console.log('⚠️ Database not available, using fallback');
+            return false;
+        }
+
+        const startTime = Date.now();
+        
+        await databasePool.query(
+            `INSERT INTO conversations (chat_id, user_message, gpt_response, message_type, context_data, response_time_ms) 
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [chatId, userMessage, gptResponse, messageType, contextData, Date.now() - startTime]
+        );
+        
+        // Update user profile
+        await databasePool.query(`
+            INSERT INTO user_profiles (chat_id, conversation_count, last_seen) 
+            VALUES ($1, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT (chat_id) 
+            DO UPDATE SET 
+                conversation_count = user_profiles.conversation_count + 1,
+                last_seen = CURRENT_TIMESTAMP
+        `, [chatId]);
+        
+        console.log(`✅ Conversation saved to database for ${chatId}`);
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Save conversation error:', error.message);
+        return false;
+    }
+}
+
+// Update your getDatabaseStats function
+async function getDatabaseStats() {
+    try {
+        if (!databasePool) {
+            return {
+                totalUsers: 0,
+                totalConversations: 0,
+                totalMemories: 0,
+                totalDocuments: 0,
+                storage: 'Database Not Connected',
+                error: 'Database pool not available'
+            };
+        }
+
+        const [users, conversations, memories, documents] = await Promise.all([
+            databasePool.query('SELECT COUNT(DISTINCT chat_id) as count FROM user_profiles'),
+            databasePool.query('SELECT COUNT(*) as count FROM conversations'),
+            databasePool.query('SELECT COUNT(*) as count FROM persistent_memories'),
+            databasePool.query('SELECT COUNT(*) as count FROM training_documents')
+        ]);
+
+        return {
+            totalUsers: users.rows[0].count,
+            totalConversations: conversations.rows[0].count,
+            totalMemories: memories.rows[0].count,
+            totalDocuments: documents.rows[0].count,
+            storage: 'Railway PostgreSQL (Strategic Enhanced)',
+            connectionHealth: 'HEALTHY',
+            lastUpdated: new Date().toISOString()
+        };
+        
+    } catch (error) {
+        console.error('❌ Database stats error:', error.message);
+        return {
+            totalUsers: '0',
+            totalConversations: '0',
+            totalMemories: '0',
+            totalDocuments: '0',
+            storage: 'Database Error',
+            error: error.message
+        };
     }
 }
 
@@ -384,8 +519,11 @@ if (require.main === module) {
 }
 
 module.exports = {
+    pool: databasePool,
     runDatabaseDiagnostic,
     fixDatabaseConnection,
     initializeDatabase,
-    generateRailwayFixes
+    generateRailwayFixes,
+    saveConversationDB,
+    getDatabaseStats
 };
