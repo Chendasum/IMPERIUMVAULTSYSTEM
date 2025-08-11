@@ -154,15 +154,20 @@ async function runDatabaseDiagnostic() {
 /**
  * 🔧 FIX DATABASE CONNECTION ISSUES
  */
-async function fixDatabaseConnection() {
-    console.log('\n🔧 FIXING DATABASE CONNECTION...');
-    
-    // Create optimized pool configuration
-    const dbConfig = {
+const createDatabasePool = () => {
+    if (!process.env.DATABASE_URL) {
+        console.error('❌ DATABASE_URL not found in environment');
+        console.log('💡 Check your .env file or Railway environment variables');
+        return null;
+    }
+
+    const pool = new Pool({
         connectionString: process.env.DATABASE_URL,
+        
+        // RAILWAY OPTIMIZED SETTINGS
         ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
         
-        // Optimized connection settings
+        // CONNECTION TIMEOUTS (Railway-optimized)
         connectionTimeoutMillis: 30000,  // 30 seconds (was 5000)
         idleTimeoutMillis: 30000,        // 30 seconds (was 30000)
         max: 5,                          // Max 5 connections (was 20)
@@ -179,12 +184,8 @@ async function fixDatabaseConnection() {
         // RETRY SETTINGS
         acquireTimeoutMillis: 30000,
     });
-    
-    console.log('✅ Optimized connection configuration created');
-    
-    const pool = new Pool(dbConfig);
-    
-    // Add connection event handlers
+
+    // CONNECTION EVENT HANDLERS
     pool.on('connect', (client) => {
         console.log('✅ Database client connected to Railway PostgreSQL');
     });
@@ -204,37 +205,11 @@ async function fixDatabaseConnection() {
 
     return pool;
 };
-    
-    try {
-        // Test the fixed connection
-        console.log('🧪 Testing fixed connection...');
-        const client = await pool.connect();
-        const result = await client.query('SELECT NOW() as test_time');
-        
-        console.log('✅ Fixed connection works!');
-        console.log(`   Test time: ${result.rows[0].test_time}`);
-        
-        client.release();
-        
-        // Initialize database if needed
-        console.log('🏗️  Initializing database schema...');
-        await initializeDatabase(pool);
-        
-        return pool;
-        
-    } catch (error) {
-        console.error('❌ Fix failed:', error.message);
-        await pool.end();
-        return null;
-    }
-}
 
 // CREATE THE POOL
 const databasePool = createDatabasePool();
 
-/**
- * 🏗️ INITIALIZE DATABASE SCHEMA
- */
+// REPLACE YOUR EXISTING initializeDatabase() FUNCTION WITH THIS:
 async function initializeDatabase() {
     try {
         if (!databasePool) {
@@ -325,85 +300,6 @@ async function initializeDatabase() {
         console.error('❌ Database initialization error:', error.message);
         console.error('Stack trace:', error.stack);
         return false;
-    }
-}
-
-// Update your saveConversationDB function
-async function saveConversationDB(chatId, userMessage, gptResponse, messageType = 'text', contextData = null) {
-    try {
-        if (!databasePool) {
-            console.log('⚠️ Database not available, using fallback');
-            return false;
-        }
-
-        const startTime = Date.now();
-        
-        await databasePool.query(
-            `INSERT INTO conversations (chat_id, user_message, gpt_response, message_type, context_data, response_time_ms) 
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [chatId, userMessage, gptResponse, messageType, contextData, Date.now() - startTime]
-        );
-        
-        // Update user profile
-        await databasePool.query(`
-            INSERT INTO user_profiles (chat_id, conversation_count, last_seen) 
-            VALUES ($1, 1, CURRENT_TIMESTAMP)
-            ON CONFLICT (chat_id) 
-            DO UPDATE SET 
-                conversation_count = user_profiles.conversation_count + 1,
-                last_seen = CURRENT_TIMESTAMP
-        `, [chatId]);
-        
-        console.log(`✅ Conversation saved to database for ${chatId}`);
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Save conversation error:', error.message);
-        return false;
-    }
-}
-
-// Update your getDatabaseStats function
-async function getDatabaseStats() {
-    try {
-        if (!databasePool) {
-            return {
-                totalUsers: 0,
-                totalConversations: 0,
-                totalMemories: 0,
-                totalDocuments: 0,
-                storage: 'Database Not Connected',
-                error: 'Database pool not available'
-            };
-        }
-
-        const [users, conversations, memories, documents] = await Promise.all([
-            databasePool.query('SELECT COUNT(DISTINCT chat_id) as count FROM user_profiles'),
-            databasePool.query('SELECT COUNT(*) as count FROM conversations'),
-            databasePool.query('SELECT COUNT(*) as count FROM persistent_memories'),
-            databasePool.query('SELECT COUNT(*) as count FROM training_documents')
-        ]);
-
-        return {
-            totalUsers: users.rows[0].count,
-            totalConversations: conversations.rows[0].count,
-            totalMemories: memories.rows[0].count,
-            totalDocuments: documents.rows[0].count,
-            storage: 'Railway PostgreSQL (Strategic Enhanced)',
-            connectionHealth: 'HEALTHY',
-            lastUpdated: new Date().toISOString()
-        };
-        
-    } catch (error) {
-        console.error('❌ Database stats error:', error.message);
-        return {
-            totalUsers: '0',
-            totalConversations: '0',
-            totalMemories: '0',
-            totalDocuments: '0',
-            storage: 'Database Error',
-            error: error.message
-        };
     }
 }
 
@@ -511,16 +407,99 @@ async function main() {
     }
 }
 
+/ Update your saveConversationDB function
+async function saveConversationDB(chatId, userMessage, gptResponse, messageType = 'text', contextData = null) {
+    try {
+        if (!databasePool) {
+            console.log('⚠️ Database not available, using fallback');
+            return false;
+        }
+
+        const startTime = Date.now();
+        
+        await databasePool.query(
+            `INSERT INTO conversations (chat_id, user_message, gpt_response, message_type, context_data, response_time_ms) 
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [chatId, userMessage, gptResponse, messageType, contextData, Date.now() - startTime]
+        );
+        
+        // Update user profile
+        await databasePool.query(`
+            INSERT INTO user_profiles (chat_id, conversation_count, last_seen) 
+            VALUES ($1, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT (chat_id) 
+            DO UPDATE SET 
+                conversation_count = user_profiles.conversation_count + 1,
+                last_seen = CURRENT_TIMESTAMP
+        `, [chatId]);
+        
+        console.log(`✅ Conversation saved to database for ${chatId}`);
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Save conversation error:', error.message);
+        return false;
+    }
+}
+
+// Update your getDatabaseStats function
+async function getDatabaseStats() {
+    try {
+        if (!databasePool) {
+            return {
+                totalUsers: 0,
+                totalConversations: 0,
+                totalMemories: 0,
+                totalDocuments: 0,
+                storage: 'Database Not Connected',
+                error: 'Database pool not available'
+            };
+        }
+
+        const [users, conversations, memories, documents] = await Promise.all([
+            databasePool.query('SELECT COUNT(DISTINCT chat_id) as count FROM user_profiles'),
+            databasePool.query('SELECT COUNT(*) as count FROM conversations'),
+            databasePool.query('SELECT COUNT(*) as count FROM persistent_memories'),
+            databasePool.query('SELECT COUNT(*) as count FROM training_documents')
+        ]);
+
+        return {
+            totalUsers: users.rows[0].count,
+            totalConversations: conversations.rows[0].count,
+            totalMemories: memories.rows[0].count,
+            totalDocuments: documents.rows[0].count,
+            storage: 'Railway PostgreSQL (Strategic Enhanced)',
+            connectionHealth: 'HEALTHY',
+            lastUpdated: new Date().toISOString()
+        };
+        
+    } catch (error) {
+        console.error('❌ Database stats error:', error.message);
+        return {
+            totalUsers: '0',
+            totalConversations: '0',
+            totalMemories: '0',
+            totalDocuments: '0',
+            storage: 'Database Error',
+            error: error.message
+        };
+    }
+}
+
 // Run if called directly
 if (require.main === module) {
     main().catch(console.error);
 }
 
 module.exports = {
+        pool: databasePool,
+    
+    // Fixed functions
+    initializeDatabase,
+    saveConversationDB,
+    getDatabaseStats,
     runDatabaseDiagnostic,
     fixDatabaseConnection,
     initializeDatabase,
-    generateRailwayFixes,
-    saveConversationDB,
-    getDatabaseStats
+    generateRailwayFixes
 };
