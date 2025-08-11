@@ -1,24 +1,35 @@
-// utils/openaiClient.js - Clean OpenAI Client with Natural GPT-4o Responses
-require("dotenv").config();
-const { OpenAI } = require("openai");
+// utils/claudeClient.js - Clean Claude Client with Live Data Integration
+const { Anthropic } = require('@anthropic-ai/sdk');
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+// Import your live data system
+const {
+    getRayDalioMarketData,
+    detectEconomicRegime,
+    getYieldCurveAnalysis,
+    getCreditSpreadAnalysis,
+    getInflationExpectations,
+    getSectorRotationSignals,
+    getEnhancedLiveData,
+    detectMarketAnomalies,
+    generateMarketInsights
+} = require('./liveData');
+
+// Initialize Claude client
+const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
     timeout: 120000, // 2 minutes
     maxRetries: 3
 });
 
 // Debug configuration
-console.log("🔧 OpenAI Client Configuration:");
-console.log(`   API Key: ${process.env.OPENAI_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
-console.log(`   Model: GPT-4o`);
-console.log(`   Timeout: 120 seconds`);
+console.log("🔧 Claude Client Configuration:");
+console.log(`   API Key: ${process.env.ANTHROPIC_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
+console.log(`   Model: ${process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805'}`);
 
 /**
- * Analyze query type for appropriate response complexity
+ * Analyze conversation type for appropriate response complexity
  */
-function analyzeQueryType(prompt) {
+function analyzeConversationType(prompt) {
     const message = prompt.toLowerCase();
     
     // Simple/casual patterns
@@ -26,167 +37,284 @@ function analyzeQueryType(prompt) {
         /^(hello|hi|hey|good morning|good afternoon)$/i,
         /^how are you\??$/i,
         /^what's up\??$/i,
-        /^(thanks|thank you)$/i
+        /^(thanks|thank you)$/i,
+        /^(ok|okay|cool|great)$/i
     ];
     
-    // Financial analysis patterns
-    const financialPatterns = [
-        /(market|stock|bond|investment|portfolio)/i,
-        /(economy|economic|fed|inflation|gdp)/i,
-        /(trading|buy|sell|hold|allocation)/i,
-        /(risk|return|yield|dividend)/i,
-        /(analysis|forecast|outlook|trend)/i
+    // Quick financial queries
+    const quickPatterns = [
+        /what's the (price|rate|yield) of/i,
+        /should i (buy|sell|hold)/i,
+        /is (.*) a good (buy|investment)/i,
+        /what happened to/i,
+        /why did (.*) (rise|fall|crash|surge)/i,
+        /current (market|economic) conditions/i
     ];
     
     // Complex analysis patterns
     const complexPatterns = [
-        /(strategy|strategic|comprehensive)/i,
-        /(detailed|thorough|in-depth)/i,
-        /(compare|comparison|versus|vs)/i,
-        /(research|analyze|evaluate)/i
+        /(strategy|strategic|portfolio|allocation)/i,
+        /(regime|economic|macro|analysis)/i,
+        /(risk|diversification|correlation)/i,
+        /(cambodia|lending|fund|deal)/i,
+        /(forecast|outlook|prediction)/i,
+        /(comprehensive|detailed|thorough)/i,
+        /(research|analyze|investigate)/i
     ];
     
-    // Cambodia-specific patterns
-    const cambodiaPatterns = [
-        /(cambodia|khmer|phnom penh|lending)/i,
-        /(deal|loan|property|real estate)/i
+    // Market data patterns
+    const marketDataPatterns = [
+        /(yield curve|credit spread|inflation)/i,
+        /(fed rate|federal reserve|central bank)/i,
+        /(market regime|economic regime)/i,
+        /(sector rotation|vix|volatility)/i,
+        /(anomaly|crisis|bubble)/i
     ];
     
-    // Determine query type
+    // Determine response type
     if (casualPatterns.some(pattern => pattern.test(message))) {
         return {
             type: 'casual',
-            maxTokens: 300,
-            temperature: 0.8
+            maxTokens: 200,
+            temperature: 0.8,
+            needsLiveData: false
         };
     }
     
-    if (cambodiaPatterns.some(pattern => pattern.test(message))) {
+    if (marketDataPatterns.some(pattern => pattern.test(message))) {
         return {
-            type: 'cambodia',
+            type: 'market_data',
             maxTokens: 2000,
-            temperature: 0.6
+            temperature: 0.6,
+            needsLiveData: true,
+            dataType: 'comprehensive'
+        };
+    }
+    
+    if (quickPatterns.some(pattern => pattern.test(message))) {
+        return {
+            type: 'quick_analysis',
+            maxTokens: 800,
+            temperature: 0.7,
+            needsLiveData: true,
+            dataType: 'basic'
         };
     }
     
     if (complexPatterns.some(pattern => pattern.test(message))) {
         return {
-            type: 'complex',
+            type: 'detailed_analysis',
             maxTokens: 3000,
-            temperature: 0.6
-        };
-    }
-    
-    if (financialPatterns.some(pattern => pattern.test(message))) {
-        return {
-            type: 'financial',
-            maxTokens: 1500,
-            temperature: 0.7
+            temperature: 0.6,
+            needsLiveData: true,
+            dataType: 'comprehensive'
         };
     }
     
     // Default
     return {
-        type: 'general',
-        maxTokens: 1000,
-        temperature: 0.7
+        type: 'balanced',
+        maxTokens: 1200,
+        temperature: 0.7,
+        needsLiveData: true,
+        dataType: 'basic'
     };
 }
 
 /**
- * Create natural system prompt based on query type
+ * Fetch appropriate live data based on query type
  */
-function createSystemPrompt(queryType, options = {}) {
-    let systemPrompt = "You are GPT-4o, OpenAI's advanced AI assistant with strong capabilities in analysis and reasoning.";
+async function fetchLiveData(conversationType, query) {
+    try {
+        if (!conversationType.needsLiveData) {
+            return null;
+        }
+        
+        console.log(`📊 Fetching ${conversationType.dataType} market data...`);
+        
+        const queryLower = query.toLowerCase();
+        
+        if (conversationType.dataType === 'comprehensive') {
+            // Get comprehensive market data
+            const [marketData, regime, anomalies] = await Promise.allSettled([
+                getRayDalioMarketData(),
+                detectEconomicRegime(),
+                detectMarketAnomalies()
+            ]);
+            
+            return {
+                marketData: marketData.status === 'fulfilled' ? marketData.value : null,
+                regime: regime.status === 'fulfilled' ? regime.value : null,
+                anomalies: anomalies.status === 'fulfilled' ? anomalies.value : null,
+                type: 'comprehensive'
+            };
+            
+        } else if (queryLower.includes('yield') || queryLower.includes('curve')) {
+            const yieldData = await getYieldCurveAnalysis();
+            return { yieldCurve: yieldData, type: 'yield_curve' };
+            
+        } else if (queryLower.includes('credit') || queryLower.includes('spread')) {
+            const creditData = await getCreditSpreadAnalysis();
+            return { creditSpreads: creditData, type: 'credit_spreads' };
+            
+        } else if (queryLower.includes('regime')) {
+            const regimeData = await detectEconomicRegime();
+            return { regime: regimeData, type: 'regime' };
+            
+        } else {
+            // Basic market data
+            const basicData = await getEnhancedLiveData();
+            return { marketData: basicData, type: 'basic' };
+        }
+        
+    } catch (error) {
+        console.error('📊 Live data fetch error:', error.message);
+        return { error: error.message };
+    }
+}
+
+/**
+ * Create natural system prompt with live data context
+ */
+function createSystemPrompt(conversationType, liveData = null) {
+    let systemPrompt = "You are Claude, an AI assistant created by Anthropic. You help with financial analysis and strategic thinking.";
     
-    switch (queryType.type) {
+    // Add appropriate expertise context based on conversation type
+    switch (conversationType.type) {
         case 'casual':
             systemPrompt += " Respond naturally and briefly to casual questions.";
             break;
             
-        case 'financial':
-            systemPrompt += " You have expertise in financial analysis, markets, and investment strategy. Provide clear, actionable insights while acknowledging risks and limitations in financial advice.";
+        case 'quick_analysis':
+            systemPrompt += " Provide concise but insightful financial analysis. Be direct and actionable.";
             break;
             
-        case 'complex':
-            systemPrompt += " Provide comprehensive, well-structured analysis. Break down complex topics clearly and offer specific, actionable insights.";
+        case 'market_data':
+            systemPrompt += " You have access to real-time market data. Provide data-driven analysis with specific metrics and insights.";
             break;
             
-        case 'cambodia':
-            systemPrompt += " You understand Southeast Asian markets, particularly Cambodia's economic environment, real estate, and lending markets. Consider local context, regulations, and cultural factors in your analysis.";
+        case 'detailed_analysis':
+            systemPrompt += " Provide comprehensive strategic analysis. Use institutional-level thinking while remaining clear and actionable.";
             break;
             
         default:
-            systemPrompt += " Provide helpful, informative responses adapted to the complexity and context of the question.";
+            systemPrompt += " Provide helpful, informative responses adapted to the complexity of the question.";
     }
     
-    // Add context if provided
-    if (options.context) {
-        systemPrompt += `\n\nAdditional context: ${options.context}`;
+    // Add live data context if available
+    if (liveData && !liveData.error) {
+        systemPrompt += "\n\nCurrent market data available:\n" + formatLiveDataContext(liveData);
+        systemPrompt += "\n\nUse this current data to inform your analysis when relevant.";
     }
     
-    // Add guidelines
-    systemPrompt += "\n\nGuidelines:";
-    systemPrompt += "\n- Be direct and professional";
-    systemPrompt += "\n- Provide specific, actionable insights when possible";
-    systemPrompt += "\n- Acknowledge limitations and risks appropriately";
-    systemPrompt += "\n- Use clear, accessible language";
+    // Add general guidelines
+    systemPrompt += "\n\nGuidelines:\n";
+    systemPrompt += "- Be professional but conversational\n";
+    systemPrompt += "- Provide specific, actionable insights when possible\n";
+    systemPrompt += "- Acknowledge limitations and risks in financial analysis\n";
+    systemPrompt += "- Use clear, jargon-free explanations\n";
     
     return systemPrompt;
 }
 
 /**
- * Main GPT-4o analysis function
+ * Format live data for system prompt context
  */
-async function getGptAnalysis(prompt, options = {}) {
-    try {
-        console.log('🔍 GPT-4o analyzing query...');
+function formatLiveDataContext(liveData) {
+    let context = "";
+    
+    if (liveData.type === 'comprehensive') {
+        if (liveData.regime?.currentRegime) {
+            const regime = liveData.regime.currentRegime;
+            context += `Economic Regime: ${regime.name}\n`;
+            context += `Growth: ${regime.growth}, Inflation: ${regime.inflation}\n`;
+        }
         
-        // Analyze query type
-        const queryType = analyzeQueryType(prompt);
-        console.log(`📊 Query type: ${queryType.type}`);
+        if (liveData.marketData?.economics) {
+            const econ = liveData.marketData.economics;
+            if (econ.fedRate) context += `Fed Rate: ${econ.fedRate.value}%\n`;
+            if (econ.inflation) context += `Inflation: ${econ.inflation.value}%\n`;
+            if (econ.unemployment) context += `Unemployment: ${econ.unemployment.value}%\n`;
+        }
+        
+        if (liveData.anomalies?.anomalies?.length > 0) {
+            context += `Market Anomalies: ${liveData.anomalies.anomalies.length} detected\n`;
+        }
+        
+    } else if (liveData.yieldCurve) {
+        context += `Yield Curve: ${liveData.yieldCurve.shape} (${liveData.yieldCurve.signal})\n`;
+        
+    } else if (liveData.creditSpreads) {
+        context += `Credit Conditions: ${liveData.creditSpreads.conditions}\n`;
+        
+    } else if (liveData.regime) {
+        context += `Economic Regime: ${liveData.regime.currentRegime?.name || 'Unknown'}\n`;
+        
+    } else if (liveData.marketData) {
+        const data = liveData.marketData;
+        if (data.economics?.fedRate) {
+            context += `Fed Rate: ${data.economics.fedRate.value}%\n`;
+        }
+        if (data.crypto?.bitcoin) {
+            context += `Bitcoin: $${data.crypto.bitcoin.usd?.toLocaleString()}\n`;
+        }
+    }
+    
+    return context.trim() || "Market data processing...";
+}
+
+/**
+ * Main Claude analysis function
+ */
+async function getClaudeAnalysis(prompt, options = {}) {
+    try {
+        console.log('🔍 Claude analyzing query...');
+        
+        // Analyze conversation type
+        const conversationType = analyzeConversationType(prompt);
+        console.log(`📊 Conversation type: ${conversationType.type}`);
+        
+        // Fetch live data if needed
+        let liveData = null;
+        if (conversationType.needsLiveData && !options.skipLiveData) {
+            liveData = await fetchLiveData(conversationType, prompt);
+        }
         
         // Create system prompt
-        const systemPrompt = createSystemPrompt(queryType, options);
+        const systemPrompt = createSystemPrompt(conversationType, liveData);
         
-        // Prepare request options
-        const requestOptions = {
-            model: "gpt-4o",
+        // Prepare final options
+        const finalOptions = {
+            model: options.model || process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805',
+            max_tokens: options.maxTokens || conversationType.maxTokens,
+            temperature: options.temperature || conversationType.temperature,
+            system: systemPrompt,
             messages: [
                 {
-                    role: "system",
-                    content: systemPrompt
-                },
-                {
-                    role: "user",
+                    role: 'user',
                     content: prompt
                 }
-            ],
-            temperature: options.temperature || queryType.temperature,
-            max_tokens: options.maxTokens || queryType.maxTokens,
-            top_p: 1,
-            frequency_penalty: 0,
-            presence_penalty: 0
+            ]
         };
         
-        // Execute request
-        const completion = await openai.chat.completions.create(requestOptions);
-        const response = completion.choices[0].message.content.trim();
+        // Execute Claude request
+        const message = await anthropic.messages.create(finalOptions);
+        const response = message.content[0].text;
         
-        console.log(`✅ GPT-4o analysis complete: ${queryType.type} (${response.length} chars, ${completion.usage?.total_tokens || 'unknown'} tokens)`);
+        console.log(`✅ Claude analysis complete: ${conversationType.type} (${response.length} chars)`);
         return response;
         
     } catch (error) {
-        console.error('❌ GPT-4o analysis error:', error.message);
+        console.error('❌ Claude analysis error:', error.message);
         
-        if (error.message.includes('model')) {
-            throw new Error(`GPT Model Error: ${error.message}. Verify GPT-4o access.`);
-        } else if (error.message.includes('API key')) {
-            throw new Error('GPT API Key Error: Check OPENAI_API_KEY environment variable.');
+        if (error.message.includes('api_key')) {
+            throw new Error('Claude API Key Error: Check ANTHROPIC_API_KEY environment variable.');
+        } else if (error.message.includes('rate_limit')) {
+            throw new Error('Claude Rate Limit: Request rate exceeded. Please wait.');
         } else if (error.message.includes('timeout')) {
-            throw new Error('GPT Timeout: Request took too long. Try a shorter query.');
+            throw new Error('Claude Timeout: Request took too long. Try a shorter query.');
         } else {
-            throw new Error(`GPT Error: ${error.message}`);
+            throw new Error(`Claude Error: ${error.message}`);
         }
     }
 }
@@ -195,100 +323,107 @@ async function getGptAnalysis(prompt, options = {}) {
  * Specialized functions for different analysis types
  */
 
-// Quick general response
-async function getQuickReply(prompt, options = {}) {
-    return await getGptAnalysis(prompt, {
+// Quick market analysis with basic live data
+async function getQuickMarketAnalysis(query, options = {}) {
+    return await getClaudeAnalysis(query, {
         ...options,
-        maxTokens: 500,
+        maxTokens: 800,
         temperature: 0.7
     });
 }
 
-// Financial market analysis
-async function getMarketAnalysis(query, marketData = null, options = {}) {
+// Comprehensive strategic analysis with full live data
+async function getStrategicAnalysis(query, options = {}) {
+    return await getClaudeAnalysis(query, {
+        ...options,
+        maxTokens: 3000,
+        temperature: 0.6
+    });
+}
+
+// Market regime analysis
+async function getRegimeAnalysis(query, options = {}) {
     try {
-        console.log('📈 GPT-4o market analysis...');
+        console.log('📊 Claude regime analysis...');
         
-        let enhancedQuery = `Market analysis request: ${query}`;
+        const [regimeData, yieldCurve] = await Promise.allSettled([
+            detectEconomicRegime(),
+            getYieldCurveAnalysis()
+        ]);
         
-        // Add market context if available
-        if (marketData) {
-            enhancedQuery += `\n\nCurrent market context:`;
-            if (marketData.fedRate) enhancedQuery += `\n- Fed Rate: ${marketData.fedRate}%`;
-            if (marketData.vix) enhancedQuery += `\n- VIX: ${marketData.vix}`;
-            if (marketData.yield10Y) enhancedQuery += `\n- 10Y Treasury: ${marketData.yield10Y}%`;
-            if (marketData.sp500) enhancedQuery += `\n- S&P 500: ${marketData.sp500}`;
-            if (marketData.dollar) enhancedQuery += `\n- Dollar Index: ${marketData.dollar}`;
-            if (marketData.bitcoin) enhancedQuery += `\n- Bitcoin: ${marketData.bitcoin}`;
+        let enhancedQuery = `Economic regime analysis: ${query}`;
+        
+        if (regimeData.status === 'fulfilled') {
+            const regime = regimeData.value.currentRegime;
+            enhancedQuery += `\n\nCurrent regime data: ${regime.name} - Growth: ${regime.growth}, Inflation: ${regime.inflation}`;
         }
         
-        return await getGptAnalysis(enhancedQuery, {
+        return await getClaudeAnalysis(enhancedQuery, {
             ...options,
-            maxTokens: 2000,
-            temperature: 0.6
+            skipLiveData: true,
+            maxTokens: 2000
         });
         
     } catch (error) {
-        console.error('❌ Market analysis error:', error.message);
+        console.error('❌ Regime analysis error:', error.message);
         throw error;
     }
 }
 
-// Strategic business analysis
-async function getStrategicAnalysis(query, options = {}) {
+// Portfolio optimization
+async function getPortfolioAnalysis(query, portfolioData = null, options = {}) {
     try {
-        console.log('🎯 GPT-4o strategic analysis...');
+        console.log('💎 Claude portfolio analysis...');
         
-        const strategicQuery = `Strategic business analysis: ${query}
+        let enhancedQuery = `Portfolio analysis: ${query}`;
         
-Please provide comprehensive analysis including:
-- Key strategic considerations
-- Risk assessment
-- Actionable recommendations
-- Implementation considerations`;
+        if (portfolioData) {
+            enhancedQuery += `\n\nCurrent portfolio data:\n${JSON.stringify(portfolioData, null, 2)}`;
+        }
         
-        return await getGptAnalysis(strategicQuery, {
+        enhancedQuery += `\n\nProvide portfolio optimization recommendations considering current market conditions.`;
+        
+        return await getClaudeAnalysis(enhancedQuery, {
             ...options,
             maxTokens: 3000,
-            temperature: 0.6
+            temperature: 0.5
         });
         
     } catch (error) {
-        console.error('❌ Strategic analysis error:', error.message);
+        console.error('❌ Portfolio analysis error:', error.message);
         throw error;
     }
 }
 
 // Cambodia market analysis
-async function getCambodiaAnalysis(dealQuery, dealData = null, options = {}) {
+async function getCambodiaAnalysis(query, dealData = null, options = {}) {
     try {
-        console.log('🇰🇭 GPT-4o Cambodia analysis...');
+        console.log('🇰🇭 Claude Cambodia analysis...');
         
-        let enhancedQuery = `Cambodia market analysis: ${dealQuery}`;
+        let enhancedQuery = `Cambodia market analysis: ${query}`;
         
         if (dealData) {
-            enhancedQuery += `\n\nDeal information:`;
-            enhancedQuery += `\n- Amount: $${dealData.amount?.toLocaleString() || 'TBD'}`;
-            enhancedQuery += `\n- Type: ${dealData.type || 'Commercial'}`;
-            enhancedQuery += `\n- Location: ${dealData.location || 'Phnom Penh'}`;
-            enhancedQuery += `\n- Interest Rate: ${dealData.rate || 'TBD'}%`;
-            enhancedQuery += `\n- Term: ${dealData.term || 'TBD'} months`;
-            if (dealData.ltv) enhancedQuery += `\n- LTV: ${dealData.ltv}%`;
+            enhancedQuery += `\n\nDeal details:\n`;
+            enhancedQuery += `- Amount: $${dealData.amount?.toLocaleString() || 'TBD'}\n`;
+            enhancedQuery += `- Type: ${dealData.type || 'Commercial'}\n`;
+            enhancedQuery += `- Location: ${dealData.location || 'Phnom Penh'}\n`;
+            enhancedQuery += `- Rate: ${dealData.rate || 'TBD'}%\n`;
+            enhancedQuery += `- Term: ${dealData.term || 'TBD'} months`;
         }
         
-        enhancedQuery += `\n\nPlease analyze considering:
-- Local market conditions and trends
-- Regulatory environment
-- Currency and political risks
-- Comparative yields vs alternatives
-- Risk mitigation strategies
-- Market timing considerations`;
+        // Get basic global market context
+        try {
+            const basicData = await getEnhancedLiveData();
+            if (basicData.economics?.fedRate) {
+                enhancedQuery += `\n\nGlobal context: Fed Rate at ${basicData.economics.fedRate.value}%`;
+            }
+        } catch (error) {
+            // Continue without global context
+        }
         
-        return await getGptAnalysis(enhancedQuery, {
+        return await getClaudeAnalysis(enhancedQuery, {
             ...options,
-            context: "Focus on Cambodia's economic environment, real estate market, and lending sector",
-            maxTokens: 2500,
-            temperature: 0.6
+            maxTokens: 2500
         });
         
     } catch (error) {
@@ -297,91 +432,33 @@ async function getCambodiaAnalysis(dealQuery, dealData = null, options = {}) {
     }
 }
 
-// Vision analysis for images
-async function getVisionAnalysis(base64Image, prompt, options = {}) {
+// Anomaly detection analysis
+async function getAnomalyAnalysis(query, options = {}) {
     try {
-        console.log('🖼️ GPT-4o vision analysis...');
+        console.log('🚨 Claude anomaly analysis...');
         
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                {
-                    role: "system",
-                    content: "You are GPT-4o with vision capabilities. Analyze images thoroughly and provide detailed, accurate descriptions and insights."
-                },
-                {
-                    role: "user",
-                    content: [
-                        { type: "text", text: prompt },
-                        {
-                            type: "image_url",
-                            image_url: {
-                                url: `data:image/jpeg;base64,${base64Image}`,
-                                detail: options.detail || "high"
-                            }
-                        }
-                    ]
-                }
-            ],
-            max_tokens: options.maxTokens || 2000,
-            temperature: options.temperature || 0.7
-        });
+        const anomalies = await detectMarketAnomalies();
         
-        const analysis = completion.choices[0].message.content;
-        console.log(`✅ Vision analysis complete (${analysis.length} characters)`);
+        let enhancedQuery = `Market anomaly analysis: ${query}`;
         
-        return analysis;
-        
-    } catch (error) {
-        console.error('❌ Vision analysis error:', error.message);
-        
-        if (error.message.includes('model')) {
-            throw new Error(`Vision Model Error: ${error.message}. Verify GPT-4o vision access.`);
+        if (anomalies.anomalies?.length > 0) {
+            enhancedQuery += `\n\nCurrent anomalies detected: ${anomalies.anomalies.length}`;
+            anomalies.anomalies.slice(0, 3).forEach((anomaly, index) => {
+                enhancedQuery += `\n${index + 1}. ${anomaly.type}: ${anomaly.description}`;
+            });
         } else {
-            throw new Error(`Vision Analysis Error: ${error.message}`);
+            enhancedQuery += `\n\nNo significant market anomalies currently detected.`;
         }
-    }
-}
-
-// Audio transcription
-async function getAudioTranscription(audioFile, options = {}) {
-    try {
-        console.log('🎤 GPT-4o audio transcription...');
         
-        const transcription = await openai.audio.transcriptions.create({
-            file: audioFile,
-            model: "whisper-1",
-            language: options.language || "en",
-            temperature: options.temperature || 0.0
+        return await getClaudeAnalysis(enhancedQuery, {
+            ...options,
+            skipLiveData: true,
+            maxTokens: 2000
         });
         
-        console.log(`✅ Audio transcription complete: "${transcription.text}"`);
-        return transcription.text;
-        
     } catch (error) {
-        console.error('❌ Audio transcription error:', error.message);
-        throw new Error(`Audio Transcription Error: ${error.message}`);
-    }
-}
-
-// Text-to-speech
-async function getTextToSpeech(text, options = {}) {
-    try {
-        console.log('🗣️ GPT-4o text-to-speech...');
-        
-        const mp3 = await openai.audio.speech.create({
-            model: "tts-1",
-            voice: options.voice || "alloy",
-            input: text,
-            speed: options.speed || 1.0
-        });
-        
-        console.log('✅ Text-to-speech complete');
-        return Buffer.from(await mp3.arrayBuffer());
-        
-    } catch (error) {
-        console.error('❌ Text-to-speech error:', error.message);
-        throw new Error(`Text-to-Speech Error: ${error.message}`);
+        console.error('❌ Anomaly analysis error:', error.message);
+        throw error;
     }
 }
 
@@ -389,29 +466,29 @@ async function getTextToSpeech(text, options = {}) {
  * Test functions
  */
 
-// Test natural GPT-4o response
-async function testNaturalGPT() {
+// Test natural Claude response
+async function testNaturalClaude() {
     try {
-        console.log('🔍 Testing natural GPT-4o response...');
+        console.log('🔍 Testing natural Claude response...');
         
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
+        const message = await anthropic.messages.create({
+            model: process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805',
+            max_tokens: 200,
             messages: [
                 {
-                    role: "user",
-                    content: "What is your exact model name and do you have vision capabilities?"
+                    role: 'user',
+                    content: 'What is your exact model name and who created you?'
                 }
-            ],
-            max_tokens: 200,
-            temperature: 0
+            ]
+            // No system prompt - pure Claude
         });
         
-        const response = completion.choices[0].message.content;
-        console.log('✅ Natural GPT-4o response:', response);
+        const response = message.content[0].text;
+        console.log('✅ Natural Claude response:', response);
         return response;
         
     } catch (error) {
-        console.error('❌ Natural GPT test failed:', error.message);
+        console.error('❌ Natural Claude test failed:', error.message);
         return false;
     }
 }
@@ -419,24 +496,11 @@ async function testNaturalGPT() {
 // Test connection
 async function testConnection() {
     try {
-        console.log('🔍 Testing GPT-4o connection...');
+        console.log('🔍 Testing Claude connection...');
         
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                {
-                    role: "user",
-                    content: "Respond with 'GPT-4o connection successful' if you receive this."
-                }
-            ],
-            max_tokens: 50,
-            temperature: 0
-        });
-        
-        const response = completion.choices[0].message.content;
-        console.log('✅ Connection test result:', response);
-        
-        return response.includes("successful");
+        const response = await getClaudeAnalysis('Hello, can you confirm you are working?');
+        console.log('✅ Connection test successful');
+        return true;
         
     } catch (error) {
         console.error('❌ Connection test failed:', error.message);
@@ -447,40 +511,34 @@ async function testConnection() {
 // System health check
 async function checkSystemHealth() {
     const health = {
-        gptConnection: false,
-        visionCapabilities: false,
-        audioCapabilities: false,
+        claudeConnection: false,
+        liveDataConnection: false,
         naturalResponses: false,
         errors: []
     };
     
     try {
         await testConnection();
-        health.gptConnection = true;
+        health.claudeConnection = true;
     } catch (error) {
-        health.errors.push(`GPT Connection: ${error.message}`);
+        health.errors.push(`Claude: ${error.message}`);
     }
     
     try {
-        // Test vision with a simple base64 image (1x1 pixel)
-        const testImage = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
-        await getVisionAnalysis(testImage, "What do you see?", { maxTokens: 50 });
-        health.visionCapabilities = true;
+        await getEnhancedLiveData();
+        health.liveDataConnection = true;
     } catch (error) {
-        health.errors.push(`Vision: ${error.message}`);
+        health.errors.push(`Live Data: ${error.message}`);
     }
     
     try {
-        const response = await testNaturalGPT();
-        health.naturalResponses = response.includes('GPT-4o') && response.includes('vision');
+        const response = await testNaturalClaude();
+        health.naturalResponses = response.includes('Claude') && response.includes('Anthropic');
     } catch (error) {
         health.errors.push(`Natural Response: ${error.message}`);
     }
     
-    // Audio capabilities check would require actual audio file
-    health.audioCapabilities = true; // Assume available if connection works
-    
-    health.overallHealth = health.gptConnection && health.naturalResponses;
+    health.overallHealth = health.claudeConnection && health.liveDataConnection && health.naturalResponses;
     
     return health;
 }
@@ -488,59 +546,49 @@ async function checkSystemHealth() {
 // Get client metrics
 function getMetrics() {
     return {
-        model: "gpt-4o",
-        apiKeyConfigured: !!process.env.OPENAI_API_KEY,
-        maxTokens: 4096,
+        model: process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805',
+        apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY,
+        maxTokens: 3000,
         timeout: 120000,
         retries: 3,
-        queryTypes: ['casual', 'financial', 'complex', 'cambodia', 'general'],
+        conversationTypes: ['casual', 'quick_analysis', 'market_data', 'detailed_analysis', 'balanced'],
+        liveDataIntegration: true,
         naturalResponses: true,
         capabilities: [
-            'Natural language understanding',
+            'Natural conversation',
             'Financial analysis',
-            'Strategic planning',
-            'Vision analysis (images)',
-            'Audio transcription',
-            'Text-to-speech',
+            'Live market data integration',
+            'Economic regime detection',
+            'Portfolio optimization',
             'Cambodia market expertise',
-            'Multi-language support'
-        ],
-        multimodal: {
-            vision: true,
-            audio: true,
-            speech: true
-        }
+            'Anomaly detection',
+            'Strategic planning'
+        ]
     };
 }
 
 module.exports = {
-    // Main client instance
-    openai,
-    
-    // Analysis functions
-    getGptAnalysis,
-    getQuickReply,
-    getMarketAnalysis,
+    // Main analysis functions
+    getClaudeAnalysis,
+    getQuickMarketAnalysis,
     getStrategicAnalysis,
+    getRegimeAnalysis,
+    getPortfolioAnalysis,
     getCambodiaAnalysis,
-    
-    // Multimodal functions
-    getVisionAnalysis,
-    getAudioTranscription,
-    getTextToSpeech,
+    getAnomalyAnalysis,
     
     // Utility functions
-    analyzeQueryType,
+    analyzeConversationType,
+    fetchLiveData,
     createSystemPrompt,
+    formatLiveDataContext,
     
     // Test functions
-    testNaturalGPT,
+    testNaturalClaude,
     testConnection,
     checkSystemHealth,
     getMetrics,
     
-    // Legacy compatibility (clean versions)
-    getGptReply: getGptAnalysis,
-    getGeneralReply: getQuickReply,
-    getCambodiaFundAnalysis: getCambodiaAnalysis
+    // Claude client instance
+    anthropic
 };
