@@ -492,9 +492,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-        pool: databasePool,
-    
-    // Fixed functions
+    pool: databasePool,
     initializeDatabase,
     saveConversationDB,
     getDatabaseStats,
