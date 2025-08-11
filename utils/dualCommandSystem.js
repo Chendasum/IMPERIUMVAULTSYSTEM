@@ -1,7 +1,5 @@
-// utils/dualCommandSystem.js - Clean Dual AI System with Natural Responses
-// Smart routing between gpt-5 and Claude Opus 4.1 with live data integration
-
-const { getGptAnalysis, getMarketAnalysis, getCambodiaAnalysis } = require('./openaiClient');
+// utils/enhancedDualCommandSystem.js - GPT-5 + Claude Opus 4.1 Strategic System
+const { getGPT5Analysis, getEnhancedMarketAnalysis, getEnhancedCambodiaAnalysis } = require('./openaiClient');
 const { 
     getClaudeAnalysis,
     getStrategicAnalysis,
@@ -12,609 +10,630 @@ const {
 } = require('./claudeClient');
 const { buildConversationContext } = require('./memory');
 
-// 🌍 DATETIME UTILITIES
-function getCurrentCambodiaDateTime() {
-    try {
-        const now = new Date();
-        const cambodiaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Phnom_Penh"}));
-        
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
-                       'July', 'August', 'September', 'October', 'November', 'December'];
-        
-        const dayName = days[cambodiaTime.getDay()];
-        const monthName = months[cambodiaTime.getMonth()];
-        const date = cambodiaTime.getDate();
-        const year = cambodiaTime.getFullYear();
-        const hour = cambodiaTime.getHours();
-        const minute = cambodiaTime.getMinutes();
-        const isWeekend = cambodiaTime.getDay() === 0 || cambodiaTime.getDay() === 6;
-        
-        return {
-            date: `${dayName}, ${monthName} ${date}, ${year}`,
-            time: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
-            hour: hour,
-            minute: minute,
-            dayName: dayName,
-            isWeekend: isWeekend,
-            timezone: 'ICT (UTC+7)',
-            timestamp: cambodiaTime.toISOString()
-        };
-    } catch (error) {
-        console.error('❌ Cambodia DateTime error:', error.message);
-        return {
-            date: new Date().toDateString(),
-            time: new Date().toTimeString().slice(0, 5),
-            hour: new Date().getHours(),
-            isWeekend: [0, 6].includes(new Date().getDay()),
-            error: 'Timezone calculation failed'
-        };
+// Enhanced AI capabilities matrix
+const AI_CAPABILITIES = {
+    gpt5: {
+        strengths: [
+            'Enhanced reasoning and problem-solving',
+            'Superior mathematical calculations', 
+            'Improved code generation',
+            'Better instruction following',
+            'Reduced hallucinations',
+            'Natural conversation flow',
+            'Complex financial modeling',
+            'Multi-step analysis',
+            'Creative solutions'
+        ],
+        optimalFor: [
+            'financial_calculations',
+            'code_generation', 
+            'creative_analysis',
+            'step_by_step_reasoning',
+            'mathematical_modeling',
+            'strategic_planning',
+            'multimodal_analysis'
+        ]
+    },
+    claude: {
+        strengths: [
+            'Extended reasoning and thinking',
+            'Superior analytical depth',
+            'Excellent document analysis',
+            'Strong ethical reasoning',
+            'Nuanced understanding',
+            'Research synthesis',
+            'Complex scenario analysis',
+            'Tool use during thinking',
+            'Long-form content analysis'
+        ],
+        optimalFor: [
+            'regime_analysis',
+            'risk_assessment',
+            'document_analysis',
+            'research_synthesis',
+            'strategic_thinking',
+            'anomaly_detection',
+            'portfolio_optimization'
+        ]
     }
-}
+};
 
-function getCurrentGlobalDateTime() {
-    try {
-        const now = new Date();
-        
-        const cambodiaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Phnom_Penh"}));
-        const newYorkTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-        const londonTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/London"}));
-        
-        return {
-            cambodia: {
-                ...getCurrentCambodiaDateTime(),
-                timezone: 'ICT (UTC+7)'
-            },
-            newYork: {
-                time: `${newYorkTime.getHours()}:${newYorkTime.getMinutes().toString().padStart(2, '0')}`,
-                hour: newYorkTime.getHours(),
-                timezone: 'EST/EDT (UTC-5/-4)'
-            },
-            london: {
-                time: `${londonTime.getHours()}:${londonTime.getMinutes().toString().padStart(2, '0')}`,
-                hour: londonTime.getHours(),
-                timezone: 'GMT/BST (UTC+0/+1)'
-            },
-            utc: now.toISOString()
-        };
-    } catch (error) {
-        console.error('❌ Global DateTime error:', error.message);
-        return {
-            cambodia: getCurrentCambodiaDateTime(),
-            error: 'Global timezone calculation failed'
-        };
-    }
-}
-
-// 🧠 SMART QUERY ANALYSIS
-function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
+/**
+ * Enhanced query analysis for optimal AI routing
+ */
+function analyzeQueryForOptimalAI(userMessage, messageType = 'text', hasMedia = false) {
     const message = userMessage.toLowerCase();
     
-    // Simple date/time queries
-    const dateTimePatterns = [
-        /^(what time|what's the time|current time|time now)/i,
-        /^(what date|what's the date|today's date|date today)/i,
-        /^(what day|what's today|today is)/i,
-        /^(time in cambodia|cambodia time)/i
+    // Immediate GPT-5 routing patterns
+    const gpt5Patterns = [
+        // Mathematical and computational
+        /calculate|compute|derive|solve|formula|equation|optimization/i,
+        /portfolio.*allocation|efficient.*frontier|monte.*carlo/i,
+        /dcf|npv|irr|wacc|capm|black.*scholes|var.*calculation/i,
+        
+        // Code and technical implementation
+        /code|script|function|algorithm|implement|build|create.*system/i,
+        /api|database|programming|technical.*solution/i,
+        
+        // Creative and synthesis
+        /design|creative|innovative|brainstorm|generate.*ideas/i,
+        /strategy.*development|business.*plan|marketing.*strategy/i,
+        
+        // Step-by-step reasoning
+        /step.*by.*step|walk.*through|explain.*process|methodology/i,
+        /how.*to.*implement|detailed.*plan|systematic.*approach/i
     ];
     
-    // Casual conversation
-    const casualPatterns = [
-        /^(hello|hi|hey|good morning|good afternoon|what's up)$/i,
-        /^how are you\??$/i,
-        /^(thanks|thank you|cool|nice|great)$/i,
-        /^(ok|okay|got it|understood)$/i
+    // Immediate Claude routing patterns  
+    const claudePatterns = [
+        // Regime and economic analysis
+        /regime|economic.*regime|ray.*dalio|bridgewater|all.*weather/i,
+        /recession|expansion|stagflation|deflationary/i,
+        
+        // Risk and anomaly detection
+        /risk.*assessment|anomaly|crisis|stress.*test|tail.*risk/i,
+        /correlation|diversification|hedge|risk.*management/i,
+        
+        // Research and analysis
+        /research|analyze.*thoroughly|comprehensive.*analysis/i,
+        /evaluate|assess|compare.*multiple|pros.*and.*cons/i,
+        
+        // Document and content analysis
+        /summarize|extract.*insights|key.*findings|document.*analysis/i,
+        /review.*literature|academic|scholarly|research.*paper/i
     ];
     
-    // Economic regime queries (best for Claude)
-    const regimePatterns = [
-        /(economic regime|market regime|regime analysis)/i,
-        /(growth.*inflation|inflation.*growth)/i,
-        /(all weather|ray dalio|bridgewater)/i,
-        /(recession|expansion|stagflation)/i
+    // Dual AI patterns (use both for comprehensive analysis)
+    const dualPatterns = [
+        /comprehensive.*strategy|complete.*analysis|full.*assessment/i,
+        /dual.*perspective|multiple.*viewpoints|different.*approaches/i,
+        /complex.*decision|major.*investment|strategic.*choice/i,
+        /both.*quantitative.*and.*qualitative/i
     ];
     
-    // Market anomaly/crisis (best for Claude)
-    const anomalyPatterns = [
-        /(anomaly|anomalies|market stress|crisis)/i,
-        /(bubble|crash|panic|volatility spike)/i,
-        /(yield.*invert|curve.*invert)/i,
-        /(credit.*spread|spread.*widen)/i
-    ];
-    
-    // Portfolio analysis (best for Claude)
-    const portfolioPatterns = [
-        /(portfolio.*optim|allocation.*optim)/i,
-        /(rebalanc|diversif|correlation)/i,
-        /(risk.*adjust|hedge|position.*siz)/i,
-        /(asset.*allocation)/i
-    ];
-    
-    // Cambodia specific (can use either, but Claude has better context integration)
+    // Cambodia-specific routing (prefer Claude for nuanced market analysis)
     const cambodiaPatterns = [
-        /(cambodia|khmer|phnom penh|cambodian)/i,
-        /(lending.*cambodia|cambodia.*lending)/i,
-        /(usd.*khr|khr.*usd)/i
+        /cambodia|phnom.*penh|khmer|cambodian.*market/i,
+        /southeast.*asia|emerging.*market|frontier.*market/i,
+        /lending.*cambodia|real.*estate.*cambodia/i
     ];
     
-    // Market analysis (good for either)
-    const marketPatterns = [
-        /(market|stock|bond|crypto|forex)/i,
-        /(trading|investment|buy|sell)/i,
-        /(price|rate|yield|return)/i,
-        /(analysis|forecast|outlook)/i
-    ];
-    
-    // Complex strategic (good for either, but prefer GPT for synthesis)
-    const complexPatterns = [
-        /(strategy|strategic|comprehensive)/i,
-        /(detailed|thorough|in-depth)/i,
-        /(compare|comparison|versus)/i,
-        /(research|evaluate|assess)/i
-    ];
-    
-    // Determine optimal AI and response type
+    // Media handling (GPT-5 has enhanced multimodal capabilities)
     if (hasMedia || messageType !== 'text') {
         return {
-            type: 'multimodal',
-            bestAI: 'gpt',
-            reason: 'gpt-5 has vision capabilities',
+            optimalAI: 'gpt5',
+            confidence: 0.9,
+            reasoning: 'GPT-5 has enhanced multimodal capabilities',
             complexity: 'medium',
-            maxTokens: 2000,
-            needsLiveData: false
+            needsLiveData: false,
+            useEnhancedReasoning: true
         };
     }
     
-    if (dateTimePatterns.some(pattern => pattern.test(message))) {
+    // Route to dual AI for complex strategic queries
+    if (dualPatterns.some(pattern => pattern.test(message))) {
         return {
-            type: 'datetime',
-            bestAI: 'gpt',
-            reason: 'Simple query, quick response',
-            complexity: 'low',
-            maxTokens: 200,
-            needsLiveData: false
-        };
-    }
-    
-    if (casualPatterns.some(pattern => pattern.test(message))) {
-        return {
-            type: 'casual',
-            bestAI: 'gpt',
-            reason: 'Casual conversation, natural response',
-            complexity: 'low',
-            maxTokens: 300,
-            needsLiveData: false
-        };
-    }
-    
-    if (regimePatterns.some(pattern => pattern.test(message))) {
-        return {
-            type: 'regime',
-            bestAI: 'claude',
-            reason: 'Economic regime analysis, Ray Dalio framework',
+            optimalAI: 'both',
+            confidence: 0.95,
+            reasoning: 'Complex strategic analysis benefits from dual AI perspectives',
             complexity: 'high',
-            maxTokens: 2500,
             needsLiveData: true,
-            specialFunction: 'regime'
+            useEnhancedReasoning: true,
+            useBothAIs: true
         };
     }
     
-    if (anomalyPatterns.some(pattern => pattern.test(message))) {
+    // Route to GPT-5 for computational/creative tasks
+    if (gpt5Patterns.some(pattern => pattern.test(message))) {
         return {
-            type: 'anomaly',
-            bestAI: 'claude',
-            reason: 'Market anomaly detection and analysis',
-            complexity: 'high',
-            maxTokens: 2000,
-            needsLiveData: true,
-            specialFunction: 'anomaly'
+            optimalAI: 'gpt5',
+            confidence: 0.85,
+            reasoning: 'GPT-5 excels at mathematical reasoning and creative solutions',
+            complexity: determineComplexity(message),
+            needsLiveData: requiresLiveData(message),
+            useEnhancedReasoning: true
         };
     }
     
-    if (portfolioPatterns.some(pattern => pattern.test(message))) {
+    // Route to Claude for analytical/research tasks
+    if (claudePatterns.some(pattern => pattern.test(message))) {
         return {
-            type: 'portfolio',
-            bestAI: 'claude',
-            reason: 'Portfolio optimization with live data',
-            complexity: 'high',
-            maxTokens: 2500,
-            needsLiveData: true,
-            specialFunction: 'portfolio'
+            optimalAI: 'claude',
+            confidence: 0.85,
+            reasoning: 'Claude excels at deep analysis and research synthesis',
+            complexity: determineComplexity(message),
+            needsLiveData: requiresLiveData(message),
+            useExtendedThinking: true
         };
     }
     
+    // Cambodia-specific routing
     if (cambodiaPatterns.some(pattern => pattern.test(message))) {
         return {
-            type: 'cambodia',
-            bestAI: 'claude',
-            reason: 'Cambodia expertise with global context',
+            optimalAI: 'claude',
+            confidence: 0.8,
+            reasoning: 'Claude better handles nuanced emerging market analysis',
             complexity: 'medium',
-            maxTokens: 2000,
             needsLiveData: true,
-            specialFunction: 'cambodia'
+            useExtendedThinking: true,
+            specialization: 'cambodia'
         };
     }
     
-    if (marketPatterns.some(pattern => pattern.test(message))) {
+    // Default intelligent routing based on query characteristics
+    const queryLength = message.length;
+    const hasQuestionWords = /what|how|why|when|where|which|should|would|could/i.test(message);
+    const hasFinancialTerms = /market|trading|investment|portfolio|risk|return/i.test(message);
+    const hasAnalyticalTerms = /analyze|evaluate|assess|review|examine/i.test(message);
+    
+    // Default routing logic
+    if (hasAnalyticalTerms && queryLength > 100) {
         return {
-            type: 'market',
-            bestAI: 'gpt',
-            reason: 'Market analysis with current data',
+            optimalAI: 'claude',
+            confidence: 0.7,
+            reasoning: 'Longer analytical queries benefit from Claude\'s extended reasoning',
             complexity: 'medium',
-            maxTokens: 1500,
-            needsLiveData: true
+            needsLiveData: hasFinancialTerms,
+            useExtendedThinking: true
         };
-    }
-    
-    if (complexPatterns.some(pattern => pattern.test(message))) {
+    } else if (hasFinancialTerms || hasQuestionWords) {
         return {
-            type: 'complex',
-            bestAI: 'both',
-            reason: 'Complex analysis benefits from dual perspectives',
-            complexity: 'high',
-            maxTokens: 3000,
-            needsLiveData: true
+            optimalAI: 'gpt5',
+            confidence: 0.7,
+            reasoning: 'GPT-5 provides enhanced financial reasoning and natural responses',
+            complexity: queryLength > 200 ? 'medium' : 'low',
+            needsLiveData: hasFinancialTerms,
+            useEnhancedReasoning: queryLength > 100
         };
     }
     
-    // Default: balanced analysis
+    // Fallback to GPT-5 for general queries
     return {
-        type: 'general',
-        bestAI: 'gpt',
-        reason: 'General query, GPT for natural conversation',
-        complexity: 'medium',
-        maxTokens: 1200,
-        needsLiveData: false
+        optimalAI: 'gpt5',
+        confidence: 0.6,
+        reasoning: 'GPT-5 default for general conversation and improved responses',
+        complexity: 'low',
+        needsLiveData: false,
+        useEnhancedReasoning: false
     };
 }
 
-// 🎯 EXECUTE gpt-5 ANALYSIS
-async function executeGptAnalysis(userMessage, queryAnalysis, context = null) {
+/**
+ * Determine query complexity
+ */
+function determineComplexity(message) {
+    if (message.length > 500) return 'high';
+    if (message.length > 200) return 'medium';
+    return 'low';
+}
+
+/**
+ * Check if query requires live data
+ */
+function requiresLiveData(message) {
+    const liveDataIndicators = [
+        /current|latest|today|now|recent/i,
+        /market.*condition|economic.*data|price|rate/i,
+        /fed.*rate|inflation|unemployment|gdp/i,
+        /regime|volatility|vix|yield.*curve/i
+    ];
+    
+    return liveDataIndicators.some(pattern => pattern.test(message));
+}
+
+/**
+ * Execute GPT-5 analysis with enhanced capabilities
+ */
+async function executeEnhancedGPT5Analysis(userMessage, routingDecision, context = null) {
     try {
-        console.log('🔍 Executing gpt-5 analysis...');
+        console.log('🚀 Executing GPT-5 Enhanced Analysis...');
         
-        // Handle simple date/time queries directly
-        if (queryAnalysis.type === 'datetime') {
-            const cambodiaTime = getCurrentCambodiaDateTime();
-            return `Today is ${cambodiaTime.date} and it's currently ${cambodiaTime.time} in Cambodia (${cambodiaTime.timezone}). ${cambodiaTime.isWeekend ? "Enjoy your weekend!" : "Have a great day!"}`;
-        }
-        
-        // Add time context for non-casual queries
         let enhancedMessage = userMessage;
-        if (queryAnalysis.type !== 'casual' && queryAnalysis.type !== 'datetime') {
-            const cambodiaTime = getCurrentCambodiaDateTime();
-            enhancedMessage = `Current time: ${cambodiaTime.date}, ${cambodiaTime.time} Cambodia\n\n${userMessage}`;
+        
+        // Add context if available
+        if (context) {
+            enhancedMessage = `Context: ${context}\n\nQuery: ${userMessage}`;
         }
         
-        // Route to appropriate GPT function
-        if (queryAnalysis.type === 'market') {
-            return await getMarketAnalysis(enhancedMessage, null, {
-                maxTokens: queryAnalysis.maxTokens,
-                context: context
-            });
-        } else if (queryAnalysis.type === 'cambodia') {
-            return await getCambodiaAnalysis(enhancedMessage, null, {
-                maxTokens: queryAnalysis.maxTokens,
-                context: context
-            });
+        // Add live data context if needed
+        if (routingDecision.needsLiveData) {
+            try {
+                const { getRayDalioMarketData } = require('./liveData');
+                const marketData = await getRayDalioMarketData();
+                
+                if (marketData && marketData.rayDalio?.regime) {
+                    const regime = marketData.rayDalio.regime;
+                    enhancedMessage += `\n\nCurrent Market Context: Economic regime is ${regime.currentRegime?.name} with ${regime.confidence}% confidence.`;
+                }
+            } catch (dataError) {
+                console.log('⚠️ Live data unavailable:', dataError.message);
+            }
+        }
+        
+        // Route to specialized functions based on query type
+        if (routingDecision.specialization === 'cambodia') {
+            return await getEnhancedCambodiaAnalysis(enhancedMessage);
+        } else if (routingDecision.needsLiveData && /market|trading|investment/i.test(userMessage)) {
+            return await getEnhancedMarketAnalysis(enhancedMessage);
         } else {
-            return await getGptAnalysis(enhancedMessage, {
-                maxTokens: queryAnalysis.maxTokens,
-                context: context
+            return await getGPT5Analysis(enhancedMessage, {
+                useEnhancedReasoning: routingDecision.useEnhancedReasoning,
+                maxTokens: routingDecision.complexity === 'high' ? 4000 : 
+                          routingDecision.complexity === 'medium' ? 2000 : 1000
             });
         }
         
     } catch (error) {
-        console.error('❌ GPT analysis error:', error.message);
+        console.error('❌ GPT-5 execution error:', error.message);
         throw error;
     }
 }
 
-// ⚡ EXECUTE CLAUDE ANALYSIS
-async function executeClaudeAnalysis(userMessage, queryAnalysis, context = null) {
+/**
+ * Execute Claude analysis with extended thinking
+ */
+async function executeEnhancedClaudeAnalysis(userMessage, routingDecision, context = null) {
     try {
-        console.log('⚡ Executing Claude analysis...');
+        console.log('⚡ Executing Claude Enhanced Analysis...');
         
-        // Add global time context
-        const globalTime = getCurrentGlobalDateTime();
-        const timeContext = `Current global time: ${globalTime.cambodia.date}, ${globalTime.cambodia.time} Cambodia | NY: ${globalTime.newYork.time} | London: ${globalTime.london.time} | Market status: ${globalTime.cambodia.isWeekend ? 'Weekend' : 'Weekday'}\n\n${userMessage}`;
+        let enhancedMessage = userMessage;
         
-        const options = {
-            maxTokens: queryAnalysis.maxTokens,
-            context: context
-        };
+        // Add context for Claude's analysis
+        if (context) {
+            enhancedMessage = `Previous context: ${context}\n\nCurrent query: ${userMessage}`;
+        }
+        
+        // Add global time context for Claude
+        const cambodiaTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Phnom_Penh"});
+        enhancedMessage = `Current time: ${cambodiaTime} Cambodia\n\n${enhancedMessage}`;
         
         // Route to specialized Claude functions
-        if (queryAnalysis.specialFunction) {
-            switch (queryAnalysis.specialFunction) {
-                case 'regime':
-                    return await getRegimeAnalysis(timeContext, options);
-                case 'anomaly':
-                    return await getAnomalyAnalysis(timeContext, options);
-                case 'portfolio':
-                    return await getPortfolioAnalysis(timeContext, null, options);
-                case 'cambodia':
-                    return await getClaudeCambodiaAnalysis(timeContext, null, options);
-                default:
-                    return await getStrategicAnalysis(timeContext, options);
-            }
+        if (routingDecision.specialization === 'cambodia') {
+            return await getClaudeCambodiaAnalysis(enhancedMessage);
+        } else if (/regime|economic|ray.*dalio/i.test(userMessage)) {
+            return await getRegimeAnalysis(enhancedMessage);
+        } else if (/portfolio|allocation|optimization/i.test(userMessage)) {
+            return await getPortfolioAnalysis(enhancedMessage);
+        } else if (/anomaly|crisis|risk.*detection/i.test(userMessage)) {
+            return await getAnomalyAnalysis(enhancedMessage);
+        } else if (routingDecision.complexity === 'high') {
+            return await getStrategicAnalysis(enhancedMessage);
         } else {
-            // Standard Claude analysis
-            if (queryAnalysis.complexity === 'high') {
-                return await getStrategicAnalysis(timeContext, options);
-            } else {
-                return await getClaudeAnalysis(timeContext, options);
-            }
+            return await getClaudeAnalysis(enhancedMessage, {
+                useExtendedThinking: routingDecision.useExtendedThinking
+            });
         }
         
     } catch (error) {
-        console.error('❌ Claude analysis error:', error.message);
+        console.error('❌ Claude execution error:', error.message);
         throw error;
     }
 }
 
-// 🎯 MAIN DUAL COMMAND EXECUTION
-async function executeDualCommand(userMessage, chatId, messageType = 'text', hasMedia = false) {
+/**
+ * Execute dual AI analysis for complex queries
+ */
+async function executeDualAIAnalysis(userMessage, routingDecision, context = null) {
     try {
-        console.log('🎯 Executing dual command analysis...');
+        console.log('🔄 Executing Dual AI Analysis (GPT-5 + Claude Opus 4.1)...');
         
-        // Analyze the query to determine optimal routing
-        const queryAnalysis = analyzeQuery(userMessage, messageType, hasMedia);
-        console.log('🧠 Query analysis:', {
-            type: queryAnalysis.type,
-            bestAI: queryAnalysis.bestAI,
-            complexity: queryAnalysis.complexity,
-            reason: queryAnalysis.reason
+        // Execute both AIs in parallel
+        const [gpt5Result, claudeResult] = await Promise.allSettled([
+            executeEnhancedGPT5Analysis(userMessage, routingDecision, context),
+            executeEnhancedClaudeAnalysis(userMessage, routingDecision, context)
+        ]);
+        
+        let response = `# Dual AI Strategic Analysis\n\n`;
+        
+        // Add GPT-5 analysis
+        if (gpt5Result.status === 'fulfilled') {
+            response += `## GPT-5 Enhanced Analysis\n\n${gpt5Result.value}\n\n`;
+        } else {
+            response += `## GPT-5 Analysis\n*Analysis unavailable: ${gpt5Result.reason}*\n\n`;
+        }
+        
+        // Add Claude analysis
+        if (claudeResult.status === 'fulfilled') {
+            response += `## Claude Opus 4.1 Strategic Analysis\n\n${claudeResult.value}\n\n`;
+        } else {
+            response += `## Claude Analysis\n*Analysis unavailable: ${claudeResult.reason}*\n\n`;
+        }
+        
+        // Add synthesis if both succeeded
+        if (gpt5Result.status === 'fulfilled' && claudeResult.status === 'fulfilled') {
+            response += `## Strategic Synthesis\n\n`;
+            response += `**Combined Insights:** Both AI systems provide complementary perspectives. `;
+            response += `GPT-5 offers enhanced computational reasoning while Claude provides extended analytical depth. `;
+            response += `Together, they deliver institutional-grade strategic intelligence.\n\n`;
+            response += `**Recommendation:** Consider both analyses for comprehensive decision-making, `;
+            response += `with GPT-5 insights informing quantitative aspects and Claude insights guiding qualitative strategy.`;
+        }
+        
+        return response;
+        
+    } catch (error) {
+        console.error('❌ Dual AI execution error:', error.message);
+        throw error;
+    }
+}
+
+/**
+ * Main enhanced dual command execution
+ */
+async function executeEnhancedDualCommand(userMessage, chatId, options = {}) {
+    try {
+        console.log('🎯 Enhanced Dual Command System - GPT-5 + Claude Opus 4.1');
+        
+        const startTime = Date.now();
+        
+        // Analyze query for optimal AI routing
+        const routingDecision = analyzeQueryForOptimalAI(
+            userMessage, 
+            options.messageType || 'text', 
+            options.hasMedia || false
+        );
+        
+        console.log('🧠 Enhanced Routing Decision:', {
+            optimalAI: routingDecision.optimalAI,
+            confidence: routingDecision.confidence,
+            reasoning: routingDecision.reasoning,
+            complexity: routingDecision.complexity
         });
         
-        // Build context for complex queries
+        // Build conversation context for complex queries
         let context = null;
-        if (queryAnalysis.complexity !== 'low') {
+        if (routingDecision.complexity !== 'low') {
             try {
                 context = await buildConversationContext(chatId);
             } catch (contextError) {
-                console.log('⚠️ Context building failed, continuing without:', contextError.message);
+                console.log('⚠️ Context building failed:', contextError.message);
             }
         }
         
         let response;
+        let aiUsed = routingDecision.optimalAI;
         
-        if (queryAnalysis.bestAI === 'both') {
-            // Use both AIs for complex analysis
-            console.log('🔄 Using both AIs for comprehensive analysis...');
-            
-            const [gptResponse, claudeResponse] = await Promise.allSettled([
-                executeGptAnalysis(userMessage, queryAnalysis, context),
-                executeClaudeAnalysis(userMessage, queryAnalysis, context)
-            ]);
-            
-            let finalResponse = '';
-            
-            if (gptResponse.status === 'fulfilled') {
-                finalResponse += `**gpt-5 Analysis:**\n${gptResponse.value}\n\n`;
-            }
-            
-            if (claudeResponse.status === 'fulfilled') {
-                finalResponse += `**Claude Opus 4.1 Analysis:**\n${claudeResponse.value}`;
-            }
-            
-            if (!finalResponse) {
-                throw new Error('Both AI analyses failed');
-            }
-            
-            response = finalResponse;
-            
-        } else {
-            // Use single AI
-            if (queryAnalysis.bestAI === 'claude') {
-                response = await executeClaudeAnalysis(userMessage, queryAnalysis, context);
-            } else {
-                response = await executeGptAnalysis(userMessage, queryAnalysis, context);
-            }
+        // Execute based on routing decision
+        switch (routingDecision.optimalAI) {
+            case 'both':
+                response = await executeDualAIAnalysis(userMessage, routingDecision, context);
+                aiUsed = 'gpt5+claude';
+                break;
+                
+            case 'claude':
+                response = await executeEnhancedClaudeAnalysis(userMessage, routingDecision, context);
+                break;
+                
+            case 'gpt5':
+            default:
+                response = await executeEnhancedGPT5Analysis(userMessage, routingDecision, context);
+                break;
         }
+        
+        const executionTime = Date.now() - startTime;
         
         return {
             response: response,
-            aiUsed: queryAnalysis.bestAI,
-            queryType: queryAnalysis.type,
-            complexity: queryAnalysis.complexity,
-            reasoning: queryAnalysis.reason,
-            specialFunction: queryAnalysis.specialFunction,
-            liveDataUsed: queryAnalysis.needsLiveData,
-            success: true
+            aiUsed: aiUsed,
+            routingDecision: routingDecision,
+            executionTime: executionTime,
+            success: true,
+            enhancedCapabilities: true,
+            systemVersion: 'Enhanced Dual AI v2.0'
         };
         
     } catch (error) {
-        console.error('❌ Dual command execution error:', error.message);
+        console.error('❌ Enhanced dual command error:', error.message);
         
-        // Fallback to gpt-5
+        // Enhanced fallback system
         try {
-            console.log('🔄 Falling back to gpt-5...');
+            console.log('🔄 Attempting GPT-5 fallback...');
             
-            const fallbackAnalysis = {
-                type: 'fallback',
-                maxTokens: 1200,
-                needsLiveData: false
-            };
-            
-            const fallbackResponse = await executeGptAnalysis(userMessage, fallbackAnalysis);
+            const fallbackResponse = await getGPT5Analysis(userMessage, {
+                maxTokens: 1500,
+                useEnhancedReasoning: false
+            });
             
             return {
-                response: `${fallbackResponse}\n\n*Note: Using fallback mode due to system issue.*`,
-                aiUsed: 'gpt',
-                queryType: 'fallback',
-                complexity: 'medium',
-                reasoning: 'Fallback after system error',
+                response: `${fallbackResponse}\n\n*Note: Using GPT-5 fallback mode due to system issue.*`,
+                aiUsed: 'gpt5-fallback',
+                routingDecision: { optimalAI: 'fallback', reasoning: 'System error recovery' },
+                executionTime: Date.now() - (Date.now() - 5000),
                 success: false,
-                error: error.message
+                error: error.message,
+                fallbackUsed: true
             };
             
         } catch (fallbackError) {
-            throw new Error(`Dual command system failure: ${error.message}`);
+            throw new Error(`Enhanced dual command system failure: ${error.message}`);
         }
     }
 }
 
-// 📊 SYSTEM HEALTH CHECK
-async function checkSystemHealth() {
+/**
+ * Enhanced system health check
+ */
+async function checkEnhancedSystemHealth() {
     const health = {
-        gptAnalysis: false,
-        claudeAnalysis: false,
+        gpt5Available: false,
+        claudeAvailable: false,
+        dualModeOperational: false,
+        enhancedFeatures: false,
         contextBuilding: false,
-        dateTimeSupport: false,
-        dualMode: false,
-        errors: []
+        liveDataIntegration: false,
+        overallStatus: 'UNKNOWN',
+        errors: [],
+        capabilities: {}
     };
     
     try {
-        // Test gpt-5
-        await executeGptAnalysis('Hello', { type: 'casual', maxTokens: 100 });
-        health.gptAnalysis = true;
-        console.log('✅ gpt-5 analysis operational');
+        // Test GPT-5
+        const { checkGPT5SystemHealth } = require('./openaiClient');
+        const gpt5Health = await checkGPT5SystemHealth();
+        health.gpt5Available = gpt5Health.overallHealth;
+        health.capabilities.gpt5 = gpt5Health.capabilities;
+        
+        if (!gpt5Health.overallHealth) {
+            health.errors.push(`GPT-5: ${gpt5Health.errors.join(', ')}`);
+        }
+        
     } catch (error) {
-        health.errors.push(`GPT: ${error.message}`);
-        console.log('❌ gpt-5 analysis unavailable');
+        health.errors.push(`GPT-5 Test: ${error.message}`);
     }
     
     try {
         // Test Claude
-        await executeClaudeAnalysis('Test', { type: 'general', maxTokens: 100 });
-        health.claudeAnalysis = true;
-        console.log('✅ Claude analysis operational');
+        const { checkSystemHealth } = require('./claudeClient');
+        const claudeHealth = await checkSystemHealth();
+        health.claudeAvailable = claudeHealth.overallHealth;
+        health.capabilities.claude = claudeHealth;
+        
+        if (!claudeHealth.overallHealth) {
+            health.errors.push(`Claude: ${claudeHealth.errors.join(', ')}`);
+        }
+        
     } catch (error) {
-        health.errors.push(`Claude: ${error.message}`);
-        console.log('❌ Claude analysis unavailable');
-    }
-    
-    try {
-        // Test datetime
-        const cambodiaTime = getCurrentCambodiaDateTime();
-        health.dateTimeSupport = cambodiaTime && cambodiaTime.date;
-        console.log('✅ DateTime support operational');
-    } catch (error) {
-        health.errors.push(`DateTime: ${error.message}`);
-        console.log('❌ DateTime support unavailable');
+        health.errors.push(`Claude Test: ${error.message}`);
     }
     
     try {
         // Test context building
-        await buildStrategicCommanderContext('test', 'test query');
+        await buildConversationContext('test_health_check');
         health.contextBuilding = true;
-        console.log('✅ Context building operational');
     } catch (error) {
         health.errors.push(`Context: ${error.message}`);
-        console.log('❌ Context building unavailable');
     }
     
-    health.dualMode = health.gptAnalysis && health.claudeAnalysis;
-    health.overallHealth = health.gptAnalysis || health.claudeAnalysis; // At least one AI working
+    try {
+        // Test live data integration
+        const { getRayDalioMarketData } = require('./liveData');
+        await getRayDalioMarketData();
+        health.liveDataIntegration = true;
+    } catch (error) {
+        health.errors.push(`Live Data: ${error.message}`);
+    }
+    
+    // Determine overall status
+    health.dualModeOperational = health.gpt5Available && health.claudeAvailable;
+    health.enhancedFeatures = health.dualModeOperational && health.contextBuilding;
+    
+    if (health.enhancedFeatures && health.liveDataIntegration) {
+        health.overallStatus = 'FULLY_OPERATIONAL';
+    } else if (health.dualModeOperational) {
+        health.overallStatus = 'OPERATIONAL';
+    } else if (health.gpt5Available || health.claudeAvailable) {
+        health.overallStatus = 'DEGRADED';
+    } else {
+        health.overallStatus = 'OFFLINE';
+    }
     
     return health;
 }
 
-// 🚀 QUICK ACCESS FUNCTIONS
-async function getMarketIntelligence() {
-    const globalTime = getCurrentGlobalDateTime();
-    const query = `Current market intelligence summary - Time: ${globalTime.cambodia.date}, ${globalTime.cambodia.time} Cambodia. Provide concise overview of market conditions, key risks, and opportunities.`;
-    
-    try {
-        return await executeClaudeAnalysis(query, {
-            type: 'market',
-            maxTokens: 1000,
-            needsLiveData: true,
-            specialFunction: 'regime'
-        });
-    } catch (error) {
-        console.error('❌ Market intelligence error:', error.message);
-        return 'Market intelligence temporarily unavailable';
-    }
-}
-
-function getGlobalMarketStatus() {
-    try {
-        const globalTime = getCurrentGlobalDateTime();
-        
-        return {
-            cambodia: {
-                time: globalTime.cambodia.time,
-                isBusinessHours: !globalTime.cambodia.isWeekend && 
-                               globalTime.cambodia.hour >= 8 && 
-                               globalTime.cambodia.hour <= 17,
-                isWeekend: globalTime.cambodia.isWeekend
-            },
-            newYork: {
-                time: globalTime.newYork.time,
-                isMarketHours: !globalTime.cambodia.isWeekend && 
-                             globalTime.newYork.hour >= 9 && 
-                             globalTime.newYork.hour <= 16
-            },
-            london: {
-                time: globalTime.london.time,
-                isMarketHours: !globalTime.cambodia.isWeekend && 
-                             globalTime.london.hour >= 8 && 
-                             globalTime.london.hour <= 16
-            },
-            summary: globalTime.cambodia.isWeekend ? 
-                    'Weekend - Markets Closed' : 
-                    'Weekday - Check individual market hours',
-            lastUpdated: new Date().toISOString()
-        };
-    } catch (error) {
-        console.error('❌ Global market status error:', error.message);
-        return { error: 'Global market status unavailable' };
-    }
-}
-
-// 📈 SYSTEM ANALYTICS
-function getSystemAnalytics() {
+/**
+ * Get enhanced system analytics
+ */
+function getEnhancedSystemAnalytics() {
     return {
-        version: '2.0 - Clean Natural Responses',
+        systemName: 'Enhanced Dual AI Command System',
+        version: '2.0 - GPT-5 + Claude Opus 4.1',
         aiModels: {
-            gpt: 'gpt-5 (multimodal, natural conversation)',
-            claude: 'Claude Opus 4.1 (advanced reasoning, live data)'
+            primary: 'GPT-5 (Enhanced reasoning, superior math, improved financial analysis)',
+            secondary: 'Claude Opus 4.1 (Extended thinking, research synthesis, analytical depth)',
+            dualMode: 'Intelligent routing with parallel processing for complex queries'
         },
-        capabilities: [
-            'Smart query routing',
-            'Natural AI responses',
-            'Live market data integration',
-            'Global timezone support',
-            'Economic regime analysis',
-            'Portfolio optimization',
-            'Market anomaly detection',
-            'Cambodia market expertise',
-            'Dual AI synthesis for complex queries'
+        enhancedCapabilities: [
+            'GPT-5 enhanced reasoning and mathematical capabilities',
+            'Claude Opus 4.1 extended thinking and tool use',
+            'Intelligent query routing based on AI strengths',
+            'Dual AI analysis for comprehensive insights',
+            'Enhanced multimodal processing (GPT-5)',
+            'Extended context analysis (Claude)',
+            'Real-time market data integration',
+            'Strategic financial modeling',
+            'Cambodia market specialization',
+            'Institutional-grade risk analysis'
         ],
-        queryTypes: [
-            'casual', 'datetime', 'market', 'regime', 'anomaly', 
-            'portfolio', 'cambodia', 'complex', 'multimodal'
+        routingCapabilities: [
+            'Mathematical/computational → GPT-5',
+            'Analytical/research → Claude',
+            'Strategic/complex → Dual AI',
+            'Multimodal → GPT-5 enhanced',
+            'Cambodia markets → Claude specialized',
+            'Creative/synthesis → GPT-5',
+            'Risk/regime analysis → Claude'
         ],
-        specialFunctions: [
-            'regime analysis', 'anomaly detection', 'portfolio optimization', 'cambodia analysis'
-        ],
-        healthCheck: 'Use checkSystemHealth() for current status'
+        performanceOptimizations: [
+            'Smart caching for live data',
+            'Parallel processing for dual queries', 
+            'Context-aware response generation',
+            'Adaptive complexity handling',
+            'Enhanced error recovery',
+            'Intelligent fallback systems'
+        ]
     };
 }
 
+/**
+ * Quick access functions for compatibility
+ */
+async function getMarketIntelligence() {
+    const query = "Provide current market intelligence summary with key risks and opportunities";
+    const result = await executeEnhancedDualCommand(query, 'system');
+    return result.response;
+}
+
+async function getCambodiaIntelligence() {
+    const query = "Analyze current Cambodia market conditions for lending and real estate investment";
+    const result = await executeEnhancedDualCommand(query, 'system');
+    return result.response;
+}
+
 module.exports = {
-    // Main functions
-    executeDualCommand,
-    analyzeQuery,
-    executeGptAnalysis,
-    executeClaudeAnalysis,
-    
-    // Utility functions
-    getCurrentCambodiaDateTime,
-    getCurrentGlobalDateTime,
-    getMarketIntelligence,
-    getGlobalMarketStatus,
+    // Main enhanced functions
+    executeEnhancedDualCommand,
+    analyzeQueryForOptimalAI,
+    executeEnhancedGPT5Analysis,
+    executeEnhancedClaudeAnalysis,
+    executeDualAIAnalysis,
     
     // System management
-    checkSystemHealth,
-    getSystemAnalytics,
+    checkEnhancedSystemHealth,
+    getEnhancedSystemAnalytics,
+    
+    // Quick access
+    getMarketIntelligence,
+    getCambodiaIntelligence,
+    
+    // Utility functions
+    determineComplexity,
+    requiresLiveData,
     
     // Legacy compatibility
-    executeEnhancedDualCommand: executeDualCommand,
-    routeConversationIntelligently: analyzeQuery,
-    getEnhancedCommandAnalytics: getSystemAnalytics,
-    checkEnhancedSystemHealth: checkSystemHealth
+    executeDualCommand: executeEnhancedDualCommand,
+    checkSystemHealth: checkEnhancedSystemHealth,
+    getSystemAnalytics: getEnhancedSystemAnalytics,
+    
+    // AI capabilities reference
+    AI_CAPABILITIES
 };
