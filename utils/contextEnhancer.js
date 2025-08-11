@@ -465,7 +465,7 @@ async function executeDualCommand(userMessage, chatId, messageType = 'text', has
     }
 }
 
-// 📊 SYSTEM HEALTH CHECK
+// 📊 SYSTEM HEALTH CHECK - FIXED VERSION
 async function checkSystemHealth() {
     const health = {
         gptAnalysis: false,
@@ -507,8 +507,8 @@ async function checkSystemHealth() {
     }
     
     try {
-        // Test context building
-        await buildStrategicCommanderContext('test', 'test query');
+        // 🔧 FIXED: Test context building with correct parameters
+        const testContext = await buildStrategicCommanderContext('test_health_check');
         health.contextBuilding = true;
         console.log('✅ Context building operational');
     } catch (error) {
