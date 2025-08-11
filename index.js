@@ -17,7 +17,9 @@ const {
     getEnhancedLiveData, 
     getEconomicIndicators,
     getStockMarketData,
-    getRayDalioMarketData
+    getRayDalioMarketData,
+    getCurrentCambodiaDateTime,
+    getCurrentGlobalDateTime
 } = require("./utils/liveData");
 
 const { 
@@ -45,22 +47,15 @@ const {
 
 // Import COMPLETE enhanced database system
 const {
-    // Core database functions
     initializeDatabase,
     saveConversationDB,
     getConversationHistoryDB,
     getUserProfileDB,
     getDatabaseStats,
-    
-    // Enhanced persistent memory
     addPersistentMemoryDB,
     getPersistentMemoryDB,
-    
-    // Training documents
     saveTrainingDocumentDB,
     getTrainingDocumentsDB,
-    
-    // Ray Dalio enhanced functions
     saveRegimeData,
     savePortfolioAllocation,
     saveRiskAssessment,
@@ -71,15 +66,11 @@ const {
     logCommandUsage,
     getCurrentRegime,
     getLatestRiskAssessment,
-    
-    // Cambodia fund functions
     saveCambodiaDeal,
     saveCambodiaPortfolio,
     getCambodiaFundAnalytics,
     getLatestCambodiaMarketData,
     getCambodiaDealsBy,
-    
-    // Enhanced dual AI system
     saveDualAIConversation,
     saveAIHeadToHead,
     saveEnhancedFunctionPerformance,
@@ -87,15 +78,11 @@ const {
     getConversationIntelligenceAnalytics,
     getMasterEnhancedDualSystemAnalytics,
     saveEnhancedDualConversation,
-    
-    // Analytics and monitoring
     getSystemAnalytics,
     getRayDalioStats,
     performHealthCheck,
     updateSystemMetrics,
     performDatabaseMaintenance,
-    
-    // Connection monitoring
     connectionStats
 } = require("./utils/database");
 
@@ -113,9 +100,9 @@ const {
 } = require('./utils/claudeClient');
 
 const { 
-    getGptAnalysis,
-    getMarketAnalysis,
-    getCambodiaAnalysis,
+    getGPT5Analysis,
+    getEnhancedMarketAnalysis,
+    getEnhancedCambodiaAnalysis,
     getStrategicAnalysis: getGptStrategicAnalysis
 } = require('./utils/openaiClient');
 
@@ -227,13 +214,9 @@ async function getComprehensiveMarketData() {
             responseTime: Date.now() - startTime
         };
         
-        // Log API usage
-        await logApiUsage('live_data', 'comprehensive_market', 1, true, Date.now() - startTime, 0, 0.001).catch(console.error);
-        
         return marketData;
     } catch (error) {
         console.error('Market data error:', error.message);
-        await logApiUsage('live_data', 'comprehensive_market', 1, false, 0, 0, 0).catch(console.error);
         return null;
     }
 }
@@ -322,6 +305,8 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
             await handleHelpCommand(chatId);
         } else if (text === "/myid") {
             await sendSmartMessage(bot, chatId, `Your Chat ID: ${chatId}`);
+        } else if (text === "/time" || text === "/datetime") {
+            await handleDateTime(chatId);
         } else if (text.startsWith('/deal_analyze')) {
             await handleDealAnalysis(chatId, text);
         } else if (text === '/portfolio') {
@@ -376,10 +361,10 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
 
 // Enhanced command handlers with database integration
 async function handleStartCommand(chatId) {
-    const welcome = `🤖 **Enhanced AI Assistant System v3.1**
+    const welcome = `🤖 **Enhanced AI Assistant System v3.2**
 
 **🎯 Core Features:**
-- Dual AI: gpt-5 + Claude Opus 4.1
+- Dual AI: GPT-5 + Claude Opus 4.1
 - Enhanced Database Integration
 - Live market data & Ray Dalio framework
 - Cambodia fund analysis
@@ -406,6 +391,7 @@ async function handleStartCommand(chatId) {
 /analytics - Master system analytics
 /db_stats - Database statistics
 /status - Enhanced system status
+/time - Current date/time
 /maintenance - Database maintenance
 
 **Chat ID:** ${chatId}
@@ -443,13 +429,50 @@ async function handleHelpCommand(chatId) {
 **Examples:**
 - "What's the current market regime?" (Claude Analysis)
 - "Analyze this Cambodia lending opportunity" (Specialized)
-- "Tell me a joke" (gpt-5)
+- "Tell me a joke" (GPT-5)
 - "/analytics" for comprehensive system analytics`;
 
     await sendSmartMessage(bot, chatId, help);
     
     // Save help interaction
     await saveConversationDB(chatId, "/help", help, "command").catch(console.error);
+}
+
+// FIXED DateTime Handler
+async function handleDateTime(chatId) {
+    try {
+        const cambodiaTime = getCurrentCambodiaDateTime();
+        const globalTime = getCurrentGlobalDateTime();
+        
+        let response = `🕐 **Current Date & Time**\n\n`;
+        
+        // Cambodia time (primary)
+        response += `🇰🇭 **Cambodia (ICT):**\n`;
+        response += `• Date: ${cambodiaTime.date}\n`;
+        response += `• Time: ${cambodiaTime.time}\n`;
+        response += `• Day: ${cambodiaTime.dayName}\n`;
+        response += `• Weekend: ${cambodiaTime.isWeekend ? 'Yes' : 'No'}\n\n`;
+        
+        // Global times
+        response += `🌍 **Global Times:**\n`;
+        response += `• New York: ${globalTime.newYork.time} (${globalTime.newYork.timezone})\n`;
+        response += `• London: ${globalTime.london.time} (${globalTime.london.timezone})\n`;
+        response += `• Tokyo: ${globalTime.tokyo.time} (${globalTime.tokyo.timezone})\n`;
+        response += `• Singapore: ${globalTime.singapore.time} (${globalTime.singapore.timezone})\n\n`;
+        
+        response += `📊 **Market Status:**\n`;
+        response += `• ${cambodiaTime.isWeekend ? '🔴 Weekend - Markets Closed' : '🟢 Weekday - Markets Active'}\n`;
+        response += `• Best trading hours: Asia (now), EU (afternoon), US (evening)`;
+        
+        await sendSmartMessage(bot, chatId, response);
+        
+        // Save datetime interaction
+        await saveConversationDB(chatId, "/time", response, "command").catch(console.error);
+        
+    } catch (error) {
+        console.error('DateTime handler error:', error.message);
+        await sendSmartMessage(bot, chatId, `❌ DateTime error: ${error.message}`);
+    }
 }
 
 async function handleEnhancedSystemStatus(chatId) {
@@ -462,12 +485,12 @@ async function handleEnhancedSystemStatus(chatId) {
             getDualAIPerformanceDashboard(7).catch(() => ({ error: 'Not available' }))
         ]);
         
-        let status = `**Enhanced System Status v3.1**\n\n`;
+        let status = `**Enhanced System Status v3.2**\n\n`;
         
         // AI Models Status
         status += `**AI Models:**\n`;
-        status += `• gpt-5: ${health.gptAnalysis ? '✅ Online' : '❌ Offline'}\n`;
-        status += `• Claude Opus 4.1: ${health.claudeAnalysis ? '✅ Online' : '❌ Offline'}\n\n`;
+        status += `• GPT-5: ${health.gpt5Available ? '✅ Online' : '❌ Offline'}\n`;
+        status += `• Claude Opus 4.1: ${health.claudeAvailable ? '✅ Online' : '❌ Offline'}\n\n`;
         
         // Enhanced Database Status
         status += `**Enhanced Database:**\n`;
@@ -700,7 +723,7 @@ async function handleEnhancedConversation(chatId, text, sessionId) {
         
         // Fallback to simple GPT response with error logging
         try {
-            const response = await getGptAnalysis(text, { maxTokens: 1000 });
+            const response = await getGPT5Analysis(text, { maxTokens: 1000 });
             await sendSmartMessage(bot, chatId, response);
             
             // Save fallback conversation
@@ -867,428 +890,6 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
     }
 }
 
-// Enhanced Cambodia fund command handlers with database integration
-async function handleDealAnalysis(chatId, text) {
-    try {
-        if (text === '/deal_analyze') {
-            await sendSmartMessage(bot, chatId, 
-                "**Enhanced Deal Analysis Usage:**\n" +
-                "/deal_analyze [amount] [type] [location] [rate] [term]\n\n" +
-                "**Example:**\n" +
-                "/deal_analyze 500000 commercial \"Phnom Penh\" 18 12\n\n" +
-                "**Database Integration:** All analyses are saved for trend tracking"
-            );
-            return;
-        }
-
-        const params = text.replace('/deal_analyze ', '').split(' ');
-        if (params.length < 5) {
-            await sendSmartMessage(bot, chatId, "❌ Invalid format. Use: /deal_analyze [amount] [type] [location] [rate] [term]");
-            return;
-        }
-
-        const dealParams = {
-            amount: parseFloat(params[0]),
-            collateralType: params[1],
-            location: params[2].replace(/"/g, ''),
-            interestRate: parseFloat(params[3]),
-            term: parseInt(params[4])
-        };
-
-        await bot.sendMessage(chatId, "📊 Analyzing Cambodia lending deal with enhanced database...");
-        const analysis = await analyzeLendingDeal(dealParams);
-
-        if (analysis.error) {
-            await sendSmartMessage(bot, chatId, `❌ Analysis error: ${analysis.error}`);
-            return;
-        }
-
-        // Save to enhanced Cambodia deals database
-        const dealData = {
-            ...analysis,
-            dealId: `${chatId}_${Date.now()}`,
-            collateralType: dealParams.collateralType,
-            location: dealParams.location
-        };
-        
-        await saveCambodiaDeal(chatId, dealData).catch(console.error);
-
-        let response = `**Enhanced Cambodia Deal Analysis**\n\n`;
-        response += `**Overview:**\n`;
-        response += `• Amount: $${analysis.dealSummary.amount.toLocaleString()}\n`;
-        response += `• Rate: ${analysis.dealSummary.rate}% annually\n`;
-        response += `• Term: ${analysis.dealSummary.term} months\n`;
-        response += `• Monthly Payment: $${analysis.dealSummary.monthlyPayment.toFixed(0)}\n\n`;
-        
-        response += `**Risk Assessment:**\n`;
-        response += `• Overall Risk: ${analysis.riskAssessment.overallScore}/100\n`;
-        response += `• Risk Category: ${analysis.riskAssessment.riskCategory}\n\n`;
-        
-        response += `**Recommendation: ${analysis.recommendation.decision}**\n`;
-        response += `• Confidence: ${analysis.recommendation.confidence}%\n`;
-        response += `• Rationale: ${analysis.recommendation.reasons[0]}\n\n`;
-        response += `💾 **Saved to database for trend analysis**`;
-
-        await sendCambodiaAnalysis(bot, chatId, response);
-
-    } catch (error) {
-        await sendSmartMessage(bot, chatId, `❌ Enhanced deal analysis error: ${error.message}`);
-    }
-}
-
-async function handlePortfolioStatus(chatId) {
-    try {
-        await bot.sendMessage(chatId, "📊 Getting enhanced portfolio status from database...");
-        
-        // Get portfolio data from database
-        const portfolioHistory = await getCambodiaFundAnalytics(30).catch(() => null);
-        
-        const sampleData = {
-            totalAUM: 2500000,
-            deployedCapital: 2000000,
-            availableCapital: 500000,
-            activeDeals: 12,
-            currentYield: 17.5
-        };
-        
-        const portfolio = await getPortfolioStatus(sampleData);
-        
-        // Save portfolio status to database
-        await saveCambodiaPortfolio(portfolio).catch(console.error);
-        
-        let response = `**Enhanced Cambodia Fund Portfolio Status**\n\n`;
-        response += `**Fund Overview:**\n`;
-        response += `• Total AUM: $${portfolio.fundOverview.totalAUM.toLocaleString()}\n`;
-        response += `• Deployed Capital: $${portfolio.fundOverview.deployedCapital.toLocaleString()}\n`;
-        response += `• Available Capital: $${portfolio.fundOverview.availableCapital.toLocaleString()}\n`;
-        response += `• Active Deals: ${portfolio.fundOverview.numberOfDeals}\n\n`;
-        
-        response += `**Performance:**\n`;
-        response += `• Current Yield: ${portfolio.performance.currentYieldRate.toFixed(2)}%\n`;
-        response += `• vs Target: ${portfolio.performance.actualVsTarget > 0 ? '+' : ''}${portfolio.performance.actualVsTarget.toFixed(1)}%\n`;
-        response += `• Monthly Income: $${portfolio.performance.monthlyIncome.toLocaleString()}\n\n`;
-        
-        if (portfolioHistory && portfolioHistory.dealAnalytics) {
-            response += `**30-Day Analytics from Database:**\n`;
-            response += `• Total Deals Analyzed: ${portfolioHistory.dealAnalytics.total_deals}\n`;
-            response += `• Average Deal Size: $${parseFloat(portfolioHistory.dealAnalytics.avg_deal_size || 0).toLocaleString()}\n`;
-            response += `• Approval Rate: ${((portfolioHistory.dealAnalytics.approved_deals / portfolioHistory.dealAnalytics.total_deals) * 100).toFixed(1)}%\n`;
-        }
-
-        await sendCambodiaAnalysis(bot, chatId, response);
-
-    } catch (error) {
-        await sendSmartMessage(bot, chatId, `❌ Enhanced portfolio status error: ${error.message}`);
-    }
-}
-
-async function handleCambodiaMarket(chatId) {
-    try {
-        await bot.sendMessage(chatId, "🇰🇭 Analyzing Cambodia market with enhanced database integration...");
-        
-        // Get latest market data from database
-        const latestMarketData = await getLatestCambodiaMarketData().catch(() => null);
-        
-        const conditions = await getCambodiaMarketConditions();
-        
-        // Save market conditions to database
-        await saveCambodiaMarketData({
-            marketConditions: conditions,
-            dataDate: new Date().toISOString().split('T')[0],
-            marketSummary: conditions.summary
-        }).catch(console.error);
-        
-        let response = `**Enhanced Cambodia Market Analysis**\n\n`;
-        response += `**Economic Environment:**\n`;
-        response += `• GDP Growth: ${conditions.economicEnvironment.gdpGrowth}%\n`;
-        response += `• Inflation: ${conditions.economicEnvironment.inflation}%\n`;
-        response += `• Currency Stability: ${conditions.economicEnvironment.currencyStability}\n\n`;
-        
-        response += `**Interest Rate Environment:**\n`;
-        response += `• Commercial Loans: ${conditions.interestRateEnvironment.commercialRates.commercial.average}% avg\n`;
-        response += `• Bridge Loans: ${conditions.interestRateEnvironment.commercialRates.bridge.average}% avg\n\n`;
-        
-        response += `**Market Summary:**\n${conditions.summary}\n\n`;
-        
-        if (latestMarketData) {
-            response += `💾 **Historical data available in database since ${new Date(latestMarketData.data_date).toLocaleDateString()}**`;
-        }
-
-        await sendCambodiaAnalysis(bot, chatId, response);
-
-    } catch (error) {
-        await sendSmartMessage(bot, chatId, `❌ Enhanced Cambodia market analysis error: ${error.message}`);
-    }
-}
-
-async function handleRiskAssessment(chatId) {
-    try {
-        await bot.sendMessage(chatId, "📊 Performing enhanced risk assessment with database integration...");
-        
-        const sampleData = {
-            totalValue: 2500000,
-            numberOfDeals: 12,
-            averageRate: 17.5
-        };
-        
-        const risk = await performRiskAssessment(sampleData);
-        
-        // Save risk assessment to database
-        await saveRiskAssessment(chatId, {
-            assessmentType: 'PORTFOLIO',
-            totalRiskPercent: risk.portfolioRisk.overallRiskScore,
-            correlationRisk: risk.portfolioRisk.concentrationRisk,
-            regimeRisk: 'MODERATE',
-            diversificationScore: 75,
-            accountBalance: sampleData.totalValue,
-            riskData: risk,
-            recommendations: ["Monitor concentration risk", "Consider diversification"],
-            stressTestResults: risk.stressTesting
-        }).catch(console.error);
-        
-        let response = `**Enhanced Portfolio Risk Assessment**\n\n`;
-        response += `**Overall Risk Metrics:**\n`;
-        response += `• Risk Score: ${risk.portfolioRisk.overallRiskScore}/100\n`;
-        response += `• Concentration Risk: ${risk.portfolioRisk.concentrationRisk}\n`;
-        response += `• Credit Risk: ${risk.portfolioRisk.creditRisk}\n`;
-        response += `• Market Risk: ${risk.portfolioRisk.marketRisk}\n\n`;
-        
-        response += `**Stress Testing:**\n`;
-        response += `• Economic Downturn: ${risk.stressTesting.economicDownturn}% loss\n`;
-        response += `• Interest Rate Shock: ${risk.stressTesting.interestRateShock}% impact\n\n`;
-        
-        response += `💾 **Assessment saved to database for trend tracking**`;
-
-        await sendAnalysis(bot, chatId, response, "Enhanced Risk Assessment");
-
-    } catch (error) {
-        await sendSmartMessage(bot, chatId, `❌ Enhanced risk assessment error: ${error.message}`);
-    }
-}
-
-// Enhanced market analysis handlers with database integration
-async function handleMarketBriefing(chatId) {
-    try {
-        await bot.sendMessage(chatId, "📊 Generating enhanced market briefing with database context...");
-        
-        const marketData = await getComprehensiveMarketData();
-        
-        // Get current regime from database
-        const currentRegime = await getCurrentRegime().catch(() => null);
-        
-        let briefing = `**Enhanced Daily Market Briefing**\n\n`;
-        briefing += `📅 ${new Date().toLocaleDateString()}\n\n`;
-        
-        if (currentRegime) {
-            briefing += `**Current Economic Regime (Database):**\n`;
-            briefing += `• Regime: ${currentRegime.regime_name}\n`;
-            briefing += `• Confidence: ${currentRegime.confidence}%\n`;
-            briefing += `• Duration: ${currentRegime.regime_duration || 0} days\n\n`;
-        }
-        
-        if (marketData?.markets?.economics) {
-            briefing += `**Economic Data:**\n`;
-            briefing += `• Fed Rate: ${marketData.markets.economics.fedRate?.value}%\n`;
-            briefing += `• Inflation: ${marketData.markets.economics.inflation?.value}%\n\n`;
-        }
-        
-        if (marketData?.markets?.crypto?.bitcoin) {
-            const btc = marketData.markets.crypto.bitcoin;
-            briefing += `**Crypto:**\n`;
-            briefing += `• Bitcoin: $${btc.usd?.toLocaleString()} (${btc.usd_24h_change?.toFixed(1)}%)\n\n`;
-        }
-        
-        if (marketData?.trading && !marketData.trading.error) {
-            briefing += `**Your Trading Account:**\n`;
-            briefing += `• Balance: ${marketData.trading.account?.balance} ${marketData.trading.account?.currency}\n`;
-            briefing += `• Open Positions: ${marketData.trading.openPositions?.length || 0}\n\n`;
-        }
-        
-        briefing += `💾 **Data integrated from enhanced database**\n`;
-        briefing += `Ask me for analysis: "What's your take on these conditions?"`;
-
-        await sendMarketAnalysis(bot, chatId, briefing);
-
-    } catch (error) {
-        await sendSmartMessage(bot, chatId, `❌ Enhanced market briefing error: ${error.message}`);
-    }
-}
-
-async function handleRegimeAnalysis(chatId) {
-    try {
-        await bot.sendMessage(chatId, "🏛️ Analyzing economic regime with enhanced database integration...");
-        
-        const query = "Analyze the current economic regime using Ray Dalio's framework. Consider growth, inflation, and policy environment with database context.";
-        const analysis = await getRegimeAnalysis(query);
-        
-        // Extract regime data for database storage
-        const regimeData = extractRegimeDataFromAnalysis(analysis);
-        if (regimeData) {
-            await saveRegimeData(regimeData).catch(console.error);
-        }
-        
-        let enhancedAnalysis = analysis;
-        
-        // Add database context
-        const regimeHistory = await getRegimeTransitions(30).catch(() => []);
-        if (regimeHistory.length > 0) {
-            enhancedAnalysis += `\n\n**Database Context (30 days):**\n`;
-            enhancedAnalysis += `• Regime Transitions: ${regimeHistory.length}\n`;
-            enhancedAnalysis += `• Latest Transition: ${regimeHistory[0]?.regime_name || 'None'}\n`;
-        }
-        
-        await sendAnalysis(bot, chatId, enhancedAnalysis, "Enhanced Economic Regime Analysis");
-
-    } catch (error) {
-        await sendSmartMessage(bot, chatId, `❌ Enhanced regime analysis error: ${error.message}`);
-    }
-}
-
-async function handleOpportunities(chatId) {
-    try {
-        await bot.sendMessage(chatId, "🎯 Scanning for opportunities with enhanced database intelligence...");
-        
-        const marketData = await getComprehensiveMarketData();
-        const query = `Based on current market conditions and database context, identify top 3 strategic opportunities. Consider the economic environment and risk/reward profiles.`;
-        
-        const analysis = await getStrategicAnalysis(query);
-        
-        // Save market signal for opportunities
-        await saveMarketSignal({
-            type: 'OPPORTUNITY_SCAN',
-            strength: 'MODERATE',
-            description: 'Strategic opportunities identified',
-            marketData: marketData,
-            impact: 'MODERATE',
-            insights: ['Strategic opportunity scanning completed']
-        }).catch(console.error);
-        
-        let enhancedAnalysis = analysis;
-        enhancedAnalysis += `\n\n💾 **Opportunity scan saved to database for tracking**`;
-        
-        await sendAnalysis(bot, chatId, enhancedAnalysis, "Enhanced Market Opportunities");
-
-    } catch (error) {
-        await sendSmartMessage(bot, chatId, `❌ Enhanced opportunities scan error: ${error.message}`);
-    }
-}
-
-async function handleMacroAnalysis(chatId) {
-    try {
-        await bot.sendMessage(chatId, "🌍 Analyzing macro outlook with enhanced database context...");
-        
-        const query = "Provide a comprehensive macro economic outlook with database intelligence. Analyze global growth, inflation trends, central bank policies, and market implications.";
-        const analysis = await getGptStrategicAnalysis(query);
-        
-        // Save daily observation
-        await saveDailyObservation({
-            marketRegime: 'ANALYZING',
-            regimeConfidence: 75,
-            keyThemes: ['Macro Analysis', 'Global Outlook'],
-            outlook: analysis.substring(0, 500),
-            riskFactors: ['Inflation uncertainty', 'Central bank policy'],
-            opportunities: ['Strategic positioning']
-        }).catch(console.error);
-        
-        let enhancedAnalysis = analysis;
-        enhancedAnalysis += `\n\n💾 **Macro analysis saved as daily observation in database**`;
-        
-        await sendAnalysis(bot, chatId, enhancedAnalysis, "Enhanced Macro Economic Outlook");
-
-    } catch (error) {
-        await sendSmartMessage(bot, chatId, `❌ Enhanced macro analysis error: ${error.message}`);
-    }
-}
-
-// Enhanced trading handlers
-async function handleTradingStatus(chatId) {
-    try {
-        await bot.sendMessage(chatId, "💹 Getting enhanced trading account status...");
-        
-        const trading = await getTradingSummary();
-        
-        if (trading?.error) {
-            await sendSmartMessage(bot, chatId, "❌ Trading account not connected. Check MetaAPI configuration.");
-            return;
-        }
-        
-        // Save trading pattern if applicable
-        if (trading.performance?.currentPnL) {
-            await saveTradingPattern(chatId, {
-                type: 'ACCOUNT_STATUS',
-                description: `Account balance: ${trading.account?.balance}`,
-                confidence: 85,
-                evidence: trading
-            }).catch(console.error);
-        }
-        
-        let response = `**Enhanced Trading Account Status**\n\n`;
-        response += `**Account:**\n`;
-        response += `• Balance: ${trading.account?.balance} ${trading.account?.currency}\n`;
-        response += `• Equity: ${trading.account?.equity} ${trading.account?.currency}\n`;
-        response += `• Free Margin: ${trading.account?.freeMargin} ${trading.account?.currency}\n\n`;
-        
-        response += `**Positions:**\n`;
-        response += `• Open Positions: ${trading.openPositions?.length || 0}\n`;
-        
-        if (trading.performance?.currentPnL) {
-            const pnlEmoji = trading.performance.currentPnL > 0 ? '🟢' : '🔴';
-            response += `• Current P&L: ${pnlEmoji} ${trading.performance.currentPnL.toFixed(2)}\n`;
-        }
-        
-        response += `\n💾 **Trading data tracked in enhanced database**`;
-
-        await sendAnalysis(bot, chatId, response, "Enhanced Trading Account");
-
-    } catch (error) {
-        await sendSmartMessage(bot, chatId, `❌ Enhanced trading status error: ${error.message}`);
-    }
-}
-
-async function handlePositions(chatId) {
-    try {
-        const { getOpenPositions } = require('./utils/metaTrader');
-        const positions = await getOpenPositions();
-        
-        if (!positions || positions.length === 0) {
-            await sendSmartMessage(bot, chatId, "📊 No open positions found.");
-            return;
-        }
-        
-        // Save position data for analysis
-        for (const pos of positions) {
-            await savePositionSizing(chatId, {
-                symbol: pos.symbol,
-                direction: pos.type,
-                recommendedSize: pos.volume,
-                actualSize: pos.volume,
-                riskPercent: 2.0,
-                entryPrice: pos.openPrice || 0,
-                stopLoss: pos.stopLoss || 0,
-                takeProfit: pos.takeProfit || 0,
-                accountBalance: 10000, // Default
-                currentRegime: 'CURRENT',
-                rationale: 'Position tracking'
-            }).catch(console.error);
-        }
-        
-        let response = `**Enhanced Open Positions (${positions.length})**\n\n`;
-        positions.forEach((pos, i) => {
-            const pnlEmoji = pos.profit > 0 ? '🟢' : pos.profit < 0 ? '🔴' : '⚪';
-            response += `${i + 1}. ${pnlEmoji} **${pos.symbol}** ${pos.type}\n`;
-            response += `   Volume: ${pos.volume} lots\n`;
-            response += `   P&L: ${pos.profit?.toFixed(2)}\n\n`;
-        });
-        
-        response += `💾 **Position data saved to enhanced database for analysis**`;
-
-        await sendAnalysis(bot, chatId, response, "Enhanced Open Positions");
-
-    } catch (error) {
-        await sendSmartMessage(bot, chatId, `❌ Enhanced positions error: ${error.message}`);
-    }
-}
-
 async function handleDocumentsList(chatId) {
     try {
         const docs = await getTrainingDocumentsDB(chatId);
@@ -1328,102 +929,6 @@ async function handleDocumentsList(chatId) {
     }
 }
 
-// Helper function to extract regime data from analysis
-function extractRegimeDataFromAnalysis(analysis) {
-    // Basic extraction - you might want to enhance this based on your analysis format
-    try {
-        const regimePatterns = {
-            growth: analysis.toLowerCase().includes('growth') ? 'POSITIVE' : 'NEUTRAL',
-            inflation: analysis.toLowerCase().includes('inflation') ? 'RISING' : 'STABLE',
-            policy: analysis.toLowerCase().includes('tight') ? 'TIGHTENING' : 'ACCOMMODATIVE'
-        };
-        
-        let confidence = 70;
-        if (analysis.includes('high confidence')) confidence = 85;
-        if (analysis.includes('low confidence')) confidence = 55;
-        
-        return {
-            currentRegime: {
-                name: `${regimePatterns.growth}_GROWTH_${regimePatterns.inflation}_INFLATION`,
-                growth: regimePatterns.growth,
-                inflation: regimePatterns.inflation,
-                policy: regimePatterns.policy
-            },
-            confidence: confidence,
-            signals: {
-                policy: { realRate: 2.5 },
-                inflation: { indicators: { headline: 3.2 } },
-                market: { vix: 18.5 }
-            }
-        };
-    } catch (error) {
-        console.error('Error extracting regime data:', error.message);
-        return null;
-    }
-}
-
-// Enhanced function tracking utilities (missing from your list)
-async function startUserSession(chatId, sessionType = 'GENERAL') {
-    try {
-        console.log(`Starting session for ${chatId}: ${sessionType}`);
-        return `session_${chatId}_${Date.now()}`;
-    } catch (error) {
-        console.error('Start session error:', error.message);
-        return null;
-    }
-}
-
-async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
-    try {
-        console.log(`Ending session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
-        return true;
-    } catch (error) {
-        console.error('End session error:', error.message);
-        return false;
-    }
-}
-
-async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
-    try {
-        // This function should exist in your database.js but adding fallback
-        console.log(`API Usage: ${apiProvider}/${endpoint} - ${successful ? 'SUCCESS' : 'FAILED'} - ${responseTime}ms`);
-        return true;
-    } catch (error) {
-        console.error('Log API usage error:', error.message);
-        return false;
-    }
-}
-
-async function getRegimeTransitions(days = 30) {
-    try {
-        // This should exist in your database.js
-        return [];
-    } catch (error) {
-        console.error('Get regime transitions error:', error.message);
-        return [];
-    }
-}
-
-async function saveTradingPattern(chatId, pattern) {
-    try {
-        console.log(`Saving trading pattern for ${chatId}: ${pattern.type}`);
-        return true;
-    } catch (error) {
-        console.error('Save trading pattern error:', error.message);
-        return false;
-    }
-}
-
-async function saveCambodiaMarketData(marketData) {
-    try {
-        console.log('Saving Cambodia market data to database');
-        return true;
-    } catch (error) {
-        console.error('Save Cambodia market data error:', error.message);
-        return false;
-    }
-}
-
 // Express server setup with enhanced endpoints
 const express = require("express");
 const app = express();
@@ -1440,7 +945,7 @@ app.post("/webhook", (req, res) => {
 
 // Enhanced health check
 app.get("/", (req, res) => {
-    res.status(200).send("✅ Enhanced AI Assistant v3.1 is running with database integration");
+    res.status(200).send("✅ Enhanced AI Assistant v3.2 is running with database integration");
 });
 
 app.get("/health", async (req, res) => {
@@ -1448,9 +953,9 @@ app.get("/health", async (req, res) => {
     
     res.status(200).json({ 
         status: "healthy", 
-        version: "3.1 Enhanced",
+        version: "3.2 Enhanced",
         timestamp: new Date().toISOString(),
-        models: ["gpt-5", "Claude Opus 4.1"],
+        models: ["GPT-5", "Claude Opus 4.1"],
         features: ["Enhanced Database", "Market Analysis", "Cambodia Fund", "Document Processing"],
         database: {
             status: connectionStats.connectionHealth,
@@ -1469,27 +974,22 @@ app.get("/analyze", async (req, res) => {
         return res.json({
             error: "Provide query: ?q=your-question",
             example: "/analyze?q=What's the current market outlook?",
-            models: ["gpt-5", "Claude Opus 4.1"],
+            models: ["GPT-5", "Claude Opus 4.1"],
             database: "Enhanced PostgreSQL Integration"
         });
     }
 
     try {
-        const response = await getGptAnalysis(query, { maxTokens: 2000 });
-        
-        // Log API usage
-        await logApiUsage('api', 'analyze_endpoint', 1, true, 1200, 2, 0.02).catch(console.error);
+        const response = await getGPT5Analysis(query, { maxTokens: 2000 });
         
         res.json({
             query: query,
             response: response,
-            model: "gpt-5 Enhanced",
+            model: "GPT-5 Enhanced",
             database: "Integrated",
             timestamp: new Date().toISOString()
         });
     } catch (error) {
-        await logApiUsage('api', 'analyze_endpoint', 1, false, 0, 0, 0).catch(console.error);
-        
         res.status(500).json({
             error: "Enhanced analysis failed",
             message: error.message,
@@ -1512,8 +1012,6 @@ app.get("/claude", async (req, res) => {
     try {
         const response = await getClaudeAnalysis(query, { maxTokens: 2000 });
         
-        await logApiUsage('api', 'claude_endpoint', 1, true, 1800, 2.5, 0.03).catch(console.error);
-        
         res.json({
             query: query,
             response: response,
@@ -1522,8 +1020,6 @@ app.get("/claude", async (req, res) => {
             timestamp: new Date().toISOString()
         });
     } catch (error) {
-        await logApiUsage('api', 'claude_endpoint', 1, false, 0, 0, 0).catch(console.error);
-        
         res.status(500).json({
             error: "Enhanced Claude analysis failed",
             message: error.message,
@@ -1558,8 +1054,6 @@ app.get("/dual", async (req, res) => {
             response: result.response
         }).catch(console.error);
         
-        await logApiUsage('api', 'dual_endpoint', 1, true, result.responseTime || 2000, 3, 0.04).catch(console.error);
-        
         res.json({
             query: query,
             response: result.response,
@@ -1570,8 +1064,6 @@ app.get("/dual", async (req, res) => {
             timestamp: new Date().toISOString()
         });
     } catch (error) {
-        await logApiUsage('api', 'dual_endpoint', 1, false, 0, 0, 0).catch(console.error);
-        
         res.status(500).json({
             error: "Enhanced dual command failed",
             message: error.message,
@@ -1589,10 +1081,10 @@ app.get("/status", async (req, res) => {
         ]);
         
         res.json({
-            system: "Enhanced AI Assistant v3.1",
+            system: "Enhanced AI Assistant v3.2",
             models: {
-                gpt4o: health.gptAnalysis ? "online" : "offline",
-                claude: health.claudeAnalysis ? "online" : "offline"
+                gpt5: health.gpt5Available ? "online" : "offline",
+                claude: health.claudeAvailable ? "online" : "offline"
             },
             database: {
                 status: connectionStats.connectionHealth,
@@ -1651,7 +1143,7 @@ app.get("/database", async (req, res) => {
         
         res.json({
             database: "Enhanced PostgreSQL",
-            version: "3.1",
+            version: "3.2",
             stats: stats,
             connectionHealth: connectionStats.connectionHealth,
             timestamp: new Date().toISOString()
@@ -1665,11 +1157,32 @@ app.get("/database", async (req, res) => {
     }
 });
 
+// Utility functions for session tracking
+async function startUserSession(chatId, sessionType = 'GENERAL') {
+    try {
+        console.log(`Starting session for ${chatId}: ${sessionType}`);
+        return `session_${chatId}_${Date.now()}`;
+    } catch (error) {
+        console.error('Start session error:', error.message);
+        return null;
+    }
+}
+
+async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
+    try {
+        console.log(`Ending session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
+        return true;
+    } catch (error) {
+        console.error('End session error:', error.message);
+        return false;
+    }
+}
+
 // Start enhanced server with comprehensive initialization
 const server = app.listen(PORT, "0.0.0.0", async () => {
-    console.log("🚀 Enhanced AI Assistant v3.1 starting...");
+    console.log("🚀 Enhanced AI Assistant v3.2 starting...");
     console.log("✅ Server running on port " + PORT);
-    console.log("🤖 Models: gpt-5 + Claude Opus 4.1");
+    console.log("🤖 Models: GPT-5 + Claude Opus 4.1");
     console.log("🏦 Features: Enhanced Database + Cambodia Fund + Ray Dalio Framework");
     
     // Initialize enhanced database
@@ -1682,7 +1195,7 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
     }
     
     console.log("🔗 Enhanced API Endpoints:");
-    console.log(`   gpt-5: http://localhost:${PORT}/analyze?q=your-question`);
+    console.log(`   GPT-5: http://localhost:${PORT}/analyze?q=your-question`);
     console.log(`   Claude: http://localhost:${PORT}/claude?q=your-question`);
     console.log(`   Dual AI: http://localhost:${PORT}/dual?q=your-question`);
     console.log(`   Status: http://localhost:${PORT}/status`);
@@ -1695,7 +1208,7 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
     try {
         await bot.setWebHook(webhookUrl);
         console.log("🔗 Enhanced webhook configured:", webhookUrl);
-        console.log("🚀 Enhanced AI Assistant v3.1 ready with full database integration!");
+        console.log("🚀 Enhanced AI Assistant v3.2 ready with full database integration!");
         
         // Log successful startup
         await updateSystemMetrics({
@@ -1723,7 +1236,7 @@ process.on('SIGTERM', async () => {
     }
     
     server.close(() => {
-        console.log('✅ Enhanced AI Assistant v3.1 shut down gracefully');
+        console.log('✅ Enhanced AI Assistant v3.2 shut down gracefully');
         process.exit(0);
     });
 });
@@ -1742,7 +1255,7 @@ process.on('SIGINT', async () => {
     }
     
     server.close(() => {
-        console.log('✅ Enhanced AI Assistant v3.1 shut down gracefully');
+        console.log('✅ Enhanced AI Assistant v3.2 shut down gracefully');
         process.exit(0);
     });
 });
