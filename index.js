@@ -95,6 +95,16 @@ const openai = new OpenAI({
     maxRetries: 3
 });
 
+// ✅ Initialize Database Connection
+initializeDatabase()
+    .then(() => {
+        console.log("✅ PostgreSQL database connected and tables initialized");
+    })
+    .catch((err) => {
+        console.error("❌ Database connection failed:", err.message);
+        console.log("⚠️ Falling back to in-memory storage");
+    });
+
 // Initialize Database
 initializeDatabase()
     .then(() => console.log("✅ Database connected"))
