@@ -97,13 +97,10 @@ const openai = new OpenAI({
 
 // Initialize Database
 initializeDatabase()
-    .then(() => {
-        console.log("✅ PostgreSQL database connected and tables initialized");
-    })
+    .then(() => console.log("✅ PostgreSQL database connected and tables initialized")
     .catch((err) => {
         console.error("❌ Database connection failed:", err.message);
         console.log("⚠️ Falling back to in-memory storage");
-    });
 
 // User Authentication
 function isAuthorizedUser(chatId) {
@@ -129,19 +126,6 @@ async function getComprehensiveMarketData() {
         return null;
     }
 }
-
-// ✅ Initialize MetaAPI Connection
-initializeMetaAPI()
-    .then((success) => {
-        if (success) {
-            console.log("✅ MetaAPI connected successfully");
-        } else {
-            console.log("⚠️ MetaAPI not configured or connection failed");
-        }
-    })
-    .catch((err) => {
-        console.log("⚠️ MetaAPI initialization failed:", err.message);
-    });
 
 // Main message handler
 bot.on("message", async (msg) => {
