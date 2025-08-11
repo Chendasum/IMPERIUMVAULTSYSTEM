@@ -1,4 +1,4 @@
-// utils/dualCommandSystem.js - Clean Dual AI System with Natural Responses
+// utils/contextEnhancer.js - Clean Dual AI System with Natural Responses
 // Smart routing between GPT-4o and Claude Opus 4.1 with live data integration
 
 const { getGptAnalysis, getMarketAnalysis, getCambodiaAnalysis } = require('./openaiClient');
@@ -12,6 +12,7 @@ const {
 } = require('./claudeClient');
 const { buildConversationContext } = require('./memory');
 
+// 🔧 FIXED: Add the missing function that connects to memory and database
 async function buildStrategicCommanderContext(chatId, userMessage) {
     try {
         return await buildConversationContext(chatId);
@@ -376,11 +377,11 @@ async function executeDualCommand(userMessage, chatId, messageType = 'text', has
             reason: queryAnalysis.reason
         });
         
-        // Build context for complex queries
+        // 🔧 FIXED: Build context for complex queries using the correct function
         let context = null;
         if (queryAnalysis.complexity !== 'low') {
             try {
-                context = await buildConversationContext(chatId);
+                context = await buildStrategicCommanderContext(chatId, userMessage);
             } catch (contextError) {
                 console.log('⚠️ Context building failed, continuing without:', contextError.message);
             }
@@ -610,6 +611,9 @@ module.exports = {
     analyzeQuery,
     executeGptAnalysis,
     executeClaudeAnalysis,
+    
+    // 🔧 FIXED: Export the missing function
+    buildStrategicCommanderContext,
     
     // Utility functions
     getCurrentCambodiaDateTime,
