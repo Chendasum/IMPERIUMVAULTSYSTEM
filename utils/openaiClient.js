@@ -1,4 +1,4 @@
-// utils/openaiClient.js - Clean OpenAI Client with Natural GPT-5 Responses
+// utils/openaiClient.js - Clean OpenAI Client with GPT-5 and Smart Fallback
 require("dotenv").config();
 const { OpenAI } = require("openai");
 
@@ -9,11 +9,83 @@ const openai = new OpenAI({
     maxRetries: 3
 });
 
+// Smart model selection with fallback
+const PREFERRED_MODEL = process.env.OPENAI_MODEL || "gpt-5";
+const FALLBACK_MODEL = "gpt-4o";
+
+let currentModel = PREFERRED_MODEL;
+let modelTested = false;
+
 // Debug configuration
 console.log("🔧 OpenAI Client Configuration:");
 console.log(`   API Key: ${process.env.OPENAI_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
-console.log(`   Model: GPT-5`);
+console.log(`   Preferred Model: ${PREFERRED_MODEL}`);
+console.log(`   Fallback Model: ${FALLBACK_MODEL}`);
 console.log(`   Timeout: 120 seconds`);
+
+/**
+ * Test and set the working model
+ */
+async function testAndSetModel() {
+    if (modelTested) return currentModel;
+    
+    try {
+        console.log(`🔍 Testing ${PREFERRED_MODEL} availability...`);
+        
+        const testResponse = await openai.chat.completions.create({
+            model: PREFERRED_MODEL,
+            messages: [
+                {
+                    role: "user",
+                    content: "Test message - respond with 'OK'"
+                }
+            ],
+            max_tokens: 10,
+            temperature: 0
+        });
+        
+        if (testResponse.choices[0].message.content) {
+            console.log(`✅ ${PREFERRED_MODEL} is available and working`);
+            currentModel = PREFERRED_MODEL;
+            modelTested = true;
+            return currentModel;
+        }
+        
+    } catch (error) {
+        console.log(`⚠️ ${PREFERRED_MODEL} not available: ${error.message}`);
+        console.log(`🔄 Falling back to ${FALLBACK_MODEL}`);
+        
+        try {
+            const fallbackTest = await openai.chat.completions.create({
+                model: FALLBACK_MODEL,
+                messages: [
+                    {
+                        role: "user",
+                        content: "Test message - respond with 'OK'"
+                    }
+                ],
+                max_tokens: 10,
+                temperature: 0
+            });
+            
+            if (fallbackTest.choices[0].message.content) {
+                console.log(`✅ ${FALLBACK_MODEL} is working`);
+                currentModel = FALLBACK_MODEL;
+                modelTested = true;
+                return currentModel;
+            }
+            
+        } catch (fallbackError) {
+            console.error(`❌ Both models failed: ${fallbackError.message}`);
+            currentModel = FALLBACK_MODEL; // Use fallback anyway
+            modelTested = true;
+            return currentModel;
+        }
+    }
+    
+    modelTested = true;
+    return currentModel;
+}
 
 /**
  * Analyze query type for appropriate response complexity
@@ -97,7 +169,8 @@ function analyzeQueryType(prompt) {
  * Create natural system prompt based on query type
  */
 function createSystemPrompt(queryType, options = {}) {
-    let systemPrompt = "You are GPT-5, OpenAI's most advanced AI assistant with enhanced capabilities in analysis, reasoning, and problem-solving.";
+    const modelName = currentModel === "gpt-5" ? "GPT-5" : "GPT-4o";
+    let systemPrompt = `You are ${modelName}, OpenAI's advanced AI assistant with enhanced capabilities in analysis, reasoning, and problem-solving.`;
     
     switch (queryType.type) {
         case 'casual':
@@ -136,11 +209,14 @@ function createSystemPrompt(queryType, options = {}) {
 }
 
 /**
- * Main GPT-5 analysis function
+ * Main GPT analysis function with smart model selection
  */
 async function getGptAnalysis(prompt, options = {}) {
     try {
-        console.log('🔍 GPT-5 analyzing query...');
+        // Ensure we have the working model
+        await testAndSetModel();
+        
+        console.log(`🔍 ${currentModel.toUpperCase()} analyzing query...`);
         
         // Analyze query type
         const queryType = analyzeQueryType(prompt);
@@ -151,7 +227,7 @@ async function getGptAnalysis(prompt, options = {}) {
         
         // Prepare request options
         const requestOptions = {
-            model: "gpt-5",
+            model: currentModel,
             messages: [
                 {
                     role: "system",
@@ -173,14 +249,27 @@ async function getGptAnalysis(prompt, options = {}) {
         const completion = await openai.chat.completions.create(requestOptions);
         const response = completion.choices[0].message.content.trim();
         
-        console.log(`✅ GPT-5 analysis complete: ${queryType.type} (${response.length} chars, ${completion.usage?.total_tokens || 'unknown'} tokens)`);
+        console.log(`✅ ${currentModel.toUpperCase()} analysis complete: ${queryType.type} (${response.length} chars, ${completion.usage?.total_tokens || 'unknown'} tokens)`);
         return response;
         
     } catch (error) {
-        console.error('❌ GPT-5 analysis error:', error.message);
+        console.error(`❌ ${currentModel.toUpperCase()} analysis error:`, error.message);
+        
+        // If GPT-5 fails, try fallback to GPT-4o
+        if (currentModel === "gpt-5" && !error.message.includes('API key')) {
+            console.log('🔄 GPT-5 failed, trying GPT-4o fallback...');
+            currentModel = FALLBACK_MODEL;
+            modelTested = false; // Force retest
+            
+            try {
+                return await getGptAnalysis(prompt, options);
+            } catch (fallbackError) {
+                console.error('❌ Fallback also failed:', fallbackError.message);
+            }
+        }
         
         if (error.message.includes('model')) {
-            throw new Error(`GPT Model Error: ${error.message}. Verify GPT-5 access.`);
+            throw new Error(`GPT Model Error: ${error.message}. Verify ${currentModel} access.`);
         } else if (error.message.includes('API key')) {
             throw new Error('GPT API Key Error: Check OPENAI_API_KEY environment variable.');
         } else if (error.message.includes('timeout')) {
@@ -207,7 +296,7 @@ async function getQuickReply(prompt, options = {}) {
 // Financial market analysis
 async function getMarketAnalysis(query, marketData = null, options = {}) {
     try {
-        console.log('📈 GPT-5 market analysis...');
+        console.log(`📈 ${currentModel.toUpperCase()} market analysis...`);
         
         let enhancedQuery = `Market analysis request: ${query}`;
         
@@ -237,7 +326,7 @@ async function getMarketAnalysis(query, marketData = null, options = {}) {
 // Strategic business analysis
 async function getStrategicAnalysis(query, options = {}) {
     try {
-        console.log('🎯 GPT-5 strategic analysis...');
+        console.log(`🎯 ${currentModel.toUpperCase()} strategic analysis...`);
         
         const strategicQuery = `Strategic business analysis: ${query}
         
@@ -262,7 +351,7 @@ Please provide comprehensive analysis including:
 // Cambodia market analysis
 async function getCambodiaAnalysis(dealQuery, dealData = null, options = {}) {
     try {
-        console.log('🇰🇭 GPT-5 Cambodia analysis...');
+        console.log(`🇰🇭 ${currentModel.toUpperCase()} Cambodia analysis...`);
         
         let enhancedQuery = `Cambodia market analysis: ${dealQuery}`;
         
@@ -300,14 +389,15 @@ async function getCambodiaAnalysis(dealQuery, dealData = null, options = {}) {
 // Vision analysis for images
 async function getVisionAnalysis(base64Image, prompt, options = {}) {
     try {
-        console.log('🖼️ GPT-5 vision analysis...');
+        await testAndSetModel();
+        console.log(`🖼️ ${currentModel.toUpperCase()} vision analysis...`);
         
         const completion = await openai.chat.completions.create({
-            model: "gpt-5",
+            model: currentModel,
             messages: [
                 {
                     role: "system",
-                    content: "You are GPT-5 with enhanced vision capabilities. Analyze images thoroughly and provide detailed, accurate descriptions and insights."
+                    content: `You are ${currentModel === "gpt-5" ? "GPT-5" : "GPT-4o"} with enhanced vision capabilities. Analyze images thoroughly and provide detailed, accurate descriptions and insights.`
                 },
                 {
                     role: "user",
@@ -336,7 +426,7 @@ async function getVisionAnalysis(base64Image, prompt, options = {}) {
         console.error('❌ Vision analysis error:', error.message);
         
         if (error.message.includes('model')) {
-            throw new Error(`Vision Model Error: ${error.message}. Verify GPT-5 vision access.`);
+            throw new Error(`Vision Model Error: ${error.message}. Verify ${currentModel} vision access.`);
         } else {
             throw new Error(`Vision Analysis Error: ${error.message}`);
         }
@@ -346,7 +436,7 @@ async function getVisionAnalysis(base64Image, prompt, options = {}) {
 // Audio transcription
 async function getAudioTranscription(audioFile, options = {}) {
     try {
-        console.log('🎤 GPT-5 audio transcription...');
+        console.log('🎤 Audio transcription with Whisper...');
         
         const transcription = await openai.audio.transcriptions.create({
             file: audioFile,
@@ -367,7 +457,7 @@ async function getAudioTranscription(audioFile, options = {}) {
 // Text-to-speech
 async function getTextToSpeech(text, options = {}) {
     try {
-        console.log('🗣️ GPT-5 text-to-speech...');
+        console.log('🗣️ Text-to-speech generation...');
         
         const mp3 = await openai.audio.speech.create({
             model: "tts-1",
@@ -389,13 +479,14 @@ async function getTextToSpeech(text, options = {}) {
  * Test functions
  */
 
-// Test natural GPT-5 response
+// Test natural GPT response
 async function testNaturalGPT() {
     try {
-        console.log('🔍 Testing natural GPT-5 response...');
+        await testAndSetModel();
+        console.log(`🔍 Testing natural ${currentModel.toUpperCase()} response...`);
         
         const completion = await openai.chat.completions.create({
-            model: "gpt-5",
+            model: currentModel,
             messages: [
                 {
                     role: "user",
@@ -407,7 +498,7 @@ async function testNaturalGPT() {
         });
         
         const response = completion.choices[0].message.content;
-        console.log('✅ Natural GPT-5 response:', response);
+        console.log(`✅ Natural ${currentModel.toUpperCase()} response:`, response);
         return response;
         
     } catch (error) {
@@ -419,14 +510,15 @@ async function testNaturalGPT() {
 // Test connection
 async function testConnection() {
     try {
-        console.log('🔍 Testing GPT-5 connection...');
+        await testAndSetModel();
+        console.log(`🔍 Testing ${currentModel.toUpperCase()} connection...`);
         
         const completion = await openai.chat.completions.create({
-            model: "gpt-5",
+            model: currentModel,
             messages: [
                 {
                     role: "user",
-                    content: "Respond with 'GPT-5 connection successful' if you receive this."
+                    content: `Respond with '${currentModel.toUpperCase()} connection successful' if you receive this.`
                 }
             ],
             max_tokens: 50,
@@ -451,6 +543,7 @@ async function checkSystemHealth() {
         visionCapabilities: false,
         audioCapabilities: false,
         naturalResponses: false,
+        currentModel: currentModel,
         errors: []
     };
     
@@ -472,7 +565,7 @@ async function checkSystemHealth() {
     
     try {
         const response = await testNaturalGPT();
-        health.naturalResponses = response.includes('GPT-5') && response.includes('vision');
+        health.naturalResponses = response && (response.includes('GPT-5') || response.includes('GPT-4') || response.includes('vision'));
     } catch (error) {
         health.errors.push(`Natural Response: ${error.message}`);
     }
@@ -488,13 +581,16 @@ async function checkSystemHealth() {
 // Get client metrics
 function getMetrics() {
     return {
-        model: "gpt-5",
+        model: currentModel,
+        preferredModel: PREFERRED_MODEL,
+        fallbackModel: FALLBACK_MODEL,
         apiKeyConfigured: !!process.env.OPENAI_API_KEY,
         maxTokens: 4096,
         timeout: 120000,
         retries: 3,
         queryTypes: ['casual', 'financial', 'complex', 'cambodia', 'general'],
         naturalResponses: true,
+        smartFallback: true,
         capabilities: [
             'Enhanced natural language understanding',
             'Advanced financial analysis',
@@ -504,8 +600,8 @@ function getMetrics() {
             'Text-to-speech',
             'Cambodia market expertise',
             'Multi-language support',
-            'Improved coding capabilities',
-            'Reduced hallucinations'
+            'Smart model fallback',
+            'Automatic model testing'
         ],
         multimodal: {
             vision: true,
@@ -534,6 +630,7 @@ module.exports = {
     // Utility functions
     analyzeQueryType,
     createSystemPrompt,
+    testAndSetModel,
     
     // Test functions
     testNaturalGPT,
