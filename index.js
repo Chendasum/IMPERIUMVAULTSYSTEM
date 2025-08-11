@@ -881,8 +881,8 @@ const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`   Dual AI: http://localhost:${PORT}/dual?q=your-question`);
     console.log(`   Status: http://localhost:${PORT}/status`);
 
-    // Set webhook for deployment
-    const webhookUrl = process.env.WEBHOOK_URL || `https://your-app.railway.app/webhook`;
+    // Set webhook with CORRECT URL
+    const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
     bot.setWebHook(webhookUrl)
         .then(() => {
             console.log("🔗 Webhook configured:", webhookUrl);
