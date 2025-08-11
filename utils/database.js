@@ -524,5 +524,5 @@ module.exports = {
     initializeDatabase,
     generateRailwayFixes,
     saveConversationDB,
-    getDatabaseStats,
+    getDatabaseStats
 };
