@@ -125,6 +125,29 @@ async function getComprehensiveMarketData() {
     }
 }
 
+// ✅ Initialize Database Connection
+initializeDatabase()
+    .then(() => {
+        console.log("✅ PostgreSQL database connected and tables initialized");
+    })
+    .catch((err) => {
+        console.error("❌ Database connection failed:", err.message);
+        console.log("⚠️ Falling back to in-memory storage");
+    });
+
+// ✅ Initialize MetaAPI Connection
+initializeMetaAPI()
+    .then((success) => {
+        if (success) {
+            console.log("✅ MetaAPI connected successfully");
+        } else {
+            console.log("⚠️ MetaAPI not configured or connection failed");
+        }
+    })
+    .catch((err) => {
+        console.log("⚠️ MetaAPI initialization failed:", err.message);
+    });
+
 // Main message handler
 bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
