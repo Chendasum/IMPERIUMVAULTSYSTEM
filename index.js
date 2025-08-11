@@ -54,7 +54,6 @@ const {
 
 const { buildConversationContext } = require("./utils/memory");
 const { getTradingSummary, getAccountInfo } = require("./utils/metaTrader");
-const { getDatabaseStats } = require('./utils/database');
 
 // Import clean AI clients
 const { 
