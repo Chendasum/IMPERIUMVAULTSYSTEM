@@ -1,4 +1,5 @@
 require("dotenv").config({ path: ".env" });
+const { Pool } = require('pg');
 
 // Debug environment variables
 console.log("🔧 Environment check:");
@@ -9,7 +10,6 @@ console.log(`ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "SET" : "NOT S
 
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
-const { Pool } = require('pg');
 
 // Import clean utility modules
 const { 
@@ -53,7 +53,6 @@ const {
 
 const { buildConversationContext } = require("./utils/memory");
 const { getTradingSummary, getAccountInfo } = require("./utils/metaTrader");
-const { getDatabaseStats, initializeDatabaseAuto } = require('./utils/database');
 
 // Import clean AI clients
 const { 
