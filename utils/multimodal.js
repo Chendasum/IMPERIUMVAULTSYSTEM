@@ -103,7 +103,7 @@ Focus on identifying:
 Provide detailed strategic assessment with actionable insights.`;
             
         const visionResponse = await openai.chat.completions.create({
-            model: "gpt-4o", // ✅ CORRECT MODEL
+            model: "gpt-5", // ✅ CORRECT MODEL
             messages: [
                 {
                     role: "system",
@@ -138,7 +138,7 @@ Provide detailed strategic assessment with actionable insights.`;
         
         // ✅ ENHANCED ERROR HANDLING
         if (error.message.includes('model')) {
-            return `❌ **Image Analysis Error:** Model issue - ${error.message}. Verify GPT-4o access.`;
+            return `❌ **Image Analysis Error:** Model issue - ${error.message}. Verify gpt-5 access.`;
         } else if (error.message.includes('API key')) {
             return `❌ **Image Analysis Error:** API key issue. Check OPENAI_API_KEY environment variable.`;
         } else if (error.message.includes('timeout')) {
@@ -340,7 +340,7 @@ ${extractedText.substring(0, 50000)}${extractedText.length > 50000 ? '\n\n[Conte
 Execute institutional-quality analysis with commanding strategic authority.`;
 
         const analysis = await openai.chat.completions.create({
-            model: "gpt-4o", // ✅ CORRECT MODEL
+            model: "gpt-5", // ✅ CORRECT MODEL
             messages: [
                 {
                     role: "system",
@@ -507,7 +507,7 @@ Video content received for strategic analysis. To provide comprehensive institut
 Provide context for optimal strategic intelligence extraction.`;
             
         const analysis = await openai.chat.completions.create({
-            model: "gpt-4o", // ✅ CORRECT MODEL
+            model: "gpt-5", // ✅ CORRECT MODEL
             messages: [
                 {
                     role: "system",
@@ -561,7 +561,7 @@ STRATEGIC CHART ANALYSIS PROTOCOL:
 Execute institutional-grade technical and strategic analysis with specific actionable directives.`;
             
         const chartResponse = await openai.chat.completions.create({
-            model: "gpt-4o", // ✅ CORRECT MODEL
+            model: "gpt-5", // ✅ CORRECT MODEL
             messages: [
                 {
                     role: "system",
