@@ -7496,10 +7496,10 @@ class CalculationUtilities {
             
             portfolioData.deals.forEach(deal => {
                 const amount = deal.amount || 0;
-                const yield = deal.yield || deal.interestRate || 17.5;
+                const dealYield = deal.yield || deal.interestRate || 17.5;
                 
                 totalValue += amount;
-                weightedYield += amount * yield;
+                weightedYield += amount * dealYield;
             });
             
             return totalValue > 0 ? Math.round((weightedYield / totalValue) * 100) / 100 : 17.5;
