@@ -392,18 +392,6 @@ module.exports = {
     fundCache
 };
 
-// utils/cambodiaLending.js - PART 2: CORE DEAL ANALYSIS ENGINE
-// IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Cambodia Fund Management
-// Part 2 of 11: Strategic Deal Analysis & Processing
-
-// Import Part 1 constants
-const { 
-    CAMBODIA_MARKET_DATA, 
-    STRATEGIC_CONFIG, 
-    VALIDATION_RULES, 
-    fundCache 
-} = require('./cambodiaLending_part1');
-
 /**
  * 🎯 STRATEGIC DEAL WARFARE ANALYSIS SYSTEM - MAIN ENGINE
  */
