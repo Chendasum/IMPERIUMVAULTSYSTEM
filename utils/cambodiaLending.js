@@ -2013,7 +2013,7 @@ function calculatePortfolioYield(portfolioData) {
 
 // Calculate portfolio IRR
 function calculatePortfolioIRR(portfolioData) {
-    const yield = calculatePortfolioYield(portfolioData);
+    const dealYield = calculatePortfolioYield(portfolioData);
     const deploymentRatio = portfolioData ? 
         (portfolioData.deployedCapital / portfolioData.totalAUM) : 0.8;
     
@@ -6517,7 +6517,7 @@ async function performFinancialAnalysis(dealData) {
         } = dealData;
         
         // Core financial calculations
-        const yieldAnalysis = {
+        const dealYieldAnalysis = {
             effectiveYield: financialEngine.calculateEffectiveYield(amount, amount * (interestRate / 100), termMonths),
             simpleYield: financialEngine.calculateSimpleYield(amount, amount * (interestRate / 100)),
             yieldToMaturity: financialEngine.calculateYieldToMaturity(amount, amount * (1 + interestRate / 100), termMonths / 12)
@@ -6917,7 +6917,7 @@ function calculateYieldDistribution(deals) {
     
     deals.forEach(deal => {
         const value = deal.amount || 0;
-        const yield = deal.yield || deal.interestRate || 17.5;
+        const dealYield = deal.yield || deal.interestRate || 17.5;
         
         totalValue += value;
         
@@ -7740,9 +7740,9 @@ class ArrayUtilities {
                 if (filters.maxAmount && (deal.amount || 0) > filters.maxAmount) return false;
                 
                 // Yield filter
-                const yield = deal.yield || deal.interestRate || 0;
-                if (filters.minYield && yield < filters.minYield) return false;
-                if (filters.maxYield && yield > filters.maxYield) return false;
+                const dealYield = deal.yield || deal.interestRate || 0;
+                if (filters.minYield && dealYield < filters.minYield) return false;
+                if (filters.maxYield && dealYield > filters.maxYield) return false;
                 
                 // Duration filter
                 if (filters.minDuration && (deal.termMonths || 0) < filters.minDuration) return false;
@@ -7783,7 +7783,7 @@ class ArrayUtilities {
                         key = deal.province || 'Unknown';
                         break;
                     case 'yieldRange':
-                        const yield = deal.yield || deal.interestRate || 0;
+                        const dealYield = deal.yield || deal.interestRate || 0;
                         if (yield >= 20) key = 'High (20%+)';
                         else if (yield >= 15) key = 'Medium (15-20%)';
                         else key = 'Standard (<15%)';
@@ -7870,7 +7870,7 @@ class ArrayUtilities {
         
         deals.forEach(deal => {
             const amount = deal.amount || 0;
-            const yield = deal.yield || deal.interestRate || 0;
+            const dealYield = deal.yield || deal.interestRate || 0;
             totalValue += amount;
             weightedYield += amount * yield;
         });
