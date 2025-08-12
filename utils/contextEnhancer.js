@@ -334,7 +334,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         return {
             type: 'multimodal',
             bestAI: 'gpt',
-            reason: 'GPT-4o has superior vision capabilities',
+            reason: 'gpt-5 has superior vision capabilities',
             complexity: 'medium',
             maxTokens: 2000,
             needsLiveData: false,
@@ -478,10 +478,10 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     };
 }
 
-// 🎯 ENHANCED GPT-4O EXECUTION WITH CONTEXT
+// 🎯 ENHANCED gpt-5 EXECUTION WITH CONTEXT
 async function executeGptAnalysis(userMessage, queryAnalysis, context = null) {
     try {
-        console.log('🔍 Executing GPT-4o analysis with enhanced context...');
+        console.log('🔍 Executing gpt-5 analysis with enhanced context...');
         
         // Handle simple date/time queries directly
         if (queryAnalysis.type === 'datetime') {
@@ -508,7 +508,7 @@ async function executeGptAnalysis(userMessage, queryAnalysis, context = null) {
         const modelOptions = {
             maxTokens: queryAnalysis.maxTokens,
             context: context,
-            model: "gpt-4o", // Use stable GPT-4o
+            model: "gpt-5", // Use stable gpt-5
             temperature: queryAnalysis.type === 'casual' ? 0.8 : 0.7
         };
         
@@ -627,7 +627,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
             let finalResponse = '';
             
             if (gptResponse.status === 'fulfilled') {
-                finalResponse += `**GPT-4o Analysis:**\n${gptResponse.value}\n\n`;
+                finalResponse += `**gpt-5 Analysis:**\n${gptResponse.value}\n\n`;
             }
             
             if (claudeResponse.status === 'fulfilled') {
@@ -674,12 +674,12 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
         
         // Enhanced fallback with context attempt
         try {
-            console.log('🔄 Enhanced fallback to GPT-4o...');
+            console.log('🔄 Enhanced fallback to gpt-5...');
             
             const fallbackResponse = await getGptAnalysis(userMessage, {
                 maxTokens: 1200,
                 temperature: 0.7,
-                model: "gpt-4o"
+                model: "gpt-5"
             });
             
             const responseTime = Date.now() - startTime;
@@ -715,17 +715,17 @@ async function checkSystemHealth() {
     };
     
     try {
-        // Test GPT-4o
+        // Test gpt-5
         await executeGptAnalysis('Test', { 
             type: 'casual', 
             maxTokens: 50, 
             memoryImportant: false 
         });
         health.gptAnalysis = true;
-        console.log('✅ GPT-4o analysis operational');
+        console.log('✅ gpt-5 analysis operational');
     } catch (error) {
         health.errors.push(`GPT: ${error.message}`);
-        console.log('❌ GPT-4o analysis unavailable');
+        console.log('❌ gpt-5 analysis unavailable');
     }
     
     try {
