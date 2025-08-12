@@ -9766,7 +9766,7 @@ class DataAccessLayer {
         }
     }
 
-    async shutdown() {
+async shutdown() {
         try {
             console.log('💾 Strategic data warfare system shutdown initiated...');
             
@@ -9852,7 +9852,4 @@ module.exports = {
         // Basic validation for database connection string
         return typeof connectionString === 'string' && connectionString.length > 0;
     }
-};
-        
-// Test ending
 };
