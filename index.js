@@ -1867,7 +1867,7 @@ app.get("/status", async (req, res) => {
         res.json({
             system: "Enhanced AI Assistant v3.1",
             models: {
-                gpt4o: health.gptAnalysis ? "online" : "offline",
+                gpt-5: health.gptAnalysis ? "online" : "offline",
                 claude: health.claudeAnalysis ? "online" : "offline"
             },
             database: {
