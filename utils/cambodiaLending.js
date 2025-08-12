@@ -7943,98 +7943,96 @@ return totalValue > 0 ? Math.round((weightedYield / totalValue) * 100) / 100 : 0
 /**
  * 🔧 STRATEGIC STRING WARFARE UTILITIES
  */
-
-    function generateDealId(dealData) {
-        try {
-            const timestamp = Date.now().toString(36);
-            const borrower = (dealData.borrowerName || 'UNK').substring(0, 3).toUpperCase();
-            const amount = Math.floor((dealData.amount || 0) / 1000);
-            const random = Math.random().toString(36).substring(2, 4).toUpperCase();
-            
-            return `${borrower}-${amount}K-${timestamp}-${random}`;
-        } catch (error) {
-            console.error('Strategic deal ID generation error:', error.message);
-            return `DEAL-${Date.now()}`;
-        }
+function generateDealId(dealData) {
+    try {
+        const timestamp = Date.now().toString(36);
+        const borrower = (dealData.borrowerName || 'UNK').substring(0, 3).toUpperCase();
+        const amount = Math.floor((dealData.amount || 0) / 1000);
+        const random = Math.random().toString(36).substring(2, 4).toUpperCase();
+        
+        return `${borrower}-${amount}K-${timestamp}-${random}`;
+    } catch (error) {
+        console.error('Strategic deal ID generation error:', error.message);
+        return `DEAL-${Date.now()}`;
     }
+}
 
-    function generateReportId(reportType = 'GENERAL') {
-        try {
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '').substring(0, 15);
-            const type = reportType.substring(0, 3).toUpperCase();
-            const random = Math.random().toString(36).substring(2, 5).toUpperCase();
-            
-            return `RPT-${type}-${timestamp}-${random}`;
-        } catch (error) {
-            console.error('Strategic report ID generation error:', error.message);
-            return `RPT-${Date.now()}`;
-        }
+function generateReportId(reportType = 'GENERAL') {
+    try {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '').substring(0, 15);
+        const type = reportType.substring(0, 3).toUpperCase();
+        const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+        
+        return `RPT-${type}-${timestamp}-${random}`;
+    } catch (error) {
+        console.error('Strategic report ID generation error:', error.message);
+        return `RPT-${Date.now()}`;
     }
+}
 
-    sanitizeFileName(fileName) {
-        try {
-            return fileName
-                .replace(/[^a-zA-Z0-9\-_\.]/g, '_')
-                .replace(/_{2,}/g, '_')
-                .replace(/^_+|_+$/g, '')
-                .substring(0, 100);
-        } catch (error) {
-            console.error('Strategic filename sanitization error:', error.message);
-            return 'file';
-        }
+function sanitizeFileName(fileName) {
+    try {
+        return fileName
+            .replace(/[^a-zA-Z0-9\-_\.]/g, '_')
+            .replace(/_{2,}/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .substring(0, 100);
+    } catch (error) {
+        console.error('Strategic filename sanitization error:', error.message);
+        return 'file';
     }
+}
 
-    truncateString(str, maxLength = 50, suffix = '...') {
-        try {
-            if (typeof str !== 'string') return '';
-            if (str.length <= maxLength) return str;
-            return str.substring(0, maxLength - suffix.length) + suffix;
-        } catch (error) {
-            console.error('Strategic string truncation error:', error.message);
-            return '';
-        }
+function truncateString(str, maxLength = 50, suffix = '...') {
+    try {
+        if (typeof str !== 'string') return '';
+        if (str.length <= maxLength) return str;
+        return str.substring(0, maxLength - suffix.length) + suffix;
+    } catch (error) {
+        console.error('Strategic string truncation error:', error.message);
+        return '';
     }
+}
 
-    capitalizeWords(str) {
-        try {
-            if (typeof str !== 'string') return '';
-            return str.replace(/\b\w/g, char => char.toUpperCase());
-        } catch (error) {
-            console.error('Strategic word capitalization error:', error.message);
-            return str;
-        }
+function capitalizeWords(str) {
+    try {
+        if (typeof str !== 'string') return '';
+        return str.replace(/\b\w/g, char => char.toUpperCase());
+    } catch (error) {
+        console.error('Strategic word capitalization error:', error.message);
+        return str;
     }
+}
 
-    formatAddress(address) {
-        try {
-            if (typeof address !== 'string') return '';
-            
-            // Basic address formatting for Cambodia
-            return address
-                .trim()
-                .replace(/\s+/g, ' ')
-                .replace(/,\s*,/g, ',')
-                .replace(/,$/, '');
-        } catch (error) {
-            console.error('Strategic address formatting error:', error.message);
-            return address;
-        }
+function formatAddress(address) {
+    try {
+        if (typeof address !== 'string') return '';
+        
+        // Basic address formatting for Cambodia
+        return address
+            .trim()
+            .replace(/\s+/g, ' ')
+            .replace(/,\s*,/g, ',')
+            .replace(/,$/, '');
+    } catch (error) {
+        console.error('Strategic address formatting error:', error.message);
+        return address;
     }
+}
 
-    slugify(str) {
-        try {
-            if (typeof str !== 'string') return '';
-            
-            return str
-                .toLowerCase()
-                .trim()
-                .replace(/[^\w\s-]/g, '')
-                .replace(/[\s_-]+/g, '-')
-                .replace(/^-+|-+$/g, '');
-        } catch (error) {
-            console.error('Strategic slugify error:', error.message);
-            return '';
-        }
+function slugify(str) {
+    try {
+        if (typeof str !== 'string') return '';
+        
+        return str
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    } catch (error) {
+        console.error('Strategic slugify error:', error.message);
+        return '';
     }
 }
 
