@@ -7784,8 +7784,8 @@ class ArrayUtilities {
                         break;
                     case 'yieldRange':
                         const dealYield = deal.yield || deal.interestRate || 0;
-                        if (yield >= 20) key = 'High (20%+)';
-                        else if (yield >= 15) key = 'Medium (15-20%)';
+                        if (dealYield >= 20) key = 'High (20%+)';
+                        else if (dealYield >= 15) key = 'Medium (15-20%)';
                         else key = 'Standard (<15%)';
                         break;
                     case 'amountRange':
