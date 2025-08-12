@@ -7868,15 +7868,14 @@ class ArrayUtilities {
         let totalValue = 0;
         let weightedYield = 0;
         
-        deals.forEach(deal => {
-            const amount = deal.amount || 0;
-            const dealYield = deal.yield || deal.interestRate || 0;
-            totalValue += amount;
-            weightedYield += amount * yield;
-        });
-        
-        return totalValue > 0 ? Math.round((weightedYield / totalValue) * 100) / 100 : 0;
-    }
+deals.forEach(deal => {
+    const amount = deal.amount || 0;
+    const dealYield = deal.yield || deal.interestRate || 0;
+    totalValue += amount;
+    weightedYield += amount * dealYield;  // ← Fixed this line
+});
+
+return totalValue > 0 ? Math.round((weightedYield / totalValue) * 100) / 100 : 0;
 
     calculateAverageDuration(deals) {
         if (!Array.isArray(deals) || deals.length === 0) return 0;
