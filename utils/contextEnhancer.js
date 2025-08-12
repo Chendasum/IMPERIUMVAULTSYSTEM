@@ -334,7 +334,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         return {
             type: 'multimodal',
             bestAI: 'gpt',
-            reason: 'gpt-5 has superior vision capabilities',
+            reason: 'GPT-4o has superior vision capabilities',
             complexity: 'medium',
             maxTokens: 2000,
             needsLiveData: false,
@@ -478,10 +478,10 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     };
 }
 
-// 🎯 ENHANCED gpt-5 EXECUTION WITH CONTEXT
+// 🎯 ENHANCED GPT-4O EXECUTION WITH CONTEXT
 async function executeGptAnalysis(userMessage, queryAnalysis, context = null) {
     try {
-        console.log('🔍 Executing gpt-5 analysis with enhanced context...');
+        console.log('🔍 Executing GPT-4o analysis with enhanced context...');
         
         // Handle simple date/time queries directly
         if (queryAnalysis.type === 'datetime') {
@@ -508,7 +508,7 @@ async function executeGptAnalysis(userMessage, queryAnalysis, context = null) {
         const modelOptions = {
             maxTokens: queryAnalysis.maxTokens,
             context: context,
-            model: "gpt-5", // Use stable gpt-5
+            model: "gpt-4o", // Use stable GPT-4o
             temperature: queryAnalysis.type === 'casual' ? 0.8 : 0.7
         };
         
@@ -627,7 +627,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
             let finalResponse = '';
             
             if (gptResponse.status === 'fulfilled') {
-                finalResponse += `**gpt-5 Analysis:**\n${gptResponse.value}\n\n`;
+                finalResponse += `**GPT-4o Analysis:**\n${gptResponse.value}\n\n`;
             }
             
             if (claudeResponse.status === 'fulfilled') {
@@ -674,12 +674,12 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
         
         // Enhanced fallback with context attempt
         try {
-            console.log('🔄 Enhanced fallback to gpt-5...');
+            console.log('🔄 Enhanced fallback to GPT-4o...');
             
             const fallbackResponse = await getGptAnalysis(userMessage, {
                 maxTokens: 1200,
                 temperature: 0.7,
-                model: "gpt-5"
+                model: "gpt-4o"
             });
             
             const responseTime = Date.now() - startTime;
@@ -715,17 +715,17 @@ async function checkSystemHealth() {
     };
     
     try {
-        // Test gpt-5
+        // Test GPT-4o
         await executeGptAnalysis('Test', { 
             type: 'casual', 
             maxTokens: 50, 
             memoryImportant: false 
         });
         health.gptAnalysis = true;
-        console.log('✅ gpt-5 analysis operational');
+        console.log('✅ GPT-4o analysis operational');
     } catch (error) {
         health.errors.push(`GPT: ${error.message}`);
-        console.log('❌ gpt-5 analysis unavailable');
+        console.log('❌ GPT-4o analysis unavailable');
     }
     
     try {
@@ -743,6 +743,26 @@ async function checkSystemHealth() {
     }
     
     try {
+        // Test context building
+        const testContext = await buildStrategicCommanderContext('test_health', 'test query');
+        health.contextBuilding = typeof testContext === 'string';
+        console.log('✅ Context building operational');
+    } catch (error) {
+        health.errors.push(`Context: ${error.message}`);
+        console.log('❌ Context building unavailable');
+    }
+    
+    try {
+        // Test memory system
+        const testMemory = await buildConversationContext('test_memory');
+        health.memorySystem = typeof testMemory === 'string';
+        console.log('✅ Memory system operational');
+    } catch (error) {
+        health.errors.push(`Memory: ${error.message}`);
+        console.log('❌ Memory system unavailable');
+    }
+    
+    try {
         // Test datetime
         const cambodiaTime = getCurrentCambodiaDateTime();
         health.dateTimeSupport = cambodiaTime && cambodiaTime.date;
@@ -752,37 +772,33 @@ async function checkSystemHealth() {
         console.log('❌ DateTime support unavailable');
     }
     
-    try {
-        // 🔧 FIXED: Test context building with correct parameters
-        const testContext = await buildStrategicCommanderContext('test_health_check');
-        health.contextBuilding = true;
-        console.log('✅ Context building operational');
-    } catch (error) {
-        health.errors.push(`Context: ${error.message}`);
-        console.log('❌ Context building unavailable');
-    }
-    
     health.dualMode = health.gptAnalysis && health.claudeAnalysis;
-    health.overallHealth = health.gptAnalysis || health.claudeAnalysis; // At least one AI working
+    health.overallHealth = health.gptAnalysis || health.claudeAnalysis;
     
     return health;
 }
 
-// 🚀 QUICK ACCESS FUNCTIONS
-async function getMarketIntelligence() {
+// 🚀 ENHANCED QUICK ACCESS FUNCTIONS
+async function getMarketIntelligence(chatId = null) {
     const globalTime = getCurrentGlobalDateTime();
-    const query = `Current market intelligence summary - Time: ${globalTime.cambodia.date}, ${globalTime.cambodia.time} Cambodia. Provide concise overview of market conditions, key risks, and opportunities.`;
+    const query = `Enhanced market intelligence summary - Time: ${globalTime.cambodia.date}, ${globalTime.cambodia.time} Cambodia. Provide comprehensive overview of current market conditions, key risks, and strategic opportunities with memory context.`;
     
     try {
+        let context = null;
+        if (chatId) {
+            context = await buildStrategicCommanderContext(chatId, query).catch(() => null);
+        }
+        
         return await executeClaudeAnalysis(query, {
             type: 'market',
             maxTokens: 1000,
             needsLiveData: true,
-            specialFunction: 'regime'
-        });
+            specialFunction: 'regime',
+            memoryImportant: !!context
+        }, context);
     } catch (error) {
-        console.error('❌ Market intelligence error:', error.message);
-        return 'Market intelligence temporarily unavailable';
+        console.error('❌ Enhanced market intelligence error:', error.message);
+        return 'Enhanced market intelligence temporarily unavailable';
     }
 }
 
@@ -793,25 +809,27 @@ function getGlobalMarketStatus() {
         return {
             cambodia: {
                 time: globalTime.cambodia.time,
-                isBusinessHours: !globalTime.cambodia.isWeekend && 
-                               globalTime.cambodia.hour >= 8 && 
-                               globalTime.cambodia.hour <= 17,
-                isWeekend: globalTime.cambodia.isWeekend
+                isBusinessHours: globalTime.cambodia.businessHours,
+                isWeekend: globalTime.cambodia.isWeekend,
+                marketStatus: globalTime.cambodia.marketStatus
             },
             newYork: {
                 time: globalTime.newYork.time,
-                isMarketHours: !globalTime.cambodia.isWeekend && 
-                             globalTime.newYork.hour >= 9 && 
-                             globalTime.newYork.hour <= 16
+                isMarketHours: globalTime.newYork.isMarketHours,
+                timezone: globalTime.newYork.timezone
             },
             london: {
                 time: globalTime.london.time,
-                isMarketHours: !globalTime.cambodia.isWeekend && 
-                             globalTime.london.hour >= 8 && 
-                             globalTime.london.hour <= 16
+                isMarketHours: globalTime.london.isMarketHours,
+                timezone: globalTime.london.timezone
+            },
+            tokyo: {
+                time: globalTime.tokyo.time,
+                isMarketHours: globalTime.tokyo.isMarketHours,
+                timezone: globalTime.tokyo.timezone
             },
             summary: globalTime.cambodia.isWeekend ? 
-                    'Weekend - Markets Closed' : 
+                    'Weekend - Global Markets Closed' : 
                     'Weekday - Check individual market hours',
             lastUpdated: new Date().toISOString()
         };
@@ -821,59 +839,214 @@ function getGlobalMarketStatus() {
     }
 }
 
-// 📈 SYSTEM ANALYTICS
+// 🔧 UTILITY FUNCTIONS
+async function getUserProfileData(chatId) {
+    try {
+        const { getUserProfileDB } = require('./database');
+        return await getUserProfileDB(chatId);
+    } catch (error) {
+        console.log('⚠️ User profile retrieval failed:', error.message);
+        return null;
+    }
+}
+
+function buildContextPrompt(userMessage, context, queryType) {
+    let prompt = userMessage;
+    
+    if (context && context.length > 0) {
+        prompt += `\n\n${context}`;
+    }
+    
+    // Add specific instructions based on query type
+    switch (queryType) {
+        case 'memory_query':
+            prompt += `\n\n🧠 MEMORY INSTRUCTION: Use the provided memory context to answer accurately. Reference specific facts when relevant.`;
+            break;
+        case 'regime_analysis':
+            prompt += `\n\n🏛️ REGIME INSTRUCTION: Apply Ray Dalio's All Weather framework with historical context from memory.`;
+            break;
+        case 'cambodia_specific':
+            prompt += `\n\n🇰🇭 CAMBODIA INSTRUCTION: Use stored Cambodia-specific knowledge and market context.`;
+            break;
+        case 'portfolio_analysis':
+            prompt += `\n\n📊 PORTFOLIO INSTRUCTION: Apply institutional-grade analysis with risk management context.`;
+            break;
+    }
+    
+    return prompt;
+}
+
+// 📈 ENHANCED SYSTEM ANALYTICS
 function getSystemAnalytics() {
     return {
-        version: '2.0 - Clean Natural Responses',
+        version: '3.0 - Enhanced Context & Memory Integration',
         aiModels: {
-            gpt: 'gpt-5 (multimodal, natural conversation)',
-            claude: 'Claude Opus 4.1 (advanced reasoning, live data)'
+            gpt: 'GPT-4o (multimodal, natural conversation, stable)',
+            claude: 'Claude Opus 4.1 (advanced reasoning, strategic analysis)'
         },
+        contextFeatures: [
+            'Strategic context building',
+            'Enhanced memory integration',
+            'Fallback context systems',
+            'Query-aware context routing',
+            'Memory relevance analysis',
+            'Multi-source context aggregation'
+        ],
         capabilities: [
-            'Smart query routing',
-            'Natural AI responses',
-            'Live market data integration',
-            'Global timezone support',
-            'Economic regime analysis',
-            'Portfolio optimization',
-            'Market anomaly detection',
-            'Cambodia market expertise',
-            'Dual AI synthesis for complex queries'
+            'Enhanced query routing with memory awareness',
+            'Strategic context building with fallbacks',
+            'Natural AI responses with conversation history',
+            'Global timezone and market status integration',
+            'Economic regime analysis with historical context',
+            'Portfolio optimization with persistent knowledge',
+            'Market anomaly detection with memory',
+            'Cambodia market expertise with stored insights',
+            'Dual AI synthesis for complex queries with context',
+            'Memory-aware conversation enhancement'
         ],
         queryTypes: [
-            'casual', 'datetime', 'market', 'regime', 'anomaly', 
-            'portfolio', 'cambodia', 'complex', 'multimodal'
+            'memory_query', 'casual', 'datetime', 'market', 'regime', 
+            'anomaly', 'portfolio', 'cambodia', 'complex', 'multimodal', 'general'
         ],
         specialFunctions: [
-            'regime analysis', 'anomaly detection', 'portfolio optimization', 'cambodia analysis'
+            'regime analysis', 'anomaly detection', 'portfolio optimization', 
+            'cambodia analysis', 'context building', 'memory integration'
         ],
-        healthCheck: 'Use checkSystemHealth() for current status'
+        contextSources: [
+            'Conversation history', 'Persistent memory', 'User profiles',
+            'Strategic instructions', 'Query analysis', 'Fallback systems'
+        ],
+        memoryIntegration: {
+            contextBuilding: 'Enhanced memory-aware context construction',
+            queryAnalysis: 'Memory relevance detection and routing',
+            fallbackSystems: 'Multiple layers of context recovery',
+            strategicInstructions: 'Context-aware AI guidance'
+        },
+        healthCheck: 'Use checkSystemHealth() for current status with context diagnostics'
     };
 }
 
+// 🧪 CONTEXT TESTING AND DIAGNOSTICS
+async function testContextSystem(chatId) {
+    console.log('🧪 Testing enhanced context system...');
+    
+    const tests = {
+        basicContextBuilding: false,
+        memoryIntegration: false,
+        queryAnalysis: false,
+        fallbackContext: false,
+        dualCommandWithContext: false,
+        contextPromptBuilding: false
+    };
+    
+    try {
+        // Test 1: Basic Context Building
+        const basicContext = await buildStrategicCommanderContext(chatId, 'test query');
+        tests.basicContextBuilding = typeof basicContext === 'string' && basicContext.length > 50;
+        console.log(`✅ Basic Context Building: ${tests.basicContextBuilding} (${basicContext?.length || 0} chars)`);
+    } catch (error) {
+        console.log(`❌ Basic Context Building: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 2: Memory Integration
+        const memoryContext = await buildConversationContext(chatId);
+        tests.memoryIntegration = typeof memoryContext === 'string';
+        console.log(`✅ Memory Integration: ${tests.memoryIntegration} (${memoryContext?.length || 0} chars)`);
+    } catch (error) {
+        console.log(`❌ Memory Integration: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 3: Query Analysis
+        const analysis = analyzeQuery('Remember my name is John and analyze the market', 'text', false, 'test context');
+        tests.queryAnalysis = analysis && analysis.type && analysis.bestAI;
+        console.log(`✅ Query Analysis: ${tests.queryAnalysis} (${analysis?.type}, ${analysis?.bestAI})`);
+    } catch (error) {
+        console.log(`❌ Query Analysis: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 4: Fallback Context
+        const fallbackContext = await buildStrategicCommanderContext('nonexistent_user', 'test');
+        tests.fallbackContext = typeof fallbackContext === 'string' && fallbackContext.length > 0;
+        console.log(`✅ Fallback Context: ${tests.fallbackContext}`);
+    } catch (error) {
+        console.log(`❌ Fallback Context: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 5: Dual Command with Context
+        const result = await executeDualCommand('Test context integration', chatId);
+        tests.dualCommandWithContext = result.success && result.contextUsed !== undefined;
+        console.log(`✅ Dual Command with Context: ${tests.dualCommandWithContext}`);
+    } catch (error) {
+        console.log(`❌ Dual Command with Context: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 6: Context Prompt Building
+        const prompt = buildContextPrompt('test message', 'test context', 'memory_query');
+        tests.contextPromptBuilding = typeof prompt === 'string' && prompt.includes('MEMORY INSTRUCTION');
+        console.log(`✅ Context Prompt Building: ${tests.contextPromptBuilding}`);
+    } catch (error) {
+        console.log(`❌ Context Prompt Building: Failed - ${error.message}`);
+    }
+    
+    const overallSuccess = Object.values(tests).filter(test => test).length;
+    const totalTests = Object.keys(tests).length;
+    
+    console.log(`\n📊 Enhanced Context System Test: ${overallSuccess}/${totalTests} passed`);
+    console.log(`${overallSuccess === totalTests ? '🎉 FULL SUCCESS' : overallSuccess >= totalTests * 0.7 ? '✅ MOSTLY WORKING' : '⚠️ NEEDS ATTENTION'}`);
+    
+    return {
+        tests: tests,
+        score: `${overallSuccess}/${totalTests}`,
+        percentage: Math.round((overallSuccess / totalTests) * 100),
+        status: overallSuccess === totalTests ? 'FULL_SUCCESS' : 
+                overallSuccess >= totalTests * 0.7 ? 'MOSTLY_WORKING' : 'NEEDS_ATTENTION'
+    };
+}
+
+// 📋 ENHANCED EXPORT FUNCTIONS
 module.exports = {
-    // Main functions
+    // 🎯 Main functions
     executeDualCommand,
     analyzeQuery,
     executeGptAnalysis,
     executeClaudeAnalysis,
     
-    // 🔧 FIXED: Export the missing function
+    // 🏗️ Context functions
     buildStrategicCommanderContext,
+    buildContextPrompt,
     
-    // Utility functions
+    // 🧠 Analysis functions
+    analyzeQueryType,
+    analyzeQueryComplexity,
+    isMemoryRelevant,
+    
+    // 🌍 Utility functions
     getCurrentCambodiaDateTime,
     getCurrentGlobalDateTime,
     getMarketIntelligence,
     getGlobalMarketStatus,
+    getUserProfileData,
     
-    // System management
+    // 📊 System management
     checkSystemHealth,
     getSystemAnalytics,
     
-    // Legacy compatibility
+    // 🧪 Testing functions
+    testContextSystem,
+    
+    // 🔄 Legacy compatibility
     executeEnhancedDualCommand: executeDualCommand,
     routeConversationIntelligently: analyzeQuery,
     getEnhancedCommandAnalytics: getSystemAnalytics,
-    checkEnhancedSystemHealth: checkSystemHealth
+    checkEnhancedSystemHealth: checkSystemHealth,
+    
+    // 🎯 Enhanced exports
+    buildEnhancedStrategicContext: buildStrategicCommanderContext,
+    analyzeEnhancedQuery: analyzeQuery,
+    testEnhancedContextSystem: testContextSystem
 };
