@@ -1,5 +1,5 @@
-// utils/dualCommandSystem.js - Clean Dual AI System with Natural Responses
-// Smart routing between gpt-5 and Claude Opus 4.1 with live data integration
+// utils/dualCommandSystem.js - Enhanced Dual AI System with Memory Integration
+// Smart routing between gpt-5 and Claude Opus 4.1 with persistent memory
 
 const { getGptAnalysis, getMarketAnalysis, getCambodiaAnalysis } = require('./openaiClient');
 const { 
@@ -10,9 +10,12 @@ const {
     getCambodiaAnalysis: getClaudeCambodiaAnalysis,
     getAnomalyAnalysis
 } = require('./claudeClient');
-const { buildConversationContext } = require('./memory');
 
-// 🌍 DATETIME UTILITIES
+// Enhanced memory integration
+const { buildConversationContext } = require('./memory');
+const { getConversationHistoryDB, getPersistentMemoryDB } = require('./database');
+
+// 🌍 ENHANCED DATETIME UTILITIES
 function getCurrentCambodiaDateTime() {
     try {
         const now = new Date();
@@ -86,11 +89,16 @@ function getCurrentGlobalDateTime() {
     }
 }
 
-// 🧠 SMART QUERY ANALYSIS
-function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
+// 🧠 ENHANCED QUERY ANALYSIS WITH MEMORY CONTEXT
+function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memoryContext = null) {
     const message = userMessage.toLowerCase();
     
-    // Simple date/time queries
+    // Enhanced patterns with memory awareness
+    const memoryPatterns = [
+        /remember|recall|you mentioned|we discussed|before|previously|last time/i,
+        /my name|my preference|i told you|i said|you know/i
+    ];
+    
     const dateTimePatterns = [
         /^(what time|what's the time|current time|time now)/i,
         /^(what date|what's the date|today's date|date today)/i,
@@ -98,7 +106,6 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         /^(time in cambodia|cambodia time)/i
     ];
     
-    // Casual conversation
     const casualPatterns = [
         /^(hello|hi|hey|good morning|good afternoon|what's up)$/i,
         /^how are you\??$/i,
@@ -106,7 +113,6 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         /^(ok|okay|got it|understood)$/i
     ];
     
-    // Economic regime queries (best for Claude)
     const regimePatterns = [
         /(economic regime|market regime|regime analysis)/i,
         /(growth.*inflation|inflation.*growth)/i,
@@ -114,7 +120,6 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         /(recession|expansion|stagflation)/i
     ];
     
-    // Market anomaly/crisis (best for Claude)
     const anomalyPatterns = [
         /(anomaly|anomalies|market stress|crisis)/i,
         /(bubble|crash|panic|volatility spike)/i,
@@ -122,7 +127,6 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         /(credit.*spread|spread.*widen)/i
     ];
     
-    // Portfolio analysis (best for Claude)
     const portfolioPatterns = [
         /(portfolio.*optim|allocation.*optim)/i,
         /(rebalanc|diversif|correlation)/i,
@@ -130,14 +134,12 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         /(asset.*allocation)/i
     ];
     
-    // Cambodia specific (can use either, but Claude has better context integration)
     const cambodiaPatterns = [
         /(cambodia|khmer|phnom penh|cambodian)/i,
         /(lending.*cambodia|cambodia.*lending)/i,
         /(usd.*khr|khr.*usd)/i
     ];
     
-    // Market analysis (good for either)
     const marketPatterns = [
         /(market|stock|bond|crypto|forex)/i,
         /(trading|investment|buy|sell)/i,
@@ -145,7 +147,6 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         /(analysis|forecast|outlook)/i
     ];
     
-    // Complex strategic (good for either, but prefer GPT for synthesis)
     const complexPatterns = [
         /(strategy|strategic|comprehensive)/i,
         /(detailed|thorough|in-depth)/i,
@@ -153,15 +154,20 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         /(research|evaluate|assess)/i
     ];
     
-    // Determine optimal AI and response type
+    // Check for memory-related queries
+    const hasMemoryReference = memoryPatterns.some(pattern => pattern.test(message));
+    const hasMemoryContext = memoryContext && memoryContext.length > 100;
+    
+    // Determine query type and routing
     if (hasMedia || messageType !== 'text') {
         return {
             type: 'multimodal',
             bestAI: 'gpt',
-            reason: 'gpt-5 has vision capabilities',
+            reason: 'gpt-5 has superior vision capabilities',
             complexity: 'medium',
             maxTokens: 2000,
-            needsLiveData: false
+            needsLiveData: false,
+            memoryImportant: false
         };
     }
     
@@ -169,10 +175,11 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         return {
             type: 'datetime',
             bestAI: 'gpt',
-            reason: 'Simple query, quick response',
+            reason: 'Simple datetime query, quick GPT response',
             complexity: 'low',
             maxTokens: 200,
-            needsLiveData: false
+            needsLiveData: false,
+            memoryImportant: false
         };
     }
     
@@ -180,10 +187,11 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         return {
             type: 'casual',
             bestAI: 'gpt',
-            reason: 'Casual conversation, natural response',
+            reason: 'Casual conversation with memory context',
             complexity: 'low',
-            maxTokens: 300,
-            needsLiveData: false
+            maxTokens: 400,
+            needsLiveData: false,
+            memoryImportant: hasMemoryReference || hasMemoryContext
         };
     }
     
@@ -191,11 +199,12 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         return {
             type: 'regime',
             bestAI: 'claude',
-            reason: 'Economic regime analysis, Ray Dalio framework',
+            reason: 'Economic regime analysis, Claude expertise',
             complexity: 'high',
             maxTokens: 2500,
             needsLiveData: true,
-            specialFunction: 'regime'
+            specialFunction: 'regime',
+            memoryImportant: true
         };
     }
     
@@ -203,11 +212,12 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         return {
             type: 'anomaly',
             bestAI: 'claude',
-            reason: 'Market anomaly detection and analysis',
+            reason: 'Market anomaly detection, Claude analytical strength',
             complexity: 'high',
             maxTokens: 2000,
             needsLiveData: true,
-            specialFunction: 'anomaly'
+            specialFunction: 'anomaly',
+            memoryImportant: true
         };
     }
     
@@ -215,11 +225,12 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         return {
             type: 'portfolio',
             bestAI: 'claude',
-            reason: 'Portfolio optimization with live data',
+            reason: 'Portfolio optimization with memory context',
             complexity: 'high',
             maxTokens: 2500,
             needsLiveData: true,
-            specialFunction: 'portfolio'
+            specialFunction: 'portfolio',
+            memoryImportant: true
         };
     }
     
@@ -227,11 +238,12 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         return {
             type: 'cambodia',
             bestAI: 'claude',
-            reason: 'Cambodia expertise with global context',
+            reason: 'Cambodia expertise with persistent memory',
             complexity: 'medium',
             maxTokens: 2000,
             needsLiveData: true,
-            specialFunction: 'cambodia'
+            specialFunction: 'cambodia',
+            memoryImportant: true
         };
     }
     
@@ -239,10 +251,11 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         return {
             type: 'market',
             bestAI: 'gpt',
-            reason: 'Market analysis with current data',
+            reason: 'Market analysis with live data and memory',
             complexity: 'medium',
             maxTokens: 1500,
-            needsLiveData: true
+            needsLiveData: true,
+            memoryImportant: hasMemoryReference
         };
     }
     
@@ -250,28 +263,30 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false) {
         return {
             type: 'complex',
             bestAI: 'both',
-            reason: 'Complex analysis benefits from dual perspectives',
+            reason: 'Complex analysis benefits from dual AI with memory',
             complexity: 'high',
             maxTokens: 3000,
-            needsLiveData: true
+            needsLiveData: true,
+            memoryImportant: true
         };
     }
     
-    // Default: balanced analysis
+    // Default: GPT with memory context
     return {
         type: 'general',
         bestAI: 'gpt',
-        reason: 'General query, GPT for natural conversation',
+        reason: 'General conversation with memory awareness',
         complexity: 'medium',
         maxTokens: 1200,
-        needsLiveData: false
+        needsLiveData: false,
+        memoryImportant: hasMemoryReference || hasMemoryContext
     };
 }
 
-// 🎯 EXECUTE gpt-5 ANALYSIS
-async function executeGptAnalysis(userMessage, queryAnalysis, context = null) {
+// 🎯 ENHANCED gpt-5 EXECUTION WITH MEMORY
+async function executeGptAnalysis(userMessage, queryAnalysis, context = null, memoryData = null) {
     try {
-        console.log('🔍 Executing gpt-5 analysis...');
+        console.log('🔍 Executing gpt-5 analysis with enhanced memory...');
         
         // Handle simple date/time queries directly
         if (queryAnalysis.type === 'datetime') {
@@ -279,29 +294,46 @@ async function executeGptAnalysis(userMessage, queryAnalysis, context = null) {
             return `Today is ${cambodiaTime.date} and it's currently ${cambodiaTime.time} in Cambodia (${cambodiaTime.timezone}). ${cambodiaTime.isWeekend ? "Enjoy your weekend!" : "Have a great day!"}`;
         }
         
-        // Add time context for non-casual queries
+        // Build enhanced message with memory integration
         let enhancedMessage = userMessage;
+        
+        // Add time context for non-casual queries
         if (queryAnalysis.type !== 'casual' && queryAnalysis.type !== 'datetime') {
             const cambodiaTime = getCurrentCambodiaDateTime();
             enhancedMessage = `Current time: ${cambodiaTime.date}, ${cambodiaTime.time} Cambodia\n\n${userMessage}`;
         }
         
+        // 🧠 CRITICAL: Add memory context if available and important
+        if (queryAnalysis.memoryImportant && context && context.length > 0) {
+            enhancedMessage += `\n\n${context}`;
+            console.log('✅ Memory context integrated into GPT message');
+        }
+        
+        // Add specific memory data if provided
+        if (memoryData) {
+            if (memoryData.conversationHistory && memoryData.conversationHistory.length > 0) {
+                enhancedMessage += `\n\n📝 Recent conversations context available.`;
+            }
+            if (memoryData.persistentMemory && memoryData.persistentMemory.length > 0) {
+                enhancedMessage += ` 🧠 ${memoryData.persistentMemory.length} persistent memories available.`;
+            }
+        }
+        
+        // Configure model options
+        const modelOptions = {
+            maxTokens: queryAnalysis.maxTokens,
+            context: context,
+            model: "gpt-5", // Use stable gpt-5 instead of gpt-5
+            temperature: queryAnalysis.type === 'casual' ? 0.8 : 0.7
+        };
+        
         // Route to appropriate GPT function
         if (queryAnalysis.type === 'market') {
-            return await getMarketAnalysis(enhancedMessage, null, {
-                maxTokens: queryAnalysis.maxTokens,
-                context: context
-            });
+            return await getMarketAnalysis(enhancedMessage, null, modelOptions);
         } else if (queryAnalysis.type === 'cambodia') {
-            return await getCambodiaAnalysis(enhancedMessage, null, {
-                maxTokens: queryAnalysis.maxTokens,
-                context: context
-            });
+            return await getCambodiaAnalysis(enhancedMessage, null, modelOptions);
         } else {
-            return await getGptAnalysis(enhancedMessage, {
-                maxTokens: queryAnalysis.maxTokens,
-                context: context
-            });
+            return await getGptAnalysis(enhancedMessage, modelOptions);
         }
         
     } catch (error) {
@@ -310,18 +342,43 @@ async function executeGptAnalysis(userMessage, queryAnalysis, context = null) {
     }
 }
 
-// ⚡ EXECUTE CLAUDE ANALYSIS
-async function executeClaudeAnalysis(userMessage, queryAnalysis, context = null) {
+// ⚡ ENHANCED CLAUDE EXECUTION WITH MEMORY
+async function executeClaudeAnalysis(userMessage, queryAnalysis, context = null, memoryData = null) {
     try {
-        console.log('⚡ Executing Claude analysis...');
+        console.log('⚡ Executing Claude analysis with enhanced memory...');
         
         // Add global time context
         const globalTime = getCurrentGlobalDateTime();
-        const timeContext = `Current global time: ${globalTime.cambodia.date}, ${globalTime.cambodia.time} Cambodia | NY: ${globalTime.newYork.time} | London: ${globalTime.london.time} | Market status: ${globalTime.cambodia.isWeekend ? 'Weekend' : 'Weekday'}\n\n${userMessage}`;
+        let timeContext = `Current global time: ${globalTime.cambodia.date}, ${globalTime.cambodia.time} Cambodia | NY: ${globalTime.newYork.time} | London: ${globalTime.london.time} | Market status: ${globalTime.cambodia.isWeekend ? 'Weekend' : 'Weekday'}\n\n${userMessage}`;
+        
+        // 🧠 CRITICAL: Add memory context if available and important
+        if (queryAnalysis.memoryImportant && context && context.length > 0) {
+            timeContext += `\n\n${context}`;
+            console.log('✅ Memory context integrated into Claude message');
+        }
+        
+        // Add specific memory data for Claude's analytical capabilities
+        if (memoryData) {
+            if (memoryData.persistentMemory && memoryData.persistentMemory.length > 0) {
+                timeContext += `\n\n🧠 PERSISTENT MEMORY CONTEXT:\n`;
+                memoryData.persistentMemory.slice(0, 5).forEach((memory, index) => {
+                    const fact = memory.fact || memory;
+                    timeContext += `${index + 1}. ${fact}\n`;
+                });
+            }
+            
+            if (memoryData.conversationHistory && memoryData.conversationHistory.length > 0) {
+                timeContext += `\n\n📝 RECENT CONVERSATION CONTEXT:\n`;
+                memoryData.conversationHistory.slice(0, 3).forEach((conv, index) => {
+                    timeContext += `${index + 1}. User: "${conv.user_message?.substring(0, 100) || ''}"\n`;
+                });
+            }
+        }
         
         const options = {
             maxTokens: queryAnalysis.maxTokens,
-            context: context
+            context: context,
+            temperature: 0.7
         };
         
         // Route to specialized Claude functions
@@ -339,7 +396,7 @@ async function executeClaudeAnalysis(userMessage, queryAnalysis, context = null)
                     return await getStrategicAnalysis(timeContext, options);
             }
         } else {
-            // Standard Claude analysis
+            // Standard Claude analysis with memory
             if (queryAnalysis.complexity === 'high') {
                 return await getStrategicAnalysis(timeContext, options);
             } else {
@@ -353,39 +410,106 @@ async function executeClaudeAnalysis(userMessage, queryAnalysis, context = null)
     }
 }
 
-// 🎯 MAIN DUAL COMMAND EXECUTION
-async function executeDualCommand(userMessage, chatId, messageType = 'text', hasMedia = false) {
+// 🎯 MAIN ENHANCED DUAL COMMAND EXECUTION WITH MEMORY
+async function executeDualCommand(userMessage, chatId, options = {}) {
+    const startTime = Date.now();
+    
     try {
-        console.log('🎯 Executing dual command analysis...');
-        
-        // Analyze the query to determine optimal routing
-        const queryAnalysis = analyzeQuery(userMessage, messageType, hasMedia);
-        console.log('🧠 Query analysis:', {
-            type: queryAnalysis.type,
-            bestAI: queryAnalysis.bestAI,
-            complexity: queryAnalysis.complexity,
-            reason: queryAnalysis.reason
+        console.log('🎯 Executing enhanced dual command with memory integration...');
+        console.log('📝 Message:', userMessage.substring(0, 100));
+        console.log('🎯 Options:', {
+            messageType: options.messageType,
+            hasMedia: options.hasMedia,
+            hasConversationHistory: !!options.conversationHistory,
+            hasPersistentMemory: !!options.persistentMemory,
+            hasMemoryContext: !!options.memoryContext
         });
         
-        // Build context for complex queries
-        let context = null;
-        if (queryAnalysis.complexity !== 'low') {
+        // 🧠 ENHANCED MEMORY RETRIEVAL AND INTEGRATION
+        let memoryContext = options.memoryContext || '';
+        let memoryData = {
+            conversationHistory: options.conversationHistory || [],
+            persistentMemory: options.persistentMemory || []
+        };
+        
+        // If no memory provided in options, try to build it
+        if (!memoryContext && !options.conversationHistory && !options.persistentMemory) {
+            console.log('🔍 Building memory context from scratch...');
+            
             try {
-                context = await buildConversationContext(chatId);
-            } catch (contextError) {
-                console.log('⚠️ Context building failed, continuing without:', contextError.message);
+                // Try enhanced memory building
+                memoryContext = await buildConversationContext(chatId);
+                console.log(`✅ Built memory context: ${memoryContext.length} chars`);
+            } catch (memoryError) {
+                console.log('⚠️ Enhanced memory building failed, trying fallback:', memoryError.message);
+                
+                // Fallback to direct database queries
+                try {
+                    const [history, memories] = await Promise.allSettled([
+                        getConversationHistoryDB(chatId, 5),
+                        getPersistentMemoryDB(chatId)
+                    ]);
+                    
+                    if (history.status === 'fulfilled') {
+                        memoryData.conversationHistory = history.value;
+                        console.log(`✅ Retrieved ${history.value.length} conversation records`);
+                    }
+                    
+                    if (memories.status === 'fulfilled') {
+                        memoryData.persistentMemory = memories.value;
+                        console.log(`✅ Retrieved ${memories.value.length} persistent memories`);
+                    }
+                    
+                    // Build basic memory context manually
+                    if (memoryData.persistentMemory.length > 0) {
+                        memoryContext = `\n\n🧠 IMPORTANT FACTS TO REMEMBER:\n`;
+                        memoryData.persistentMemory.slice(0, 3).forEach((memory, index) => {
+                            const fact = memory.fact || memory;
+                            memoryContext += `${index + 1}. ${fact}\n`;
+                        });
+                    }
+                    
+                    if (memoryData.conversationHistory.length > 0) {
+                        memoryContext += `\n\n📝 RECENT CONVERSATION:\n`;
+                        const recent = memoryData.conversationHistory[0];
+                        memoryContext += `User previously asked: "${recent.user_message?.substring(0, 100) || ''}"\n`;
+                    }
+                    
+                    console.log(`✅ Fallback memory context built: ${memoryContext.length} chars`);
+                    
+                } catch (fallbackError) {
+                    console.log('❌ Fallback memory also failed:', fallbackError.message);
+                    memoryContext = '';
+                }
             }
         }
         
+        // Analyze query with memory context awareness
+        const queryAnalysis = analyzeQuery(
+            userMessage, 
+            options.messageType || 'text', 
+            options.hasMedia || false,
+            memoryContext
+        );
+        
+        console.log('🧠 Enhanced query analysis:', {
+            type: queryAnalysis.type,
+            bestAI: queryAnalysis.bestAI,
+            complexity: queryAnalysis.complexity,
+            memoryImportant: queryAnalysis.memoryImportant,
+            reason: queryAnalysis.reason
+        });
+        
         let response;
+        let aiUsed;
         
         if (queryAnalysis.bestAI === 'both') {
-            // Use both AIs for complex analysis
-            console.log('🔄 Using both AIs for comprehensive analysis...');
+            // Use both AIs for complex analysis with memory
+            console.log('🔄 Using both AIs for comprehensive analysis with memory...');
             
             const [gptResponse, claudeResponse] = await Promise.allSettled([
-                executeGptAnalysis(userMessage, queryAnalysis, context),
-                executeClaudeAnalysis(userMessage, queryAnalysis, context)
+                executeGptAnalysis(userMessage, queryAnalysis, memoryContext, memoryData),
+                executeClaudeAnalysis(userMessage, queryAnalysis, memoryContext, memoryData)
             ]);
             
             let finalResponse = '';
@@ -403,219 +527,106 @@ async function executeDualCommand(userMessage, chatId, messageType = 'text', has
             }
             
             response = finalResponse;
+            aiUsed = 'dual';
             
         } else {
-            // Use single AI
+            // Use single AI with enhanced memory integration
             if (queryAnalysis.bestAI === 'claude') {
-                response = await executeClaudeAnalysis(userMessage, queryAnalysis, context);
+                response = await executeClaudeAnalysis(userMessage, queryAnalysis, memoryContext, memoryData);
+                aiUsed = 'claude';
             } else {
-                response = await executeGptAnalysis(userMessage, queryAnalysis, context);
+                response = await executeGptAnalysis(userMessage, queryAnalysis, memoryContext, memoryData);
+                aiUsed = 'gpt';
             }
         }
         
-        return {
-            response: response,
-            aiUsed: queryAnalysis.bestAI,
-            queryType: queryAnalysis.type,
-            complexity: queryAnalysis.complexity,
-            reasoning: queryAnalysis.reason,
-            specialFunction: queryAnalysis.specialFunction,
-            liveDataUsed: queryAnalysis.needsLiveData,
-            success: true
-        };
+        const responseTime = Date.now() - startTime;
         
-    } catch (error) {
-        console.error('❌ Dual command execution error:', error.message);
-        
-        // Fallback to gpt-5
-        try {
-            console.log('🔄 Falling back to gpt-5...');
-            
-            const fallbackAnalysis = {
-                type: 'fallback',
-                maxTokens: 1200,
-                needsLiveData: false
-            };
-            
-            const fallbackResponse = await executeGptAnalysis(userMessage, fallbackAnalysis);
-            
-            return {
-                response: `${fallbackResponse}\n\n*Note: Using fallback mode due to system issue.*`,
-                aiUsed: 'gpt',
-                queryType: 'fallback',
-                complexity: 'medium',
-                reasoning: 'Fallback after system error',
-                success: false,
-                error: error.message
-            };
-            
-        } catch (fallbackError) {
-            throw new Error(`Dual command system failure: ${error.message}`);
-        }
-    }
-}
-
-async function executeDualCommand(userMessage, chatId, options = {}) {
-    try {
-        console.log('🎯 Executing dual command analysis...');
-        
-        // Analyze the query to determine optimal routing
-        const queryAnalysis = analyzeQuery(userMessage, options.messageType || 'text', options.hasMedia || false);
-        console.log('🧠 Query analysis:', {
-            type: queryAnalysis.type,
-            bestAI: queryAnalysis.bestAI,
-            complexity: queryAnalysis.complexity,
-            reason: queryAnalysis.reason
+        console.log('✅ Enhanced dual command completed:', {
+            aiUsed: aiUsed,
+            responseTime: responseTime,
+            memoryUsed: memoryContext.length > 0,
+            conversationRecords: memoryData.conversationHistory.length,
+            persistentMemories: memoryData.persistentMemory.length
         });
         
-        // 🔧 FIXED: Build context using the correct function from memory.js
-        let context = null;
-        if (queryAnalysis.complexity !== 'low') {
-            try {
-                // Import the memory functions
-                const { buildConversationContext } = require('./memory');
-                context = await buildConversationContext(chatId);
-                console.log('✅ Memory context built successfully');
-            } catch (contextError) {
-                console.log('⚠️ Context building failed, continuing without:', contextError.message);
-                
-                // 🔧 FALLBACK: Try to get recent conversations directly
-                try {
-                    const { getConversationHistoryDB } = require('./database');
-                    const recentHistory = await getConversationHistoryDB(chatId, 5);
-                    if (recentHistory && recentHistory.length > 0) {
-                        context = `\n\n🧠 RECENT CONVERSATIONS:\n`;
-                        recentHistory.forEach((conv, index) => {
-                            context += `${index + 1}. User: "${conv.user_message?.substring(0, 100) || ''}"\n`;
-                            context += `   AI: "${conv.gpt_response?.substring(0, 100) || ''}"\n`;
-                        });
-                        console.log('✅ Fallback context built from database');
-                    }
-                } catch (fallbackError) {
-                    console.log('⚠️ Fallback context also failed:', fallbackError.message);
-                }
-            }
-        }
-        
-        // Add enhanced context from options if provided
-        if (options.conversationHistory) {
-            let enhancedContext = context || '';
-            enhancedContext += `\n\n📝 CONVERSATION HISTORY:\n`;
-            options.conversationHistory.slice(0, 3).forEach((conv, index) => {
-                enhancedContext += `${index + 1}. "${conv.userMessage?.substring(0, 80) || ''}"\n`;
-            });
-            context = enhancedContext;
-        }
-        
-        if (options.persistentMemory && options.persistentMemory.length > 0) {
-            let memoryContext = context || '';
-            memoryContext += `\n\n🧠 PERSISTENT MEMORY:\n`;
-            options.persistentMemory.slice(0, 5).forEach((memory, index) => {
-                const fact = memory.fact || memory;
-                memoryContext += `• ${fact.substring(0, 100)}...\n`;
-            });
-            context = memoryContext;
-        }
-
-        let response;
-        
-        if (queryAnalysis.bestAI === 'both') {
-            // Use both AIs for complex analysis
-            console.log('🔄 Using both AIs for comprehensive analysis...');
-            
-            const [gptResponse, claudeResponse] = await Promise.allSettled([
-                executeGptAnalysis(userMessage, queryAnalysis, context),
-                executeClaudeAnalysis(userMessage, queryAnalysis, context)
-            ]);
-            
-            let finalResponse = '';
-            
-            if (gptResponse.status === 'fulfilled') {
-                finalResponse += `**GPT-5 Analysis:**\n${gptResponse.value}\n\n`;
-            }
-            
-            if (claudeResponse.status === 'fulfilled') {
-                finalResponse += `**Claude Opus 4.1 Analysis:**\n${claudeResponse.value}`;
-            }
-            
-            if (!finalResponse) {
-                throw new Error('Both AI analyses failed');
-            }
-            
-            response = finalResponse;
-            
-        } else {
-            // Use single AI with context
-            if (queryAnalysis.bestAI === 'claude') {
-                response = await executeClaudeAnalysis(userMessage, queryAnalysis, context);
-            } else {
-                response = await executeGptAnalysis(userMessage, queryAnalysis, context);
-            }
-        }
-        
         return {
             response: response,
-            aiUsed: queryAnalysis.bestAI,
+            aiUsed: aiUsed,
             queryType: queryAnalysis.type,
             complexity: queryAnalysis.complexity,
             reasoning: queryAnalysis.reason,
             specialFunction: queryAnalysis.specialFunction,
             liveDataUsed: queryAnalysis.needsLiveData,
-            contextUsed: !!context,
-            responseTime: Date.now(),
+            contextUsed: memoryContext.length > 0,
+            responseTime: responseTime,
             tokenCount: response.length,
-            functionExecutionTime: Date.now(),
+            functionExecutionTime: responseTime,
+            memoryData: {
+                contextLength: memoryContext.length,
+                conversationRecords: memoryData.conversationHistory.length,
+                persistentMemories: memoryData.persistentMemory.length,
+                memoryImportant: queryAnalysis.memoryImportant
+            },
             success: true
         };
         
     } catch (error) {
-        console.error('❌ Dual command execution error:', error.message);
+        console.error('❌ Enhanced dual command execution error:', error.message);
         
         // Enhanced fallback with memory attempt
         try {
-            console.log('🔄 Enhanced fallback to GPT-5...');
+            console.log('🔄 Enhanced fallback to gpt-5 with memory...');
             
-            const { getGptAnalysis } = require('./openaiClient');
             let fallbackContext = '';
             
             // Try to get some context for fallback
             try {
-                const { getConversationHistoryDB } = require('./database');
-                const recentHistory = await getConversationHistoryDB(chatId, 3);
+                const recentHistory = await getConversationHistoryDB(chatId, 2);
                 if (recentHistory && recentHistory.length > 0) {
-                    fallbackContext = `\n\nRecent context: ${recentHistory[0]?.user_message?.substring(0, 100) || ''}`;
+                    fallbackContext = `\n\nFor context: You previously discussed "${recentHistory[0]?.user_message?.substring(0, 80) || 'general topics'}" with this user.`;
                 }
             } catch (contextError) {
-                // Continue without context
+                console.log('⚠️ Fallback context failed:', contextError.message);
             }
             
             const fallbackResponse = await getGptAnalysis(userMessage + fallbackContext, {
                 maxTokens: 1200,
-                temperature: 0.7
+                temperature: 0.7,
+                model: "gpt-5"
             });
             
+            const responseTime = Date.now() - startTime;
+            
             return {
-                response: `${fallbackResponse}\n\n*Note: Using enhanced fallback mode with partial memory.*`,
-                aiUsed: 'gpt',
+                response: `${fallbackResponse}\n\n*Note: Using enhanced fallback mode with partial memory context.*`,
+                aiUsed: 'gpt-fallback',
                 queryType: 'fallback',
                 complexity: 'medium',
                 reasoning: 'Enhanced fallback after system error with memory attempt',
                 contextUsed: !!fallbackContext,
+                responseTime: responseTime,
+                memoryData: {
+                    contextLength: fallbackContext.length,
+                    fallbackUsed: true
+                },
                 success: false,
                 error: error.message
             };
             
         } catch (fallbackError) {
+            console.error('❌ Enhanced fallback also failed:', fallbackError.message);
             throw new Error(`Enhanced dual command system failure: ${error.message}`);
         }
     }
 }
 
-// 📊 SYSTEM HEALTH CHECK
+// 📊 ENHANCED SYSTEM HEALTH CHECK
 async function checkSystemHealth() {
     const health = {
         gptAnalysis: false,
         claudeAnalysis: false,
+        memorySystem: false,
         contextBuilding: false,
         dateTimeSupport: false,
         dualMode: false,
@@ -624,7 +635,11 @@ async function checkSystemHealth() {
     
     try {
         // Test gpt-5
-        await executeGptAnalysis('Hello', { type: 'casual', maxTokens: 100 });
+        await executeGptAnalysis('Test', { 
+            type: 'casual', 
+            maxTokens: 50, 
+            memoryImportant: false 
+        });
         health.gptAnalysis = true;
         console.log('✅ gpt-5 analysis operational');
     } catch (error) {
@@ -634,12 +649,27 @@ async function checkSystemHealth() {
     
     try {
         // Test Claude
-        await executeClaudeAnalysis('Test', { type: 'general', maxTokens: 100 });
+        await executeClaudeAnalysis('Test', { 
+            type: 'general', 
+            maxTokens: 50, 
+            memoryImportant: false 
+        });
         health.claudeAnalysis = true;
         console.log('✅ Claude analysis operational');
     } catch (error) {
         health.errors.push(`Claude: ${error.message}`);
         console.log('❌ Claude analysis unavailable');
+    }
+    
+    try {
+        // Test memory system
+        const testContext = await buildConversationContext('test');
+        health.memorySystem = typeof testContext === 'string';
+        health.contextBuilding = true;
+        console.log('✅ Memory system operational');
+    } catch (error) {
+        health.errors.push(`Memory: ${error.message}`);
+        console.log('❌ Memory system unavailable');
     }
     
     try {
@@ -652,24 +682,14 @@ async function checkSystemHealth() {
         console.log('❌ DateTime support unavailable');
     }
     
-    try {
-        // Test context building
-        await buildStrategicCommanderContext('test', 'test query');
-        health.contextBuilding = true;
-        console.log('✅ Context building operational');
-    } catch (error) {
-        health.errors.push(`Context: ${error.message}`);
-        console.log('❌ Context building unavailable');
-    }
-    
     health.dualMode = health.gptAnalysis && health.claudeAnalysis;
-    health.overallHealth = health.gptAnalysis || health.claudeAnalysis; // At least one AI working
+    health.overallHealth = health.gptAnalysis || health.claudeAnalysis;
     
     return health;
 }
 
-// 🚀 QUICK ACCESS FUNCTIONS
-async function getMarketIntelligence() {
+// 🚀 ENHANCED QUICK ACCESS FUNCTIONS
+async function getMarketIntelligence(chatId = null) {
     const globalTime = getCurrentGlobalDateTime();
     const query = `Current market intelligence summary - Time: ${globalTime.cambodia.date}, ${globalTime.cambodia.time} Cambodia. Provide concise overview of market conditions, key risks, and opportunities.`;
     
@@ -678,7 +698,8 @@ async function getMarketIntelligence() {
             type: 'market',
             maxTokens: 1000,
             needsLiveData: true,
-            specialFunction: 'regime'
+            specialFunction: 'regime',
+            memoryImportant: false
         });
     } catch (error) {
         console.error('❌ Market intelligence error:', error.message);
@@ -721,56 +742,230 @@ function getGlobalMarketStatus() {
     }
 }
 
-// 📈 SYSTEM ANALYTICS
+// 📈 ENHANCED SYSTEM ANALYTICS
 function getSystemAnalytics() {
     return {
-        version: '2.0 - Clean Natural Responses',
+        version: '3.0 - Enhanced Memory Integration',
         aiModels: {
-            gpt: 'gpt-5 (multimodal, natural conversation)',
-            claude: 'Claude Opus 4.1 (advanced reasoning, live data)'
+            gpt: 'gpt-5 (multimodal, natural conversation, stable)',
+            claude: 'Claude Opus 4.1 (advanced reasoning, live data integration)'
         },
+        memoryFeatures: [
+            'Persistent conversation memory',
+            'Strategic fact extraction',
+            'Context-aware AI routing',
+            'Enhanced memory integration',
+            'Fallback memory systems',
+            'Memory importance analysis'
+        ],
         capabilities: [
-            'Smart query routing',
-            'Natural AI responses',
+            'Smart query routing with memory context',
+            'Natural AI responses with conversation history',
             'Live market data integration',
             'Global timezone support',
-            'Economic regime analysis',
-            'Portfolio optimization',
+            'Economic regime analysis with memory',
+            'Portfolio optimization with historical context',
             'Market anomaly detection',
-            'Cambodia market expertise',
-            'Dual AI synthesis for complex queries'
+            'Cambodia market expertise with persistent knowledge',
+            'Dual AI synthesis for complex queries',
+            'Enhanced memory persistence and retrieval',
+            'Intelligent fallback systems',
+            'Memory-aware query analysis'
         ],
         queryTypes: [
             'casual', 'datetime', 'market', 'regime', 'anomaly', 
-            'portfolio', 'cambodia', 'complex', 'multimodal'
+            'portfolio', 'cambodia', 'complex', 'multimodal', 'memory-enhanced'
         ],
         specialFunctions: [
-            'regime analysis', 'anomaly detection', 'portfolio optimization', 'cambodia analysis'
+            'regime analysis', 'anomaly detection', 'portfolio optimization', 
+            'cambodia analysis', 'memory integration', 'context building'
         ],
-        healthCheck: 'Use checkSystemHealth() for current status'
+        memorySystem: {
+            conversationHistory: 'Database-backed persistent storage',
+            persistentMemory: 'Strategic fact extraction and storage',
+            contextBuilding: 'Enhanced memory integration',
+            fallbackSystems: 'Multiple layers of memory recovery'
+        },
+        healthCheck: 'Use checkSystemHealth() for current status with memory diagnostics'
     };
 }
 
+// 🧠 MEMORY TESTING AND DIAGNOSTICS
+async function testMemoryIntegration(chatId) {
+    console.log('🧪 Testing enhanced memory integration...');
+    
+    const tests = {
+        conversationHistory: false,
+        persistentMemory: false,
+        memoryBuilding: false,
+        dualCommandWithMemory: false,
+        memoryContextPassing: false,
+        fallbackMemory: false
+    };
+    
+    try {
+        // Test 1: Conversation History
+        const history = await getConversationHistoryDB(chatId, 3);
+        tests.conversationHistory = Array.isArray(history);
+        console.log(`✅ Conversation History: ${tests.conversationHistory} (${history?.length || 0} records)`);
+    } catch (error) {
+        console.log(`❌ Conversation History: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 2: Persistent Memory
+        const memory = await getPersistentMemoryDB(chatId);
+        tests.persistentMemory = Array.isArray(memory);
+        console.log(`✅ Persistent Memory: ${tests.persistentMemory} (${memory?.length || 0} records)`);
+    } catch (error) {
+        console.log(`❌ Persistent Memory: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 3: Memory Building
+        const context = await buildConversationContext(chatId);
+        tests.memoryBuilding = typeof context === 'string';
+        console.log(`✅ Memory Building: ${tests.memoryBuilding} (${context?.length || 0} chars)`);
+    } catch (error) {
+        console.log(`❌ Memory Building: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 4: Dual Command with Memory
+        const result = await executeDualCommand('Hello, do you remember our previous conversations?', chatId);
+        tests.dualCommandWithMemory = result.success && result.contextUsed;
+        console.log(`✅ Dual Command with Memory: ${tests.dualCommandWithMemory}`);
+    } catch (error) {
+        console.log(`❌ Dual Command with Memory: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 5: Memory Context Passing
+        const testOptions = {
+            conversationHistory: [{ user_message: 'test', gpt_response: 'test response' }],
+            persistentMemory: [{ fact: 'test memory fact' }],
+            memoryContext: 'Test context'
+        };
+        const result = await executeDualCommand('Test memory context', chatId, testOptions);
+        tests.memoryContextPassing = result.success && result.memoryData.contextLength > 0;
+        console.log(`✅ Memory Context Passing: ${tests.memoryContextPassing}`);
+    } catch (error) {
+        console.log(`❌ Memory Context Passing: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 6: Fallback Memory
+        const result = await executeDualCommand('Test fallback', 'nonexistent_user');
+        tests.fallbackMemory = result.success;
+        console.log(`✅ Fallback Memory: ${tests.fallbackMemory}`);
+    } catch (error) {
+        console.log(`❌ Fallback Memory: Failed - ${error.message}`);
+    }
+    
+    const overallSuccess = Object.values(tests).filter(test => test).length;
+    const totalTests = Object.keys(tests).length;
+    
+    console.log(`\n📊 Enhanced Memory Integration Test: ${overallSuccess}/${totalTests} passed`);
+    console.log(`${overallSuccess === totalTests ? '🎉 FULL SUCCESS' : overallSuccess >= totalTests * 0.7 ? '✅ MOSTLY WORKING' : '⚠️ NEEDS ATTENTION'}`);
+    
+    return {
+        tests: tests,
+        score: `${overallSuccess}/${totalTests}`,
+        percentage: Math.round((overallSuccess / totalTests) * 100),
+        status: overallSuccess === totalTests ? 'FULL_SUCCESS' : 
+                overallSuccess >= totalTests * 0.7 ? 'MOSTLY_WORKING' : 'NEEDS_ATTENTION'
+    };
+}
+
+// 🔄 MEMORY OPTIMIZATION UTILITIES
+async function optimizeMemoryForUser(chatId) {
+    try {
+        console.log(`🔧 Optimizing memory for user ${chatId}...`);
+        
+        // Get current memory state
+        const [conversations, memories] = await Promise.allSettled([
+            getConversationHistoryDB(chatId, 50),
+            getPersistentMemoryDB(chatId)
+        ]);
+        
+        const results = {
+            conversationsAnalyzed: 0,
+            memoriesAnalyzed: 0,
+            optimizationsApplied: [],
+            recommendations: []
+        };
+        
+        if (conversations.status === 'fulfilled') {
+            results.conversationsAnalyzed = conversations.value.length;
+            
+            // Analyze conversation patterns
+            if (conversations.value.length > 10) {
+                results.recommendations.push('Consider memory consolidation - high conversation volume');
+            }
+            
+            if (conversations.value.length === 0) {
+                results.recommendations.push('No conversation history - memory building will be limited');
+            }
+        }
+        
+        if (memories.status === 'fulfilled') {
+            results.memoriesAnalyzed = memories.value.length;
+            
+            // Analyze memory quality
+            if (memories.value.length === 0) {
+                results.recommendations.push('No persistent memories - fact extraction may need attention');
+            } else if (memories.value.length > 50) {
+                results.recommendations.push('High memory volume - consider importance-based filtering');
+            }
+        }
+        
+        results.optimizationsApplied.push('Memory state analyzed');
+        results.optimizationsApplied.push('Performance recommendations generated');
+        
+        console.log(`✅ Memory optimization completed for ${chatId}`);
+        return results;
+        
+    } catch (error) {
+        console.error('❌ Memory optimization error:', error.message);
+        return {
+            error: error.message,
+            conversationsAnalyzed: 0,
+            memoriesAnalyzed: 0,
+            optimizationsApplied: [],
+            recommendations: ['Memory optimization failed - check system health']
+        };
+    }
+}
+
+// 📋 ENHANCED EXPORT FUNCTIONS
 module.exports = {
-    // Main functions
+    // 🎯 Main functions
     executeDualCommand,
     analyzeQuery,
     executeGptAnalysis,
     executeClaudeAnalysis,
     
-    // Utility functions
+    // 🧠 Memory functions
+    testMemoryIntegration,
+    optimizeMemoryForUser,
+    
+    // 🌍 Utility functions
     getCurrentCambodiaDateTime,
     getCurrentGlobalDateTime,
     getMarketIntelligence,
     getGlobalMarketStatus,
     
-    // System management
+    // 📊 System management
     checkSystemHealth,
     getSystemAnalytics,
     
-    // Legacy compatibility
+    // 🔄 Legacy compatibility
     executeEnhancedDualCommand: executeDualCommand,
     routeConversationIntelligently: analyzeQuery,
     getEnhancedCommandAnalytics: getSystemAnalytics,
-    checkEnhancedSystemHealth: checkSystemHealth
+    checkEnhancedSystemHealth: checkSystemHealth,
+    
+    // 🧪 Testing and diagnostics
+    testEnhancedMemorySystem: testMemoryIntegration,
+    optimizeEnhancedMemory: optimizeMemoryForUser
 };
