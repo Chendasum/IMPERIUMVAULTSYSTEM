@@ -9800,7 +9800,7 @@ module.exports = {
     // Global instance
     dataAccess,
     
-    // Database methods
+// Database methods
     connectDatabase: async (config) => await dataAccess.initialize(config),
     disconnectDatabase: async () => await dataAccess.shutdown(),
     
