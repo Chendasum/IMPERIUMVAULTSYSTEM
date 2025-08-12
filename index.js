@@ -170,45 +170,32 @@ async function initializeEnhancedDatabase() {
     }
 }
 
-// Test database functions
-async function getDatabaseStats() {
-  const p = getPool();
-  if (!p) return { connected: false, reason: 'no pool' };
-
+// Test database functions (live + safe)
+async function testDatabaseFunctions() {
   try {
-    await p.query('SELECT 1'); // live ping
-    const [{ count: totalUsers }] = (await p.query(
-      "SELECT COUNT(*)::int AS count FROM user_profiles"
-    )).rows;
-    const [{ count: totalConversations }] = (await p.query(
-      "SELECT COUNT(*)::int AS count FROM conversations"
-    )).rows;
+    const stats = await getDatabaseStats(); // should do SELECT 1 inside
+    const dbConnected = !!(stats && stats.connected === true);
 
-    // optional more metrics (guard tables if they may not exist)
-    let totalDocuments = 0;
-    try {
-      totalDocuments = (await p.query(
-        "SELECT COUNT(*)::int AS count FROM training_documents"
-      )).rows[0].count;
-    } catch {}
+    // optional: show DB host for quick sanity
+    let dbHost = "missing DATABASE_URL";
+    try { dbHost = new URL(process.env.DATABASE_URL).hostname; } catch {}
 
-    // keep your in-memory stats synced
-    connectionStats.connectionHealth = 'HEALTHY';
-    connectionStats.lastError = null;
-    connectionStats.totalQueries++;
-    connectionStats.successfulQueries++;
+    console.log("📊 Database stats test:", {
+      connected: dbConnected,
+      host: dbHost,
+      totalUsers: stats?.totalUsers ?? 0,
+      totalConversations: stats?.totalConversations ?? 0,
+      totalDocuments: stats?.totalDocuments ?? 0,
+      error: stats?.error || null
+    });
 
-    return {
-      connected: true,
-      totalUsers,
-      totalConversations,
-      totalDocuments,
-      time: new Date().toISOString()
-    };
-  } catch (e) {
-    connectionStats.connectionHealth = 'DISCONNECTED';
-    connectionStats.lastError = e.message;
-    return { connected: false, error: e.message };
+    const health = await performHealthCheck();
+    console.log("🏥 Database health test:", health?.status, health?.error ? `(${health.error})` : "");
+
+    return true;
+  } catch (error) {
+    console.error("⚠️ Database function test failed:", error.message);
+    return false;
   }
 }
 
