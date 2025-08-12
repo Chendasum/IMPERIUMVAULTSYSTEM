@@ -7938,7 +7938,6 @@ return totalValue > 0 ? Math.round((weightedYield / totalValue) * 100) / 100 : 0
             return { data: [], pagination: {} };
         }
     }
-}
 
 /**
  * 🔧 STRATEGIC STRING WARFARE UTILITIES
