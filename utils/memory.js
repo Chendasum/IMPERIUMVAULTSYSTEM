@@ -2039,50 +2039,6 @@ function calculateStrategicWeight(conversationIntel) {
     return Math.min(1.0, Math.max(0.0, weight));
 }
 
-// Enhanced memory score calculation
-function calculateMemoryScore(memory) {
-    let score = 0;
-    
-    // Importance score (40%)
-    const importanceScores = {
-        'critical': 1.0, 'strategic': 0.9, 'high': 0.7,
-        'medium': 0.5, 'low': 0.3, 'contextual': 0.4
-    };
-    score += (importanceScores[memory.importance] || 0.5) * 0.4;
-    
-    // Strategic weight (30%)
-    score += memory.strategicWeight * 0.3;
-    
-    // Quality factors (30%)
-    const qualityScore = memory.metadata?.qualityScore || 0.5;
-    const relevanceScore = memory.metadata?.relevanceScore || 0.5;
-    const uniquenessScore = memory.metadata?.uniquenessScore || 0.5;
-    
-    score += ((qualityScore + relevanceScore + uniquenessScore) / 3) * 0.3;
-    
-    return Math.min(1.0, score);
-}
-
-// Enhanced fact quality calculation
-function calculateFactQuality(fact) {
-    let quality = 0.5;
-    
-    // Length factor
-    const length = fact.length;
-    if (length > 20 && length < 200) quality += 0.2;
-    if (length > 200) quality -= 0.1;
-    
-    // Specificity factor
-    if (/\d+/.test(fact)) quality += 0.1; // Contains numbers
-    if (/[A-Z][a-z]+/.test(fact)) quality += 0.1; // Contains proper nouns
-    
-    // Completeness factor
-    if (fact.includes('because') || fact.includes('due to')) quality += 0.1;
-    if (fact.endsWith('.') || fact.endsWith('!')) quality += 0.05;
-    
-    return Math.min(1.0, quality);
-}
-
 // Enhanced relevance score calculation
 function calculateRelevanceScore(fact, category) {
     const factLower = fact.toLowerCase();
@@ -2099,13 +2055,10 @@ function calculateRelevanceScore(fact, category) {
     };
     
     const keywords = categoryKeywords[category] || [];
-    const matchCount = keywords.filter(keyword => factLower.includes(keyword)).length;
-    
-    relevance += (match
-
-// ENHANCED MEMORY.JS - PART 8: PERFORMANCE & LEGACY FUNCTIONS
-
-Count / keywords.length) * 0.3;
+    if (keywords.length > 0) {
+        const matchCount = keywords.filter(keyword => factLower.includes(keyword)).length;
+        relevance += (matchCount / keywords.length) * 0.3;
+    }
     
     return Math.min(1.0, relevance);
 }
