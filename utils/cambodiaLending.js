@@ -7944,12 +7944,7 @@ return totalValue > 0 ? Math.round((weightedYield / totalValue) * 100) / 100 : 0
  * 🔧 STRATEGIC STRING WARFARE UTILITIES
  */
 
-class StringUtilities {
-    constructor() {
-        console.log('🔧 Strategic String Warfare Utilities initialized');
-    }
-
-    generateDealId(dealData) {
+    function generateDealId(dealData) {
         try {
             const timestamp = Date.now().toString(36);
             const borrower = (dealData.borrowerName || 'UNK').substring(0, 3).toUpperCase();
@@ -7963,7 +7958,7 @@ class StringUtilities {
         }
     }
 
-    generateReportId(reportType = 'GENERAL') {
+    function generateReportId(reportType = 'GENERAL') {
         try {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '').substring(0, 15);
             const type = reportType.substring(0, 3).toUpperCase();
