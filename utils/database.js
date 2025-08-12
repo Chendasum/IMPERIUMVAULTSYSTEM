@@ -5,11 +5,11 @@ const { Pool } = require('pg');
 
 // Initialize PostgreSQL connection (Railway provides this for free)
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.DATABASE_PUBLIC_URL || process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 30000,
-    max: 20, // Increased pool size for better performance
+    max: 20,
     statement_timeout: 30000,
     query_timeout: 30000
 });
