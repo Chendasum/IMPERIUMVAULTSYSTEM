@@ -15,10 +15,44 @@ const { buildConversationContext } = require('./memory');
 // 🔧 FIXED: Add the missing function that connects to memory and database
 async function buildStrategicCommanderContext(chatId, userMessage) {
     try {
+        // Import memory functions
+        const { buildConversationContext } = require('./memory');
         return await buildConversationContext(chatId);
     } catch (error) {
-        console.error('Context enhancer error:', error.message);
-        return null;
+        console.error('Strategic context building error:', error.message);
+        
+        // Fallback context building
+        try {
+            const { getConversationHistoryDB, getPersistentMemoryDB } = require('./database');
+            const [recentHistory, persistentMemory] = await Promise.all([
+                getConversationHistoryDB(chatId, 5).catch(() => []),
+                getPersistentMemoryDB(chatId).catch(() => [])
+            ]);
+            
+            let fallbackContext = '';
+            
+            if (recentHistory.length > 0) {
+                fallbackContext += `\n\n📝 RECENT CONVERSATIONS:\n`;
+                recentHistory.forEach((conv, index) => {
+                    fallbackContext += `${index + 1}. User: "${conv.user_message?.substring(0, 80) || ''}"\n`;
+                    fallbackContext += `   AI: "${conv.gpt_response?.substring(0, 80) || ''}"\n`;
+                });
+            }
+            
+            if (persistentMemory.length > 0) {
+                fallbackContext += `\n\n🧠 PERSISTENT MEMORY:\n`;
+                persistentMemory.slice(0, 5).forEach((memory, index) => {
+                    const fact = memory.fact || memory;
+                    fallbackContext += `• ${fact.substring(0, 100)}...\n`;
+                });
+            }
+            
+            return fallbackContext;
+            
+        } catch (fallbackError) {
+            console.error('Fallback context building failed:', fallbackError.message);
+            return '';
+        }
     }
 }
 
