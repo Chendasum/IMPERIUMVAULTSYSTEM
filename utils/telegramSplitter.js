@@ -1,558 +1,459 @@
-// utils/strategicIntegration.js - LIGHTWEIGHT INTEGRATION LAYER
-// Works with existing telegramSplitter.js and modular system structure
+// utils/telegramSplitter.js - Clean Message Handling for Telegram
+// Professional message splitting and formatting without theatrical elements
 
-const telegramSplitter = require('./telegramSplitter');
-const metaTrader = require('./metaTrader');
-const cambodiaLending = require('./cambodiaLending');
-const liveData = require('./liveData');
-
-// 🎯 STRATEGIC INTEGRATION CONFIGURATION
-const INTEGRATION_CONFIG = {
-    // GPT-5 and Claude Opus 4.1 optimization
-    AI_PROCESSING: {
-        GPT5_ENABLED: true,
-        CLAUDE_OPUS_ENABLED: true,
-        CONFIDENCE_THRESHOLD: 0.75,
-        MAX_TOKENS_PER_ANALYSIS: 4000
-    },
-    
-    // Monitoring intervals (minutes)
-    INTERVALS: {
-        OPPORTUNITY_SCAN: 30,
-        RISK_CHECK: 15,
-        HEALTH_MONITOR: 60,
-        REGIME_WATCH: 10
-    },
-    
-    // Alert thresholds
-    THRESHOLDS: {
-        PORTFOLIO_RISK: 5.0,
-        OPPORTUNITY_SCORE: 75,
-        MARGIN_LEVEL: 200,
-        CORRELATION_RISK: 0.8
-    },
-    
-    // Daily schedule
-    SCHEDULE: {
-        DAILY_REPORT_TIME: '08:00',
-        TIMEZONE: 'Asia/Phnom_Penh'
-    }
+const TELEGRAM_LIMITS = {
+    MAX_MESSAGE_LENGTH: 4096,          // Telegram's hard limit
+    SAFE_MESSAGE_LENGTH: 4000,         // Safe limit with buffer
+    MAX_CAPTION_LENGTH: 1024,          // For media captions
+    OPTIMAL_CHUNK_SIZE: 3800,          // Optimal chunk size
+    MAX_CHUNKS_PER_MESSAGE: 15,        // Prevent spam
+    MESSAGE_DELAY_MS: 1000,            // Delay between message chunks
+    PRIORITY_DELAY_MS: 500             // Faster for urgent messages
 };
 
-// 📊 MONITORING STATE
-let monitoringActive = false;
-let intervalHandlers = {};
-let lastAnalysisCache = {};
+// 📊 MESSAGE TYPES
+const MESSAGE_TYPES = {
+    'general': { emoji: '💬', priority: 'normal' },
+    'analysis': { emoji: '📊', priority: 'high' },
+    'cambodia': { emoji: '🇰🇭', priority: 'high' },
+    'market': { emoji: '📈', priority: 'high' },
+    'portfolio': { emoji: '💼', priority: 'high' },
+    'alert': { emoji: '🚨', priority: 'urgent' },
+    'regime': { emoji: '🏛️', priority: 'high' },
+    'anomaly': { emoji: '⚠️', priority: 'urgent' }
+};
 
 /**
- * 🚀 INITIALIZE STRATEGIC INTEGRATION
- * Lightweight initialization that works with existing modules
+ * 🧹 Clean response text for better readability
  */
-async function initializeStrategicIntegration(bot, chatId, config = {}) {
-    try {
-        console.log('🚀 Initializing Strategic Commander Integration Layer...');
-        
-        // Merge custom config
-        const finalConfig = { ...INTEGRATION_CONFIG, ...config };
-        
-        // Quick system check using existing modules
-        const systemCheck = await performSystemCheck();
-        
-        // Send initialization status using existing telegramSplitter
-        const statusMessage = formatSystemStatus(systemCheck);
-        await telegramSplitter.sendAnalysis(bot, chatId, statusMessage, 
-            'Strategic Commander Integration Status', 'analysis');
-        
-        // Start monitoring if systems are ready
-        if (systemCheck.readyToMonitor) {
-            await startMonitoring(bot, chatId, finalConfig);
-            console.log('✅ Strategic Commander Integration initialized successfully');
-        } else {
-            console.log('⚠️ Strategic Commander Integration initialized with warnings');
-        }
-        
-        return {
-            success: true,
-            config: finalConfig,
-            systemStatus: systemCheck,
-            monitoringActive: monitoringActive
-        };
-        
-    } catch (error) {
-        console.error('❌ Strategic Integration initialization error:', error.message);
-        
-        await telegramSplitter.sendAlert(bot, chatId, 
-            `Integration initialization failed: ${error.message}`,
-            'System Error');
-        
-        return { success: false, error: error.message };
+function cleanResponse(text) {
+    if (!text || typeof text !== 'string') {
+        return '';
     }
+    
+    return text
+        // Clean up markdown formatting
+        .replace(/\*\*(.*?)\*\*/g, '$1')        // Remove **bold**
+        .replace(/^\s*[-*+]\s+/gm, '• ')        // Clean bullet points
+        .replace(/^#{1,6}\s+(.*)$/gm, '$1')     // Remove markdown headers
+        
+        // Clean up excessive spacing
+        .replace(/\n{3,}/g, '\n\n')             // Max 2 line breaks
+        .replace(/^\s+|\s+$/g, '')              // Trim whitespace
+        .trim();
 }
 
 /**
- * 🔍 PERFORM SYSTEM CHECK
- * Uses existing module functions to check system status
+ * 📱 Smart message sender with intelligent splitting
  */
-async function performSystemCheck() {
-    const checks = {
-        metaTrader: false,
-        cambodiaLending: false,
-        liveData: false,
-        telegramSplitter: true // Always available since we're using it
-    };
-    
-    const details = {};
-    
+async function sendSmartMessage(bot, chatId, message, options = {}) {
     try {
-        // Check MetaTrader module
-        if (metaTrader && typeof metaTrader.getConnectionStatus === 'function') {
-            const mtStatus = await metaTrader.getConnectionStatus();
-            checks.metaTrader = mtStatus.connected && mtStatus.synchronized;
-            details.metaTrader = mtStatus;
-        }
-    } catch (error) {
-        details.metaTrader = { error: error.message };
-    }
-    
-    try {
-        // Check Cambodia Lending module
-        if (cambodiaLending && typeof cambodiaLending.getPortfolioStatus === 'function') {
-            const clStatus = await cambodiaLending.getPortfolioStatus();
-            checks.cambodiaLending = !!clStatus;
-            details.cambodiaLending = clStatus;
-        }
-    } catch (error) {
-        details.cambodiaLending = { error: error.message };
-    }
-    
-    try {
-        // Check Live Data module
-        if (liveData && typeof liveData.getRayDalioMarketData === 'function') {
-            const ldStatus = await liveData.getRayDalioMarketData();
-            checks.liveData = !!ldStatus;
-            details.liveData = { available: !!ldStatus };
-        }
-    } catch (error) {
-        details.liveData = { error: error.message };
-    }
-    
-    const readyToMonitor = checks.metaTrader && checks.telegramSplitter;
-    const allSystemsOnline = Object.values(checks).every(check => check === true);
-    
-    return {
-        checks,
-        details,
-        readyToMonitor,
-        allSystemsOnline,
-        timestamp: new Date().toISOString()
-    };
-}
-
-/**
- * 📋 FORMAT SYSTEM STATUS
- */
-function formatSystemStatus(systemCheck) {
-    let status = `**STRATEGIC COMMANDER INTEGRATION STATUS**\n\n`;
-    
-    status += `**SYSTEM MODULES**\n`;
-    status += `• MetaTrader: ${systemCheck.checks.metaTrader ? '✅ Online' : '❌ Offline'}\n`;
-    status += `• Cambodia Lending: ${systemCheck.checks.cambodiaLending ? '✅ Online' : '❌ Offline'}\n`;
-    status += `• Live Data Feed: ${systemCheck.checks.liveData ? '✅ Online' : '❌ Offline'}\n`;
-    status += `• Telegram System: ${systemCheck.checks.telegramSplitter ? '✅ Online' : '❌ Offline'}\n\n`;
-    
-    status += `**OVERALL STATUS**\n`;
-    status += `• Ready to Monitor: ${systemCheck.readyToMonitor ? '✅ Yes' : '❌ No'}\n`;
-    status += `• All Systems: ${systemCheck.allSystemsOnline ? '✅ Online' : '⚠️ Some Offline'}\n\n`;
-    
-    if (systemCheck.details.metaTrader?.error) {
-        status += `**METATRADER ISSUE**\n• ${systemCheck.details.metaTrader.error}\n\n`;
-    }
-    
-    if (systemCheck.details.cambodiaLending?.error) {
-        status += `**CAMBODIA LENDING ISSUE**\n• ${systemCheck.details.cambodiaLending.error}\n\n`;
-    }
-    
-    status += `**AI INTEGRATION**\n`;
-    status += `• GPT-5 Ready: ${INTEGRATION_CONFIG.AI_PROCESSING.GPT5_ENABLED ? '✅' : '❌'}\n`;
-    status += `• Claude Opus 4.1 Ready: ${INTEGRATION_CONFIG.AI_PROCESSING.CLAUDE_OPUS_ENABLED ? '✅' : '❌'}\n\n`;
-    
-    if (systemCheck.readyToMonitor) {
-        status += `**✅ INTEGRATION LAYER ACTIVE**\nAutomated monitoring started.`;
-    } else {
-        status += `**⚠️ MANUAL INTERVENTION REQUIRED**\nCheck MetaTrader connection.`;
-    }
-    
-    return status;
-}
-
-/**
- * 🔄 START MONITORING
- */
-async function startMonitoring(bot, chatId, config) {
-    if (monitoringActive) {
-        console.log('⚠️ Monitoring already active');
-        return;
-    }
-    
-    console.log('🔄 Starting Strategic Commander monitoring...');
-    monitoringActive = true;
-    
-    // Schedule daily report
-    scheduleDailyReport(bot, chatId, config.SCHEDULE.DAILY_REPORT_TIME);
-    
-    // Start interval-based monitoring
-    intervalHandlers.opportunities = setInterval(() => {
-        checkOpportunities(bot, chatId);
-    }, config.INTERVALS.OPPORTUNITY_SCAN * 60 * 1000);
-    
-    intervalHandlers.risk = setInterval(() => {
-        checkRiskLevels(bot, chatId);
-    }, config.INTERVALS.RISK_CHECK * 60 * 1000);
-    
-    intervalHandlers.health = setInterval(() => {
-        checkPortfolioHealth(bot, chatId);
-    }, config.INTERVALS.HEALTH_MONITOR * 60 * 1000);
-    
-    intervalHandlers.regime = setInterval(() => {
-        checkRegimeChanges(bot, chatId);
-    }, config.INTERVALS.REGIME_WATCH * 60 * 1000);
-    
-    console.log('✅ Strategic monitoring active');
-}
-
-/**
- * 🎯 CHECK OPPORTUNITIES
- */
-async function checkOpportunities(bot, chatId) {
-    try {
-        if (!metaTrader.scanStrategicTradingOpportunities) return;
+        console.log(`📱 Sending message to ${chatId} (${message?.length || 0} chars)`);
         
-        const opportunities = await metaTrader.scanStrategicTradingOpportunities();
-        const highPriority = opportunities.opportunities?.filter(op => 
-            op.priority === 'HIGH' && op.score >= INTEGRATION_CONFIG.THRESHOLDS.OPPORTUNITY_SCORE
-        ) || [];
-        
-        if (highPriority.length === 0) return;
-        
-        // Check if already alerted
-        const cacheKey = `opportunities_${highPriority.map(op => op.symbol).join('_')}`;
-        if (lastAnalysisCache[cacheKey]) return;
-        
-        let alert = `**HIGH PRIORITY OPPORTUNITIES**\n\n`;
-        highPriority.forEach((opp, i) => {
-            alert += `${i + 1}. **${opp.symbol}** (Score: ${opp.score}/100)\n`;
-            alert += `   • Direction: ${opp.directionBias}\n`;
-            alert += `   • Recommendation: ${opp.strategicRecommendation}\n\n`;
-        });
-        
-        await telegramSplitter.sendAlert(bot, chatId, alert, 
-            `${highPriority.length} High Priority Opportunities`);
-        
-        // Cache for 2 hours
-        lastAnalysisCache[cacheKey] = Date.now();
-        setTimeout(() => delete lastAnalysisCache[cacheKey], 2 * 60 * 60 * 1000);
-        
-    } catch (error) {
-        console.error('❌ Opportunity check error:', error.message);
-    }
-}
-
-/**
- * ⚠️ CHECK RISK LEVELS
- */
-async function checkRiskLevels(bot, chatId) {
-    try {
-        if (!metaTrader.getAccountInfo || !metaTrader.calculateStrategicPortfolioRisk) return;
-        
-        const accountInfo = await metaTrader.getAccountInfo();
-        if (!accountInfo?.balance) return;
-        
-        const riskAnalysis = await metaTrader.calculateStrategicPortfolioRisk(accountInfo.balance);
-        
-        const alerts = [];
-        
-        if (riskAnalysis.totalStrategicRiskPercent > INTEGRATION_CONFIG.THRESHOLDS.PORTFOLIO_RISK) {
-            alerts.push(`Portfolio risk: ${riskAnalysis.formattedRiskPercent}`);
+        if (!message || message.trim().length === 0) {
+            console.log('⚠️ Empty message - skipping send');
+            return false;
         }
         
-        if (accountInfo.marginLevel < INTEGRATION_CONFIG.THRESHOLDS.MARGIN_LEVEL) {
-            alerts.push(`Margin level: ${accountInfo.formattedMarginLevel}`);
+        // Clean the message
+        let cleanedMessage = cleanResponse(message);
+        
+        // Add optional title
+        if (options.title) {
+            const messageType = MESSAGE_TYPES[options.type] || MESSAGE_TYPES.general;
+            cleanedMessage = `${messageType.emoji} **${options.title}**\n\n${cleanedMessage}`;
         }
         
-        if (riskAnalysis.strategicCorrelationRisk === 'HIGH') {
-            alerts.push('High correlation risk detected');
+        // Check if message needs splitting
+        if (cleanedMessage.length <= TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
+            // Single message - send directly
+            try {
+                await bot.sendMessage(chatId, cleanedMessage, {
+                    parse_mode: 'Markdown',
+                    disable_web_page_preview: options.disablePreview !== false
+                });
+                
+                console.log(`✅ Message sent (${cleanedMessage.length} chars)`);
+                return true;
+                
+            } catch (sendError) {
+                console.log('⚠️ Markdown failed, trying plain text');
+                
+                // Fallback to plain text
+                const plainMessage = cleanedMessage.replace(/[*_`~]/g, '');
+                await bot.sendMessage(chatId, plainMessage, {
+                    disable_web_page_preview: options.disablePreview !== false
+                });
+                
+                console.log(`✅ Message sent as plain text (${plainMessage.length} chars)`);
+                return true;
+            }
         }
         
-        if (alerts.length === 0) return;
+        // Message needs splitting
+        const chunks = splitMessage(cleanedMessage, options);
         
-        const riskAlert = `**PORTFOLIO RISK ALERT**\n\n${alerts.map(a => `• ${a}`).join('\n')}`;
+        if (chunks.length > TELEGRAM_LIMITS.MAX_CHUNKS_PER_MESSAGE) {
+            console.log(`⚠️ Message too long (${chunks.length} chunks), truncating`);
+            chunks.splice(TELEGRAM_LIMITS.MAX_CHUNKS_PER_MESSAGE);
+            chunks[chunks.length - 1] += '\n\n*(Message truncated due to length)*';
+        }
         
-        await telegramSplitter.sendAlert(bot, chatId, riskAlert, 'Risk Alert');
+        // Send chunks with appropriate delays
+        const messageType = MESSAGE_TYPES[options.type] || MESSAGE_TYPES.general;
+        const delay = messageType.priority === 'urgent' ? 
+            TELEGRAM_LIMITS.PRIORITY_DELAY_MS : 
+            TELEGRAM_LIMITS.MESSAGE_DELAY_MS;
         
-    } catch (error) {
-        console.error('❌ Risk check error:', error.message);
-    }
-}
-
-/**
- * 💚 CHECK PORTFOLIO HEALTH
- */
-async function checkPortfolioHealth(bot, chatId) {
-    try {
-        if (!metaTrader.getEnhancedTradingSummary) return;
-        
-        const summary = await metaTrader.getEnhancedTradingSummary();
-        const currentScore = summary.healthScore?.score || 0;
-        const lastScore = lastAnalysisCache.healthScore || currentScore;
-        
-        const scoreDifference = Math.abs(currentScore - lastScore);
-        if (scoreDifference < 15) return; // Only alert on significant changes
-        
-        const improvement = currentScore > lastScore;
-        const healthUpdate = `**PORTFOLIO HEALTH UPDATE**\n\n` +
-            `Score: ${currentScore}/100 (${improvement ? '+' : ''}${scoreDifference})\n` +
-            `Grade: ${summary.healthScore?.grade || 'Unknown'}\n` +
-            `Status: ${summary.healthScore?.description || 'N/A'}`;
-        
-        const messageType = currentScore >= 70 ? 'sendAnalysis' : 'sendAlert';
-        await telegramSplitter[messageType](bot, chatId, healthUpdate, 'Portfolio Health Update');
-        
-        lastAnalysisCache.healthScore = currentScore;
-        
-    } catch (error) {
-        console.error('❌ Health check error:', error.message);
-    }
-}
-
-/**
- * 🏛️ CHECK REGIME CHANGES
- */
-async function checkRegimeChanges(bot, chatId) {
-    try {
-        if (!liveData.getRayDalioMarketData) return;
-        
-        const marketData = await liveData.getRayDalioMarketData();
-        const currentRegime = marketData?.rayDalio?.regime?.currentRegime?.name;
-        const confidence = marketData?.rayDalio?.regime?.confidence || 0;
-        
-        if (!currentRegime) return;
-        
-        const lastRegime = lastAnalysisCache.regime;
-        
-        if (currentRegime !== lastRegime && lastRegime) {
-            const regimeAlert = `**ECONOMIC REGIME CHANGE**\n\n` +
-                `Previous: ${lastRegime}\n` +
-                `Current: ${currentRegime}\n` +
-                `Confidence: ${confidence}%\n\n` +
-                `Review position sizing and risk parameters.`;
+        for (let i = 0; i < chunks.length; i++) {
+            const chunk = chunks[i];
+            const isLast = i === chunks.length - 1;
             
-            await telegramSplitter.sendRegimeAnalysis(bot, chatId, regimeAlert, 
-                `Regime Change: ${currentRegime}`);
+            try {
+                await bot.sendMessage(chatId, chunk, {
+                    parse_mode: 'Markdown',
+                    disable_web_page_preview: options.disablePreview !== false
+                });
+                
+                console.log(`✅ Chunk ${i + 1}/${chunks.length} sent (${chunk.length} chars)`);
+                
+                // Add delay between chunks (except last)
+                if (!isLast) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+                
+            } catch (chunkError) {
+                console.error(`❌ Chunk ${i + 1} failed:`, chunkError.message);
+                
+                // Try plain text fallback
+                try {
+                    const plainChunk = chunk.replace(/[*_`~]/g, '');
+                    await bot.sendMessage(chatId, plainChunk);
+                    console.log(`✅ Chunk ${i + 1} sent as plain text`);
+                } catch (fallbackError) {
+                    console.error(`❌ Chunk ${i + 1} completely failed`);
+                }
+            }
         }
         
-        lastAnalysisCache.regime = currentRegime;
+        console.log(`✅ Message complete: ${chunks.length} chunks sent`);
+        return true;
         
     } catch (error) {
-        console.error('❌ Regime check error:', error.message);
+        console.error('❌ Smart message error:', error.message);
+        
+        // Emergency fallback
+        try {
+            const emergency = `⚠️ Message delivery error: ${error.message}`;
+            await bot.sendMessage(chatId, emergency.substring(0, TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH));
+        } catch (emergencyError) {
+            console.error('❌ Emergency fallback failed:', emergencyError.message);
+        }
+        
+        return false;
     }
 }
 
 /**
- * 📅 SCHEDULE DAILY REPORT
+ * ✂️ Split message intelligently
  */
-function scheduleDailyReport(bot, chatId, timeString) {
-    const [hours, minutes] = timeString.split(':').map(Number);
+function splitMessage(message, options = {}) {
+    const chunks = [];
+    let remaining = message;
+    let partNumber = 1;
     
-    function scheduleNext() {
-        const now = new Date();
-        const scheduled = new Date();
-        scheduled.setHours(hours, minutes, 0, 0);
+    const maxChunkSize = TELEGRAM_LIMITS.OPTIMAL_CHUNK_SIZE;
+    const messageType = MESSAGE_TYPES[options.type] || MESSAGE_TYPES.general;
+    
+    while (remaining.length > maxChunkSize) {
+        // Find good split point
+        let splitPoint = findBestSplitPoint(remaining, maxChunkSize);
         
-        if (scheduled <= now) {
-            scheduled.setDate(scheduled.getDate() + 1);
+        if (splitPoint === -1) {
+            // Force split if no good point found
+            splitPoint = maxChunkSize - 100;
         }
         
-        const delay = scheduled.getTime() - now.getTime();
+        // Extract chunk
+        let chunk = remaining.substring(0, splitPoint).trim();
         
-        setTimeout(async () => {
-            await generateDailyReport(bot, chatId);
+        // Add part header for multi-part messages
+        if (options.title || chunks.length > 0) {
+            const partHeader = `${messageType.emoji} *(Part ${partNumber})*\n\n`;
             
-            // Schedule next day
-            setTimeout(() => scheduleNext(), 24 * 60 * 60 * 1000);
-        }, delay);
+            // Ensure chunk fits with header
+            if (chunk.length + partHeader.length > maxChunkSize) {
+                const availableSpace = maxChunkSize - partHeader.length - 50;
+                chunk = chunk.substring(0, availableSpace).trim();
+                
+                // Try to end at sentence or line break
+                const lastSentence = chunk.lastIndexOf('.');
+                const lastLine = chunk.lastIndexOf('\n');
+                const cutPoint = Math.max(lastSentence, lastLine);
+                
+                if (cutPoint > availableSpace * 0.7) {
+                    chunk = chunk.substring(0, cutPoint + 1).trim();
+                }
+            }
+            
+            chunk = partHeader + chunk;
+        }
         
-        console.log(`📅 Daily report scheduled for ${scheduled.toLocaleString()}`);
+        chunks.push(chunk);
+        remaining = remaining.substring(chunk.length - (chunks.length > 1 ? partHeader.length : 0)).trim();
+        partNumber++;
+        
+        // Safety check
+        if (partNumber > TELEGRAM_LIMITS.MAX_CHUNKS_PER_MESSAGE) {
+            console.log('⚠️ Reached maximum chunks limit');
+            break;
+        }
     }
     
-    scheduleNext();
+    // Add remaining content as final chunk
+    if (remaining.length > 0) {
+        let finalChunk = remaining;
+        
+        if (partNumber > 1) {
+            const finalHeader = `${messageType.emoji} *(Part ${partNumber} - Final)*\n\n`;
+            finalChunk = finalHeader + remaining;
+        }
+        
+        chunks.push(finalChunk);
+    }
+    
+    return chunks;
 }
 
 /**
- * 📊 GENERATE DAILY REPORT
+ * 🔍 Find best point to split message
  */
-async function generateDailyReport(bot, chatId) {
-    try {
-        console.log('📊 Generating daily report...');
+function findBestSplitPoint(text, maxLength) {
+    // Preferred split patterns (in order of preference)
+    const splitPatterns = [
+        /\n\n/g,               // Double line breaks (paragraphs)
+        /\.\s+/g,              // End of sentences
+        /\n/g,                 // Single line breaks
+        /;\s+/g,               // Semicolons
+        /,\s+/g                // Commas (last resort)
+    ];
+    
+    const minSplitPoint = maxLength * 0.7; // Don't split too early
+    
+    for (const pattern of splitPatterns) {
+        const matches = [...text.matchAll(pattern)];
         
-        const [summary, opportunities] = await Promise.all([
-            metaTrader.getEnhancedTradingSummary?.() || Promise.resolve(null),
-            metaTrader.scanStrategicTradingOpportunities?.() || Promise.resolve(null)
-        ]);
-        
-        let report = `**DAILY STRATEGIC COMMANDER REPORT**\n`;
-        report += `Date: ${new Date().toLocaleDateString()}\n\n`;
-        
-        if (summary) {
-            report += `**PORTFOLIO OVERVIEW**\n`;
-            report += `• Health Score: ${summary.healthScore?.score || 0}/100\n`;
-            report += `• Account Balance: ${summary.account?.formattedBalance || 'N/A'}\n`;
-            report += `• Active Positions: ${summary.positions?.count || 0}\n`;
-            report += `• Net P&L: ${summary.positions?.formattedNetProfit || 'N/A'}\n\n`;
+        // Find last good match within range
+        for (let i = matches.length - 1; i >= 0; i--) {
+            const matchEnd = matches[i].index + matches[i][0].length;
+            
+            if (matchEnd >= minSplitPoint && matchEnd <= maxLength) {
+                return matchEnd;
+            }
         }
-        
-        if (opportunities) {
-            report += `**MARKET OPPORTUNITIES**\n`;
-            report += `• Total Opportunities: ${opportunities.totalOpportunities || 0}\n`;
-            report += `• High Priority: ${opportunities.highPriorityOpportunities || 0}\n`;
-            report += `• Market Regime: ${opportunities.marketRegime || 'Unknown'}\n\n`;
-        }
-        
-        if (summary?.recommendations?.length > 0) {
-            report += `**KEY RECOMMENDATIONS**\n`;
-            summary.recommendations.slice(0, 3).forEach(rec => {
-                report += `• ${rec.message || rec}\n`;
-            });
-        }
-        
-        await telegramSplitter.sendPortfolioAnalysis(bot, chatId, report, 
-            `Daily Report - ${new Date().toLocaleDateString()}`);
-        
-        console.log('✅ Daily report sent');
-        
-    } catch (error) {
-        console.error('❌ Daily report error:', error.message);
-        await telegramSplitter.sendAlert(bot, chatId, 
-            `Daily report generation failed: ${error.message}`, 'Report Error');
     }
+    
+    return -1; // No good split point found
 }
 
 /**
- * 🛑 STOP MONITORING
+ * 📊 Send analysis response
  */
-function stopMonitoring() {
-    if (!monitoringActive) return;
-    
-    console.log('🛑 Stopping Strategic Commander monitoring...');
-    
-    Object.values(intervalHandlers).forEach(handler => {
-        if (handler) clearInterval(handler);
+async function sendAnalysis(bot, chatId, analysis, title = null, analysisType = 'analysis') {
+    return await sendSmartMessage(bot, chatId, analysis, {
+        title: title,
+        type: analysisType,
+        disablePreview: true
+    });
+}
+
+/**
+ * 🇰🇭 Send Cambodia analysis
+ */
+async function sendCambodiaAnalysis(bot, chatId, analysis, title = 'Cambodia Analysis') {
+    return await sendSmartMessage(bot, chatId, analysis, {
+        title: title,
+        type: 'cambodia',
+        disablePreview: true
+    });
+}
+
+/**
+ * 📈 Send market analysis
+ */
+async function sendMarketAnalysis(bot, chatId, analysis, title = 'Market Analysis') {
+    return await sendSmartMessage(bot, chatId, analysis, {
+        title: title,
+        type: 'market',
+        disablePreview: true
+    });
+}
+
+/**
+ * 💼 Send portfolio analysis
+ */
+async function sendPortfolioAnalysis(bot, chatId, analysis, title = 'Portfolio Analysis') {
+    return await sendSmartMessage(bot, chatId, analysis, {
+        title: title,
+        type: 'portfolio',
+        disablePreview: true
+    });
+}
+
+/**
+ * 🚨 Send urgent alert
+ */
+async function sendAlert(bot, chatId, alertMessage, title = 'Alert') {
+    const timestamp = new Date().toLocaleTimeString('en-US', { 
+        timeZone: 'Asia/Phnom_Penh',
+        hour12: false 
     });
     
-    intervalHandlers = {};
-    monitoringActive = false;
+    const alertContent = `*Time:* ${timestamp} Cambodia\n\n${alertMessage}`;
     
-    console.log('✅ Monitoring stopped');
+    return await sendSmartMessage(bot, chatId, alertContent, {
+        title: title,
+        type: 'alert',
+        disablePreview: true
+    });
 }
 
 /**
- * 📱 MANUAL COMMANDS (using existing telegramSplitter)
+ * 🏛️ Send regime analysis
  */
-
-async function manualPortfolioStatus(bot, chatId) {
-    try {
-        const summary = await metaTrader.getEnhancedTradingSummary?.();
-        if (!summary) {
-            await telegramSplitter.sendAlert(bot, chatId, 'Portfolio data unavailable', 'Error');
-            return;
-        }
-        
-        const report = `**CURRENT PORTFOLIO STATUS**\n\n` +
-            `Health: ${summary.healthScore?.score || 0}/100\n` +
-            `Balance: ${summary.account?.formattedBalance || 'N/A'}\n` +
-            `Positions: ${summary.positions?.count || 0}\n` +
-            `P&L: ${summary.positions?.formattedNetProfit || 'N/A'}`;
-        
-        await telegramSplitter.sendPortfolioAnalysis(bot, chatId, report, 'Portfolio Status');
-        
-    } catch (error) {
-        await telegramSplitter.sendAlert(bot, chatId, `Status error: ${error.message}`, 'Error');
-    }
-}
-
-async function manualOpportunityScan(bot, chatId) {
-    try {
-        const opportunities = await metaTrader.scanStrategicTradingOpportunities?.();
-        if (!opportunities?.opportunities) {
-            await telegramSplitter.sendAlert(bot, chatId, 'Opportunity data unavailable', 'Error');
-            return;
-        }
-        
-        const topOps = opportunities.opportunities.slice(0, 5);
-        let report = `**CURRENT OPPORTUNITIES**\n\n`;
-        
-        topOps.forEach((opp, i) => {
-            report += `${i + 1}. ${opp.symbol}: ${opp.score}/100 (${opp.priority})\n`;
-        });
-        
-        await telegramSplitter.sendMarketAnalysis(bot, chatId, report, 'Opportunity Scan');
-        
-    } catch (error) {
-        await telegramSplitter.sendAlert(bot, chatId, `Scan error: ${error.message}`, 'Error');
-    }
-}
-
-async function manualSystemCheck(bot, chatId) {
-    try {
-        const systemCheck = await performSystemCheck();
-        const statusMessage = formatSystemStatus(systemCheck);
-        
-        await telegramSplitter.sendAnalysis(bot, chatId, statusMessage, 'System Check');
-        
-    } catch (error) {
-        await telegramSplitter.sendAlert(bot, chatId, `System check error: ${error.message}`, 'Error');
-    }
+async function sendRegimeAnalysis(bot, chatId, analysis, title = 'Economic Regime Analysis') {
+    return await sendSmartMessage(bot, chatId, analysis, {
+        title: title,
+        type: 'regime',
+        disablePreview: true
+    });
 }
 
 /**
- * 📤 MODULE EXPORTS
+ * ⚠️ Send anomaly detection
  */
+async function sendAnomalyAlert(bot, chatId, analysis, title = 'Market Anomaly Detected') {
+    return await sendSmartMessage(bot, chatId, analysis, {
+        title: title,
+        type: 'anomaly',
+        disablePreview: true
+    });
+}
+
+/**
+ * 📊 Get message statistics
+ */
+function getMessageStats(message) {
+    if (!message || typeof message !== 'string') {
+        return {
+            length: 0,
+            chunks: 0,
+            estimatedSendTime: 0,
+            type: 'invalid'
+        };
+    }
+    
+    const length = message.length;
+    const chunks = Math.ceil(length / TELEGRAM_LIMITS.OPTIMAL_CHUNK_SIZE);
+    const estimatedSendTime = chunks > 1 ? 
+        (chunks - 1) * TELEGRAM_LIMITS.MESSAGE_DELAY_MS + 1000 : 1000;
+    
+    let type = 'short';
+    if (length > TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
+        type = chunks <= 3 ? 'medium' : 'long';
+    }
+    
+    return {
+        length,
+        chunks,
+        estimatedSendTime,
+        type,
+        withinLimits: length <= TELEGRAM_LIMITS.MAX_MESSAGE_LENGTH
+    };
+}
+
+/**
+ * 🔧 Format response with timestamp
+ */
+function formatWithTimestamp(message, includeTimestamp = false) {
+    if (!includeTimestamp) {
+        return message;
+    }
+    
+    const timestamp = new Date().toLocaleTimeString('en-US', { 
+        timeZone: 'Asia/Phnom_Penh',
+        hour12: false 
+    });
+    
+    return `*Time:* ${timestamp} Cambodia\n\n${message}`;
+}
+
+/**
+ * 📝 Legacy compatibility functions
+ */
+
+// Legacy function names for backward compatibility
+async function sendSmartResponse(bot, chatId, message, title = null, messageType = 'general', options = {}) {
+    return await sendSmartMessage(bot, chatId, message, {
+        title: title,
+        type: messageType,
+        ...options
+    });
+}
+
+function cleanStrategicResponse(text) {
+    return cleanResponse(text);
+}
+
+async function sendLongMessage(bot, chatId, message, delay = TELEGRAM_LIMITS.MESSAGE_DELAY_MS) {
+    return await sendSmartMessage(bot, chatId, message, {
+        type: 'general'
+    });
+}
+
+function splitLongMessage(message, maxLength = TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
+    if (message.length <= maxLength) {
+        return [message];
+    }
+    
+    return splitMessage(message, { type: 'general' });
+}
+
+function formatRayDalioResponse(analysis, title = "Analysis") {
+    return formatWithTimestamp(analysis, true);
+}
+
+function formatCambodiaFundResponse(analysis, title = "Cambodia Analysis") {
+    return formatWithTimestamp(analysis, true);
+}
+
 module.exports = {
-    // Core functions
-    initializeStrategicIntegration,
-    performSystemCheck,
-    formatSystemStatus,
+    // Main functions
+    sendSmartMessage,
+    sendAnalysis,
+    sendCambodiaAnalysis,
+    sendMarketAnalysis,
+    sendPortfolioAnalysis,
+    sendAlert,
+    sendRegimeAnalysis,
+    sendAnomalyAlert,
     
-    // Monitoring control
-    startMonitoring,
-    stopMonitoring,
-    isMonitoringActive: () => monitoringActive,
+    // Utility functions
+    cleanResponse,
+    splitMessage,
+    findBestSplitPoint,
+    getMessageStats,
+    formatWithTimestamp,
     
-    // Manual commands
-    manualPortfolioStatus,
-    manualOpportunityScan,
-    manualSystemCheck,
+    // Legacy compatibility
+    sendSmartResponse,
+    cleanStrategicResponse,
+    sendLongMessage,
+    splitLongMessage,
+    formatRayDalioResponse,
+    formatCambodiaFundResponse,
     
-    // Individual checkers (can be called manually)
-    checkOpportunities,
-    checkRiskLevels,
-    checkPortfolioHealth,
-    checkRegimeChanges,
-    generateDailyReport,
-    
-    // Configuration
-    INTEGRATION_CONFIG,
-    
-    // Status
-    getMonitoringStatus: () => ({
-        active: monitoringActive,
-        intervals: Object.keys(intervalHandlers),
-        lastAnalysis: lastAnalysisCache
-    })
+    // Constants
+    TELEGRAM_LIMITS,
+    MESSAGE_TYPES
 };
-
-console.log('✅ Strategic Commander Integration Layer loaded');
-console.log('🎯 Works with existing modular structure');
-console.log('📱 Uses existing telegramSplitter functions');
-console.log('🤖 Optimized for GPT-5 and Claude Opus 4.1');
-console.log('');
-console.log('Usage: await initializeStrategicIntegration(bot, chatId);');
