@@ -310,6 +310,193 @@ bot.on("message", async (msg) => {
     }
 });
 
+// REPLACE the handleEnhancedConversation function (around line 350) with this:
+async function handleEnhancedConversation(chatId, text, sessionId) {
+    try {
+        console.log("🤖 Processing enhanced conversation with memory:", text.substring(0, 50));
+        
+        // 🔧 FIXED: Build conversation context from database with proper error handling
+        let conversationHistory = [];
+        let persistentMemory = [];
+        
+        try {
+            conversationHistory = await getConversationHistoryDB(chatId, 5);
+            console.log(`✅ Retrieved ${conversationHistory.length} recent conversations`);
+        } catch (error) {
+            console.log('⚠️ Could not retrieve conversation history:', error.message);
+        }
+        
+        try {
+            persistentMemory = await getPersistentMemoryDB(chatId);
+            console.log(`✅ Retrieved ${persistentMemory.length} persistent memories`);
+        } catch (error) {
+            console.log('⚠️ Could not retrieve persistent memory:', error.message);
+        }
+        
+        // Prepare conversation intelligence with memory context
+        const conversationIntel = {
+            type: determineConversationType(text),
+            complexity: determineComplexity(text),
+            liveDataRequired: requiresLiveData(text),
+            primaryAI: 'GPT_COMMANDER', // Default routing
+            enhancementLevel: 'ENHANCED',
+            style: 'helpful_intelligent',
+            reasoning: 'Enhanced dual command routing with database context and memory'
+        };
+        
+        // 🔧 FIXED: Use enhanced dual command system with proper memory integration
+        const { executeDualCommand } = require('./utils/dualCommandSystem');
+        
+        const result = await executeDualCommand(text, chatId, {
+            conversationHistory: conversationHistory,
+            persistentMemory: persistentMemory,
+            conversationIntel: conversationIntel,
+            messageType: 'text',
+            hasMedia: false
+        });
+        
+        // Send response
+        await sendSmartMessage(bot, chatId, result.response);
+        
+        // 🔧 FIXED: Enhanced conversation save with full metadata and memory extraction
+        try {
+            // Save conversation to database
+            await saveConversationDB(chatId, text, result.response, "text", {
+                aiUsed: result.aiUsed,
+                queryType: result.queryType,
+                complexity: result.complexity,
+                contextUsed: result.contextUsed,
+                responseTime: result.responseTime,
+                success: result.success
+            });
+            
+            // 🔧 ENHANCED: Extract and save new persistent memories
+            const { extractAndSaveFacts } = require('./utils/memory');
+            await extractAndSaveFacts(chatId, text, result.response);
+            
+            console.log('✅ Enhanced conversation and memory saved successfully');
+            
+        } catch (saveError) {
+            console.error('⚠️ Could not save conversation/memory:', saveError.message);
+            // Continue execution even if save fails
+        }
+        
+        // Add important facts to persistent memory if this is a significant conversation
+        if (shouldSaveToPersistentMemory(text, result.response)) {
+            try {
+                const memoryFact = extractMemoryFact(text, result.response);
+                if (memoryFact) {
+                    await addPersistentMemoryDB(chatId, memoryFact, 'medium');
+                    console.log('💾 New persistent memory saved:', memoryFact.substring(0, 50));
+                }
+            } catch (memoryError) {
+                console.error('⚠️ Could not save persistent memory:', memoryError.message);
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Enhanced conversation error:', error.message);
+        
+        // 🔧 ENHANCED: Fallback with memory attempt
+        try {
+            console.log('🔄 Fallback to simple GPT with memory context...');
+            
+            // Try to get some memory context for fallback
+            let memoryContext = '';
+            try {
+                const recentHistory = await getConversationHistoryDB(chatId, 3);
+                if (recentHistory && recentHistory.length > 0) {
+                    memoryContext = `\n\nRecent context: User previously asked about "${recentHistory[0]?.user_message?.substring(0, 100) || ''}"`;
+                }
+            } catch (contextError) {
+                // Continue without memory context
+            }
+            
+            const { getGptAnalysis } = require('./utils/openaiClient');
+            const response = await getGptAnalysis(text + memoryContext, { 
+                maxTokens: 1000,
+                temperature: 0.7 
+            });
+            
+            await sendSmartMessage(bot, chatId, response);
+            
+            // Save fallback conversation
+            try {
+                await saveConversationDB(chatId, text, response, "text", { 
+                    error: error.message,
+                    fallback: true,
+                    memoryContextUsed: !!memoryContext
+                });
+            } catch (saveError) {
+                console.error('⚠️ Could not save fallback conversation:', saveError.message);
+            }
+            
+        } catch (fallbackError) {
+            console.error('❌ Fallback also failed:', fallbackError.message);
+            await sendSmartMessage(bot, chatId, 
+                `Sorry, I'm having technical difficulties with memory systems. Please try again in a moment. 🔧`
+            );
+        }
+    }
+}
+
+// ===== FIX 4: Memory Integration Test Function =====
+// ADD this function to test memory connections:
+
+async function testMemoryIntegration(chatId) {
+    console.log('🧪 Testing memory integration...');
+    
+    const tests = {
+        conversationHistory: false,
+        persistentMemory: false,
+        memoryBuilding: false,
+        dualCommandWithMemory: false
+    };
+    
+    try {
+        // Test 1: Conversation History
+        const history = await getConversationHistoryDB(chatId, 3);
+        tests.conversationHistory = Array.isArray(history);
+        console.log(`✅ Conversation History: ${tests.conversationHistory} (${history?.length || 0} records)`);
+    } catch (error) {
+        console.log(`❌ Conversation History: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 2: Persistent Memory
+        const memory = await getPersistentMemoryDB(chatId);
+        tests.persistentMemory = Array.isArray(memory);
+        console.log(`✅ Persistent Memory: ${tests.persistentMemory} (${memory?.length || 0} records)`);
+    } catch (error) {
+        console.log(`❌ Persistent Memory: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 3: Memory Building
+        const { buildConversationContext } = require('./utils/memory');
+        const context = await buildConversationContext(chatId);
+        tests.memoryBuilding = typeof context === 'string';
+        console.log(`✅ Memory Building: ${tests.memoryBuilding} (${context?.length || 0} chars)`);
+    } catch (error) {
+        console.log(`❌ Memory Building: Failed - ${error.message}`);
+    }
+    
+    try {
+        // Test 4: Dual Command with Memory
+        const { executeDualCommand } = require('./utils/dualCommandSystem');
+        const result = await executeDualCommand('Hello, do you remember me?', chatId);
+        tests.dualCommandWithMemory = result.success && result.contextUsed;
+        console.log(`✅ Dual Command with Memory: ${tests.dualCommandWithMemory}`);
+    } catch (error) {
+        console.log(`❌ Dual Command with Memory: Failed - ${error.message}`);
+    }
+    
+    const overallSuccess = Object.values(tests).every(test => test);
+    console.log(`\n📊 Memory Integration Test: ${overallSuccess ? 'SUCCESS' : 'PARTIAL'}`);
+    
+    return tests;
+}
+
 // Enhanced command execution with full database logging
 async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
