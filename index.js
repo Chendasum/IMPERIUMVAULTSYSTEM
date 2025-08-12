@@ -481,7 +481,7 @@ async function handleEnhancedConversation(chatId, text, sessionId) {
             const response = await getGptAnalysis(enhancedPrompt, { 
                 maxTokens: 1500,
                 temperature: 0.7,
-                model: "gpt-4o" // Use stable model as fallback
+                model: "gpt-5" // Use stable model as fallback
             });
             
             result = {
@@ -579,7 +579,7 @@ async function handleEnhancedConversation(chatId, text, sessionId) {
             const response = await getGptAnalysis(text + basicMemory, { 
                 maxTokens: 1000,
                 temperature: 0.7,
-                model: "gpt-4o"
+                model: "gpt-5"
             });
             
             await sendSmartMessage(bot, chatId, response);
@@ -777,7 +777,7 @@ async function handleStartCommand(chatId) {
     const welcome = `🤖 **Enhanced AI Assistant System v3.2**
 
 **🎯 Core Features:**
-- Dual AI: GPT-4o + Claude Opus 4.1
+- Dual AI: gpt-5 + Claude Opus 4.1
 - Enhanced PostgreSQL Database Integration
 - Live market data & Ray Dalio framework
 - Cambodia fund analysis
@@ -826,7 +826,7 @@ async function handleHelpCommand(chatId) {
     const help = `🤖 **Enhanced AI Assistant Help**
 
 **Main Features:**
-- Natural conversation with dual AI routing (GPT-4o + Claude)
+- Natural conversation with dual AI routing (gpt-5 + Claude)
 - Financial market analysis with database persistence
 - Cambodia lending fund management
 - Document analysis and training with storage
@@ -856,7 +856,7 @@ async function handleHelpCommand(chatId) {
 - "Remember my name is John" (Memory system)
 - "What's the current market regime?" (Claude Analysis)
 - "Analyze this Cambodia lending opportunity" (Specialized)
-- "Tell me a joke" (GPT-4o)
+- "Tell me a joke" (gpt-5)
 - "/test_memory" to check if memory is working`;
 
     await sendSmartMessage(bot, chatId, help);
@@ -901,7 +901,7 @@ async function handleEnhancedSystemStatus(chatId) {
 
         // AI Models Status
         status += `**AI Models:**\n`;
-        status += `• GPT-4o: ${health?.gptAnalysis ? '✅ Online' : '❌ Offline'}\n`;
+        status += `• gpt-5: ${health?.gptAnalysis ? '✅ Online' : '❌ Offline'}\n`;
         status += `• Claude Opus 4.1: ${health?.claudeAnalysis ? '✅ Online' : '❌ Offline'}\n\n`;
 
         // Enhanced Database Status
@@ -3509,7 +3509,7 @@ app.get("/health", async (req, res) => {
             timestamp: new Date().toISOString(),
             responseTime: `${responseTime}ms`,
             models: {
-                gpt: "GPT-4o (stable)",
+                gpt: "gpt-5 (stable)",
                 claude: "Claude Opus 4.1"
             },
             features: [
@@ -3538,7 +3538,7 @@ app.get("/health", async (req, res) => {
             },
             systemHealth: health.status === 'fulfilled' ? health.value?.status : 'ERROR',
             endpoints: [
-                "/analyze?q=question (GPT-4o)",
+                "/analyze?q=question (gpt-5)",
                 "/claude?q=question (Claude)",
                 "/dual?q=question (Both AIs)",
                 "/memory?chatId=123&action=test (Memory)",
@@ -3565,7 +3565,7 @@ app.get("/analyze", async (req, res) => {
         return res.json({
             error: "Provide query: ?q=your-question",
             example: "/analyze?q=What's the current market outlook?&chatId=your_id",
-            models: ["GPT-4o (stable)", "Claude Opus 4.1"],
+            models: ["gpt-5 (stable)", "Claude Opus 4.1"],
             database: "Enhanced PostgreSQL Integration",
             memory: "Persistent memory available with chatId"
         });
@@ -3585,7 +3585,7 @@ app.get("/analyze", async (req, res) => {
         const enhancedQuery = memoryContext ? `${memoryContext}\n\nUser query: ${query}` : query;
         const response = await getGptAnalysis(enhancedQuery, { 
             maxTokens: 2000,
-            model: "gpt-4o" // Use stable model
+            model: "gpt-5" // Use stable model
         });
         
         const responseTime = Date.now() - startTime;
@@ -3603,7 +3603,7 @@ app.get("/analyze", async (req, res) => {
         res.json({
             query: query,
             response: response,
-            model: "GPT-4o Enhanced",
+            model: "gpt-5 Enhanced",
             database: "Integrated",
             memory: {
                 contextUsed: !!memoryContext,
@@ -3618,7 +3618,7 @@ app.get("/analyze", async (req, res) => {
         res.status(500).json({
             error: "Enhanced analysis failed",
             message: error.message,
-            model: "GPT-4o",
+            model: "gpt-5",
             timestamp: new Date().toISOString()
         });
     }
@@ -4018,7 +4018,7 @@ app.get("/analytics", async (req, res) => {
 const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log("🚀 Enhanced AI Assistant v3.2 starting...");
     console.log("✅ Server running on port " + PORT);
-    console.log("🤖 Models: GPT-4o (stable) + Claude Opus 4.1");
+    console.log("🤖 Models: gpt-5 (stable) + Claude Opus 4.1");
     console.log("🏦 Features: Enhanced PostgreSQL Database + Memory System + Cambodia Fund + Ray Dalio Framework");
     
     // Initialize enhanced database with memory system
@@ -4033,7 +4033,7 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
     }
     
     console.log("🔗 Enhanced API Endpoints:");
-    console.log(`   GPT-4o: http://localhost:${PORT}/analyze?q=your-question&chatId=123`);
+    console.log(`   gpt-5: http://localhost:${PORT}/analyze?q=your-question&chatId=123`);
     console.log(`   Claude: http://localhost:${PORT}/claude?q=your-question&chatId=123`);
     console.log(`   Dual AI: http://localhost:${PORT}/dual?q=your-question&chatId=123`);
     console.log(`   Memory: http://localhost:${PORT}/memory?chatId=123&action=test`);
