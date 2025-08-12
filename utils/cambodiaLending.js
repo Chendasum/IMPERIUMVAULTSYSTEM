@@ -7909,7 +7909,7 @@ return totalValue > 0 ? Math.round((weightedYield / totalValue) * 100) / 100 : 0
         return totalValue > 0 ? Math.round(weightedLTV / totalValue) : 0;
     }
 
-    paginateDeals(deals, page = 1, pageSize = 10) {
+    function paginateDeals(deals, page = 1, pageSize = 10) {
         try {
             if (!Array.isArray(deals)) return { data: [], pagination: {} };
             
