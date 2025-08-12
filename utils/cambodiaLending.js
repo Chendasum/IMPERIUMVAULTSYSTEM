@@ -965,9 +965,6 @@ console.log('✅ Cambodia Lending System Part 2: Core Deal Analysis Engine loade
 // IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Cambodia Fund Management
 // Part 3 of 11: Strategic Market Analysis & Intelligence
 
-// Import previous parts
-const { CAMBODIA_MARKET_DATA, STRATEGIC_CONFIG, fundCache } = require('./cambodiaLending_part1');
-
 /**
  * 🇰🇭 STRATEGIC CAMBODIA MARKET WARFARE INTELLIGENCE
  */
@@ -1683,9 +1680,6 @@ console.log('✅ Cambodia Lending System Part 3: Market Intelligence & Analysis 
 // IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Cambodia Fund Management
 // Part 4 of 11: Strategic Financial Analysis & Calculations
 
-// Import previous parts
-const { CAMBODIA_MARKET_DATA, STRATEGIC_CONFIG } = require('./cambodiaLending_part1');
-
 /**
  * 💰 STRATEGIC DEAL FINANCIAL METRICS CALCULATION ENGINE
  */
@@ -2174,9 +2168,6 @@ console.log('✅ Cambodia Lending System Part 4: Financial Calculations & Metric
 // utils/cambodiaLending.js - PART 5: RAY DALIO INTEGRATION FRAMEWORK
 // IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Cambodia Fund Management
 // Part 5 of 11: Strategic Ray Dalio All Weather Framework Integration
-
-// Import previous parts
-const { CAMBODIA_MARKET_DATA, STRATEGIC_CONFIG } = require('./cambodiaLending_part1');
 
 /**
  * 🏛️ STRATEGIC RAY DALIO FRAMEWORK APPLICATION TO LENDING
@@ -3155,27 +3146,6 @@ console.log('✅ Cambodia Lending System Part 5: Ray Dalio Integration Framework
 // IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Cambodia Fund Management
 // Part 6 of 11: Strategic Portfolio Analysis & Management
 
-// Import previous parts
-const { 
-    CAMBODIA_MARKET_DATA, 
-    STRATEGIC_CONFIG, 
-    PERFORMANCE_METRICS,
-    fundCache 
-} = require('./cambodiaLending_part1');
-
-const {
-    calculatePortfolioYield,
-    calculatePortfolioIRR,
-    calculatePortfolioRiskAdjustedReturn,
-    calculatePortfolioSharpeRatio,
-    calculateDeploymentRatio,
-    calculateCapitalVelocity,
-    calculateMonthlyIncome,
-    calculateAlpha,
-    calculateBeta,
-    calculateMaxDrawdown
-} = require('./cambodiaLending_part4');
-
 /**
  * 🏦 STRATEGIC PORTFOLIO WARFARE MANAGEMENT SYSTEM
  */
@@ -3885,13 +3855,6 @@ console.log('✅ Cambodia Lending System Part 6: Portfolio Management & Status S
 // IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Cambodia Fund Management
 // Part 7 of 11: Strategic Risk Assessment & Management Framework
 
-// Import previous parts
-const { 
-    CAMBODIA_MARKET_DATA, 
-    STRATEGIC_CONFIG, 
-    PERFORMANCE_METRICS 
-} = require('./cambodiaLending_part1');
-
 /**
  * 📊 STRATEGIC RISK WARFARE MANAGEMENT SYSTEM
  */
@@ -4552,19 +4515,6 @@ console.log('✅ Cambodia Lending System Part 7: Risk Assessment & Management Sy
 // utils/cambodiaLending.js - PART 8: LP/INVESTOR REPORTING SYSTEM
 // IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Cambodia Fund Management
 // Part 8 of 11: Strategic LP/Investor Warfare Reporting Framework
-
-// Import previous parts
-const { 
-    CAMBODIA_MARKET_DATA, 
-    STRATEGIC_CONFIG, 
-    PERFORMANCE_METRICS 
-} = require('./cambodiaLending_part1');
-
-const {
-    performRiskAssessment,
-    calculatePortfolioRiskMetrics,
-    calculateOverallRiskScore
-} = require('./cambodiaLending_part7');
 
 /**
  * 📊 STRATEGIC LP/INVESTOR WARFARE REPORTING COMMAND CENTER
@@ -5802,13 +5752,6 @@ console.log('✅ Cambodia Lending System Part 8: LP/Investor Reporting System lo
 // utils/cambodiaLending.js - PART 9: FINANCIAL CALCULATIONS & METRICS ENGINE
 // IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Cambodia Fund Management
 // Part 9 of 11: Strategic Financial Warfare Calculation Engine
-
-// Import previous parts
-const { 
-    CAMBODIA_MARKET_DATA, 
-    STRATEGIC_CONFIG, 
-    PERFORMANCE_METRICS 
-} = require('./cambodiaLending_part1');
 
 /**
  * 💰 STRATEGIC FINANCIAL WARFARE CALCULATION ENGINE
@@ -7063,15 +7006,6 @@ console.log('✅ Cambodia Lending System Part 9: Financial Calculations & Metric
 // utils/cambodiaLending.js - PART 10: HELPER FUNCTIONS & UTILITIES
 // IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Cambodia Fund Management
 // Part 10 of 11: Strategic Utility Warfare Functions
-
-// Import previous parts
-const { 
-    CAMBODIA_MARKET_DATA, 
-    STRATEGIC_CONFIG, 
-    PERFORMANCE_METRICS 
-} = require('./cambodiaLending_part1');
-
-const { financialEngine } = require('./cambodiaLending_part9');
 
 /**
  * 🔧 STRATEGIC DATA WARFARE PROCESSING UTILITIES
@@ -8532,15 +8466,6 @@ console.log('✅ Cambodia Lending System Part 10: Helper Functions & Utilities l
 // utils/cambodiaLending.js - PART 11: DATABASE INTEGRATION & CACHE MANAGEMENT
 // IMPERIUM VAULT STRATEGIC COMMAND SYSTEM - Cambodia Fund Management
 // Part 11 of 11: Strategic Data Warfare Persistence & Cache Engine
-
-// Import previous parts
-const { 
-    CAMBODIA_MARKET_DATA, 
-    STRATEGIC_CONFIG, 
-    PERFORMANCE_METRICS 
-} = require('./cambodiaLending_part1');
-
-const { cache, errorHandler } = require('./cambodiaLending_part10');
 
 /**
  * 💾 STRATEGIC DATABASE WARFARE ENGINE
