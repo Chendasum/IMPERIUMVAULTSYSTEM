@@ -455,6 +455,162 @@ async function executeDualCommand(userMessage, chatId, messageType = 'text', has
     }
 }
 
+async function executeDualCommand(userMessage, chatId, options = {}) {
+    try {
+        console.log('🎯 Executing dual command analysis...');
+        
+        // Analyze the query to determine optimal routing
+        const queryAnalysis = analyzeQuery(userMessage, options.messageType || 'text', options.hasMedia || false);
+        console.log('🧠 Query analysis:', {
+            type: queryAnalysis.type,
+            bestAI: queryAnalysis.bestAI,
+            complexity: queryAnalysis.complexity,
+            reason: queryAnalysis.reason
+        });
+        
+        // 🔧 FIXED: Build context using the correct function from memory.js
+        let context = null;
+        if (queryAnalysis.complexity !== 'low') {
+            try {
+                // Import the memory functions
+                const { buildConversationContext } = require('./memory');
+                context = await buildConversationContext(chatId);
+                console.log('✅ Memory context built successfully');
+            } catch (contextError) {
+                console.log('⚠️ Context building failed, continuing without:', contextError.message);
+                
+                // 🔧 FALLBACK: Try to get recent conversations directly
+                try {
+                    const { getConversationHistoryDB } = require('./database');
+                    const recentHistory = await getConversationHistoryDB(chatId, 5);
+                    if (recentHistory && recentHistory.length > 0) {
+                        context = `\n\n🧠 RECENT CONVERSATIONS:\n`;
+                        recentHistory.forEach((conv, index) => {
+                            context += `${index + 1}. User: "${conv.user_message?.substring(0, 100) || ''}"\n`;
+                            context += `   AI: "${conv.gpt_response?.substring(0, 100) || ''}"\n`;
+                        });
+                        console.log('✅ Fallback context built from database');
+                    }
+                } catch (fallbackError) {
+                    console.log('⚠️ Fallback context also failed:', fallbackError.message);
+                }
+            }
+        }
+        
+        // Add enhanced context from options if provided
+        if (options.conversationHistory) {
+            let enhancedContext = context || '';
+            enhancedContext += `\n\n📝 CONVERSATION HISTORY:\n`;
+            options.conversationHistory.slice(0, 3).forEach((conv, index) => {
+                enhancedContext += `${index + 1}. "${conv.userMessage?.substring(0, 80) || ''}"\n`;
+            });
+            context = enhancedContext;
+        }
+        
+        if (options.persistentMemory && options.persistentMemory.length > 0) {
+            let memoryContext = context || '';
+            memoryContext += `\n\n🧠 PERSISTENT MEMORY:\n`;
+            options.persistentMemory.slice(0, 5).forEach((memory, index) => {
+                const fact = memory.fact || memory;
+                memoryContext += `• ${fact.substring(0, 100)}...\n`;
+            });
+            context = memoryContext;
+        }
+
+        let response;
+        
+        if (queryAnalysis.bestAI === 'both') {
+            // Use both AIs for complex analysis
+            console.log('🔄 Using both AIs for comprehensive analysis...');
+            
+            const [gptResponse, claudeResponse] = await Promise.allSettled([
+                executeGptAnalysis(userMessage, queryAnalysis, context),
+                executeClaudeAnalysis(userMessage, queryAnalysis, context)
+            ]);
+            
+            let finalResponse = '';
+            
+            if (gptResponse.status === 'fulfilled') {
+                finalResponse += `**GPT-5 Analysis:**\n${gptResponse.value}\n\n`;
+            }
+            
+            if (claudeResponse.status === 'fulfilled') {
+                finalResponse += `**Claude Opus 4.1 Analysis:**\n${claudeResponse.value}`;
+            }
+            
+            if (!finalResponse) {
+                throw new Error('Both AI analyses failed');
+            }
+            
+            response = finalResponse;
+            
+        } else {
+            // Use single AI with context
+            if (queryAnalysis.bestAI === 'claude') {
+                response = await executeClaudeAnalysis(userMessage, queryAnalysis, context);
+            } else {
+                response = await executeGptAnalysis(userMessage, queryAnalysis, context);
+            }
+        }
+        
+        return {
+            response: response,
+            aiUsed: queryAnalysis.bestAI,
+            queryType: queryAnalysis.type,
+            complexity: queryAnalysis.complexity,
+            reasoning: queryAnalysis.reason,
+            specialFunction: queryAnalysis.specialFunction,
+            liveDataUsed: queryAnalysis.needsLiveData,
+            contextUsed: !!context,
+            responseTime: Date.now(),
+            tokenCount: response.length,
+            functionExecutionTime: Date.now(),
+            success: true
+        };
+        
+    } catch (error) {
+        console.error('❌ Dual command execution error:', error.message);
+        
+        // Enhanced fallback with memory attempt
+        try {
+            console.log('🔄 Enhanced fallback to GPT-5...');
+            
+            const { getGptAnalysis } = require('./openaiClient');
+            let fallbackContext = '';
+            
+            // Try to get some context for fallback
+            try {
+                const { getConversationHistoryDB } = require('./database');
+                const recentHistory = await getConversationHistoryDB(chatId, 3);
+                if (recentHistory && recentHistory.length > 0) {
+                    fallbackContext = `\n\nRecent context: ${recentHistory[0]?.user_message?.substring(0, 100) || ''}`;
+                }
+            } catch (contextError) {
+                // Continue without context
+            }
+            
+            const fallbackResponse = await getGptAnalysis(userMessage + fallbackContext, {
+                maxTokens: 1200,
+                temperature: 0.7
+            });
+            
+            return {
+                response: `${fallbackResponse}\n\n*Note: Using enhanced fallback mode with partial memory.*`,
+                aiUsed: 'gpt',
+                queryType: 'fallback',
+                complexity: 'medium',
+                reasoning: 'Enhanced fallback after system error with memory attempt',
+                contextUsed: !!fallbackContext,
+                success: false,
+                error: error.message
+            };
+            
+        } catch (fallbackError) {
+            throw new Error(`Enhanced dual command system failure: ${error.message}`);
+        }
+    }
+}
+
 // 📊 SYSTEM HEALTH CHECK
 async function checkSystemHealth() {
     const health = {
