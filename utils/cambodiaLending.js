@@ -7877,11 +7877,11 @@ deals.forEach(deal => {
 
 return totalValue > 0 ? Math.round((weightedYield / totalValue) * 100) / 100 : 0;
 
-    calculateAverageDuration(deals) {
+    function calculateAverageDuration(deals) {
         if (!Array.isArray(deals) || deals.length === 0) return 0;
         
         let totalValue = 0;
-        let weightedDuration = 0;
+        let weightedDuration = 0; 
         
         deals.forEach(deal => {
             const amount = deal.amount || 0;
@@ -7893,7 +7893,7 @@ return totalValue > 0 ? Math.round((weightedYield / totalValue) * 100) / 100 : 0
         return totalValue > 0 ? Math.round(weightedDuration / totalValue) : 0;
     }
 
-    calculateAverageLTV(deals) {
+    function calculateAverageLTV(deals) {
         if (!Array.isArray(deals) || deals.length === 0) return 0;
         
         let totalValue = 0;
