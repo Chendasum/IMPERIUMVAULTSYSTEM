@@ -171,25 +171,45 @@ async function initializeEnhancedDatabase() {
 }
 
 // Test database functions
-async function testDatabaseFunctions() {
+async function getDatabaseStats() {
+  const p = getPool();
+  if (!p) return { connected: false, reason: 'no pool' };
+
+  try {
+    await p.query('SELECT 1'); // live ping
+    const [{ count: totalUsers }] = (await p.query(
+      "SELECT COUNT(*)::int AS count FROM user_profiles"
+    )).rows;
+    const [{ count: totalConversations }] = (await p.query(
+      "SELECT COUNT(*)::int AS count FROM conversations"
+    )).rows;
+
+    // optional more metrics (guard tables if they may not exist)
+    let totalDocuments = 0;
     try {
-        // Test basic stats
-        const stats = await getDatabaseStats();
-        console.log("📊 Database stats test:", {
-            connectionHealth: connectionStats.connectionHealth,
-            totalUsers: stats.totalUsers,
-            totalConversations: stats.totalConversations
-        });
-        
-        // Test health check
-        const health = await performHealthCheck();
-        console.log("🏥 Database health test:", health.status);
-        
-        return true;
-    } catch (error) {
-        console.error("⚠️ Database function test failed:", error.message);
-        return false;
-    }
+      totalDocuments = (await p.query(
+        "SELECT COUNT(*)::int AS count FROM training_documents"
+      )).rows[0].count;
+    } catch {}
+
+    // keep your in-memory stats synced
+    connectionStats.connectionHealth = 'HEALTHY';
+    connectionStats.lastError = null;
+    connectionStats.totalQueries++;
+    connectionStats.successfulQueries++;
+
+    return {
+      connected: true,
+      totalUsers,
+      totalConversations,
+      totalDocuments,
+      time: new Date().toISOString()
+    };
+  } catch (e) {
+    connectionStats.connectionHealth = 'DISCONNECTED';
+    connectionStats.lastError = e.message;
+    return { connected: false, error: e.message };
+  }
 }
 
 // Initialize daily metrics
@@ -729,62 +749,67 @@ async function handleHelpCommand(chatId) {
 }
 
 async function handleEnhancedSystemStatus(chatId) {
-    try {
-        await bot.sendMessage(chatId, "🔄 Checking enhanced system status...");
-        
-        const [health, stats, dualAIStats] = await Promise.all([
-            checkSystemHealth(),
-            getDatabaseStats(),
-            getDualAIPerformanceDashboard(7).catch(() => ({ error: 'Not available' }))
-        ]);
-        
-        let status = `**Enhanced System Status v3.1**\n\n`;
-        
-        // AI Models Status
-        status += `**AI Models:**\n`;
-        status += `• gpt-5: ${health.gptAnalysis ? '✅ Online' : '❌ Offline'}\n`;
-        status += `• Claude Opus 4.1: ${health.claudeAnalysis ? '✅ Online' : '❌ Offline'}\n\n`;
-        
-        // Enhanced Database Status
-        status += `**Enhanced Database:**\n`;
-        status += `• Connection: ${connectionStats.connectionHealth === 'HEALTHY' ? '✅ Connected' : '❌ Disconnected'}\n`;
-        status += `• Total Users: ${stats.totalUsers}\n`;
-        status += `• Total Conversations: ${stats.totalConversations}\n`;
-        status += `• Regime Records: ${stats.totalRegimeRecords || 0}\n`;
-        status += `• Cambodia Deals: ${stats.totalDeals || 0}\n\n`;
-        
-        // System Health
-        status += `**System Health:**\n`;
-        status += `• Database Queries: ${connectionStats.totalQueries}\n`;
-        status += `• Success Rate: ${connectionStats.totalQueries > 0 ? 
-            ((connectionStats.successfulQueries / connectionStats.totalQueries) * 100).toFixed(1) : 100}%\n`;
-        status += `• DateTime Support: ${health.dateTimeSupport ? '✅ Working' : '❌ Error'}\n\n`;
-        
-        // Dual AI Performance (if available)
-        if (dualAIStats.summary && !dualAIStats.error) {
-            status += `**Dual AI Performance (7 days):**\n`;
-            status += `• Total Conversations: ${dualAIStats.summary.totalConversations}\n`;
-            status += `• Avg Response Time: ${dualAIStats.summary.avgResponseTime?.toFixed(0)}ms\n`;
-            status += `• Success Rate: ${dualAIStats.summary.overallSuccessRate?.toFixed(1)}%\n`;
-            status += `• Preferred AI: ${dualAIStats.summary.preferredAI}\n\n`;
-        }
-        
-        // Overall Status
-        const overallHealthy = health.overallHealth && connectionStats.connectionHealth === 'HEALTHY';
-        status += `**Overall Status: ${overallHealthy ? '🟢 Healthy' : '🔴 Degraded'}**`;
-        
-        if (connectionStats.lastError) {
-            status += `\n\n**Last Error:** ${connectionStats.lastError}`;
-        }
+  try {
+    await bot.sendMessage(chatId, "🔄 Checking enhanced system status...");
 
-        await sendAnalysis(bot, chatId, status, "Enhanced System Status");
-        
-        // Save status check
-        await saveConversationDB(chatId, "/status", status, "command").catch(console.error);
+    const [health, stats, dualAIStats] = await Promise.all([
+      checkSystemHealth(),
+      getDatabaseStats(), // must return { connected: boolean, ... }
+      getDualAIPerformanceDashboard(7).catch(() => ({ error: 'Not available' }))
+    ]);
 
-    } catch (error) {
-        await sendSmartMessage(bot, chatId, `❌ Status check error: ${error.message}`);
+    const dbConnected = !!(stats && stats.connected === true);
+    const totalUsers = stats?.totalUsers ?? '—';
+    const totalConversations = stats?.totalConversations ?? '—';
+    const totalDocuments = stats?.totalDocuments ?? '—';
+    const dbLine = dbConnected ? '✅ Connected' : `❌ Disconnected${stats?.error ? ` — ${stats.error}` : ''}`;
+
+    // Optional: show the DB host we’re targeting (helps verify correct instance)
+    const dbUrl = process.env.DATABASE_URL || '';
+    let dbHost = 'unknown';
+    try { dbHost = dbUrl ? new URL(dbUrl).hostname : 'missing DATABASE_URL'; } catch {}
+
+    let status = `**Enhanced System Status v3.2**\n\n`;
+
+    // AI Models
+    status += `**AI Models:**\n`;
+    status += `• gpt-5: ${health?.gptAnalysis ? '✅ Online' : '❌ Offline'}\n`;
+    status += `• Claude Opus 4.1: ${health?.claudeAnalysis ? '✅ Online' : '❌ Offline'}\n\n`;
+
+    // Database
+    status += `**Database:**\n`;
+    status += `• Connection: ${dbLine}\n`;
+    status += `• Host: ${dbHost}\n`;
+    status += `• Total Users: ${totalUsers}\n`;
+    status += `• Total Conversations: ${totalConversations}\n`;
+    status += `• Training Documents: ${totalDocuments}\n\n`;
+
+    // System Health
+    status += `**System Health:**\n`;
+    status += `• DateTime Support: ${health?.dateTimeSupport ? '✅ Working' : '❌ Error'}\n`;
+    status += `• Dual Mode: ${health?.dualMode ? '✅ Enabled' : '❌ Disabled'}\n\n`;
+
+    // Dual AI performance (optional)
+    if (dualAIStats?.summary && !dualAIStats.error) {
+      status += `**Dual AI Performance (7 days):**\n`;
+      status += `• Total Conversations: ${dualAIStats.summary.totalConversations}\n`;
+      status += `• Avg Response Time: ${dualAIStats.summary.avgResponseTime?.toFixed(0)}ms\n`;
+      status += `• Success Rate: ${dualAIStats.summary.overallSuccessRate?.toFixed(1)}%\n`;
+      status += `• Preferred AI: ${dualAIStats.summary.preferredAI}\n\n`;
     }
+
+    // Overall status
+    const overallHealthy = !!health?.overallHealth && dbConnected;
+    status += `**Overall Status: ${overallHealthy ? '🟢 Healthy' : '🔴 Degraded'}**`;
+
+    await sendAnalysis(bot, chatId, status, "Enhanced System Status");
+
+    // Persist the check (non-fatal if it fails)
+    await saveConversationDB(chatId, "/status", status, "command").catch(console.error);
+
+  } catch (error) {
+    await sendSmartMessage(bot, chatId, `❌ Status check error: ${error.message}`);
+  }
 }
 
 async function handleMasterAnalytics(chatId) {
@@ -1857,68 +1882,61 @@ app.get("/dual", async (req, res) => {
 });
 
 app.get("/status", async (req, res) => {
-    try {
-        const [health, stats, dualAIStats] = await Promise.all([
-            checkSystemHealth(),
-            getDatabaseStats(),
-            getDualAIPerformanceDashboard(7).catch(() => ({ error: 'Not available' }))
-        ]);
-        
-        res.json({
-            system: "Enhanced AI Assistant v3.1",
-            models: {
-                gpt-5: health.gptAnalysis ? "online" : "offline",
-                claude: health.claudeAnalysis ? "online" : "offline"
-            },
-            database: {
-                status: connectionStats.connectionHealth,
-                totalUsers: stats.totalUsers,
-                totalConversations: stats.totalConversations,
-                totalQueries: connectionStats.totalQueries,
-                successRate: connectionStats.totalQueries > 0 ? 
-                    ((connectionStats.successfulQueries / connectionStats.totalQueries) * 100).toFixed(1) : 100,
-                regimeRecords: stats.totalRegimeRecords,
-                cambodiaDeals: stats.totalDeals
-            },
-            features: {
-                dualCommand: health.dualMode,
-                enhancedDatabase: connectionStats.connectionHealth === 'HEALTHY',
-                rayDalioFramework: stats.totalRegimeRecords > 0,
-                cambodiaFund: stats.totalDeals > 0,
-                datetime: health.dateTimeSupport
-            },
-            dualAIPerformance: dualAIStats.summary || { error: dualAIStats.error },
-            stats: stats,
-            uptime: process.uptime(),
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(500).json({
-            error: "Enhanced status check failed",
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-    }
-});
+  try {
+    const [health, stats, dualAIStats] = await Promise.all([
+      checkSystemHealth(),
+      getDatabaseStats(), // must return { connected: boolean, ... }
+      getDualAIPerformanceDashboard(7).catch(() => ({ error: 'Not available' }))
+    ]);
 
-// Additional API endpoints
-app.get("/analytics", async (req, res) => {
-    try {
-        const days = parseInt(req.query.days) || 30;
-        const analytics = await getMasterEnhancedDualSystemAnalytics(null, days);
-        
-        res.json({
-            analytics: analytics,
-            period: `${days} days`,
-            generated: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(500).json({
-            error: "Enhanced analytics failed",
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-    }
+    // Live DB view (don’t trust cached flag)
+    const dbConnected = !!(stats && stats.connected === true);
+    const totalUsers = stats?.totalUsers ?? 0;
+    const totalConversations = stats?.totalConversations ?? 0;
+    const totalDocuments = stats?.totalDocuments ?? 0;
+
+    // Optional: show which host you’re targeting
+    let dbHost = "missing DATABASE_URL";
+    try { dbHost = new URL(process.env.DATABASE_URL).hostname; } catch {}
+
+    res.json({
+      system: "Enhanced AI Assistant v3.2",
+      models: {
+        gpt5: health?.gptAnalysis ? "online" : "offline",
+        claude: health?.claudeAnalysis ? "online" : "offline"
+      },
+      database: {
+        connected: dbConnected,
+        host: dbHost,
+        totalUsers,
+        totalConversations,
+        totalDocuments,
+        // keep your internal counters if you want
+        totalQueries: connectionStats.totalQueries,
+        successRate: connectionStats.totalQueries > 0
+          ? Number(((connectionStats.successfulQueries / connectionStats.totalQueries) * 100).toFixed(1))
+          : 100,
+        lastError: stats?.error || connectionStats.lastError || null
+      },
+      features: {
+        dualCommand: !!health?.dualMode,
+        enhancedDatabase: dbConnected,
+        rayDalioFramework: (stats?.totalRegimeRecords ?? 0) > 0,
+        cambodiaFund: (stats?.totalDeals ?? 0) > 0,
+        datetime: !!health?.dateTimeSupport
+      },
+      dualAIPerformance: dualAIStats?.summary || { error: dualAIStats?.error || 'Not available' },
+      stats, // raw for debugging
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Enhanced status check failed",
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 app.get("/database", async (req, res) => {
