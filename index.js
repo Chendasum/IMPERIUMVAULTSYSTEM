@@ -20,6 +20,7 @@ const {
     getStockMarketData,
     getRayDalioMarketData
 } = require("./utils/liveData");
+
 const { 
     analyzeLendingDeal, 
     getPortfolioStatus, 
@@ -27,6 +28,7 @@ const {
     performRiskAssessment, 
     generateLPReport 
 } = require("./utils/cambodiaLending");
+
 const {
     sendSmartMessage,
     sendAnalysis,
@@ -34,6 +36,7 @@ const {
     sendMarketAnalysis,
     sendAlert
 } = require("./utils/telegramSplitter");
+
 const {
     processVoiceMessage,
     processImageMessage,
@@ -49,15 +52,15 @@ const {
     getConversationHistoryDB,
     getUserProfileDB,
     getDatabaseStats,
-
+    
     // Enhanced persistent memory
     addPersistentMemoryDB,
     getPersistentMemoryDB,
-
+    
     // Training documents
     saveTrainingDocumentDB,
     getTrainingDocumentsDB,
-
+    
     // Ray Dalio enhanced functions
     saveRegimeData,
     savePortfolioAllocation,
@@ -69,14 +72,14 @@ const {
     logCommandUsage,
     getCurrentRegime,
     getLatestRiskAssessment,
-
+    
     // Cambodia fund functions
     saveCambodiaDeal,
     saveCambodiaPortfolio,
     getCambodiaFundAnalytics,
     getLatestCambodiaMarketData,
     getCambodiaDealsBy,
-
+    
     // Enhanced dual AI system
     saveDualAIConversation,
     saveAIHeadToHead,
@@ -85,17 +88,18 @@ const {
     getConversationIntelligenceAnalytics,
     getMasterEnhancedDualSystemAnalytics,
     saveEnhancedDualConversation,
-
+    
     // Analytics and monitoring
     getSystemAnalytics,
     getRayDalioStats,
     performHealthCheck,
     updateSystemMetrics,
     performDatabaseMaintenance,
-
+    
     // Connection monitoring
     connectionStats
 } = require("./utils/database");
+
 const { buildConversationContext } = require("./utils/memory");
 const { getTradingSummary, getAccountInfo } = require("./utils/metaTrader");
 
@@ -108,12 +112,27 @@ const {
     getPortfolioAnalysis,
     getAnomalyAnalysis
 } = require('./utils/claudeClient');
+
 const { 
     getGptAnalysis,
     getMarketAnalysis,
     getCambodiaAnalysis,
     getStrategicAnalysis: getGptStrategicAnalysis
 } = require('./utils/openaiClient');
+
+// 🚀 NEW: DUAL AI SYSTEM INTEGRATION
+const { 
+    getUniversalAnalysis,
+    getDualAnalysis,
+    routeQuery,
+    checkDualSystemHealth,
+    getGPT5Analysis,
+    getClaudeAnalysis: getDualClaudeAnalysis,
+    getMarketAnalysis: getDualMarketAnalysis,
+    getCambodiaAnalysis: getDualCambodiaAnalysis,
+    analyzeImageWithAI
+} = require('./utils/dualAISystem');
+
 const { 
     executeDualCommand,
     checkSystemHealth
@@ -122,6 +141,7 @@ const {
 // Load credentials
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
+
 if (!telegramToken || !openaiKey) {
     console.error("❌ Missing TELEGRAM_BOT_TOKEN or OPENAI_API_KEY in .env");
     process.exit(1);
@@ -129,6 +149,7 @@ if (!telegramToken || !openaiKey) {
 
 // Initialize Telegram Bot
 const bot = new TelegramBot(telegramToken, { polling: false });
+
 // Initialize OpenAI
 const openai = new OpenAI({ 
     apiKey: openaiKey,
