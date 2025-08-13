@@ -1771,6 +1771,230 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
         const fileSize = msg.document.file_size || 0;
         
         if (isTraining) {
+            // Enhanced training document processing with better error handling
+            await bot.sendMessage(chatId, "📚 Processing document for enhanced AI training database...");
+            
+            try {
+                const fileLink = await bot.getFileLink(msg.document.file_id);
+                console.log("📥 Downloading document from Telegram...");
+                
+                // Enhanced file download with timeout
+                const fetch = require('node-fetch');
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                
+                const response = await fetch(fileLink, { 
+                    signal: controller.signal,
+                    timeout: 30000
+                });
+                clearTimeout(timeout);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const buffer = await response.buffer();
+                let content = '';
+                
+                // Enhanced file type handling with better validation
+                const fileExtension = fileName.toLowerCase().split('.').pop();
+                
+                if (['txt', 'md', 'json', 'csv'].includes(fileExtension)) {
+                    content = buffer.toString('utf8');
+                } else if (fileExtension === 'pdf') {
+                    // For PDF files, suggest conversion
+                    throw new Error("PDF files require conversion to text format. Please save as .txt or .md file.");
+                } else {
+                    // Try to read as text for other formats
+                    content = buffer.toString('utf8');
+                    console.log(`⚠️ Attempting to read ${fileExtension} file as text`);
+                }
+                
+                // Validate content
+                if (content.length === 0) {
+                    throw new Error("Document appears to be empty or unreadable");
+                }
+                
+                if (content.length > 1000000) { // 1MB text limit
+                    throw new Error("Document too large (max 1MB text content)");
+                }
+                
+                const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+                const summary = content.length > 500 ? content.substring(0, 500) + '...' : content;
+                const responseTime = Date.now() - startTime;
+                
+                console.log(`📊 Document stats: ${wordCount} words, ${content.length} characters`);
+                
+                const saved = await saveTrainingDocumentDB(chatId, fileName, content, 'user_uploaded', wordCount, summary);
+                
+                if (saved) {
+                    await sendSmartMessage(bot, chatId, 
+                        `📚 **Document Added to Enhanced AI Training Database**\n\n` +
+                        `📄 **File:** ${fileName}\n` +
+                        `📊 **Words:** ${wordCount.toLocaleString()}\n` +
+                        `📏 **Size:** ${(fileSize / 1024).toFixed(1)} KB\n` +
+                        `⚡ **Processing:** ${responseTime}ms\n` +
+                        `💾 **Storage:** Enhanced PostgreSQL Database\n` +
+                        `✅ **Your AI can now reference this document in conversations!**\n\n` +
+                        `**Try asking:** "What did you learn from ${fileName}?"`
+                    );
+                    
+                    // Log successful training
+                    await logCommandUsage(chatId, 'document_training', responseTime, true)
+                        .catch(err => console.error('Command log error:', err.message));
+                    
+                    // Save comprehensive training record
+                    await saveConversationDB(chatId, `[TRAINING_DOC] ${fileName}`, `Document added: ${wordCount} words`, "document", {
+                        fileName: fileName,
+                        wordCount: wordCount,
+                        fileSize: fileSize,
+                        processingTime: responseTime,
+                        trainingSuccess: true,
+                        sessionId: sessionId,
+                        fileType: fileExtension,
+                        contentPreview: summary.substring(0, 200)
+                    }).catch(err => console.error('Training record save error:', err.message));
+                    
+                    // Log API usage for training
+                    await logApiUsage('TRAINING_DB', 'document_save', 1, true, responseTime, content.length)
+                        .catch(err => console.error('API log error:', err.message));
+                    
+                    console.log("✅ Document training completed successfully");
+                } else {
+                    throw new Error("Database save operation failed - please try again");
+                }
+                
+            } catch (downloadError) {
+                const responseTime = Date.now() - startTime;
+                console.error("❌ Document download/processing error:", downloadError.message);
+                
+                let errorMessage = `❌ Error processing document for training: ${downloadError.message}\n\n`;
+                
+                if (downloadError.message.includes('timeout') || downloadError.message.includes('abort')) {
+                    errorMessage += `**Timeout Error:** Document too large or connection slow\n`;
+                } else if (downloadError.message.includes('HTTP')) {
+                    errorMessage += `**Download Error:** Could not download file from Telegram\n`;
+                } else if (downloadError.message.includes('PDF')) {
+                    errorMessage += `**Format Error:** PDF files need conversion\n`;
+                }
+                
+                errorMessage += `**Please try:**\n` +
+                    `• Converting to .txt or .md format\n` +
+                    `• Reducing file size if too large\n` +
+                    `• Checking if file is corrupted\n` +
+                    `• Uploading via copy-paste for text content`;
+                
+                await sendSmartMessage(bot, chatId, errorMessage);
+                
+                // Save comprehensive error record
+                await saveConversationDB(chatId, `[TRAINING_ERROR] ${fileName}`, `Training failed: ${downloadError.message}`, "document", {
+                    fileName: fileName,
+                    fileSize: fileSize,
+                    error: downloadError.message,
+                    processingTime: responseTime,
+                    trainingSuccess: false,
+                    sessionId: sessionId,
+                    errorType: downloadError.name || 'Unknown'
+                }).catch(err => console.error('Error record save failed:', err.message));
+                
+                // Log failed API usage
+                await logApiUsage('TRAINING_DB', 'document_save', 1, false, responseTime, 0)
+                    .catch(err => console.error('API log error:', err.message));
+            }
+            
+        } else {
+            // Enhanced document analysis with better processing
+            await bot.sendMessage(chatId, "📄 Analyzing document with enhanced AI...");
+            
+            try {
+                const analysis = await processDocumentMessage(bot, msg.document.file_id, chatId, fileName);
+                const responseTime = Date.now() - startTime;
+                
+                if (analysis?.success && analysis.analysis) {
+                    await sendAnalysis(bot, chatId, analysis.analysis, `Enhanced Document Analysis: ${fileName}`);
+                    
+                    // Enhanced document analysis save with metadata
+                    await saveConversationDB(chatId, `[DOCUMENT] ${fileName}`, analysis.analysis, "document", {
+                        fileName: fileName,
+                        fileSize: fileSize,
+                        analysisLength: analysis.analysis.length,
+                        processingTime: responseTime,
+                        analysisSuccess: true,
+                        sessionId: sessionId,
+                        analysisType: 'content_review'
+                    }).catch(err => console.error('Document analysis save error:', err.message));
+                    
+                    // Save to persistent memory if analysis reveals important information
+                    if (shouldSaveToPersistentMemory(`Document: ${fileName}`, analysis.analysis)) {
+                        const memoryFact = `Document analysis: ${fileName} - ${analysis.analysis.substring(0, 100)}...`;
+                        await addPersistentMemoryDB(chatId, memoryFact, 'medium')
+                            .catch(err => console.error('Memory save error:', err.message));
+                        console.log("💾 Document analysis saved to persistent memory");
+                    }
+                    
+                    // Log successful API usage
+                    await logApiUsage('DOCUMENT_AI', 'document_analysis', 1, true, responseTime, fileSize)
+                        .catch(err => console.error('API log error:', err.message));
+                    
+                    console.log("✅ Document analysis completed successfully");
+                } else {
+                    throw new Error("Document analysis failed or returned empty results");
+                }
+                
+            } catch (analysisError) {
+                const responseTime = Date.now() - startTime;
+                console.error("❌ Document analysis error:", analysisError.message);
+                
+                await sendSmartMessage(bot, chatId, 
+                    `❌ Document analysis failed: ${analysisError.message}\n\n` +
+                    `**Please try:**\n` +
+                    `• Converting to PDF or TXT format\n` +
+                    `• Reducing file size\n` +
+                    `• Adding caption "train" to save for AI training instead\n` +
+                    `• Uploading as image if it's a scan`
+                );
+                
+                // Save comprehensive error record
+                await saveConversationDB(chatId, `[DOCUMENT_ERROR] ${fileName}`, `Analysis failed: ${analysisError.message}`, "document", {
+                    fileName: fileName,
+                    fileSize: fileSize,
+                    error: analysisError.message,
+                    processingTime: responseTime,
+                    analysisSuccess: false,
+                    sessionId: sessionId
+                }).catch(err => console.error('Document error save failed:', err.message));
+                
+                // Log failed API usage
+                await logApiUsage('DOCUMENT_AI', 'document_analysis', 1, false, responseTime, fileSize)
+                    .catch(err => console.error('API log error:', err.message));
+            }
+        }
+    } catch (error) {
+        const responseTime = Date.now() - startTime;
+        console.error("❌ Document processing system error:", error.message);
+        await sendSmartMessage(bot, chatId, `❌ Document processing system error: ${error.message}`);
+        
+        // Save general system error record
+        await saveConversationDB(chatId, "[DOCUMENT_SYSTEM_ERROR]", `System error: ${error.message}`, "document", {
+            fileName: msg.document?.file_name || "unknown",
+            fileSize: msg.document?.file_size || 0,
+            systemError: error.message,
+            processingTime: responseTime,
+            sessionId: sessionId
+        }).catch(err => console.error('System error save failed:', err.message));
+    }
+}
+
+// 🔧 FIXED: Document processing handler with better error handling and analysis
+async function handleDocumentMessage(msg, chatId, sessionId) {
+    const startTime = Date.now();
+    try {
+        console.log("📄 Processing document:", msg.document.file_name);
+        const isTraining = msg.caption?.toLowerCase().includes("train");
+        const fileName = msg.document.file_name || "untitled_document";
+        const fileSize = msg.document.file_size || 0;
+        
+        if (isTraining) {
             // Training document processing (this part was working)
             await bot.sendMessage(chatId, "📚 Processing document for enhanced AI training database...");
             
