@@ -2,12 +2,13 @@ require("dotenv").config({ path: ".env" });
 
 // Debug environment variables
 console.log("🔧 Environment check:");
-console.log(ADMIN_CHAT_ID: ${process.env.ADMIN_CHAT_ID});
-console.log(TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? "SET" : "NOT SET"});
-console.log(OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "SET" : "NOT SET"});
-console.log(ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "SET" : "NOT SET"});
-console.log(DATABASE_URL: ${process.env.DATABASE_URL ? "SET" : "NOT SET"});
-console.log(DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}); // 🔧 ADDED
+console.log(`ADMIN_CHAT_ID: ${process.env.ADMIN_CHAT_ID}`);
+console.log(`TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? "SET" : "NOT SET"}`);
+console.log(`OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "SET" : "NOT SET"}`);
+console.log(`ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "SET" : "NOT SET"}`);
+console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? "SET" : "NOT SET"}`);
+console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}`); // 🔧 ADDED
+
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
 
