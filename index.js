@@ -1,4 +1,3 @@
-
 require("dotenv").config({ path: ".env" });
 
 // Debug environment variables
@@ -8,7 +7,7 @@ console.log(`TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? "SET" : "NOT
 console.log(`OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "SET" : "NOT SET"}`);
 console.log(`ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "SET" : "NOT SET"}`);
 console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? "SET" : "NOT SET"}`);
-console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}`); // 🔧 ADDED
+console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}`);
 
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
@@ -104,10 +103,10 @@ const {
 const { buildConversationContext } = require("./utils/memory");
 const { getTradingSummary, getAccountInfo } = require("./utils/metaTrader");
 
-// Import enhanced AI clients
+// 🚀 ENHANCED: Import Individual AI Clients + DUAL AI SYSTEM
 const { 
     getClaudeAnalysis,
-    getStrategicAnalysis,
+    getStrategicAnalysis: getClaudeStrategicAnalysis,
     getRegimeAnalysis,
     getCambodiaAnalysis: getClaudeCambodiaAnalysis,
     getPortfolioAnalysis,
@@ -116,8 +115,8 @@ const {
 
 const { 
     getGptAnalysis,
-    getMarketAnalysis,
-    getCambodiaAnalysis,
+    getMarketAnalysis: getGptMarketAnalysis,
+    getCambodiaAnalysis: getGptCambodiaAnalysis,
     getStrategicAnalysis: getGptStrategicAnalysis
 } = require('./utils/openaiClient');
 
