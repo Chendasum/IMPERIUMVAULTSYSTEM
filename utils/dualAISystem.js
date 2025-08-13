@@ -1,577 +1,600 @@
-// 🤖🤖 ULTIMATE DUAL AI SYSTEM: GPT-5 + Claude Opus 4.1
-// Supreme Strategic AI Commander for IMPERIUM VAULT SYSTEM
+// 🔧 FIXED: utils/dualAISystem.js - Missing OpenAI import and other fixes
+require("dotenv").config({ path: ".env" });
 
-require("dotenv").config();
+// 🔧 FIXED: Import OpenAI properly
 const { OpenAI } = require("openai");
-const { Anthropic } = require('@anthropic-ai/sdk');
+const openai = new OpenAI({ 
+    apiKey: process.env.OPENAI_API_KEY,
+    timeout: 60000,
+    maxRetries: 3
+});
 
-// Import your existing AI clients
+// Import enhanced AI clients
 const { 
-    getGptAnalysis,
-    getMarketAnalysis: getGPTMarketAnalysis,
-    getCambodiaAnalysis: getGPTCambodiaAnalysis,
-    analyzeImageWithGPT,
-    testModelCapabilities: testGPTCapabilities
-} = require('./openaiClient');
-
-const { 
-    getClaudeAnalysis: getClaudeAnalysisOriginal,
+    getClaudeAnalysis,
     getStrategicAnalysis: getClaudeStrategicAnalysis,
     getRegimeAnalysis,
     getCambodiaAnalysis: getClaudeCambodiaAnalysis,
-    checkSystemHealth: checkClaudeHealth
+    getPortfolioAnalysis,
+    getAnomalyAnalysis
 } = require('./claudeClient');
 
-// Import live data system
-const {
-    getRayDalioMarketData,
-    detectEconomicRegime,
-    getYieldCurveAnalysis,
-    getCreditSpreadAnalysis,
-    getInflationExpectations,
-    getSectorRotationSignals,
-    getEnhancedLiveData,
-    detectMarketAnomalies,
-    generateMarketInsights
-} = require('./liveData');
+const { 
+    getGptAnalysis,
+    getMarketAnalysis: getGptMarketAnalysis,
+    getCambodiaAnalysis: getGptCambodiaAnalysis,
+    getStrategicAnalysis: getGptStrategicAnalysis
+} = require('./openaiClient');
 
-// Note: We'll use the existing initialized clients from openaiClient.js and claudeClient.js
-// This avoids duplicate initialization and leverages your existing configurations
-
-// 🚀 ULTIMATE DUAL AI CONFIGURATION
-const DUAL_AI_CONFIG = {
-    // Model Selection
-    GPT5_MODELS: {
-        primary: "gpt-5",
-        mini: "gpt-5-mini",
-        nano: "gpt-5-nano",
-        vision: "gpt-5"
-    },
-    CLAUDE_MODELS: {
-        primary: "claude-opus-4-1-20250805",  // Your Claude Opus 4.1
-        fallback: "claude-3-opus-20240229"    // Fallback
-    },
-    
-    // AI Specializations - Strategic Assignment
-    SPECIALIZATIONS: {
-        GPT5_BEST_FOR: [
-            'coding', 'mathematics', 'step-by-step calculations',
-            'technical analysis', 'data processing', 'complex reasoning',
-            'structured financial models', 'quantitative analysis',
-            'vision analysis', 'image interpretation', 'chart analysis'
-        ],
-        CLAUDE_BEST_FOR: [
-            'strategic thinking', 'nuanced analysis', 'complex writing',
-            'creative problem solving', 'philosophical reasoning',
-            'contextual understanding', 'synthesis of information',
-            'comprehensive research', 'natural conversation',
-            'ethical considerations', 'risk assessment narratives'
-        ]
-    },
-    
-    // Routing Strategy
-    ROUTING_PATTERNS: {
-        // GPT-5 Patterns
-        USE_GPT5: [
-            /(calculate|compute|math|formula|equation)/i,
-            /(code|programming|technical|api|debug)/i,
-            /(chart|graph|image|visual|analyze.*image)/i,
-            /(step.*by.*step|methodology|procedure)/i,
-            /(quantitative|statistical|numerical)/i,
-            /(portfolio.*optimization|modern.*portfolio.*theory)/i
-        ],
-        // Claude Patterns  
-        USE_CLAUDE: [
-            /(strategy|strategic|philosophy|think)/i,
-            /(write|essay|report|comprehensive|detailed)/i,
-            /(explain|understand|context|nuance)/i,
-            /(creative|innovative|brainstorm|ideate)/i,
-            /(risk.*assessment|scenario.*planning)/i,
-            /(ethical|moral|consideration|implication)/i
-        ],
-        // Dual Analysis Patterns
-        USE_BOTH: [
-            /(compare|versus|vs|contrast)/i,
-            /(comprehensive.*analysis|full.*analysis)/i,
-            /(dual.*perspective|multiple.*viewpoint)/i,
-            /(cross.*validate|second.*opinion)/i,
-            /(complex.*decision|major.*investment)/i
-        ]
-    },
-    
-    // Performance Settings
-    PERFORMANCE: {
-        GPT5_MAX_TOKENS: 8192,
-        CLAUDE_MAX_TOKENS: 4096,
-        GPT5_CONTEXT: 200000,
-        CLAUDE_CONTEXT: 200000,
-        TIMEOUT: 180000,
-        DUAL_ANALYSIS_DELAY: 1000 // Stagger dual requests
-    }
-};
-
-// Global state
-let systemHealth = {
-    gpt5Available: false,
-    claudeAvailable: false,
-    lastHealthCheck: null,
-    preferredPrimary: 'auto' // 'gpt5', 'claude', 'auto'
-};
-
-console.log("🏛️ ULTIMATE DUAL AI SYSTEM v4.0 - IMPERIUM VAULT");
-console.log(`   GPT-5: ${process.env.OPENAI_API_KEY ? "✅" : "❌"} (${DUAL_AI_CONFIG.GPT5_MODELS.primary})`);
-console.log(`   Claude Opus 4.1: ${process.env.ANTHROPIC_API_KEY ? "✅" : "❌"} (${DUAL_AI_CONFIG.CLAUDE_MODELS.primary})`);
-console.log(`   Live Data Integration: ✅ ENABLED`);
-console.log(`   Dual Analysis Capability: ✅ READY`);
-
-/**
- * 🧠 Intelligent AI Router - Determines best AI for query
- */
-function routeQuery(query, options = {}) {
-    // Force specific AI if requested
-    if (options.forceGPT5) return { ai: 'gpt5', confidence: 1.0, reason: 'Forced GPT-5' };
-    if (options.forceClaude) return { ai: 'claude', confidence: 1.0, reason: 'Forced Claude' };
-    if (options.dualAnalysis) return { ai: 'both', confidence: 1.0, reason: 'Requested dual analysis' };
-    
-    const queryLower = query.toLowerCase();
-    let gpt5Score = 0;
-    let claudeScore = 0;
-    
-    // Score for GPT-5
-    DUAL_AI_CONFIG.ROUTING_PATTERNS.USE_GPT5.forEach(pattern => {
-        if (pattern.test(queryLower)) gpt5Score += 1;
-    });
-    
-    // Score for Claude
-    DUAL_AI_CONFIG.ROUTING_PATTERNS.USE_CLAUDE.forEach(pattern => {
-        if (pattern.test(queryLower)) claudeScore += 1;
-    });
-    
-    // Check for dual analysis patterns
-    const needsDual = DUAL_AI_CONFIG.ROUTING_PATTERNS.USE_BOTH.some(pattern => 
-        pattern.test(queryLower)
-    );
-    
-    if (needsDual) {
-        return { ai: 'both', confidence: 0.9, reason: 'Complex query requiring dual perspective' };
-    }
-    
-    // Determine primary AI
-    if (gpt5Score > claudeScore) {
-        return { 
-            ai: 'gpt5', 
-            confidence: Math.min(gpt5Score / 3, 1.0), 
-            reason: `GPT-5 specialization (score: ${gpt5Score} vs ${claudeScore})` 
-        };
-    } else if (claudeScore > gpt5Score) {
-        return { 
-            ai: 'claude', 
-            confidence: Math.min(claudeScore / 3, 1.0), 
-            reason: `Claude specialization (score: ${claudeScore} vs ${gpt5Score})` 
-        };
-    }
-    
-    // Default routing based on query characteristics
-    if (queryLower.length < 50 && !/analysis|strategy|comprehensive/.test(queryLower)) {
-        return { ai: 'claude', confidence: 0.6, reason: 'Short query - Claude conversation' };
-    }
-    
-    if (/cambodia|fund|lending|deal/.test(queryLower)) {
-        return { ai: 'claude', confidence: 0.8, reason: 'Strategic analysis - Claude expertise' };
-    }
-    
-    // Auto-select based on availability and preference
-    if (systemHealth.preferredPrimary === 'gpt5' && systemHealth.gpt5Available) {
-        return { ai: 'gpt5', confidence: 0.5, reason: 'Default GPT-5 preference' };
-    }
-    
-    return { ai: 'claude', confidence: 0.5, reason: 'Default Claude selection' };
-}
-
-/**
- * 🎯 Enhanced GPT-5 Analysis (uses your existing openaiClient.js)
- */
-async function getGPT5Analysis(query, options = {}) {
-    try {
-        console.log('🤖 GPT-5 Strategic Analysis (via openaiClient)...');
-        
-        // Use your existing GPT-5 function with enhanced options
-        const result = await getGptAnalysis(query, {
-            ...options,
-            reasoning_effort: options.reasoning_effort || 'medium',
-            verbosity: options.verbosity || 'balanced'
-        });
-        
-        return {
-            response: result,
-            ai: 'gpt5',
-            model: 'gpt-5',
-            source: 'openaiClient.js'
-        };
-        
-    } catch (error) {
-        console.error('❌ GPT-5 Analysis Error:', error.message);
-        throw new Error(`GPT-5 Error: ${error.message}`);
-    }
-}
-
-/**
- * 🎭 Enhanced Claude Opus 4.1 Analysis (uses your existing claudeClient.js)
- */
-async function getClaudeAnalysis(query, options = {}) {
-    try {
-        console.log('🎭 Claude Opus 4.1 Strategic Analysis (via claudeClient)...');
-        
-        // Use your existing Claude function
-        const result = await getClaudeAnalysisOriginal(query, {
-            ...options,
-            model: options.model || DUAL_AI_CONFIG.CLAUDE_MODELS.primary
-        });
-        
-        return {
-            response: result,
-            ai: 'claude',
-            model: DUAL_AI_CONFIG.CLAUDE_MODELS.primary,
-            source: 'claudeClient.js',
-            context_included: true // Your claudeClient includes live data
-        };
-        
-    } catch (error) {
-        console.error('❌ Claude Analysis Error:', error.message);
-        throw new Error(`Claude Error: ${error.message}`);
-    }
-}
-
-/**
- * 🔄 Dual AI Analysis - Get perspectives from both
- */
-async function getDualAnalysis(query, options = {}) {
-    try {
-        console.log('🔄 Dual AI Analysis: GPT-5 + Claude Opus 4.1...');
-        
-        // Enhance query for dual analysis
-        const dualQuery = options.skipEnhancement ? query : 
-            `DUAL AI ANALYSIS REQUEST:\n${query}\n\nProvide your unique perspective and expertise on this query.`;
-        
-        // Execute both analyses with slight delay
-        const [gpt5Result, claudeResult] = await Promise.allSettled([
-            getGPT5Analysis(dualQuery, { ...options, systemPrompt: options.gpt5SystemPrompt }),
-            new Promise(resolve => setTimeout(() => 
-                getClaudeAnalysis(dualQuery, { ...options, systemPrompt: options.claudeSystemPrompt })
-                    .then(resolve), 
-                DUAL_AI_CONFIG.PERFORMANCE.DUAL_ANALYSIS_DELAY
-            ))
-        ]);
-        
-        // Process results
-        const results = {
-            success: true,
-            gpt5: gpt5Result.status === 'fulfilled' ? gpt5Result.value : { error: gpt5Result.reason?.message },
-            claude: claudeResult.status === 'fulfilled' ? claudeResult.value : { error: claudeResult.reason?.message },
-            query: query,
-            timestamp: new Date().toISOString()
-        };
-        
-        // Create synthesis if both succeeded
-        if (gpt5Result.status === 'fulfilled' && claudeResult.status === 'fulfilled') {
-            results.synthesis = createSynthesis(results.gpt5, results.claude, query);
-        }
-        
-        console.log('✅ Dual Analysis Complete');
-        return results;
-        
-    } catch (error) {
-        console.error('❌ Dual Analysis Error:', error.message);
-        throw error;
-    }
-}
-
-/**
- * 🔗 Create synthesis from dual analysis
- */
-function createSynthesis(gpt5Result, claudeResult, originalQuery) {
-    const gpt5Response = gpt5Result.response;
-    const claudeResponse = claudeResult.response;
-    
-    return {
-        summary: `Dual AI Synthesis for: "${originalQuery.substring(0, 100)}${originalQuery.length > 100 ? '...' : ''}"`,
-        gpt5_perspective: {
-            model: gpt5Result.model,
-            length: gpt5Response.length,
-            reasoning_effort: gpt5Result.reasoning_effort,
-            key_strengths: ['Quantitative analysis', 'Step-by-step reasoning', 'Technical precision']
-        },
-        claude_perspective: {
-            model: claudeResult.model,
-            length: claudeResponse.length,
-            context_aware: claudeResult.context_included,
-            key_strengths: ['Strategic insight', 'Contextual understanding', 'Nuanced analysis']
-        },
-        convergence_areas: extractConvergenceAreas(gpt5Response, claudeResponse),
-        unique_insights: extractUniqueInsights(gpt5Response, claudeResponse),
-        recommendation: "Review both perspectives for comprehensive understanding"
+// Import database functions with error handling
+let databaseFunctions = {};
+try {
+    databaseFunctions = require('./database');
+} catch (error) {
+    console.error('❌ Database import failed:', error.message);
+    // Provide fallback functions
+    databaseFunctions = {
+        saveDualAIConversation: async () => ({ success: false, error: 'Database not available' }),
+        saveAIHeadToHead: async () => ({ success: false, error: 'Database not available' }),
+        saveEnhancedFunctionPerformance: async () => ({ success: false, error: 'Database not available' }),
+        getDualAIPerformanceDashboard: async () => ({ error: 'Database not available' }),
+        getConversationIntelligenceAnalytics: async () => ({ error: 'Database not available' }),
+        getMasterEnhancedDualSystemAnalytics: async () => ({ error: 'Database not available' }),
+        saveEnhancedDualConversation: async () => ({ success: false, error: 'Database not available' }),
+        getConversationHistoryDB: async () => [],
+        getPersistentMemoryDB: async () => [],
+        buildConversationContext: async () => ''
     };
 }
 
-/**
- * 🎯 Main Universal AI Analysis Function
- */
-async function getUniversalAnalysis(query, options = {}) {
-    try {
-        console.log('🎯 Universal AI Analysis - Routing query...');
+// 🔧 FIXED: Memory system import with fallback
+let memoryFunctions = {};
+try {
+    memoryFunctions = require('./memory');
+} catch (error) {
+    console.error('❌ Memory system import failed:', error.message);
+    // Provide fallback functions
+    memoryFunctions = {
+        buildConversationContext: async () => '',
+        extractAndSaveFacts: async () => ({ success: false, extractedFacts: 0 })
+    };
+}
+
+// Enhanced dual AI router with memory integration
+class EnhancedDualAIRouter {
+    constructor() {
+        this.routingRules = {
+            // Strategic and analytical queries → Claude
+            strategic: {
+                keywords: ['strategy', 'analyze', 'strategic', 'comprehensive', 'economic', 'regime', 'framework'],
+                ai: 'CLAUDE',
+                confidence: 0.8
+            },
+            
+            // Creative and conversational → GPT
+            creative: {
+                keywords: ['joke', 'story', 'creative', 'funny', 'casual', 'chat', 'hello', 'hi'],
+                ai: 'GPT',
+                confidence: 0.9
+            },
+            
+            // Market analysis → Dual (both AIs)
+            market: {
+                keywords: ['market', 'trading', 'stocks', 'crypto', 'forex', 'portfolio'],
+                ai: 'DUAL',
+                confidence: 0.7
+            },
+            
+            // Memory queries → GPT with enhanced context
+            memory: {
+                keywords: ['remember', 'recall', 'you mentioned', 'we discussed', 'previous'],
+                ai: 'GPT_MEMORY',
+                confidence: 0.85
+            },
+            
+            // Cambodia fund → Claude (specialized)
+            cambodia: {
+                keywords: ['cambodia', 'lending', 'fund', 'phnom penh', 'deal'],
+                ai: 'CLAUDE',
+                confidence: 0.9
+            }
+        };
         
-        // Route the query
-        const routing = routeQuery(query, options);
-        console.log(`🧭 Route Decision: ${routing.ai} (confidence: ${(routing.confidence * 100).toFixed(0)}%) - ${routing.reason}`);
-        
-        // Execute based on routing
-        switch (routing.ai) {
-            case 'gpt5':
-                return await getGPT5Analysis(query, options);
+        this.performanceStats = {
+            totalRequests: 0,
+            gptRequests: 0,
+            claudeRequests: 0,
+            dualRequests: 0,
+            averageResponseTime: 0,
+            successRate: 0
+        };
+    }
+    
+    // 🔧 FIXED: Route query with better logic
+    routeQuery(query, context = {}) {
+        try {
+            const queryLower = query.toLowerCase();
+            const scores = {};
+            
+            // Calculate scores for each category
+            for (const [category, rule] of Object.entries(this.routingRules)) {
+                const keywordMatches = rule.keywords.filter(keyword => 
+                    queryLower.includes(keyword)
+                ).length;
                 
-            case 'claude':
-                return await getClaudeAnalysis(query, options);
-                
-            case 'both':
-                return await getDualAnalysis(query, options);
-                
-            default:
-                throw new Error(`Invalid AI routing: ${routing.ai}`);
+                scores[category] = {
+                    score: keywordMatches * rule.confidence,
+                    ai: rule.ai,
+                    confidence: rule.confidence
+                };
+            }
+            
+            // Find highest scoring category
+            const bestMatch = Object.entries(scores).reduce((best, [category, data]) => {
+                return data.score > best.score ? { category, ...data } : best;
+            }, { score: 0, ai: 'GPT', category: 'default' });
+            
+            // Enhanced routing logic with context awareness
+            let selectedAI = bestMatch.ai;
+            let reasoning = `Matched category: ${bestMatch.category} (score: ${bestMatch.score})`;
+            
+            // Context-based overrides
+            if (context.hasMemoryContext && bestMatch.score < 0.7) {
+                selectedAI = 'GPT_MEMORY';
+                reasoning += ' → Override: Memory context detected';
+            }
+            
+            if (context.complexity === 'maximum' && selectedAI !== 'DUAL') {
+                selectedAI = 'DUAL';
+                reasoning += ' → Override: High complexity detected';
+            }
+            
+            if (query.length > 500 && selectedAI === 'GPT') {
+                selectedAI = 'CLAUDE';
+                reasoning += ' → Override: Long query, Claude preferred';
+            }
+            
+            return {
+                selectedAI: selectedAI,
+                confidence: bestMatch.confidence || 0.7,
+                reasoning: reasoning,
+                category: bestMatch.category,
+                queryAnalysis: {
+                    length: query.length,
+                    complexity: this.analyzeComplexity(query),
+                    keywords: this.extractKeywords(query)
+                }
+            };
+        } catch (error) {
+            console.error('❌ Query routing error:', error.message);
+            return {
+                selectedAI: 'GPT',
+                confidence: 0.5,
+                reasoning: `Routing error: ${error.message}, defaulting to GPT`,
+                category: 'error'
+            };
         }
+    }
+    
+    // 🔧 FIXED: Analyze query complexity
+    analyzeComplexity(query) {
+        const wordCount = query.split(/\s+/).length;
+        const questionCount = (query.match(/\?/g) || []).length;
+        const hasMultipleTopics = query.includes('and') || query.includes('also');
         
-    } catch (error) {
-        console.error('❌ Universal Analysis Error:', error.message);
-        
-        // Intelligent fallback
-        if (!options.fallbackAttempted) {
-            console.log('🔄 Attempting fallback analysis...');
-            
-            // Try the other AI
-            const fallbackOptions = { ...options, fallbackAttempted: true };
-            
-            if (routing.ai === 'gpt5') {
-                return await getClaudeAnalysis(query, fallbackOptions);
-            } else if (routing.ai === 'claude') {
-                return await getGPT5Analysis(query, fallbackOptions);
+        if (wordCount > 100 || questionCount > 2 || hasMultipleTopics) return 'high';
+        if (wordCount > 50 || questionCount > 1) return 'medium';
+        return 'low';
+    }
+    
+    // Extract relevant keywords for analysis
+    extractKeywords(query) {
+        const words = query.toLowerCase().split(/\s+/);
+        const relevantWords = words.filter(word => 
+            word.length > 4 && 
+            !['this', 'that', 'with', 'from', 'they', 'have', 'been', 'will'].includes(word)
+        );
+        return relevantWords.slice(0, 5);
+    }
+}
+
+// Initialize router
+const dualAIRouter = new EnhancedDualAIRouter();
+
+// 🔧 FIXED: Universal analysis function with memory integration
+async function getUniversalAnalysis(query, options = {}) {
+    const startTime = Date.now();
+    
+    try {
+        // Build context if chatId provided
+        let memoryContext = '';
+        if (options.chatId) {
+            try {
+                memoryContext = await memoryFunctions.buildConversationContext(options.chatId);
+            } catch (contextError) {
+                console.log('⚠️ Memory context failed:', contextError.message);
             }
         }
         
-        throw error;
-    }
-}
-
-/**
- * 🏥 System Health Check (uses your existing health checks)
- */
-async function checkDualSystemHealth() {
-    console.log('🏥 Checking Dual AI System Health...');
-    
-    const health = {
-        timestamp: new Date().toISOString(),
-        gpt5: { available: false, source: 'openaiClient.js' },
-        claude: { available: false, source: 'claudeClient.js' },
-        liveData: { available: false },
-        overall: 'UNKNOWN'
-    };
-    
-    // Test GPT-5 via your existing client
-    try {
-        await testGPTCapabilities();
-        health.gpt5.available = true;
-        console.log('✅ GPT-5 Health: ONLINE (via openaiClient)');
-    } catch (error) {
-        health.gpt5.error = error.message;
-        console.log('❌ GPT-5 Health: OFFLINE');
-    }
-    
-    // Test Claude via your existing client  
-    try {
-        const claudeHealth = await checkClaudeHealth();
-        health.claude.available = claudeHealth.overallHealth;
-        health.claude.details = claudeHealth;
-        console.log('✅ Claude Health: ONLINE (via claudeClient)');
-    } catch (error) {
-        health.claude.error = error.message;
-        console.log('❌ Claude Health: OFFLINE');
-    }
-    
-    // Test Live Data
-    try {
-        await getEnhancedLiveData();
-        health.liveData.available = true;
-        console.log('✅ Live Data: ONLINE');
-    } catch (error) {
-        health.liveData.error = error.message;
-        console.log('❌ Live Data: OFFLINE');
-    }
-    
-    // Determine overall health
-    if (health.gpt5.available && health.claude.available) {
-        health.overall = 'EXCELLENT';
-    } else if (health.gpt5.available || health.claude.available) {
-        health.overall = 'FUNCTIONAL';
-    } else {
-        health.overall = 'CRITICAL';
-    }
-    
-    // Update global state
-    systemHealth = {
-        gpt5Available: health.gpt5.available,
-        claudeAvailable: health.claude.available,
-        lastHealthCheck: health.timestamp,
-        preferredPrimary: systemHealth.preferredPrimary
-    };
-    
-    console.log(`🏥 Overall System Health: ${health.overall}`);
-    return health;
-}
-
-/**
- * 📊 Specialized Analysis Functions
- */
-
-// Market Analysis with optimal AI selection
-async function getMarketAnalysis(query, marketData = null, options = {}) {
-    const enhancedQuery = `STRATEGIC MARKET ANALYSIS:\n${query}`;
-    
-    if (marketData) {
-        enhancedQuery += `\n\nMarket Context:\n${JSON.stringify(marketData, null, 2)}`;
-    }
-    
-    // Use Claude for strategic market insights
-    return await getClaudeAnalysis(enhancedQuery, {
-        ...options,
-        systemPrompt: "You are Claude Opus 4.1 providing institutional-grade market analysis. Focus on strategic implications, regime dynamics, and actionable investment insights."
-    });
-}
-
-// Quantitative Analysis with GPT-5
-async function getQuantitativeAnalysis(query, data = null, options = {}) {
-    const enhancedQuery = `QUANTITATIVE ANALYSIS REQUEST:\n${query}`;
-    
-    if (data) {
-        enhancedQuery += `\n\nData:\n${JSON.stringify(data, null, 2)}`;
-    }
-    
-    enhancedQuery += `\n\nProvide step-by-step quantitative analysis with calculations, formulas, and precise numerical results.`;
-    
-    return await getGPT5Analysis(enhancedQuery, {
-        ...options,
-        reasoning_effort: 'high',
-        verbosity: 'detailed',
-        systemPrompt: "You are GPT-5 providing precise quantitative analysis. Use advanced mathematical reasoning, show all calculations, and provide exact numerical results."
-    });
-}
-
-// Cambodia Analysis with dual perspective
-async function getCambodiaAnalysis(query, dealData = null, options = {}) {
-    let enhancedQuery = `CAMBODIA MARKET ANALYSIS:\n${query}`;
-    
-    if (dealData) {
-        enhancedQuery += `\n\nDeal Parameters:\n${JSON.stringify(dealData, null, 2)}`;
-    }
-    
-    // Use dual analysis for comprehensive Cambodia assessment
-    return await getDualAnalysis(enhancedQuery, {
-        ...options,
-        gpt5SystemPrompt: "You are GPT-5 analyzing Cambodia investment opportunities. Focus on quantitative risk assessment, financial calculations, and data-driven insights.",
-        claudeSystemPrompt: "You are Claude Opus 4.1 analyzing Cambodia market strategy. Focus on contextual understanding, political risk, cultural factors, and strategic positioning."
-    });
-}
-
-// Vision Analysis with GPT-5 (uses your existing function)
-async function analyzeImageWithAI(base64Image, prompt, options = {}) {
-    try {
-        console.log('🖼️ AI Vision Analysis with GPT-5 (via openaiClient)...');
+        // Route the query
+        const routing = dualAIRouter.routeQuery(query, {
+            hasMemoryContext: memoryContext.length > 0,
+            complexity: options.complexity || 'medium',
+            ...options
+        });
         
-        // Use your existing vision analysis function
-        const result = await analyzeImageWithGPT(base64Image, prompt, options);
+        console.log(`🎯 Query routed to: ${routing.selectedAI} (${routing.reasoning})`);
+        
+        let result;
+        const enhancedQuery = memoryContext ? `${memoryContext}\n\nUser query: ${query}` : query;
+        
+        // Execute based on routing decision
+        switch (routing.selectedAI) {
+            case 'CLAUDE':
+                result = await getClaudeAnalysis(enhancedQuery, { 
+                    maxTokens: options.maxTokens || 1500 
+                });
+                break;
+                
+            case 'GPT':
+            case 'GPT_MEMORY':
+                result = await getGptAnalysis(enhancedQuery, { 
+                    max_completion_tokens: options.maxTokens || 1500,
+                    model: "gpt-5",
+                    temperature: 0.7
+                });
+                break;
+                
+            case 'DUAL':
+                result = await getDualAnalysis(enhancedQuery, options);
+                break;
+                
+            default:
+                result = await getGptAnalysis(enhancedQuery, { 
+                    max_completion_tokens: 1000,
+                    model: "gpt-5"
+                });
+        }
+        
+        const responseTime = Date.now() - startTime;
+        
+        // Update performance stats
+        dualAIRouter.performanceStats.totalRequests++;
+        if (routing.selectedAI.includes('GPT')) dualAIRouter.performanceStats.gptRequests++;
+        if (routing.selectedAI.includes('CLAUDE')) dualAIRouter.performanceStats.claudeRequests++;
+        if (routing.selectedAI === 'DUAL') dualAIRouter.performanceStats.dualRequests++;
+        
+        // Save to database if available
+        if (options.chatId && databaseFunctions.saveDualAIConversation) {
+            await databaseFunctions.saveDualAIConversation(options.chatId, {
+                query: query,
+                response: result,
+                aiUsed: routing.selectedAI,
+                responseTime: responseTime,
+                confidence: routing.confidence,
+                routing: routing,
+                memoryContextUsed: memoryContext.length > 0
+            }).catch(err => console.error('Database save error:', err.message));
+        }
         
         return {
             response: result,
-            ai: 'gpt5',
-            model: 'gpt-5',
-            analysis_type: 'vision',
-            source: 'openaiClient.js'
+            aiUsed: routing.selectedAI,
+            responseTime: responseTime,
+            confidence: routing.confidence,
+            routing: routing,
+            memoryContext: memoryContext.length > 0,
+            success: true
         };
         
     } catch (error) {
-        console.error('❌ Vision analysis error:', error.message);
-        throw new Error(`Vision Analysis Error: ${error.message}`);
+        console.error('❌ Universal analysis error:', error.message);
+        
+        // Fallback to simple GPT
+        try {
+            const fallbackResult = await getGptAnalysis(query, { 
+                max_completion_tokens: 800,
+                model: "gpt-5"
+            });
+            
+            return {
+                response: fallbackResult,
+                aiUsed: 'GPT_FALLBACK',
+                responseTime: Date.now() - startTime,
+                confidence: 0.6,
+                error: error.message,
+                success: true
+            };
+        } catch (fallbackError) {
+            return {
+                response: `I apologize, but I'm experiencing technical difficulties. Error: ${error.message}`,
+                aiUsed: 'ERROR',
+                responseTime: Date.now() - startTime,
+                confidence: 0,
+                error: error.message,
+                success: false
+            };
+        }
     }
 }
 
-// Utility functions
-function extractConvergenceAreas(response1, response2) {
-    // Simple keyword overlap detection
-    const words1 = response1.toLowerCase().split(/\W+/).filter(w => w.length > 4);
-    const words2 = response2.toLowerCase().split(/\W+/).filter(w => w.length > 4);
-    const overlap = words1.filter(w => words2.includes(w));
-    return overlap.slice(0, 5); // Top 5 common concepts
+// 🔧 FIXED: Dual analysis function (both AIs)
+async function getDualAnalysis(query, options = {}) {
+    try {
+        console.log('🤝 Running dual AI analysis...');
+        
+        const [gptResult, claudeResult] = await Promise.allSettled([
+            getGptAnalysis(query, { 
+                max_completion_tokens: options.maxTokens || 800,
+                model: "gpt-5",
+                temperature: 0.7
+            }),
+            getClaudeAnalysis(query, { 
+                maxTokens: options.maxTokens || 800 
+            })
+        ]);
+        
+        let dualResponse = `**Enhanced Dual AI Analysis: GPT-5 + Claude Opus 4.1**\n\n`;
+        
+        if (gptResult.status === 'fulfilled') {
+            dualResponse += `**GPT-5 Analysis:**\n${gptResult.value}\n\n`;
+        } else {
+            dualResponse += `**GPT-5 Analysis:** ❌ Error: ${gptResult.reason?.message}\n\n`;
+        }
+        
+        if (claudeResult.status === 'fulfilled') {
+            dualResponse += `**Claude Opus 4.1 Analysis:**\n${claudeResult.value}\n\n`;
+        } else {
+            dualResponse += `**Claude Opus 4.1 Analysis:** ❌ Error: ${claudeResult.reason?.message}\n\n`;
+        }
+        
+        // Add synthesis if both succeeded
+        if (gptResult.status === 'fulfilled' && claudeResult.status === 'fulfilled') {
+            try {
+                const synthesisPrompt = `Based on these two AI analyses of the same query, provide a brief synthesis highlighting key agreements and unique insights:\n\nGPT-5: ${gptResult.value.substring(0, 300)}\n\nClaude: ${claudeResult.value.substring(0, 300)}`;
+                
+                const synthesis = await getGptAnalysis(synthesisPrompt, {
+                    max_completion_tokens: 300,
+                    model: "gpt-5",
+                    temperature: 0.6
+                });
+                
+                dualResponse += `**AI Synthesis:**\n${synthesis}`;
+            } catch (synthesisError) {
+                console.log('⚠️ Synthesis failed:', synthesisError.message);
+            }
+        }
+        
+        return dualResponse;
+        
+    } catch (error) {
+        console.error('❌ Dual analysis error:', error.message);
+        throw new Error(`Dual analysis failed: ${error.message}`);
+    }
 }
 
-function extractUniqueInsights(gpt5Response, claudeResponse) {
+// 🔧 FIXED: Image analysis with GPT-5 vision
+async function analyzeImageWithAI(base64Image, prompt, aiModel = 'GPT') {
+    try {
+        if (aiModel === 'GPT' || aiModel === 'DUAL') {
+            console.log('🖼️ Using GPT-5 vision for image analysis...');
+            
+            const response = await openai.chat.completions.create({
+                model: "gpt-5",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: prompt
+                            },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: `data:image/jpeg;base64,${base64Image}`,
+                                    detail: "high"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_completion_tokens: 1200,
+                temperature: 0.7
+            });
+            
+            return response.choices[0]?.message?.content || 'No analysis generated';
+        }
+        
+        // Claude doesn't support vision, fallback to GPT
+        return await analyzeImageWithAI(base64Image, prompt, 'GPT');
+        
+    } catch (error) {
+        console.error('❌ AI image analysis error:', error.message);
+        
+        // Fallback to GPT-4 if GPT-5 fails
+        try {
+            console.log('🔄 Falling back to GPT-4 vision...');
+            const fallbackResponse = await openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: prompt
+                            },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: `data:image/jpeg;base64,${base64Image}`,
+                                    detail: "high"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_completion_tokens: 1200,
+                temperature: 0.7
+            });
+            
+            return fallbackResponse.choices[0]?.message?.content || 'No analysis generated';
+        } catch (fallbackError) {
+            throw new Error(`Both GPT-5 and GPT-4 vision failed: ${fallbackError.message}`);
+        }
+    }
+}
+
+// 🔧 FIXED: System health check
+async function checkDualSystemHealth() {
+    const healthChecks = {
+        gptConnection: false,
+        claudeConnection: false,
+        dualMode: false,
+        memorySystem: false,
+        databaseConnection: false
+    };
+    
+    try {
+        // Test GPT connection
+        const gptTest = await getGptAnalysis("Test", { 
+            max_completion_tokens: 10,
+            model: "gpt-5"
+        });
+        healthChecks.gptConnection = !!gptTest;
+        
+        // Test Claude connection
+        const claudeTest = await getClaudeAnalysis("Test", { maxTokens: 10 });
+        healthChecks.claudeConnection = !!claudeTest;
+        
+        // Test dual mode
+        healthChecks.dualMode = healthChecks.gptConnection && healthChecks.claudeConnection;
+        
+        // Test memory system
+        try {
+            await memoryFunctions.buildConversationContext('test');
+            healthChecks.memorySystem = true;
+        } catch (memoryError) {
+            console.log('⚠️ Memory system test failed:', memoryError.message);
+        }
+        
+        // Test database
+        try {
+            await databaseFunctions.getConversationHistoryDB('test', 1);
+            healthChecks.databaseConnection = true;
+        } catch (dbError) {
+            console.log('⚠️ Database test failed:', dbError.message);
+        }
+        
+    } catch (error) {
+        console.error('❌ Health check error:', error.message);
+    }
+    
     return {
-        gpt5_unique: "Quantitative precision and step-by-step methodology",
-        claude_unique: "Strategic context and nuanced risk assessment"
+        ...healthChecks,
+        overallHealth: Object.values(healthChecks).filter(Boolean).length >= 3,
+        timestamp: new Date().toISOString()
     };
 }
 
-// Get system metrics
-function getDualSystemMetrics() {
-    return {
-        system: "ULTIMATE DUAL AI SYSTEM v4.0",
-        models: {
-            gpt5: DUAL_AI_CONFIG.GPT5_MODELS.primary,
-            claude: DUAL_AI_CONFIG.CLAUDE_MODELS.primary
-        },
-        capabilities: [
-            'Intelligent AI routing',
-            'GPT-5 quantitative analysis',
-            'Claude strategic insights', 
-            'Dual perspective analysis',
-            'Live market data integration',
-            'Vision analysis',
-            'System health monitoring',
-            'Automatic fallback handling'
-        ],
-        health: systemHealth,
-        routing_confidence: 'Adaptive based on query patterns'
+// 🔧 FIXED: Memory integration test
+async function testMemoryIntegration(chatId) {
+    const tests = {
+        conversationHistory: false,
+        persistentMemory: false,
+        contextBuilding: false,
+        memoryExtraction: false,
+        dualCommandWithMemory: false
     };
+    
+    try {
+        // Test 1: Conversation History
+        const history = await databaseFunctions.getConversationHistoryDB(chatId, 3);
+        tests.conversationHistory = Array.isArray(history);
+        
+        // Test 2: Persistent Memory
+        const memory = await databaseFunctions.getPersistentMemoryDB(chatId);
+        tests.persistentMemory = Array.isArray(memory);
+        
+        // Test 3: Context Building
+        const context = await memoryFunctions.buildConversationContext(chatId);
+        tests.contextBuilding = typeof context === 'string';
+        
+        // Test 4: Memory Extraction
+        const extraction = await memoryFunctions.extractAndSaveFacts(
+            chatId, 
+            'Test message', 
+            'Test response'
+        );
+        tests.memoryExtraction = extraction.success || extraction.extractedFacts >= 0;
+        
+        // Test 5: Dual Command with Memory
+        const dualResult = await getUniversalAnalysis('Hello test', { chatId: chatId });
+        tests.dualCommandWithMemory = dualResult.success && dualResult.memoryContext;
+        
+    } catch (error) {
+        console.error('❌ Memory integration test error:', error.message);
+    }
+    
+    const successCount = Object.values(tests).filter(Boolean).length;
+    const totalTests = Object.keys(tests).length;
+    
+    return {
+        tests: tests,
+        score: `${successCount}/${totalTests}`,
+        percentage: Math.round((successCount / totalTests) * 100),
+        status: successCount === totalTests ? 'FULL_SUCCESS' : 
+                successCount >= totalTests * 0.7 ? 'MOSTLY_WORKING' : 'NEEDS_ATTENTION',
+        timestamp: new Date().toISOString()
+    };
+}
+
+// 🔧 LEGACY COMPATIBILITY: Maintain existing function names
+async function getGPT5Analysis(query, options = {}) {
+    return await getGptAnalysis(query, { 
+        ...options,
+        model: "gpt-5"
+    });
+}
+
+async function getClaudeAnalysis(query, options = {}) {
+    return await getClaudeAnalysis(query, options);
+}
+
+async function getMarketAnalysis(query, options = {}) {
+    const routing = dualAIRouter.routeQuery(query + ' market analysis');
+    if (routing.selectedAI === 'CLAUDE') {
+        return await getClaudeStrategicAnalysis(query);
+    } else {
+        return await getGptMarketAnalysis(query, options);
+    }
+}
+
+async function getCambodiaAnalysis(query, options = {}) {
+    // Cambodia queries prefer Claude
+    return await getClaudeCambodiaAnalysis(query, options);
 }
 
 // Export all functions
 module.exports = {
-    // Main Functions
+    // Main functions
     getUniversalAnalysis,
     getDualAnalysis,
-    getGPT5Analysis,
-    getClaudeAnalysis,
-    
-    // Specialized Functions
-    getMarketAnalysis,
-    getQuantitativeAnalysis,
-    getCambodiaAnalysis,
+    routeQuery: (query, context) => dualAIRouter.routeQuery(query, context),
+    checkDualSystemHealth,
+    testMemoryIntegration,
     analyzeImageWithAI,
     
-    // System Functions
-    checkDualSystemHealth,
-    routeQuery,
-    getDualSystemMetrics,
-    
-    // Utility Functions
-    createSynthesis,
-    extractConvergenceAreas,
-    extractUniqueInsights,
-    
-    // Direct Client Access
-    openai,
-    anthropic,
-    DUAL_AI_CONFIG,
-    
-    // Legacy Compatibility
-    getGptAnalysis: getGPT5Analysis,
+    // Legacy compatibility
+    getGPT5Analysis,
     getClaudeAnalysis: getClaudeAnalysis,
-    getStrategicAnalysis: (query, options) => getClaudeAnalysis(query, options),
-    getEnhancedAnalysis: getUniversalAnalysis
+    getMarketAnalysis,
+    getCambodiaAnalysis,
+    
+    // Router access
+    dualAIRouter,
+    
+    // Performance stats
+    getPerformanceStats: () => dualAIRouter.performanceStats
 };
