@@ -1902,44 +1902,60 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
                     .catch(err => console.error('API log error:', err.message));
             }
             
+} else {
+    // Enhanced document analysis with better processing
+    await bot.sendMessage(chatId, "📄 Analyzing document with enhanced AI...");
+    
+    try {
+        const analysis = await processDocumentMessage(bot, msg.document.file_id, chatId, fileName);
+        const responseTime = Date.now() - startTime;
+        
+        // 🔧 FIXED: Handle both object and string responses
+        let analysisText = '';
+        let success = false;
+        
+        if (typeof analysis === 'string') {
+            // String response (older format)
+            analysisText = analysis;
+            success = !analysis.includes('❌');
+        } else if (analysis && typeof analysis === 'object') {
+            // Object response (newer format)
+            analysisText = analysis.analysis || analysis.response || 'Analysis completed';
+            success = analysis.success !== false;
         } else {
-            // Enhanced document analysis with better processing
-            await bot.sendMessage(chatId, "📄 Analyzing document with enhanced AI...");
+            throw new Error("No analysis returned");
+        }
+        
+        if (success && analysisText) {
+            await sendAnalysis(bot, chatId, analysisText, `Enhanced Document Analysis: ${fileName}`);
             
-            try {
-                const analysis = await processDocumentMessage(bot, msg.document.file_id, chatId, fileName);
-                const responseTime = Date.now() - startTime;
-                
-                if (analysis?.success && analysis.analysis) {
-                    await sendAnalysis(bot, chatId, analysis.analysis, `Enhanced Document Analysis: ${fileName}`);
-                    
-                    // Enhanced document analysis save with metadata
-                    await saveConversationDB(chatId, `[DOCUMENT] ${fileName}`, analysis.analysis, "document", {
-                        fileName: fileName,
-                        fileSize: fileSize,
-                        analysisLength: analysis.analysis.length,
-                        processingTime: responseTime,
-                        analysisSuccess: true,
-                        sessionId: sessionId,
-                        analysisType: 'content_review'
-                    }).catch(err => console.error('Document analysis save error:', err.message));
-                    
-                    // Save to persistent memory if analysis reveals important information
-                    if (shouldSaveToPersistentMemory(`Document: ${fileName}`, analysis.analysis)) {
-                        const memoryFact = `Document analysis: ${fileName} - ${analysis.analysis.substring(0, 100)}...`;
-                        await addPersistentMemoryDB(chatId, memoryFact, 'medium')
-                            .catch(err => console.error('Memory save error:', err.message));
-                        console.log("💾 Document analysis saved to persistent memory");
-                    }
-                    
-                    // Log successful API usage
-                    await logApiUsage('DOCUMENT_AI', 'document_analysis', 1, true, responseTime, fileSize)
-                        .catch(err => console.error('API log error:', err.message));
-                    
-                    console.log("✅ Document analysis completed successfully");
-                } else {
-                    throw new Error("Document analysis failed or returned empty results");
-                }
+            // Enhanced document analysis save with metadata
+            await saveConversationDB(chatId, `[DOCUMENT] ${fileName}`, analysisText, "document", {
+                fileName: fileName,
+                fileSize: fileSize,
+                analysisLength: analysisText.length,
+                processingTime: responseTime,
+                analysisSuccess: true,
+                sessionId: sessionId,
+                analysisType: 'content_review'
+            }).catch(err => console.error('Document analysis save error:', err.message));
+            
+            // Save to persistent memory if analysis reveals important information
+            if (shouldSaveToPersistentMemory(`Document: ${fileName}`, analysisText)) {
+                const memoryFact = `Document analysis: ${fileName} - ${analysisText.substring(0, 100)}...`;
+                await addPersistentMemoryDB(chatId, memoryFact, 'medium')
+                    .catch(err => console.error('Memory save error:', err.message));
+                console.log("💾 Document analysis saved to persistent memory");
+            }
+            
+            // Log successful API usage
+            await logApiUsage('DOCUMENT_AI', 'document_analysis', 1, true, responseTime, fileSize)
+                .catch(err => console.error('API log error:', err.message));
+            
+            console.log("✅ Document analysis completed successfully");
+        } else {
+            throw new Error("Document analysis failed or returned empty results");
+        }
                 
             } catch (analysisError) {
                 const responseTime = Date.now() - startTime;
