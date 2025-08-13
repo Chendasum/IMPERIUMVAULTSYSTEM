@@ -1922,23 +1922,44 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
             // Object response (newer format)
             analysisText = analysis.analysis || analysis.response || 'Analysis completed';
             success = analysis.success !== false;
-        } else {
-            throw new Error("No analysis returned");
-        }
+} else {
+    // No valid analysis received
+    analysisText = "❌ Document analysis failed: No valid response received";
+    success = false;
+}
         
-        if (success && analysisText) {
-            await sendAnalysis(bot, chatId, analysisText, `Enhanced Document Analysis: ${fileName}`);
-            
-            // Enhanced document analysis save with metadata
-            await saveConversationDB(chatId, `[DOCUMENT] ${fileName}`, analysisText, "document", {
-                fileName: fileName,
-                fileSize: fileSize,
-                analysisLength: analysisText.length,
-                processingTime: responseTime,
-                analysisSuccess: true,
-                sessionId: sessionId,
-                analysisType: 'content_review'
-            }).catch(err => console.error('Document analysis save error:', err.message));
+if (success && analysisText) {
+    // ✅ SUCCESS CASE
+    await sendAnalysis(bot, chatId, analysisText, `Enhanced Document Analysis: ${fileName}`);
+    
+    // Enhanced document analysis save with metadata
+    await saveConversationDB(chatId, `[DOCUMENT] ${fileName}`, analysisText, "document", {
+        fileName: fileName,
+        fileSize: fileSize,
+        analysisLength: analysisText.length,
+        processingTime: responseTime,
+        analysisSuccess: true,
+        sessionId: sessionId,
+        analysisType: 'content_review'
+    }).catch(err => console.error('Document analysis save error:', err.message));
+    
+} else {
+    // ❌ FAILURE CASE
+    await sendSmartMessage(bot, chatId, 
+        analysisText || "❌ Document analysis failed: Unknown error occurred"
+    );
+    
+    // Save failed analysis attempt
+    await saveConversationDB(chatId, `[DOCUMENT_FAILED] ${fileName}`, 
+        analysisText || "Analysis failed", "document", {
+        fileName: fileName,
+        fileSize: fileSize,
+        error: "Analysis failed or empty",
+        processingTime: responseTime,
+        analysisSuccess: false,
+        sessionId: sessionId
+    }).catch(err => console.error('Document error save failed:', err.message));
+}
             
             // Save to persistent memory if analysis reveals important information
             if (shouldSaveToPersistentMemory(`Document: ${fileName}`, analysisText)) {
