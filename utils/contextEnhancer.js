@@ -10158,3 +10158,4172 @@ console.log('Integration: Replace executeDualCommand with executeAdvancedIntelli
 console.log('           Use semantic analysis for deep context understanding');
 console.log('           Apply dynamic weighting for context optimization');
 console.log('           Leverage cross-conversation learning for personalization');
+
+// utils/contextEnhancerPart6_1.js - PART 6.1: MULTI-USER SESSION MANAGEMENT
+// Add these enhancements to your existing contextEnhancer.js
+
+// 🌐 MULTI-USER SESSION MANAGEMENT SYSTEM
+class MultiUserSessionManager {
+    constructor() {
+        this.userSessions = new Map();
+        this.sessionMetrics = new Map();
+        this.activeRequests = new Map();
+        
+        this.sessionConfig = {
+            maxSessionsPerUser: 5,
+            sessionTimeout: 1800000, // 30 minutes
+            maxConcurrentUsers: 1000,
+            cleanupInterval: 300000, // 5 minutes
+            sessionIdLength: 32
+        };
+        
+        this.sessionStats = {
+            totalSessions: 0,
+            activeSessions: 0,
+            totalUsers: 0,
+            activeUsers: 0,
+            sessionCreationRate: 0,
+            averageSessionDuration: 0
+        };
+        
+        this.startSessionCleanup();
+    }
+
+    async createUserSession(userId, options = {}) {
+        try {
+            console.log(`🌐 Creating session for user: ${userId}`);
+            
+            const {
+                priority = 'normal',
+                maxDuration = this.sessionConfig.sessionTimeout,
+                metadata = {}
+            } = options;
+            
+            // Check user session limits
+            const existingSessions = this.getUserSessions(userId);
+            if (existingSessions.length >= this.sessionConfig.maxSessionsPerUser) {
+                throw new Error(`Maximum sessions exceeded for user: ${userId}`);
+            }
+            
+            // Check system capacity
+            if (this.userSessions.size >= this.sessionConfig.maxConcurrentUsers) {
+                throw new Error('System at maximum capacity');
+            }
+            
+            const session = {
+                sessionId: this.generateSessionId(),
+                userId: userId,
+                created: Date.now(),
+                lastActivity: Date.now(),
+                priority: priority,
+                maxDuration: maxDuration,
+                metadata: metadata,
+                
+                // Session statistics
+                requestCount: 0,
+                totalResponseTime: 0,
+                successfulRequests: 0,
+                failedRequests: 0,
+                
+                // Session state
+                status: 'active',
+                activeRequests: 0,
+                lastRequest: null,
+                
+                // Performance metrics
+                averageResponseTime: 0,
+                successRate: 100,
+                resourceUsage: {
+                    memory: 0,
+                    cpu: 0,
+                    connections: 0
+                }
+            };
+            
+            this.userSessions.set(session.sessionId, session);
+            this.updateSessionStats();
+            
+            console.log(`✅ Session created: ${session.sessionId} for user: ${userId}`);
+            
+            return {
+                success: true,
+                sessionId: session.sessionId,
+                session: session
+            };
+            
+        } catch (error) {
+            console.error(`❌ Session creation failed for ${userId}:`, error.message);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async validateSession(sessionId) {
+        try {
+            const session = this.userSessions.get(sessionId);
+            
+            if (!session) {
+                return {
+                    valid: false,
+                    reason: 'Session not found'
+                };
+            }
+            
+            const now = Date.now();
+            
+            // Check session timeout
+            if (now - session.lastActivity > session.maxDuration) {
+                await this.destroySession(sessionId, 'timeout');
+                return {
+                    valid: false,
+                    reason: 'Session expired'
+                };
+            }
+            
+            // Check session status
+            if (session.status !== 'active') {
+                return {
+                    valid: false,
+                    reason: `Session status: ${session.status}`
+                };
+            }
+            
+            // Update activity
+            session.lastActivity = now;
+            
+            return {
+                valid: true,
+                session: session,
+                userId: session.userId,
+                timeRemaining: session.maxDuration - (now - session.lastActivity)
+            };
+            
+        } catch (error) {
+            console.error(`❌ Session validation error:`, error.message);
+            return {
+                valid: false,
+                reason: 'Validation error',
+                error: error.message
+            };
+        }
+    }
+
+    async recordSessionRequest(sessionId, responseTime, success = true) {
+        try {
+            const session = this.userSessions.get(sessionId);
+            if (!session) return false;
+            
+            // Update request statistics
+            session.requestCount++;
+            session.totalResponseTime += responseTime;
+            session.averageResponseTime = session.totalResponseTime / session.requestCount;
+            session.lastRequest = Date.now();
+            session.lastActivity = Date.now();
+            
+            if (success) {
+                session.successfulRequests++;
+            } else {
+                session.failedRequests++;
+            }
+            
+            // Calculate success rate
+            session.successRate = session.requestCount > 0 ? 
+                (session.successfulRequests / session.requestCount) * 100 : 100;
+            
+            // Update session metrics
+            this.updateSessionMetrics(sessionId, session);
+            
+            console.log(`📊 Session request recorded: ${sessionId} (${responseTime}ms, ${success ? 'success' : 'failed'})`);
+            
+            return true;
+            
+        } catch (error) {
+            console.error(`❌ Session request recording error:`, error.message);
+            return false;
+        }
+    }
+
+    async startSessionRequest(sessionId) {
+        try {
+            const session = this.userSessions.get(sessionId);
+            if (!session) return false;
+            
+            session.activeRequests++;
+            session.lastActivity = Date.now();
+            
+            // Track active request
+            const requestId = this.generateRequestId();
+            this.activeRequests.set(requestId, {
+                sessionId: sessionId,
+                startTime: Date.now(),
+                requestId: requestId
+            });
+            
+            return requestId;
+            
+        } catch (error) {
+            console.error(`❌ Session request start error:`, error.message);
+            return null;
+        }
+    }
+
+    async endSessionRequest(requestId, success = true) {
+        try {
+            const request = this.activeRequests.get(requestId);
+            if (!request) return false;
+            
+            const session = this.userSessions.get(request.sessionId);
+            if (!session) return false;
+            
+            const responseTime = Date.now() - request.startTime;
+            
+            // Update session
+            session.activeRequests = Math.max(0, session.activeRequests - 1);
+            
+            // Record the request
+            await this.recordSessionRequest(request.sessionId, responseTime, success);
+            
+            // Clean up active request
+            this.activeRequests.delete(requestId);
+            
+            return true;
+            
+        } catch (error) {
+            console.error(`❌ Session request end error:`, error.message);
+            return false;
+        }
+    }
+
+    async destroySession(sessionId, reason = 'manual') {
+        try {
+            const session = this.userSessions.get(sessionId);
+            if (!session) return false;
+            
+            console.log(`🗑️ Destroying session: ${sessionId} (reason: ${reason})`);
+            
+            // Mark session as destroyed
+            session.status = 'destroyed';
+            session.destroyedAt = Date.now();
+            session.destroyReason = reason;
+            
+            // Calculate session duration
+            const sessionDuration = session.destroyedAt - session.created;
+            
+            // Update session metrics before removal
+            this.recordSessionDestruction(session, sessionDuration);
+            
+            // Clean up active requests for this session
+            this.activeRequests.forEach((request, requestId) => {
+                if (request.sessionId === sessionId) {
+                    this.activeRequests.delete(requestId);
+                }
+            });
+            
+            // Remove session
+            this.userSessions.delete(sessionId);
+            this.updateSessionStats();
+            
+            return {
+                success: true,
+                sessionDuration: sessionDuration,
+                requestCount: session.requestCount,
+                reason: reason
+            };
+            
+        } catch (error) {
+            console.error(`❌ Session destruction error:`, error.message);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    getUserSessions(userId) {
+        return Array.from(this.userSessions.values())
+            .filter(session => session.userId === userId && session.status === 'active');
+    }
+
+    getSessionById(sessionId) {
+        return this.userSessions.get(sessionId);
+    }
+
+    getActiveSessions() {
+        return Array.from(this.userSessions.values())
+            .filter(session => session.status === 'active');
+    }
+
+    updateSessionMetrics(sessionId, session) {
+        const metrics = this.sessionMetrics.get(sessionId) || {
+            responseTimeHistory: [],
+            requestHistory: [],
+            performanceScore: 100
+        };
+        
+        // Update response time history (keep last 10)
+        metrics.responseTimeHistory.push(session.averageResponseTime);
+        if (metrics.responseTimeHistory.length > 10) {
+            metrics.responseTimeHistory.shift();
+        }
+        
+        // Update request history
+        metrics.requestHistory.push({
+            timestamp: Date.now(),
+            count: session.requestCount,
+            successRate: session.successRate
+        });
+        if (metrics.requestHistory.length > 20) {
+            metrics.requestHistory.shift();
+        }
+        
+        // Calculate performance score
+        metrics.performanceScore = this.calculateSessionPerformanceScore(session);
+        
+        this.sessionMetrics.set(sessionId, metrics);
+    }
+
+    calculateSessionPerformanceScore(session) {
+        let score = 100;
+        
+        // Response time impact
+        if (session.averageResponseTime > 5000) score -= 30;
+        else if (session.averageResponseTime > 3000) score -= 15;
+        else if (session.averageResponseTime > 1000) score -= 5;
+        
+        // Success rate impact
+        if (session.successRate < 80) score -= 40;
+        else if (session.successRate < 90) score -= 20;
+        else if (session.successRate < 95) score -= 10;
+        
+        // Request load impact
+        if (session.activeRequests > 10) score -= 20;
+        else if (session.activeRequests > 5) score -= 10;
+        
+        return Math.max(0, Math.min(100, score));
+    }
+
+    recordSessionDestruction(session, duration) {
+        // Update global averages
+        const currentAvg = this.sessionStats.averageSessionDuration;
+        const totalSessions = this.sessionStats.totalSessions;
+        
+        this.sessionStats.averageSessionDuration = 
+            ((currentAvg * totalSessions) + duration) / (totalSessions + 1);
+    }
+
+    updateSessionStats() {
+        const activeSessions = this.getActiveSessions();
+        const activeUserIds = new Set(activeSessions.map(s => s.userId));
+        
+        this.sessionStats.activeSessions = activeSessions.length;
+        this.sessionStats.activeUsers = activeUserIds.size;
+        this.sessionStats.totalSessions = this.userSessions.size;
+        
+        // Calculate creation rate (sessions per minute)
+        const recentSessions = activeSessions.filter(s => 
+            Date.now() - s.created < 60000 // Last minute
+        );
+        this.sessionStats.sessionCreationRate = recentSessions.length;
+    }
+
+    startSessionCleanup() {
+        setInterval(() => {
+            this.performSessionCleanup();
+        }, this.sessionConfig.cleanupInterval);
+        
+        console.log('🧹 Session cleanup scheduler started');
+    }
+
+    performSessionCleanup() {
+        const now = Date.now();
+        let cleanedSessions = 0;
+        let cleanedRequests = 0;
+        
+        // Clean up expired sessions
+        this.userSessions.forEach((session, sessionId) => {
+            if (now - session.lastActivity > session.maxDuration) {
+                this.destroySession(sessionId, 'cleanup_timeout');
+                cleanedSessions++;
+            }
+        });
+        
+        // Clean up orphaned active requests (older than 5 minutes)
+        this.activeRequests.forEach((request, requestId) => {
+            if (now - request.startTime > 300000) {
+                this.activeRequests.delete(requestId);
+                cleanedRequests++;
+            }
+        });
+        
+        if (cleanedSessions > 0 || cleanedRequests > 0) {
+            console.log(`🧹 Session cleanup: ${cleanedSessions} sessions, ${cleanedRequests} requests`);
+        }
+        
+        this.updateSessionStats();
+    }
+
+    getSessionStatistics() {
+        return {
+            ...this.sessionStats,
+            sessionMetrics: this.sessionMetrics.size,
+            activeRequests: this.activeRequests.size,
+            config: this.sessionConfig,
+            
+            // Current system load
+            systemLoad: {
+                sessionUtilization: (this.sessionStats.activeSessions / this.sessionConfig.maxConcurrentUsers) * 100,
+                averageSessionLoad: this.calculateAverageSessionLoad(),
+                peakSessionCount: this.calculatePeakSessionCount()
+            }
+        };
+    }
+
+    calculateAverageSessionLoad() {
+        const activeSessions = this.getActiveSessions();
+        if (activeSessions.length === 0) return 0;
+        
+        const totalActiveRequests = activeSessions.reduce((sum, session) => 
+            sum + session.activeRequests, 0);
+        
+        return totalActiveRequests / activeSessions.length;
+    }
+
+    calculatePeakSessionCount() {
+        // This would track historical peak in a real implementation
+        return Math.max(this.sessionStats.activeSessions, 0);
+    }
+
+    // Helper methods
+    generateSessionId() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < this.sessionConfig.sessionIdLength; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return `session_${Date.now()}_${result}`;
+    }
+
+    generateRequestId() {
+        return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    // Configuration methods
+    updateSessionConfig(newConfig) {
+        this.sessionConfig = { ...this.sessionConfig, ...newConfig };
+        console.log('⚙️ Session configuration updated');
+    }
+
+    getSessionHealth() {
+        const stats = this.getSessionStatistics();
+        
+        let healthScore = 100;
+        let status = 'healthy';
+        const issues = [];
+        
+        // Check utilization
+        if (stats.systemLoad.sessionUtilization > 90) {
+            healthScore -= 30;
+            status = 'critical';
+            issues.push('High session utilization');
+        } else if (stats.systemLoad.sessionUtilization > 70) {
+            healthScore -= 15;
+            status = status === 'healthy' ? 'warning' : status;
+            issues.push('Elevated session utilization');
+        }
+        
+        // Check average response time
+        const activeSessions = this.getActiveSessions();
+        const avgResponseTime = activeSessions.length > 0 ?
+            activeSessions.reduce((sum, s) => sum + s.averageResponseTime, 0) / activeSessions.length : 0;
+        
+        if (avgResponseTime > 5000) {
+            healthScore -= 25;
+            status = 'critical';
+            issues.push('High average response time');
+        } else if (avgResponseTime > 3000) {
+            healthScore -= 10;
+            status = status === 'healthy' ? 'warning' : status;
+            issues.push('Elevated response time');
+        }
+        
+        return {
+            score: Math.max(0, healthScore),
+            status: status,
+            issues: issues,
+            recommendations: this.generateHealthRecommendations(stats, issues)
+        };
+    }
+
+    generateHealthRecommendations(stats, issues) {
+        const recommendations = [];
+        
+        if (issues.includes('High session utilization')) {
+            recommendations.push('Consider scaling session capacity');
+            recommendations.push('Implement session load balancing');
+        }
+        
+        if (issues.includes('High average response time')) {
+            recommendations.push('Optimize request processing');
+            recommendations.push('Review resource allocation');
+        }
+        
+        if (stats.sessionCreationRate > 50) {
+            recommendations.push('Monitor for unusual traffic patterns');
+        }
+        
+        return recommendations;
+    }
+}
+
+// 📤 PART 6.1 EXPORTS
+module.exports = {
+    MultiUserSessionManager,
+    
+    // Create global instance
+    multiUserSessionManager: new MultiUserSessionManager()
+};
+
+console.log('🌐 PART 6.1: Multi-User Session Management loaded');
+console.log('👥 Features: Session lifecycle, Request tracking, Performance monitoring, Auto-cleanup');
+console.log('📊 Capacity: 1000 concurrent users, 5 sessions per user, 30min timeout');
+console.log('⚡ Ready for: createUserSession(), validateSession(), recordSessionRequest()');
+
+// utils/contextEnhancerPart6_2.js - PART 6.2: RESOURCE POOL MANAGEMENT
+// Add these enhancements to your existing contextEnhancer.js
+
+// 🔧 RESOURCE POOL MANAGEMENT SYSTEM
+class ResourcePoolManager {
+    constructor() {
+        this.resourcePools = new Map();
+        this.allocations = new Map();
+        this.waitingQueue = [];
+        this.poolIndexes = new Map(); // For round-robin tracking
+        
+        this.poolConfig = {
+            maxAllocationTime: 30000, // 30 seconds
+            cleanupInterval: 60000, // 1 minute
+            queueTimeout: 120000, // 2 minutes
+            healthCheckInterval: 30000, // 30 seconds
+            maxQueueSize: 1000,
+            allocationRetryAttempts: 3
+        };
+        
+        this.poolStats = {
+            totalAllocations: 0,
+            successfulAllocations: 0,
+            failedAllocations: 0,
+            averageAllocationTime: 0,
+            queueLength: 0,
+            resourceUtilization: new Map(),
+            peakUtilization: 0,
+            allocationHistory: []
+        };
+        
+        this.initializeResourcePools();
+        this.startResourceMonitoring();
+    }
+
+    initializeResourcePools() {
+        console.log('🔧 Initializing resource pools...');
+        
+        // AI Model Pool
+        this.createResourcePool('ai_models', {
+            resources: {
+                gpt5: { 
+                    count: 10, 
+                    available: 10, 
+                    maxConcurrent: 5, 
+                    currentLoad: 0,
+                    health: 100,
+                    lastHealthCheck: Date.now(),
+                    averageResponseTime: 2000
+                },
+                claude: { 
+                    count: 8, 
+                    available: 8, 
+                    maxConcurrent: 4, 
+                    currentLoad: 0,
+                    health: 100,
+                    lastHealthCheck: Date.now(),
+                    averageResponseTime: 2500
+                }
+            },
+            allocationStrategy: 'least_loaded',
+            maxWaitTime: 30000,
+            priority: 'critical'
+        });
+        
+        // Memory System Pool
+        this.createResourcePool('memory_systems', {
+            resources: {
+                semantic_analyzer: { 
+                    count: 5, 
+                    available: 5, 
+                    maxConcurrent: 3, 
+                    currentLoad: 0,
+                    health: 100,
+                    lastHealthCheck: Date.now(),
+                    averageResponseTime: 500
+                },
+                context_builder: { 
+                    count: 8, 
+                    available: 8, 
+                    maxConcurrent: 5, 
+                    currentLoad: 0,
+                    health: 100,
+                    lastHealthCheck: Date.now(),
+                    averageResponseTime: 300
+                },
+                pattern_analyzer: { 
+                    count: 3, 
+                    available: 3, 
+                    maxConcurrent: 2, 
+                    currentLoad: 0,
+                    health: 100,
+                    lastHealthCheck: Date.now(),
+                    averageResponseTime: 800
+                }
+            },
+            allocationStrategy: 'round_robin',
+            maxWaitTime: 15000,
+            priority: 'high'
+        });
+        
+        // Database Connection Pool
+        this.createResourcePool('database_connections', {
+            resources: {
+                conversation_db: { 
+                    count: 50, 
+                    available: 50, 
+                    maxConcurrent: 40, 
+                    currentLoad: 0,
+                    health: 100,
+                    lastHealthCheck: Date.now(),
+                    averageResponseTime: 100
+                },
+                memory_db: { 
+                    count: 30, 
+                    available: 30, 
+                    maxConcurrent: 25, 
+                    currentLoad: 0,
+                    health: 100,
+                    lastHealthCheck: Date.now(),
+                    averageResponseTime: 80
+                },
+                analytics_db: { 
+                    count: 20, 
+                    available: 20, 
+                    maxConcurrent: 15, 
+                    currentLoad: 0,
+                    health: 100,
+                    lastHealthCheck: Date.now(),
+                    averageResponseTime: 120
+                }
+            },
+            allocationStrategy: 'least_used',
+            maxWaitTime: 10000,
+            priority: 'medium'
+        });
+        
+        // Cache Layer Pool
+        this.createResourcePool('cache_layers', {
+            resources: {
+                l1_memory: { 
+                    count: 10, 
+                    available: 10, 
+                    maxConcurrent: 8, 
+                    currentLoad: 0,
+                    health: 100,
+                    lastHealthCheck: Date.now(),
+                    averageResponseTime: 5
+                },
+                l2_disk: { 
+                    count: 5, 
+                    available: 5, 
+                    maxConcurrent: 4, 
+                    currentLoad: 0,
+                    health: 100,
+                    lastHealthCheck: Date.now(),
+                    averageResponseTime: 50
+                },
+                l3_distributed: { 
+                    count: 3, 
+                    available: 3, 
+                    maxConcurrent: 2, 
+                    currentLoad: 0,
+                    health: 100,
+                    lastHealthCheck: Date.now(),
+                    averageResponseTime: 200
+                }
+            },
+            allocationStrategy: 'priority_based',
+            maxWaitTime: 5000,
+            priority: 'low'
+        });
+        
+        console.log('✅ Resource pools initialized: 4 pools with 12 resource types');
+    }
+
+    createResourcePool(poolName, config) {
+        const pool = {
+            name: poolName,
+            resources: new Map(),
+            allocationStrategy: config.allocationStrategy,
+            maxWaitTime: config.maxWaitTime,
+            priority: config.priority,
+            
+            // Pool statistics
+            totalAllocations: 0,
+            successfulAllocations: 0,
+            failedAllocations: 0,
+            currentlyAllocated: 0,
+            waitingRequests: 0,
+            
+            // Pool health
+            status: 'healthy',
+            lastHealthCheck: Date.now(),
+            healthScore: 100,
+            
+            // Performance metrics
+            averageAllocationTime: 0,
+            allocationHistory: [],
+            utilizationHistory: []
+        };
+        
+        // Initialize resources
+        Object.entries(config.resources).forEach(([resourceType, resourceConfig]) => {
+            pool.resources.set(resourceType, {
+                ...resourceConfig,
+                totalAllocations: 0,
+                failedAllocations: 0,
+                lastAllocated: null,
+                allocationHistory: []
+            });
+        });
+        
+        this.resourcePools.set(poolName, pool);
+        
+        // Initialize pool index for round-robin
+        this.poolIndexes.set(poolName, 0);
+        
+        // Initialize utilization tracking
+        this.poolStats.resourceUtilization.set(poolName, {
+            utilizationRate: 0,
+            peakUtilization: 0,
+            allocationHistory: [],
+            healthTrend: 'stable'
+        });
+        
+        console.log(`🔧 Created resource pool: ${poolName} with ${Object.keys(config.resources).length} resource types`);
+    }
+
+    async allocateResource(poolName, resourceType = null, priority = 'normal', sessionId = null) {
+        try {
+            console.log(`🔧 Allocating resource from pool: ${poolName} (${resourceType || 'any'}, priority: ${priority})`);
+            
+            const startTime = Date.now();
+            const allocationId = this.generateAllocationId();
+            
+            const pool = this.resourcePools.get(poolName);
+            if (!pool) {
+                throw new Error(`Resource pool not found: ${poolName}`);
+            }
+            
+            // Check pool health
+            if (pool.status !== 'healthy') {
+                throw new Error(`Resource pool ${poolName} is unhealthy: ${pool.status}`);
+            }
+            
+            // Find available resource
+            const selectedResource = await this.selectResource(pool, resourceType, priority);
+            
+            if (!selectedResource) {
+                // No resources available, queue the request
+                return await this.queueAllocationRequest(poolName, resourceType, priority, allocationId, sessionId);
+            }
+            
+            // Allocate the resource
+            const allocation = {
+                allocationId: allocationId,
+                poolName: poolName,
+                resourceType: selectedResource.type,
+                resourceInstance: selectedResource.instance,
+                allocatedAt: Date.now(),
+                priority: priority,
+                sessionId: sessionId,
+                status: 'allocated',
+                lastActivity: Date.now()
+            };
+            
+            // Update resource availability
+            selectedResource.resource.available--;
+            selectedResource.resource.currentLoad++;
+            selectedResource.resource.totalAllocations++;
+            selectedResource.resource.lastAllocated = Date.now();
+            
+            // Track allocation
+            this.allocations.set(allocationId, allocation);
+            pool.totalAllocations++;
+            pool.successfulAllocations++;
+            pool.currentlyAllocated++;
+            
+            // Update statistics
+            const allocationTime = Date.now() - startTime;
+            this.updateAllocationStats(poolName, allocationTime, true);
+            
+            console.log(`✅ Resource allocated: ${allocationId} (${selectedResource.type}) in ${allocationTime}ms`);
+            
+            return {
+                success: true,
+                allocationId: allocationId,
+                resourceType: selectedResource.type,
+                resourceInstance: selectedResource.instance,
+                allocationTime: allocationTime,
+                poolName: poolName
+            };
+            
+        } catch (error) {
+            console.error(`❌ Resource allocation failed:`, error.message);
+            
+            const pool = this.resourcePools.get(poolName);
+            if (pool) {
+                pool.failedAllocations++;
+                this.updateAllocationStats(poolName, 0, false);
+            }
+            
+            return {
+                success: false,
+                error: error.message,
+                poolName: poolName
+            };
+        }
+    }
+
+    async selectResource(pool, resourceType, priority) {
+        const strategy = pool.allocationStrategy;
+        let availableResources = [];
+        
+        // Get available resources
+        if (resourceType) {
+            const resource = pool.resources.get(resourceType);
+            if (resource && resource.available > 0 && resource.health > 50) {
+                availableResources.push({
+                    type: resourceType,
+                    resource: resource,
+                    instance: this.generateResourceInstance(resourceType)
+                });
+            }
+        } else {
+            // Get all available resources
+            pool.resources.forEach((resource, type) => {
+                if (resource.available > 0 && resource.health > 50) {
+                    availableResources.push({
+                        type: type,
+                        resource: resource,
+                        instance: this.generateResourceInstance(type)
+                    });
+                }
+            });
+        }
+        
+        if (availableResources.length === 0) {
+            return null;
+        }
+        
+        // Apply allocation strategy
+        switch (strategy) {
+            case 'least_loaded':
+                return this.selectLeastLoaded(availableResources);
+            case 'round_robin':
+                return this.selectRoundRobin(availableResources, pool.name);
+            case 'least_used':
+                return this.selectLeastUsed(availableResources);
+            case 'priority_based':
+                return this.selectByPriority(availableResources, priority);
+            case 'health_based':
+                return this.selectByHealth(availableResources);
+            default:
+                return availableResources[0]; // First available
+        }
+    }
+
+    selectLeastLoaded(resources) {
+        return resources.reduce((least, current) => {
+            const leastLoad = least.resource.currentLoad / least.resource.maxConcurrent;
+            const currentLoad = current.resource.currentLoad / current.resource.maxConcurrent;
+            return currentLoad < leastLoad ? current : least;
+        });
+    }
+
+    selectRoundRobin(resources, poolName) {
+        const currentIndex = this.poolIndexes.get(poolName) || 0;
+        const selected = resources[currentIndex % resources.length];
+        this.poolIndexes.set(poolName, currentIndex + 1);
+        return selected;
+    }
+
+    selectLeastUsed(resources) {
+        return resources.reduce((least, current) => {
+            const leastUsed = least.resource.totalAllocations;
+            const currentUsed = current.resource.totalAllocations;
+            return currentUsed < leastUsed ? current : least;
+        });
+    }
+
+    selectByPriority(resources, priority) {
+        // For priority-based, prefer higher capacity resources for higher priority
+        if (priority === 'critical' || priority === 'high') {
+            return resources.reduce((best, current) => {
+                return current.resource.maxConcurrent > best.resource.maxConcurrent ? current : best;
+            });
+        } else {
+            return resources[0]; // Use any available for normal/low priority
+        }
+    }
+
+    selectByHealth(resources) {
+        return resources.reduce((healthiest, current) => {
+            const healthiestScore = healthiest.resource.health;
+            const currentScore = current.resource.health;
+            return currentScore > healthiestScore ? current : healthiest;
+        });
+    }
+
+    async queueAllocationRequest(poolName, resourceType, priority, allocationId, sessionId) {
+        console.log(`⏳ Queuing allocation request: ${allocationId} (${poolName})`);
+        
+        // Check queue size limit
+        if (this.waitingQueue.length >= this.poolConfig.maxQueueSize) {
+            throw new Error('Allocation queue is full');
+        }
+        
+        const queueEntry = {
+            allocationId: allocationId,
+            poolName: poolName,
+            resourceType: resourceType,
+            priority: priority,
+            sessionId: sessionId,
+            queuedAt: Date.now(),
+            timeoutAt: Date.now() + this.poolConfig.queueTimeout,
+            retryAttempts: 0
+        };
+        
+        // Insert based on priority
+        const insertIndex = this.findQueueInsertIndex(priority);
+        this.waitingQueue.splice(insertIndex, 0, queueEntry);
+        
+        // Update pool waiting count
+        const pool = this.resourcePools.get(poolName);
+        if (pool) {
+            pool.waitingRequests++;
+        }
+        
+        this.poolStats.queueLength = this.waitingQueue.length;
+        
+        return {
+            success: false,
+            queued: true,
+            queuePosition: insertIndex + 1,
+            estimatedWaitTime: this.estimateWaitTime(poolName, insertIndex),
+            allocationId: allocationId
+        };
+    }
+
+    findQueueInsertIndex(priority) {
+        const priorityOrder = { critical: 0, high: 1, normal: 2, low: 3 };
+        const priorityValue = priorityOrder[priority] || 2;
+        
+        let insertIndex = this.waitingQueue.length;
+        
+        for (let i = 0; i < this.waitingQueue.length; i++) {
+            const queuedPriority = priorityOrder[this.waitingQueue[i].priority] || 2;
+            if (priorityValue < queuedPriority) {
+                insertIndex = i;
+                break;
+            }
+        }
+        
+        return insertIndex;
+    }
+
+    estimateWaitTime(poolName, queuePosition) {
+        const pool = this.resourcePools.get(poolName);
+        if (!pool) return 30000; // Default 30 seconds
+        
+        const avgAllocationTime = pool.averageAllocationTime || 3000;
+        const resourceCapacity = this.getTotalPoolCapacity(poolName);
+        
+        return Math.round((queuePosition / Math.max(1, resourceCapacity)) * avgAllocationTime);
+    }
+
+    async releaseResource(allocationId) {
+        try {
+            const allocation = this.allocations.get(allocationId);
+            if (!allocation) {
+                console.log(`⚠️ Allocation not found: ${allocationId}`);
+                return false;
+            }
+            
+            console.log(`🔧 Releasing resource: ${allocationId} (${allocation.resourceType})`);
+            
+            const pool = this.resourcePools.get(allocation.poolName);
+            if (pool) {
+                const resource = pool.resources.get(allocation.resourceType);
+                if (resource) {
+                    resource.available++;
+                    resource.currentLoad = Math.max(0, resource.currentLoad - 1);
+                }
+                pool.currentlyAllocated--;
+            }
+            
+            // Update allocation status
+            allocation.status = 'released';
+            allocation.releasedAt = Date.now();
+            allocation.duration = allocation.releasedAt - allocation.allocatedAt;
+            
+            // Remove from active allocations
+            this.allocations.delete(allocationId);
+            
+            // Process waiting queue
+            await this.processWaitingQueue(allocation.poolName);
+            
+            console.log(`✅ Resource released: ${allocationId} (duration: ${allocation.duration}ms)`);
+            
+            return {
+                success: true,
+                duration: allocation.duration,
+                resourceType: allocation.resourceType,
+                poolName: allocation.poolName
+            };
+            
+        } catch (error) {
+            console.error(`❌ Resource release error:`, error.message);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async processWaitingQueue(poolName = null) {
+        try {
+            const now = Date.now();
+            let processedRequests = 0;
+            
+            // Remove expired queue entries first
+            this.waitingQueue = this.waitingQueue.filter(entry => {
+                if (now > entry.timeoutAt) {
+                    console.log(`⏰ Queue entry expired: ${entry.allocationId}`);
+                    
+                    // Update pool waiting count
+                    const pool = this.resourcePools.get(entry.poolName);
+                    if (pool) {
+                        pool.waitingRequests--;
+                        pool.failedAllocations++;
+                    }
+                    
+                    return false;
+                }
+                return true;
+            });
+            
+            // Process queue entries for specific pool or all pools
+            for (let i = this.waitingQueue.length - 1; i >= 0; i--) {
+                const entry = this.waitingQueue[i];
+                
+                // Skip if processing specific pool and this entry is for different pool
+                if (poolName && entry.poolName !== poolName) {
+                    continue;
+                }
+                
+                // Try to allocate resource for this queue entry
+                const result = await this.allocateResource(
+                    entry.poolName, 
+                    entry.resourceType, 
+                    entry.priority, 
+                    entry.sessionId
+                );
+                
+                if (result.success) {
+                    // Remove from queue
+                    this.waitingQueue.splice(i, 1);
+                    
+                    // Update pool waiting count
+                    const pool = this.resourcePools.get(entry.poolName);
+                    if (pool) {
+                        pool.waitingRequests--;
+                    }
+                    
+                    processedRequests++;
+                    console.log(`🎯 Queue entry processed: ${entry.allocationId} → ${result.allocationId}`);
+                    
+                } else if (entry.retryAttempts >= this.poolConfig.allocationRetryAttempts) {
+                    // Remove failed entry after max retry attempts
+                    this.waitingQueue.splice(i, 1);
+                    
+                    const pool = this.resourcePools.get(entry.poolName);
+                    if (pool) {
+                        pool.waitingRequests--;
+                        pool.failedAllocations++;
+                    }
+                    
+                    console.log(`❌ Queue entry failed after retries: ${entry.allocationId}`);
+                } else {
+                    entry.retryAttempts++;
+                }
+            }
+            
+            this.poolStats.queueLength = this.waitingQueue.length;
+            
+            if (processedRequests > 0) {
+                console.log(`🎯 Processed ${processedRequests} queue entries`);
+            }
+            
+            return processedRequests;
+            
+        } catch (error) {
+            console.error(`❌ Queue processing error:`, error.message);
+            return 0;
+        }
+    }
+
+    startResourceMonitoring() {
+        // Health check interval
+        setInterval(() => {
+            this.performResourceHealthCheck();
+        }, this.poolConfig.healthCheckInterval);
+        
+        // Cleanup interval
+        setInterval(() => {
+            this.performResourceCleanup();
+        }, this.poolConfig.cleanupInterval);
+        
+        // Queue processing interval
+        setInterval(() => {
+            this.processWaitingQueue();
+        }, 5000); // Process queue every 5 seconds
+        
+        console.log('🔧 Resource monitoring started');
+    }
+
+    performResourceHealthCheck() {
+        this.resourcePools.forEach((pool, poolName) => {
+            pool.resources.forEach((resource, resourceType) => {
+                // Simulate health check (in real implementation, this would check actual resource health)
+                const timeSinceLastCheck = Date.now() - resource.lastHealthCheck;
+                
+                // Health degrades if resource is overloaded
+                const loadRatio = resource.currentLoad / resource.maxConcurrent;
+                if (loadRatio > 0.9) {
+                    resource.health = Math.max(20, resource.health - 5);
+                } else if (loadRatio > 0.7) {
+                    resource.health = Math.max(50, resource.health - 2);
+                } else {
+                    resource.health = Math.min(100, resource.health + 1);
+                }
+                
+                resource.lastHealthCheck = Date.now();
+            });
+            
+            // Update pool health
+            this.updatePoolHealth(pool);
+        });
+        
+        console.log('💓 Resource health check completed');
+    }
+
+    updatePoolHealth(pool) {
+        const resources = Array.from(pool.resources.values());
+        const averageHealth = resources.reduce((sum, r) => sum + r.health, 0) / resources.length;
+        
+        pool.healthScore = Math.round(averageHealth);
+        
+        if (pool.healthScore >= 80) {
+            pool.status = 'healthy';
+        } else if (pool.healthScore >= 50) {
+            pool.status = 'degraded';
+        } else {
+            pool.status = 'unhealthy';
+        }
+        
+        pool.lastHealthCheck = Date.now();
+    }
+
+    performResourceCleanup() {
+        let cleanedAllocations = 0;
+        const now = Date.now();
+        
+        // Clean up stale allocations (older than max allocation time)
+        this.allocations.forEach((allocation, allocationId) => {
+            if (now - allocation.lastActivity > this.poolConfig.maxAllocationTime) {
+                console.log(`🧹 Cleaning up stale allocation: ${allocationId}`);
+                this.releaseResource(allocationId);
+                cleanedAllocations++;
+            }
+        });
+        
+        // Update utilization history
+        this.updateUtilizationHistory();
+        
+        if (cleanedAllocations > 0) {
+            console.log(`🧹 Resource cleanup: ${cleanedAllocations} stale allocations removed`);
+        }
+    }
+
+    updateUtilizationHistory() {
+        this.resourcePools.forEach((pool, poolName) => {
+            const utilization = this.poolStats.resourceUtilization.get(poolName);
+            if (utilization) {
+                const currentUtilization = this.calculatePoolUtilization(poolName);
+                
+                utilization.allocationHistory.push({
+                    timestamp: Date.now(),
+                    utilization: currentUtilization,
+                    allocatedResources: pool.currentlyAllocated
+                });
+                
+                // Keep only last 100 entries
+                if (utilization.allocationHistory.length > 100) {
+                    utilization.allocationHistory.shift();
+                }
+                
+                utilization.utilizationRate = currentUtilization;
+                utilization.peakUtilization = Math.max(utilization.peakUtilization, currentUtilization);
+            }
+        });
+    }
+
+    updateAllocationStats(poolName, allocationTime, success) {
+        // Update global stats
+        this.poolStats.totalAllocations++;
+        if (success) {
+            this.poolStats.successfulAllocations++;
+            
+            // Update average allocation time
+            const currentAvg = this.poolStats.averageAllocationTime;
+            const totalSuccessful = this.poolStats.successfulAllocations;
+            this.poolStats.averageAllocationTime = 
+                ((currentAvg * (totalSuccessful - 1)) + allocationTime) / totalSuccessful;
+        } else {
+            this.poolStats.failedAllocations++;
+        }
+        
+        // Update pool-specific stats
+        const pool = this.resourcePools.get(poolName);
+        if (pool && success) {
+            const currentAvg = pool.averageAllocationTime;
+            const totalSuccessful = pool.successfulAllocations;
+            pool.averageAllocationTime = totalSuccessful > 1 ?
+                ((currentAvg * (totalSuccessful - 1)) + allocationTime) / totalSuccessful :
+                allocationTime;
+            
+            // Track allocation history
+            pool.allocationHistory.push({
+                timestamp: Date.now(),
+                allocationTime: allocationTime,
+                success: success
+            });
+            
+            // Keep only last 50 entries
+            if (pool.allocationHistory.length > 50) {
+                pool.allocationHistory.shift();
+            }
+        }
+    }
+
+    // Statistics and monitoring methods
+    getResourceStatistics() {
+        const stats = {
+            timestamp: Date.now(),
+            globalStats: { ...this.poolStats },
+            poolStats: {},
+            allocationStats: {},
+            queueStats: {
+                queueLength: this.waitingQueue.length,
+                queuedRequests: this.waitingQueue.map(entry => ({
+                    allocationId: entry.allocationId,
+                    poolName: entry.poolName,
+                    priority: entry.priority,
+                    waitTime: Date.now() - entry.queuedAt
+                }))
+            }
+        };
+        
+        // Pool-specific statistics
+        this.resourcePools.forEach((pool, poolName) => {
+            const utilization = this.calculatePoolUtilization(poolName);
+            const capacity = this.getTotalPoolCapacity(poolName);
+            
+            stats.poolStats[poolName] = {
+                status: pool.status,
+                healthScore: pool.healthScore,
+                totalAllocations: pool.totalAllocations,
+                currentlyAllocated: pool.currentlyAllocated,
+                waitingRequests: pool.waitingRequests,
+                utilization: Math.round(utilization),
+                capacity: capacity,
+                averageAllocationTime: pool.averageAllocationTime,
+                successRate: pool.totalAllocations > 0 ? 
+                    Math.round((pool.successfulAllocations / pool.totalAllocations) * 100) : 100
+            };
+        });
+        
+        // Active allocation statistics
+        stats.allocationStats = {
+            totalActive: this.allocations.size,
+            allocationsByPool: this.getAllocationsByPool(),
+            allocationsByPriority: this.getAllocationsByPriority(),
+            averageAllocationAge: this.calculateAverageAllocationAge()
+        };
+        
+        return stats;
+    }
+
+    calculatePoolUtilization(poolName) {
+        const pool = this.resourcePools.get(poolName);
+        if (!pool) return 0;
+        
+        const totalCapacity = this.getTotalPoolCapacity(poolName);
+        return totalCapacity > 0 ? (pool.currentlyAllocated / totalCapacity) * 100 : 0;
+    }
+
+    getTotalPoolCapacity(poolName) {
+        const pool = this.resourcePools.get(poolName);
+        if (!pool) return 0;
+        
+        let totalCapacity = 0;
+        pool.resources.forEach(resource => {
+            totalCapacity += resource.count;
+        });
+        
+        return totalCapacity;
+    }
+
+    getAllocationsByPool() {
+        const allocationsByPool = new Map();
+        
+        this.allocations.forEach(allocation => {
+            const poolName = allocation.poolName;
+            allocationsByPool.set(poolName, (allocationsByPool.get(poolName) || 0) + 1);
+        });
+        
+        return Object.fromEntries(allocationsByPool);
+    }
+
+    getAllocationsByPriority() {
+        const allocationsByPriority = new Map();
+        
+        this.allocations.forEach(allocation => {
+            const priority = allocation.priority;
+            allocationsByPriority.set(priority, (allocationsByPriority.get(priority) || 0) + 1);
+        });
+        
+        return Object.fromEntries(allocationsByPriority);
+    }
+
+    calculateAverageAllocationAge() {
+        if (this.allocations.size === 0) return 0;
+        
+        const now = Date.now();
+        let totalAge = 0;
+        
+        this.allocations.forEach(allocation => {
+            totalAge += now - allocation.allocatedAt;
+        });
+        
+        return Math.round(totalAge / this.allocations.size);
+    }
+
+    // Helper methods
+    generateAllocationId() {
+        return `alloc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    generateResourceInstance(resourceType) {
+        return `${resourceType}_instance_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    }
+
+    // Configuration and management methods
+    updatePoolConfig(newConfig) {
+        this.poolConfig = { ...this.poolConfig, ...newConfig };
+        console.log('⚙️ Resource pool configuration updated');
+    }
+
+    addResourceToPool(poolName, resourceType, resourceConfig) {
+        const pool = this.resourcePools.get(poolName);
+        if (!pool) {
+            throw new Error(`Pool not found: ${poolName}`);
+        }
+        
+        pool.resources.set(resourceType, {
+            ...resourceConfig,
+            totalAllocations: 0,
+            failedAllocations: 0,
+            lastAllocated: null,
+            allocationHistory: [],
+            health: 100,
+            lastHealthCheck: Date.now()
+        });
+        
+        console.log(`➕ Added resource type ${resourceType} to pool ${poolName}`);
+    }
+
+    removeResourceFromPool(poolName, resourceType) {
+        const pool = this.resourcePools.get(poolName);
+        if (!pool) {
+            throw new Error(`Pool not found: ${poolName}`);
+        }
+        
+        const resource = pool.resources.get(resourceType);
+        if (!resource) {
+            throw new Error(`Resource type not found: ${resourceType}`);
+        }
+        
+        // Check if resource is currently in use
+        if (resource.currentLoad > 0) {
+            throw new Error(`Cannot remove resource ${resourceType}: currently in use`);
+        }
+        
+        pool.resources.delete(resourceType);
+        console.log(`➖ Removed resource type ${resourceType} from pool ${poolName}`);
+    }
+
+    scalePool(poolName, resourceType, newCount) {
+        const pool = this.resourcePools.get(poolName);
+        if (!pool) {
+            throw new Error(`Pool not found: ${poolName}`);
+        }
+        
+        const resource = pool.resources.get(resourceType);
+        if (!resource) {
+            throw new Error(`Resource type not found: ${resourceType}`);
+        }
+        
+        const oldCount = resource.count;
+        const currentAllocated = resource.count - resource.available;
+        
+        if (newCount < currentAllocated) {
+            throw new Error(`Cannot scale down: ${currentAllocated} resources currently allocated`);
+        }
+        
+        resource.count = newCount;
+        resource.available = newCount - currentAllocated;
+        
+        console.log(`📈 Scaled ${resourceType} in pool ${poolName}: ${oldCount} → ${newCount}`);
+        
+        // Process waiting queue after scaling up
+        if (newCount > oldCount) {
+            this.processWaitingQueue(poolName);
+        }
+    }
+
+    getPoolHealth() {
+        const healthReport = {
+            timestamp: Date.now(),
+            overallHealth: 'healthy',
+            overallScore: 0,
+            poolHealth: {},
+            criticalIssues: [],
+            warnings: [],
+            recommendations: []
+        };
+        
+        let totalScore = 0;
+        let poolCount = 0;
+        
+        this.resourcePools.forEach((pool, poolName) => {
+            const poolUtilization = this.calculatePoolUtilization(poolName);
+            const queueLength = pool.waitingRequests;
+            
+            const poolHealthData = {
+                status: pool.status,
+                healthScore: pool.healthScore,
+                utilization: poolUtilization,
+                queueLength: queueLength,
+                issues: [],
+                recommendations: []
+            };
+            
+            // Check for issues
+            if (pool.healthScore < 50) {
+                poolHealthData.issues.push('Low health score');
+                healthReport.criticalIssues.push(`Pool ${poolName}: Low health score (${pool.healthScore})`);
+            }
+            
+            if (poolUtilization > 90) {
+                poolHealthData.issues.push('High utilization');
+                healthReport.criticalIssues.push(`Pool ${poolName}: High utilization (${Math.round(poolUtilization)}%)`);
+                poolHealthData.recommendations.push('Consider scaling up resources');
+            } else if (poolUtilization > 75) {
+                poolHealthData.issues.push('Elevated utilization');
+                healthReport.warnings.push(`Pool ${poolName}: Elevated utilization (${Math.round(poolUtilization)}%)`);
+                poolHealthData.recommendations.push('Monitor for scaling needs');
+            }
+            
+            if (queueLength > 10) {
+                poolHealthData.issues.push('High queue length');
+                healthReport.warnings.push(`Pool ${poolName}: Queue length ${queueLength}`);
+                poolHealthData.recommendations.push('Review resource allocation strategy');
+            }
+            
+            healthReport.poolHealth[poolName] = poolHealthData;
+            totalScore += pool.healthScore;
+            poolCount++;
+        });
+        
+        // Calculate overall health
+        healthReport.overallScore = poolCount > 0 ? Math.round(totalScore / poolCount) : 100;
+        
+        if (healthReport.criticalIssues.length > 0) {
+            healthReport.overallHealth = 'critical';
+        } else if (healthReport.warnings.length > 0) {
+            healthReport.overallHealth = 'warning';
+        } else if (healthReport.overallScore < 80) {
+            healthReport.overallHealth = 'degraded';
+        }
+        
+        // Generate system-wide recommendations
+        if (this.waitingQueue.length > 50) {
+            healthReport.recommendations.push('High global queue length - consider system scaling');
+        }
+        
+        if (this.poolStats.failedAllocations / this.poolStats.totalAllocations > 0.1) {
+            healthReport.recommendations.push('High allocation failure rate - review resource capacity');
+        }
+        
+        return healthReport;
+    }
+
+    // Resource optimization methods
+    optimizeResourceAllocation() {
+        console.log('🎯 Optimizing resource allocation...');
+        
+        const optimizations = {
+            timestamp: Date.now(),
+            optimizationsApplied: [],
+            performanceImprovement: 0
+        };
+        
+        this.resourcePools.forEach((pool, poolName) => {
+            // Optimize based on historical usage patterns
+            const utilization = this.poolStats.resourceUtilization.get(poolName);
+            if (utilization && utilization.allocationHistory.length > 10) {
+                
+                // Check for consistently underutilized resources
+                const recentUtilization = utilization.allocationHistory.slice(-10);
+                const avgUtilization = recentUtilization.reduce((sum, entry) => 
+                    sum + entry.utilization, 0) / recentUtilization.length;
+                
+                if (avgUtilization < 30) {
+                    optimizations.optimizationsApplied.push({
+                        poolName: poolName,
+                        type: 'scale_down_suggestion',
+                        reason: `Low utilization: ${Math.round(avgUtilization)}%`,
+                        recommendation: 'Consider reducing resource count'
+                    });
+                }
+                
+                // Check for consistently high utilization
+                if (avgUtilization > 85) {
+                    optimizations.optimizationsApplied.push({
+                        poolName: poolName,
+                        type: 'scale_up_suggestion',
+                        reason: `High utilization: ${Math.round(avgUtilization)}%`,
+                        recommendation: 'Consider increasing resource count'
+                    });
+                }
+            }
+            
+            // Optimize allocation strategy based on performance
+            if (pool.averageAllocationTime > 5000) {
+                optimizations.optimizationsApplied.push({
+                    poolName: poolName,
+                    type: 'strategy_optimization',
+                    reason: `Slow allocation time: ${pool.averageAllocationTime}ms`,
+                    recommendation: 'Consider switching to health_based allocation strategy'
+                });
+            }
+        });
+        
+        return optimizations;
+    }
+
+    // Emergency procedures
+    emergencyResourceRelease(poolName = null) {
+        console.log(`🚨 Emergency resource release triggered for ${poolName || 'all pools'}`);
+        
+        let releasedCount = 0;
+        const now = Date.now();
+        
+        this.allocations.forEach((allocation, allocationId) => {
+            // Skip if specific pool requested and this allocation is for different pool
+            if (poolName && allocation.poolName !== poolName) {
+                return;
+            }
+            
+            // Release allocations that are older than 5 minutes or low priority
+            const age = now - allocation.allocatedAt;
+            if (age > 300000 || allocation.priority === 'low') {
+                this.releaseResource(allocationId);
+                releasedCount++;
+            }
+        });
+        
+        console.log(`🚨 Emergency release completed: ${releasedCount} resources released`);
+        return releasedCount;
+    }
+
+    // Testing and validation methods
+    validatePoolIntegrity() {
+        const validation = {
+            timestamp: Date.now(),
+            valid: true,
+            issues: [],
+            pools: {}
+        };
+        
+        this.resourcePools.forEach((pool, poolName) => {
+            const poolValidation = {
+                valid: true,
+                issues: []
+            };
+            
+            // Validate resource counts
+            pool.resources.forEach((resource, resourceType) => {
+                if (resource.available < 0) {
+                    poolValidation.issues.push(`Negative available count for ${resourceType}: ${resource.available}`);
+                    poolValidation.valid = false;
+                }
+                
+                if (resource.currentLoad < 0) {
+                    poolValidation.issues.push(`Negative current load for ${resourceType}: ${resource.currentLoad}`);
+                    poolValidation.valid = false;
+                }
+                
+                if (resource.available + resource.currentLoad > resource.count) {
+                    poolValidation.issues.push(`Invalid resource count for ${resourceType}: available(${resource.available}) + load(${resource.currentLoad}) > count(${resource.count})`);
+                    poolValidation.valid = false;
+                }
+            });
+            
+            // Validate pool statistics
+            if (pool.currentlyAllocated < 0) {
+                poolValidation.issues.push(`Negative currently allocated: ${pool.currentlyAllocated}`);
+                poolValidation.valid = false;
+            }
+            
+            validation.pools[poolName] = poolValidation;
+            
+            if (!poolValidation.valid) {
+                validation.valid = false;
+                validation.issues.push(...poolValidation.issues);
+            }
+        });
+        
+        return validation;
+    }
+
+    // Debugging and diagnostics
+    generateDiagnosticReport() {
+        return {
+            timestamp: new Date().toISOString(),
+            systemHealth: this.getPoolHealth(),
+            resourceStatistics: this.getResourceStatistics(),
+            poolIntegrity: this.validatePoolIntegrity(),
+            optimizationReport: this.optimizeResourceAllocation(),
+            
+            // Detailed pool information
+            poolDetails: this.getDetailedPoolInformation(),
+            
+            // Queue analysis
+            queueAnalysis: this.analyzeQueue(),
+            
+            // Performance metrics
+            performanceMetrics: this.getPerformanceMetrics()
+        };
+    }
+
+    getDetailedPoolInformation() {
+        const details = {};
+        
+        this.resourcePools.forEach((pool, poolName) => {
+            const resourceDetails = {};
+            
+            pool.resources.forEach((resource, resourceType) => {
+                resourceDetails[resourceType] = {
+                    count: resource.count,
+                    available: resource.available,
+                    currentLoad: resource.currentLoad,
+                    maxConcurrent: resource.maxConcurrent,
+                    health: resource.health,
+                    totalAllocations: resource.totalAllocations,
+                    failedAllocations: resource.failedAllocations,
+                    averageResponseTime: resource.averageResponseTime,
+                    utilizationRate: ((resource.count - resource.available) / resource.count) * 100
+                };
+            });
+            
+            details[poolName] = {
+                strategy: pool.allocationStrategy,
+                status: pool.status,
+                healthScore: pool.healthScore,
+                totalAllocations: pool.totalAllocations,
+                successfulAllocations: pool.successfulAllocations,
+                failedAllocations: pool.failedAllocations,
+                currentlyAllocated: pool.currentlyAllocated,
+                waitingRequests: pool.waitingRequests,
+                averageAllocationTime: pool.averageAllocationTime,
+                resources: resourceDetails
+            };
+        });
+        
+        return details;
+    }
+
+    analyzeQueue() {
+        const queueAnalysis = {
+            totalLength: this.waitingQueue.length,
+            byPool: {},
+            byPriority: {},
+            averageWaitTime: 0,
+            oldestRequest: null
+        };
+        
+        let totalWaitTime = 0;
+        let oldestTime = 0;
+        const now = Date.now();
+        
+        this.waitingQueue.forEach(entry => {
+            const waitTime = now - entry.queuedAt;
+            totalWaitTime += waitTime;
+            
+            if (waitTime > oldestTime) {
+                oldestTime = waitTime;
+                queueAnalysis.oldestRequest = {
+                    allocationId: entry.allocationId,
+                    waitTime: waitTime,
+                    poolName: entry.poolName,
+                    priority: entry.priority
+                };
+            }
+            
+            // Group by pool
+            queueAnalysis.byPool[entry.poolName] = (queueAnalysis.byPool[entry.poolName] || 0) + 1;
+            
+            // Group by priority
+            queueAnalysis.byPriority[entry.priority] = (queueAnalysis.byPriority[entry.priority] || 0) + 1;
+        });
+        
+        queueAnalysis.averageWaitTime = this.waitingQueue.length > 0 ? 
+            totalWaitTime / this.waitingQueue.length : 0;
+        
+        return queueAnalysis;
+    }
+
+    getPerformanceMetrics() {
+        return {
+            allocationSuccessRate: this.poolStats.totalAllocations > 0 ? 
+                (this.poolStats.successfulAllocations / this.poolStats.totalAllocations) * 100 : 100,
+            averageAllocationTime: this.poolStats.averageAllocationTime,
+            totalActiveAllocations: this.allocations.size,
+            queueProcessingRate: this.calculateQueueProcessingRate(),
+            systemThroughput: this.calculateSystemThroughput(),
+            resourceEfficiency: this.calculateResourceEfficiency()
+        };
+    }
+
+    calculateQueueProcessingRate() {
+        // Calculate how many queue entries are processed per minute
+        // This would use historical data in a real implementation
+        return Math.round(this.poolStats.successfulAllocations / Math.max(1, (Date.now() - this.initTime) / 60000));
+    }
+
+    calculateSystemThroughput() {
+        // Calculate requests processed per second
+        const uptime = (Date.now() - (this.initTime || Date.now())) / 1000;
+        return uptime > 0 ? Math.round(this.poolStats.totalAllocations / uptime * 100) / 100 : 0;
+    }
+
+    calculateResourceEfficiency() {
+        let totalResources = 0;
+        let totalAllocated = 0;
+        
+        this.resourcePools.forEach(pool => {
+            pool.resources.forEach(resource => {
+                totalResources += resource.count;
+                totalAllocated += (resource.count - resource.available);
+            });
+        });
+        
+        return totalResources > 0 ? Math.round((totalAllocated / totalResources) * 100) : 0;
+    }
+}
+
+// 🚀 MULTI-USER ORCHESTRATOR
+class MultiUserOrchestrator {
+    constructor() {
+        this.sessionManager = new MultiUserSessionManager();
+        this.resourceManager = new ResourcePoolManager();
+        
+        this.orchestratorConfig = {
+            maxConcurrentRequests: 500,
+            requestTimeout: 30000,
+            enableAutoScaling: true,
+            scalingThreshold: 80, // Utilization percentage
+            healthCheckInterval: 15000
+        };
+        
+        this.requestQueue = new Map(); // sessionId -> requests
+        this.activeRequests = new Map();
+        this.orchestratorStats = {
+            totalRequests: 0,
+            successfulRequests: 0,
+            failedRequests: 0,
+            averageRequestTime: 0,
+            concurrentRequestsPeak: 0
+        };
+        
+        this.initTime = Date.now();
+        this.startOrchestration();
+    }
+
+    async handleUserRequest(userId, userMessage, options = {}) {
+        try {
+            const requestId = this.generateRequestId();
+            console.log(`🌐 Handling request ${requestId} for user: ${userId}`);
+            
+            const startTime = Date.now();
+            
+            // Create or validate user session
+            const sessionResult = await this.ensureUserSession(userId, options);
+            if (!sessionResult.success) {
+                throw new Error(`Session error: ${sessionResult.error}`);
+            }
+            
+            const sessionId = sessionResult.sessionId;
+            
+            // Start session request tracking
+            const requestTrackingId = await this.sessionManager.startSessionRequest(sessionId);
+            
+            // Allocate required resources
+            const resourceAllocation = await this.allocateRequestResources(requestId, options.priority || 'normal');
+            if (!resourceAllocation.success) {
+                throw new Error(`Resource allocation failed: ${resourceAllocation.error}`);
+            }
+            
+            // Execute the request with allocated resources
+            const result = await this.executeWithResources(
+                requestId,
+                sessionId,
+                userMessage,
+                resourceAllocation,
+                options
+            );
+            
+            // Record successful request
+            const responseTime = Date.now() - startTime;
+            await this.sessionManager.endSessionRequest(requestTrackingId, true);
+            await this.sessionManager.recordSessionRequest(sessionId, responseTime, true);
+            
+            // Release resources
+            await this.releaseRequestResources(resourceAllocation);
+            
+            // Update statistics
+            this.updateOrchestrationStats(responseTime, true);
+            
+            console.log(`✅ Request ${requestId} completed successfully in ${responseTime}ms`);
+            
+            return {
+                success: true,
+                response: result.response,
+                sessionId: sessionId,
+                requestId: requestId,
+                responseTime: responseTime,
+                resourcesUsed: resourceAllocation.resources,
+                metadata: result.metadata
+            };
+            
+        } catch (error) {
+            console.error(`❌ Request failed for user ${userId}:`, error.message);
+            
+            // Update failure statistics
+            this.updateOrchestrationStats(Date.now() - startTime, false);
+            
+            return {
+                success: false,
+                error: error.message,
+                fallbackResponse: await this.generateFallbackResponse(userMessage)
+            };
+        }
+    }
+
+    async ensureUserSession(userId, options) {
+        // Check for existing active sessions
+        const existingSessions = this.sessionManager.getUserSessions(userId);
+        
+        if (existingSessions.length > 0) {
+            // Use existing session
+            const session = existingSessions[0];
+            const validation = await this.sessionManager.validateSession(session.sessionId);
+            
+            if (validation.valid) {
+                return {
+                    success: true,
+                    sessionId: session.sessionId,
+                    existing: true
+                };
+            }
+        }
+        
+        // Create new session
+        return await this.sessionManager.createUserSession(userId, options);
+    }
+
+    async allocateRequestResources(requestId, priority) {
+        try {
+            const resources = {};
+            
+            // Allocate AI model resource
+            const aiAllocation = await this.resourceManager.allocateResource(
+                'ai_models', 
+                null, // Let system choose best available
+                priority,
+                requestId
+            );
+            
+            if (!aiAllocation.success) {
+                throw new Error(`AI model allocation failed: ${aiAllocation.error}`);
+            }
+            
+            resources.aiModel = aiAllocation;
+            
+            // Allocate memory system resources
+            const memoryAllocation = await this.resourceManager.allocateResource(
+                'memory_systems',
+                null,
+                priority,
+                requestId
+            );
+            
+            if (memoryAllocation.success) {
+                resources.memorySystem = memoryAllocation;
+            }
+            
+            // Allocate database connection
+            const dbAllocation = await this.resourceManager.allocateResource(
+                'database_connections',
+                'conversation_db',
+                priority,
+                requestId
+            );
+            
+            if (dbAllocation.success) {
+                resources.database = dbAllocation;
+            }
+            
+            // Allocate cache layer
+            const cacheAllocation = await this.resourceManager.allocateResource(
+                'cache_layers',
+                'l1_memory',
+                priority,
+                requestId
+            );
+            
+            if (cacheAllocation.success) {
+                resources.cache = cacheAllocation;
+            }
+            
+            return {
+                success: true,
+                requestId: requestId,
+                resources: resources
+            };
+            
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async executeWithResources(requestId, sessionId, userMessage, resourceAllocation, options) {
+        console.log(`🎯 Executing request ${requestId} with allocated resources`);
+        
+        // Track active request
+        this.activeRequests.set(requestId, {
+            sessionId: sessionId,
+            startTime: Date.now(),
+            resources: resourceAllocation.resources,
+            status: 'executing'
+        });
+        
+        try {
+            // Use the advanced context system from previous parts
+            const result = await this.executeAdvancedContextProcessing(
+                userMessage, 
+                sessionId, 
+                resourceAllocation.resources,
+                options
+            );
+            
+            // Update request status
+            const activeRequest = this.activeRequests.get(requestId);
+            if (activeRequest) {
+                activeRequest.status = 'completed';
+                activeRequest.completedAt = Date.now();
+            }
+            
+            return result;
+            
+        } catch (error) {
+            // Update request status
+            const activeRequest = this.activeRequests.get(requestId);
+            if (activeRequest) {
+                activeRequest.status = 'failed';
+                activeRequest.failedAt = Date.now();
+                activeRequest.error = error.message;
+            }
+            
+            throw error;
+        } finally {
+            // Clean up active request tracking
+            setTimeout(() => {
+                this.activeRequests.delete(requestId);
+            }, 5000); // Keep for 5 seconds for monitoring
+        }
+    }
+
+    async executeAdvancedContextProcessing(userMessage, sessionId, resources, options) {
+        // This integrates with the previous parts of the context enhancer
+        try {
+            // Use the ultimate context orchestration from Part 4
+            const result = await executeAdvancedIntelligentDualCommand(
+                userMessage,
+                sessionId,
+                {
+                    useSemanticAnalysis: true,
+                    useDynamicWeighting: true,
+                    useCrossConversationLearning: true,
+                    intelligenceLevel: 'enterprise',
+                    resources: resources,
+                    ...options
+                }
+            );
+            
+            return result;
+            
+        } catch (error) {
+            console.error('Advanced context processing failed:', error.message);
+            
+            // Fallback to simpler processing
+            return {
+                response: await this.generateFallbackResponse(userMessage),
+                metadata: {
+                    fallbackUsed: true,
+                    error: error.message,
+                    processingLevel: 'basic'
+                }
+            };
+        }
+    }
+
+    async releaseRequestResources(resourceAllocation) {
+        if (!resourceAllocation.success || !resourceAllocation.resources) {
+            return;
+        }
+        
+        const resources = resourceAllocation.resources;
+        
+        // Release all allocated resources
+        for (const [resourceType, allocation] of Object.entries(resources)) {
+            if (allocation.success && allocation.allocationId) {
+                await this.resourceManager.releaseResource(allocation.allocationId);
+            }
+        }
+        
+        console.log(`🔧 Released resources for request ${resourceAllocation.requestId}`);
+    }
+
+    async generateFallbackResponse(userMessage) {
+        return `I understand you're asking about: "${userMessage.substring(0, 100)}..."\n\nI'm currently experiencing high load but I'm ready to help. Could you please try again in a moment, or rephrase your question?`;
+    }
+
+    updateOrchestrationStats(responseTime, success) {
+        this.orchestratorStats.totalRequests++;
+        
+        if (success) {
+            this.orchestratorStats.successfulRequests++;
+            
+            // Update average response time
+            const currentAvg = this.orchestratorStats.averageRequestTime;
+            const successfulRequests = this.orchestratorStats.successfulRequests;
+            this.orchestratorStats.averageRequestTime = successfulRequests > 1 ?
+                ((currentAvg * (successfulRequests - 1)) + responseTime) / successfulRequests :
+                responseTime;
+        } else {
+            this.orchestratorStats.failedRequests++;
+        }
+        
+        // Update peak concurrent requests
+        const currentConcurrent = this.activeRequests.size;
+        this.orchestratorStats.concurrentRequestsPeak = Math.max(
+            this.orchestratorStats.concurrentRequestsPeak,
+            currentConcurrent
+        );
+    }
+
+    startOrchestration() {
+        // Health monitoring
+        setInterval(() => {
+            this.performHealthCheck();
+        }, this.orchestratorConfig.healthCheckInterval);
+        
+        // Auto-scaling check
+        if (this.orchestratorConfig.enableAutoScaling) {
+            setInterval(() => {
+                this.checkAutoScaling();
+            }, 30000); // Check every 30 seconds
+        }
+        
+        console.log('🌐 Multi-user orchestration started');
+    }
+
+    performHealthCheck() {
+        const sessionHealth = this.sessionManager.getSessionHealth();
+        const resourceHealth = this.resourceManager.getPoolHealth();
+        
+        console.log(`💓 System health check: Sessions(${sessionHealth.status}), Resources(${resourceHealth.overallHealth})`);
+        
+        // Take action if health is critical
+        if (sessionHealth.status === 'critical' || resourceHealth.overallHealth === 'critical') {
+            console.log('🚨 Critical system health detected - initiating emergency procedures');
+            this.handleCriticalHealth(sessionHealth, resourceHealth);
+        }
+    }
+
+    handleCriticalHealth(sessionHealth, resourceHealth) {
+        // Emergency response procedures
+        if (resourceHealth.overallHealth === 'critical') {
+            // Emergency resource release
+            this.resourceManager.emergencyResourceRelease();
+        }
+        
+        if (sessionHealth.status === 'critical') {
+            // Could implement session cleanup or other measures
+            console.log('🚨 Critical session health - consider session cleanup');
+        }
+    }
+
+    checkAutoScaling() {
+        if (!this.orchestratorConfig.enableAutoScaling) return;
+        
+        const resourceStats = this.resourceManager.getResourceStatistics();
+        const threshold = this.orchestratorConfig.scalingThreshold;
+        
+        // Check each pool for scaling needs
+        Object.entries(resourceStats.poolStats).forEach(([poolName, stats]) => {
+            if (stats.utilization > threshold) {
+                console.log(`📈 Auto-scaling trigger: ${poolName} utilization at ${stats.utilization}%`);
+                this.triggerAutoScaling(poolName, 'scale_up');
+            } else if (stats.utilization < threshold * 0.3) {
+                console.log(`📉 Auto-scaling trigger: ${poolName} utilization at ${stats.utilization}%`);
+                this.triggerAutoScaling(poolName, 'scale_down');
+            }
+        });
+    }
+
+    triggerAutoScaling(poolName, direction) {
+        // This would integrate with cloud auto-scaling APIs in production
+        console.log(`🔄 Auto-scaling ${direction} triggered for pool: ${poolName}`);
+        
+        // For now, just log the scaling decision
+        // In production, this would call cloud provider APIs to scale resources
+    }
+
+    getOrchestrationStatistics() {
+        return {
+            timestamp: Date.now(),
+            orchestrator: {
+                ...this.orchestratorStats,
+                activeRequests: this.activeRequests.size,
+                uptime: Date.now() - this.initTime,
+                successRate: this.orchestratorStats.totalRequests > 0 ?
+                    Math.round((this.orchestratorStats.successfulRequests / this.orchestratorStats.totalRequests) * 100) : 100
+            },
+            sessions: this.sessionManager.getSessionStatistics(),
+            resources: this.resourceManager.getResourceStatistics(),
+            systemHealth: {
+                sessions: this.sessionManager.getSessionHealth(),
+                resources: this.resourceManager.getPoolHealth()
+            }
+        };
+    }
+
+    generateRequestId() {
+        return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+}
+
+// Create global instances
+const multiUserSessionManager = new MultiUserSessionManager();
+const resourcePoolManager = new ResourcePoolManager();
+const multiUserOrchestrator = new MultiUserOrchestrator();
+
+// 📤 PART 6.2 EXPORTS
+module.exports = {
+    // Main classes
+    ResourcePoolManager,
+    MultiUserOrchestrator,
+    
+    // Global instances
+    multiUserSessionManager,
+    resourcePoolManager,
+    multiUserOrchestrator,
+    
+    // Direct access methods
+    handleUserRequest: (userId, userMessage, options) => 
+        multiUserOrchestrator.handleUserRequest(userId, userMessage, options),
+    
+    getSystemStatistics: () => multiUserOrchestrator.getOrchestrationStatistics(),
+    
+    // Resource management
+    allocateResource: (poolName, resourceType, priority) => 
+        resourcePoolManager.allocateResource(poolName, resourceType, priority),
+    releaseResource: (allocationId) => 
+        resourcePoolManager.releaseResource(allocationId),
+    
+    // Session management  
+    createUserSession: (userId, options) => 
+        multiUserSessionManager.createUserSession(userId, options),
+    validateSession: (sessionId) => 
+        multiUserSessionManager.validateSession(sessionId)
+};
+
+console.log('🔧 PART 6.2: Resource Pool Management & Multi-User Orchestration loaded');
+console.log('🌐 Features: Resource pooling, Session orchestration, Auto-scaling, Health monitoring');
+console.log('📊 Capacity: 1000 users, 500 concurrent requests, 4 resource pools');
+console.log('⚡ Ready for: handleUserRequest(), getSystemStatistics(), resource allocation');
+
+// utils/contextEnhancerPart6_3.js - PART 6.3: ADVANCED CACHING SYSTEM
+// Add these enhancements to your existing contextEnhancer.js
+
+// 🎯 ADVANCED 3-TIER CACHING SYSTEM
+class AdvancedCacheManager {
+    constructor() {
+        this.caches = new Map();
+        this.cacheHierarchy = ['l1_memory', 'l2_disk', 'l3_distributed'];
+        this.cacheStats = new Map();
+        this.compressionEngine = new CompressionEngine();
+        
+        this.cacheConfig = {
+            l1_memory: {
+                maxSize: 1000,
+                ttl: 300000, // 5 minutes
+                evictionPolicy: 'lru',
+                compressionEnabled: false,
+                maxItemSize: 1048576 // 1MB
+            },
+            l2_disk: {
+                maxSize: 10000,
+                ttl: 3600000, // 1 hour
+                evictionPolicy: 'lfu',
+                compressionEnabled: true,
+                maxItemSize: 10485760 // 10MB
+            },
+            l3_distributed: {
+                maxSize: 100000,
+                ttl: 86400000, // 24 hours
+                evictionPolicy: 'time_based',
+                compressionEnabled: true,
+                maxItemSize: 104857600 // 100MB
+            }
+        };
+        
+        this.globalCacheStats = {
+            totalRequests: 0,
+            totalHits: 0,
+            totalMisses: 0,
+            hitRateL1: 0,
+            hitRateL2: 0,
+            hitRateL3: 0,
+            totalEvictions: 0,
+            averageResponseTime: 0,
+            compressionRatio: 0,
+            totalSizeReduction: 0
+        };
+        
+        this.performanceMetrics = new Map();
+        this.initializeCaches();
+        this.startCacheOptimization();
+    }
+
+    initializeCaches() {
+        this.cacheHierarchy.forEach(level => {
+            this.caches.set(level, new Map());
+            this.cacheStats.set(level, {
+                hits: 0,
+                misses: 0,
+                evictions: 0,
+                totalSize: 0,
+                itemCount: 0,
+                compressionSavings: 0,
+                lastCleanup: Date.now(),
+                averageItemSize: 0,
+                accessPattern: new Map()
+            });
+            
+            // Initialize performance tracking
+            this.performanceMetrics.set(level, {
+                accessTimes: [],
+                compressionTimes: [],
+                evictionTimes: []
+            });
+        });
+        
+        console.log('🎯 Advanced 3-tier cache system initialized');
+    }
+
+    async get(key, options = {}) {
+        const startTime = Date.now();
+        this.globalCacheStats.totalRequests++;
+        
+        try {
+            const {
+                skipLevels = [],
+                preferredLevel = null,
+                populateUpper = true,
+                decompressionHint = false
+            } = options;
+            
+            let levels = preferredLevel ? [preferredLevel] : this.cacheHierarchy;
+            levels = levels.filter(level => !skipLevels.includes(level));
+            
+            // Search through cache hierarchy
+            for (const level of levels) {
+                const cache = this.caches.get(level);
+                const cached = cache.get(key);
+                
+                if (cached && this.isValidCacheEntry(cached, level)) {
+                    // Cache hit
+                    this.recordCacheHit(level, key);
+                    
+                    // Decompress if needed
+                    const data = await this.decompressIfNeeded(cached.data, level, decompressionHint);
+                    
+                    // Populate upper cache levels if enabled
+                    if (populateUpper && level !== levels[0]) {
+                        await this.populateUpperCaches(key, cached, level, levels);
+                    }
+                    
+                    const responseTime = Date.now() - startTime;
+                    this.updateGlobalStats(responseTime, true);
+                    this.trackPerformanceMetric(level, 'access', responseTime);
+                    
+                    console.log(`💾 Cache HIT [${level}]: ${key.substring(0, 20)}... (${responseTime}ms)`);
+                    
+                    return {
+                        data: data,
+                        hit: true,
+                        level: level,
+                        age: Date.now() - cached.timestamp,
+                        responseTime: responseTime,
+                        compressed: cached.compressed || false,
+                        originalSize: cached.originalSize || data.length
+                    };
+                }
+            }
+            
+            // Cache miss across all levels
+            levels.forEach(level => this.recordCacheMiss(level, key));
+            
+            const responseTime = Date.now() - startTime;
+            this.updateGlobalStats(responseTime, false);
+            
+            console.log(`💾 Cache MISS: ${key.substring(0, 20)}... (${responseTime}ms)`);
+            
+            return {
+                data: null,
+                hit: false,
+                level: null,
+                responseTime: responseTime
+            };
+            
+        } catch (error) {
+            console.error('❌ Cache get error:', error.message);
+            return {
+                data: null,
+                hit: false,
+                error: error.message,
+                responseTime: Date.now() - startTime
+            };
+        }
+    }
+
+    async set(key, data, options = {}) {
+        const startTime = Date.now();
+        
+        try {
+            const {
+                ttl = null,
+                level = 'l1_memory',
+                priority = 'normal',
+                tags = [],
+                cascadeToLower = false,
+                forceCompression = false
+            } = options;
+            
+            const config = this.cacheConfig[level];
+            if (!config) {
+                throw new Error(`Invalid cache level: ${level}`);
+            }
+            
+            // Calculate data size
+            const dataSize = this.calculateDataSize(data);
+            
+            // Check size limits
+            if (dataSize > config.maxItemSize) {
+                throw new Error(`Data size (${dataSize}) exceeds limit for ${level} (${config.maxItemSize})`);
+            }
+            
+            // Compress if needed
+            const compressionStart = Date.now();
+            const compressedData = await this.compressIfNeeded(data, level, forceCompression);
+            const compressionTime = Date.now() - compressionStart;
+            
+            const cacheEntry = {
+                key: key,
+                data: compressedData.data,
+                timestamp: Date.now(),
+                ttl: ttl || config.ttl,
+                priority: priority,
+                tags: tags,
+                accessCount: 0,
+                lastAccess: Date.now(),
+                originalSize: dataSize,
+                compressedSize: this.calculateDataSize(compressedData.data),
+                compressed: compressedData.compressed,
+                compressionRatio: compressedData.ratio,
+                level: level
+            };
+            
+            // Set in specified level
+            await this.setCacheEntry(level, key, cacheEntry);
+            
+            // Cascade to lower levels if requested
+            if (cascadeToLower && (priority === 'high' || priority === 'critical')) {
+                await this.cascadeToLowerLevels(key, cacheEntry, level);
+            }
+            
+            const totalTime = Date.now() - startTime;
+            this.trackPerformanceMetric(level, 'compression', compressionTime);
+            
+            console.log(`💾 Cache SET [${level}]: ${key.substring(0, 20)}... (${cacheEntry.compressedSize} bytes, ${totalTime}ms)`);
+            
+            return {
+                success: true,
+                level: level,
+                originalSize: cacheEntry.originalSize,
+                compressedSize: cacheEntry.compressedSize,
+                compressionRatio: cacheEntry.compressionRatio,
+                ttl: cacheEntry.ttl,
+                compressionTime: compressionTime
+            };
+            
+        } catch (error) {
+            console.error('❌ Cache set error:', error.message);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async setCacheEntry(level, key, cacheEntry) {
+        const cache = this.caches.get(level);
+        const config = this.cacheConfig[level];
+        const stats = this.cacheStats.get(level);
+        
+        // Check if eviction needed
+        if (cache.size >= config.maxSize) {
+            await this.evictEntries(level, 1);
+        }
+        
+        // Remove existing entry if it exists
+        if (cache.has(key)) {
+            const existingEntry = cache.get(key);
+            stats.totalSize -= existingEntry.compressedSize;
+            stats.itemCount--;
+        }
+        
+        cache.set(key, cacheEntry);
+        stats.totalSize += cacheEntry.compressedSize;
+        stats.itemCount++;
+        stats.averageItemSize = stats.itemCount > 0 ? stats.totalSize / stats.itemCount : 0;
+        
+        // Track compression savings
+        if (cacheEntry.compressed) {
+            const savings = cacheEntry.originalSize - cacheEntry.compressedSize;
+            stats.compressionSavings += savings;
+            this.globalCacheStats.totalSizeReduction += savings;
+        }
+    }
+
+    async evictEntries(level, count = 1) {
+        const evictionStart = Date.now();
+        const cache = this.caches.get(level);
+        const config = this.cacheConfig[level];
+        const stats = this.cacheStats.get(level);
+        
+        const evictionPolicy = config.evictionPolicy;
+        let candidates = Array.from(cache.entries());
+        
+        // Sort candidates based on eviction policy
+        switch (evictionPolicy) {
+            case 'lru':
+                candidates.sort((a, b) => a[1].lastAccess - b[1].lastAccess);
+                break;
+            case 'lfu':
+                candidates.sort((a, b) => a[1].accessCount - b[1].accessCount);
+                break;
+            case 'time_based':
+                candidates.sort((a, b) => a[1].timestamp - b[1].timestamp);
+                break;
+            case 'size_based':
+                candidates.sort((a, b) => b[1].compressedSize - a[1].compressedSize);
+                break;
+            default:
+                // Random eviction
+                candidates = this.shuffleArray(candidates);
+        }
+        
+        // Evict entries
+        let evictedCount = 0;
+        for (let i = 0; i < Math.min(count, candidates.length); i++) {
+            const [key, entry] = candidates[i];
+            cache.delete(key);
+            stats.totalSize -= entry.compressedSize;
+            stats.itemCount--;
+            stats.evictions++;
+            this.globalCacheStats.totalEvictions++;
+            evictedCount++;
+            
+            console.log(`🗑️ Cache evicted [${level}]: ${key.substring(0, 20)}... (${entry.compressedSize} bytes)`);
+        }
+        
+        const evictionTime = Date.now() - evictionStart;
+        this.trackPerformanceMetric(level, 'eviction', evictionTime);
+        
+        return evictedCount;
+    }
+
+    async populateUpperCaches(key, cacheEntry, currentLevel, levels) {
+        const currentIndex = levels.indexOf(currentLevel);
+        
+        for (let i = 0; i < currentIndex; i++) {
+            const upperLevel = levels[i];
+            const upperCache = this.caches.get(upperLevel);
+            
+            if (!upperCache.has(key)) {
+                // Create entry suitable for upper level
+                const upperEntry = {
+                    ...cacheEntry,
+                    timestamp: Date.now(),
+                    ttl: this.cacheConfig[upperLevel].ttl,
+                    level: upperLevel,
+                    populatedFrom: currentLevel
+                };
+                
+                await this.setCacheEntry(upperLevel, key, upperEntry);
+            }
+        }
+    }
+
+    async cascadeToLowerLevels(key, cacheEntry, startLevel) {
+        const startIndex = this.cacheHierarchy.indexOf(startLevel);
+        
+        for (let i = startIndex + 1; i < this.cacheHierarchy.length; i++) {
+            const lowerLevel = this.cacheHierarchy[i];
+            const lowerEntry = {
+                ...cacheEntry,
+                ttl: this.cacheConfig[lowerLevel].ttl,
+                level: lowerLevel,
+                cascadedFrom: startLevel
+            };
+            
+            await this.setCacheEntry(lowerLevel, key, lowerEntry);
+        }
+    }
+
+    isValidCacheEntry(entry, level) {
+        const now = Date.now();
+        
+        // Check TTL
+        if (now - entry.timestamp > entry.ttl) {
+            return false;
+        }
+        
+        // Update access statistics
+        entry.accessCount++;
+        entry.lastAccess = now;
+        
+        // Track access pattern
+        this.trackAccessPattern(level, entry.key);
+        
+        return true;
+    }
+
+    async compressIfNeeded(data, level, forceCompression = false) {
+        const config = this.cacheConfig[level];
+        
+        if (!config.compressionEnabled && !forceCompression) {
+            return {
+                data: data,
+                compressed: false,
+                ratio: 1.0
+            };
+        }
+        
+        // Only compress if data is large enough to benefit
+        const dataSize = this.calculateDataSize(data);
+        if (dataSize < 1000 && !forceCompression) {
+            return {
+                data: data,
+                compressed: false,
+                ratio: 1.0
+            };
+        }
+        
+        try {
+            const compressed = await this.compressionEngine.compress(data);
+            const compressedSize = this.calculateDataSize(compressed);
+            const ratio = dataSize > 0 ? compressedSize / dataSize : 1.0;
+            
+            // Only use compression if it actually saves space
+            if (ratio < 0.9 || forceCompression) {
+                this.updateCompressionStats(dataSize, compressedSize);
+                return {
+                    data: compressed,
+                    compressed: true,
+                    ratio: ratio
+                };
+            } else {
+                return {
+                    data: data,
+                    compressed: false,
+                    ratio: 1.0
+                };
+            }
+        } catch (error) {
+            console.error('❌ Compression failed:', error.message);
+            return {
+                data: data,
+                compressed: false,
+                ratio: 1.0
+            };
+        }
+    }
+
+    async decompressIfNeeded(data, level, hint = false) {
+        if (!data || typeof data !== 'object' || !data.compressed) {
+            return data;
+        }
+        
+        try {
+            return await this.compressionEngine.decompress(data);
+        } catch (error) {
+            console.error('❌ Decompression failed:', error.message);
+            return data;
+        }
+    }
+
+    calculateDataSize(data) {
+        if (typeof data === 'string') {
+            return data.length;
+        } else if (typeof data === 'object') {
+            return JSON.stringify(data).length;
+        }
+        return 100; // Default size estimate
+    }
+
+    recordCacheHit(level, key) {
+        const stats = this.cacheStats.get(level);
+        stats.hits++;
+        this.globalCacheStats.totalHits++;
+        
+        // Update level-specific hit rates
+        this.updateLevelHitRate(level);
+    }
+
+    recordCacheMiss(level, key) {
+        const stats = this.cacheStats.get(level);
+        stats.misses++;
+        this.globalCacheStats.totalMisses++;
+        
+        // Update level-specific hit rates
+        this.updateLevelHitRate(level);
+    }
+
+    updateLevelHitRate(level) {
+        const stats = this.cacheStats.get(level);
+        const total = stats.hits + stats.misses;
+        
+        if (total > 0) {
+            const hitRate = (stats.hits / total) * 100;
+            
+            switch (level) {
+                case 'l1_memory':
+                    this.globalCacheStats.hitRateL1 = hitRate;
+                    break;
+                case 'l2_disk':
+                    this.globalCacheStats.hitRateL2 = hitRate;
+                    break;
+                case 'l3_distributed':
+                    this.globalCacheStats.hitRateL3 = hitRate;
+                    break;
+            }
+        }
+    }
+
+    updateGlobalStats(responseTime, hit) {
+        const currentAvg = this.globalCacheStats.averageResponseTime;
+        const totalRequests = this.globalCacheStats.totalRequests;
+        
+        this.globalCacheStats.averageResponseTime = 
+            ((currentAvg * (totalRequests - 1)) + responseTime) / totalRequests;
+    }
+
+    updateCompressionStats(originalSize, compressedSize) {
+        const savings = originalSize - compressedSize;
+        this.globalCacheStats.totalSizeReduction += savings;
+        
+        // Update compression ratio
+        const totalOriginal = this.globalCacheStats.totalSizeReduction + this.getTotalCacheSize();
+        this.globalCacheStats.compressionRatio = totalOriginal > 0 ? 
+            this.globalCacheStats.totalSizeReduction / totalOriginal : 0;
+    }
+
+    trackAccessPattern(level, key) {
+        const stats = this.cacheStats.get(level);
+        const pattern = stats.accessPattern;
+        
+        pattern.set(key, (pattern.get(key) || 0) + 1);
+        
+        // Keep only top 100 access patterns
+        if (pattern.size > 100) {
+            const sorted = Array.from(pattern.entries()).sort((a, b) => b[1] - a[1]);
+            stats.accessPattern = new Map(sorted.slice(0, 100));
+        }
+    }
+
+    trackPerformanceMetric(level, operation, time) {
+        const metrics = this.performanceMetrics.get(level);
+        const operationMetrics = metrics[`${operation}Times`];
+        
+        operationMetrics.push(time);
+        
+        // Keep only last 50 measurements
+        if (operationMetrics.length > 50) {
+            operationMetrics.shift();
+        }
+    }
+
+    startCacheOptimization() {
+        // Run cache optimization every 5 minutes
+        setInterval(() => {
+            this.optimizeCaches();
+        }, 300000);
+        
+        // Run cleanup every minute
+        setInterval(() => {
+            this.performCacheCleanup();
+        }, 60000);
+        
+        console.log('⚙️ Cache optimization and cleanup started');
+    }
+
+    async optimizeCaches() {
+        console.log('⚙️ Running cache optimization...');
+        
+        for (const level of this.cacheHierarchy) {
+            await this.optimizeCacheLevel(level);
+        }
+        
+        // Update configuration based on performance
+        this.adaptCacheConfiguration();
+    }
+
+    async optimizeCacheLevel(level) {
+        const cache = this.caches.get(level);
+        const stats = this.cacheStats.get(level);
+        const config = this.cacheConfig[level];
+        
+        // Clean expired entries
+        let expiredCount = 0;
+        const now = Date.now();
+        
+        cache.forEach((entry, key) => {
+            if (now - entry.timestamp > entry.ttl) {
+                cache.delete(key);
+                stats.totalSize -= entry.compressedSize;
+                stats.itemCount--;
+                expiredCount++;
+            }
+        });
+        
+        if (expiredCount > 0) {
+            console.log(`🧹 Cleaned ${expiredCount} expired entries from ${level}`);
+        }
+        
+        // Optimize based on access patterns and hit rates
+        const hitRate = stats.hits + stats.misses > 0 ? 
+            stats.hits / (stats.hits + stats.misses) : 0;
+        
+        this.adjustCacheConfiguration(level, hitRate, stats);
+        
+        stats.lastCleanup = now;
+    }
+
+    adjustCacheConfiguration(level, hitRate, stats) {
+        const config = this.cacheConfig[level];
+        
+        // Adjust cache size based on hit rate
+        if (hitRate < 0.3 && config.maxSize > 100) {
+            config.maxSize = Math.floor(config.maxSize * 0.9);
+            console.log(`📉 Reduced ${level} cache size to ${config.maxSize}`);
+        } else if (hitRate > 0.8 && config.maxSize < 50000) {
+            config.maxSize = Math.floor(config.maxSize * 1.1);
+            console.log(`📈 Increased ${level} cache size to ${config.maxSize}`);
+        }
+        
+        // Adjust TTL based on access patterns
+        const avgAccess = Array.from(stats.accessPattern.values())
+            .reduce((sum, count) => sum + count, 0) / stats.accessPattern.size || 1;
+        
+        if (avgAccess > 5 && config.ttl < 3600000) {
+            config.ttl = Math.min(config.ttl * 1.2, 3600000);
+            console.log(`⏰ Increased ${level} TTL to ${Math.round(config.ttl / 1000)}s`);
+        } else if (avgAccess < 2 && config.ttl > 60000) {
+            config.ttl = Math.max(config.ttl * 0.8, 60000);
+            console.log(`⏰ Decreased ${level} TTL to ${Math.round(config.ttl / 1000)}s`);
+        }
+    }
+
+    adaptCacheConfiguration() {
+        // Global adaptation based on overall performance
+        const overallHitRate = this.globalCacheStats.totalRequests > 0 ?
+            (this.globalCacheStats.totalHits / this.globalCacheStats.totalRequests) * 100 : 0;
+        
+        if (overallHitRate < 50) {
+            console.log('⚠️ Low overall hit rate, reviewing cache strategy');
+            this.suggestCacheOptimizations();
+        }
+    }
+
+    suggestCacheOptimizations() {
+        const suggestions = [];
+        
+        // Analyze each level
+        this.cacheHierarchy.forEach(level => {
+            const stats = this.cacheStats.get(level);
+            const hitRate = stats.hits + stats.misses > 0 ? 
+                (stats.hits / (stats.hits + stats.misses)) * 100 : 0;
+            
+            if (hitRate < 30) {
+                suggestions.push(`Consider reviewing ${level} cache strategy`);
+            }
+            
+            if (stats.evictions > stats.hits) {
+                suggestions.push(`${level} cache size may be too small`);
+            }
+        });
+        
+        if (suggestions.length > 0) {
+            console.log('💡 Cache optimization suggestions:', suggestions.join(', '));
+        }
+    }
+
+    performCacheCleanup() {
+        // Clean expired entries and optimize memory usage
+        this.cacheHierarchy.forEach(level => {
+            const cache = this.caches.get(level);
+            const stats = this.cacheStats.get(level);
+            
+            // Quick cleanup of obviously expired entries
+            const now = Date.now();
+            let cleanedCount = 0;
+            
+            cache.forEach((entry, key) => {
+                if (now - entry.timestamp > entry.ttl * 1.1) { // 10% grace period
+                    cache.delete(key);
+                    stats.totalSize -= entry.compressedSize;
+                    stats.itemCount--;
+                    cleanedCount++;
+                }
+            });
+            
+            if (cleanedCount > 0) {
+                console.log(`🧹 Quick cleanup: ${cleanedCount} entries from ${level}`);
+            }
+        });
+    }
+
+    // Helper methods
+    getTotalCacheSize() {
+        let totalSize = 0;
+        this.cacheStats.forEach(stats => {
+            totalSize += stats.totalSize;
+        });
+        return totalSize;
+    }
+
+    shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+
+    getCacheStats() {
+        const levelStats = {};
+        
+        this.cacheHierarchy.forEach(level => {
+            const cache = this.caches.get(level);
+            const stats = this.cacheStats.get(level);
+            const config = this.cacheConfig[level];
+            
+            levelStats[level] = {
+                entries: cache.size,
+                maxSize: config.maxSize,
+                utilization: config.maxSize > 0 ? (cache.size / config.maxSize) * 100 : 0,
+                hits: stats.hits,
+                misses: stats.misses,
+                hitRate: (stats.hits + stats.misses) > 0 ? (stats.hits / (stats.hits + stats.misses)) * 100 : 0,
+                evictions: stats.evictions,
+                totalSize: stats.totalSize,
+                averageItemSize: stats.averageItemSize,
+                compressionSavings: stats.compressionSavings,
+                ttl: config.ttl,
+                compressionEnabled: config.compressionEnabled
+            };
+        });
+        
+        return {
+            global: this.globalCacheStats,
+            levels: levelStats,
+            overallHitRate: this.globalCacheStats.totalRequests > 0 ?
+                (this.globalCacheStats.totalHits / this.globalCacheStats.totalRequests) * 100 : 0,
+            totalCacheSize: this.getTotalCacheSize()
+        };
+    }
+}
+
+// 🗜️ COMPRESSION ENGINE
+class CompressionEngine {
+    constructor() {
+        this.compressionStats = {
+            totalCompressions: 0,
+            totalDecompressions: 0,
+            totalTimeSaved: 0,
+            totalSpaceSaved: 0
+        };
+    }
+
+    async compress(data) {
+        // Simple compression simulation (in real implementation, use actual compression library)
+        const startTime = Date.now();
+        
+        if (typeof data === 'string') {
+            // Simulate string compression
+            const compressed = this.simulateStringCompression(data);
+            this.compressionStats.totalCompressions++;
+            this.compressionStats.totalTimeSaved += Date.now() - startTime;
+            
+            return {
+                compressed: true,
+                data: compressed,
+                originalSize: data.length,
+                compressedSize: compressed.length
+            };
+        } else {
+            // For objects, JSON stringify then compress
+            const jsonString = JSON.stringify(data);
+            const compressed = this.simulateStringCompression(jsonString);
+            this.compressionStats.totalCompressions++;
+            
+            return {
+                compressed: true,
+                data: compressed,
+                originalSize: jsonString.length,
+                compressedSize: compressed.length,
+                isObject: true
+            };
+        }
+    }
+
+    async decompress(compressedData) {
+        const startTime = Date.now();
+        
+        if (compressedData.isObject) {
+            const decompressed = this.simulateStringDecompression(compressedData.data);
+            this.compressionStats.totalDecompressions++;
+            return JSON.parse(decompressed);
+        } else {
+            const decompressed = this.simulateStringDecompression(compressedData.data);
+            this.compressionStats.totalDecompressions++;
+            return decompressed;
+        }
+    }
+
+    simulateStringCompression(str) {
+        // Simple compression simulation - remove repeated patterns
+        // In reality, you'd use gzip, lz4, or similar
+        return str.replace(/(.)\1{2,}/g, (match, char) => {
+            return `${char}*${match.length}`;
+        });
+    }
+
+    simulateStringDecompression(compressed) {
+        // Reverse the compression simulation
+        return compressed.replace(/(.)\*(\d+)/g, (match, char, count) => {
+            return char.repeat(parseInt(count));
+        });
+    }
+}
+
+// 📤 PART 6.3 EXPORTS
+module.exports = {
+    AdvancedCacheManager,
+    CompressionEngine,
+    
+    // Create global instance
+    advancedCacheManager: new AdvancedCacheManager()
+};
+
+console.log('🎯 PART 6.3: Advanced Caching System loaded');
+console.log('💾 Features: 3-tier hierarchy (L1/L2/L3), Smart eviction, Compression engine');
+console.log('⚡ Policies: LRU, LFU, Time-based, Size-based eviction strategies');
+console.log('📊 Monitoring: Hit rates, Performance metrics, Auto-optimization');
+console.log('🗜️ Compression: Automatic compression/decompression with size optimization');
+console.log('⚙️ Ready for: get(), set(), evictEntries(), getCacheStats()');
+
+// utils/contextEnhancerPart6_4.js - PART 6.4: ADVANCED LOAD BALANCER
+// Add these enhancements to your existing contextEnhancer.js
+
+// ⚖️ ADVANCED LOAD BALANCER SYSTEM
+class AdvancedLoadBalancer {
+    constructor() {
+        this.servers = new Map();
+        this.serverPools = new Map();
+        this.routingTable = new Map();
+        this.circuitBreakers = new Map();
+        this.healthCheckers = new Map();
+        
+        this.balancerConfig = {
+            healthCheckInterval: 30000, // 30 seconds
+            circuitBreakerThreshold: 5, // failures before opening
+            circuitBreakerTimeout: 60000, // 1 minute recovery time
+            retryAttempts: 3,
+            retryDelay: 1000, // 1 second
+            connectionTimeout: 10000, // 10 seconds
+            maxConcurrentRequests: 1000
+        };
+        
+        this.algorithms = {
+            round_robin: new RoundRobinBalancer(),
+            least_connections: new LeastConnectionsBalancer(),
+            weighted_round_robin: new WeightedRoundRobinBalancer(),
+            ip_hash: new IPHashBalancer(),
+            health_based: new HealthBasedBalancer()
+        };
+        
+        this.loadBalancerStats = {
+            totalRequests: 0,
+            successfulRequests: 0,
+            failedRequests: 0,
+            totalResponseTime: 0,
+            averageResponseTime: 0,
+            requestsPerSecond: 0,
+            activeConnections: 0,
+            circuitBreakerTrips: 0
+        };
+        
+        this.requestHistory = [];
+        this.performanceMetrics = new Map();
+        this.initializeDefaultPools();
+        this.startHealthMonitoring();
+    }
+
+    initializeDefaultPools() {
+        // AI Processing Pool
+        this.createServerPool('ai_processing', {
+            algorithm: 'health_based',
+            healthCheckPath: '/health',
+            servers: [
+                { id: 'ai-server-1', host: 'ai1.internal', port: 8001, weight: 100 },
+                { id: 'ai-server-2', host: 'ai2.internal', port: 8001, weight: 100 },
+                { id: 'ai-server-3', host: 'ai3.internal', port: 8001, weight: 80 }
+            ]
+        });
+        
+        // Database Pool
+        this.createServerPool('database', {
+            algorithm: 'least_connections',
+            healthCheckPath: '/db/health',
+            servers: [
+                { id: 'db-primary', host: 'db1.internal', port: 5432, weight: 100, role: 'primary' },
+                { id: 'db-replica-1', host: 'db2.internal', port: 5432, weight: 80, role: 'replica' },
+                { id: 'db-replica-2', host: 'db3.internal', port: 5432, weight: 80, role: 'replica' }
+            ]
+        });
+        
+        // Cache Pool
+        this.createServerPool('cache', {
+            algorithm: 'ip_hash',
+            healthCheckPath: '/cache/ping',
+            servers: [
+                { id: 'cache-1', host: 'cache1.internal', port: 6379, weight: 100 },
+                { id: 'cache-2', host: 'cache2.internal', port: 6379, weight: 100 },
+                { id: 'cache-3', host: 'cache3.internal', port: 6379, weight: 100 }
+            ]
+        });
+        
+        // Web API Pool
+        this.createServerPool('web_api', {
+            algorithm: 'weighted_round_robin',
+            healthCheckPath: '/api/health',
+            servers: [
+                { id: 'api-1', host: 'api1.internal', port: 3000, weight: 120 },
+                { id: 'api-2', host: 'api2.internal', port: 3000, weight: 100 },
+                { id: 'api-3', host: 'api3.internal', port: 3000, weight: 100 },
+                { id: 'api-4', host: 'api4.internal', port: 3000, weight: 80 }
+            ]
+        });
+        
+        console.log('⚖️ Load balancer initialized with 4 server pools');
+    }
+
+    createServerPool(poolName, config) {
+        const pool = {
+            name: poolName,
+            algorithm: config.algorithm,
+            healthCheckPath: config.healthCheckPath,
+            servers: new Map(),
+            activeServers: new Set(),
+            healthyServers: new Set(),
+            currentIndex: 0, // For round-robin algorithms
+            
+            // Pool statistics
+            totalRequests: 0,
+            successfulRequests: 0,
+            failedRequests: 0,
+            averageResponseTime: 0,
+            
+            // Pool configuration
+            stickySession: config.stickySession || false,
+            sessionAffinity: config.sessionAffinity || 'none',
+            failoverEnabled: config.failoverEnabled !== false
+        };
+        
+        // Add servers to pool
+        config.servers.forEach(serverConfig => {
+            this.addServerToPool(poolName, serverConfig);
+        });
+        
+        this.serverPools.set(poolName, pool);
+        
+        // Initialize circuit breaker for pool
+        this.circuitBreakers.set(poolName, new CircuitBreaker(poolName, this.balancerConfig));
+        
+        console.log(`⚖️ Created server pool: ${poolName} with ${config.servers.length} servers`);
+    }
+
+    addServerToPool(poolName, serverConfig) {
+        const pool = this.serverPools.get(poolName);
+        if (!pool) {
+            throw new Error(`Server pool not found: ${poolName}`);
+        }
+        
+        const server = {
+            id: serverConfig.id,
+            host: serverConfig.host,
+            port: serverConfig.port,
+            weight: serverConfig.weight || 100,
+            role: serverConfig.role || 'worker',
+            
+            // Server state
+            status: 'unknown',
+            health: 100,
+            lastHealthCheck: null,
+            consecutiveFailures: 0,
+            consecutiveSuccesses: 0,
+            
+            // Performance metrics
+            activeConnections: 0,
+            totalRequests: 0,
+            successfulRequests: 0,
+            failedRequests: 0,
+            totalResponseTime: 0,
+            averageResponseTime: 0,
+            
+            // Timestamps
+            addedAt: Date.now(),
+            lastRequestAt: null,
+            lastSuccessAt: null,
+            lastFailureAt: null
+        };
+        
+        pool.servers.set(server.id, server);
+        this.servers.set(server.id, server);
+        
+        // Initialize health checker for server
+        this.healthCheckers.set(server.id, new HealthChecker(server, pool.healthCheckPath));
+        
+        console.log(`➕ Added server ${server.id} to pool ${poolName}`);
+    }
+
+    async routeRequest(poolName, request, options = {}) {
+        try {
+            const startTime = Date.now();
+            this.loadBalancerStats.totalRequests++;
+            
+            const {
+                clientIP = '127.0.0.1',
+                sessionId = null,
+                priority = 'normal',
+                retryOnFailure = true,
+                timeout = this.balancerConfig.connectionTimeout
+            } = options;
+            
+            console.log(`⚖️ Routing request to pool: ${poolName} (session: ${sessionId || 'none'})`);
+            
+            const pool = this.serverPools.get(poolName);
+            if (!pool) {
+                throw new Error(`Server pool not found: ${poolName}`);
+            }
+            
+            // Check circuit breaker
+            const circuitBreaker = this.circuitBreakers.get(poolName);
+            if (circuitBreaker && !circuitBreaker.canExecute()) {
+                throw new Error(`Circuit breaker open for pool: ${poolName}`);
+            }
+            
+            // Select server using configured algorithm
+            const selectedServer = await this.selectServer(pool, clientIP, sessionId, priority);
+            if (!selectedServer) {
+                throw new Error(`No healthy servers available in pool: ${poolName}`);
+            }
+            
+            // Execute request with retry logic
+            const result = await this.executeRequestWithRetry(
+                selectedServer,
+                request,
+                {
+                    retryOnFailure,
+                    timeout,
+                    maxRetries: this.balancerConfig.retryAttempts
+                }
+            );
+            
+            // Record successful request
+            const responseTime = Date.now() - startTime;
+            this.recordSuccessfulRequest(pool, selectedServer, responseTime);
+            
+            if (circuitBreaker) {
+                circuitBreaker.recordSuccess();
+            }
+            
+            console.log(`✅ Request routed successfully: ${selectedServer.id} (${responseTime}ms)`);
+            
+            return {
+                success: true,
+                response: result.response,
+                server: selectedServer.id,
+                responseTime: responseTime,
+                retryCount: result.retryCount || 0,
+                poolName: poolName
+            };
+            
+        } catch (error) {
+            console.error(`❌ Request routing failed for pool ${poolName}:`, error.message);
+            
+            const responseTime = Date.now() - startTime;
+            this.recordFailedRequest(poolName, responseTime, error);
+            
+            const circuitBreaker = this.circuitBreakers.get(poolName);
+            if (circuitBreaker) {
+                circuitBreaker.recordFailure();
+            }
+            
+            return {
+                success: false,
+                error: error.message,
+                responseTime: responseTime,
+                poolName: poolName
+            };
+        }
+    }
+
+    async selectServer(pool, clientIP, sessionId, priority) {
+        const algorithm = this.algorithms[pool.algorithm];
+        if (!algorithm) {
+            throw new Error(`Unknown load balancing algorithm: ${pool.algorithm}`);
+        }
+        
+        // Get available healthy servers
+        const healthyServers = Array.from(pool.servers.values())
+            .filter(server => server.status === 'healthy' && server.health > 50);
+        
+        if (healthyServers.length === 0) {
+            return null;
+        }
+        
+        // Apply session affinity if configured
+        if (pool.stickySession && sessionId) {
+            const affinityServer = this.getAffinityServer(pool, sessionId);
+            if (affinityServer && healthyServers.includes(affinityServer)) {
+                return affinityServer;
+            }
+        }
+        
+        // Use algorithm to select server
+        const selectedServer = algorithm.selectServer(healthyServers, {
+            clientIP,
+            sessionId,
+            priority,
+            pool
+        });
+        
+        // Update server selection tracking
+        if (selectedServer) {
+            selectedServer.activeConnections++;
+            selectedServer.lastRequestAt = Date.now();
+            
+            // Update session affinity if enabled
+            if (pool.stickySession && sessionId) {
+                this.setAffinityServer(pool, sessionId, selectedServer);
+            }
+        }
+        
+        return selectedServer;
+    }
+
+    async executeRequestWithRetry(server, request, options) {
+        const { retryOnFailure, timeout, maxRetries } = options;
+        let lastError;
+        let retryCount = 0;
+        
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`🔄 Executing request on ${server.id} (attempt ${attempt + 1}/${maxRetries + 1})`);
+                
+                const result = await this.executeRequest(server, request, timeout);
+                
+                if (attempt > 0) {
+                    console.log(`✅ Request succeeded after ${attempt} retries`);
+                }
+                
+                return {
+                    response: result,
+                    retryCount: attempt
+                };
+                
+            } catch (error) {
+                lastError = error;
+                retryCount = attempt;
+                
+                console.error(`❌ Request attempt ${attempt + 1} failed:`, error.message);
+                
+                // Don't retry if it's the last attempt or retry is disabled
+                if (attempt >= maxRetries || !retryOnFailure) {
+                    break;
+                }
+                
+                // Don't retry on certain error types
+                if (this.isNonRetryableError(error)) {
+                    break;
+                }
+                
+                // Wait before retry with exponential backoff
+                const delay = this.balancerConfig.retryDelay * Math.pow(2, attempt);
+                await this.sleep(delay);
+            }
+        }
+        
+        throw new Error(`Request failed after ${retryCount + 1} attempts: ${lastError.message}`);
+    }
+
+    async executeRequest(server, request, timeout) {
+        // Simulate request execution (in real implementation, this would make HTTP request)
+        return new Promise((resolve, reject) => {
+            const executionTime = Math.random() * 2000 + 500; // 500-2500ms
+            const failureRate = server.health < 80 ? 0.2 : 0.05; // Higher failure rate for unhealthy servers
+            
+            setTimeout(() => {
+                if (Math.random() < failureRate) {
+                    reject(new Error(`Server ${server.id} request failed`));
+                } else {
+                    resolve({
+                        data: `Response from ${server.id}`,
+                        timestamp: Date.now(),
+                        server: server.id
+                    });
+                }
+            }, executionTime);
+        });
+    }
+
+    recordSuccessfulRequest(pool, server, responseTime) {
+        // Update server metrics
+        server.totalRequests++;
+        server.successfulRequests++;
+        server.totalResponseTime += responseTime;
+        server.averageResponseTime = server.totalResponseTime / server.totalRequests;
+        server.lastSuccessAt = Date.now();
+        server.consecutiveSuccesses++;
+        server.consecutiveFailures = 0;
+        server.activeConnections = Math.max(0, server.activeConnections - 1);
+        
+        // Update pool metrics
+        pool.totalRequests++;
+        pool.successfulRequests++;
+        const poolAvgResponse = pool.averageResponseTime;
+        pool.averageResponseTime = ((poolAvgResponse * (pool.totalRequests - 1)) + responseTime) / pool.totalRequests;
+        
+        // Update global metrics
+        this.loadBalancerStats.successfulRequests++;
+        this.loadBalancerStats.totalResponseTime += responseTime;
+        this.loadBalancerStats.averageResponseTime = 
+            this.loadBalancerStats.totalResponseTime / this.loadBalancerStats.totalRequests;
+        
+        // Record in history
+        this.recordRequestHistory(pool.name, server.id, responseTime, true);
+    }
+
+    recordFailedRequest(poolName, responseTime, error) {
+        const pool = this.serverPools.get(poolName);
+        if (pool) {
+            pool.totalRequests++;
+            pool.failedRequests++;
+        }
+        
+        // Update global metrics
+        this.loadBalancerStats.failedRequests++;
+        this.loadBalancerStats.totalResponseTime += responseTime;
+        this.loadBalancerStats.averageResponseTime = 
+            this.loadBalancerStats.totalResponseTime / this.loadBalancerStats.totalRequests;
+        
+        // Record in history
+        this.recordRequestHistory(poolName, null, responseTime, false, error.message);
+    }
+
+    recordRequestHistory(poolName, serverId, responseTime, success, error = null) {
+        this.requestHistory.push({
+            timestamp: Date.now(),
+            poolName: poolName,
+            serverId: serverId,
+            responseTime: responseTime,
+            success: success,
+            error: error
+        });
+        
+        // Keep only last 1000 entries
+        if (this.requestHistory.length > 1000) {
+            this.requestHistory.shift();
+        }
+    }
+
+    startHealthMonitoring() {
+        // Health check interval
+        setInterval(() => {
+            this.performHealthChecks();
+        }, this.balancerConfig.healthCheckInterval);
+        
+        // Performance metrics collection
+        setInterval(() => {
+            this.collectPerformanceMetrics();
+        }, 10000); // Every 10 seconds
+        
+        // Circuit breaker monitoring
+        setInterval(() => {
+            this.updateCircuitBreakers();
+        }, 5000); // Every 5 seconds
+        
+        console.log('💓 Health monitoring started');
+    }
+
+    async performHealthChecks() {
+        console.log('💓 Performing health checks...');
+        
+        const healthPromises = [];
+        
+        this.servers.forEach((server, serverId) => {
+            const healthChecker = this.healthCheckers.get(serverId);
+            if (healthChecker) {
+                healthPromises.push(this.checkServerHealth(server, healthChecker));
+            }
+        });
+        
+        await Promise.allSettled(healthPromises);
+        
+        // Update pool health status
+        this.updatePoolHealthStatus();
+    }
+
+    async checkServerHealth(server, healthChecker) {
+        try {
+            const healthResult = await healthChecker.check();
+            
+            if (healthResult.healthy) {
+                server.status = 'healthy';
+                server.health = Math.min(100, server.health + 5);
+                server.consecutiveFailures = 0;
+                server.consecutiveSuccesses++;
+            } else {
+                server.status = 'unhealthy';
+                server.health = Math.max(0, server.health - 10);
+                server.consecutiveFailures++;
+                server.consecutiveSuccesses = 0;
+                server.lastFailureAt = Date.now();
+            }
+            
+            server.lastHealthCheck = Date.now();
+            
+        } catch (error) {
+            server.status = 'error';
+            server.health = Math.max(0, server.health - 15);
+            server.consecutiveFailures++;
+            server.consecutiveSuccesses = 0;
+            server.lastFailureAt = Date.now();
+            server.lastHealthCheck = Date.now();
+            
+            console.error(`❌ Health check failed for ${server.id}:`, error.message);
+        }
+    }
+
+    updatePoolHealthStatus() {
+        this.serverPools.forEach((pool, poolName) => {
+            const servers = Array.from(pool.servers.values());
+            const healthyServers = servers.filter(server => server.status === 'healthy');
+            
+            pool.healthyServers.clear();
+            healthyServers.forEach(server => pool.healthyServers.add(server.id));
+            
+            // Log pool health changes
+            if (healthyServers.length === 0) {
+                console.log(`🚨 CRITICAL: No healthy servers in pool ${poolName}`);
+            } else if (healthyServers.length < servers.length * 0.5) {
+                console.log(`⚠️ WARNING: Only ${healthyServers.length}/${servers.length} servers healthy in pool ${poolName}`);
+            }
+        });
+    }
+
+    collectPerformanceMetrics() {
+        this.serverPools.forEach((pool, poolName) => {
+            const metrics = {
+                timestamp: Date.now(),
+                totalRequests: pool.totalRequests,
+                successRate: pool.totalRequests > 0 ? (pool.successfulRequests / pool.totalRequests) * 100 : 100,
+                averageResponseTime: pool.averageResponseTime,
+                healthyServers: pool.healthyServers.size,
+                totalServers: pool.servers.size
+            };
+            
+            if (!this.performanceMetrics.has(poolName)) {
+                this.performanceMetrics.set(poolName, []);
+            }
+            
+            const poolMetrics = this.performanceMetrics.get(poolName);
+            poolMetrics.push(metrics);
+            
+            // Keep only last 100 entries
+            if (poolMetrics.length > 100) {
+                poolMetrics.shift();
+            }
+        });
+        
+        // Update requests per second
+        const recentRequests = this.requestHistory.filter(req => 
+            Date.now() - req.timestamp < 60000 // Last minute
+        );
+        this.loadBalancerStats.requestsPerSecond = Math.round(recentRequests.length / 60);
+    }
+
+    updateCircuitBreakers() {
+        this.circuitBreakers.forEach((circuitBreaker, poolName) => {
+            circuitBreaker.update();
+            
+            if (circuitBreaker.isOpen()) {
+                this.loadBalancerStats.circuitBreakerTrips++;
+            }
+        });
+    }
+
+    // Session affinity methods
+    getAffinityServer(pool, sessionId) {
+        const affinityKey = `${pool.name}_${sessionId}`;
+        const serverId = this.routingTable.get(affinityKey);
+        return serverId ? pool.servers.get(serverId) : null;
+    }
+
+    setAffinityServer(pool, sessionId, server) {
+        const affinityKey = `${pool.name}_${sessionId}`;
+        this.routingTable.set(affinityKey, server.id);
+        
+        // Clean up old affinity entries periodically
+        if (this.routingTable.size > 10000) {
+            const entries = Array.from(this.routingTable.entries());
+            // Keep only recent half of entries (simple cleanup)
+            this.routingTable.clear();
+            entries.slice(-5000).forEach(([key, value]) => {
+                this.routingTable.set(key, value);
+            });
+        }
+    }
+
+    // Utility methods
+    isNonRetryableError(error) {
+        const nonRetryablePatterns = [
+            /authentication/i,
+            /authorization/i,
+            /forbidden/i,
+            /not found/i,
+            /bad request/i,
+            /invalid/i
+        ];
+        
+        return nonRetryablePatterns.some(pattern => pattern.test(error.message));
+    }
+
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Statistics and monitoring
+    getLoadBalancerStats() {
+        return {
+            timestamp: Date.now(),
+            global: {
+                ...this.loadBalancerStats,
+                successRate: this.loadBalancerStats.totalRequests > 0 ?
+                    (this.loadBalancerStats.successfulRequests / this.loadBalancerStats.totalRequests) * 100 : 100
+            },
+            pools: this.getPoolStatistics(),
+            servers: this.getServerStatistics(),
+            circuitBreakers: this.getCircuitBreakerStatus(),
+            recentRequests: this.requestHistory.slice(-50) // Last 50 requests
+        };
+    }
+
+    getPoolStatistics() {
+        const poolStats = {};
+        
+        this.serverPools.forEach((pool, poolName) => {
+            poolStats[poolName] = {
+                algorithm: pool.algorithm,
+                totalServers: pool.servers.size,
+                healthyServers: pool.healthyServers.size,
+                totalRequests: pool.totalRequests,
+                successfulRequests: pool.successfulRequests,
+                failedRequests: pool.failedRequests,
+                successRate: pool.totalRequests > 0 ? (pool.successfulRequests / pool.totalRequests) * 100 : 100,
+                averageResponseTime: pool.averageResponseTime,
+                stickySession: pool.stickySession,
+                failoverEnabled: pool.failoverEnabled
+            };
+        });
+        
+        return poolStats;
+    }
+
+    getServerStatistics() {
+        const serverStats = {};
+        
+        this.servers.forEach((server, serverId) => {
+            serverStats[serverId] = {
+                status: server.status,
+                health: server.health,
+                weight: server.weight,
+                role: server.role,
+                activeConnections: server.activeConnections,
+                totalRequests: server.totalRequests,
+                successfulRequests: server.successfulRequests,
+                failedRequests: server.failedRequests,
+                successRate: server.totalRequests > 0 ? (server.successfulRequests / server.totalRequests) * 100 : 100,
+                averageResponseTime: server.averageResponseTime,
+                consecutiveFailures: server.consecutiveFailures,
+                consecutiveSuccesses: server.consecutiveSuccesses,
+                lastHealthCheck: server.lastHealthCheck,
+                lastRequestAt: server.lastRequestAt
+            };
+        });
+        
+        return serverStats;
+    }
+
+    getCircuitBreakerStatus() {
+        const status = {};
+        
+        this.circuitBreakers.forEach((circuitBreaker, poolName) => {
+            status[poolName] = circuitBreaker.getStatus();
+        });
+        
+        return status;
+    }
+
+    // Configuration methods
+    updateBalancerConfig(newConfig) {
+        this.balancerConfig = { ...this.balancerConfig, ...newConfig };
+        console.log('⚙️ Load balancer configuration updated');
+    }
+
+    removeServerFromPool(poolName, serverId) {
+        const pool = this.serverPools.get(poolName);
+        if (!pool) {
+            throw new Error(`Server pool not found: ${poolName}`);
+        }
+        
+        const server = pool.servers.get(serverId);
+        if (!server) {
+            throw new Error(`Server not found: ${serverId}`);
+        }
+        
+        // Check if server has active connections
+        if (server.activeConnections > 0) {
+            console.log(`⚠️ Server ${serverId} has ${server.activeConnections} active connections`);
+        }
+        
+        pool.servers.delete(serverId);
+        pool.healthyServers.delete(serverId);
+        this.servers.delete(serverId);
+        this.healthCheckers.delete(serverId);
+        
+        console.log(`➖ Removed server ${serverId} from pool ${poolName}`);
+    }
+
+    drainServer(serverId) {
+        const server = this.servers.get(serverId);
+        if (!server) {
+            throw new Error(`Server not found: ${serverId}`);
+        }
+        
+        server.status = 'draining';
+        console.log(`🔄 Server ${serverId} set to draining mode`);
+        
+        return new Promise((resolve) => {
+            const checkConnections = () => {
+                if (server.activeConnections === 0) {
+                    server.status = 'drained';
+                    console.log(`✅ Server ${serverId} fully drained`);
+                    resolve();
+                } else {
+                    console.log(`⏳ Server ${serverId} draining: ${server.activeConnections} connections remaining`);
+                    setTimeout(checkConnections, 5000);
+                }
+            };
+            checkConnections();
+        });
+    }
+}
+
+// 🔄 ROUND ROBIN BALANCER
+class RoundRobinBalancer {
+    selectServer(servers, options) {
+        if (servers.length === 0) return null;
+        
+        const pool = options.pool;
+        const server = servers[pool.currentIndex % servers.length];
+        pool.currentIndex = (pool.currentIndex + 1) % servers.length;
+        
+        return server;
+    }
+}
+
+// 🔗 LEAST CONNECTIONS BALANCER  
+class LeastConnectionsBalancer {
+    selectServer(servers, options) {
+        if (servers.length === 0) return null;
+        
+        return servers.reduce((least, current) => {
+            return current.activeConnections < least.activeConnections ? current : least;
+        });
+    }
+}
+
+// ⚖️ WEIGHTED ROUND ROBIN BALANCER
+class WeightedRoundRobinBalancer {
+    constructor() {
+        this.weightCounters = new Map();
+    }
+    
+    selectServer(servers, options) {
+        if (servers.length === 0) return null;
+        
+        const poolName = options.pool.name;
+        
+        // Initialize weight counters for pool if not exists
+        if (!this.weightCounters.has(poolName)) {
+            this.weightCounters.set(poolName, new Map());
+        }
+        
+        const counters = this.weightCounters.get(poolName);
+        
+        // Find server with highest current weight
+        let selectedServer = null;
+        let maxCurrentWeight = -1;
+        
+        servers.forEach(server => {
+            if (!counters.has(server.id)) {
+                counters.set(server.id, 0);
+            }
+            
+            const currentWeight = counters.get(server.id) + server.weight;
+            counters.set(server.id, currentWeight);
+            
+            if (currentWeight > maxCurrentWeight) {
+                maxCurrentWeight = currentWeight;
+                selectedServer = server;
+            }
+        });
+        
+        // Reduce selected server's weight by total weight
+        if (selectedServer) {
+            const totalWeight = servers.reduce((sum, server) => sum + server.weight, 0);
+            const currentWeight = counters.get(selectedServer.id);
+            counters.set(selectedServer.id, currentWeight - totalWeight);
+        }
+        
+        return selectedServer;
+    }
+}
+
+// 🏷️ IP HASH BALANCER
+class IPHashBalancer {
+    selectServer(servers, options) {
+        if (servers.length === 0) return null;
+        
+        const clientIP = options.clientIP || '127.0.0.1';
+        const hash = this.hashIP(clientIP);
+        const index = hash % servers.length;
+        
+        return servers[index];
+    }
+    
+    hashIP(ip) {
+        let hash = 0;
+        for (let i = 0; i < ip.length; i++) {
+            const char = ip.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+        return Math.abs(hash);
+    }
+}
+
+// 💓 HEALTH BASED BALANCER
+class HealthBasedBalancer {
+    selectServer(servers, options) {
+        if (servers.length === 0) return null;
+        
+        // Weight servers by health and inverse response time
+        const scoredServers = servers.map(server => {
+            const healthScore = server.health / 100;
+            const responseScore = server.averageResponseTime > 0 ? 
+                1000 / server.averageResponseTime : 1;
+            const loadScore = server.weight / Math.max(1, server.activeConnections);
+            
+            return {
+                server: server,
+                score: healthScore * responseScore * loadScore
+            };
+        });
+        
+        // Sort by score and select best
+        scoredServers.sort((a, b) => b.score - a.score);
+        return scoredServers[0].server;
+    }
+}
+
+// 🔌 CIRCUIT BREAKER
+class CircuitBreaker {
+    constructor(name, config) {
+        this.name = name;
+        this.config = config;
+        this.state = 'closed'; // closed, open, half-open
+        this.failures = 0;
+        this.successes = 0;
+        this.lastFailureTime = null;
+        this.lastOpenTime = null;
+        this.nextAttemptTime = null;
+        
+        this.stats = {
+            totalRequests: 0,
+            totalFailures: 0,
+            totalSuccesses: 0,
+            timesOpened: 0,
+            timesClosed: 0,
+            averageFailureRate: 0
+        };
+    }
+
+    canExecute() {
+        const now = Date.now();
+        
+        switch (this.state) {
+            case 'closed':
+                return true;
+                
+            case 'open':
+                if (now > this.nextAttemptTime) {
+                    this.state = 'half-open';
+                    console.log(`🔌 Circuit breaker ${this.name} entering half-open state`);
+                    return true;
+                }
+                return false;
+                
+            case 'half-open':
+                return true;
+                
+            default:
+                return false;
+        }
+    }
+
+    recordSuccess() {
+        this.successes++;
+        this.stats.totalRequests++;
+        this.stats.totalSuccesses++;
+        
+        if (this.state === 'half-open') {
+            // Close circuit breaker after successful request in half-open state
+            this.state = 'closed';
+            this.failures = 0;
+            this.stats.timesClosed++;
+            console.log(`✅ Circuit breaker ${this.name} closed after successful request`);
+        }
+    }
+
+    recordFailure() {
+        this.failures++;
+        this.stats.totalRequests++;
+        this.stats.totalFailures++;
+        this.lastFailureTime = Date.now();
+        
+        if (this.state === 'closed' && this.failures >= this.config.circuitBreakerThreshold) {
+            this.openCircuit();
+        } else if (this.state === 'half-open') {
+            this.openCircuit();
+        }
+        
+        this.updateFailureRate();
+    }
+
+    openCircuit() {
+        this.state = 'open';
+        this.lastOpenTime = Date.now();
+        this.nextAttemptTime = this.lastOpenTime + this.config.circuitBreakerTimeout;
+        this.stats.timesOpened++;
+        
+        console.log(`🚨 Circuit breaker ${this.name} opened after ${this.failures} failures`);
+    }
+
+    updateFailureRate() {
+        if (this.stats.totalRequests > 0) {
+            this.stats.averageFailureRate = (this.stats.totalFailures / this.stats.totalRequests) * 100;
+        }
+    }
+
+    update() {
+        // Reset failure count periodically in closed state
+        if (this.state === 'closed' && this.failures > 0) {
+            const timeSinceLastFailure = Date.now() - (this.lastFailureTime || 0);
+            if (timeSinceLastFailure > this.config.circuitBreakerTimeout) {
+                this.failures = Math.max(0, this.failures - 1);
+            }
+        }
+    }
+
+    isOpen() {
+        return this.state === 'open';
+    }
+
+    getStatus() {
+        return {
+            state: this.state,
+            failures: this.failures,
+            successes: this.successes,
+            lastFailureTime: this.lastFailureTime,
+            nextAttemptTime: this.nextAttemptTime,
+            stats: this.stats,
+            canExecute: this.canExecute()
+        };
+    }
+
+    reset() {
+        this.state = 'closed';
+        this.failures = 0;
+        this.successes = 0;
+        this.lastFailureTime = null;
+        this.lastOpenTime = null;
+        this.nextAttemptTime = null;
+        
+        console.log(`🔄 Circuit breaker ${this.name} reset`);
+    }
+}
+
+// 💓 HEALTH CHECKER
+class HealthChecker {
+    constructor(server, healthCheckPath) {
+        this.server = server;
+        this.healthCheckPath = healthCheckPath;
+        this.lastCheck = null;
+        this.checkHistory = [];
+    }
+
+    async check() {
+        const startTime = Date.now();
+        
+        try {
+            // Simulate health check (in real implementation, this would make HTTP request)
+            const result = await this.performHealthCheck();
+            const responseTime = Date.now() - startTime;
+            
+            this.recordCheckResult(true, responseTime);
+            
+            return {
+                healthy: result.healthy,
+                responseTime: responseTime,
+                details: result.details
+            };
+            
+        } catch (error) {
+            const responseTime = Date.now() - startTime;
+            this.recordCheckResult(false, responseTime, error.message);
+            
+            return {
+                healthy: false,
+                responseTime: responseTime,
+                error: error.message
+            };
+        }
+    }
+
+    async performHealthCheck() {
+        // Simulate health check with server health-based probability
+        return new Promise((resolve, reject) => {
+            const checkTime = Math.random() * 1000 + 100; // 100-1100ms
+            
+            setTimeout(() => {
+                // Health check success probability based on server health
+                const healthThreshold = this.server.health / 100;
+                const random = Math.random();
+                
+                if (random < healthThreshold) {
+                    resolve({
+                        healthy: true,
+                        details: {
+                            status: 'ok',
+                            uptime: Date.now() - this.server.addedAt,
+                            load: this.server.activeConnections,
+                            memory: Math.random() * 80 + 20 // 20-100%
+                        }
+                    });
+                } else {
+                    reject(new Error(`Health check failed for ${this.server.id}`));
+                }
+            }, checkTime);
+        });
+    }
+
+    recordCheckResult(success, responseTime, error = null) {
+        const result = {
+            timestamp: Date.now(),
+            success: success,
+            responseTime: responseTime,
+            error: error
+        };
+        
+        this.checkHistory.push(result);
+        this.lastCheck = result;
+        
+        // Keep only last 50 health checks
+        if (this.checkHistory.length > 50) {
+            this.checkHistory.shift();
+        }
+    }
+
+    getHealthHistory() {
+        return {
+            server: this.server.id,
+            lastCheck: this.lastCheck,
+            recentChecks: this.checkHistory.slice(-10),
+            successRate: this.calculateSuccessRate(),
+            averageResponseTime: this.calculateAverageResponseTime()
+        };
+    }
+
+    calculateSuccessRate() {
+        if (this.checkHistory.length === 0) return 100;
+        
+        const successCount = this.checkHistory.filter(check => check.success).length;
+        return (successCount / this.checkHistory.length) * 100;
+    }
+
+    calculateAverageResponseTime() {
+        if (this.checkHistory.length === 0) return 0;
+        
+        const totalTime = this.checkHistory.reduce((sum, check) => sum + check.responseTime, 0);
+        return totalTime / this.checkHistory.length;
+    }
+}
+
+// Create global instance
+const advancedLoadBalancer = new AdvancedLoadBalancer();
+
+// 📤 PART 6.4 EXPORTS
+module.exports = {
+    // Main classes
+    AdvancedLoadBalancer,
+    RoundRobinBalancer,
+    LeastConnectionsBalancer,
+    WeightedRoundRobinBalancer,
+    IPHashBalancer,
+    HealthBasedBalancer,
+    CircuitBreaker,
+    HealthChecker,
+    
+    // Global instance
+    advancedLoadBalancer,
+    
+    // Direct access methods
+    routeRequest: (poolName, request, options) => 
+        advancedLoadBalancer.routeRequest(poolName, request, options),
+    
+    getLoadBalancerStats: () => 
+        advancedLoadBalancer.getLoadBalancerStats(),
+    
+    addServerToPool: (poolName, serverConfig) => 
+        advancedLoadBalancer.addServerToPool(poolName, serverConfig),
+    
+    removeServerFromPool: (poolName, serverId) => 
+        advancedLoadBalancer.removeServerFromPool(poolName, serverId),
+    
+    drainServer: (serverId) => 
+        advancedLoadBalancer.drainServer(serverId),
+    
+    createServerPool: (poolName, config) => 
+        advancedLoadBalancer.createServerPool(poolName, config)
+};
+
+console.log('⚖️ PART 6.4: Advanced Load Balancer loaded');
+console.log('🔄 Algorithms: Round Robin, Least Connections, Weighted RR, IP Hash, Health-based');
+console.log('🔌 Features: Circuit breakers, Health checks, Session affinity, Auto-failover');
+console.log('📊 Monitoring: Server metrics, Pool statistics, Performance tracking');
+console.log('🎯 Pools: AI Processing, Database, Cache, Web API (4 default pools)');
+console.log('⚡ Ready for: routeRequest(), getLoadBalancerStats(), addServerToPool()');
+
+
