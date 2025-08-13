@@ -2,13 +2,12 @@ require("dotenv").config({ path: ".env" });
 
 // Debug environment variables
 console.log("🔧 Environment check:");
-console.log(`ADMIN_CHAT_ID: ${process.env.ADMIN_CHAT_ID}`);
-console.log(`TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? "SET" : "NOT SET"}`);
-console.log(`OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "SET" : "NOT SET"}`);
-console.log(`ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "SET" : "NOT SET"}`);
-console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? "SET" : "NOT SET"}`);
-console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}`);
-
+console.log(ADMIN_CHAT_ID: ${process.env.ADMIN_CHAT_ID});
+console.log(TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? "SET" : "NOT SET"});
+console.log(OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "SET" : "NOT SET"});
+console.log(ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "SET" : "NOT SET"});
+console.log(DATABASE_URL: ${process.env.DATABASE_URL ? "SET" : "NOT SET"});
+console.log(DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}); // 🔧 ADDED
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
 
@@ -20,7 +19,6 @@ const {
     getStockMarketData,
     getRayDalioMarketData
 } = require("./utils/liveData");
-
 const { 
     analyzeLendingDeal, 
     getPortfolioStatus, 
@@ -28,7 +26,6 @@ const {
     performRiskAssessment, 
     generateLPReport 
 } = require("./utils/cambodiaLending");
-
 const {
     sendSmartMessage,
     sendAnalysis,
@@ -36,7 +33,6 @@ const {
     sendMarketAnalysis,
     sendAlert
 } = require("./utils/telegramSplitter");
-
 const {
     processVoiceMessage,
     processImageMessage,
@@ -52,15 +48,15 @@ const {
     getConversationHistoryDB,
     getUserProfileDB,
     getDatabaseStats,
-    
+
     // Enhanced persistent memory
     addPersistentMemoryDB,
     getPersistentMemoryDB,
-    
+
     // Training documents
     saveTrainingDocumentDB,
     getTrainingDocumentsDB,
-    
+
     // Ray Dalio enhanced functions
     saveRegimeData,
     savePortfolioAllocation,
@@ -72,14 +68,14 @@ const {
     logCommandUsage,
     getCurrentRegime,
     getLatestRiskAssessment,
-    
+
     // Cambodia fund functions
     saveCambodiaDeal,
     saveCambodiaPortfolio,
     getCambodiaFundAnalytics,
     getLatestCambodiaMarketData,
     getCambodiaDealsBy,
-    
+
     // Enhanced dual AI system
     saveDualAIConversation,
     saveAIHeadToHead,
@@ -88,51 +84,35 @@ const {
     getConversationIntelligenceAnalytics,
     getMasterEnhancedDualSystemAnalytics,
     saveEnhancedDualConversation,
-    
+
     // Analytics and monitoring
     getSystemAnalytics,
     getRayDalioStats,
     performHealthCheck,
     updateSystemMetrics,
     performDatabaseMaintenance,
-    
+
     // Connection monitoring
     connectionStats
 } = require("./utils/database");
-
 const { buildConversationContext } = require("./utils/memory");
 const { getTradingSummary, getAccountInfo } = require("./utils/metaTrader");
 
-// 🚀 ENHANCED: Import Individual AI Clients + DUAL AI SYSTEM
+// Import enhanced AI clients
 const { 
     getClaudeAnalysis,
-    getStrategicAnalysis: getClaudeStrategicAnalysis,
+    getStrategicAnalysis,
     getRegimeAnalysis,
     getCambodiaAnalysis: getClaudeCambodiaAnalysis,
     getPortfolioAnalysis,
     getAnomalyAnalysis
 } = require('./utils/claudeClient');
-
 const { 
     getGptAnalysis,
-    getMarketAnalysis: getGptMarketAnalysis,
-    getCambodiaAnalysis: getGptCambodiaAnalysis,
+    getMarketAnalysis,
+    getCambodiaAnalysis,
     getStrategicAnalysis: getGptStrategicAnalysis
 } = require('./utils/openaiClient');
-
-// 🚀 NEW: DUAL AI SYSTEM INTEGRATION
-const { 
-    getUniversalAnalysis,
-    getDualAnalysis,
-    routeQuery,
-    checkDualSystemHealth,
-    getGPT5Analysis,
-    getClaudeAnalysis: getDualClaudeAnalysis,
-    getMarketAnalysis: getDualMarketAnalysis,
-    getCambodiaAnalysis: getDualCambodiaAnalysis,
-    analyzeImageWithAI
-} = require('./utils/dualAISystem');
-
 const { 
     executeDualCommand,
     checkSystemHealth
@@ -141,7 +121,6 @@ const {
 // Load credentials
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
-
 if (!telegramToken || !openaiKey) {
     console.error("❌ Missing TELEGRAM_BOT_TOKEN or OPENAI_API_KEY in .env");
     process.exit(1);
@@ -149,7 +128,6 @@ if (!telegramToken || !openaiKey) {
 
 // Initialize Telegram Bot
 const bot = new TelegramBot(telegramToken, { polling: false });
-
 // Initialize OpenAI
 const openai = new OpenAI({ 
     apiKey: openaiKey,
