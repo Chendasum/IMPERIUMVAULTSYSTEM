@@ -1611,7 +1611,9 @@ function extractMemoryFact(userMessage, aiResponse) {
     return null;
 }
 
-// 🔧 ENHANCED: Media message handlers with better database integration and error handling
+// 🔧 PART 1: FIXED FILE/IMAGE PROCESSING FUNCTIONS FOR YOUR INDEX.JS
+// Replace the broken functions in your index.js with these working versions
+
 // 🔧 FIXED: Enhanced voice message handler (this one was working, keeping for completeness)
 async function handleVoiceMessage(msg, chatId, sessionId) {
     const startTime = Date.now();
@@ -2113,6 +2115,41 @@ async function analyzeImageWithGPT5(base64Image, prompt) {
         return response.choices[0]?.message?.content || null;
     } catch (error) {
         console.error("GPT-5 Vision API error:", error.message);
+        
+        // Fallback to GPT-4 if GPT-5 fails
+        if (error.message.includes('gpt-5') || error.message.includes('model')) {
+            console.log("🔄 Falling back to GPT-4 vision...");
+            try {
+                const fallbackResponse = await openai.chat.completions.create({
+                    model: "gpt-4o",  // Stable fallback model
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "text",
+                                    text: prompt
+                                },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: `data:image/jpeg;base64,${base64Image}`,
+                                        detail: "high"
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    max_completion_tokens: 1200,
+                    temperature: 0.7
+                });
+                
+                return fallbackResponse.choices[0]?.message?.content || null;
+            } catch (fallbackError) {
+                throw new Error(`Both GPT-5 and GPT-4 vision failed: ${fallbackError.message}`);
+            }
+        }
+        
         throw new Error(`GPT-5 vision analysis failed: ${error.message}`);
     }
 }
@@ -2120,12 +2157,24 @@ async function analyzeImageWithGPT5(base64Image, prompt) {
 // 🔧 NEW: PDF Text Extraction Function
 async function extractTextFromPDF(buffer) {
     try {
-        // Using pdf-parse library - you'll need to install it: npm install pdf-parse
+        // Using pdf-parse library - install with: npm install pdf-parse
         const pdf = require('pdf-parse');
         const data = await pdf(buffer);
+        
+        if (!data.text || data.text.length === 0) {
+            throw new Error("PDF contains no readable text");
+        }
+        
+        console.log(`📄 PDF extracted: ${data.numpages} pages, ${data.text.length} characters`);
         return data.text;
+        
     } catch (error) {
         console.error("PDF extraction error:", error.message);
+        
+        if (error.message.includes('pdf-parse')) {
+            throw new Error("PDF parsing library not installed. Run: npm install pdf-parse");
+        }
+        
         throw new Error(`PDF text extraction failed: ${error.message}`);
     }
 }
@@ -2133,12 +2182,30 @@ async function extractTextFromPDF(buffer) {
 // 🔧 NEW: Word Document Text Extraction Function  
 async function extractTextFromWord(buffer) {
     try {
-        // Using mammoth library - you'll need to install it: npm install mammoth
+        // Using mammoth library - install with: npm install mammoth
         const mammoth = require('mammoth');
         const result = await mammoth.extractRawText({ buffer: buffer });
+        
+        if (!result.value || result.value.length === 0) {
+            throw new Error("Word document contains no readable text");
+        }
+        
+        console.log(`📄 Word document extracted: ${result.value.length} characters`);
+        
+        // Log any warnings from mammoth
+        if (result.messages && result.messages.length > 0) {
+            console.log("⚠️ Word extraction warnings:", result.messages.map(m => m.message).join(', '));
+        }
+        
         return result.value;
+        
     } catch (error) {
         console.error("Word extraction error:", error.message);
+        
+        if (error.message.includes('mammoth')) {
+            throw new Error("Mammoth library not installed. Run: npm install mammoth");
+        }
+        
         throw new Error(`Word document extraction failed: ${error.message}`);
     }
 }
@@ -2146,449 +2213,58 @@ async function extractTextFromWord(buffer) {
 // 🔧 NEW: Excel Text Extraction Function
 async function extractTextFromExcel(buffer) {
     try {
-        // Using xlsx library - you'll need to install it: npm install xlsx
+        // Using xlsx library - install with: npm install xlsx
         const XLSX = require('xlsx');
-        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const workbook = XLSX.read(buffer, { 
+            type: 'buffer',
+            cellText: true,
+            cellDates: true
+        });
+        
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+            throw new Error("Excel file contains no readable sheets");
+        }
         
         let text = '';
-        workbook.SheetNames.forEach(sheetName => {
+        let totalCells = 0;
+        
+        workbook.SheetNames.forEach((sheetName, index) => {
             const sheet = workbook.Sheets[sheetName];
-            const csv = XLSX.utils.sheet_to_csv(sheet);
-            text += `Sheet: ${sheetName}\n${csv}\n\n`;
+            
+            // Convert sheet to CSV format for better text representation
+            const csv = XLSX.utils.sheet_to_csv(sheet, {
+                header: 1,
+                skipHidden: false,
+                blankrows: false
+            });
+            
+            if (csv && csv.trim().length > 0) {
+                text += `=== SHEET ${index + 1}: ${sheetName} ===\n`;
+                text += csv;
+                text += '\n\n';
+                
+                // Count cells for logging
+                const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1:A1');
+                totalCells += (range.e.r - range.s.r + 1) * (range.e.c - range.s.c + 1);
+            }
         });
         
+        if (text.length === 0) {
+            throw new Error("Excel file contains no readable data");
+        }
+        
+        console.log(`📊 Excel extracted: ${workbook.SheetNames.length} sheets, ${totalCells} cells, ${text.length} characters`);
         return text;
+        
     } catch (error) {
         console.error("Excel extraction error:", error.message);
+        
+        if (error.message.includes('xlsx') || error.message.includes('XLSX')) {
+            throw new Error("XLSX library not installed. Run: npm install xlsx");
+        }
+        
         throw new Error(`Excel extraction failed: ${error.message}`);
     }
-}
-            
-            // Log successful API usage
-            await logApiUsage('VISION_AI', 'image_analysis', 1, true, responseTime, largestPhoto.file_size || 0)
-                .catch(err => console.error('API log error:', err.message));
-            
-            console.log("✅ Image processed successfully");
-        } else {
-            await sendSmartMessage(bot, chatId, "❌ Image analysis failed. Please try again with a clearer image.");
-            
-            // Save failed analysis attempt with diagnostic data
-            await saveConversationDB(chatId, "[IMAGE_FAILED]", "Image analysis failed", "image", {
-                error: "Analysis returned empty",
-                imageWidth: largestPhoto.width,
-                imageHeight: largestPhoto.height,
-                fileSize: largestPhoto.file_size,
-                caption: msg.caption || null,
-                processingTime: responseTime,
-                sessionId: sessionId
-            }).catch(err => console.error('Image error save failed:', err.message));
-            
-            // Log failed API usage
-            await logApiUsage('VISION_AI', 'image_analysis', 1, false, responseTime, largestPhoto.file_size || 0)
-                .catch(err => console.error('API log error:', err.message));
-        }
-    } catch (error) {
-        const responseTime = Date.now() - startTime;
-        console.error("❌ Image processing error:", error.message);
-        await sendSmartMessage(bot, chatId, `❌ Image processing error: ${error.message}`);
-        
-        // Save comprehensive error details
-        await saveConversationDB(chatId, "[IMAGE_ERROR]", `Error: ${error.message}`, "image", {
-            error: error.message,
-            stackTrace: error.stack?.substring(0, 500),
-            caption: msg.caption || null,
-            processingTime: responseTime,
-            sessionId: sessionId
-        }).catch(err => console.error('Image error save failed:', err.message));
-        
-        // Log error for monitoring
-        await logApiUsage('VISION_AI', 'image_analysis', 1, false, responseTime, 0, 0)
-            .catch(err => console.error('API log error:', err.message));
-    }
-}
-
-// ---- shared helper (top-level once) ---------------------------------------
-const fetch = require('node-fetch');
-
-async function downloadTelegramFileBuffer(bot, fileId, timeoutMs = 30000) {
-  const fileLink = await bot.getFileLink(fileId);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(fileLink, { signal: controller.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    return await res.buffer();
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-// ---- IMAGE: Vision analysis via OpenAI (fix: use max_tokens) --------------
-async function analyzeImageWithOpenAI(base64Image, prompt) {
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-5", // vision-capable
-      messages: [{
-        role: "user",
-        content: [
-          { type: "text", text: prompt },
-          {
-            type: "image_url",
-            image_url: { url: `data:image/jpeg;base64,${base64Image}`, detail: "high" }
-          }
-        ]
-      }],
-      max_tokens: 1000,   // ✅ correct param
-      temperature: 0.7
-    });
-
-    return response.choices?.[0]?.message?.content || null;
-  } catch (error) {
-    console.error("OpenAI Vision API error:", error.message);
-    throw new Error(`Vision analysis failed: ${error.message}`);
-  }
-}
-
-// ---- IMAGE: main chat handler (pass bot explicitly) -----------------------
-async function handleImageMessage(bot, msg, chatId, sessionId) {
-  const startTime = Date.now();
-  try {
-    if (!msg.photo || !msg.photo.length) {
-      await bot.sendMessage(chatId, "No photo found in this message.");
-      return;
-    }
-
-    console.log("🖼️ Processing image message...");
-    await bot.sendMessage(chatId, "🖼️ Analyzing image with enhanced AI vision...");
-
-    const largestPhoto = msg.photo[msg.photo.length - 1];
-
-    // download image buffer
-    const buffer = await downloadTelegramFileBuffer(bot, largestPhoto.file_id);
-    const base64Image = buffer.toString('base64');
-
-    const analysisPrompt = msg.caption
-      ? `Analyze this image in detail. The user provided this caption: "${msg.caption}". Please provide a comprehensive analysis of what you see in the image.`
-      : `Analyze this image in detail. Describe what you see, identify key elements, colors, composition, and any text or objects present.`;
-
-    const analysis = await analyzeImageWithOpenAI(base64Image, analysisPrompt);
-
-    const responseTime = Date.now() - startTime;
-
-    if (analysis && analysis.length > 0) {
-      await sendAnalysis(bot, chatId, analysis, "Enhanced Image Analysis");
-
-      await saveConversationDB(
-        chatId,
-        "[IMAGE]" + (msg.caption ? `: ${msg.caption}` : ""),
-        analysis,
-        "image",
-        {
-          imageWidth: largestPhoto.width,
-          imageHeight: largestPhoto.height,
-          fileSize: largestPhoto.file_size,
-          caption: msg.caption || null,
-          analysisLength: analysis.length,
-          processingTime: responseTime,
-          sessionId,
-          timestamp: new Date().toISOString(),
-          imageQuality:
-            largestPhoto.width * largestPhoto.height > 1_000_000 ? "HIGH" : "STANDARD",
-        }
-      ).catch(err => console.error('Image save error:', err.message));
-
-      if (msg.caption?.length) {
-        console.log("📝 Processing image caption as conversation...");
-        await handleEnhancedConversation(chatId, `About this image: ${msg.caption}`, sessionId);
-      }
-
-      console.log("✅ Image processed successfully");
-    } else {
-      throw new Error("Image analysis returned empty result");
-    }
-  } catch (error) {
-    const responseTime = Date.now() - startTime;
-    console.error("❌ Image processing error:", error.message);
-
-    await sendSmartMessage(
-      bot,
-      chatId,
-      `❌ Image Analysis Error: ${error.message}\n\n` +
-      `**Please try:**\n` +
-      `• Uploading a clearer image\n` +
-      `• Reducing image file size\n` +
-      `• Using a different image format\n` +
-      `• Adding a descriptive caption`
-    );
-
-    await saveConversationDB(chatId, "[IMAGE_ERROR]", `Error: ${error.message}`, "image", {
-      error: error.message,
-      processingTime: responseTime,
-      sessionId
-    }).catch(err => console.error('Image error save failed:', err.message));
-  }
-}
-
-// ---- IMAGE: utility used elsewhere (returns {success,analysis|error}) ------
-async function processImageMessage(bot, fileId, chatId, caption = null) {
-  try {
-    const buffer = await downloadTelegramFileBuffer(bot, fileId);
-    const base64Image = buffer.toString('base64');
-
-    const analysisPrompt = caption
-      ? `Analyze this image in detail. The user provided this caption: "${caption}". Please provide a comprehensive analysis of what you see in the image.`
-      : `Analyze this image in detail. Describe what you see, identify key elements, colors, composition, and any text or objects present.`;
-
-    const analysis = await analyzeImageWithOpenAI(base64Image, analysisPrompt);
-
-    return { success: true, analysis };
-  } catch (error) {
-    console.error("Process image message error:", error.message);
-    return { success: false, error: error.message };
-  }
-}
-
-// ---- DOCUMENT: full chat handler (training vs. analysis) ------------------
-async function handleDocumentMessage(bot, msg, chatId, sessionId) {
-  const startTime = Date.now();
-  try {
-    console.log("📄 Processing document:", msg.document?.file_name);
-    if (!msg.document?.file_id) {
-      await sendSmartMessage(bot, chatId, "No document found in this message.");
-      return;
-    }
-
-    const isTraining = msg.caption?.toLowerCase().includes("train");
-    const fileName = msg.document.file_name || "untitled_document";
-    const fileSize = msg.document.file_size || 0;
-
-    if (isTraining) {
-      await bot.sendMessage(chatId, "📚 Processing document for enhanced AI training database...");
-      try {
-        const buffer = await downloadTelegramFileBuffer(bot, msg.document.file_id);
-        let content = '';
-        const fileExtension = (fileName.toLowerCase().split('.').pop()) || '';
-
-        if (['txt', 'md', 'json', 'csv'].includes(fileExtension)) {
-          content = buffer.toString('utf8');
-        } else if (fileExtension === 'pdf') {
-          throw new Error("PDF files require conversion to text format. Please save as .txt or .md file.");
-        } else {
-          content = buffer.toString('utf8');
-          console.log(`⚠️ Attempting to read ${fileExtension} file as text`);
-        }
-
-        if (!content.length) throw new Error("Document appears to be empty or unreadable");
-        if (content.length > 1_000_000) throw new Error("Document too large (max 1MB text content)");
-
-        const wordCount = content.split(/\s+/).filter(Boolean).length;
-        const summary = content.length > 500 ? content.slice(0, 500) + '...' : content;
-        const responseTime = Date.now() - startTime;
-
-        console.log(`📊 Document stats: ${wordCount} words, ${content.length} characters`);
-
-        const saved = await saveTrainingDocumentDB(chatId, fileName, content, 'user_uploaded', wordCount, summary);
-        if (saved) {
-          await sendSmartMessage(
-            bot,
-            chatId,
-            `📚 **Document Added to Enhanced AI Training Database**\n\n` +
-            `📄 **File:** ${fileName}\n` +
-            `📊 **Words:** ${wordCount.toLocaleString()}\n` +
-            `📏 **Size:** ${(fileSize / 1024).toFixed(1)} KB\n` +
-            `⚡ **Processing:** ${responseTime}ms\n` +
-            `💾 **Storage:** Enhanced PostgreSQL Database\n` +
-            `✅ **Your AI can now reference this document in conversations!**\n\n` +
-            `**Try asking:** "What did you learn from ${fileName}?"`
-          );
-        } else {
-          throw new Error("Database save operation failed - please try again");
-        }
-      } catch (downloadError) {
-        console.error("❌ Document download/processing error:", downloadError.message);
-
-        let errorMessage = `❌ Error processing document for training: ${downloadError.message}\n\n`;
-        const m = downloadError.message.toLowerCase();
-        if (m.includes('timeout') || m.includes('abort')) {
-          errorMessage += `**Timeout Error:** Document too large or connection slow\n`;
-        } else if (m.includes('http')) {
-          errorMessage += `**Download Error:** Could not download file from Telegram\n`;
-        } else if (m.includes('pdf')) {
-          errorMessage += `**Format Error:** PDF files need conversion\n`;
-        }
-
-        errorMessage += `**Please try:**\n` +
-          `• Converting to .txt or .md format\n` +
-          `• Reducing file size if too large\n` +
-          `• Checking if file is corrupted\n` +
-          `• Uploading via copy-paste for text content`;
-
-        await sendSmartMessage(bot, chatId, errorMessage);
-      }
-      return;
-    }
-
-    // ---------- non-training: run analysis ----------
-    await bot.sendMessage(chatId, "📄 Analyzing document with enhanced AI...");
-
-    try {
-      const buffer = await downloadTelegramFileBuffer(bot, msg.document.file_id);
-      const fileExtension = (fileName.toLowerCase().split('.').pop()) || '';
-      let content = '';
-
-      if (['txt', 'md', 'json', 'csv'].includes(fileExtension)) {
-        content = buffer.toString('utf8');
-      } else if (fileExtension === 'pdf') {
-        throw new Error("PDF analysis requires conversion. Please save as .txt file for analysis.");
-      } else {
-        content = buffer.toString('utf8');
-      }
-
-      if (!content.length) throw new Error("Document appears to be empty or unreadable");
-
-      let analysis;
-      if (content.length > 8000) {
-        const summary = content.slice(0, 4000);
-        const prompt =
-          `Analyze this document content:\n\n${summary}\n\n[Document truncated due to length]\n\n` +
-          `Provide a comprehensive analysis covering:\n` +
-          `1. Document type and purpose\n` +
-          `2. Key topics and themes\n` +
-          `3. Important insights or findings\n` +
-          `4. Structure and organization\n` +
-          `5. Recommendations or action items if any`;
-
-        analysis = await getGptAnalysis(prompt, {
-          maxCompletionTokens: 1000,
-          temperature: 0.7,
-          model: "gpt-5",
-        });
-      } else {
-        const prompt =
-          `Analyze this document:\n\n${content}\n\n` +
-          `Provide a detailed analysis covering:\n` +
-          `1. Document summary\n` +
-          `2. Key points and insights\n` +
-          `3. Structure and organization\n` +
-          `4. Important data or findings\n` +
-          `5. Recommendations or next steps`;
-
-        analysis = await getGptAnalysis(prompt, {
-          maxCompletionTokens: 1200,
-          temperature: 0.7,
-          model: "gpt-5",
-        });
-      }
-
-      const responseTime = Date.now() - startTime;
-
-      if (analysis && analysis.length > 0) {
-        await sendAnalysis(bot, chatId, analysis, `Enhanced Document Analysis: ${fileName}`);
-
-        await saveConversationDB(chatId, `[DOCUMENT] ${fileName}`, analysis, "document", {
-          fileName,
-          fileSize,
-          analysisLength: analysis.length,
-          processingTime: responseTime,
-          analysisSuccess: true,
-          sessionId,
-          analysisType: 'content_review',
-          contentLength: content.length,
-          fileType: fileExtension
-        }).catch(err => console.error('Document analysis save error:', err.message));
-
-        console.log("✅ Document analysis completed successfully");
-      } else {
-        throw new Error("AI analysis returned empty result");
-      }
-    } catch (analysisError) {
-      const responseTime = Date.now() - startTime;
-      console.error("❌ Document analysis error:", analysisError.message);
-
-      await sendSmartMessage(
-        bot,
-        chatId,
-        `❌ Document analysis failed: ${analysisError.message}\n\n` +
-        `**Please try:**\n` +
-        `• Converting to .txt format for better compatibility\n` +
-        `• Reducing file size if too large\n` +
-        `• Adding caption "train" to save for AI training instead\n` +
-        `• Copy-pasting text content directly\n` +
-        `• Uploading as image if it's a scan`
-      );
-
-      await saveConversationDB(chatId, `[DOCUMENT_ERROR] ${fileName}`, `Analysis failed: ${analysisError.message}`, "document", {
-        fileName,
-        fileSize,
-        error: analysisError.message,
-        processingTime: responseTime,
-        analysisSuccess: false,
-        sessionId
-      }).catch(err => console.error('Document error save failed:', err.message));
-    }
-  } catch (error) {
-    const responseTime = Date.now() - startTime;
-    console.error("❌ Document processing system error:", error.message);
-    await sendSmartMessage(bot, chatId, `❌ Document processing system error: ${error.message} (${responseTime}ms)`);
-  }
-}
-
-// ---- DOCUMENT: utility used elsewhere (returns {success,analysis|error}) ---
-async function processDocumentMessage(bot, fileId, chatId, fileName) {
-  try {
-    const buffer = await downloadTelegramFileBuffer(bot, fileId);
-    const fileExtension = (fileName.toLowerCase().split('.').pop()) || '';
-
-    let content = '';
-    if (['txt', 'md', 'json', 'csv'].includes(fileExtension)) {
-      content = buffer.toString('utf8');
-    } else if (fileExtension === 'pdf') {
-      throw new Error("PDF analysis requires conversion. Please save as .txt file for analysis.");
-    } else {
-      content = buffer.toString('utf8');
-    }
-
-    if (!content.length) throw new Error("Document appears to be empty or unreadable");
-
-    let analysis;
-    if (content.length > 8000) {
-      const summary = content.slice(0, 4000);
-      const prompt =
-        `Analyze this document content:\n\n${summary}\n\n[Document truncated due to length]\n\n` +
-        `Provide a comprehensive analysis covering:\n` +
-        `1. Document type and purpose\n` +
-        `2. Key topics and themes\n` +
-        `3. Important insights or findings\n` +
-        `4. Structure and organization\n` +
-        `5. Recommendations or action items if any`;
-
-      analysis = await getGptAnalysis(prompt, {
-        maxCompletionTokens: 1000,
-        temperature: 0.7,
-        model: "gpt-5"
-      });
-    } else {
-      const prompt =
-        `Analyze this document:\n\n${content}\n\n` +
-        `Provide a detailed analysis covering:\n` +
-        `1. Document summary\n` +
-        `2. Key points and insights\n` +
-        `3. Structure and organization\n` +
-        `4. Important data or findings\n` +
-        `5. Recommendations or next steps`;
-
-      analysis = await getGptAnalysis(prompt, {
-        maxCompletionTokens: 1200,
-        temperature: 0.7,
-        model: "gpt-5"
-      });
-    }
-
-    return { success: true, analysis };
-  } catch (error) {
-    console.error("Process document message error:", error.message);
-    return { success: false, error: error.message };
-  }
 }
 
 // 🔧 ENHANCED: Memory integration helper functions with better logic
