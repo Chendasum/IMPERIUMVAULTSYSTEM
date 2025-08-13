@@ -1,3 +1,4 @@
+
 require("dotenv").config({ path: ".env" });
 
 // Debug environment variables
@@ -119,6 +120,19 @@ const {
     getCambodiaAnalysis,
     getStrategicAnalysis: getGptStrategicAnalysis
 } = require('./utils/openaiClient');
+
+// 🚀 NEW: DUAL AI SYSTEM INTEGRATION
+const { 
+    getUniversalAnalysis,
+    getDualAnalysis,
+    routeQuery,
+    checkDualSystemHealth,
+    getGPT5Analysis,
+    getClaudeAnalysis: getDualClaudeAnalysis,
+    getMarketAnalysis: getDualMarketAnalysis,
+    getCambodiaAnalysis: getDualCambodiaAnalysis,
+    analyzeImageWithAI
+} = require('./utils/dualAISystem');
 
 const { 
     executeDualCommand,
