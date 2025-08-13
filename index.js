@@ -1612,6 +1612,7 @@ function extractMemoryFact(userMessage, aiResponse) {
 }
 
 // 🔧 ENHANCED: Media message handlers with better database integration and error handling
+// 🔧 FIXED: Enhanced voice message handler (this one was working, keeping for completeness)
 async function handleVoiceMessage(msg, chatId, sessionId) {
     const startTime = Date.now();
     try {
@@ -1679,18 +1680,37 @@ async function handleVoiceMessage(msg, chatId, sessionId) {
     }
 }
 
+// 🔧 COMPLETELY FIXED: Image message handler with GPT-5 vision support
 async function handleImageMessage(msg, chatId, sessionId) {
     const startTime = Date.now();
     try {
         console.log("🖼️ Processing image message...");
-        await bot.sendMessage(chatId, "🖼️ Analyzing image with enhanced AI vision...");
+        await bot.sendMessage(chatId, "🖼️ Analyzing image with GPT-5 enhanced AI vision...");
         
         const largestPhoto = msg.photo[msg.photo.length - 1];
-        const analysis = await processImageMessage(bot, largestPhoto.file_id, chatId, msg.caption);
+        
+        // Get image file from Telegram
+        const fileLink = await bot.getFileLink(largestPhoto.file_id);
+        const fetch = require('node-fetch');
+        const response = await fetch(fileLink);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to download image: HTTP ${response.status}`);
+        }
+        
+        const buffer = await response.buffer();
+        const base64Image = buffer.toString('base64');
+        
+        // 🔧 FIXED: Use GPT-5 vision analysis with correct parameters
+        const analysisPrompt = msg.caption ? 
+            `Analyze this image in detail. The user provided this caption: "${msg.caption}". Please provide a comprehensive analysis of what you see in the image, including objects, people, text, colors, composition, and context.` :
+            `Analyze this image in detail. Describe what you see, identify key elements, objects, people, text, colors, composition, and provide insights about the context or purpose of the image.`;
+        
+        const analysis = await analyzeImageWithGPT5(base64Image, analysisPrompt);
         const responseTime = Date.now() - startTime;
         
         if (analysis && analysis.length > 0) {
-            await sendAnalysis(bot, chatId, analysis, "Enhanced Image Analysis");
+            await sendAnalysis(bot, chatId, analysis, "GPT-5 Enhanced Image Analysis");
             
             // Enhanced image analysis save with comprehensive metadata
             await saveConversationDB(chatId, "[IMAGE]" + (msg.caption ? `: ${msg.caption}` : ""), analysis, "image", {
@@ -1702,7 +1722,8 @@ async function handleImageMessage(msg, chatId, sessionId) {
                 processingTime: responseTime,
                 sessionId: sessionId,
                 timestamp: new Date().toISOString(),
-                imageQuality: largestPhoto.width * largestPhoto.height > 1000000 ? 'HIGH' : 'STANDARD'
+                imageQuality: largestPhoto.width * largestPhoto.height > 1000000 ? 'HIGH' : 'STANDARD',
+                aiModel: 'GPT-5-vision'
             }).catch(err => console.error('Image save error:', err.message));
             
             // If image has caption, process it as additional conversation with memory
@@ -1718,6 +1739,430 @@ async function handleImageMessage(msg, chatId, sessionId) {
                     .catch(err => console.error('Memory save error:', err.message));
                 console.log("💾 Image analysis saved to persistent memory");
             }
+            
+            // Log successful API usage
+            await logApiUsage('GPT5_VISION', 'image_analysis', 1, true, responseTime, largestPhoto.file_size || 0)
+                .catch(err => console.error('API log error:', err.message));
+            
+            console.log("✅ Image processed successfully with GPT-5");
+        } else {
+            throw new Error("GPT-5 image analysis returned empty result");
+        }
+        
+    } catch (error) {
+        const responseTime = Date.now() - startTime;
+        console.error("❌ Image processing error:", error.message);
+        
+        await sendSmartMessage(bot, chatId, 
+            `❌ GPT-5 Image Analysis Error: ${error.message}\n\n` +
+            `**Please try:**\n` +
+            `• Uploading a clearer, higher quality image\n` +
+            `• Reducing image file size if too large\n` +
+            `• Using JPG or PNG format\n` +
+            `• Adding a descriptive caption\n` +
+            `• Ensuring good lighting in the image`
+        );
+        
+        // Save comprehensive error details
+        await saveConversationDB(chatId, "[IMAGE_ERROR]", `Error: ${error.message}`, "image", {
+            error: error.message,
+            stackTrace: error.stack?.substring(0, 500),
+            caption: msg.caption || null,
+            imageWidth: msg.photo?.[msg.photo.length - 1]?.width,
+            imageHeight: msg.photo?.[msg.photo.length - 1]?.height,
+            processingTime: responseTime,
+            sessionId: sessionId,
+            aiModel: 'GPT-5-vision'
+        }).catch(err => console.error('Image error save failed:', err.message));
+        
+        // Log error for monitoring
+        await logApiUsage('GPT5_VISION', 'image_analysis', 1, false, responseTime, 0, 0)
+            .catch(err => console.error('API log error:', err.message));
+    }
+}
+
+// 🔧 COMPLETELY REWRITTEN: Document message handler with full file support
+async function handleDocumentMessage(msg, chatId, sessionId) {
+    const startTime = Date.now();
+    try {
+        console.log("📄 Processing document:", msg.document.file_name);
+        const isTraining = msg.caption?.toLowerCase().includes("train");
+        const fileName = msg.document.file_name || "untitled_document";
+        const fileSize = msg.document.file_size || 0;
+        
+        if (isTraining) {
+            // Enhanced training document processing (this part was working)
+            await bot.sendMessage(chatId, "📚 Processing document for enhanced AI training database...");
+            
+            try {
+                const fileLink = await bot.getFileLink(msg.document.file_id);
+                console.log("📥 Downloading document from Telegram...");
+                
+                const fetch = require('node-fetch');
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 30000);
+                
+                const response = await fetch(fileLink, { 
+                    signal: controller.signal,
+                    timeout: 30000
+                });
+                clearTimeout(timeout);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const buffer = await response.buffer();
+                let content = '';
+                
+                const fileExtension = fileName.toLowerCase().split('.').pop();
+                
+                if (['txt', 'md', 'json', 'csv'].includes(fileExtension)) {
+                    content = buffer.toString('utf8');
+                } else if (fileExtension === 'pdf') {
+                    // Enhanced PDF processing
+                    content = await extractTextFromPDF(buffer);
+                } else if (['doc', 'docx'].includes(fileExtension)) {
+                    // Word document processing
+                    content = await extractTextFromWord(buffer);
+                } else {
+                    // Try to read as text for other formats
+                    content = buffer.toString('utf8');
+                    console.log(`⚠️ Attempting to read ${fileExtension} file as text`);
+                }
+                
+                if (content.length === 0) {
+                    throw new Error("Document appears to be empty or unreadable");
+                }
+                
+                if (content.length > 1000000) {
+                    throw new Error("Document too large (max 1MB text content)");
+                }
+                
+                const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+                const summary = content.length > 500 ? content.substring(0, 500) + '...' : content;
+                const responseTime = Date.now() - startTime;
+                
+                console.log(`📊 Document stats: ${wordCount} words, ${content.length} characters`);
+                
+                const saved = await saveTrainingDocumentDB(chatId, fileName, content, 'user_uploaded', wordCount, summary);
+                
+                if (saved) {
+                    await sendSmartMessage(bot, chatId, 
+                        `📚 **Document Added to Enhanced AI Training Database**\n\n` +
+                        `📄 **File:** ${fileName}\n` +
+                        `📊 **Words:** ${wordCount.toLocaleString()}\n` +
+                        `📏 **Size:** ${(fileSize / 1024).toFixed(1)} KB\n` +
+                        `⚡ **Processing:** ${responseTime}ms\n` +
+                        `💾 **Storage:** Enhanced PostgreSQL Database\n` +
+                        `🤖 **AI Models:** GPT-5 + Claude Opus 4.1\n` +
+                        `✅ **Your AI can now reference this document in conversations!**\n\n` +
+                        `**Try asking:** "What did you learn from ${fileName}?"`
+                    );
+                    
+                    console.log("✅ Document training completed successfully");
+                } else {
+                    throw new Error("Database save operation failed - please try again");
+                }
+                
+            } catch (downloadError) {
+                const responseTime = Date.now() - startTime;
+                console.error("❌ Document download/processing error:", downloadError.message);
+                
+                let errorMessage = `❌ Error processing document for training: ${downloadError.message}\n\n`;
+                
+                if (downloadError.message.includes('timeout') || downloadError.message.includes('abort')) {
+                    errorMessage += `**Timeout Error:** Document too large or connection slow\n`;
+                } else if (downloadError.message.includes('HTTP')) {
+                    errorMessage += `**Download Error:** Could not download file from Telegram\n`;
+                } else if (downloadError.message.includes('PDF')) {
+                    errorMessage += `**PDF Error:** ${downloadError.message}\n`;
+                }
+                
+                errorMessage += `**Please try:**\n` +
+                    `• Converting to .txt or .md format\n` +
+                    `• Reducing file size if too large\n` +
+                    `• Checking if file is corrupted\n` +
+                    `• Uploading via copy-paste for text content`;
+                
+                await sendSmartMessage(bot, chatId, errorMessage);
+            }
+            
+        } else {
+            // 🔧 COMPLETELY FIXED: Document analysis with GPT-5 + Claude dual analysis
+            await bot.sendMessage(chatId, "📄 Analyzing document with GPT-5 + Claude Opus 4.1 enhanced AI...");
+            
+            try {
+                // Get file from Telegram
+                const fileLink = await bot.getFileLink(msg.document.file_id);
+                const fetch = require('node-fetch');
+                const response = await fetch(fileLink);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to download document: HTTP ${response.status}`);
+                }
+                
+                const buffer = await response.buffer();
+                const fileExtension = fileName.toLowerCase().split('.').pop();
+                
+                let content = '';
+                let extractionMethod = 'text';
+                
+                // Enhanced file type handling
+                if (['txt', 'md', 'json', 'csv'].includes(fileExtension)) {
+                    content = buffer.toString('utf8');
+                    extractionMethod = 'direct_text';
+                } else if (fileExtension === 'pdf') {
+                    content = await extractTextFromPDF(buffer);
+                    extractionMethod = 'pdf_extraction';
+                } else if (['doc', 'docx'].includes(fileExtension)) {
+                    content = await extractTextFromWord(buffer);
+                    extractionMethod = 'word_extraction';
+                } else if (['xls', 'xlsx'].includes(fileExtension)) {
+                    content = await extractTextFromExcel(buffer);
+                    extractionMethod = 'excel_extraction';
+                } else {
+                    // Try to read as text
+                    content = buffer.toString('utf8');
+                    extractionMethod = 'fallback_text';
+                }
+                
+                if (content.length === 0) {
+                    throw new Error("Document appears to be empty or unreadable");
+                }
+                
+                // 🔧 ENHANCED: Dual AI analysis - use both GPT-5 and Claude for comprehensive analysis
+                let analysis;
+                
+                if (content.length > 12000) {
+                    // For very large documents, use Claude for better handling
+                    const summary = content.substring(0, 8000);
+                    const prompt = `Analyze this document (showing first part due to length):\n\n${summary}\n\n[Document truncated - ${content.length} total characters]\n\nProvide comprehensive analysis covering:\n1. Document type and purpose\n2. Key topics and main themes\n3. Important insights and findings\n4. Structure and organization\n5. Data/statistics if present\n6. Recommendations or conclusions\n7. Overall assessment and significance`;
+                    
+                    analysis = await getClaudeAnalysis(prompt, { maxTokens: 1500 });
+                    analysis = `**Claude Opus 4.1 Analysis** (Large Document)\n\n${analysis}`;
+                    
+                } else if (content.length > 6000) {
+                    // For medium documents, use GPT-5
+                    const prompt = `Analyze this document in detail:\n\n${content}\n\nProvide comprehensive analysis covering:\n1. Document summary and purpose\n2. Key points and main themes\n3. Important insights and findings\n4. Structure and organization\n5. Data, statistics, or evidence presented\n6. Conclusions and recommendations\n7. Strategic implications or actionable items`;
+                    
+                    analysis = await getGptAnalysis(prompt, { 
+                        max_completion_tokens: 1200,
+                        temperature: 0.7,
+                        model: "gpt-5"
+                    });
+                    analysis = `**GPT-5 Analysis** (Detailed)\n\n${analysis}`;
+                    
+                } else {
+                    // For smaller documents, use dual AI for comprehensive analysis
+                    const prompt = `Analyze this document:\n\n${content}\n\nProvide detailed analysis covering:\n1. Document summary\n2. Key insights and findings\n3. Important data or information\n4. Structure and organization\n5. Recommendations or next steps\n6. Overall assessment`;
+                    
+                    // Get both analyses
+                    const [gptAnalysis, claudeAnalysis] = await Promise.allSettled([
+                        getGptAnalysis(prompt, { 
+                            max_completion_tokens: 800,
+                            temperature: 0.7,
+                            model: "gpt-5"
+                        }),
+                        getClaudeAnalysis(prompt, { maxTokens: 800 })
+                    ]);
+                    
+                    // Combine analyses
+                    let combinedAnalysis = `**Dual AI Analysis: GPT-5 + Claude Opus 4.1**\n\n`;
+                    
+                    if (gptAnalysis.status === 'fulfilled') {
+                        combinedAnalysis += `**GPT-5 Analysis:**\n${gptAnalysis.value}\n\n`;
+                    }
+                    
+                    if (claudeAnalysis.status === 'fulfilled') {
+                        combinedAnalysis += `**Claude Opus 4.1 Analysis:**\n${claudeAnalysis.value}\n\n`;
+                    }
+                    
+                    if (gptAnalysis.status === 'fulfilled' && claudeAnalysis.status === 'fulfilled') {
+                        // Add synthesis
+                        const synthesisPrompt = `Based on these two AI analyses of the same document, provide a brief synthesis highlighting:\n1. Key agreements between analyses\n2. Any unique insights from each AI\n3. Overall consensus and conclusions\n\nGPT-5: ${gptAnalysis.value.substring(0, 400)}\n\nClaude: ${claudeAnalysis.value.substring(0, 400)}`;
+                        
+                        const synthesis = await getGptAnalysis(synthesisPrompt, {
+                            max_completion_tokens: 400,
+                            temperature: 0.6,
+                            model: "gpt-5"
+                        });
+                        
+                        combinedAnalysis += `**AI Synthesis:**\n${synthesis}`;
+                    }
+                    
+                    analysis = combinedAnalysis;
+                }
+                
+                const responseTime = Date.now() - startTime;
+                
+                if (analysis && analysis.length > 0) {
+                    await sendAnalysis(bot, chatId, analysis, `Enhanced Document Analysis: ${fileName}`);
+                    
+                    // Enhanced document analysis save with metadata
+                    await saveConversationDB(chatId, `[DOCUMENT] ${fileName}`, analysis, "document", {
+                        fileName: fileName,
+                        fileSize: fileSize,
+                        fileType: fileExtension,
+                        extractionMethod: extractionMethod,
+                        contentLength: content.length,
+                        analysisLength: analysis.length,
+                        processingTime: responseTime,
+                        analysisSuccess: true,
+                        sessionId: sessionId,
+                        analysisType: 'dual_ai_analysis',
+                        aiModels: 'GPT-5 + Claude Opus 4.1'
+                    }).catch(err => console.error('Document analysis save error:', err.message));
+                    
+                    // Save to persistent memory if analysis reveals important information
+                    if (shouldSaveToPersistentMemory(`Document: ${fileName}`, analysis)) {
+                        const memoryFact = `Document analysis: ${fileName} - ${analysis.substring(0, 100)}...`;
+                        await addPersistentMemoryDB(chatId, memoryFact, 'medium')
+                            .catch(err => console.error('Memory save error:', err.message));
+                        console.log("💾 Document analysis saved to persistent memory");
+                    }
+                    
+                    // Log successful API usage
+                    await logApiUsage('DUAL_AI', 'document_analysis', 1, true, responseTime, fileSize)
+                        .catch(err => console.error('API log error:', err.message));
+                    
+                    console.log("✅ Document analysis completed successfully with dual AI");
+                } else {
+                    throw new Error("Document analysis failed - both AI models returned empty results");
+                }
+                
+            } catch (analysisError) {
+                const responseTime = Date.now() - startTime;
+                console.error("❌ Document analysis error:", analysisError.message);
+                
+                await sendSmartMessage(bot, chatId, 
+                    `❌ Document analysis failed: ${analysisError.message}\n\n` +
+                    `**Supported Formats:**\n` +
+                    `✅ Text files (.txt, .md)\n` +
+                    `✅ PDF documents (.pdf)\n` +
+                    `✅ Word documents (.doc, .docx)\n` +
+                    `✅ Excel files (.xls, .xlsx)\n` +
+                    `✅ JSON data (.json)\n` +
+                    `✅ CSV files (.csv)\n\n` +
+                    `**Please try:**\n` +
+                    `• Converting to supported format\n` +
+                    `• Reducing file size if too large\n` +
+                    `• Adding caption "train" to save for AI training\n` +
+                    `• Copy-pasting text content directly`
+                );
+                
+                // Save comprehensive error record
+                await saveConversationDB(chatId, `[DOCUMENT_ERROR] ${fileName}`, `Analysis failed: ${analysisError.message}`, "document", {
+                    fileName: fileName,
+                    fileSize: fileSize,
+                    error: analysisError.message,
+                    processingTime: responseTime,
+                    analysisSuccess: false,
+                    sessionId: sessionId,
+                    aiModels: 'GPT-5 + Claude Opus 4.1'
+                }).catch(err => console.error('Document error save failed:', err.message));
+                
+                // Log failed API usage
+                await logApiUsage('DUAL_AI', 'document_analysis', 1, false, responseTime, fileSize)
+                    .catch(err => console.error('API log error:', err.message));
+            }
+        }
+    } catch (error) {
+        const responseTime = Date.now() - startTime;
+        console.error("❌ Document processing system error:", error.message);
+        await sendSmartMessage(bot, chatId, `❌ Document processing system error: ${error.message}`);
+        
+        // Save general system error record
+        await saveConversationDB(chatId, "[DOCUMENT_SYSTEM_ERROR]", `System error: ${error.message}`, "document", {
+            fileName: msg.document?.file_name || "unknown",
+            fileSize: msg.document?.file_size || 0,
+            systemError: error.message,
+            processingTime: responseTime,
+            sessionId: sessionId
+        }).catch(err => console.error('System error save failed:', err.message));
+    }
+}
+
+// 🔧 NEW: GPT-5 Vision Analysis Function
+async function analyzeImageWithGPT5(base64Image, prompt) {
+    try {
+        const response = await openai.chat.completions.create({
+            model: "gpt-5",  // Use your GPT-5 model
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: prompt
+                        },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/jpeg;base64,${base64Image}`,
+                                detail: "high"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_completion_tokens: 1200,  // 🔧 FIXED: Correct parameter
+            temperature: 0.7
+        });
+        
+        return response.choices[0]?.message?.content || null;
+    } catch (error) {
+        console.error("GPT-5 Vision API error:", error.message);
+        throw new Error(`GPT-5 vision analysis failed: ${error.message}`);
+    }
+}
+
+// 🔧 NEW: PDF Text Extraction Function
+async function extractTextFromPDF(buffer) {
+    try {
+        // Using pdf-parse library - you'll need to install it: npm install pdf-parse
+        const pdf = require('pdf-parse');
+        const data = await pdf(buffer);
+        return data.text;
+    } catch (error) {
+        console.error("PDF extraction error:", error.message);
+        throw new Error(`PDF text extraction failed: ${error.message}`);
+    }
+}
+
+// 🔧 NEW: Word Document Text Extraction Function  
+async function extractTextFromWord(buffer) {
+    try {
+        // Using mammoth library - you'll need to install it: npm install mammoth
+        const mammoth = require('mammoth');
+        const result = await mammoth.extractRawText({ buffer: buffer });
+        return result.value;
+    } catch (error) {
+        console.error("Word extraction error:", error.message);
+        throw new Error(`Word document extraction failed: ${error.message}`);
+    }
+}
+
+// 🔧 NEW: Excel Text Extraction Function
+async function extractTextFromExcel(buffer) {
+    try {
+        // Using xlsx library - you'll need to install it: npm install xlsx
+        const XLSX = require('xlsx');
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        
+        let text = '';
+        workbook.SheetNames.forEach(sheetName => {
+            const sheet = workbook.Sheets[sheetName];
+            const csv = XLSX.utils.sheet_to_csv(sheet);
+            text += `Sheet: ${sheetName}\n${csv}\n\n`;
+        });
+        
+        return text;
+    } catch (error) {
+        console.error("Excel extraction error:", error.message);
+        throw new Error(`Excel extraction failed: ${error.message}`);
+    }
+}
             
             // Log successful API usage
             await logApiUsage('VISION_AI', 'image_analysis', 1, true, responseTime, largestPhoto.file_size || 0)
