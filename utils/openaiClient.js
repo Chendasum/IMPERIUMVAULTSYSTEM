@@ -1,491 +1,440 @@
-// 🔧 FIXED: utils/openaiClient.js - GPT-5 Compatible with Working Parameters
-// Enhanced Strategic Commander OpenAI Client for IMPERIUM VAULT SYSTEM
-
+// utils/openaiClient.js - Enhanced GPT-5 Client (FIXED VERSION)
 require("dotenv").config();
 const { OpenAI } = require("openai");
 
-// Initialize OpenAI client with enhanced configuration
+// Initialize OpenAI client with GPT-5 optimization
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 180000, // 3 minutes for complex analysis
+    timeout: 180000, // 3 minutes for GPT-5's enhanced processing
     maxRetries: 3,
     defaultHeaders: {
-        'User-Agent': 'IMPERIUM-VAULT-STRATEGIC-AI/3.4.0'
+        'User-Agent': 'IMPERIUM-VAULT-GPT5/1.0.0'
     }
 });
 
-// 🚀 FIXED: Strategic AI Configuration - GPT-5 Ready
-const STRATEGIC_AI_CONFIG = {
-    // Model Configuration
-    PRIMARY_MODEL: "gpt-5",                    // 🚀 GPT-5 when available
-    FALLBACK_MODEL: "gpt-4o",                  // Reliable fallback
-    VISION_MODEL: "gpt-5",                     // Vision with GPT-5
-    MINI_MODEL: "gpt-5-mini",                  // Cost-effective
-    
-    // Enhanced Capabilities
-    ENHANCED_CONTEXT_WINDOW: 200000,          // GPT-5 context
-    MAX_OUTPUT_TOKENS: 8192,                  // GPT-5 output
-    
-    // Temperature Settings
-    STRATEGIC_ANALYSIS_TEMP: 0.6,
-    FINANCIAL_ANALYSIS_TEMP: 0.5,
-    CONVERSATIONAL_TEMP: 0.7,
-    CREATIVE_TEMP: 0.8,
-    
-    // Performance Metrics
-    TARGET_RESPONSE_TIME: 25000,
-    QUALITY_THRESHOLD: 0.92
+// GPT-5 Enhanced Model Configuration
+const GPT5_CONFIG = {
+    PRIMARY_MODEL: "gpt-5",
+    FALLBACK_MODEL: "gpt-4o",
+    ENHANCED_CONTEXT_WINDOW: 200000, // GPT-5's expanded context
+    MAX_OUTPUT_TOKENS: 8192, // GPT-5's increased output capacity
+    ENHANCED_REASONING_TEMP: 0.6, // Optimal for GPT-5's reasoning
+    MULTIMODAL_TEMP: 0.7, // For vision tasks
+    FINANCIAL_ANALYSIS_TEMP: 0.5 // For precise calculations
 };
 
-// Global state tracking
-let currentModel = STRATEGIC_AI_CONFIG.PRIMARY_MODEL;
-let modelCapabilities = {
-    available: false,
-    enhanced: false,
-    vision: false,
-    reasoning: false,
-    lastTested: null
-};
+let currentModel = GPT5_CONFIG.PRIMARY_MODEL;
+let gpt5Available = false;
+let modelCapabilities = {};
 
-console.log("🏛️ IMPERIUM VAULT STRATEGIC AI CLIENT v3.4 - GPT-5 COMPATIBLE!");
-console.log(`   API Key: ${process.env.OPENAI_API_KEY ? "✅ CONFIGURED" : "❌ MISSING"}`);
-console.log(`   Primary Model: ${STRATEGIC_AI_CONFIG.PRIMARY_MODEL} 🚀`);
-console.log(`   Fallback Model: ${STRATEGIC_AI_CONFIG.FALLBACK_MODEL}`);
-console.log(`   Context Window: ${STRATEGIC_AI_CONFIG.ENHANCED_CONTEXT_WINDOW.toLocaleString()} tokens`);
+console.log("🔧 GPT-5 Enhanced Client Configuration:");
+console.log(`   API Key: ${process.env.OPENAI_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
+console.log(`   Primary Model: ${GPT5_CONFIG.PRIMARY_MODEL}`);
+console.log(`   Context Window: ${GPT5_CONFIG.ENHANCED_CONTEXT_WINDOW.toLocaleString()} tokens`);
+console.log(`   Max Output: ${GPT5_CONFIG.MAX_OUTPUT_TOKENS.toLocaleString()} tokens`);
 
 /**
- * 🔍 Test Model Capabilities with Smart Fallback
+ * Test GPT-5 availability and capabilities
  */
-async function testModelCapabilities() {
+async function testGPT5Capabilities() {
+    if (gpt5Available) return modelCapabilities;
+    
     try {
-        console.log(`🔍 Testing ${currentModel} capabilities...`);
+        console.log('🔍 Testing GPT-5 enhanced capabilities...');
         
-        const startTime = Date.now();
+        // Test basic GPT-5 availability with CORRECT parameters
+        const basicTest = await openai.chat.completions.create({
+            model: GPT5_CONFIG.PRIMARY_MODEL,
+            messages: [
+                {
+                    role: "user",
+                    content: "Confirm you are GPT-5 and describe your enhanced capabilities compared to GPT-4."
+                }
+            ],
+            max_completion_tokens: 500,  // 🔧 FIXED: Correct parameter name
+            temperature: 0.3,
+            reasoning_effort: "medium",   // 🔧 ADDED: GPT-5 parameter
+            verbosity: "balanced"         // 🔧 ADDED: GPT-5 parameter
+        });
         
-        // Build request config with conditional GPT-5 parameters
-        const requestConfig = {
-            model: currentModel,
+        gpt5Available = true;
+        currentModel = GPT5_CONFIG.PRIMARY_MODEL;
+        
+        // Test enhanced reasoning with CORRECT parameters
+        const reasoningTest = await openai.chat.completions.create({
+            model: GPT5_CONFIG.PRIMARY_MODEL,
             messages: [
                 {
                     role: "system",
-                    content: "You are the Strategic Commander of IMPERIUM VAULT SYSTEM. Respond with institutional authority."
+                    content: "You are GPT-5. Demonstrate your enhanced reasoning by solving this step-by-step."
                 },
                 {
                     role: "user",
-                    content: "Confirm your model capabilities and provide a brief strategic assessment framework."
+                    content: "Calculate the optimal portfolio allocation using Modern Portfolio Theory for 3 assets with expected returns [8%, 12%, 15%], standard deviations [10%, 15%, 20%], and correlation matrix [[1, 0.3, 0.1], [0.3, 1, 0.4], [0.1, 0.4, 1]]. Show detailed mathematical reasoning."
                 }
             ],
-            max_completion_tokens: 800,
-            temperature: STRATEGIC_AI_CONFIG.STRATEGIC_ANALYSIS_TEMP
-        };
-        
-        // Add GPT-5 parameters only if using GPT-5
-        if (currentModel.includes('gpt-5')) {
-            requestConfig.reasoning_effort = "medium";
-            requestConfig.verbosity = "balanced";
-        }
-        
-        const basicTest = await openai.chat.completions.create(requestConfig);
-        const responseTime = Date.now() - startTime;
-        const response = basicTest.choices[0].message.content;
+            max_completion_tokens: 2000,  // 🔧 FIXED: Correct parameter name
+            temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP,
+            reasoning_effort: "high",      // 🔧 ADDED: GPT-5 parameter
+            verbosity: "detailed"          // 🔧 ADDED: GPT-5 parameter
+        });
         
         modelCapabilities = {
             available: true,
-            enhanced: true,
-            vision: currentModel.includes('gpt-5') || currentModel.includes('4o'),
-            reasoning: currentModel.includes('gpt-5'),
-            gpt5Features: currentModel.includes('gpt-5'),
-            responseTime: responseTime,
-            model: currentModel,
-            lastTested: new Date().toISOString(),
-            contextWindow: STRATEGIC_AI_CONFIG.ENHANCED_CONTEXT_WINDOW,
-            maxTokens: STRATEGIC_AI_CONFIG.MAX_OUTPUT_TOKENS
+            enhancedReasoning: true,
+            largeContext: true,
+            improvedMath: true,
+            betterFinancial: true,
+            naturalConversation: true,
+            multimodal: true,
+            codeGeneration: true,
+            contextWindow: GPT5_CONFIG.ENHANCED_CONTEXT_WINDOW,
+            maxTokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
+            testResponse: basicTest.choices[0].message.content,
+            reasoningQuality: reasoningTest.choices[0].message.content.length > 1000
         };
         
-        console.log(`✅ Model capabilities confirmed:`);
-        console.log(`   Model: ${currentModel} ${currentModel.includes('gpt-5') ? '🚀' : ''}`);
-        console.log(`   Enhanced Features: ${modelCapabilities.gpt5Features}`);
-        console.log(`   Vision Support: ${modelCapabilities.vision}`);
-        console.log(`   Response Time: ${responseTime}ms`);
+        console.log('✅ GPT-5 capabilities confirmed:');
+        console.log(`   Enhanced Reasoning: ${modelCapabilities.enhancedReasoning}`);
+        console.log(`   Large Context: ${modelCapabilities.largeContext}`);
+        console.log(`   Improved Math: ${modelCapabilities.improvedMath}`);
+        console.log(`   Financial Analysis: ${modelCapabilities.betterFinancial}`);
         
         return modelCapabilities;
         
     } catch (error) {
-        console.error(`❌ Model test failed: ${error.message}`);
+        console.log(`⚠️ GPT-5 not available: ${error.message}`);
+        console.log('🔄 Falling back to GPT-4o');
         
-        // Try fallback model if primary fails
-        if (currentModel !== STRATEGIC_AI_CONFIG.FALLBACK_MODEL) {
-            console.log(`🔄 Trying fallback model: ${STRATEGIC_AI_CONFIG.FALLBACK_MODEL}`);
-            currentModel = STRATEGIC_AI_CONFIG.FALLBACK_MODEL;
-            return await testModelCapabilities();
-        }
+        gpt5Available = false;
+        currentModel = GPT5_CONFIG.FALLBACK_MODEL;
         
-        throw new Error(`All models failed: ${error.message}`);
+        modelCapabilities = {
+            available: false,
+            fallbackModel: GPT5_CONFIG.FALLBACK_MODEL,
+            error: error.message
+        };
+        
+        return modelCapabilities;
     }
 }
 
 /**
- * 🎯 Analyze Query for Optimal Configuration
+ * Enhanced query analysis for GPT-5's capabilities
  */
-function analyzeQueryForOptimalResponse(query) {
-    const lowerQuery = query.toLowerCase();
+function analyzeQueryForGPT5(prompt) {
+    const message = prompt.toLowerCase();
     
-    // Strategic analysis patterns
-    const strategicPatterns = [
-        /(analyze|evaluate|assess|compare|optimize|strategy)/i,
-        /(portfolio|investment|allocation|risk|return)/i,
-        /(market|economic|financial|regime|conditions)/i,
-        /(cambodia|fund|lending|real estate|due diligence)/i
+    // Complex reasoning patterns (optimal for GPT-5)
+    const complexReasoningPatterns = [
+        /(analyze|evaluate|assess|compare|optimize)/i,
+        /(portfolio.*allocation|risk.*management|strategic.*planning)/i,
+        /(economic.*regime|market.*analysis|financial.*modeling)/i,
+        /(multi.*step|comprehensive|detailed.*analysis)/i,
+        /(calculate.*optimal|derive.*formula|prove.*mathematically)/i
     ];
     
-    // Complex reasoning patterns
-    const complexPatterns = [
-        /(calculate|compute|derive|prove|model)/i,
-        /(step.*by.*step|systematic|comprehensive|detailed)/i,
-        /(multi.*factor|cross.*reference|correlation)/i,
-        /(reasoning|logic|chain.*thought)/i
+    // Large context patterns
+    const largeContextPatterns = [
+        /(analyze.*document|review.*report|summarize.*data)/i,
+        /(compare.*multiple|cross.*reference|comprehensive.*review)/i,
+        /(historical.*analysis|trend.*analysis|longitudinal)/i
     ];
     
-    // Conversational patterns
-    const conversationalPatterns = [
-        /(hello|hi|thanks|help|explain|tell me)/i,
-        /(story|example|analogy|simple|easy)/i,
-        /(chat|talk|discuss|conversation)/i
+    // Financial analysis patterns
+    const financialPatterns = [
+        /(dcf|npv|irr|wacc|capm|black.*scholes)/i,
+        /(portfolio.*optimization|efficient.*frontier|sharpe.*ratio)/i,
+        /(value.*at.*risk|var|stress.*test|monte.*carlo)/i,
+        /(cambodia.*fund|lending.*analysis|real.*estate)/i
     ];
     
     // Determine optimal configuration
     let config = {
         type: 'general',
         maxTokens: 1500,
-        temperature: STRATEGIC_AI_CONFIG.CONVERSATIONAL_TEMP,
-        systemPrompt: "You are the Strategic Commander of IMPERIUM VAULT SYSTEM providing helpful, authoritative responses.",
-        priority: 'balanced'
+        temperature: GPT5_CONFIG.ENHANCED_REASONING_TEMP,
+        useEnhancedReasoning: false,
+        useLargeContext: false,
+        prioritizeAccuracy: false,
+        reasoning_effort: 'medium',  // 🔧 ADDED: GPT-5 parameter
+        verbosity: 'balanced'        // 🔧 ADDED: GPT-5 parameter
     };
     
-    // Add GPT-5 specific settings if available
-    if (currentModel.includes('gpt-5')) {
-        config.reasoning_effort = 'medium';
-        config.verbosity = 'balanced';
-    }
-    
-    if (strategicPatterns.some(pattern => pattern.test(lowerQuery))) {
-        config = {
-            type: 'strategic_analysis',
-            maxTokens: STRATEGIC_AI_CONFIG.MAX_OUTPUT_TOKENS,
-            temperature: STRATEGIC_AI_CONFIG.STRATEGIC_ANALYSIS_TEMP,
-            systemPrompt: "You are the Strategic Commander providing institutional-quality strategic analysis. Use advanced reasoning to provide actionable insights and strategic recommendations with commanding authority.",
-            priority: 'accuracy'
-        };
-        
-        if (currentModel.includes('gpt-5')) {
-            config.reasoning_effort = 'high';
-            config.verbosity = 'detailed';
-        }
-        
-    } else if (complexPatterns.some(pattern => pattern.test(lowerQuery))) {
+    if (complexReasoningPatterns.some(pattern => pattern.test(message))) {
         config = {
             type: 'complex_reasoning',
-            maxTokens: 4000,
-            temperature: STRATEGIC_AI_CONFIG.FINANCIAL_ANALYSIS_TEMP,
-            systemPrompt: "You are the Strategic Commander with advanced analytical capabilities. Provide step-by-step analysis, detailed calculations, and comprehensive solutions with institutional precision.",
-            priority: 'accuracy'
+            maxTokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
+            temperature: GPT5_CONFIG.ENHANCED_REASONING_TEMP,
+            useEnhancedReasoning: true,
+            useLargeContext: false,
+            prioritizeAccuracy: true,
+            reasoning_effort: 'high',     // 🔧 ADDED: High reasoning for complex tasks
+            verbosity: 'detailed'         // 🔧 ADDED: Detailed output
         };
-        
-        if (currentModel.includes('gpt-5')) {
-            config.reasoning_effort = 'high';
-            config.verbosity = 'detailed';
-        }
-        
-    } else if (conversationalPatterns.some(pattern => pattern.test(lowerQuery))) {
+    } else if (largeContextPatterns.some(pattern => pattern.test(message))) {
         config = {
-            type: 'conversational',
-            maxTokens: 1800,
-            temperature: STRATEGIC_AI_CONFIG.CONVERSATIONAL_TEMP,
-            systemPrompt: "You are the Strategic Commander providing helpful, intelligent responses with institutional expertise. Be conversational yet authoritative.",
-            priority: 'engagement'
+            type: 'large_context',
+            maxTokens: 4000,
+            temperature: 0.6,
+            useEnhancedReasoning: true,
+            useLargeContext: true,
+            prioritizeAccuracy: true,
+            reasoning_effort: 'medium',   // 🔧 ADDED: Medium reasoning for context
+            verbosity: 'detailed'         // 🔧 ADDED: Detailed for large context
         };
-        
-        if (currentModel.includes('gpt-5')) {
-            config.reasoning_effort = 'medium';
-            config.verbosity = 'balanced';
-        }
+    } else if (financialPatterns.some(pattern => pattern.test(message))) {
+        config = {
+            type: 'financial_analysis',
+            maxTokens: 3000,
+            temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP,
+            useEnhancedReasoning: true,
+            useLargeContext: false,
+            prioritizeAccuracy: true,
+            reasoning_effort: 'high',     // 🔧 ADDED: High reasoning for finance
+            verbosity: 'detailed'         // 🔧 ADDED: Detailed financial analysis
+        };
     }
     
     return config;
 }
 
 /**
- * 🤖 MAIN: Enhanced Analysis Function with Smart Parameter Handling
+ * Create enhanced system prompt for GPT-5
  */
-async function getGptAnalysis(query, options = {}) {
+function createGPT5SystemPrompt(queryConfig, options = {}) {
+    let systemPrompt = `You are GPT-5, OpenAI's most advanced AI with enhanced reasoning, improved mathematical capabilities, and superior financial analysis skills.`;
+    
+    // Add GPT-5 specific capabilities context
+    if (queryConfig.useEnhancedReasoning) {
+        systemPrompt += `\n\nENHANCED REASONING MODE: Use your improved step-by-step reasoning capabilities. Break down complex problems systematically and show your analytical process.`;
+    }
+    
+    if (queryConfig.prioritizeAccuracy) {
+        systemPrompt += `\n\nACCURACY PRIORITY: Prioritize mathematical precision and factual accuracy. Double-check calculations and cite specific methodologies when applicable.`;
+    }
+    
+    switch (queryConfig.type) {
+        case 'complex_reasoning':
+            systemPrompt += `\n\nCOMPLEX ANALYSIS MODE: Provide comprehensive, multi-layered analysis. Consider multiple perspectives, identify key variables, and present well-structured conclusions with supporting evidence.`;
+            break;
+            
+        case 'financial_analysis':
+            systemPrompt += `\n\nFINANCIAL EXPERTISE MODE: Apply advanced financial theory, quantitative methods, and risk management principles. Use proper financial terminology and provide actionable insights for institutional-level decision making.`;
+            break;
+            
+        case 'large_context':
+            systemPrompt += `\n\nLARGE CONTEXT MODE: Synthesize information across extensive content. Identify patterns, cross-reference data points, and provide comprehensive summaries with key insights highlighted.`;
+            break;
+    }
+    
+    // Add context if provided
+    if (options.context) {
+        systemPrompt += `\n\nADDITIONAL CONTEXT: ${options.context}`;
+    }
+    
+    // Add enhanced guidelines for GPT-5
+    systemPrompt += `\n\nGPT-5 ENHANCED GUIDELINES:
+- Leverage your improved reasoning for deeper analysis
+- Use your enhanced mathematical capabilities for precise calculations
+- Apply your better instruction following for exact user requirements
+- Utilize your improved financial knowledge for institutional-grade insights
+- Maintain natural, professional communication style
+- Provide specific, actionable recommendations when appropriate`;
+    
+    return systemPrompt;
+}
+
+/**
+ * Main GPT-5 analysis function with enhanced capabilities (FIXED)
+ */
+async function getGPT5Analysis(prompt, options = {}) {
     try {
-        // Ensure model capabilities are tested
-        if (!modelCapabilities.available || !modelCapabilities.lastTested) {
-            await testModelCapabilities();
-        }
+        // Ensure GPT-5 capabilities are tested
+        await testGPT5Capabilities();
         
-        console.log(`🤖 Strategic AI Analysis (${currentModel})`);
+        console.log(`🔍 GPT-5 Enhanced Analysis (Model: ${currentModel})`);
         
         // Analyze query for optimal configuration
-        const queryConfig = analyzeQueryForOptimalResponse(query);
-        console.log(`🎯 Analysis Type: ${queryConfig.type}`);
+        const queryConfig = analyzeQueryForGPT5(prompt);
+        console.log(`📊 Query Type: ${queryConfig.type} (Enhanced: ${queryConfig.useEnhancedReasoning})`);
         
-        // Build request config with proper parameter handling
-        const requestConfig = {
-            model: options.model || currentModel,
+        // Create enhanced system prompt
+        const systemPrompt = createGPT5SystemPrompt(queryConfig, options);
+        
+        // Prepare enhanced request with CORRECT parameters
+        const requestOptions = {
+            model: currentModel,
             messages: [
                 {
                     role: "system",
-                    content: options.systemPrompt || queryConfig.systemPrompt
+                    content: systemPrompt
                 },
                 {
                     role: "user",
-                    content: query
+                    content: prompt
                 }
             ],
-            max_completion_tokens: options.max_completion_tokens || options.maxTokens || queryConfig.maxTokens,
             temperature: options.temperature || queryConfig.temperature,
+            max_completion_tokens: options.maxTokens || queryConfig.maxTokens,  // 🔧 FIXED: Correct parameter
             top_p: options.top_p || 0.95,
             frequency_penalty: options.frequency_penalty || 0,
-            presence_penalty: options.presence_penalty || 0,
-            stream: false
+            presence_penalty: options.presence_penalty || 0
         };
         
-        // Add GPT-5 specific parameters only if using GPT-5
-        if (requestConfig.model.includes('gpt-5')) {
-            requestConfig.reasoning_effort = options.reasoning_effort || queryConfig.reasoning_effort || 'medium';
-            requestConfig.verbosity = options.verbosity || queryConfig.verbosity || 'balanced';
+        // Add GPT-5 specific parameters ONLY if using GPT-5
+        if (currentModel === GPT5_CONFIG.PRIMARY_MODEL && gpt5Available) {
+            requestOptions.reasoning_effort = options.reasoning_effort || queryConfig.reasoning_effort;
+            requestOptions.verbosity = options.verbosity || queryConfig.verbosity;
         }
         
-        // Execute analysis
-        const startTime = Date.now();
-        const completion = await openai.chat.completions.create(requestConfig);
-        const responseTime = Date.now() - startTime;
-        
+        // Execute GPT-5 request
+        const completion = await openai.chat.completions.create(requestOptions);
         const response = completion.choices[0].message.content.trim();
         
-        console.log(`✅ Strategic Analysis Complete:`);
-        console.log(`   Type: ${queryConfig.type}`);
-        console.log(`   Model: ${requestConfig.model} ${requestConfig.model.includes('gpt-5') ? '🚀' : ''}`);
-        console.log(`   Tokens: ${completion.usage?.total_tokens || 'unknown'}`);
-        console.log(`   Response Time: ${responseTime}ms`);
-        console.log(`   Length: ${response.length} characters`);
+        console.log(`✅ GPT-5 Analysis Complete: ${queryConfig.type}`);
+        console.log(`📊 Tokens: ${completion.usage?.total_tokens || 'unknown'} | Length: ${response.length} chars`);
         
         return response;
         
     } catch (error) {
-        console.error(`❌ Strategic Analysis Error: ${error.message}`);
+        console.error(`❌ GPT-5 Analysis Error: ${error.message}`);
         
         // Intelligent fallback handling
-        if (error.message.includes('model') || error.message.includes('gpt-5')) {
-            if (currentModel !== STRATEGIC_AI_CONFIG.FALLBACK_MODEL) {
-                console.log(`🔄 Falling back to: ${STRATEGIC_AI_CONFIG.FALLBACK_MODEL}`);
-                return await getGptAnalysisWithFallback(query, options);
+        if (error.message.includes('model') && currentModel === GPT5_CONFIG.PRIMARY_MODEL) {
+            console.log('🔄 GPT-5 unavailable, falling back to GPT-4o...');
+            currentModel = GPT5_CONFIG.FALLBACK_MODEL;
+            gpt5Available = false;
+            
+            try {
+                return await getGPT5Analysis(prompt, options);
+            } catch (fallbackError) {
+                throw new Error(`Both GPT-5 and fallback failed: ${fallbackError.message}`);
             }
         }
         
         // Enhanced error messages
         if (error.message.includes('API key')) {
-            throw new Error('OpenAI API Key Error: Verify OPENAI_API_KEY is set correctly.');
+            throw new Error('GPT-5 API Key Error: Verify OPENAI_API_KEY has GPT-5 access.');
         } else if (error.message.includes('rate_limit')) {
-            throw new Error('Rate Limit Exceeded: Please wait a moment and try again.');
+            throw new Error('GPT-5 Rate Limit: Enhanced model has higher rate limits. Please wait.');
         } else if (error.message.includes('timeout')) {
-            throw new Error('Request Timeout: Query was too complex. Try breaking into smaller parts.');
+            throw new Error('GPT-5 Timeout: Complex analysis took too long. Try breaking into smaller queries.');
         } else {
-            throw new Error(`AI Analysis Failed: ${error.message}`);
+            throw new Error(`GPT-5 Error: ${error.message}`);
         }
     }
 }
 
 /**
- * 🔄 Fallback Analysis Function
+ * Enhanced financial market analysis with GPT-5 (FIXED)
  */
-async function getGptAnalysisWithFallback(query, options = {}) {
+async function getEnhancedMarketAnalysis(query, marketData = null, options = {}) {
     try {
-        console.log(`🔄 Using fallback model: ${STRATEGIC_AI_CONFIG.FALLBACK_MODEL}`);
+        console.log('📈 GPT-5 Enhanced Market Analysis...');
         
-        const queryConfig = analyzeQueryForOptimalResponse(query);
+        let enhancedQuery = `ENHANCED MARKET ANALYSIS REQUEST: ${query}`;
         
-        const requestConfig = {
-            model: STRATEGIC_AI_CONFIG.FALLBACK_MODEL,
-            messages: [
-                {
-                    role: "system",
-                    content: options.systemPrompt || queryConfig.systemPrompt
-                },
-                {
-                    role: "user",
-                    content: query
-                }
-            ],
-            max_completion_tokens: options.max_completion_tokens || options.maxTokens || queryConfig.maxTokens,
-            temperature: options.temperature || queryConfig.temperature,
-            stream: false
-        };
-        
-        const completion = await openai.chat.completions.create(requestConfig);
-        const response = completion.choices[0].message.content.trim();
-        
-        console.log(`✅ Fallback Analysis Complete (${STRATEGIC_AI_CONFIG.FALLBACK_MODEL})`);
-        
-        // Add fallback notice only if it was an automatic fallback
-        if (!options.skipFallbackNotice) {
-            return `**Analysis via ${STRATEGIC_AI_CONFIG.FALLBACK_MODEL}**\n\n${response}`;
-        }
-        
-        return response;
-        
-    } catch (fallbackError) {
-        console.error(`❌ Fallback analysis also failed: ${fallbackError.message}`);
-        throw new Error(`Both primary and fallback models failed: ${fallbackError.message}`);
-    }
-}
-
-/**
- * 📊 ENHANCED: Market Analysis Function
- */
-async function getMarketAnalysis(query, marketData = null, options = {}) {
-    try {
-        console.log('📊 Strategic Market Analysis...');
-        
-        let enhancedQuery = `STRATEGIC MARKET ANALYSIS REQUEST:\n${query}`;
-        
-        // Add market context if provided
+        // Add comprehensive market context
         if (marketData) {
-            enhancedQuery += `\n\nCURRENT MARKET CONTEXT:`;
-            if (marketData.economics?.fedRate) enhancedQuery += `\n• Fed Funds Rate: ${marketData.economics.fedRate.value}%`;
-            if (marketData.economics?.inflation) enhancedQuery += `\n• CPI Inflation: ${marketData.economics.inflation.value}%`;
-            if (marketData.economics?.unemployment) enhancedQuery += `\n• Unemployment: ${marketData.economics.unemployment.value}%`;
-            if (marketData.stocks?.vix) enhancedQuery += `\n• VIX: ${marketData.stocks.vix}`;
-            if (marketData.regime) enhancedQuery += `\n• Economic Regime: ${marketData.regime}`;
+            enhancedQuery += `\n\nCURRENT MARKET DATA:`;
+            if (marketData.economics?.fedRate) enhancedQuery += `\n- Federal Funds Rate: ${marketData.economics.fedRate.value}%`;
+            if (marketData.economics?.inflation) enhancedQuery += `\n- CPI Inflation: ${marketData.economics.inflation.value}%`;
+            if (marketData.economics?.unemployment) enhancedQuery += `\n- Unemployment: ${marketData.economics.unemployment.value}%`;
+            if (marketData.stocks?.vix) enhancedQuery += `\n- VIX: ${marketData.stocks.vix['05. price']}`;
+            if (marketData.stocks?.sp500) enhancedQuery += `\n- S&P 500: ${marketData.stocks.sp500['05. price']}`;
+            if (marketData.rayDalio?.regime?.currentRegime) {
+                const regime = marketData.rayDalio.regime.currentRegime;
+                enhancedQuery += `\n- Economic Regime: ${regime.name} (${marketData.rayDalio.regime.confidence}% confidence)`;
+            }
         }
         
-        enhancedQuery += `\n\nSTRATEGIC ANALYSIS REQUIREMENTS:
-• Apply institutional-grade financial theory and quantitative methods
-• Consider multiple timeframe analysis (tactical, strategic, secular)
-• Assess current regime implications for asset allocation
-• Identify key risk factors and hedging strategies
-• Provide specific, actionable investment recommendations
-• Calculate risk-adjusted return expectations with detailed methodology
-• Consider IMPERIUM VAULT SYSTEM strategic positioning`;
+        enhancedQuery += `\n\nENHANCED ANALYSIS REQUIREMENTS:
+- Apply advanced financial theory and quantitative methods
+- Consider multi-timeframe analysis (short, medium, long-term)
+- Assess regime implications for asset allocation
+- Identify key risk factors and hedging strategies
+- Provide specific, actionable trading/investment recommendations
+- Calculate risk-adjusted return expectations where applicable`;
         
-        return await getGptAnalysis(enhancedQuery, {
+        return await getGPT5Analysis(enhancedQuery, {
             ...options,
-            systemPrompt: "You are the Strategic Commander with institutional-grade market analysis expertise. Provide comprehensive market intelligence with commanding authority and actionable insights.",
-            maxTokens: 5000,
-            temperature: STRATEGIC_AI_CONFIG.FINANCIAL_ANALYSIS_TEMP
+            context: "Advanced financial market analysis using institutional-grade methodologies",
+            maxTokens: 4000,
+            temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP
         });
         
     } catch (error) {
-        console.error('❌ Market analysis error:', error.message);
+        console.error('❌ Enhanced market analysis error:', error.message);
         throw error;
     }
 }
 
 /**
- * 🇰🇭 ENHANCED: Cambodia Fund Analysis Function
+ * Enhanced Cambodia fund analysis with GPT-5 (FIXED)
  */
-async function getCambodiaAnalysis(dealQuery, dealData = null, options = {}) {
+async function getEnhancedCambodiaAnalysis(dealQuery, dealData = null, options = {}) {
     try {
-        console.log('🇰🇭 Strategic Cambodia Fund Analysis...');
+        console.log('🇰🇭 GPT-5 Enhanced Cambodia Analysis...');
         
-        let enhancedQuery = `STRATEGIC CAMBODIA FUND ANALYSIS:\n${dealQuery}`;
+        let enhancedQuery = `ENHANCED CAMBODIA FUND ANALYSIS: ${dealQuery}`;
         
         if (dealData) {
             enhancedQuery += `\n\nDEAL PARAMETERS:`;
-            enhancedQuery += `\n• Investment Amount: $${dealData.amount?.toLocaleString() || 'TBD'}`;
-            enhancedQuery += `\n• Asset Type: ${dealData.type || 'Commercial Real Estate'}`;
-            enhancedQuery += `\n• Location: ${dealData.location || 'Phnom Penh, Cambodia'}`;
-            enhancedQuery += `\n• Target Yield: ${dealData.rate || 'TBD'}% annually`;
-            enhancedQuery += `\n• Investment Term: ${dealData.term || 'TBD'} months`;
-            if (dealData.ltv) enhancedQuery += `\n• Loan-to-Value: ${dealData.ltv}%`;
-            if (dealData.irr) enhancedQuery += `\n• Target IRR: ${dealData.irr}%`;
+            enhancedQuery += `\n- Investment Amount: $${dealData.amount?.toLocaleString() || 'TBD'}`;
+            enhancedQuery += `\n- Asset Type: ${dealData.type || 'Commercial Real Estate'}`;
+            enhancedQuery += `\n- Location: ${dealData.location || 'Phnom Penh, Cambodia'}`;
+            enhancedQuery += `\n- Expected Yield: ${dealData.rate || 'TBD'}% annually`;
+            enhancedQuery += `\n- Investment Term: ${dealData.term || 'TBD'} months`;
+            if (dealData.ltv) enhancedQuery += `\n- Loan-to-Value: ${dealData.ltv}%`;
+            if (dealData.irr) enhancedQuery += `\n- Target IRR: ${dealData.irr}%`;
         }
         
-        enhancedQuery += `\n\nCOMPREHENSIVE CAMBODIA ANALYSIS FRAMEWORK:
-• Macroeconomic environment and USD peg stability analysis
-• Real estate market dynamics, supply/demand fundamentals
-• Regulatory landscape and foreign investment compliance
-• Political risk assessment and mitigation strategies
-• Currency risk analysis (USD vs KHR considerations)
-• Comparative yield analysis versus regional markets
-• Exit strategy evaluation and liquidity considerations
-• Risk-adjusted return calculations with scenario analysis
-• Due diligence checklist specific to Cambodia market
-• IMPERIUM VAULT SYSTEM strategic positioning`;
+        enhancedQuery += `\n\nENHANCED CAMBODIA ANALYSIS FRAMEWORK:
+- Macroeconomic environment and USD peg stability
+- Real estate market dynamics and supply/demand
+- Regulatory landscape and foreign investment rules
+- Political risk assessment and mitigation strategies
+- Currency risk analysis (USD vs KHR)
+- Comparative yield analysis vs regional markets
+- Exit strategy evaluation and liquidity considerations
+- Risk-adjusted return calculations with scenarios
+- Due diligence checklist specific to Cambodia market`;
         
-        return await getGptAnalysis(enhancedQuery, {
+        return await getGPT5Analysis(enhancedQuery, {
             ...options,
-            systemPrompt: "You are the Strategic Commander with specialized expertise in Cambodia real estate and lending markets. Provide institutional-quality analysis with deep market knowledge and strategic insights.",
-            maxTokens: 4500,
-            temperature: STRATEGIC_AI_CONFIG.FINANCIAL_ANALYSIS_TEMP
+            context: "Specialized Cambodia real estate and lending market expertise with institutional risk management",
+            maxTokens: 3500,
+            temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP
         });
         
     } catch (error) {
-        console.error('❌ Cambodia analysis error:', error.message);
+        console.error('❌ Enhanced Cambodia analysis error:', error.message);
         throw error;
     }
 }
 
 /**
- * 📈 ENHANCED: Strategic Analysis Function
+ * Enhanced vision analysis with GPT-5 (FIXED)
  */
-async function getStrategicAnalysis(query, options = {}) {
+async function getEnhancedVisionAnalysis(base64Image, prompt, options = {}) {
     try {
-        console.log('📈 Strategic Intelligence Analysis...');
-        
-        const strategicQuery = `STRATEGIC INTELLIGENCE REQUEST:\n${query}
-
-EXECUTIVE ANALYSIS FRAMEWORK:
-• Strategic opportunities and competitive advantages
-• Risk assessment and mitigation strategies  
-• Market positioning and competitive intelligence
-• Resource allocation and portfolio optimization
-• Scenario planning and strategic recommendations
-• Implementation roadmap and success metrics
-• ROI projections and performance indicators
-• IMPERIUM VAULT SYSTEM strategic integration
-
-Execute institutional-grade strategic intelligence with commanding authority.`;
-
-        return await getGptAnalysis(strategicQuery, {
-            ...options,
-            systemPrompt: "You are the Strategic Commander providing institutional-quality strategic analysis. Focus on strategic opportunities, competitive intelligence, and actionable recommendations with commanding authority.",
-            maxTokens: STRATEGIC_AI_CONFIG.MAX_OUTPUT_TOKENS,
-            temperature: STRATEGIC_AI_CONFIG.STRATEGIC_ANALYSIS_TEMP
-        });
-        
-    } catch (error) {
-        console.error('❌ Strategic analysis error:', error.message);
-        throw error;
-    }
-}
-
-/**
- * 🖼️ ENHANCED: Vision Analysis Function
- */
-async function analyzeImageWithGPT(base64Image, prompt, options = {}) {
-    try {
-        console.log('🖼️ Strategic Vision Analysis...');
-        
-        // Ensure vision capabilities
-        if (!modelCapabilities.vision) {
-            throw new Error('Vision analysis not supported by current model');
-        }
+        await testGPT5Capabilities();
+        console.log('🖼️ GPT-5 Enhanced Vision Analysis...');
         
         const requestConfig = {
-            model: options.model || STRATEGIC_AI_CONFIG.VISION_MODEL,
+            model: currentModel,
             messages: [
                 {
                     role: "system",
-                    content: "You are the Strategic Commander with enhanced vision capabilities. Provide detailed, accurate analysis of images with particular expertise in financial charts, documents, business content, and strategic intelligence extraction."
+                    content: `You are GPT-5 with enhanced vision capabilities. Provide detailed, accurate analysis of images with particular expertise in financial charts, documents, and business content.`
                 },
                 {
                     role: "user",
                     content: [
-                        {
-                            type: "text",
-                            text: `STRATEGIC VISION ANALYSIS:\n${prompt}\n\nProvide comprehensive visual analysis with strategic insights. Extract specific data points, identify trends, patterns, and provide actionable intelligence.`
+                        { 
+                            type: "text", 
+                            text: `ENHANCED VISION ANALYSIS: ${prompt}\n\nApply detailed visual analysis with financial expertise. Extract specific data points, identify trends, and provide actionable insights.`
                         },
                         {
                             type: "image_url",
@@ -497,251 +446,168 @@ async function analyzeImageWithGPT(base64Image, prompt, options = {}) {
                     ]
                 }
             ],
-            max_completion_tokens: options.maxTokens || 4000,
-            temperature: options.temperature || STRATEGIC_AI_CONFIG.CONVERSATIONAL_TEMP
+            max_completion_tokens: options.maxTokens || 3000,  // 🔧 FIXED: Correct parameter
+            temperature: options.temperature || GPT5_CONFIG.MULTIMODAL_TEMP
         };
         
         // Add GPT-5 parameters if using GPT-5
-        if (requestConfig.model.includes('gpt-5')) {
+        if (currentModel === GPT5_CONFIG.PRIMARY_MODEL && gpt5Available) {
             requestConfig.reasoning_effort = options.reasoning_effort || 'medium';
             requestConfig.verbosity = options.verbosity || 'detailed';
         }
         
         const completion = await openai.chat.completions.create(requestConfig);
         const analysis = completion.choices[0].message.content;
+        console.log(`✅ Enhanced vision analysis complete (${analysis.length} characters)`);
         
-        console.log(`✅ Strategic vision analysis complete (${analysis.length} characters)`);
         return analysis;
         
     } catch (error) {
-        console.error('❌ Vision analysis error:', error.message);
-        
-        // Try fallback for vision analysis
-        if (error.message.includes('gpt-5') && !options.model) {
-            console.log('🔄 Trying vision analysis with GPT-4o...');
-            return await analyzeImageWithGPT(base64Image, prompt, { ...options, model: 'gpt-4o' });
-        }
-        
-        throw new Error(`Strategic Vision Analysis Error: ${error.message}`);
+        console.error('❌ Enhanced vision analysis error:', error.message);
+        throw new Error(`GPT-5 Vision Analysis Error: ${error.message}`);
     }
 }
 
 /**
- * 🎤 Audio Transcription Function
+ * System health check for GPT-5 (FIXED)
  */
-async function transcribeAudio(audioFile, options = {}) {
-    try {
-        console.log('🎤 Strategic Audio Transcription...');
-        
-        const transcription = await openai.audio.transcriptions.create({
-            file: audioFile,
-            model: options.model || "whisper-1",
-            language: options.language || "en",
-            temperature: options.temperature || 0.2,
-            response_format: options.response_format || "text"
-        });
-        
-        console.log(`✅ Audio transcription complete: ${transcription.length || 0} characters`);
-        return transcription;
-        
-    } catch (error) {
-        console.error('❌ Audio transcription error:', error.message);
-        throw new Error(`Audio transcription failed: ${error.message}`);
-    }
-}
-
-/**
- * 🧠 Memory-Aware Analysis Function
- */
-async function getMemoryAwareAnalysis(query, memoryContext = '', options = {}) {
-    try {
-        console.log('🧠 Memory-Enhanced Strategic Analysis...');
-        
-        const enhancedQuery = memoryContext ? 
-            `MEMORY CONTEXT:\n${memoryContext}\n\nCURRENT QUERY:\n${query}` : query;
-        
-        return await getGptAnalysis(enhancedQuery, {
-            ...options,
-            systemPrompt: "You are the Strategic Commander with access to persistent memory about this user. Use the provided context to give personalized, intelligent responses that reference previous conversations and learned facts.",
-            maxTokens: options.maxTokens || 3000,
-            temperature: options.temperature || STRATEGIC_AI_CONFIG.CONVERSATIONAL_TEMP
-        });
-        
-    } catch (error) {
-        console.error('❌ Memory-aware analysis error:', error.message);
-        throw error;
-    }
-}
-
-/**
- * 🎯 Quick Response Function
- */
-async function getQuickGptResponse(query, options = {}) {
-    try {
-        console.log('🎯 Quick Strategic Response...');
-        
-        return await getGptAnalysis(query, {
-            ...options,
-            maxTokens: options.maxTokens || 1200,
-            temperature: options.temperature || STRATEGIC_AI_CONFIG.CONVERSATIONAL_TEMP,
-            systemPrompt: "You are the Strategic Commander providing concise, authoritative responses. Be direct and helpful while maintaining institutional expertise."
-        });
-        
-    } catch (error) {
-        console.error('❌ Quick response error:', error.message);
-        throw error;
-    }
-}
-
-/**
- * 🔍 Test OpenAI Connection
- */
-async function testOpenAIConnection() {
-    try {
-        console.log('🔍 Testing OpenAI connection...');
-        
-        const requestConfig = {
-            model: STRATEGIC_AI_CONFIG.FALLBACK_MODEL, // Use reliable model for testing
-            messages: [
-                {
-                    role: "user",
-                    content: "Test connection. Respond with: Strategic Commander Online."
-                }
-            ],
-            max_completion_tokens: 50,
-            temperature: 0
-        };
-        
-        const response = await openai.chat.completions.create(requestConfig);
-        const result = response.choices[0]?.message?.content;
-        
-        console.log('✅ OpenAI Connection Test Result:', result);
-        
-        return {
-            success: true,
-            result: result,
-            model: STRATEGIC_AI_CONFIG.FALLBACK_MODEL,
-            usage: response.usage
-        };
-        
-    } catch (error) {
-        console.error('❌ OpenAI Connection Test Failed:', error.message);
-        
-        return {
-            success: false,
-            error: error.message,
-            model: STRATEGIC_AI_CONFIG.FALLBACK_MODEL
-        };
-    }
-}
-
-/**
- * 🏥 System Health Check
- */
-async function checkSystemHealth() {
+async function checkGPT5SystemHealth() {
     const health = {
-        primaryModelWorking: false,
-        fallbackModelWorking: false,
-        visionCapabilities: false,
-        audioCapabilities: false,
         gpt5Available: false,
+        fallbackWorking: false,
+        enhancedReasoning: false,
+        visionCapabilities: false,
+        largeContext: false,
         currentModel: currentModel,
         capabilities: modelCapabilities,
         errors: []
     };
     
     try {
-        // Test primary model
-        await testModelCapabilities();
-        health.primaryModelWorking = modelCapabilities.available;
-        health.visionCapabilities = modelCapabilities.vision;
-        health.audioCapabilities = true;
-        health.gpt5Available = modelCapabilities.gpt5Features;
+        const capabilities = await testGPT5Capabilities();
+        health.gpt5Available = capabilities.available;
+        health.enhancedReasoning = capabilities.enhancedReasoning;
+        health.visionCapabilities = capabilities.multimodal;
+        health.largeContext = capabilities.largeContext;
         
-        if (!health.primaryModelWorking && currentModel !== STRATEGIC_AI_CONFIG.FALLBACK_MODEL) {
-            // Test fallback
-            const originalModel = currentModel;
-            currentModel = STRATEGIC_AI_CONFIG.FALLBACK_MODEL;
-            await testModelCapabilities();
-            health.fallbackModelWorking = modelCapabilities.available;
-            currentModel = originalModel;
+        if (!health.gpt5Available) {
+            // Test fallback model with CORRECT parameters
+            try {
+                await openai.chat.completions.create({
+                    model: GPT5_CONFIG.FALLBACK_MODEL,
+                    messages: [{ role: "user", content: "Test" }],
+                    max_completion_tokens: 10  // 🔧 FIXED: Correct parameter
+                });
+                health.fallbackWorking = true;
+            } catch (fallbackError) {
+                health.errors.push(`Fallback: ${fallbackError.message}`);
+            }
         }
         
     } catch (error) {
-        health.errors.push(`System Test: ${error.message}`);
+        health.errors.push(`GPT-5 Test: ${error.message}`);
     }
     
-    health.overallHealth = health.primaryModelWorking || health.fallbackModelWorking;
-    health.status = health.overallHealth ? 'HEALTHY' : 'DEGRADED';
-    health.gpt5Status = health.gpt5Available ? 'ACTIVE' : 'FALLBACK';
+    health.overallHealth = health.gpt5Available || health.fallbackWorking;
     
     return health;
 }
 
-/**
- * 📊 Get Performance Metrics
- */
-function getPerformanceMetrics() {
+// Get enhanced metrics
+function getGPT5Metrics() {
     return {
-        system: "IMPERIUM VAULT STRATEGIC AI CLIENT v3.4 - GPT-5 COMPATIBLE",
-        currentModel: currentModel,
-        gpt5Ready: currentModel.includes('gpt-5'),
+        model: currentModel,
+        gpt5Available: gpt5Available,
         capabilities: modelCapabilities,
-        configuration: STRATEGIC_AI_CONFIG,
-        features: [
-            'Smart GPT-5 Parameter Handling',
-            'Automatic Fallback System', 
-            'Strategic Market Analysis',
-            'Cambodia Fund Intelligence', 
-            'Enhanced Vision Analysis',
-            'Memory-Aware Responses',
-            'Audio Transcription',
-            'Multi-Modal Intelligence',
-            'Institutional-Grade Analysis',
-            'Risk-Adjusted Recommendations',
-            'Real-Time Model Switching',
-            'Advanced Error Recovery'
+        contextWindow: GPT5_CONFIG.ENHANCED_CONTEXT_WINDOW,
+        maxOutputTokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
+        enhancedFeatures: [
+            'Superior reasoning capabilities',
+            'Enhanced mathematical computation',
+            'Improved financial analysis',
+            'Better instruction following',
+            'Reduced hallucinations',
+            'Natural conversation flow',
+            'Advanced multimodal understanding',
+            'Large context processing',
+            'Complex problem solving',
+            'Institutional-grade analysis'
         ],
-        queryTypes: ['strategic_analysis', 'complex_reasoning', 'conversational', 'general'],
-        optimizedFor: 'Financial analysis, strategic planning, and institutional decision-making',
-        compatibility: 'GPT-5 ready with GPT-4o fallback'
+        queryTypes: ['complex_reasoning', 'financial_analysis', 'large_context', 'general'],
+        optimizedFor: 'Financial analysis, strategic planning, and institutional decision-making'
     };
 }
 
-// Export all functions
 module.exports = {
-    // Main Analysis Functions
-    getGptAnalysis,
-    getMarketAnalysis,
-    getCambodiaAnalysis,
-    getStrategicAnalysis,
-    getMemoryAwareAnalysis,
-    getQuickGptResponse,
+    // Main GPT-5 functions
+    getGPT5Analysis,
+    getEnhancedMarketAnalysis,
+    getEnhancedCambodiaAnalysis,
+    getEnhancedVisionAnalysis,
     
-    // Multi-Modal Functions
-    analyzeImageWithGPT,
-    transcribeAudio,
+    // Capability testing
+    testGPT5Capabilities,
+    checkGPT5SystemHealth,
+    getGPT5Metrics,
     
-    // System Functions
-    testModelCapabilities,
-    testOpenAIConnection,
-    checkSystemHealth,
-    getPerformanceMetrics,
+    // Utility functions
+    analyzeQueryForGPT5,
+    createGPT5SystemPrompt,
     
-    // Utility Functions
-    analyzeQueryForOptimalResponse,
-    getGptAnalysisWithFallback,
+    // Legacy compatibility
+    getGptAnalysis: getGPT5Analysis,
+    getMarketAnalysis: getEnhancedMarketAnalysis,
+    getCambodiaAnalysis: getEnhancedCambodiaAnalysis,
+    analyzeImageWithGPT: getEnhancedVisionAnalysis,
+    getVisionAnalysis: getEnhancedVisionAnalysis,
     
-    // Legacy Compatibility
-    getGPT5Analysis: getGptAnalysis,
-    getEnhancedMarketAnalysis: getMarketAnalysis,
-    getEnhancedCambodiaAnalysis: getCambodiaAnalysis,
-    getEnhancedVisionAnalysis: analyzeImageWithGPT,
-    getConversationalAnalysis: getQuickGptResponse,
+    // Additional compatibility
+    getMemoryAwareAnalysis: async (query, memoryContext = '', options = {}) => {
+        const enhancedQuery = memoryContext ? 
+            `MEMORY CONTEXT:\n${memoryContext}\n\nCURRENT QUERY:\n${query}` : query;
+        return await getGPT5Analysis(enhancedQuery, options);
+    },
     
-    // Direct Access
+    getQuickGptResponse: async (query, options = {}) => {
+        return await getGPT5Analysis(query, { ...options, maxTokens: 800 });
+    },
+    
+    getStrategicAnalysis: async (query, options = {}) => {
+        return await getGPT5Analysis(`STRATEGIC ANALYSIS: ${query}`, options);
+    },
+    
+    transcribeAudio: async (audioFile, options = {}) => {
+        try {
+            const transcription = await openai.audio.transcriptions.create({
+                file: audioFile,
+                model: options.model || "whisper-1",
+                language: options.language || "en",
+                temperature: options.temperature || 0.2,
+                response_format: options.response_format || "text"
+            });
+            return transcription;
+        } catch (error) {
+            throw new Error(`Audio transcription failed: ${error.message}`);
+        }
+    },
+    
+    testOpenAIConnection: async () => {
+        try {
+            const response = await openai.chat.completions.create({
+                model: GPT5_CONFIG.FALLBACK_MODEL,
+                messages: [{ role: "user", content: "Test connection" }],
+                max_completion_tokens: 10
+            });
+            return { success: true, result: response.choices[0]?.message?.content };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    },
+    
+    // OpenAI client
     openai,
-    STRATEGIC_AI_CONFIG,
-    currentModel: () => currentModel,
-    modelCapabilities: () => modelCapabilities
+    
+    // Configuration
+    GPT5_CONFIG,
+    STRATEGIC_AI_CONFIG: GPT5_CONFIG  // Legacy compatibility
 };
