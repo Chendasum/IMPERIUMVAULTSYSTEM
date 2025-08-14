@@ -9135,16 +9135,16 @@ class LegalStructureAnalyzer {
     }
 
     // 🔍 COMPREHENSIVE LEGAL STRUCTURE ANALYSIS
-    async analyzeLegalStructureOptimization(businessData) {
-        try {
-            const {
-                annualRevenue,
-                numberOfOwners = 1,
-                businessType,
-                growthPlans,
-                liability Concerns,
-                currentStructure = 'SOLE_PROPRIETORSHIP'
-            } = businessData;
+async analyzeLegalStructureOptimization(businessData) {
+    try {
+        const {
+            annualRevenue,
+            numberOfOwners = 1,
+            businessType,
+            growthPlans,
+            liabilityConcerns,  // ✅ FIXED - removed space
+            currentStructure = 'SOLE_PROPRIETORSHIP'
+        } = businessData;
 
             const structureComparison = this.compareBusinessStructures(businessData);
             const recommendation = this.getOptimalStructureRecommendation(businessData, structureComparison);
