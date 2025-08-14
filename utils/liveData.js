@@ -7864,3 +7864,4239 @@ module.exports = {
     generateMonitoringSchedule,
     generateMasterRecommendations
 };
+
+// 🏆 WEALTH MODULE 7: TAX OPTIMIZATION & LEGAL STRUCTURES
+// Advanced tax planning, legal entity optimization, and regulatory compliance
+
+// 💰 TAX OPTIMIZATION ENGINE
+class TaxOptimizationEngine {
+    constructor() {
+        this.taxStrategies = {
+            TAX_LOSS_HARVESTING: 'Tax-Loss Harvesting',
+            ASSET_LOCATION: 'Strategic Asset Location',
+            ROTH_CONVERSIONS: 'Roth IRA Conversions',
+            HSA_OPTIMIZATION: 'HSA Maximization',
+            MUNICIPAL_BONDS: 'Municipal Bond Strategy',
+            DONOR_ADVISED_FUNDS: 'Charitable Giving Optimization',
+            DIRECT_INDEXING: 'Direct Indexing for Tax Alpha',
+            ESTATE_GIFTING: 'Annual Gifting Strategy',
+            BUSINESS_STRUCTURES: 'Business Entity Optimization',
+            RETIREMENT_SEQUENCING: 'Withdrawal Sequencing'
+        };
+        
+        this.taxBrackets2024 = {
+            single: [
+                { min: 0, max: 11600, rate: 0.10 },
+                { min: 11601, max: 47150, rate: 0.12 },
+                { min: 47151, max: 100525, rate: 0.22 },
+                { min: 100526, max: 191950, rate: 0.24 },
+                { min: 191951, max: 243725, rate: 0.32 },
+                { min: 243726, max: 609350, rate: 0.35 },
+                { min: 609351, max: Infinity, rate: 0.37 }
+            ],
+            marriedJoint: [
+                { min: 0, max: 23200, rate: 0.10 },
+                { min: 23201, max: 94300, rate: 0.12 },
+                { min: 94301, max: 201050, rate: 0.22 },
+                { min: 201051, max: 383900, rate: 0.24 },
+                { min: 383901, max: 487450, rate: 0.32 },
+                { min: 487451, max: 731200, rate: 0.35 },
+                { min: 731201, max: Infinity, rate: 0.37 }
+            ]
+        };
+        
+        this.capitalGainsBrackets2024 = {
+            single: [
+                { min: 0, max: 47025, rate: 0.00 },
+                { min: 47026, max: 518900, rate: 0.15 },
+                { min: 518901, max: Infinity, rate: 0.20 }
+            ],
+            marriedJoint: [
+                { min: 0, max: 94050, rate: 0.00 },
+                { min: 94051, max: 583750, rate: 0.15 },
+                { min: 583751, max: Infinity, rate: 0.20 }
+            ]
+        };
+        
+        this.stateTaxRates = {
+            'CA': 0.133, 'NY': 0.109, 'NJ': 0.109, 'HI': 0.11,
+            'OR': 0.099, 'MN': 0.098, 'DC': 0.095, 'IA': 0.086,
+            'VT': 0.086, 'WI': 0.076, 'ME': 0.075, 'ID': 0.069,
+            'SC': 0.069, 'CT': 0.069, 'NE': 0.068, 'DE': 0.066,
+            'FL': 0, 'TX': 0, 'WA': 0, 'NV': 0, 'TN': 0, 'WY': 0, 'SD': 0, 'AK': 0, 'NH': 0
+        };
+
+        this.stateEstateExemptions = {
+            'WA': 2193000, 'OR': 1000000, 'MN': 3000000, 'IL': 4000000,
+            'MD': 5000000, 'MA': 2000000, 'CT': 12920000, 'VT': 5000000,
+            'NY': 6940000, 'HI': 5490000, 'RI': 1733264, 'ME': 6010000,
+            'DC': 4352200, 'NJ': 674000
+        };
+    }
+    
+    // 🎯 COMPREHENSIVE TAX OPTIMIZATION ANALYSIS
+    async analyzeComprehensiveTaxOptimization(clientData) {
+        try {
+            const {
+                income,
+                filingStatus = 'single',
+                state = 'CA',
+                portfolio,
+                retirementAccounts,
+                businessIncome = 0,
+                dependents = 0,
+                charitableGoals = 0,
+                estateValue = 0
+            } = clientData;
+            
+            // Calculate current tax situation
+            const currentTaxSituation = this.calculateCurrentTaxSituation(clientData);
+            
+            // Analyze tax-loss harvesting opportunities
+            const taxLossHarvesting = await this.analyzeTaxLossHarvesting(portfolio);
+            
+            // Asset location optimization
+            const assetLocation = this.optimizeAssetLocation(portfolio, retirementAccounts, currentTaxSituation);
+            
+            // Roth conversion analysis
+            const rothConversion = this.analyzeRothConversions(retirementAccounts, currentTaxSituation);
+            
+            // Municipal bond analysis
+            const municipalBonds = this.analyzeMunicipalBonds(currentTaxSituation, state);
+            
+            // Charitable giving optimization
+            const charitableOptimization = this.optimizeCharitableGiving(charitableGoals, portfolio, currentTaxSituation);
+            
+            // Business structure optimization
+            const businessOptimization = this.optimizeBusinessStructure(businessIncome, currentTaxSituation);
+            
+            // Estate planning considerations
+            const estatePlanning = this.analyzeEstateTaxOptimization(estateValue, currentTaxSituation);
+            
+            // HSA optimization
+            const hsaOptimization = this.analyzeHSAOptimization(currentTaxSituation);
+            
+            // Direct indexing analysis
+            const directIndexing = this.analyzeDirectIndexing(portfolio, currentTaxSituation);
+            
+            // Calculate total potential tax savings
+            const totalSavings = this.calculateTotalTaxSavings([
+                taxLossHarvesting,
+                assetLocation,
+                rothConversion,
+                municipalBonds,
+                charitableOptimization,
+                businessOptimization,
+                estatePlanning,
+                hsaOptimization,
+                directIndexing
+            ]);
+            
+            return {
+                currentTaxSituation: currentTaxSituation,
+                optimizationStrategies: {
+                    taxLossHarvesting: taxLossHarvesting,
+                    assetLocation: assetLocation,
+                    rothConversion: rothConversion,
+                    municipalBonds: municipalBonds,
+                    charitableOptimization: charitableOptimization,
+                    businessOptimization: businessOptimization,
+                    estatePlanning: estatePlanning,
+                    hsaOptimization: hsaOptimization,
+                    directIndexing: directIndexing
+                },
+                totalPotentialSavings: totalSavings,
+                implementationPriority: this.prioritizeImplementation([
+                    taxLossHarvesting,
+                    assetLocation,
+                    rothConversion,
+                    municipalBonds,
+                    charitableOptimization,
+                    businessOptimization,
+                    estatePlanning,
+                    hsaOptimization,
+                    directIndexing
+                ]),
+                yearEndActions: this.generateYearEndTaxActions(currentTaxSituation),
+                ongoingStrategies: this.generateOngoingTaxStrategies(currentTaxSituation),
+                complianceRequirements: this.getComplianceRequirements(currentTaxSituation, businessIncome),
+                analysisDate: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Tax optimization analysis error:', error.message);
+            return { error: error.message };
+        }
+    }
+    
+    // 📊 CALCULATE CURRENT TAX SITUATION
+    calculateCurrentTaxSituation(clientData) {
+        const { income, filingStatus, state, businessIncome, dependents } = clientData;
+        
+        // Federal tax calculation
+        const federalTax = this.calculateFederalTax(income, filingStatus);
+        
+        // State tax calculation
+        const stateTax = this.calculateStateTax(income, state);
+        
+        // Self-employment tax if applicable
+        const selfEmploymentTax = businessIncome > 0 ? businessIncome * 0.1413 : 0; // 14.13% SE tax
+        
+        // Standard deduction
+        const standardDeduction = filingStatus === 'marriedJoint' ? 29200 : 14600; // 2024 amounts
+        
+        // Child tax credit
+        const childTaxCredit = dependents * 2000; // $2,000 per qualifying child
+        
+        const totalTax = federalTax + stateTax + selfEmploymentTax - childTaxCredit;
+        const effectiveRate = totalTax / income;
+        const marginalRate = this.getMarginalTaxRate(income, filingStatus, state);
+        
+        return {
+            grossIncome: income,
+            federalTax: federalTax,
+            stateTax: stateTax,
+            selfEmploymentTax: selfEmploymentTax,
+            totalTax: Math.max(0, totalTax),
+            effectiveRate: effectiveRate,
+            marginalRate: marginalRate,
+            standardDeduction: standardDeduction,
+            taxCredits: childTaxCredit,
+            filingStatus: filingStatus,
+            state: state,
+            taxableIncome: Math.max(0, income - standardDeduction)
+        };
+    }
+    
+    // 📉 ANALYZE TAX-LOSS HARVESTING
+    async analyzeTaxLossHarvesting(portfolio) {
+        try {
+            if (!portfolio || !portfolio.positions) {
+                return { 
+                    strategy: 'TAX_LOSS_HARVESTING',
+                    applicability: 'NOT_APPLICABLE',
+                    reason: 'No taxable portfolio provided',
+                    potentialSavings: 0
+                };
+            }
+            
+            const unrealizedLosses = [];
+            const unrealizedGains = [];
+            let totalUnrealizedLosses = 0;
+            let totalUnrealizedGains = 0;
+            
+            portfolio.positions.forEach(position => {
+                const unrealizedPL = (position.currentPrice - position.costBasis) * position.shares;
+                
+                if (unrealizedPL < 0) {
+                    unrealizedLosses.push({
+                        symbol: position.symbol,
+                        unrealizedLoss: Math.abs(unrealizedPL),
+                        shares: position.shares,
+                        percentLoss: (unrealizedPL / (position.costBasis * position.shares)) * 100,
+                        washSaleRisk: this.assessWashSaleRisk(position.symbol)
+                    });
+                    totalUnrealizedLosses += Math.abs(unrealizedPL);
+                } else if (unrealizedPL > 0) {
+                    unrealizedGains.push({
+                        symbol: position.symbol,
+                        unrealizedGain: unrealizedPL,
+                        shares: position.shares,
+                        percentGain: (unrealizedPL / (position.costBasis * position.shares)) * 100
+                    });
+                    totalUnrealizedGains += unrealizedPL;
+                }
+            });
+            
+            // Calculate harvestable losses (considering wash sale rule)
+            const harvestableLosses = Math.min(totalUnrealizedLosses, 3000); // $3,000 annual limit for ordinary income offset
+            const carryForwardLosses = Math.max(0, totalUnrealizedLosses - 3000);
+            
+            // Calculate tax savings
+            const marginalRate = 0.32; // Example marginal rate
+            const capitalGainsRate = 0.15; // Example capital gains rate
+            
+            const ordinaryIncomeSavings = Math.min(harvestableLosses, 3000) * marginalRate;
+            const capitalGainsSavings = Math.max(0, harvestableLosses - 3000) * capitalGainsRate;
+            const totalCurrentSavings = ordinaryIncomeSavings + capitalGainsSavings;
+            
+            return {
+                strategy: 'TAX_LOSS_HARVESTING',
+                applicability: totalUnrealizedLosses > 0 ? 'HIGHLY_APPLICABLE' : 'NOT_APPLICABLE',
+                analysis: {
+                    totalUnrealizedLosses: totalUnrealizedLosses,
+                    totalUnrealizedGains: totalUnrealizedGains,
+                    harvestableLosses: harvestableLosses,
+                    carryForwardLosses: carryForwardLosses,
+                    currentYearSavings: totalCurrentSavings,
+                    futureValueSavings: carryForwardLosses * capitalGainsRate
+                },
+                recommendations: this.generateTaxLossHarvestingRecommendations(unrealizedLosses, unrealizedGains),
+                washSaleConsiderations: this.getWashSaleGuidance(),
+                potentialSavings: totalCurrentSavings,
+                implementationSteps: this.getTaxLossHarvestingSteps()
+            };
+        } catch (error) {
+            console.error('Tax-loss harvesting analysis error:', error.message);
+            return { 
+                strategy: 'TAX_LOSS_HARVESTING',
+                error: error.message,
+                potentialSavings: 0
+            };
+        }
+    }
+
+    // 🏠 OPTIMIZE ASSET LOCATION
+    optimizeAssetLocation(portfolio, retirementAccounts, taxSituation) {
+        try {
+            const assetLocationRules = {
+                taxableAccount: {
+                    preferred: ['Tax-efficient index funds', 'Municipal bonds', 'Individual stocks for tax-loss harvesting', 'Foreign tax credit eligible funds'],
+                    avoid: ['REITs', 'High-yield bonds', 'Actively managed funds', 'Tax-inefficient funds']
+                },
+                taxDeferred401k: {
+                    preferred: ['REITs', 'High-yield bonds', 'International funds', 'Small-cap value', 'Commodities', 'High-turnover strategies'],
+                    avoid: ['Tax-efficient index funds', 'Municipal bonds', 'Growth stocks with low dividends']
+                },
+                rothIRA: {
+                    preferred: ['Highest growth potential assets', 'Small-cap growth', 'Emerging markets', 'Individual growth stocks', 'Alternative investments'],
+                    avoid: ['Conservative bonds', 'Low-growth assets', 'High-dividend stocks']
+                }
+            };
+            
+            // Calculate current asset location efficiency
+            const currentEfficiency = this.calculateAssetLocationEfficiency(portfolio, retirementAccounts);
+            
+            // Generate optimization recommendations
+            const optimizationPlan = this.generateAssetLocationOptimization(
+                portfolio, 
+                retirementAccounts, 
+                assetLocationRules,
+                taxSituation
+            );
+            
+            // Calculate potential tax savings
+            const potentialSavings = this.calculateAssetLocationSavings(optimizationPlan, taxSituation);
+            
+            return {
+                strategy: 'ASSET_LOCATION',
+                applicability: 'HIGHLY_APPLICABLE',
+                currentEfficiency: currentEfficiency,
+                optimizationPlan: optimizationPlan,
+                assetLocationRules: assetLocationRules,
+                potentialSavings: potentialSavings,
+                implementationSteps: [
+                    'Audit current asset location across all accounts',
+                    'Identify tax-inefficient placements',
+                    'Gradually rebalance to optimal locations during rebalancing',
+                    'Use new contributions to improve allocation',
+                    'Consider tax implications of any moves'
+                ]
+            };
+        } catch (error) {
+            console.error('Asset location optimization error:', error.message);
+            return { 
+                strategy: 'ASSET_LOCATION',
+                error: error.message,
+                potentialSavings: 0
+            };
+        }
+    }
+    
+    // 🔄 ANALYZE ROTH CONVERSIONS
+    analyzeRothConversions(retirementAccounts, taxSituation) {
+        try {
+            if (!retirementAccounts || (!retirementAccounts.traditional401k && !retirementAccounts.traditionalIRA)) {
+                return {
+                    strategy: 'ROTH_CONVERSIONS',
+                    applicability: 'NOT_APPLICABLE',
+                    reason: 'No traditional retirement accounts to convert',
+                    potentialSavings: 0
+                };
+            }
+            
+            const traditionalBalance = (retirementAccounts.traditional401k || 0) + (retirementAccounts.traditionalIRA || 0);
+            const currentMarginalRate = taxSituation.marginalRate;
+            
+            // Calculate optimal conversion amounts for different scenarios
+            const conversionScenarios = this.calculateConversionScenarios(traditionalBalance, taxSituation);
+            
+            // Determine if conversions make sense
+            const conversionAnalysis = this.evaluateConversionBenefits(conversionScenarios, taxSituation);
+            
+            return {
+                strategy: 'ROTH_CONVERSIONS',
+                applicability: conversionAnalysis.recommended ? 'HIGHLY_APPLICABLE' : 'MODERATE',
+                traditionalBalance: traditionalBalance,
+                currentMarginalRate: currentMarginalRate * 100,
+                conversionScenarios: conversionScenarios,
+                analysis: conversionAnalysis,
+                potentialSavings: conversionAnalysis.lifetimeSavings || 0,
+                implementationGuidance: this.getRothConversionGuidance(conversionAnalysis)
+            };
+        } catch (error) {
+            console.error('Roth conversion analysis error:', error.message);
+            return {
+                strategy: 'ROTH_CONVERSIONS',
+                error: error.message,
+                potentialSavings: 0
+            };
+        }
+    }
+
+    // 🏛️ ANALYZE MUNICIPAL BONDS
+    analyzeMunicipalBonds(taxSituation, state) {
+        try {
+            const federalRate = taxSituation.marginalRate;
+            const stateRate = this.stateTaxRates[state] || 0;
+            const combinedRate = federalRate + stateRate - (federalRate * stateRate); // Approximate combined rate
+            
+            // Calculate tax-equivalent yield
+            const municipalYield = 0.035; // Example 3.5% municipal yield
+            const taxEquivalentYield = municipalYield / (1 - combinedRate);
+            
+            // Compare to taxable alternatives
+            const corporateBondYield = 0.045; // Example 4.5% corporate bond yield
+            const treasuryYield = 0.040; // Example 4.0% treasury yield
+            
+            const recommendation = taxEquivalentYield > Math.max(corporateBondYield, treasuryYield);
+            const breakEvenRate = Math.max(corporateBondYield, treasuryYield) * (1 - combinedRate);
+            
+            return {
+                strategy: 'MUNICIPAL_BONDS',
+                applicability: federalRate >= 0.22 ? 'HIGHLY_APPLICABLE' : 'MODERATE',
+                analysis: {
+                    federalTaxRate: federalRate * 100,
+                    stateTaxRate: stateRate * 100,
+                    combinedTaxRate: combinedRate * 100,
+                    municipalYield: municipalYield * 100,
+                    taxEquivalentYield: taxEquivalentYield * 100,
+                    corporateBondYield: corporateBondYield * 100,
+                    treasuryYield: treasuryYield * 100,
+                    breakEvenMuniRate: breakEvenRate * 100
+                },
+                recommendation: recommendation,
+                potentialSavings: recommendation ? (taxEquivalentYield - Math.max(corporateBondYield, treasuryYield)) * 10000 : 0, // Per $10k invested
+                considerations: [
+                    'State-specific bonds may offer additional tax benefits',
+                    'Consider credit quality and duration risk',
+                    'AMT considerations for high earners',
+                    'Liquidity may be lower than treasuries',
+                    'Compare to after-tax yield of taxable bonds'
+                ]
+            };
+        } catch (error) {
+            console.error('Municipal bond analysis error:', error.message);
+            return {
+                strategy: 'MUNICIPAL_BONDS',
+                error: error.message,
+                potentialSavings: 0
+            };
+        }
+    }
+
+    // 🎁 OPTIMIZE CHARITABLE GIVING
+    optimizeCharitableGiving(charitableGoals, portfolio, taxSituation) {
+        try {
+            if (!charitableGoals || charitableGoals === 0) {
+                return {
+                    strategy: 'CHARITABLE_OPTIMIZATION',
+                    applicability: 'NOT_APPLICABLE',
+                    reason: 'No charitable giving goals specified',
+                    potentialSavings: 0
+                };
+            }
+            
+            const marginalRate = taxSituation.marginalRate;
+            const capitalGainsRate = this.getCapitalGainsRate(taxSituation.grossIncome, taxSituation.filingStatus);
+            const agiLimit = taxSituation.grossIncome * 0.6; // 60% AGI limit for cash gifts
+            
+            // Calculate different giving strategies
+            const strategies = {
+                cashGiving: {
+                    deduction: Math.min(charitableGoals, agiLimit) * marginalRate,
+                    netCost: charitableGoals * (1 - marginalRate),
+                    limitations: charitableGoals > agiLimit ? 'AGI limitation applies' : 'No limitations'
+                },
+                appreciatedSecurities: {
+                    deduction: charitableGoals * marginalRate,
+                    capitalGainsSavings: charitableGoals * 0.3 * capitalGainsRate, // Assuming 30% appreciation
+                    netCost: charitableGoals * (1 - marginalRate) - (charitableGoals * 0.3 * capitalGainsRate),
+                    agiLimit: taxSituation.grossIncome * 0.3 // 30% AGI limit for appreciated property
+                },
+                donorAdvisedFund: {
+                    upfrontDeduction: charitableGoals * marginalRate,
+                    investmentGrowth: charitableGoals * 0.07, // 7% annual growth assumption
+                    flexibility: 'High - can time distributions optimally',
+                    minimumContribution: 5000
+                },
+                charitableRemainder: {
+                    incomeStream: charitableGoals * 0.05, // 5% annual payout
+                    taxDeduction: charitableGoals * 0.4 * marginalRate, // Approximate deduction
+                    estateTaxSavings: charitableGoals * 0.4, // Removes asset from estate
+                    minimumContribution: 100000
+                },
+                qualifiedCharitableDistribution: {
+                    applicability: 'Age 70.5+ with traditional IRA',
+                    maxAnnual: 100000,
+                    benefit: 'Counts toward RMD, not included in AGI'
+                }
+            };
+            
+            // Calculate optimal strategy
+            const optimalStrategy = this.determineOptimalCharitableStrategy(strategies, charitableGoals, taxSituation);
+            
+            return {
+                strategy: 'CHARITABLE_OPTIMIZATION',
+                applicability: 'HIGHLY_APPLICABLE',
+                charitableGoals: charitableGoals,
+                strategies: strategies,
+                optimalStrategy: optimalStrategy,
+                potentialSavings: optimalStrategy.additionalSavings || 0,
+                implementationSteps: this.getCharitableImplementationSteps(optimalStrategy),
+                timing: this.getCharitableTimingGuidance(taxSituation)
+            };
+        } catch (error) {
+            console.error('Charitable giving optimization error:', error.message);
+            return {
+                strategy: 'CHARITABLE_OPTIMIZATION',
+                error: error.message,
+                potentialSavings: 0
+            };
+        }
+    }
+
+    // 🏢 OPTIMIZE BUSINESS STRUCTURE
+    optimizeBusinessStructure(businessIncome, taxSituation) {
+        try {
+            if (!businessIncome || businessIncome === 0) {
+                return {
+                    strategy: 'BUSINESS_OPTIMIZATION',
+                    applicability: 'NOT_APPLICABLE',
+                    reason: 'No business income to optimize',
+                    potentialSavings: 0
+                };
+            }
+            
+            const currentSETax = businessIncome * 0.1413; // 14.13% self-employment tax
+            const currentIncomeTax = businessIncome * taxSituation.marginalRate;
+            const currentTotalTax = currentSETax + currentIncomeTax;
+            
+            // Analyze different business structures
+            const businessStructures = {
+                soleProprietorship: {
+                    selfEmploymentTax: currentSETax,
+                    incomeTax: currentIncomeTax,
+                    totalTax: currentTotalTax,
+                    qbiDeduction: Math.min(businessIncome * 0.2, taxSituation.taxableIncome * 0.2), // QBI deduction
+                    pros: ['Simple structure', 'No separate tax return', 'QBI deduction available'],
+                    cons: ['Full self-employment tax', 'Unlimited liability']
+                },
+                singleMemberLLC: {
+                    selfEmploymentTax: currentSETax,
+                    incomeTax: currentIncomeTax,
+                    totalTax: currentTotalTax,
+                    qbiDeduction: Math.min(businessIncome * 0.2, taxSituation.taxableIncome * 0.2),
+                    pros: ['Limited liability', 'Tax flexibility', 'QBI deduction'],
+                    cons: ['Still subject to full SE tax', 'State filing requirements']
+                },
+                sCorporation: {
+                    reasonableSalary: Math.min(businessIncome * 0.6, 160200), // 60% or SS wage base
+                    selfEmploymentTax: Math.min(businessIncome * 0.6, 160200) * 0.1413,
+                    incomeTax: businessIncome * taxSituation.marginalRate,
+                    distributions: businessIncome - Math.min(businessIncome * 0.6, 160200),
+                    totalTax: Math.min(businessIncome * 0.6, 160200) * 0.1413 + businessIncome * taxSituation.marginalRate,
+                    qbiDeduction: Math.min((businessIncome - Math.min(businessIncome * 0.6, 160200)) * 0.2, taxSituation.taxableIncome * 0.2),
+                    pros: ['SE tax savings on distributions', 'Tax-free fringe benefits', 'QBI deduction on distributions'],
+                    cons: ['Reasonable salary requirement', 'Payroll compliance', 'Separate tax return']
+                },
+                llcTaxedAsS: {
+                    reasonableSalary: Math.min(businessIncome * 0.6, 160200),
+                    selfEmploymentTax: Math.min(businessIncome * 0.6, 160200) * 0.1413,
+                    incomeTax: businessIncome * taxSituation.marginalRate,
+                    distributions: businessIncome - Math.min(businessIncome * 0.6, 160200),
+                    totalTax: Math.min(businessIncome * 0.6, 160200) * 0.1413 + businessIncome * taxSituation.marginalRate,
+                    qbiDeduction: Math.min((businessIncome - Math.min(businessIncome * 0.6, 160200)) * 0.2, taxSituation.taxableIncome * 0.2),
+                    pros: ['Limited liability', 'SE tax savings', 'Operational flexibility'],
+                    cons: ['S-election complexity', 'Reasonable salary requirement']
+                }
+            };
+            
+            // Calculate potential savings
+            const sCorp = businessStructures.sCorporation;
+            const soleProprietor = businessStructures.soleProprietorship;
+            const seTaxSavings = soleProprietor.selfEmploymentTax - sCorp.selfEmploymentTax;
+            const qbiDifference = sCorp.qbiDeduction - soleProprietor.qbiDeduction;
+            const totalSavings = seTaxSavings + (qbiDifference * taxSituation.marginalRate);
+            
+            return {
+                strategy: 'BUSINESS_OPTIMIZATION',
+                applicability: businessIncome > 60000 ? 'HIGHLY_APPLICABLE' : 'MODERATE',
+                currentStructure: 'Sole Proprietorship (assumed)',
+                businessIncome: businessIncome,
+                structureAnalysis: businessStructures,
+                recommendation: totalSavings > 1000 ? 'S-Corporation Election' : 'Current Structure Optimal',
+                potentialSavings: Math.max(0, totalSavings),
+                implementationConsiderations: this.getBusinessStructureConsiderations(),
+                timing: this.getBusinessStructureTimingGuidance()
+            };
+        } catch (error) {
+            console.error('Business structure optimization error:', error.message);
+            return {
+                strategy: 'BUSINESS_OPTIMIZATION',
+                error: error.message,
+                potentialSavings: 0
+            };
+        }
+    }
+
+    // 🏛️ ANALYZE ESTATE TAX OPTIMIZATION
+    analyzeEstateTaxOptimization(estateValue, taxSituation) {
+        try {
+            const federalExemption = 13610000; // 2024 federal estate tax exemption
+            const stateExemption = this.getStateEstateExemption(taxSituation.state);
+            
+            if (estateValue < Math.min(federalExemption, stateExemption || federalExemption)) {
+                return {
+                    strategy: 'ESTATE_PLANNING',
+                    applicability: 'LOW',
+                    reason: 'Estate value below exemption thresholds',
+                    estateValue: estateValue,
+                    federalExemption: federalExemption,
+                    stateExemption: stateExemption,
+                    potentialSavings: 0
+                };
+            }
+            
+            // Calculate potential estate tax
+            const federalEstateTax = Math.max(0, (estateValue - federalExemption) * 0.40);
+            const stateEstateTax = this.calculateStateEstateTax(estateValue, taxSituation.state);
+            const totalEstateTax = federalEstateTax + stateEstateTax;
+            
+            // Annual gifting strategy
+            const annualGiftExclusion = 18000; // 2024 amount
+            const spouseGifting = taxSituation.filingStatus === 'marriedJoint';
+            const maxAnnualGifting = annualGiftExclusion * (spouseGifting ? 2 : 1);
+            
+            // Calculate gifting strategy benefits
+            const giftingStrategy = this.calculateGiftingStrategy(estateValue, maxAnnualGifting, totalEstateTax);
+            
+            return {
+                strategy: 'ESTATE_PLANNING',
+                applicability: 'HIGHLY_APPLICABLE',
+                estateValue: estateValue,
+                exemptions: {
+                    federal: federalExemption,
+                    state: stateExemption || 0
+                },
+                potentialEstateTax: totalEstateTax,
+                giftingStrategy: giftingStrategy,
+                potentialSavings: giftingStrategy.totalTaxSavings,
+                additionalStrategies: this.getEstateStrategies(estateValue),
+                urgency: estateValue > federalExemption * 0.8 ? 'HIGH' : 'MODERATE'
+            };
+        } catch (error) {
+            console.error('Estate tax optimization error:', error.message);
+            return {
+                strategy: 'ESTATE_PLANNING',
+                error: error.message,
+                potentialSavings: 0
+            };
+        }
+    }
+
+    // 💊 ANALYZE HSA OPTIMIZATION
+    analyzeHSAOptimization(taxSituation) {
+        try {
+            const hsaContributionLimits = {
+                individual: 4150, // 2024 limit
+                family: 8300, // 2024 limit
+                catchUp: 1000 // Age 55+ catch-up
+            };
+            
+            const marginalTaxRate = taxSituation.marginalRate;
+            const currentYearDeduction = hsaContributionLimits.individual * marginalTaxRate;
+            
+            // Calculate triple tax advantage value
+            const tripleAdvantage = {
+                contributionDeduction: currentYearDeduction,
+                taxFreeGrowth: hsaContributionLimits.individual * 0.07 * 30, // 30 years growth at 7%
+                taxFreeWithdrawals: 'Unlimited for qualified medical expenses'
+            };
+            
+            return {
+                strategy: 'HSA_OPTIMIZATION',
+                applicability: 'HIGHLY_APPLICABLE',
+                contributionLimits: hsaContributionLimits,
+                currentYearBenefit: currentYearDeduction,
+                tripleAdvantage: tripleAdvantage,
+                potentialSavings: currentYearDeduction,
+                strategy: {
+                    maximize: 'Contribute maximum amount annually',
+                    invest: 'Invest HSA funds for long-term growth',
+                    preserve: 'Pay medical expenses out-of-pocket when possible',
+                    withdrawal: 'Use as retirement account after age 65'
+                },
+                implementationSteps: [
+                    'Verify HSA eligibility with HDHP',
+                    'Set up automatic maximum contributions',
+                    'Invest HSA balance in low-cost index funds',
+                    'Keep receipts for future reimbursement',
+                    'Avoid withdrawals for current medical expenses if possible'
+                ]
+            };
+        } catch (error) {
+            console.error('HSA optimization error:', error.message);
+            return {
+                strategy: 'HSA_OPTIMIZATION',
+                error: error.message,
+                potentialSavings: 0
+            };
+        }
+    }
+
+    // 📈 ANALYZE DIRECT INDEXING
+    analyzeDirectIndexing(portfolio, taxSituation) {
+        try {
+            const portfolioValue = portfolio?.totalValue || 0;
+            const minimumForDirectIndexing = 250000; // Typical minimum
+            
+            if (portfolioValue < minimumForDirectIndexing) {
+                return {
+                    strategy: 'DIRECT_INDEXING',
+                    applicability: 'NOT_APPLICABLE',
+                    reason: `Portfolio value (${portfolioValue}) below typical minimum (${minimumForDirectIndexing})`,
+                    potentialSavings: 0
+                };
+            }
+            
+            const marginalTaxRate = taxSituation.marginalRate;
+            const estimatedTaxAlpha = portfolioValue * 0.01; // 1% tax alpha estimate
+            const annualSavings = estimatedTaxAlpha * marginalTaxRate;
+            
+            return {
+                strategy: 'DIRECT_INDEXING',
+                applicability: 'HIGHLY_APPLICABLE',
+                portfolioValue: portfolioValue,
+                minimumThreshold: minimumForDirectIndexing,
+                benefits: {
+                    taxLossHarvesting: 'Individual stock positions enable continuous harvesting',
+                    customization: 'Remove unwanted stocks (ESG, sector concentration)',
+                    transitionManagement: 'Gradual transition from concentrated positions'
+                },
+                estimatedTaxAlpha: estimatedTaxAlpha,
+                potentialSavings: annualSavings,
+                considerations: [
+                    'Higher complexity than index funds',
+                    'Requires sophisticated portfolio management',
+                    'May have higher fees than broad index funds',
+                    'Best for taxable accounts with high tax rates'
+                ],
+                providers: [
+                    'Parametric Portfolio Associates',
+                    'Aperio (BlackRock)',
+                    'Separately Managed Accounts (SMAs)',
+                    'Canvas (JPMorgan)'
+                ]
+            };
+        } catch (error) {
+            console.error('Direct indexing analysis error:', error.message);
+            return {
+                strategy: 'DIRECT_INDEXING',
+                error: error.message,
+                potentialSavings: 0
+            };
+        }
+    }
+
+    // 🔧 HELPER METHODS
+    
+    calculateFederalTax(income, filingStatus) {
+        const brackets = this.taxBrackets2024[filingStatus] || this.taxBrackets2024.single;
+        let tax = 0;
+        
+        for (const bracket of brackets) {
+            if (income > bracket.min) {
+                const taxableInThisBracket = Math.min(income, bracket.max) - bracket.min + 1;
+                tax += taxableInThisBracket * bracket.rate;
+            }
+        }
+        
+        return tax;
+    }
+    
+    calculateStateTax(income, state) {
+        const stateRate = this.stateTaxRates[state] || 0;
+        return income * stateRate;
+    }
+    
+    getMarginalTaxRate(income, filingStatus, state) {
+        const brackets = this.taxBrackets2024[filingStatus] || this.taxBrackets2024.single;
+        let marginalRate = 0;
+        
+        for (const bracket of brackets) {
+            if (income >= bracket.min && income <= bracket.max) {
+                marginalRate = bracket.rate;
+                break;
+            }
+        }
+        
+        const stateRate = this.stateTaxRates[state] || 0;
+        return marginalRate + stateRate;
+    }
+
+    getCapitalGainsRate(income, filingStatus) {
+        const brackets = this.capitalGainsBrackets2024[filingStatus] || this.capitalGainsBrackets2024.single;
+        
+        for (const bracket of brackets) {
+            if (income >= bracket.min && income <= bracket.max) {
+                return bracket.rate;
+            }
+        }
+        return 0.20; // Default to highest rate
+    }
+
+    getStateEstateExemption(state) {
+        return this.stateEstateExemptions[state] || null;
+    }
+
+    calculateStateEstateTax(estateValue, state) {
+        const exemption = this.getStateEstateExemption(state);
+        if (!exemption || estateValue <= exemption) return 0;
+        
+        // Simplified state estate tax calculation (varies by state)
+        const taxableEstate = estateValue - exemption;
+        return taxableEstate * 0.16; // Approximate average state rate
+    }
+
+    assessWashSaleRisk(symbol) {
+        // Simplified wash sale risk assessment
+        const commonETFs = ['SPY', 'QQQ', 'IWM', 'VTI', 'VOO'];
+        return commonETFs.includes(symbol) ? 'HIGH' : 'MODERATE';
+    }
+
+    calculateAssetLocationEfficiency(portfolio, retirementAccounts) {
+        // Simplified efficiency calculation
+        let efficiencyScore = 0;
+        let totalAssets = 0;
+        
+        // Check if high-yield assets are in tax-advantaged accounts
+        if (retirementAccounts?.traditional401k > 0) efficiencyScore += 0.3;
+        if (retirementAccounts?.rothIRA > 0) efficiencyScore += 0.3;
+        
+        totalAssets = (portfolio?.totalValue || 0) + 
+                     (retirementAccounts?.traditional401k || 0) + 
+                     (retirementAccounts?.rothIRA || 0);
+        
+        return {
+            score: Math.min(1.0, efficiencyScore),
+            totalAssets: totalAssets,
+            recommendations: efficiencyScore < 0.8 ? 'Significant optimization opportunities' : 'Well optimized'
+        };
+    }
+
+    generateAssetLocationOptimization(portfolio, retirementAccounts, rules, taxSituation) {
+        return {
+            taxableOptimization: {
+                current: 'Mixed allocation',
+                recommended: 'Tax-efficient index funds, municipal bonds, individual stocks',
+                action: 'Move REITs and bonds to tax-advantaged accounts'
+            },
+            taxDeferredOptimization: {
+                current: 'Conservative allocation',
+                recommended: 'REITs, high-yield bonds, international funds',
+                action: 'Concentrate tax-inefficient assets here'
+            },
+            rothOptimization: {
+                current: 'Mixed allocation',
+                recommended: 'Highest growth potential assets',
+                action: 'Prioritize small-cap growth and emerging markets'
+            }
+        };
+    }
+
+    calculateAssetLocationSavings(optimizationPlan, taxSituation) {
+        // Estimated annual tax savings from optimal asset location
+        const marginalRate = taxSituation.marginalRate;
+        const estimatedSavings = 1000; // Base estimate
+        
+        return estimatedSavings * marginalRate;
+    }
+
+    calculateConversionScenarios(traditionalBalance, taxSituation) {
+        const currentMarginalRate = taxSituation.marginalRate;
+        
+        return {
+            conservative: {
+                conversionAmount: Math.min(25000, traditionalBalance * 0.1),
+                taxCost: Math.min(25000, traditionalBalance * 0.1) * currentMarginalRate,
+                timeToRecoup: 8 // years
+            },
+            moderate: {
+                conversionAmount: Math.min(50000, traditionalBalance * 0.2),
+                taxCost: Math.min(50000, traditionalBalance * 0.2) * currentMarginalRate,
+                timeToRecoup: 10 // years
+            },
+            aggressive: {
+                conversionAmount: Math.min(100000, traditionalBalance * 0.4),
+                taxCost: Math.min(100000, traditionalBalance * 0.4) * currentMarginalRate,
+                timeToRecoup: 12 // years
+            }
+        };
+    }
+
+    evaluateConversionBenefits(scenarios, taxSituation) {
+        const futureRate = taxSituation.marginalRate * 1.1; // Assume 10% higher future rates
+        const recommended = futureRate > taxSituation.marginalRate;
+        
+        return {
+            recommended: recommended,
+            reasoning: recommended ? 
+                'Future tax rates likely higher than current rates' : 
+                'Current rates likely higher than future rates',
+            lifetimeSavings: recommended ? scenarios.moderate.conversionAmount * 0.05 : 0,
+            optimalScenario: 'moderate'
+        };
+    }
+
+    determineOptimalCharitableStrategy(strategies, charitableGoals, taxSituation) {
+        if (charitableGoals >= 100000) {
+            return {
+                strategy: 'charitableRemainder',
+                reason: 'Large gift amount suitable for CRT',
+                additionalSavings: strategies.charitableRemainder.taxDeduction + strategies.charitableRemainder.estateTaxSavings
+            };
+        } else if (charitableGoals >= 5000) {
+            return {
+                strategy: 'donorAdvisedFund',
+                reason: 'Provides flexibility and investment growth',
+                additionalSavings: strategies.donorAdvisedFund.investmentGrowth
+            };
+        } else {
+            return {
+                strategy: 'appreciatedSecurities',
+                reason: 'Avoids capital gains tax',
+                additionalSavings: strategies.appreciatedSecurities.capitalGainsSavings
+            };
+        }
+    }
+
+    calculateGiftingStrategy(estateValue, maxAnnualGifting, totalEstateTax) {
+        const yearsToGift = Math.ceil(estateValue * 0.2 / maxAnnualGifting); // Gift 20% of estate
+        const totalGifted = maxAnnualGifting * yearsToGift;
+        const taxSavings = totalGifted * 0.40; // 40% estate tax rate
+        
+        return {
+            annualGifting: maxAnnualGifting,
+            yearsRequired: yearsToGift,
+            totalGifted: totalGifted,
+            totalTaxSavings: taxSavings,
+            recommendation: 'Begin annual gifting program immediately'
+        };
+    }
+
+    calculateTotalTaxSavings(strategies) {
+        const totalSavings = strategies.reduce((sum, strategy) => {
+            return sum + (strategy.potentialSavings || 0);
+        }, 0);
+        
+        return {
+            totalAnnualSavings: totalSavings,
+            strategies: strategies.filter(s => s.potentialSavings > 0),
+            implementationValue: totalSavings * 10, // 10-year value estimate
+            priorityStrategies: strategies
+                .filter(s => s.potentialSavings > 1000)
+                .sort((a, b) => b.potentialSavings - a.potentialSavings)
+        };
+    }
+    
+    prioritizeImplementation(strategies) {
+        return strategies
+            .filter(strategy => strategy.potentialSavings > 0)
+            .sort((a, b) => {
+                // Sort by savings potential and ease of implementation
+                const scoreA = (a.potentialSavings || 0) + (this.getImplementationEase(a.strategy) * 100);
+                const scoreB = (b.potentialSavings || 0) + (this.getImplementationEase(b.strategy) * 100);
+                return scoreB - scoreA;
+            })
+            .map((strategy, index) => ({
+                priority: index + 1,
+                strategy: strategy.strategy,
+                savings: strategy.potentialSavings,
+                ease: this.getImplementationEase(strategy.strategy),
+                timeframe: this.getImplementationTimeframe(strategy.strategy),
+                implementation: this.getImplementationSteps(strategy.strategy)
+            }));
+    }
+
+    getImplementationEase(strategy) {
+        const easeScores = {
+            'TAX_LOSS_HARVESTING': 3,
+            'HSA_OPTIMIZATION': 3,
+            'ASSET_LOCATION': 2,
+            'MUNICIPAL_BONDS': 3,
+            'ROTH_CONVERSIONS': 2,
+            'CHARITABLE_OPTIMIZATION': 2,
+            'DIRECT_INDEXING': 1,
+            'BUSINESS_OPTIMIZATION': 1,
+            'ESTATE_PLANNING': 1
+        };
+        return easeScores[strategy] || 2;
+    }
+
+    getImplementationTimeframe(strategy) {
+        const timeframes = {
+            'TAX_LOSS_HARVESTING': 'Immediate',
+            'HSA_OPTIMIZATION': '1-2 weeks',
+            'ASSET_LOCATION': '1-3 months',
+            'MUNICIPAL_BONDS': '1-2 weeks',
+            'ROTH_CONVERSIONS': '2-4 weeks',
+            'CHARITABLE_OPTIMIZATION': '2-6 weeks',
+            'DIRECT_INDEXING': '2-3 months',
+            'BUSINESS_OPTIMIZATION': '3-6 months',
+            'ESTATE_PLANNING': '3-12 months'
+        };
+        return timeframes[strategy] || '1-3 months';
+    }
+
+    getImplementationSteps(strategy) {
+        const steps = {
+            'TAX_LOSS_HARVESTING': [
+                'Review portfolio for unrealized losses',
+                'Execute tax-loss harvesting trades',
+                'Reinvest proceeds in similar but not identical assets',
+                'Track wash sale periods'
+            ],
+            'HSA_OPTIMIZATION': [
+                'Verify HDHP eligibility',
+                'Open HSA account if needed',
+                'Set up automatic maximum contributions',
+                'Invest HSA balance appropriately'
+            ],
+            'ASSET_LOCATION': [
+                'Audit current asset placement',
+                'Identify optimization opportunities',
+                'Gradually rebalance during regular rebalancing',
+                'Use new contributions optimally'
+            ],
+            'MUNICIPAL_BONDS': [
+                'Calculate tax-equivalent yield',
+                'Research municipal bond options',
+                'Compare credit quality and duration',
+                'Execute municipal bond purchases'
+            ],
+            'ROTH_CONVERSIONS': [
+                'Calculate optimal conversion amount',
+                'Plan for tax payment',
+                'Execute Roth conversion',
+                'Document for tax purposes'
+            ],
+            'CHARITABLE_OPTIMIZATION': [
+                'Choose optimal giving strategy',
+                'Set up donor-advised fund if applicable',
+                'Identify appreciated securities for donation',
+                'Execute charitable gifts'
+            ],
+            'DIRECT_INDEXING': [
+                'Research direct indexing providers',
+                'Meet minimum investment thresholds',
+                'Transition from broad index funds',
+                'Implement tax-loss harvesting'
+            ],
+            'BUSINESS_OPTIMIZATION': [
+                'Consult with tax professional',
+                'File necessary entity elections',
+                'Set up payroll if required',
+                'Implement new structure'
+            ],
+            'ESTATE_PLANNING': [
+                'Meet with estate planning attorney',
+                'Update wills and trusts',
+                'Begin annual gifting program',
+                'Review beneficiary designations'
+            ]
+        };
+        return steps[strategy] || ['Consult with tax professional', 'Develop implementation plan'];
+    }
+    
+    generateYearEndTaxActions(taxSituation) {
+        const actions = [];
+        const currentDate = new Date();
+        const daysRemaining = Math.ceil((new Date(currentDate.getFullYear(), 11, 31) - currentDate) / (1000 * 60 * 60 * 24));
+        
+        if (daysRemaining < 90) {
+            actions.push({
+                action: 'Review tax-loss harvesting opportunities',
+                deadline: 'December 31',
+                priority: 'HIGH',
+                estimatedSavings: taxSituation.marginalRate * 3000
+            });
+            
+            actions.push({
+                action: 'Maximize retirement contributions',
+                deadline: 'December 31 (401k) / April 15 (IRA)',
+                priority: 'HIGH',
+                estimatedSavings: 23000 * taxSituation.marginalRate // 2024 401k limit
+            });
+
+            actions.push({
+                action: 'Accelerate charitable giving',
+                deadline: 'December 31',
+                priority: 'MEDIUM',
+                estimatedSavings: 'Varies by donation amount'
+            });
+
+            actions.push({
+                action: 'Review Roth conversion opportunity',
+                deadline: 'December 31',
+                priority: 'MEDIUM',
+                estimatedSavings: 'Long-term tax benefits'
+            });
+        }
+        
+        return actions;
+    }
+    
+    generateOngoingTaxStrategies(taxSituation) {
+        return {
+            quarterly: [
+                'Review estimated tax payments',
+                'Assess tax-loss harvesting opportunities',
+                'Rebalance with tax efficiency in mind'
+            ],
+            annually: [
+                'Maximize retirement account contributions',
+                'Review and update tax withholdings',
+                'Consider Roth conversion opportunities',
+                'Execute annual gifting strategy',
+                'Review and update estate plan'
+            ],
+            asNeeded: [
+                'Harvest tax losses during market volatility',
+                'Optimize asset location during rebalancing',
+                'Consider business structure changes as income grows',
+                'Adjust strategies based on tax law changes'
+            ]
+        };
+    }
+
+    getComplianceRequirements(taxSituation, businessIncome) {
+        const requirements = {
+            individual: [
+                'File Form 1040 by April 15',
+                'Make quarterly estimated payments if needed',
+                'Report all investment income'
+            ],
+            business: [],
+            estate: []
+        };
+
+        if (businessIncome > 0) {
+            requirements.business.push(
+                'File Schedule C with Form 1040',
+                'Pay self-employment tax',
+                'Make quarterly estimated payments',
+                'Consider separate business entity'
+            );
+        }
+
+        if (taxSituation.grossIncome > 500000) {
+            requirements.individual.push(
+                'Consider AMT implications',
+                'Review Net Investment Income Tax (NIIT)'
+            );
+        }
+
+        return requirements;
+    }
+
+    // 🎯 ADDITIONAL HELPER METHODS
+    generateTaxLossHarvestingRecommendations(losses, gains) {
+        return {
+            immediateActions: losses.slice(0, 3).map(loss => ({
+                symbol: loss.symbol,
+                action: `Harvest ${loss.unrealizedLoss.toFixed(2)} loss`,
+                washSaleRisk: loss.washSaleRisk
+            })),
+            gainRealization: gains.slice(0, 2).map(gain => ({
+                symbol: gain.symbol,
+                action: `Consider realizing ${gain.unrealizedGain.toFixed(2)} gain to offset losses`
+            }))
+        };
+    }
+
+    getWashSaleGuidance() {
+        return {
+            rule: 'Cannot buy substantially identical security 30 days before or after sale',
+            alternatives: [
+                'Use similar but not identical ETFs',
+                'Wait 31 days before repurchasing',
+                'Double up strategy (buy more, then sell original after 31 days)'
+            ]
+        };
+    }
+
+    getTaxLossHarvestingSteps() {
+        return [
+            'Identify positions with unrealized losses',
+            'Check wash sale implications',
+            'Sell losing positions',
+            'Reinvest in similar but not identical assets',
+            'Set calendar reminder for wash sale period expiration'
+        ];
+    }
+
+    getRothConversionGuidance(analysis) {
+        return {
+            timing: 'Early in year for maximum growth time',
+            taxPayment: 'Pay taxes from non-retirement funds if possible',
+            amount: `Consider ${analysis.optimalScenario} scenario`,
+            monitoring: 'Review annually and adjust based on tax situation'
+        };
+    }
+
+    getCharitableImplementationSteps(strategy) {
+        return [
+            'Identify optimal charitable strategy',
+            'Research qualified charitable organizations',
+            'Consider bunching charitable deductions',
+            'Use appreciated securities when possible',
+            'Document all charitable contributions'
+        ];
+    }
+
+    getCharitableTimingGuidance(taxSituation) {
+        return {
+            yearEnd: 'Complete by December 31 for current year deduction',
+            bunching: 'Consider bunching deductions every other year',
+            securities: 'Donate appreciated securities held over one year',
+            planning: 'Plan charitable giving as part of overall tax strategy'
+        };
+    }
+
+    getBusinessStructureConsiderations() {
+        return [
+            'Reasonable salary requirements for S-Corp',
+            'State tax implications',
+            'Administrative burden and costs',
+            'QBI deduction eligibility',
+            'Fringe benefit opportunities',
+            'Exit strategy considerations'
+        ];
+    }
+
+    getBusinessStructureTimingGuidance() {
+        return {
+            sElection: 'Must elect by March 15 (or 2 months 15 days after entity formation)',
+            payroll: 'Set up payroll system before first salary payment',
+            planning: 'Consider timing with other major tax changes',
+            consultation: 'Work with tax professional for optimal timing'
+        };
+    }
+
+    getEstateStrategies(estateValue) {
+        const strategies = [
+            {
+                strategy: 'Annual Gifting',
+                description: 'Use annual gift tax exclusion',
+                applicability: 'ALL'
+            },
+            {
+                strategy: 'Grantor Retained Annuity Trust (GRAT)',
+                description: 'Transfer appreciation while retaining income',
+                applicability: estateValue > 5000000 ? 'APPLICABLE' : 'FUTURE'
+            },
+            {
+                strategy: 'Charitable Remainder Trust',
+                description: 'Reduce estate while generating income',
+                applicability: estateValue > 1000000 ? 'APPLICABLE' : 'FUTURE'
+            },
+            {
+                strategy: 'Family Limited Partnership',
+                description: 'Transfer business interests at discount',
+                applicability: 'Business owners'
+            }
+        ];
+
+        return strategies.filter(s => s.applicability === 'ALL' || s.applicability === 'APPLICABLE');
+    }
+}
+
+// 🏛️ LEGAL STRUCTURE ANALYZER
+class LegalStructureAnalyzer {
+    constructor() {
+        this.entityTypes = {
+            SOLE_PROPRIETORSHIP: 'Sole Proprietorship',
+            SINGLE_MEMBER_LLC: 'Single Member LLC',
+            MULTI_MEMBER_LLC: 'Multi-Member LLC',
+            S_CORPORATION: 'S-Corporation',
+            C_CORPORATION: 'C-Corporation',
+            PARTNERSHIP: 'Partnership'
+        };
+    }
+
+    // 🔍 COMPREHENSIVE LEGAL STRUCTURE ANALYSIS
+    async analyzeLegalStructureOptimization(businessData) {
+        try {
+            const {
+                annualRevenue,
+                numberOfOwners = 1,
+                businessType,
+                growthPlans,
+                liability Concerns,
+                currentStructure = 'SOLE_PROPRIETORSHIP'
+            } = businessData;
+
+            const structureComparison = this.compareBusinessStructures(businessData);
+            const recommendation = this.getOptimalStructureRecommendation(businessData, structureComparison);
+            const transitionPlan = this.createTransitionPlan(currentStructure, recommendation.recommended);
+
+            return {
+                currentStructure: currentStructure,
+                structureComparison: structureComparison,
+                recommendation: recommendation,
+                transitionPlan: transitionPlan,
+                complianceRequirements: this.getStructureCompliance(recommendation.recommended),
+                analysisDate: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Legal structure analysis error:', error.message);
+            return { error: error.message };
+        }
+    }
+
+    compareBusinessStructures(businessData) {
+        const { annualRevenue, numberOfOwners, liabilityConcerns } = businessData;
+
+        return {
+            soleProprietorship: {
+                taxTreatment: 'Pass-through',
+                liability: 'Unlimited personal liability',
+                complexity: 'Very Low',
+                cost: 'Minimal',
+                suitableFor: 'Single owner, low liability risk',
+                pros: ['Simple setup', 'Complete control', 'No separate tax return'],
+                cons: ['Unlimited liability', 'Limited growth options', 'Full self-employment tax']
+            },
+            singleMemberLLC: {
+                taxTreatment: 'Pass-through (default)',
+                liability: 'Limited liability protection',
+                complexity: 'Low',
+                cost: 'Low to Moderate',
+                suitableFor: 'Single owner wanting liability protection',
+                pros: ['Limited liability', 'Tax flexibility', 'Credibility'],
+                cons: ['State filing fees', 'Self-employment tax on all income']
+            },
+            sCorporation: {
+                taxTreatment: 'Pass-through with payroll',
+                liability: 'Limited liability protection',
+                complexity: 'Moderate',
+                cost: 'Moderate',
+                suitableFor: 'Profitable businesses wanting SE tax savings',
+                pros: ['SE tax savings', 'Limited liability', 'QBI deduction'],
+                cons: ['Payroll requirements', 'Reasonable salary rules', 'More compliance']
+            },
+            cCorporation: {
+                taxTreatment: 'Double taxation (entity + individual)',
+                liability: 'Limited liability protection',
+                complexity: 'High',
+                cost: 'High',
+                suitableFor: 'Large businesses, seeking investment',
+                pros: ['Limited liability', 'Investment flexibility', 'Fringe benefits'],
+                cons: ['Double taxation', 'Complex compliance', 'Higher costs']
+            }
+        };
+    }
+
+    getOptimalStructureRecommendation(businessData, comparison) {
+        const { annualRevenue, numberOfOwners, growthPlans, liabilityConcerns } = businessData;
+
+        let score = {};
+        let recommended = 'SOLE_PROPRIETORSHIP';
+        let reasoning = [];
+
+        // Score each structure
+        Object.keys(comparison).forEach(structure => {
+            score[structure] = 0;
+        });
+
+        // Revenue-based scoring
+        if (annualRevenue > 100000) {
+            score.sCorporation += 3;
+            score.singleMemberLLC += 2;
+            reasoning.push('Higher revenue supports more complex structures');
+        }
+
+        if (annualRevenue > 60000) {
+            score.sCorporation += 2;
+            reasoning.push('Revenue level supports S-Corp SE tax savings');
+        }
+
+        // Liability concerns
+        if (liabilityConcerns === 'HIGH') {
+            score.singleMemberLLC += 3;
+            score.sCorporation += 3;
+            score.cCorporation += 3;
+            reasoning.push('High liability concerns favor limited liability structures');
+        }
+
+        // Growth plans
+        if (growthPlans === 'AGGRESSIVE') {
+            score.cCorporation += 3;
+            score.sCorporation += 2;
+            reasoning.push('Growth plans favor scalable structures');
+        }
+
+        // Number of owners
+        if (numberOfOwners > 1) {
+            score.soleProprietorship = 0; // Not applicable
+            score.partnership += 2;
+            score.multiMemberLLC += 3;
+            reasoning.push('Multiple owners require partnership structures');
+        }
+
+        // Find highest scoring structure
+        let maxScore = 0;
+        Object.keys(score).forEach(structure => {
+            if (score[structure] > maxScore) {
+                maxScore = score[structure];
+                recommended = structure;
+            }
+        });
+
+        return {
+            recommended: recommended,
+            scores: score,
+            reasoning: reasoning,
+            confidence: maxScore > 3 ? 'HIGH' : maxScore > 1 ? 'MEDIUM' : 'LOW',
+            alternativeOptions: Object.keys(score)
+                .filter(s => s !== recommended && score[s] > 0)
+                .sort((a, b) => score[b] - score[a])
+                .slice(0, 2)
+        };
+    }
+
+    createTransitionPlan(currentStructure, recommendedStructure) {
+        if (currentStructure === recommendedStructure) {
+            return {
+                transitionNeeded: false,
+                message: 'Current structure is optimal'
+            };
+        }
+
+        const transitionSteps = {
+            'SOLE_PROPRIETORSHIP_to_SINGLE_MEMBER_LLC': [
+                'File Articles of Organization with state',
+                'Obtain EIN from IRS',
+                'Open business bank account',
+                'Update business licenses and permits',
+                'Notify clients and vendors of structure change'
+            ],
+            'SOLE_PROPRIETORSHIP_to_S_CORPORATION': [
+                'File Articles of Incorporation with state',
+                'Obtain EIN from IRS',
+                'File Form 2553 (S-Corp election)',
+                'Set up payroll system',
+                'Establish corporate formalities',
+                'Open business bank account'
+            ],
+            'SINGLE_MEMBER_LLC_to_S_CORPORATION': [
+                'File Form 8832 (Entity Classification Election)',
+                'File Form 2553 (S-Corp election)',
+                'Set up payroll system',
+                'Establish corporate formalities',
+                'Update operating agreement if needed'
+            ]
+        };
+
+        const transitionKey = `${currentStructure}_to_${recommendedStructure}`;
+        
+        return {
+            transitionNeeded: true,
+            fromStructure: currentStructure,
+            toStructure: recommendedStructure,
+            steps: transitionSteps[transitionKey] || ['Consult with business attorney and CPA'],
+            estimatedTimeframe: '2-4 months',
+            estimatedCost: '$1,500 - $5,000',
+            considerations: [
+                'Tax implications of structure change',
+                'State-specific requirements',
+                'Impact on existing contracts',
+                'Banking and financing relationships'
+            ]
+        };
+    }
+
+    getStructureCompliance(structure) {
+        const complianceRequirements = {
+            SOLE_PROPRIETORSHIP: {
+                federal: ['Schedule C with Form 1040', 'Self-employment tax'],
+                state: ['Business license (if required)', 'State income tax'],
+                ongoing: ['Quarterly estimated taxes', 'Annual tax return'],
+                complexity: 'Very Low'
+            },
+            SINGLE_MEMBER_LLC: {
+                federal: ['Schedule C with Form 1040', 'Self-employment tax'],
+                state: ['Annual report', 'State franchise tax/fee'],
+                ongoing: ['Quarterly estimated taxes', 'Annual state filings'],
+                complexity: 'Low'
+            },
+            S_CORPORATION: {
+                federal: ['Form 1120S', 'Payroll tax returns', 'K-1s to owners'],
+                state: ['State corporate returns', 'State payroll taxes'],
+                ongoing: ['Quarterly payroll taxes', 'Annual corporate returns', 'Corporate minutes'],
+                complexity: 'Moderate to High'
+            },
+            C_CORPORATION: {
+                federal: ['Form 1120', 'Payroll tax returns'],
+                state: ['State corporate returns', 'State payroll taxes'],
+                ongoing: ['Quarterly estimated taxes', 'Annual meetings', 'Board resolutions'],
+                complexity: 'High'
+            }
+        };
+
+        return complianceRequirements[structure] || complianceRequirements.SOLE_PROPRIETORSHIP;
+    }
+}
+
+// 📋 TAX COMPLIANCE MANAGER
+class TaxComplianceManager {
+    constructor() {
+        this.deadlines = {
+            individual: {
+                'Q1_ESTIMATED': new Date(new Date().getFullYear(), 3, 15), // April 15
+                'Q2_ESTIMATED': new Date(new Date().getFullYear(), 5, 15), // June 15
+                'Q3_ESTIMATED': new Date(new Date().getFullYear(), 8, 15), // September 15
+                'Q4_ESTIMATED': new Date(new Date().getFullYear(), 0, 15), // January 15 (next year)
+                'TAX_RETURN': new Date(new Date().getFullYear(), 3, 15) // April 15
+            },
+            business: {
+                'S_CORP_RETURN': new Date(new Date().getFullYear(), 2, 15), // March 15
+                'PARTNERSHIP_RETURN': new Date(new Date().getFullYear(), 2, 15), // March 15
+                'C_CORP_RETURN': new Date(new Date().getFullYear(), 3, 15) // April 15
+            }
+        };
+    }
+
+    // 📅 GENERATE TAX CALENDAR
+    generateTaxCalendar(clientData) {
+        const calendar = [];
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+
+        // Individual deadlines
+        Object.keys(this.deadlines.individual).forEach(deadline => {
+            const deadlineDate = this.deadlines.individual[deadline];
+            if (deadlineDate >= currentDate) {
+                calendar.push({
+                    deadline: deadline,
+                    date: deadlineDate,
+                    type: 'INDIVIDUAL',
+                    priority: this.getDeadlinePriority(deadline, deadlineDate),
+                    description: this.getDeadlineDescription(deadline)
+                });
+            }
+        });
+
+        // Business deadlines (if applicable)
+        if (clientData.businessIncome > 0) {
+            Object.keys(this.deadlines.business).forEach(deadline => {
+                const deadlineDate = this.deadlines.business[deadline];
+                if (deadlineDate >= currentDate) {
+                    calendar.push({
+                        deadline: deadline,
+                        date: deadlineDate,
+                        type: 'BUSINESS',
+                        priority: this.getDeadlinePriority(deadline, deadlineDate),
+                        description: this.getDeadlineDescription(deadline)
+                    });
+                }
+            });
+        }
+
+        return calendar.sort((a, b) => a.date - b.date);
+    }
+
+    getDeadlinePriority(deadline, deadlineDate) {
+        const daysUntil = Math.ceil((deadlineDate - new Date()) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntil <= 30) return 'HIGH';
+        if (daysUntil <= 60) return 'MEDIUM';
+        return 'LOW';
+    }
+
+    getDeadlineDescription(deadline) {
+        const descriptions = {
+            'Q1_ESTIMATED': 'First quarter estimated tax payment',
+            'Q2_ESTIMATED': 'Second quarter estimated tax payment',
+            'Q3_ESTIMATED': 'Third quarter estimated tax payment',
+            'Q4_ESTIMATED': 'Fourth quarter estimated tax payment',
+            'TAX_RETURN': 'Individual tax return filing deadline',
+            'S_CORP_RETURN': 'S-Corporation tax return filing deadline',
+            'PARTNERSHIP_RETURN': 'Partnership tax return filing deadline',
+            'C_CORP_RETURN': 'C-Corporation tax return filing deadline'
+        };
+        return descriptions[deadline] || deadline;
+    }
+
+    // 🎯 COMPLIANCE CHECKLIST
+    generateComplianceChecklist(clientData, taxStrategies) {
+        const checklist = {
+            immediate: [],
+            quarterly: [],
+            annual: [],
+            asNeeded: []
+        };
+
+        // Immediate actions
+        if (taxStrategies.taxLossHarvesting?.applicability === 'HIGHLY_APPLICABLE') {
+            checklist.immediate.push({
+                task: 'Execute tax-loss harvesting',
+                priority: 'HIGH',
+                estimatedTime: '1-2 hours'
+            });
+        }
+
+        if (taxStrategies.hsaOptimization?.applicability === 'HIGHLY_APPLICABLE') {
+            checklist.immediate.push({
+                task: 'Maximize HSA contributions',
+                priority: 'HIGH',
+                estimatedTime: '30 minutes'
+            });
+        }
+
+        // Quarterly actions
+        checklist.quarterly.push({
+            task: 'Review and pay estimated taxes',
+            priority: 'HIGH',
+            estimatedTime: '1 hour'
+        });
+
+        checklist.quarterly.push({
+            task: 'Review tax-loss harvesting opportunities',
+            priority: 'MEDIUM',
+            estimatedTime: '30 minutes'
+        });
+
+        // Annual actions
+        checklist.annual.push({
+            task: 'Maximize retirement contributions',
+            priority: 'HIGH',
+            estimatedTime: '1 hour'
+        });
+
+        if (taxStrategies.rothConversion?.applicability === 'HIGHLY_APPLICABLE') {
+            checklist.annual.push({
+                task: 'Consider Roth conversion',
+                priority: 'MEDIUM',
+                estimatedTime: '2-3 hours'
+            });
+        }
+
+        checklist.annual.push({
+            task: 'Review and update tax withholdings',
+            priority: 'MEDIUM',
+            estimatedTime: '30 minutes'
+        });
+
+        // As needed actions
+        if (taxStrategies.businessOptimization?.applicability === 'HIGHLY_APPLICABLE') {
+            checklist.asNeeded.push({
+                task: 'Consider business structure optimization',
+                priority: 'HIGH',
+                estimatedTime: '4-8 hours with professional'
+            });
+        }
+
+        if (taxStrategies.estatePlanning?.applicability === 'HIGHLY_APPLICABLE') {
+            checklist.asNeeded.push({
+                task: 'Update estate planning documents',
+                priority: 'HIGH',
+                estimatedTime: '4-6 hours with attorney'
+            });
+        }
+
+        return checklist;
+    }
+}
+
+// 🚀 MAIN TAX OPTIMIZATION SYSTEM
+class TaxOptimizationSystem {
+    constructor() {
+        this.taxEngine = new TaxOptimizationEngine();
+        this.legalAnalyzer = new LegalStructureAnalyzer();
+        this.complianceManager = new TaxComplianceManager();
+    }
+
+    // 🎯 COMPREHENSIVE TAX OPTIMIZATION ANALYSIS
+    async performComprehensiveAnalysis(clientData) {
+        try {
+            console.log('🔍 Starting comprehensive tax optimization analysis...');
+            
+            // Core tax optimization
+            const taxOptimization = await this.taxEngine.analyzeComprehensiveTaxOptimization(clientData);
+            
+            // Legal structure analysis
+            const legalStructure = clientData.businessIncome > 0 ? 
+                await this.legalAnalyzer.analyzeLegalStructureOptimization({
+                    annualRevenue: clientData.businessIncome,
+                    businessType: clientData.businessType || 'SERVICE',
+                    growthPlans: clientData.growthPlans || 'MODERATE',
+                    liabilityConcerns: clientData.liabilityConcerns || 'MEDIUM'
+                }) : { applicability: 'NOT_APPLICABLE' };
+
+            // Compliance management
+            const taxCalendar = this.complianceManager.generateTaxCalendar(clientData);
+            const complianceChecklist = this.complianceManager.generateComplianceChecklist(
+                clientData, 
+                taxOptimization.optimizationStrategies
+            );
+
+            // Generate executive summary
+            const executiveSummary = this.generateExecutiveSummary(
+                taxOptimization, 
+                legalStructure, 
+                clientData
+            );
+
+            console.log('✅ Tax optimization analysis complete!');
+
+            return {
+                executiveSummary: executiveSummary,
+                taxOptimization: taxOptimization,
+                legalStructureAnalysis: legalStructure,
+                complianceManagement: {
+                    taxCalendar: taxCalendar,
+                    complianceChecklist: complianceChecklist
+                },
+                implementationRoadmap: this.createImplementationRoadmap(
+                    taxOptimization.implementationPriority
+                ),
+                analysisMetadata: {
+                    analysisDate: new Date().toISOString(),
+                    version: '7.0',
+                    nextReviewDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days
+                }
+            };
+        } catch (error) {
+            console.error('❌ Tax optimization system error:', error.message);
+            return { 
+                error: error.message,
+                fallbackRecommendations: this.getFallbackRecommendations()
+            };
+        }
+    }
+
+    generateExecutiveSummary(taxOptimization, legalStructure, clientData) {
+        const totalSavings = taxOptimization.totalPotentialSavings?.totalAnnualSavings || 0;
+        const topStrategies = taxOptimization.implementationPriority?.slice(0, 3) || [];
+
+        return {
+            currentTaxSituation: {
+                effectiveRate: (taxOptimization.currentTaxSituation?.effectiveRate * 100)?.toFixed(1) + '%',
+                marginalRate: (taxOptimization.currentTaxSituation?.marginalRate * 100)?.toFixed(1) + '%',
+                totalTax: taxOptimization.currentTaxSituation?.totalTax,
+                annualIncome: clientData.income
+            },
+            optimizationOpportunity: {
+                totalAnnualSavings: totalSavings,
+                savingsPercentage: ((totalSavings / clientData.income) * 100)?.toFixed(1) + '%',
+                tenYearValue: totalSavings * 10,
+                topStrategies: topStrategies
+            },
+            keyRecommendations: [
+                totalSavings > 5000 ? 'Significant tax optimization opportunities identified' : 'Moderate optimization opportunities available',
+                topStrategies.length > 0 ? `Prioritize ${topStrategies[0]?.strategy} for maximum impact` : 'Focus on basic tax-efficient strategies',
+                legalStructure.recommendation?.confidence === 'HIGH' ? 'Business structure optimization recommended' : 'Current structure appears adequate'
+            ],
+            urgentActions: this.identifyUrgentActions(taxOptimization, legalStructure),
+            overallAssessment: this.getOverallAssessment(totalSavings, clientData.income)
+        };
+    }
+
+    identifyUrgentActions(taxOptimization, legalStructure) {
+        const urgentActions = [];
+        const currentDate = new Date();
+        const yearEnd = new Date(currentDate.getFullYear(), 11, 31);
+        const daysToYearEnd = Math.ceil((yearEnd - currentDate) / (1000 * 60 * 60 * 24));
+
+        if (daysToYearEnd < 60) {
+            urgentActions.push('Execute year-end tax-loss harvesting');
+            urgentActions.push('Maximize retirement contributions');
+        }
+
+        if (taxOptimization.optimizationStrategies?.businessOptimization?.potentialSavings > 2000) {
+            urgentActions.push('Consider S-Corporation election for next year');
+        }
+
+        if (taxOptimization.optimizationStrategies?.estatePlanning?.urgency === 'HIGH') {
+            urgentActions.push('Begin estate planning process immediately');
+        }
+
+        return urgentActions;
+    }
+
+    getOverallAssessment(totalSavings, income) {
+        const savingsPercentage = (totalSavings / income) * 100;
+        
+        if (savingsPercentage > 5) return 'EXCELLENT - Major optimization opportunities';
+        if (savingsPercentage > 2) return 'GOOD - Meaningful tax savings available';
+        if (savingsPercentage > 0.5) return 'MODERATE - Some optimization possible';
+        return 'LIMITED - Tax situation appears well-optimized';
+    }
+
+    createImplementationRoadmap(implementationPriority) {
+        const roadmap = {
+            immediate: [], // 0-30 days
+            short_term: [], // 1-3 months
+            medium_term: [], // 3-12 months
+            long_term: [] // 12+ months
+        };
+
+        implementationPriority?.forEach(item => {
+            const timeframe = this.getTimeframeBucket(item.strategy);
+            roadmap[timeframe].push({
+                strategy: item.strategy,
+                savings: item.savings,
+                priority: item.priority,
+                implementation: item.implementation
+            });
+        });
+
+        return roadmap;
+    }
+
+    getTimeframeBucket(strategy) {
+        const immediateStrategies = ['TAX_LOSS_HARVESTING', 'HSA_OPTIMIZATION'];
+        const shortTermStrategies = ['ASSET_LOCATION', 'MUNICIPAL_BONDS', 'ROTH_CONVERSIONS'];
+        const mediumTermStrategies = ['CHARITABLE_OPTIMIZATION', 'DIRECT_INDEXING'];
+        const longTermStrategies = ['BUSINESS_OPTIMIZATION', 'ESTATE_PLANNING'];
+
+        if (immediateStrategies.includes(strategy)) return 'immediate';
+        if (shortTermStrategies.includes(strategy)) return 'short_term';
+        if (mediumTermStrategies.includes(strategy)) return 'medium_term';
+        return 'long_term';
+    }
+
+    getFallbackRecommendations() {
+        return [
+            'Maximize retirement account contributions',
+            'Consider tax-loss harvesting in taxable accounts',
+            'Review asset location across account types',
+            'Consult with tax professional for personalized advice'
+        ];
+    }
+}
+
+// 📊 USAGE EXAMPLE AND TESTING
+async function demonstrateTaxOptimization() {
+    const taxSystem = new TaxOptimizationSystem();
+    
+    const sampleClientData = {
+        income: 150000,
+        filingStatus: 'single',
+        state: 'CA',
+        businessIncome: 75000,
+        dependents: 0,
+        charitableGoals: 10000,
+        estateValue: 2000000,
+        portfolio: {
+            totalValue: 500000,
+            positions: [
+                { symbol: 'AAPL', shares: 100, costBasis: 150, currentPrice: 180 },
+                { symbol: 'TSLA', shares: 50, costBasis: 250, currentPrice: 200 },
+                { symbol: 'SPY', shares: 200, costBasis: 400, currentPrice: 420 }
+            ]
+        },
+        retirementAccounts: {
+            traditional401k: 300000,
+            rothIRA: 100000,
+            traditionalIRA: 50000
+        },
+        businessType: 'CONSULTING',
+        growthPlans: 'MODERATE',
+        liabilityConcerns: 'MEDIUM'
+    };
+
+    try {
+        console.log('🚀 Running comprehensive tax optimization analysis...');
+        const results = await taxSystem.performComprehensiveAnalysis(sampleClientData);
+        
+        console.log('\n📊 EXECUTIVE SUMMARY:');
+        console.log('Current Tax Situation:', results.executiveSummary?.currentTaxSituation);
+        console.log('Optimization Opportunity:', results.executiveSummary?.optimizationOpportunity);
+        console.log('Key Recommendations:', results.executiveSummary?.keyRecommendations);
+        
+        console.log('\n💰 TOP TAX STRATEGIES:');
+        results.taxOptimization?.implementationPriority?.slice(0, 5).forEach(strategy => {
+            console.log(`${strategy.priority}. ${strategy.strategy}: ${strategy.savings?.toFixed(0)} savings`);
+        });
+
+        console.log('\n🏢 BUSINESS STRUCTURE:');
+        if (results.legalStructureAnalysis?.recommendation) {
+            console.log('Recommended:', results.legalStructureAnalysis.recommendation.recommended);
+            console.log('Confidence:', results.legalStructureAnalysis.recommendation.confidence);
+        }
+
+        console.log('\n📅 URGENT ACTIONS:');
+        results.executiveSummary?.urgentActions?.forEach(action => {
+            console.log('•', action);
+        });
+
+        return results;
+    } catch (error) {
+        console.error('❌ Demo error:', error.message);
+        return null;
+    }
+}
+
+// Export the system
+module.exports = {
+    TaxOptimizationSystem,
+    TaxOptimizationEngine,
+    LegalStructureAnalyzer,
+    TaxComplianceManager,
+    demonstrateTaxOptimization
+};
+
+console.log('🏆 Module 7: Tax Optimization & Legal Structures - Loaded Successfully! 🏆');
+
+// 🏆 WEALTH MODULE 8: ALTERNATIVE INVESTMENTS & PRIVATE MARKETS
+// Institutional-grade alternative investment analysis and private market access
+
+// 🎯 ALTERNATIVE INVESTMENTS ENGINE
+class AlternativeInvestmentsEngine {
+    constructor() {
+        this.alternativeCategories = {
+            PRIVATE_EQUITY: 'Private Equity',
+            HEDGE_FUNDS: 'Hedge Funds',
+            REAL_ESTATE: 'Real Estate Investment',
+            COMMODITIES: 'Commodities & Natural Resources',
+            COLLECTIBLES: 'Collectibles & Art',
+            CRYPTOCURRENCY: 'Digital Assets & Cryptocurrency',
+            STRUCTURED_PRODUCTS: 'Structured Products',
+            PRIVATE_DEBT: 'Private Credit & Debt',
+            INFRASTRUCTURE: 'Infrastructure Investment',
+            VENTURE_CAPITAL: 'Venture Capital'
+        };
+
+        this.riskProfiles = {
+            CONSERVATIVE: { allocation: 0.05, description: 'Up to 5% in alternatives' },
+            MODERATE: { allocation: 0.15, description: 'Up to 15% in alternatives' },
+            AGGRESSIVE: { allocation: 0.30, description: 'Up to 30% in alternatives' },
+            INSTITUTIONAL: { allocation: 0.50, description: 'Up to 50% in alternatives' }
+        };
+
+        this.minimumInvestments = {
+            PRIVATE_EQUITY: 250000,
+            HEDGE_FUNDS: 100000,
+            REAL_ESTATE_FUND: 25000,
+            PRIVATE_DEBT: 100000,
+            INFRASTRUCTURE: 500000,
+            VENTURE_CAPITAL: 250000,
+            REITs: 1000,
+            COMMODITIES_ETF: 1000,
+            CRYPTOCURRENCY: 100,
+            COLLECTIBLES: 5000
+        };
+
+        // Market data endpoints (simulated)
+        this.marketData = {
+            privateEquity: { avgReturn: 0.12, volatility: 0.20, liquidity: 'ILLIQUID' },
+            hedgeFunds: { avgReturn: 0.08, volatility: 0.12, liquidity: 'LIMITED' },
+            realEstate: { avgReturn: 0.09, volatility: 0.15, liquidity: 'ILLIQUID' },
+            commodities: { avgReturn: 0.06, volatility: 0.25, liquidity: 'LIQUID' },
+            cryptocurrency: { avgReturn: 0.15, volatility: 0.60, liquidity: 'LIQUID' },
+            collectibles: { avgReturn: 0.07, volatility: 0.30, liquidity: 'ILLIQUID' }
+        };
+    }
+
+    // 🎯 COMPREHENSIVE ALTERNATIVE INVESTMENT ANALYSIS
+    async analyzeAlternativeInvestmentOpportunities(clientData) {
+        try {
+            const {
+                netWorth,
+                liquidAssets,
+                riskTolerance = 'MODERATE',
+                investmentHorizon = 10,
+                accreditedInvestor = false,
+                currentAlternatives = {},
+                investmentObjectives = []
+            } = clientData;
+
+            console.log('🔍 Analyzing alternative investment opportunities...');
+
+            // Determine eligibility and allocation
+            const eligibilityAnalysis = this.analyzeInvestorEligibility(clientData);
+            const allocationRecommendation = this.calculateOptimalAllocation(clientData);
+
+            // Analyze each alternative category
+            const categoryAnalysis = await this.analyzeCategoriesInDepth(clientData, allocationRecommendation);
+
+            // Generate specific opportunities
+            const specificOpportunities = await this.identifySpecificOpportunities(clientData, categoryAnalysis);
+
+            // Risk and diversification analysis
+            const riskAnalysis = this.analyzeAlternativeRisks(categoryAnalysis, clientData);
+
+            // Implementation strategy
+            const implementationStrategy = this.createImplementationStrategy(
+                specificOpportunities, 
+                allocationRecommendation, 
+                clientData
+            );
+
+            // Performance projections
+            const performanceProjections = this.projectAlternativePerformance(
+                allocationRecommendation, 
+                investmentHorizon
+            );
+
+            console.log('✅ Alternative investment analysis complete!');
+
+            return {
+                eligibilityAnalysis: eligibilityAnalysis,
+                allocationRecommendation: allocationRecommendation,
+                categoryAnalysis: categoryAnalysis,
+                specificOpportunities: specificOpportunities,
+                riskAnalysis: riskAnalysis,
+                implementationStrategy: implementationStrategy,
+                performanceProjections: performanceProjections,
+                marketInsights: await this.getMarketInsights(),
+                complianceConsiderations: this.getComplianceConsiderations(clientData),
+                analysisDate: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Alternative investment analysis error:', error.message);
+            return { error: error.message };
+        }
+    }
+
+    // 👥 ANALYZE INVESTOR ELIGIBILITY
+    analyzeInvestorEligibility(clientData) {
+        const { netWorth, liquidAssets, annualIncome = 0, accreditedInvestor } = clientData;
+
+        const eligibility = {
+            accreditedInvestor: accreditedInvestor || (annualIncome >= 200000 && netWorth >= 1000000),
+            qualifiedPurchaser: netWorth >= 5000000,
+            suitableForAlternatives: liquidAssets >= 100000,
+            accessLevels: {}
+        };
+
+        // Determine access levels for different alternatives
+        eligibility.accessLevels = {
+            publicREITs: true,
+            commodityETFs: true,
+            cryptocurrency: liquidAssets >= 10000,
+            privateREITs: eligibility.accreditedInvestor && liquidAssets >= 25000,
+            hedgeFunds: eligibility.accreditedInvestor && liquidAssets >= 100000,
+            privateEquity: eligibility.accreditedInvestor && liquidAssets >= 250000,
+            infrastructure: eligibility.qualifiedPurchaser,
+            ventureCapital: eligibility.accreditedInvestor && liquidAssets >= 250000,
+            collectibles: liquidAssets >= 50000
+        };
+
+        // Calculate overall suitability score
+        const suitabilityScore = this.calculateSuitabilityScore(clientData);
+
+        return {
+            ...eligibility,
+            suitabilityScore: suitabilityScore,
+            recommendations: this.generateEligibilityRecommendations(eligibility, suitabilityScore),
+            limitations: this.identifyInvestmentLimitations(eligibility)
+        };
+    }
+
+    // 📊 CALCULATE OPTIMAL ALLOCATION
+    calculateOptimalAllocation(clientData) {
+        const { netWorth, liquidAssets, riskTolerance, investmentHorizon, age = 40 } = clientData;
+
+        // Base allocation based on risk tolerance
+        const baseAllocation = this.riskProfiles[riskTolerance]?.allocation || 0.15;
+
+        // Adjustments based on other factors
+        let adjustedAllocation = baseAllocation;
+
+        // Age adjustment (younger = more alternatives)
+        if (age < 35) adjustedAllocation *= 1.2;
+        else if (age > 55) adjustedAllocation *= 0.8;
+
+        // Investment horizon adjustment
+        if (investmentHorizon > 15) adjustedAllocation *= 1.3;
+        else if (investmentHorizon < 5) adjustedAllocation *= 0.6;
+
+        // Liquidity adjustment
+        const liquidityRatio = liquidAssets / netWorth;
+        if (liquidityRatio > 0.5) adjustedAllocation *= 1.1;
+        else if (liquidityRatio < 0.2) adjustedAllocation *= 0.7;
+
+        // Cap at reasonable limits
+        adjustedAllocation = Math.min(adjustedAllocation, 0.5);
+        adjustedAllocation = Math.max(adjustedAllocation, 0.02);
+
+        const totalAlternativeAllocation = liquidAssets * adjustedAllocation;
+
+        // Break down by category
+        const categoryAllocations = this.allocateAcrossCategories(
+            totalAlternativeAllocation, 
+            clientData
+        );
+
+        return {
+            totalAllocationPercentage: adjustedAllocation,
+            totalAllocationAmount: totalAlternativeAllocation,
+            categoryAllocations: categoryAllocations,
+            rationale: this.explainAllocationRationale(adjustedAllocation, clientData),
+            riskLevel: this.assessAllocationRisk(adjustedAllocation)
+        };
+    }
+
+    // 🏢 ANALYZE CATEGORIES IN DEPTH
+    async analyzeCategoriesInDepth(clientData, allocation) {
+        const categories = {};
+
+        for (const [category, amount] of Object.entries(allocation.categoryAllocations)) {
+            if (amount > 0) {
+                categories[category] = await this.analyzeSpecificCategory(category, amount, clientData);
+            }
+        }
+
+        return categories;
+    }
+
+    // 🔍 ANALYZE SPECIFIC CATEGORY
+    async analyzeSpecificCategory(category, allocationAmount, clientData) {
+        try {
+            switch (category) {
+                case 'PRIVATE_EQUITY':
+                    return await this.analyzePrivateEquity(allocationAmount, clientData);
+                case 'HEDGE_FUNDS':
+                    return await this.analyzeHedgeFunds(allocationAmount, clientData);
+                case 'REAL_ESTATE':
+                    return await this.analyzeRealEstate(allocationAmount, clientData);
+                case 'COMMODITIES':
+                    return await this.analyzeCommodities(allocationAmount, clientData);
+                case 'CRYPTOCURRENCY':
+                    return await this.analyzeCryptocurrency(allocationAmount, clientData);
+                case 'COLLECTIBLES':
+                    return await this.analyzeCollectibles(allocationAmount, clientData);
+                case 'PRIVATE_DEBT':
+                    return await this.analyzePrivateDebt(allocationAmount, clientData);
+                case 'INFRASTRUCTURE':
+                    return await this.analyzeInfrastructure(allocationAmount, clientData);
+                case 'VENTURE_CAPITAL':
+                    return await this.analyzeVentureCapital(allocationAmount, clientData);
+                default:
+                    return this.getGenericCategoryAnalysis(category, allocationAmount);
+            }
+        } catch (error) {
+            console.error(`Error analyzing ${category}:`, error.message);
+            return { error: error.message, category: category };
+        }
+    }
+
+    // 🏗️ PRIVATE EQUITY ANALYSIS
+    async analyzePrivateEquity(allocationAmount, clientData) {
+        const { accreditedInvestor, liquidAssets } = clientData;
+
+        if (!accreditedInvestor || allocationAmount < this.minimumInvestments.PRIVATE_EQUITY) {
+            return {
+                category: 'PRIVATE_EQUITY',
+                applicability: 'NOT_SUITABLE',
+                reason: 'Insufficient qualification or allocation',
+                alternatives: ['Private REIT', 'BDC (Business Development Company)', 'Private equity ETF']
+            };
+        }
+
+        const analysis = {
+            category: 'PRIVATE_EQUITY',
+            applicability: 'HIGHLY_SUITABLE',
+            allocationAmount: allocationAmount,
+            expectedReturn: 0.12, // 12% annual
+            volatility: 0.20,
+            holdingPeriod: '5-10 years',
+            liquidity: 'ILLIQUID',
+            minimumInvestment: this.minimumInvestments.PRIVATE_EQUITY,
+            
+            strategies: {
+                buyout: {
+                    description: 'Acquiring mature companies with stable cash flows',
+                    expectedReturn: 0.11,
+                    risk: 'MODERATE',
+                    allocation: allocationAmount * 0.6
+                },
+                growth: {
+                    description: 'Investing in growing companies needing capital',
+                    expectedReturn: 0.14,
+                    risk: 'MODERATE_HIGH',
+                    allocation: allocationAmount * 0.3
+                },
+                distressed: {
+                    description: 'Investing in underperforming companies',
+                    expectedReturn: 0.16,
+                    risk: 'HIGH',
+                    allocation: allocationAmount * 0.1
+                }
+            },
+
+            topFunds: [
+                {
+                    name: 'Blackstone Capital Partners',
+                    strategy: 'Large Buyout',
+                    minimumInvestment: 5000000,
+                    fees: '2% management + 20% carry',
+                    performance: '15% IRR (10-year avg)'
+                },
+                {
+                    name: 'KKR North America Fund',
+                    strategy: 'Mid-Market Buyout',
+                    minimumInvestment: 1000000,
+                    fees: '1.75% management + 20% carry',
+                    performance: '13% IRR (10-year avg)'
+                },
+                {
+                    name: 'Apollo Strategic Fund',
+                    strategy: 'Opportunistic',
+                    minimumInvestment: 250000,
+                    fees: '2% management + 20% carry',
+                    performance: '12% IRR (5-year avg)'
+                }
+            ],
+
+            accessibleOptions: this.getAccessiblePrivateEquityOptions(allocationAmount),
+            
+            risks: [
+                'Illiquidity for 5-10 years',
+                'High fees (2-3% management + 20% carry)',
+                'Manager selection risk',
+                'Economic cycle sensitivity',
+                'Limited transparency'
+            ],
+
+            benefits: [
+                'Higher return potential than public markets',
+                'Access to non-public companies',
+                'Professional management',
+                'Diversification benefits',
+                'Inflation hedge potential'
+            ],
+
+            dueDiligence: [
+                'Review fund strategy and track record',
+                'Analyze management team experience',
+                'Understand fee structure',
+                'Evaluate portfolio companies',
+                'Assess fund size and timing'
+            ]
+        };
+
+        return analysis;
+    }
+
+    // 📈 HEDGE FUNDS ANALYSIS
+    async analyzeHedgeFunds(allocationAmount, clientData) {
+        const { accreditedInvestor } = clientData;
+
+        if (!accreditedInvestor || allocationAmount < this.minimumInvestments.HEDGE_FUNDS) {
+            return {
+                category: 'HEDGE_FUNDS',
+                applicability: 'NOT_SUITABLE',
+                reason: 'Insufficient qualification or allocation',
+                alternatives: ['Liquid alt mutual funds', 'Alternative ETFs', 'Market neutral funds']
+            };
+        }
+
+        return {
+            category: 'HEDGE_FUNDS',
+            applicability: 'SUITABLE',
+            allocationAmount: allocationAmount,
+            expectedReturn: 0.08, // 8% annual
+            volatility: 0.12,
+            sharpeRatio: 0.67,
+            liquidity: 'LIMITED', // Monthly/quarterly redemptions
+
+            strategies: {
+                longShort: {
+                    description: 'Long undervalued stocks, short overvalued stocks',
+                    expectedReturn: 0.09,
+                    allocation: allocationAmount * 0.4,
+                    volatility: 0.10
+                },
+                marketNeutral: {
+                    description: 'Beta-neutral strategies focused on alpha generation',
+                    expectedReturn: 0.07,
+                    allocation: allocationAmount * 0.3,
+                    volatility: 0.06
+                },
+                eventDriven: {
+                    description: 'M&A arbitrage, distressed securities, special situations',
+                    expectedReturn: 0.10,
+                    allocation: allocationAmount * 0.2,
+                    volatility: 0.12
+                },
+                global_macro: {
+                    description: 'Currency, rates, and macro economic trends',
+                    expectedReturn: 0.08,
+                    allocation: allocationAmount * 0.1,
+                    volatility: 0.15
+                }
+            },
+
+            topFunds: [
+                {
+                    name: 'Bridgewater Pure Alpha',
+                    strategy: 'Global Macro',
+                    minimumInvestment: 5000000,
+                    fees: '2% + 20%',
+                    sharpeRatio: 0.8
+                },
+                {
+                    name: 'Renaissance Medallion',
+                    strategy: 'Quantitative',
+                    minimumInvestment: 'Closed to outside investors',
+                    fees: '5% + 44%',
+                    performance: 'Legendary performance'
+                },
+                {
+                    name: 'Two Sigma Spectrum',
+                    strategy: 'Multi-Strategy',
+                    minimumInvestment: 1000000,
+                    fees: '1.5% + 17.5%',
+                    sharpeRatio: 1.2
+                }
+            ],
+
+            accessibleOptions: this.getAccessibleHedgeFundOptions(allocationAmount),
+
+            performanceMetrics: {
+                alpha: 0.04, // 4% annual alpha
+                beta: 0.3,   // Low correlation to markets
+                maxDrawdown: 0.08, // 8% maximum historical drawdown
+                calmarRatio: 1.0
+            }
+        };
+    }
+
+    // 🏠 REAL ESTATE ANALYSIS
+    async analyzeRealEstate(allocationAmount, clientData) {
+        return {
+            category: 'REAL_ESTATE',
+            applicability: 'HIGHLY_SUITABLE',
+            allocationAmount: allocationAmount,
+            expectedReturn: 0.09, // 9% annual (including appreciation)
+            currentYield: 0.04, // 4% current income yield
+            volatility: 0.15,
+            liquidity: 'VARIES', // Depends on investment type
+
+            investmentTypes: {
+                publicREITs: {
+                    description: 'Publicly traded real estate investment trusts',
+                    minimumInvestment: 1000,
+                    liquidity: 'DAILY',
+                    allocation: allocationAmount * 0.4,
+                    expectedReturn: 0.08,
+                    yield: 0.04
+                },
+                privateREITs: {
+                    description: 'Non-traded REITs with institutional access',
+                    minimumInvestment: 25000,
+                    liquidity: 'QUARTERLY',
+                    allocation: allocationAmount * 0.3,
+                    expectedReturn: 0.10,
+                    yield: 0.05
+                },
+                realEstateDebt: {
+                    description: 'Direct lending secured by real estate',
+                    minimumInvestment: 50000,
+                    liquidity: 'ILLIQUID',
+                    allocation: allocationAmount * 0.2,
+                    expectedReturn: 0.09,
+                    yield: 0.07
+                },
+                directOwnership: {
+                    description: 'Direct ownership of investment properties',
+                    minimumInvestment: 100000,
+                    liquidity: 'ILLIQUID',
+                    allocation: allocationAmount * 0.1,
+                    expectedReturn: 0.11,
+                    yield: 0.05
+                }
+            },
+
+            sectors: {
+                residential: {
+                    multifamily: { allocation: 0.3, expectedReturn: 0.09 },
+                    singleFamily: { allocation: 0.15, expectedReturn: 0.08 },
+                    manufactured: { allocation: 0.05, expectedReturn: 0.10 }
+                },
+                commercial: {
+                    office: { allocation: 0.15, expectedReturn: 0.07 },
+                    retail: { allocation: 0.10, expectedReturn: 0.06 },
+                    industrial: { allocation: 0.15, expectedReturn: 0.10 },
+                    healthcare: { allocation: 0.10, expectedReturn: 0.09 }
+                }
+            },
+
+            geographicDiversification: {
+                domestic: { allocation: 0.7, focus: 'Major metros with job growth' },
+                international: { allocation: 0.3, focus: 'Developed markets with stable currencies' }
+            },
+
+            topInvestmentOptions: [
+                {
+                    name: 'Vanguard Real Estate ETF (VNQ)',
+                    type: 'Public REIT ETF',
+                    minimumInvestment: 100,
+                    fees: '0.12%',
+                    yield: '3.8%'
+                },
+                {
+                    name: 'Blackstone Real Estate Income Trust',
+                    type: 'Private REIT',
+                    minimumInvestment: 25000,
+                    fees: '1.25% + fees',
+                    yield: '4.5%'
+                },
+                {
+                    name: 'Fundrise eREIT',
+                    type: 'Online Real Estate Platform',
+                    minimumInvestment: 500,
+                    fees: '1.0%',
+                    yield: '4.2%'
+                }
+            ]
+        };
+    }
+
+    // 🥇 COMMODITIES ANALYSIS
+    async analyzeCommodities(allocationAmount, clientData) {
+        return {
+            category: 'COMMODITIES',
+            applicability: 'SUITABLE',
+            allocationAmount: allocationAmount,
+            expectedReturn: 0.06, // 6% annual
+            volatility: 0.25, // High volatility
+            inflationHedge: true,
+            liquidity: 'LIQUID',
+
+            categories: {
+                energy: {
+                    allocation: allocationAmount * 0.4,
+                    components: {
+                        crude_oil: { weight: 0.5, expectedReturn: 0.07 },
+                        natural_gas: { weight: 0.3, expectedReturn: 0.05 },
+                        gasoline: { weight: 0.2, expectedReturn: 0.06 }
+                    }
+                },
+                precious_metals: {
+                    allocation: allocationAmount * 0.3,
+                    components: {
+                        gold: { weight: 0.7, expectedReturn: 0.05 },
+                        silver: { weight: 0.2, expectedReturn: 0.06 },
+                        platinum: { weight: 0.1, expectedReturn: 0.04 }
+                    }
+                },
+                industrial_metals: {
+                    allocation: allocationAmount * 0.2,
+                    components: {
+                        copper: { weight: 0.5, expectedReturn: 0.07 },
+                        aluminum: { weight: 0.3, expectedReturn: 0.06 },
+                        zinc: { weight: 0.2, expectedReturn: 0.05 }
+                    }
+                },
+                agriculture: {
+                    allocation: allocationAmount * 0.1,
+                    components: {
+                        wheat: { weight: 0.3, expectedReturn: 0.05 },
+                        corn: { weight: 0.3, expectedReturn: 0.06 },
+                        soybeans: { weight: 0.2, expectedReturn: 0.07 },
+                        livestock: { weight: 0.2, expectedReturn: 0.05 }
+                    }
+                }
+            },
+
+            investmentVehicles: [
+                {
+                    name: 'SPDR Gold Trust (GLD)',
+                    type: 'Physical Gold ETF',
+                    fees: '0.40%',
+                    minimumInvestment: 100
+                },
+                {
+                    name: 'Invesco DB Commodity Index (DBC)',
+                    type: 'Broad Commodity ETF',
+                    fees: '0.87%',
+                    minimumInvestment: 100
+                },
+                {
+                    name: 'United States Oil Fund (USO)',
+                    type: 'Oil Futures ETF',
+                    fees: '0.79%',
+                    minimumInvestment: 100
+                },
+                {
+                    name: 'iShares Silver Trust (SLV)',
+                    type: 'Physical Silver ETF',
+                    fees: '0.50%',
+                    minimumInvestment: 100
+                }
+            ],
+
+            marketDrivers: [
+                'Global economic growth',
+                'Currency fluctuations (especially USD)',
+                'Geopolitical tensions',
+                'Supply/demand imbalances',
+                'Weather patterns (agriculture)',
+                'Inflation expectations'
+            ],
+
+            risks: [
+                'High volatility',
+                'Storage costs (physical commodities)',
+                'Contango/backwardation effects',
+                'Regulatory changes',
+                'Technological disruption'
+            ]
+        };
+    }
+
+    // ₿ CRYPTOCURRENCY ANALYSIS
+    async analyzeCryptocurrency(allocationAmount, clientData) {
+        const { riskTolerance } = clientData;
+        
+        // Conservative allocation caps for crypto
+        const maxCryptoAllocation = {
+            'CONSERVATIVE': allocationAmount * 0.05, // Max 5% of alternatives
+            'MODERATE': allocationAmount * 0.10,     // Max 10% of alternatives
+            'AGGRESSIVE': allocationAmount * 0.20    // Max 20% of alternatives
+        };
+
+        const adjustedAllocation = Math.min(allocationAmount, maxCryptoAllocation[riskTolerance] || allocationAmount * 0.10);
+
+        return {
+            category: 'CRYPTOCURRENCY',
+            applicability: 'SUITABLE_WITH_LIMITS',
+            allocationAmount: adjustedAllocation,
+            maxRecommendedAllocation: maxCryptoAllocation[riskTolerance],
+            expectedReturn: 0.15, // 15% annual (highly speculative)
+            volatility: 0.60, // Extremely high volatility
+            liquidity: 'LIQUID',
+            
+            portfolio: {
+                bitcoin: {
+                    allocation: adjustedAllocation * 0.6,
+                    rationale: 'Store of value, institutional adoption',
+                    marketCap: 'Largest',
+                    volatility: 0.55
+                },
+                ethereum: {
+                    allocation: adjustedAllocation * 0.25,
+                    rationale: 'Smart contracts, DeFi ecosystem',
+                    marketCap: 'Second largest',
+                    volatility: 0.65
+                },
+                altcoins: {
+                    allocation: adjustedAllocation * 0.15,
+                    rationale: 'Higher risk/reward potential',
+                    focus: ['Solana', 'Cardano', 'Polkadot'],
+                    volatility: 0.80
+                }
+            },
+
+            investmentVehicles: [
+                {
+                    name: 'Coinbase (Direct Purchase)',
+                    type: 'Cryptocurrency Exchange',
+                    fees: '0.50-4.50%',
+                    custody: 'Self or exchange'
+                },
+                {
+                    name: 'Grayscale Bitcoin Trust (GBTC)',
+                    type: 'Bitcoin Investment Trust',
+                    fees: '2.00%',
+                    tradeable: 'Stock market'
+                },
+                {
+                    name: 'ProShares Bitcoin Strategy ETF (BITO)',
+                    type: 'Bitcoin Futures ETF',
+                    fees: '0.95%',
+                    exposure: 'Bitcoin futures'
+                }
+            ],
+
+            institutionalTrends: [
+                'Corporate treasury adoption (Tesla, MicroStrategy)',
+                'ETF approvals increasing accessibility',
+                'Central bank digital currencies (CBDCs)',
+                'DeFi and yield farming opportunities',
+                'NFT and Web3 ecosystem growth'
+            ],
+
+            riskFactors: [
+                'Extreme price volatility',
+                'Regulatory uncertainty',
+                'Technology risks (hacks, bugs)',
+                'Market manipulation',
+                'Environmental concerns (energy usage)',
+                'Liquidity risks in smaller coins'
+            ],
+
+            riskManagement: [
+                'Dollar-cost averaging for entries',
+                'Secure custody solutions',
+                'Diversification across top cryptocurrencies',
+                'Regular rebalancing',
+                'Stop-loss strategies for risk management'
+            ]
+        };
+    }
+
+    // 🎨 COLLECTIBLES ANALYSIS
+    async analyzeCollectibles(allocationAmount, clientData) {
+        return {
+            category: 'COLLECTIBLES',
+            applicability: 'SUITABLE_FOR_DIVERSIFICATION',
+            allocationAmount: allocationAmount,
+            expectedReturn: 0.07, // 7% annual
+            volatility: 0.30, // High volatility, illiquid
+            liquidity: 'ILLIQUID',
+            taxTreatment: 'Collectibles tax rate (28% max)',
+
+            categories: {
+                art: {
+                    allocation: allocationAmount * 0.4,
+                    subcategories: {
+                        contemporary: { return: 0.08, risk: 'HIGH' },
+                        modern: { return: 0.07, risk: 'MEDIUM_HIGH' },
+                        old_masters: { return: 0.06, risk: 'MEDIUM' }
+                    },
+                    minimumInvestment: 50000,
+                    platforms: ['Masterworks', 'Arthena', 'Artsy']
+                },
+                rare_wines: {
+                    allocation: allocationAmount * 0.2,
+                    expectedReturn: 0.09,
+                    minimumInvestment: 10000,
+                    platforms: ['Vinovest', 'Cult Wine Investment']
+                },
+                classic_cars: {
+                    allocation: allocationAmount * 0.2,
+                    expectedReturn: 0.08,
+                    minimumInvestment: 100000,
+                    focus: ['Ferrari', 'Porsche', 'Mercedes classic models']
+                },
+                rare_watches: {
+                    allocation: allocationAmount * 0.1,
+                    expectedReturn: 0.07,
+                    minimumInvestment: 25000,
+                    focus: ['Rolex', 'Patek Philippe', 'Audemars Piguet']
+                },
+                sports_memorabilia: {
+                    allocation: allocationAmount * 0.1,
+                    expectedReturn: 0.06,
+                    minimumInvestment: 5000,
+                    platforms: ['Rally', 'Collectable']
+                }
+            },
+
+            fractionalOwnership: [
+                {
+                    platform: 'Masterworks',
+                    focus: 'Blue-chip art',
+                    minimumInvestment: 20000,
+                    fees: '1.5% annual + 20% profit'
+                },
+                {
+                    platform: 'Rally',
+                    focus: 'Sports cards, cars, memorabilia',
+                    minimumInvestment: 50,
+                    fees: '1% annual'
+                },
+                {
+                    platform: 'Otis',
+                    focus: 'Contemporary art, sneakers, watches',
+                    minimumInvestment: 25,
+                    fees: '1% annual'
+                }
+            ],
+
+            considerations: [
+                'Authentication and provenance crucial',
+                'Storage and insurance costs',
+                'Market expertise required',
+                'Liquidity can be very limited',
+                'Higher transaction costs',
+                'Emotional vs. financial value'
+            ]
+        };
+    }
+
+    // 💳 PRIVATE DEBT ANALYSIS
+    async analyzePrivateDebt(allocationAmount, clientData) {
+        const { accreditedInvestor } = clientData;
+
+        if (!accreditedInvestor || allocationAmount < this.minimumInvestments.PRIVATE_DEBT) {
+            return {
+                category: 'PRIVATE_DEBT',
+                applicability: 'NOT_SUITABLE',
+                reason: 'Insufficient qualification or allocation',
+                alternatives: ['High-yield bond ETFs', 'BDCs', 'Floating rate funds']
+            };
+        }
+
+        return {
+            category: 'PRIVATE_DEBT',
+            applicability: 'HIGHLY_SUITABLE',
+            allocationAmount: allocationAmount,
+            expectedReturn: 0.10, // 10% annual
+            currentYield: 0.08, // 8% current income
+            volatility: 0.12,
+            liquidity: 'ILLIQUID',
+
+            strategies: {
+                directLending: {
+                    description: 'Direct loans to middle-market companies',
+                    allocation: allocationAmount * 0.5,
+                    expectedReturn: 0.11,
+                    risk: 'MEDIUM',
+                    typical_terms: 'Floating rate, 5-7 year terms'
+                },
+                distressedDebt: {
+                    description: 'Loans to companies in financial distress',
+                    allocation: allocationAmount * 0.2,
+                    expectedReturn: 0.15,
+                    risk: 'HIGH',
+                    typical_terms: 'High yield, potential equity upside'
+                },
+                real_estate_debt: {
+                    description: 'Commercial real estate lending',
+                    allocation: allocationAmount * 0.2,
+                    expectedReturn: 0.09,
+                    risk: 'MEDIUM',
+                    typical_terms: 'Asset-backed, 3-5 year terms'
+                },
+                infrastructure_debt: {
+                    description: 'Financing for infrastructure projects',
+                    allocation: allocationAmount * 0.1,
+                    expectedReturn: 0.08,
+                    risk: 'LOW_MEDIUM',
+                    typical_terms: 'Long-term, government-backed'
+                }
+            },
+
+            topFunds: [
+                {
+                    name: 'Ares Capital Corporation (ARCC)',
+                    type: 'BDC - Business Development Company',
+                    yield: '8.5%',
+                    minimumInvestment: 'Public stock',
+                    focus: 'Middle-market direct lending'
+                },
+                {
+                    name: 'Apollo Tactical Income Fund',
+                    type: 'Private Credit Fund',
+                    yield: '9-11%',
+                    minimumInvestment: 250000,
+                    focus: 'Opportunistic credit strategies'
+                },
+                {
+                    name: 'Blackstone Credit Alpha',
+                    type: 'Private Credit Fund',
+                    yield: '8-10%',
+                    minimumInvestment: 100000,
+                    focus: 'Senior direct lending'
+                }
+            ],
+
+            benefits: [
+                'Steady current income',
+                'Lower volatility than equity',
+                'Floating rate protection',
+                'Diversification from public markets',
+                'Inflation hedge potential'
+            ],
+
+            risks: [
+                'Credit risk and defaults',
+                'Illiquidity for fund life',
+                'Interest rate sensitivity',
+                'Manager selection risk',
+                'Economic cycle sensitivity'
+            ]
+        };
+    }
+
+    // 🏗️ INFRASTRUCTURE ANALYSIS
+    async analyzeInfrastructure(allocationAmount, clientData) {
+        const { netWorth } = clientData;
+        const qualifiedPurchaser = netWorth >= 5000000;
+
+        if (!qualifiedPurchaser || allocationAmount < this.minimumInvestments.INFRASTRUCTURE) {
+            return {
+                category: 'INFRASTRUCTURE',
+                applicability: 'NOT_SUITABLE',
+                reason: 'Insufficient net worth or allocation for direct infrastructure funds',
+                alternatives: ['Infrastructure ETFs', 'Utility stocks', 'MLPs']
+            };
+        }
+
+        return {
+            category: 'INFRASTRUCTURE',
+            applicability: 'SUITABLE',
+            allocationAmount: allocationAmount,
+            expectedReturn: 0.09, // 9% annual
+            currentYield: 0.05, // 5% current income
+            volatility: 0.14,
+            liquidity: 'ILLIQUID',
+            inflationHedge: true,
+
+            sectors: {
+                transportation: {
+                    allocation: allocationAmount * 0.3,
+                    assets: ['Toll roads', 'Airports', 'Seaports', 'Railways'],
+                    expectedReturn: 0.09,
+                    inflationProtection: 'HIGH'
+                },
+                utilities: {
+                    allocation: allocationAmount * 0.25,
+                    assets: ['Power generation', 'Water treatment', 'Gas distribution'],
+                    expectedReturn: 0.08,
+                    inflationProtection: 'MEDIUM'
+                },
+                communications: {
+                    allocation: allocationAmount * 0.2,
+                    assets: ['Cell towers', 'Data centers', 'Fiber networks'],
+                    expectedReturn: 0.10,
+                    inflationProtection: 'MEDIUM'
+                },
+                energy: {
+                    allocation: allocationAmount * 0.15,
+                    assets: ['Pipelines', 'Storage facilities', 'Renewable energy'],
+                    expectedReturn: 0.09,
+                    inflationProtection: 'HIGH'
+                },
+                social: {
+                    allocation: allocationAmount * 0.1,
+                    assets: ['Schools', 'Hospitals', 'Government buildings'],
+                    expectedReturn: 0.08,
+                    inflationProtection: 'MEDIUM'
+                }
+            },
+
+            investmentVehicles: [
+                {
+                    name: 'Global Infrastructure Partners',
+                    minimumInvestment: 25000000,
+                    focus: 'Large-scale global infrastructure',
+                    fees: '2% + 20%'
+                },
+                {
+                    name: 'Brookfield Infrastructure Fund',
+                    minimumInvestment: 5000000,
+                    focus: 'Diversified infrastructure portfolio',
+                    fees: '1.5% + 20%'
+                },
+                {
+                    name: 'Invesco Global Infrastructure ETF (IGF)',
+                    minimumInvestment: 100,
+                    focus: 'Public infrastructure companies',
+                    fees: '0.60%'
+                }
+            ],
+
+            characteristics: [
+                'Long-term stable cash flows',
+                'Inflation-protected revenues',
+                'Essential service monopolies',
+                'Regulatory framework protection',
+                'ESG investment alignment'
+            ]
+        };
+    }
+
+    // 🚀 VENTURE CAPITAL ANALYSIS
+    async analyzeVentureCapital(allocationAmount, clientData) {
+        const { accreditedInvestor, netWorth } = clientData;
+
+        if (!accreditedInvestor || allocationAmount < this.minimumInvestments.VENTURE_CAPITAL) {
+            return {
+                category: 'VENTURE_CAPITAL',
+                applicability: 'NOT_SUITABLE',
+                reason: 'Insufficient qualification or allocation',
+                alternatives: ['Growth ETFs', 'Technology mutual funds', 'Angel investing platforms']
+            };
+        }
+
+        return {
+            category: 'VENTURE_CAPITAL',
+            applicability: 'SUITABLE_HIGH_RISK',
+            allocationAmount: allocationAmount,
+            expectedReturn: 0.20, // 20% annual (high variance)
+            volatility: 0.40, // Very high volatility
+            liquidity: 'ILLIQUID',
+            holdingPeriod: '7-10 years',
+
+            stages: {
+                seed: {
+                    allocation: allocationAmount * 0.2,
+                    description: 'Very early stage companies',
+                    expectedReturn: 0.25,
+                    risk: 'VERY_HIGH',
+                    successRate: 0.1
+                },
+                seriesA: {
+                    allocation: allocationAmount * 0.3,
+                    description: 'Companies with product-market fit',
+                    expectedReturn: 0.20,
+                    risk: 'HIGH',
+                    successRate: 0.2
+                },
+                seriesB: {
+                    allocation: allocationAmount * 0.3,
+                    description: 'Scaling companies',
+                    expectedReturn: 0.18,
+                    risk: 'MEDIUM_HIGH',
+                    successRate: 0.3
+                },
+                growth: {
+                    allocation: allocationAmount * 0.2,
+                    description: 'Late-stage pre-IPO companies',
+                    expectedReturn: 0.15,
+                    risk: 'MEDIUM',
+                    successRate: 0.4
+                }
+            },
+
+            sectors: {
+                technology: {
+                    allocation: 0.4,
+                    focus: ['AI/ML', 'SaaS', 'Fintech', 'Cybersecurity']
+                },
+                healthcare: {
+                    allocation: 0.25,
+                    focus: ['Biotech', 'Digital health', 'Med devices']
+                },
+                cleantech: {
+                    allocation: 0.2,
+                    focus: ['Renewable energy', 'Energy storage', 'Carbon capture']
+                },
+                consumer: {
+                    allocation: 0.15,
+                    focus: ['E-commerce', 'Direct-to-consumer brands']
+                }
+            },
+
+            accessOptions: [
+                {
+                    name: 'AngelList Funds',
+                    minimumInvestment: 25000,
+                    focus: 'Diversified startup portfolio',
+                    fees: '0% management + 15% carry'
+                },
+                {
+                    name: 'EquityZen',
+                    minimumInvestment: 10000,
+                    focus: 'Pre-IPO company shares',
+                    fees: 'Variable by deal'
+                },
+                {
+                    name: 'Sequoia Capital Fund',
+                    minimumInvestment: 25000000,
+                    focus: 'Top-tier VC with track record',
+                    fees: '2.5% + 30%'
+                }
+            ],
+
+            riskFactors: [
+                'Extremely high failure rate (90%+ fail)',
+                'Long illiquidity periods',
+                'Concentrated risk in individual companies',
+                'Market timing sensitivity',
+                'Regulatory and technology risks'
+            ]
+        };
+    }
+
+    // 🌍 MARKET INSIGHTS
+    async getMarketInsights() {
+        // This would typically fetch real market data
+        return {
+            currentMarketRegime: await this.detectCurrentRegime(),
+            alternativeMarketTrends: {
+                privateEquity: {
+                    dryPowder: '$3.7 trillion globally',
+                    trend: 'Record fundraising, increasing competition',
+                    outlook: 'Moderating returns expected'
+                },
+                realEstate: {
+                    trend: 'Interest rate sensitivity, sector rotation',
+                    opportunities: 'Industrial, data centers outperforming',
+                    outlook: 'Mixed by sector and geography'
+                },
+                privateCredit: {
+                    trend: 'Rapid growth, bank regulation driving demand',
+                    outlook: 'Strong fundamentals, attractive yields',
+                    risk: 'Credit cycle concerns'
+                },
+                infrastructure: {
+                    trend: 'Government spending, ESG focus driving growth',
+                    opportunities: 'Energy transition, digital infrastructure',
+                    outlook: 'Long-term structural tailwinds'
+                }
+            },
+            regulatoryEnvironment: [
+                'SEC proposed private fund rules',
+                'Increasing transparency requirements',
+                'ESG disclosure mandates',
+                'Qualified purchaser thresholds stable'
+            ],
+            macroeconomicFactors: {
+                interestRates: 'Rising rates challenging some alternatives',
+                inflation: 'Driving demand for real assets',
+                geopolitics: 'Increasing focus on domestic alternatives',
+                demographics: 'Aging population driving infrastructure needs'
+            }
+        };
+    }
+
+    // 🎯 IDENTIFY SPECIFIC OPPORTUNITIES
+    async identifySpecificOpportunities(clientData, categoryAnalysis) {
+        const opportunities = [];
+        const { liquidAssets, riskTolerance, accreditedInvestor } = clientData;
+
+        // High-priority opportunities based on current market conditions
+        if (liquidAssets >= 100000 && accreditedInvestor) {
+            opportunities.push({
+                type: 'PRIVATE_CREDIT',
+                fund: 'Ares Capital Corporation (ARCC)',
+                allocation: Math.min(50000, liquidAssets * 0.05),
+                yield: '8.5%',
+                rationale: 'High current income in rising rate environment',
+                risk: 'MEDIUM',
+                liquidity: 'MONTHLY'
+            });
+        }
+
+        if (liquidAssets >= 25000) {
+            opportunities.push({
+                type: 'REAL_ESTATE',
+                fund: 'Fundrise eREIT',
+                allocation: Math.min(25000, liquidAssets * 0.03),
+                yield: '4.2%',
+                rationale: 'Accessible real estate exposure with decent yield',
+                risk: 'MEDIUM',
+                liquidity: 'QUARTERLY'
+            });
+        }
+
+        // Inflation hedge opportunities
+        if (riskTolerance !== 'CONSERVATIVE') {
+            opportunities.push({
+                type: 'COMMODITIES',
+                fund: 'SPDR Gold Trust (GLD)',
+                allocation: Math.min(20000, liquidAssets * 0.02),
+                yield: '0%',
+                rationale: 'Inflation hedge and portfolio diversification',
+                risk: 'MEDIUM_HIGH',
+                liquidity: 'DAILY'
+            });
+        }
+
+        // Technology/growth opportunities
+        if (riskTolerance === 'AGGRESSIVE' && liquidAssets >= 10000) {
+            opportunities.push({
+                type: 'CRYPTOCURRENCY',
+                fund: 'Bitcoin/Ethereum Portfolio',
+                allocation: Math.min(15000, liquidAssets * 0.02),
+                yield: '0%',
+                rationale: 'Digital asset exposure for tech-forward portfolios',
+                risk: 'VERY_HIGH',
+                liquidity: 'DAILY'
+            });
+        }
+
+        return opportunities.sort((a, b) => {
+            // Sort by risk-adjusted opportunity score
+            const scoreA = this.calculateOpportunityScore(a, clientData);
+            const scoreB = this.calculateOpportunityScore(b, clientData);
+            return scoreB - scoreA;
+        });
+    }
+
+    // 📊 ALTERNATIVE RISK ANALYSIS
+    analyzeAlternativeRisks(categoryAnalysis, clientData) {
+        const risks = {
+            liquidityRisk: this.assessLiquidityRisk(categoryAnalysis),
+            concentrationRisk: this.assessConcentrationRisk(categoryAnalysis),
+            managementRisk: this.assessManagementRisk(categoryAnalysis),
+            marketRisk: this.assessMarketRisk(categoryAnalysis),
+            operationalRisk: this.assessOperationalRisk(categoryAnalysis)
+        };
+
+        const overallRiskScore = this.calculateOverallRiskScore(risks);
+        const riskMitigation = this.generateRiskMitigationStrategies(risks, clientData);
+
+        return {
+            riskBreakdown: risks,
+            overallRiskScore: overallRiskScore,
+            riskLevel: this.categorizeRiskLevel(overallRiskScore),
+            riskMitigation: riskMitigation,
+            stressTestResults: this.performStressTest(categoryAnalysis),
+            correlationAnalysis: this.analyzeCorrelations(categoryAnalysis)
+        };
+    }
+
+    // 🚀 IMPLEMENTATION STRATEGY
+    createImplementationStrategy(opportunities, allocation, clientData) {
+        const { liquidAssets, investmentHorizon } = clientData;
+
+        return {
+            phaseOne: {
+                timeframe: '0-3 months',
+                focus: 'Liquid alternatives and foundation building',
+                actions: [
+                    'Implement REIT allocation via ETFs',
+                    'Add commodity exposure via ETFs',
+                    'Begin cryptocurrency position (if appropriate)',
+                    'Research private opportunities'
+                ],
+                capitalRequired: liquidAssets * 0.05
+            },
+            phaseTwo: {
+                timeframe: '3-12 months',
+                focus: 'Semi-liquid alternatives',
+                actions: [
+                    'Invest in interval funds',
+                    'Access private REITs',
+                    'Explore BDC investments',
+                    'Due diligence on private funds'
+                ],
+                capitalRequired: liquidAssets * 0.10
+            },
+            phaseThree: {
+                timeframe: '12+ months',
+                focus: 'Illiquid alternatives (if qualified)',
+                actions: [
+                    'Private equity commitments',
+                    'Hedge fund investments',
+                    'Infrastructure funds',
+                    'Venture capital exposure'
+                ],
+                capitalRequired: liquidAssets * 0.15
+            },
+            ongoingManagement: {
+                rebalancingFrequency: 'Quarterly for liquid, annually for illiquid',
+                performanceReview: 'Quarterly assessment against benchmarks',
+                opportunityMonitoring: 'Continuous screening for new opportunities',
+                riskManagement: 'Monthly risk assessment and stress testing'
+            }
+        };
+    }
+
+    // 📈 PERFORMANCE PROJECTIONS
+    projectAlternativePerformance(allocation, investmentHorizon) {
+        const scenarios = {
+            conservative: {
+                expectedReturn: 0.06,
+                volatility: 0.12,
+                probabilityOfLoss: 0.15
+            },
+            base: {
+                expectedReturn: 0.09,
+                volatility: 0.18,
+                probabilityOfLoss: 0.25
+            },
+            optimistic: {
+                expectedReturn: 0.13,
+                volatility: 0.22,
+                probabilityOfLoss: 0.20
+            }
+        };
+
+        const projections = {};
+        Object.keys(scenarios).forEach(scenario => {
+            const scenarioData = scenarios[scenario];
+            projections[scenario] = {
+                finalValue: allocation.totalAllocationAmount * Math.pow(1 + scenarioData.expectedReturn, investmentHorizon),
+                totalReturn: (Math.pow(1 + scenarioData.expectedReturn, investmentHorizon) - 1) * 100,
+                annualizedReturn: scenarioData.expectedReturn * 100,
+                volatility: scenarioData.volatility * 100,
+                probabilityOfLoss: scenarioData.probabilityOfLoss * 100
+            };
+        });
+
+        return {
+            scenarios: projections,
+            assumptions: 'Returns are gross of fees and based on historical alternative investment performance',
+            riskFactors: [
+                'Past performance does not guarantee future results',
+                'Alternative investments carry higher risks',
+                'Liquidity constraints may limit flexibility',
+                'Manager selection significantly impacts returns'
+            ]
+        };
+    }
+
+    // 🔧 HELPER METHODS
+
+    calculateSuitabilityScore(clientData) {
+        const { netWorth, liquidAssets, investmentHorizon, riskTolerance } = clientData;
+        
+        let score = 0;
+        
+        // Net worth component (0-3 points)
+        if (netWorth >= 5000000) score += 3;
+        else if (netWorth >= 1000000) score += 2;
+        else if (netWorth >= 500000) score += 1;
+        
+        // Liquidity component (0-2 points)
+        if (liquidAssets >= 500000) score += 2;
+        else if (liquidAssets >= 100000) score += 1;
+        
+        // Time horizon (0-2 points)
+        if (investmentHorizon >= 10) score += 2;
+        else if (investmentHorizon >= 5) score += 1;
+        
+        // Risk tolerance (0-3 points)
+        const riskPoints = {
+            'CONSERVATIVE': 0,
+            'MODERATE': 1,
+            'AGGRESSIVE': 2,
+            'INSTITUTIONAL': 3
+        };
+        score += riskPoints[riskTolerance] || 1;
+        
+        return Math.min(score, 10); // Cap at 10
+    }
+
+    allocateAcrossCategories(totalAllocation, clientData) {
+        const { riskTolerance, accreditedInvestor, liquidAssets } = clientData;
+        
+        // Base allocations by risk tolerance
+        const baseAllocations = {
+            'CONSERVATIVE': {
+                'REAL_ESTATE': 0.6,
+                'COMMODITIES': 0.3,
+                'PRIVATE_DEBT': 0.1
+            },
+            'MODERATE': {
+                'REAL_ESTATE': 0.4,
+                'PRIVATE_DEBT': 0.2,
+                'COMMODITIES': 0.2,
+                'HEDGE_FUNDS': 0.1,
+                'CRYPTOCURRENCY': 0.05,
+                'COLLECTIBLES': 0.05
+            },
+            'AGGRESSIVE': {
+                'PRIVATE_EQUITY': 0.25,
+                'REAL_ESTATE': 0.25,
+                'HEDGE_FUNDS': 0.2,
+                'VENTURE_CAPITAL': 0.1,
+                'CRYPTOCURRENCY': 0.1,
+                'COMMODITIES': 0.05,
+                'COLLECTIBLES': 0.05
+            },
+            'INSTITUTIONAL': {
+                'PRIVATE_EQUITY': 0.3,
+                'HEDGE_FUNDS': 0.2,
+                'REAL_ESTATE': 0.2,
+                'INFRASTRUCTURE': 0.1,
+                'PRIVATE_DEBT': 0.1,
+                'VENTURE_CAPITAL': 0.05,
+                'COMMODITIES': 0.05
+            }
+        };
+
+        const allocation = baseAllocations[riskTolerance] || baseAllocations['MODERATE'];
+        const categoryAllocations = {};
+
+        Object.keys(allocation).forEach(category => {
+            const categoryAmount = totalAllocation * allocation[category];
+            
+            // Check minimum investment requirements
+            const minInvestment = this.minimumInvestments[category];
+            if (minInvestment && categoryAmount >= minInvestment) {
+                categoryAllocations[category] = categoryAmount;
+            } else if (!minInvestment || categoryAmount >= 1000) {
+                // Allow smaller categories if no minimum or above $1000
+                categoryAllocations[category] = categoryAmount;
+            }
+        });
+
+        return categoryAllocations;
+    }
+
+    explainAllocationRationale(allocation, clientData) {
+        const { riskTolerance, investmentHorizon, age } = clientData;
+        
+        const rationale = [];
+        
+        rationale.push(`${(allocation * 100).toFixed(1)}% allocation to alternatives based on ${riskTolerance.toLowerCase()} risk tolerance`);
+        
+        if (investmentHorizon > 10) {
+            rationale.push('Long investment horizon supports illiquid alternatives');
+        }
+        
+        if (age < 40) {
+            rationale.push('Younger age supports higher growth alternatives');
+        }
+        
+        return rationale;
+    }
+
+    assessAllocationRisk(allocation) {
+        if (allocation > 0.4) return 'HIGH';
+        if (allocation > 0.2) return 'MEDIUM';
+        if (allocation > 0.1) return 'MODERATE';
+        return 'LOW';
+    }
+
+    getAccessiblePrivateEquityOptions(allocationAmount) {
+        return [
+            {
+                name: 'Invesco QQQ Trust ETF (QQQ)',
+                type: 'Growth equity proxy',
+                minimumInvestment: 100,
+                fees: '0.20%'
+            },
+            {
+                name: 'iShares Russell 2000 ETF (IWM)',
+                type: 'Small-cap equity',
+                minimumInvestment: 100,
+                fees: '0.19%'
+            },
+            {
+                name: 'Vanguard Small-Cap Value ETF (VBR)',
+                type: 'Value equity strategy',
+                minimumInvestment: 100,
+                fees: '0.07%'
+            }
+        ];
+    }
+
+    getAccessibleHedgeFundOptions(allocationAmount) {
+        return [
+            {
+                name: 'IQ Hedge Multi-Strategy Tracker ETF (QAI)',
+                type: 'Multi-strategy hedge fund replication',
+                minimumInvestment: 100,
+                fees: '0.75%'
+            },
+            {
+                name: 'ProShares Merger ETF (MRGR)',
+                type: 'Merger arbitrage strategy',
+                minimumInvestment: 100,
+                fees: '0.75%'
+            },
+            {
+                name: 'First Trust Long/Short Equity ETF (FTLS)',
+                type: 'Long/short equity strategy',
+                minimumInvestment: 100,
+                fees: '1.59%'
+            }
+        ];
+    }
+
+    calculateOpportunityScore(opportunity, clientData) {
+        let score = 0;
+        
+        // Risk-adjusted return potential
+        const expectedReturn = parseFloat(opportunity.yield.replace('%', '')) / 100;
+        score += expectedReturn * 10;
+        
+        // Liquidity premium
+        const liquidityScores = {
+            'DAILY': 3,
+            'MONTHLY': 2,
+            'QUARTERLY': 1,
+            'ILLIQUID': 0
+        };
+        score += liquidityScores[opportunity.liquidity] || 0;
+        
+        // Risk adjustment
+        const riskScores = {
+            'LOW': 3,
+            'MEDIUM': 2,
+            'MEDIUM_HIGH': 1,
+            'HIGH': 0,
+            'VERY_HIGH': -1
+        };
+        score += riskScores[opportunity.risk] || 0;
+        
+        return score;
+    }
+
+    // Risk assessment methods
+    assessLiquidityRisk(categoryAnalysis) {
+        let illiquidAllocation = 0;
+        let totalAllocation = 0;
+        
+        Object.values(categoryAnalysis).forEach(category => {
+            if (category.liquidity === 'ILLIQUID') {
+                illiquidAllocation += category.allocationAmount || 0;
+            }
+            totalAllocation += category.allocationAmount || 0;
+        });
+        
+        const illiquidPercentage = illiquidAllocation / totalAllocation;
+        
+        return {
+            illiquidPercentage: illiquidPercentage,
+            riskLevel: illiquidPercentage > 0.6 ? 'HIGH' : illiquidPercentage > 0.3 ? 'MEDIUM' : 'LOW',
+            recommendation: illiquidPercentage > 0.5 ? 'Consider maintaining larger cash reserves' : 'Liquidity appears manageable'
+        };
+    }
+
+    assessConcentrationRisk(categoryAnalysis) {
+        const categories = Object.keys(categoryAnalysis);
+        const categoryCount = categories.length;
+        
+        return {
+            categoryCount: categoryCount,
+            riskLevel: categoryCount < 3 ? 'HIGH' : categoryCount < 5 ? 'MEDIUM' : 'LOW',
+            recommendation: categoryCount < 4 ? 'Consider broader alternative diversification' : 'Good category diversification'
+        };
+    }
+
+    assessManagementRisk(categoryAnalysis) {
+        // Simplified assessment based on active management exposure
+        let activelyManagedAllocation = 0;
+        let totalAllocation = 0;
+        
+        Object.values(categoryAnalysis).forEach(category => {
+            const allocation = category.allocationAmount || 0;
+            totalAllocation += allocation;
+            
+            // Assume private investments are actively managed
+            if (['PRIVATE_EQUITY', 'HEDGE_FUNDS', 'VENTURE_CAPITAL'].includes(category.category)) {
+                activelyManagedAllocation += allocation;
+            }
+        });
+        
+        const activePercentage = activelyManagedAllocation / totalAllocation;
+        
+        return {
+            activePercentage: activePercentage,
+            riskLevel: activePercentage > 0.7 ? 'HIGH' : activePercentage > 0.4 ? 'MEDIUM' : 'LOW',
+            recommendation: 'Conduct thorough due diligence on fund managers'
+        };
+    }
+
+    assessMarketRisk(categoryAnalysis) {
+        // Assess correlation to traditional markets
+        return {
+            correlationLevel: 'MEDIUM', // Simplified
+            riskLevel: 'MEDIUM',
+            recommendation: 'Monitor correlation during stress periods'
+        };
+    }
+
+    assessOperationalRisk(categoryAnalysis) {
+        return {
+            riskLevel: 'MEDIUM',
+            keyRisks: [
+                'Custody and safekeeping',
+                'Valuation challenges',
+                'Regulatory compliance',
+                'Tax complexity'
+            ],
+            recommendation: 'Work with experienced alternative investment specialists'
+        };
+    }
+
+    calculateOverallRiskScore(risks) {
+        const riskLevelPoints = { 'LOW': 1, 'MEDIUM': 2, 'HIGH': 3 };
+        
+        const scores = Object.values(risks).map(risk => riskLevelPoints[risk.riskLevel] || 2);
+        const averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+        
+        return averageScore;
+    }
+
+    categorizeRiskLevel(riskScore) {
+        if (riskScore <= 1.5) return 'LOW';
+        if (riskScore <= 2.5) return 'MEDIUM';
+        return 'HIGH';
+    }
+
+    generateRiskMitigationStrategies(risks, clientData) {
+        const strategies = [];
+        
+        if (risks.liquidityRisk.riskLevel === 'HIGH') {
+            strategies.push('Maintain 6-12 months emergency fund outside alternatives');
+            strategies.push('Stagger alternative investment commitments over time');
+        }
+        
+        if (risks.concentrationRisk.riskLevel === 'HIGH') {
+            strategies.push('Diversify across alternative categories');
+            strategies.push('Consider fund-of-funds for broader exposure');
+        }
+        
+        if (risks.managementRisk.riskLevel === 'HIGH') {
+            strategies.push('Thorough due diligence on fund managers');
+            strategies.push('Consider co-investment opportunities for fee reduction');
+        }
+        
+        return strategies;
+    }
+
+    performStressTest(categoryAnalysis) {
+        return {
+            scenario: '2008 Financial Crisis Stress Test',
+            assumptions: 'Private equity -30%, Real estate -25%, Hedge funds -15%',
+            results: 'Portfolio would decline 20-25% in severe stress scenario',
+            recovery: 'Expected 3-5 year recovery period'
+        };
+    }
+
+    analyzeCorrelations(categoryAnalysis) {
+        return {
+            correlationToStocks: 0.6,
+            correlationToBonds: 0.3,
+            diversificationBenefit: 'Moderate to high diversification benefit',
+            note: 'Correlations tend to increase during crisis periods'
+        };
+    }
+
+    async detectCurrentRegime() {
+        // Simplified regime detection
+        return {
+            regime: 'TRANSITION',
+            characteristics: 'Rising rates, persistent inflation, geopolitical uncertainty',
+            alternativeImplications: 'Favor real assets, floating rate strategies, and inflation hedges'
+        };
+    }
+
+    getComplianceConsiderations(clientData) {
+        return {
+            accreditedInvestorVerification: 'Annual income verification or net worth documentation required',
+            taxImplications: {
+                k1Forms: 'Private partnerships will issue K-1 tax forms',
+                unbi: 'Unrelated Business Income Tax may apply to retirement accounts',
+                collectiblesTax: 'Collectibles subject to 28% maximum tax rate',
+                foreignAssets: 'FATCA and FBAR reporting may be required'
+            },
+            reporting: [
+                'Quarterly alternative investment statements',
+                'Annual fair value assessments',
+                'Performance attribution reporting',
+                'Risk monitoring and compliance checks'
+            ],
+            fiduciary: [
+                'Investment committee oversight recommended',
+                'Regular strategy review and rebalancing',
+                'Documentation of investment rationale',
+                'Conflict of interest monitoring'
+            ]
+        };
+    }
+
+    getGenericCategoryAnalysis(category, allocationAmount) {
+        return {
+            category: category,
+            applicability: 'UNDER_DEVELOPMENT',
+            allocationAmount: allocationAmount,
+            note: 'Detailed analysis for this category will be implemented in future versions'
+        };
+    }
+}
+
+// 🏛️ PRIVATE MARKET ACCESS FACILITATOR
+class PrivateMarketAccess {
+    constructor() {
+        this.platforms = {
+            private_equity: [
+                {
+                    name: 'iCapital Network',
+                    minimumInvestment: 25000,
+                    focus: 'Alternative investments platform',
+                    fees: 'Platform fees vary by fund'
+                },
+                {
+                    name: 'CAIS',
+                    minimumInvestment: 25000,
+                    focus: 'Alternative investment marketplace',
+                    fees: 'No platform fees'
+                }
+            ],
+            real_estate: [
+                {
+                    name: 'YieldStreet',
+                    minimumInvestment: 10000,
+                    focus: 'Real estate and alternatives',
+                    fees: '0.5-2.5% annually'
+                },
+                {
+                    name: 'Fundrise',
+                    minimumInvestment: 500,
+                    focus: 'Real estate crowdfunding',
+                    fees: '1% annually'
+                }
+            ],
+            venture_capital: [
+                {
+                    name: 'AngelList',
+                    minimumInvestment: 1000,
+                    focus: 'Startup investments',
+                    fees: '0% management + 15-20% carry'
+                },
+                {
+                    name: 'EquityZen',
+                    minimumInvestment: 10000,
+                    focus: 'Pre-IPO company shares',
+                    fees: '5% transaction fee'
+                }
+            ]
+        };
+    }
+
+    // 🚪 IDENTIFY ACCESS PATHWAYS
+    identifyAccessPathways(clientData, targetCategories) {
+        const pathways = {};
+
+        targetCategories.forEach(category => {
+            pathways[category] = this.getAccessOptionsForCategory(category, clientData);
+        });
+
+        return pathways;
+    }
+
+    getAccessOptionsForCategory(category, clientData) {
+        const { liquidAssets, accreditedInvestor, netWorth } = clientData;
+
+        const options = {
+            direct: [],
+            platform: [],
+            public_proxy: [],
+            fund_of_funds: []
+        };
+
+        switch (category) {
+            case 'PRIVATE_EQUITY':
+                if (accreditedInvestor && liquidAssets >= 250000) {
+                    options.direct.push('Direct fund investment');
+                    options.platform = this.platforms.private_equity;
+                }
+                options.public_proxy.push('BDC stocks', 'Private equity ETFs');
+                options.fund_of_funds.push('Diversified PE fund-of-funds');
+                break;
+
+            case 'REAL_ESTATE':
+                options.direct.push('Direct property ownership', 'Private REITs');
+                options.platform = this.platforms.real_estate;
+                options.public_proxy.push('Public REITs', 'Real estate ETFs');
+                break;
+
+            case 'VENTURE_CAPITAL':
+                if (accreditedInvestor) {
+                    options.platform = this.platforms.venture_capital;
+                }
+                options.public_proxy.push('Growth ETFs', 'Technology mutual funds');
+                break;
+
+            default:
+                options.public_proxy.push('Relevant ETFs and mutual funds');
+        }
+
+        return options;
+    }
+}
+
+// 📊 ALTERNATIVE INVESTMENT PERFORMANCE TRACKER
+class AlternativePerformanceTracker {
+    constructor() {
+        this.benchmarks = {
+            PRIVATE_EQUITY: 'Cambridge Associates Private Equity Index',
+            HEDGE_FUNDS: 'HFRI Fund Weighted Composite Index',
+            REAL_ESTATE: 'NCREIF Property Index',
+            COMMODITIES: 'Bloomberg Commodity Index',
+            INFRASTRUCTURE: 'EDHECinfra Private Infrastructure Index'
+        };
+    }
+
+    // 📈 TRACK PERFORMANCE
+    async trackAlternativePerformance(portfolio, benchmarks = true) {
+        const performance = {
+            individual: {},
+            aggregate: {},
+            benchmarkComparison: {}
+        };
+
+        // Track individual alternative investments
+        for (const [category, investments] of Object.entries(portfolio)) {
+            performance.individual[category] = await this.trackCategoryPerformance(category, investments);
+        }
+
+        // Calculate aggregate performance
+        performance.aggregate = this.calculateAggregatePerformance(performance.individual);
+
+        // Benchmark comparison
+        if (benchmarks) {
+            performance.benchmarkComparison = await this.compareToBenchmarks(performance.individual);
+        }
+
+        return performance;
+    }
+
+    async trackCategoryPerformance(category, investments) {
+        // Simulate performance tracking
+        return {
+            category: category,
+            totalValue: investments.reduce((sum, inv) => sum + (inv.currentValue || 0), 0),
+            totalCost: investments.reduce((sum, inv) => sum + (inv.initialInvestment || 0), 0),
+            unrealizedGain: 0, // Calculate based on current vs initial
+            realizedGain: 0,
+            dividendIncome: 0,
+            fees: investments.reduce((sum, inv) => sum + (inv.feesPaid || 0), 0),
+            holdingPeriod: 'Average holding period calculation',
+            irr: 'IRR calculation based on cash flows'
+        };
+    }
+
+    calculateAggregatePerformance(individualPerformance) {
+        const totalValue = Object.values(individualPerformance).reduce((sum, cat) => sum + cat.totalValue, 0);
+        const totalCost = Object.values(individualPerformance).reduce((sum, cat) => sum + cat.totalCost, 0);
+        const totalFees = Object.values(individualPerformance).reduce((sum, cat) => sum + cat.fees, 0);
+
+        return {
+            totalValue: totalValue,
+            totalCost: totalCost,
+            totalReturn: ((totalValue - totalCost) / totalCost) * 100,
+            totalFees: totalFees,
+            feePercentage: (totalFees / totalValue) * 100,
+            diversificationScore: Object.keys(individualPerformance).length / 10 * 100 // Max 10 categories
+        };
+    }
+
+    async compareToBenchmarks(individualPerformance) {
+        const comparisons = {};
+
+        for (const [category, performance] of Object.entries(individualPerformance)) {
+            const benchmark = this.benchmarks[category];
+            if (benchmark) {
+                comparisons[category] = {
+                    benchmark: benchmark,
+                    portfolioReturn: performance.totalReturn || 0,
+                    benchmarkReturn: await this.getBenchmarkReturn(benchmark),
+                    outperformance: 0, // Calculate difference
+                    tracking: 'Tracking error calculation'
+                };
+            }
+        }
+
+        return comparisons;
+    }
+
+    async getBenchmarkReturn(benchmarkName) {
+        // Simulate benchmark data fetch
+        const benchmarkReturns = {
+            'Cambridge Associates Private Equity Index': 12.5,
+            'HFRI Fund Weighted Composite Index': 8.2,
+            'NCREIF Property Index': 9.1,
+            'Bloomberg Commodity Index': 6.3,
+            'EDHECinfra Private Infrastructure Index': 8.8
+        };
+
+        return benchmarkReturns[benchmarkName] || 7.0;
+    }
+}
+
+// 🎯 ALTERNATIVE INVESTMENT DUE DILIGENCE
+class AlternativeDueDiligence {
+    constructor() {
+        this.dueDiligenceFramework = {
+            quantitative: [
+                'Historical performance analysis',
+                'Risk-adjusted returns',
+                'Correlation analysis',
+                'Liquidity assessment',
+                'Fee analysis'
+            ],
+            qualitative: [
+                'Management team evaluation',
+                'Investment strategy assessment',
+                'Operational due diligence',
+                'Legal and compliance review',
+                'Reference checks'
+            ],
+            structural: [
+                'Fund terms and conditions',
+                'Governance structure',
+                'Reporting and transparency',
+                'Exit strategy and liquidity',
+                'Tax considerations'
+            ]
+        };
+    }
+
+    // 🔍 COMPREHENSIVE DUE DILIGENCE
+    async performDueDiligence(investment) {
+        const dueDiligence = {
+            investmentOverview: this.analyzeInvestmentOverview(investment),
+            quantitativeAnalysis: await this.performQuantitativeAnalysis(investment),
+            qualitativeAnalysis: await this.performQualitativeAnalysis(investment),
+            structuralAnalysis: this.performStructuralAnalysis(investment),
+            riskAssessment: this.assessInvestmentRisks(investment),
+            recommendation: this.generateRecommendation(investment)
+        };
+
+        return dueDiligence;
+    }
+
+    analyzeInvestmentOverview(investment) {
+        return {
+            name: investment.name,
+            category: investment.category,
+            strategy: investment.strategy,
+            minimumInvestment: investment.minimumInvestment,
+            targetReturn: investment.targetReturn,
+            holdingPeriod: investment.holdingPeriod,
+            liquidity: investment.liquidity
+        };
+    }
+
+    async performQuantitativeAnalysis(investment) {
+        return {
+            historicalReturns: {
+                one_year: 'Historical 1-year return',
+                three_year: 'Historical 3-year annualized return',
+                five_year: 'Historical 5-year annualized return',
+                since_inception: 'Since inception return'
+            },
+            riskMetrics: {
+                volatility: 'Standard deviation of returns',
+                maxDrawdown: 'Maximum peak-to-trough decline',
+                sharpeRatio: 'Risk-adjusted return measure',
+                calmarRatio: 'Return-to-max drawdown ratio'
+            },
+            correlations: {
+                stocks: 'Correlation to stock markets',
+                bonds: 'Correlation to bond markets',
+                alternatives: 'Correlation to other alternatives'
+            },
+            fees: {
+                managementFee: investment.managementFee || 'N/A',
+                performanceFee: investment.performanceFee || 'N/A',
+                otherFees: investment.otherFees || 'N/A',
+                totalExpenseRatio: 'All-in cost estimate'
+            }
+        };
+    }
+
+    async performQualitativeAnalysis(investment) {
+        return {
+            managementTeam: {
+                experience: 'Years of relevant experience',
+                trackRecord: 'Previous fund performance',
+                keyPersonnel: 'Key investment professionals',
+                alignment: 'Manager co-investment level'
+            },
+            investmentStrategy: {
+                approach: 'Investment methodology',
+                competitive: 'Competitive advantages',
+                pipeline: 'Investment pipeline quality',
+                execution: 'Strategy execution capability'
+            },
+            operations: {
+                infrastructure: 'Operational infrastructure',
+                riskManagement: 'Risk management processes',
+                compliance: 'Compliance framework',
+                reporting: 'Investor reporting quality'
+            }
+        };
+    }
+
+    performStructuralAnalysis(investment) {
+        return {
+            legalStructure: 'Fund legal structure',
+            governance: 'Board and governance structure',
+            termSheet: {
+                fees: 'Management and performance fees',
+                liquidity: 'Redemption terms and gates',
+                restrictions: 'Investment restrictions',
+                reporting: 'Reporting requirements'
+            },
+            taxStructure: 'Tax implications for investors',
+            documentation: 'Quality of legal documentation'
+        };
+    }
+
+    assessInvestmentRisks(investment) {
+        return {
+            primary: [
+                'Market risk exposure',
+                'Liquidity risk assessment',
+                'Manager risk evaluation',
+                'Operational risk review'
+            ],
+            secondary: [
+                'Regulatory risk factors',
+                'Concentration risk issues',
+                'Currency risk exposure',
+                'Counterparty risk assessment'
+            ],
+            mitigation: [
+                'Risk mitigation strategies',
+                'Diversification benefits',
+                'Hedging mechanisms',
+                'Exit strategy options'
+            ]
+        };
+    }
+
+    generateRecommendation(investment) {
+        // Simplified recommendation logic
+        const score = this.calculateInvestmentScore(investment);
+        
+        let recommendation = 'NEUTRAL';
+        if (score >= 8) recommendation = 'STRONG_BUY';
+        else if (score >= 6) recommendation = 'BUY';
+        else if (score <= 3) recommendation = 'AVOID';
+        else if (score <= 5) recommendation = 'WEAK';
+
+        return {
+            recommendation: recommendation,
+            score: score,
+            rationale: this.generateRationale(investment, score),
+            suitability: this.assessSuitability(investment),
+            alternatives: this.suggestAlternatives(investment)
+        };
+    }
+
+    calculateInvestmentScore(investment) {
+        // Simplified scoring methodology
+        let score = 5; // Base score
+        
+        // Adjust based on various factors
+        if (investment.trackRecord === 'EXCELLENT') score += 2;
+        if (investment.fees === 'LOW') score += 1;
+        if (investment.liquidity === 'HIGH') score += 1;
+        if (investment.risk === 'LOW') score += 1;
+        
+        return Math.max(1, Math.min(10, score));
+    }
+
+    generateRationale(investment, score) {
+        const rationales = {
+            'STRONG_BUY': 'Exceptional opportunity with strong risk-adjusted returns',
+            'BUY': 'Attractive investment with good fundamentals',
+            'NEUTRAL': 'Fair investment with balanced risk-return profile',
+            'WEAK': 'Below-average opportunity with concerning factors',
+            'AVOID': 'Significant risks outweigh potential returns'
+        };
+        
+        return rationales[this.getRecommendationFromScore(score)] || 'Standard investment analysis';
+    }
+
+    getRecommendationFromScore(score) {
+        if (score >= 8) return 'STRONG_BUY';
+        if (score >= 6) return 'BUY';
+        if (score <= 3) return 'AVOID';
+        if (score <= 5) return 'WEAK';
+        return 'NEUTRAL';
+    }
+
+    assessSuitability(investment) {
+        return {
+            conservative: investment.risk === 'LOW' ? 'SUITABLE' : 'NOT_SUITABLE',
+            moderate: investment.risk !== 'VERY_HIGH' ? 'SUITABLE' : 'CONSIDER',
+            aggressive: 'SUITABLE',
+            accredited: investment.accreditedOnly ? 'REQUIRED' : 'NOT_REQUIRED'
+        };
+    }
+
+    suggestAlternatives(investment) {
+        return [
+            'Similar strategy with lower fees',
+            'More liquid alternative with similar returns',
+            'Lower risk alternative in same category'
+        ];
+    }
+}
+
+// 🚀 MAIN ALTERNATIVE INVESTMENTS SYSTEM
+class AlternativeInvestmentsSystem {
+    constructor() {
+        this.alternativesEngine = new AlternativeInvestmentsEngine();
+        this.marketAccess = new PrivateMarketAccess();
+        this.performanceTracker = new AlternativePerformanceTracker();
+        this.dueDiligence = new AlternativeDueDiligence();
+    }
+
+    // 🎯 COMPREHENSIVE ALTERNATIVE INVESTMENT ANALYSIS
+    async performComprehensiveAlternativeAnalysis(clientData) {
+        try {
+            console.log('🔍 Starting comprehensive alternative investment analysis...');
+            
+            // Core alternative investment analysis
+            const alternativeAnalysis = await this.alternativesEngine.analyzeAlternativeInvestmentOpportunities(clientData);
+            
+            // Identify access pathways
+            const accessPathways = this.marketAccess.identifyAccessPathways(
+                clientData,
+                Object.keys(alternativeAnalysis.categoryAnalysis || {})
+            );
+            
+            // Performance tracking setup (if existing alternatives)
+            const performanceTracking = clientData.currentAlternatives ? 
+                await this.performanceTracker.trackAlternativePerformance(clientData.currentAlternatives) :
+                { note: 'No existing alternatives to track' };
+            
+            // Due diligence framework
+            const dueDiligenceFramework = this.dueDiligence.dueDiligenceFramework;
+            
+            // Generate implementation roadmap
+            const implementationRoadmap = this.createDetailedImplementationRoadmap(
+                alternativeAnalysis,
+                accessPathways,
+                clientData
+            );
+            
+            // Generate executive summary
+            const executiveSummary = this.generateExecutiveSummary(
+                alternativeAnalysis,
+                clientData
+            );
+
+            console.log('✅ Alternative investment analysis complete!');
+
+            return {
+                executiveSummary: executiveSummary,
+                alternativeAnalysis: alternativeAnalysis,
+                accessPathways: accessPathways,
+                performanceTracking: performanceTracking,
+                dueDiligenceFramework: dueDiligenceFramework,
+                implementationRoadmap: implementationRoadmap,
+                ongoingManagement: this.createOngoingManagementPlan(alternativeAnalysis),
+                riskWarnings: this.generateRiskWarnings(),
+                analysisMetadata: {
+                    analysisDate: new Date().toISOString(),
+                    version: '8.0',
+                    nextReviewDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days
+                }
+            };
+        } catch (error) {
+            console.error('❌ Alternative investment system error:', error.message);
+            return { 
+                error: error.message,
+                fallbackRecommendations: this.getFallbackRecommendations()
+            };
+        }
+    }
+
+    generateExecutiveSummary(alternativeAnalysis, clientData) {
+        const totalAllocation = alternativeAnalysis.allocationRecommendation?.totalAllocationAmount || 0;
+        const allocationPercentage = alternativeAnalysis.allocationRecommendation?.totalAllocationPercentage || 0;
+        const categoryCount = Object.keys(alternativeAnalysis.categoryAnalysis || {}).length;
+
+        return {
+            eligibilityStatus: {
+                accredited: alternativeAnalysis.eligibilityAnalysis?.accreditedInvestor || false,
+                qualifiedPurchaser: alternativeAnalysis.eligibilityAnalysis?.qualifiedPurchaser || false,
+                suitabilityScore: alternativeAnalysis.eligibilityAnalysis?.suitabilityScore || 0
+            },
+            recommendedAllocation: {
+                totalAmount: totalAllocation,
+                percentage: (allocationPercentage * 100).toFixed(1) + '%',
+                categoryCount: categoryCount,
+                riskLevel: alternativeAnalysis.allocationRecommendation?.riskLevel || 'MEDIUM'
+            },
+            topOpportunities: alternativeAnalysis.specificOpportunities?.slice(0, 3) || [],
+            keyBenefits: [
+                'Portfolio diversification beyond traditional assets',
+                'Access to institutional-quality investments',
+                'Potential for enhanced risk-adjusted returns',
+                'Inflation hedge characteristics'
+            ],
+            primaryRisks: [
+                'Reduced liquidity compared to public markets',
+                'Higher fees and minimum investments',
+                'Complexity and due diligence requirements',
+                'Manager selection risk'
+            ],
+            implementationPriority: this.determineImplementationPriority(alternativeAnalysis, clientData)
+        };
+    }
+
+    createDetailedImplementationRoadmap(alternativeAnalysis, accessPathways, clientData) {
+        const roadmap = alternativeAnalysis.implementationStrategy || {};
+        
+        // Add access pathway details to each phase
+        Object.keys(roadmap).forEach(phase => {
+            if (roadmap[phase].actions) {
+                roadmap[phase].accessOptions = this.mapActionsToAccessOptions(
+                    roadmap[phase].actions,
+                    accessPathways
+                );
+            }
+        });
+
+        return {
+            ...roadmap,
+            prerequisites: [
+                'Complete accredited investor verification if applicable',
+                'Establish emergency fund (6-12 months expenses)',
+                'Ensure core portfolio is properly diversified',
+                'Set up proper record-keeping systems'
+            ],
+            professionalSupport: [
+                'Consider working with alternative investment specialist',
+                'Engage qualified tax advisor for complex structures',
+                'Establish relationships with custodial platforms',
+                'Consider investment committee for large allocations'
+            ]
+        };
+    }
+
+    createOngoingManagementPlan(alternativeAnalysis) {
+        return {
+            monitoring: {
+                frequency: 'Quarterly portfolio review',
+                metrics: ['Performance vs benchmarks', 'Liquidity profile', 'Risk assessment'],
+                rebalancing: 'Annual rebalancing with 5% tolerance bands'
+            },
+            reporting: {
+                dashboard: 'Monthly alternative investment dashboard',
+                detailed: 'Quarterly comprehensive performance report',
+                annual: 'Annual alternative investment strategy review'
+            },
+            riskManagement: {
+                liquidity: 'Maintain liquidity ladder for alternative investments',
+                concentration: 'Monitor single investment concentration limits',
+                correlation: 'Track correlation changes during market stress'
+            },
+            optimization: {
+                opportunities: 'Continuous screening for new opportunities',
+                tax: 'Annual tax optimization review',
+                fees: 'Ongoing fee analysis and negotiation'
+            }
+        };
+    }
+
+    generateRiskWarnings() {
+        return {
+            general: [
+                'Alternative investments are not suitable for all investors',
+                'Past performance does not guarantee future results',
+                'Liquidity may be limited or non-existent',
+                'High fees can significantly impact returns'
+            ],
+            specific: {
+                privateEquity: 'Extremely long holding periods with no guarantee of returns',
+                hedgeFunds: 'Complex strategies with potential for significant losses',
+                realEstate: 'Interest rate sensitivity and market cyclicality',
+                cryptocurrency: 'Extreme volatility and regulatory uncertainty',
+                collectibles: 'Subjective valuations and limited market depth'
+            },
+            regulatory: [
+                'Accredited investor status may be required',
+                'Tax implications can be complex',
+                'Regulatory changes may affect investment terms',
+                'Limited investor protections compared to registered securities'
+            ]
+        };
+    }
+
+    determineImplementationPriority(alternativeAnalysis, clientData) {
+        const { liquidAssets, riskTolerance, accreditedInvestor } = clientData;
+        const totalSavings = alternativeAnalysis.allocationRecommendation?.totalAllocationAmount || 0;
+
+        if (totalSavings < 25000) return 'LOW - Focus on building liquid savings first';
+        if (!accreditedInvestor && riskTolerance === 'CONSERVATIVE') return 'MODERATE - Start with liquid alternatives';
+        if (accreditedInvestor && liquidAssets > 500000) return 'HIGH - Significant alternative allocation beneficial';
+        return 'MEDIUM - Gradual implementation recommended';
+    }
+
+    mapActionsToAccessOptions(actions, accessPathways) {
+        // Simplified mapping of actions to access options
+        const mappedOptions = {};
+        
+        actions.forEach(action => {
+            if (action.includes('REIT')) {
+                mappedOptions[action] = accessPathways.REAL_ESTATE || {};
+            } else if (action.includes('commodity')) {
+                mappedOptions[action] = { public_proxy: ['Commodity ETFs'] };
+            } else if (action.includes('private')) {
+                mappedOptions[action] = { note: 'Private market access required' };
+            }
+        });
+
+        return mappedOptions;
+    }
+
+    getFallbackRecommendations() {
+        return [
+            'Start with liquid alternative investments (REITs, commodity ETFs)',
+            'Build emergency fund before considering illiquid alternatives',
+            'Focus on low-cost, diversified alternative exposure',
+            'Consult with alternative investment specialist for guidance'
+        ];
+    }
+}
+
+// 📊 USAGE EXAMPLE AND TESTING
+async function demonstrateAlternativeInvestments() {
+    const alternativeSystem = new AlternativeInvestmentsSystem();
+    
+    const sampleClientData = {
+        netWorth: 2500000,
+        liquidAssets: 800000,
+        annualIncome: 350000,
+        riskTolerance: 'AGGRESSIVE',
+        investmentHorizon: 15,
+        age: 42,
+        accreditedInvestor: true,
+        investmentObjectives: ['Growth', 'Diversification', 'Inflation hedge'],
+        currentAlternatives: {
+            realEstate: [
+                { name: 'Fundrise eREIT', initialInvestment: 25000, currentValue: 28000 }
+            ]
+        },
+        businessType: 'TECHNOLOGY',
+        filingStatus: 'marriedJoint'
+    };
+
+    try {
+        console.log('🚀 Running comprehensive alternative investment analysis...');
+        const results = await alternativeSystem.performComprehensiveAlternativeAnalysis(sampleClientData);
+        
+        console.log('\n📊 EXECUTIVE SUMMARY:');
+        console.log('Eligibility Status:', results.executiveSummary?.eligibilityStatus);
+        console.log('Recommended Allocation:', results.executiveSummary?.recommendedAllocation);
+        
+        console.log('\n💎 TOP ALTERNATIVE OPPORTUNITIES:');
+        results.executiveSummary?.topOpportunities?.forEach((opp, index) => {
+            console.log(`${index + 1}. ${opp.type}: ${opp.allocation?.toFixed(0)} at ${opp.yield} yield`);
+        });
+
+        console.log('\n🏗️ IMPLEMENTATION PHASES:');
+        Object.keys(results.implementationRoadmap || {}).forEach(phase => {
+            if (results.implementationRoadmap[phase].timeframe) {
+                console.log(`${phase}: ${results.implementationRoadmap[phase].timeframe}`);
+                console.log(`  Actions: ${results.implementationRoadmap[phase].actions?.join(', ')}`);
+            }
+        });
+
+        console.log('\n⚠️ KEY RISKS:');
+        results.executiveSummary?.primaryRisks?.forEach(risk => {
+            console.log('•', risk);
+        });
+
+        return results;
+    } catch (error) {
+        console.error('❌ Demo error:', error.message);
+        return null;
+    }
+}
+
+// Export the system
+module.exports = {
+    AlternativeInvestmentsSystem,
+    AlternativeInvestmentsEngine,
+    PrivateMarketAccess,
+    AlternativePerformanceTracker,
+    AlternativeDueDiligence,
+    demonstrateAlternativeInvestments
+};
+
+console.log('🏆 Module 8: Alternative Investments & Private Markets - Loaded Successfully! 🏆');
