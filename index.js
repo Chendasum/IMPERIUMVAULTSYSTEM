@@ -29,6 +29,21 @@ const {
     generateLPReport 
 } = require("./utils/cambodiaLending");
 
+const { 
+    getUniversalAnalysis, 
+    getDualAnalysis, 
+    routeQuery, 
+    checkDualSystemHealth, 
+    testMemoryIntegration, 
+    analyzeImageWithAI, 
+    getGPT5Analysis, 
+    getClaudeAnalysis, 
+    getMarketAnalysis, 
+    getCambodiaAnalysis, 
+    dualAIRouter, 
+    getPerformanceStats 
+} = require("./utils/dualAISystem");
+
 const {
     sendSmartMessage,
     sendAnalysis,
