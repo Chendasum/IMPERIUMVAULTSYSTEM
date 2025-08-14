@@ -558,8 +558,8 @@ async function getGPT5Analysis(query, options = {}) {
     });
 }
 
-async function getClaudeAnalysis(query, options = {}) {
-    return await getClaudeAnalysis(query, options);
+async function getClaudeAnalysisLegacy(query, options = {}) {
+    return await getClaudeAnalysis(query, options);  // This calls the imported one
 }
 
 async function getMarketAnalysis(query, options = {}) {
@@ -588,7 +588,7 @@ module.exports = {
     
     // Legacy compatibility
     getGPT5Analysis,
-    getClaudeAnalysis: getClaudeAnalysis,
+    getClaudeAnalysis: getClaudeAnalysisLegacy,  // ← Change this
     getMarketAnalysis,
     getCambodiaAnalysis,
     
