@@ -29,6 +29,7 @@ const {
     generateLPReport 
 } = require("./utils/cambodiaLending");
 
+// 🎯 MAIN DUAL AI SYSTEM - Smart routing between GPT-5 and Claude Opus 4.1
 const { 
     getUniversalAnalysis, 
     getDualAnalysis, 
@@ -118,20 +119,16 @@ const {
 const { buildConversationContext } = require("./utils/memory");
 const { getTradingSummary, getAccountInfo } = require("./utils/metaTrader");
 
-// Import enhanced AI clients
+// Import specialized AI clients (non-duplicate functions only)
 const { 
-    getClaudeAnalysis,
-    getStrategicAnalysis,
+    getStrategicAnalysis: getClaudeStrategicAnalysis,
     getRegimeAnalysis,
-    getCambodiaAnalysis: getClaudeCambodiaAnalysis,
     getPortfolioAnalysis,
     getAnomalyAnalysis
 } = require('./utils/claudeClient');
 
 const { 
-    getUniversalAnalysis,
-    getMarketAnalysis,
-    getCambodiaAnalysis,
+    getGptAnalysis,  // Raw GPT function if needed
     getStrategicAnalysis: getGptStrategicAnalysis
 } = require('./utils/openaiClient');
 
