@@ -12103,8 +12103,6 @@ console.log('🏆 Module 8: Alternative Investments & Private Markets - Loaded S
 
 // 🏆 WEALTH MODULE 10: AI-POWERED INVESTMENT RESEARCH & DUE DILIGENCE - COMPLETE
 // Advanced AI-driven investment analysis, research automation, and intelligent due diligence
-const { getUniversalAnalysis, getDualAnalysis } = require('../utils/dualAISystem');
-const { getRayDalioMarketData, detectEconomicRegime, getCurrentGlobalDateTime } = require('../utils/liveData');
 
 // 🤖 AI INVESTMENT RESEARCH ENGINE
 class AIInvestmentResearchEngine {
