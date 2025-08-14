@@ -1903,8 +1903,8 @@ module.exports = {
 };
 
 // 🏆 SYSTEM READY NOTIFICATION
-logger.power('🚀 ULTIMATE Strategic Power Dual AI System loaded and ready!');
-logger.info('📊 Over 1000 lines of strategic intelligence optimization');
-logger.info('🎯 Maximum power routing for GPT-5 mathematical superiority');
-logger.info('🧠 Strategic mastery optimization for Claude Opus 4');
-logger.success('✅ System ready for ultimate financial analysis power!');
+console.log('🚀 ULTIMATE Strategic Power Dual AI System loaded and ready!');
+console.log('📊 Over 1000 lines of strategic intelligence optimization');
+console.log('🎯 Maximum power routing for GPT-5 mathematical superiority');
+console.log('🧠 Strategic mastery optimization for Claude Opus 4');
+console.log('✅ System ready for ultimate financial analysis power!');
