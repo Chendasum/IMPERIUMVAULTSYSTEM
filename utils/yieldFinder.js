@@ -591,12 +591,12 @@ ${yieldScan.aiInsights}
         return baseYield * riskAdjustment;
     }
 
-    calculateYieldSharpeRatio(opportunity) {
-        const yield = opportunity.yield || 0;
-        const riskLevel = opportunity.riskLevel || 5;
-        const volatility = riskLevel * 0.02; // Approximate volatility
-        return (yield - 0.02) / Math.max(volatility, 0.01); // Assuming 2% risk-free rate
-    }
+calculateYieldSharpeRatio(opportunity) {
+    const yieldValue = opportunity.yield || 0;  // ✅ Use 'yieldValue' instead
+    const riskLevel = opportunity.riskLevel || 5;
+    const volatility = riskLevel * 0.02;
+    return (yieldValue - 0.02) / Math.max(volatility, 0.01);
+}
 
     calculateAverageYield(opportunities) {
         if (!opportunities.length) return 0;
