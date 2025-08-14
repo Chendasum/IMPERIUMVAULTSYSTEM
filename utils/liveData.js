@@ -1186,8 +1186,6 @@ module.exports = {
 
 // 🏆 WEALTH MODULE 2: MARKET OPPORTUNITY SCANNER & SIGNAL DETECTION
 // Advanced technical analysis and market scanning system
-const { getUniversalAnalysis, getDualAnalysis } = require('../utils/dualAISystem');
-const { getRayDalioMarketData, detectEconomicRegime, getSectorRotationSignals, detectMarketAnomalies } = require('../utils/liveData');
 
 // 🎯 TECHNICAL INDICATOR CALCULATOR
 class TechnicalIndicatorCalculator {
@@ -2377,8 +2375,6 @@ module.exports = {
 
 // 🏆 WEALTH MODULE 3: YIELD GENERATION & INCOME OPTIMIZATION
 // Advanced yield farming, dividend optimization, and income strategies
-const { getUniversalAnalysis, getDualAnalysis } = require('../utils/dualAISystem');
-const { getRayDalioMarketData, detectEconomicRegime, getYieldCurveAnalysis, getInflationExpectations } = require('../utils/liveData');
 
 // 💰 YIELD STRATEGY ANALYZER
 class YieldStrategyAnalyzer {
