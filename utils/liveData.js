@@ -3713,3 +3713,2712 @@ module.exports = {
     analyzeYieldPortfolioRisk
 };// 🏆 WEALTH MODULE 3: YIELD GENERATION & INCOME OPTIMIZATION
 // Advanced yield farming, dividend optimization, and income strategies
+
+// 🏆 WEALTH MODULE 4: ARBITRAGE & MARKET INEFFICIENCY DETECTION
+// Advanced arbitrage detection and statistical arbitrage strategies
+
+// 🎯 ARBITRAGE OPPORTUNITY SCANNER
+class ArbitrageOpportunityScanner {
+    constructor() {
+        this.arbitrageTypes = {
+            PRICE_ARBITRAGE: 'Pure Price Arbitrage',
+            STATISTICAL_ARBITRAGE: 'Statistical Arbitrage',
+            MERGER_ARBITRAGE: 'Merger Arbitrage',
+            CALENDAR_ARBITRAGE: 'Calendar Spread Arbitrage',
+            VOLATILITY_ARBITRAGE: 'Volatility Arbitrage',
+            CARRY_TRADE: 'Currency Carry Trade',
+            ETF_ARBITRAGE: 'ETF Creation/Redemption',
+            CONVERTIBLE_ARBITRAGE: 'Convertible Bond Arbitrage',
+            FIXED_INCOME_ARBITRAGE: 'Fixed Income Arbitrage',
+            CRYPTO_ARBITRAGE: 'Cryptocurrency Arbitrage'
+        };
+        
+        this.riskProfiles = {
+            LOW_RISK: { maxDrawdown: 0.02, minSharpe: 2.0, maxLeverage: 2 },
+            MODERATE_RISK: { maxDrawdown: 0.05, minSharpe: 1.5, maxLeverage: 4 },
+            HIGH_RISK: { maxDrawdown: 0.10, minSharpe: 1.0, maxLeverage: 8 }
+        };
+        
+        this.minProfitThresholds = {
+            INSTANT: 0.001, // 0.1% for instant arbitrage
+            SHORT_TERM: 0.005, // 0.5% for short-term
+            MEDIUM_TERM: 0.02, // 2% for medium-term
+            LONG_TERM: 0.05 // 5% for long-term
+        };
+    }
+    
+    // 💰 PRICE ARBITRAGE SCANNER
+    async scanPriceArbitrageOpportunities(assetPrices, exchanges = []) {
+        try {
+            const opportunities = [];
+            
+            // Cross-exchange arbitrage detection
+            for (const [asset, priceData] of Object.entries(assetPrices)) {
+                if (!priceData.exchanges || Object.keys(priceData.exchanges).length < 2) continue;
+                
+                const exchangePrices = Object.entries(priceData.exchanges);
+                
+                // Find highest and lowest prices
+                const sortedPrices = exchangePrices.sort((a, b) => b[1].price - a[1].price);
+                const highestPrice = sortedPrices[0];
+                const lowestPrice = sortedPrices[sortedPrices.length - 1];
+                
+                const priceDifference = highestPrice[1].price - lowestPrice[1].price;
+                const percentageDifference = priceDifference / lowestPrice[1].price;
+                
+                // Calculate potential profit after fees
+                const tradingFees = this.calculateTradingFees(
+                    lowestPrice[1].price, 
+                    highestPrice[1].price, 
+                    lowestPrice[0], 
+                    highestPrice[0]
+                );
+                
+                const netProfit = priceDifference - tradingFees.totalFees;
+                const netProfitPercentage = netProfit / lowestPrice[1].price;
+                
+                if (netProfitPercentage >= this.minProfitThresholds.INSTANT) {
+                    opportunities.push({
+                        asset: asset,
+                        type: 'PRICE_ARBITRAGE',
+                        buyExchange: lowestPrice[0],
+                        sellExchange: highestPrice[0],
+                        buyPrice: lowestPrice[1].price,
+                        sellPrice: highestPrice[1].price,
+                        priceDifference: priceDifference,
+                        percentageDifference: percentageDifference * 100,
+                        tradingFees: tradingFees,
+                        netProfit: netProfit,
+                        netProfitPercentage: netProfitPercentage * 100,
+                        volume: Math.min(lowestPrice[1].volume, highestPrice[1].volume),
+                        timeWindow: 'INSTANT',
+                        riskLevel: 'LOW',
+                        confidence: this.calculateArbitrageConfidence(netProfitPercentage, 'PRICE'),
+                        executionComplexity: 'SIMPLE'
+                    });
+                }
+            }
+            
+            return {
+                opportunities: opportunities.sort((a, b) => b.netProfitPercentage - a.netProfitPercentage),
+                totalOpportunities: opportunities.length,
+                averageProfit: opportunities.length > 0 ? 
+                    opportunities.reduce((sum, opp) => sum + opp.netProfitPercentage, 0) / opportunities.length : 0,
+                highProfitCount: opportunities.filter(opp => opp.netProfitPercentage >= 1).length,
+                scanType: 'PRICE_ARBITRAGE',
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Price arbitrage scan error:', error.message);
+            return { error: error.message, opportunities: [] };
+        }
+    }
+    
+    // 📊 STATISTICAL ARBITRAGE SCANNER
+    async scanStatisticalArbitrageOpportunities(assetPairs, historicalData) {
+        try {
+            const opportunities = [];
+            
+            for (const pair of assetPairs) {
+                const analysis = await this.analyzeStatisticalArbitrage(pair, historicalData);
+                if (analysis && !analysis.error && analysis.signal !== 'NEUTRAL') {
+                    opportunities.push(analysis);
+                }
+            }
+            
+            return {
+                opportunities: opportunities.sort((a, b) => b.zscore - a.zscore),
+                totalOpportunities: opportunities.length,
+                longOpportunities: opportunities.filter(opp => opp.signal === 'LONG').length,
+                shortOpportunities: opportunities.filter(opp => opp.signal === 'SHORT').length,
+                averageZScore: opportunities.length > 0 ? 
+                    opportunities.reduce((sum, opp) => sum + Math.abs(opp.zscore), 0) / opportunities.length : 0,
+                scanType: 'STATISTICAL_ARBITRAGE',
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Statistical arbitrage scan error:', error.message);
+            return { error: error.message, opportunities: [] };
+        }
+    }
+    
+    // 🔄 ANALYZE STATISTICAL ARBITRAGE PAIR
+    async analyzeStatisticalArbitrage(pair, historicalData) {
+        try {
+            const { asset1, asset2 } = pair;
+            
+            if (!historicalData[asset1] || !historicalData[asset2]) {
+                return { error: `Missing data for ${asset1} or ${asset2}` };
+            }
+            
+            const prices1 = historicalData[asset1].prices;
+            const prices2 = historicalData[asset2].prices;
+            
+            // Ensure equal length arrays
+            const minLength = Math.min(prices1.length, prices2.length);
+            const alignedPrices1 = prices1.slice(-minLength);
+            const alignedPrices2 = prices2.slice(-minLength);
+            
+            // Calculate price ratio
+            const priceRatios = alignedPrices1.map((price1, i) => price1 / alignedPrices2[i]);
+            
+            // Calculate statistics
+            const meanRatio = priceRatios.reduce((sum, ratio) => sum + ratio, 0) / priceRatios.length;
+            const variance = priceRatios.reduce((sum, ratio) => sum + Math.pow(ratio - meanRatio, 2), 0) / priceRatios.length;
+            const standardDeviation = Math.sqrt(variance);
+            
+            const currentRatio = alignedPrices1[alignedPrices1.length - 1] / alignedPrices2[alignedPrices2.length - 1];
+            const zscore = (currentRatio - meanRatio) / standardDeviation;
+            
+            // Calculate correlation
+            const correlation = this.calculateCorrelation(alignedPrices1, alignedPrices2);
+            
+            // Calculate cointegration (simplified)
+            const cointegrationScore = this.calculateCointegrationScore(alignedPrices1, alignedPrices2);
+            
+            // Generate trading signal
+            let signal = 'NEUTRAL';
+            let confidence = 0;
+            
+            if (Math.abs(zscore) >= 2 && correlation > 0.7 && cointegrationScore > 0.6) {
+                signal = zscore > 0 ? 'SHORT' : 'LONG';
+                confidence = Math.min(95, Math.abs(zscore) * 30);
+            }
+            
+            // Calculate expected profit
+            const expectedProfit = this.calculateExpectedProfitStatArb(zscore, standardDeviation, meanRatio);
+            
+            return {
+                asset1: asset1,
+                asset2: asset2,
+                type: 'STATISTICAL_ARBITRAGE',
+                currentRatio: currentRatio,
+                meanRatio: meanRatio,
+                standardDeviation: standardDeviation,
+                zscore: zscore,
+                correlation: correlation,
+                cointegrationScore: cointegrationScore,
+                signal: signal,
+                confidence: confidence,
+                expectedProfit: expectedProfit,
+                riskLevel: Math.abs(zscore) > 3 ? 'HIGH' : Math.abs(zscore) > 2 ? 'MODERATE' : 'LOW',
+                timeHorizon: this.estimateReversion Time(zscore),
+                leverageRecommendation: this.calculateOptimalLeverage(zscore, correlation),
+                stopLoss: this.calculateStatArbStopLoss(zscore, standardDeviation),
+                targetProfit: this.calculateStatArbTarget(zscore, standardDeviation)
+            };
+        } catch (error) {
+            console.error(`Statistical arbitrage analysis error for ${pair.asset1}-${pair.asset2}:`, error.message);
+            return { error: error.message, asset1: pair.asset1, asset2: pair.asset2 };
+        }
+    }
+    
+    // 🤝 MERGER ARBITRAGE SCANNER
+    async scanMergerArbitrageOpportunities(mergerDeals) {
+        try {
+            const opportunities = [];
+            
+            for (const deal of mergerDeals) {
+                const analysis = await this.analyzeMergerArbitrage(deal);
+                if (analysis && !analysis.error) {
+                    opportunities.push(analysis);
+                }
+            }
+            
+            return {
+                opportunities: opportunities.sort((a, b) => b.annualizedReturn - a.annualizedReturn),
+                totalOpportunities: opportunities.length,
+                cashDeals: opportunities.filter(opp => opp.dealType === 'CASH').length,
+                stockDeals: opportunities.filter(opp => opp.dealType === 'STOCK').length,
+                averageSpread: opportunities.length > 0 ? 
+                    opportunities.reduce((sum, opp) => sum + opp.spread, 0) / opportunities.length : 0,
+                averageAnnualizedReturn: opportunities.length > 0 ? 
+                    opportunities.reduce((sum, opp) => sum + opp.annualizedReturn, 0) / opportunities.length : 0,
+                scanType: 'MERGER_ARBITRAGE',
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Merger arbitrage scan error:', error.message);
+            return { error: error.message, opportunities: [] };
+        }
+    }
+    
+    // 🤝 ANALYZE MERGER ARBITRAGE DEAL
+    async analyzeMergerArbitrage(deal) {
+        try {
+            const {
+                targetSymbol,
+                acquirerSymbol,
+                targetPrice,
+                acquirerPrice,
+                offerPrice,
+                offerType, // 'CASH', 'STOCK', 'MIXED'
+                exchangeRatio,
+                expectedCloseDate,
+                dealProbability = 0.85,
+                regulatoryRisk = 'MODERATE'
+            } = deal;
+            
+            let impliedValue = 0;
+            let dealType = offerType;
+            
+            // Calculate implied value based on deal structure
+            if (offerType === 'CASH') {
+                impliedValue = offerPrice;
+            } else if (offerType === 'STOCK') {
+                impliedValue = acquirerPrice * exchangeRatio;
+            } else if (offerType === 'MIXED') {
+                // Simplified mixed deal calculation
+                impliedValue = (offerPrice * 0.5) + (acquirerPrice * exchangeRatio * 0.5);
+            }
+            
+            const spread = ((impliedValue - targetPrice) / targetPrice) * 100;
+            const daysToClose = Math.max(1, Math.ceil((new Date(expectedCloseDate) - new Date()) / (1000 * 60 * 60 * 24)));
+            const annualizedReturn = (spread / daysToClose) * 365;
+            
+            // Risk assessment
+            const riskScore = this.assessMergerRisk(regulatoryRisk, daysToClose, spread, dealProbability);
+            const riskAdjustedReturn = annualizedReturn * dealProbability;
+            
+            // Downside risk calculation
+            const downsideRisk = this.calculateMergerDownsideRisk(targetPrice, spread, dealProbability);
+            
+            return {
+                targetSymbol: targetSymbol,
+                acquirerSymbol: acquirerSymbol,
+                type: 'MERGER_ARBITRAGE',
+                dealType: dealType,
+                targetPrice: targetPrice,
+                impliedValue: impliedValue,
+                spread: spread,
+                annualizedReturn: annualizedReturn,
+                riskAdjustedReturn: riskAdjustedReturn,
+                daysToClose: daysToClose,
+                dealProbability: dealProbability,
+                regulatoryRisk: regulatoryRisk,
+                riskScore: riskScore,
+                downsideRisk: downsideRisk,
+                upside: spread,
+                downside: downsideRisk.maxLoss,
+                riskRewardRatio: spread / Math.abs(downsideRisk.maxLoss),
+                recommendation: this.getMergerArbitrageRecommendation(riskAdjustedReturn, riskScore, spread),
+                confidence: dealProbability * 100
+            };
+        } catch (error) {
+            console.error(`Merger arbitrage analysis error for ${deal.targetSymbol}:`, error.message);
+            return { error: error.message, targetSymbol: deal.targetSymbol };
+        }
+    }
+    
+    // 💱 CURRENCY CARRY TRADE SCANNER
+    async scanCarryTradeOpportunities(currencyPairs, interestRates) {
+        try {
+            const opportunities = [];
+            
+            for (const pair of currencyPairs) {
+                const analysis = await this.analyzeCarryTrade(pair, interestRates);
+                if (analysis && !analysis.error && analysis.carryYield > 0.02) {
+                    opportunities.push(analysis);
+                }
+            }
+            
+            return {
+                opportunities: opportunities.sort((a, b) => b.riskAdjustedCarry - a.riskAdjustedCarry),
+                totalOpportunities: opportunities.length,
+                averageCarryYield: opportunities.length > 0 ? 
+                    opportunities.reduce((sum, opp) => sum + opp.carryYield, 0) / opportunities.length * 100 : 0,
+                highYieldCount: opportunities.filter(opp => opp.carryYield > 0.05).length,
+                scanType: 'CARRY_TRADE',
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Carry trade scan error:', error.message);
+            return { error: error.message, opportunities: [] };
+        }
+    }
+    
+    // 💱 ANALYZE CARRY TRADE
+    async analyzeCarryTrade(pair, interestRates) {
+        try {
+            const { baseCurrency, quoteCurrency, currentRate, volatility } = pair;
+            
+            const baseRate = interestRates[baseCurrency] || 0;
+            const quoteRate = interestRates[quoteCurrency] || 0;
+            
+            const carryYield = baseRate - quoteRate;
+            const annualizedCarry = carryYield;
+            
+            // Risk assessment
+            const riskScore = this.assessCarryTradeRisk(volatility, carryYield);
+            const riskAdjustedCarry = carryYield / (volatility + 0.01); // Add small constant to avoid division by zero
+            
+            // Momentum factor
+            const momentumScore = this.calculateCurrencyMomentum(pair);
+            
+            // Overall score
+            const overallScore = (riskAdjustedCarry * 0.5) + (momentumScore * 0.3) + (carryYield * 0.2);
+            
+            return {
+                baseCurrency: baseCurrency,
+                quoteCurrency: quoteCurrency,
+                type: 'CARRY_TRADE',
+                currentRate: currentRate,
+                baseInterestRate: baseRate * 100,
+                quoteInterestRate: quoteRate * 100,
+                carryYield: carryYield,
+                annualizedCarry: annualizedCarry * 100,
+                volatility: volatility * 100,
+                riskScore: riskScore,
+                riskAdjustedCarry: riskAdjustedCarry,
+                momentumScore: momentumScore,
+                overallScore: overallScore,
+                recommendation: this.getCarryTradeRecommendation(carryYield, riskScore, momentumScore),
+                expectedAnnualReturn: annualizedCarry * 100,
+                maxDrawdownRisk: volatility * 2 * 100, // 2x volatility as max drawdown estimate
+                optimalLeverage: this.calculateCarryTradeLeverage(carryYield, volatility)
+            };
+        } catch (error) {
+            console.error(`Carry trade analysis error for ${pair.baseCurrency}/${pair.quoteCurrency}:`, error.message);
+            return { error: error.message };
+        }
+    }
+    
+    // 📈 ETF ARBITRAGE SCANNER
+    async scanETFArbitrageOpportunities(etfData) {
+        try {
+            const opportunities = [];
+            
+            for (const etf of etfData) {
+                const analysis = await this.analyzeETFArbitrage(etf);
+                if (analysis && !analysis.error && Math.abs(analysis.premiumDiscount) >= 0.5) {
+                    opportunities.push(analysis);
+                }
+            }
+            
+            return {
+                opportunities: opportunities.sort((a, b) => Math.abs(b.premiumDiscount) - Math.abs(a.premiumDiscount)),
+                totalOpportunities: opportunities.length,
+                premiumOpportunities: opportunities.filter(opp => opp.premiumDiscount > 0).length,
+                discountOpportunities: opportunities.filter(opp => opp.premiumDiscount < 0).length,
+                averagePremiumDiscount: opportunities.length > 0 ? 
+                    opportunities.reduce((sum, opp) => sum + opp.premiumDiscount, 0) / opportunities.length : 0,
+                scanType: 'ETF_ARBITRAGE',
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('ETF arbitrage scan error:', error.message);
+            return { error: error.message, opportunities: [] };
+        }
+    }
+    
+    // 📈 ANALYZE ETF ARBITRAGE
+    async analyzeETFArbitrage(etf) {
+        try {
+            const {
+                symbol,
+                marketPrice,
+                nav, // Net Asset Value
+                volume,
+                creationUnit,
+                holdings
+            } = etf;
+            
+            const premiumDiscount = ((marketPrice - nav) / nav) * 100;
+            const liquidityScore = this.calculateETFLiquidity(volume, creationUnit);
+            
+            // Arbitrage feasibility
+            const arbitrageFeasible = Math.abs(premiumDiscount) >= 0.5 && liquidityScore > 60;
+            
+            // Calculate potential profit
+            const potentialProfit = Math.abs(premiumDiscount);
+            const tradingCosts = this.calculateETFTradingCosts(marketPrice, volume);
+            const netProfit = potentialProfit - tradingCosts;
+            
+            let strategy = 'NONE';
+            if (premiumDiscount > 0.5) {
+                strategy = 'SELL_ETF_BUY_BASKET'; // ETF trading at premium
+            } else if (premiumDiscount < -0.5) {
+                strategy = 'BUY_ETF_SELL_BASKET'; // ETF trading at discount
+            }
+            
+            return {
+                symbol: symbol,
+                type: 'ETF_ARBITRAGE',
+                marketPrice: marketPrice,
+                nav: nav,
+                premiumDiscount: premiumDiscount,
+                liquidityScore: liquidityScore,
+                arbitrageFeasible: arbitrageFeasible,
+                potentialProfit: potentialProfit,
+                tradingCosts: tradingCosts,
+                netProfit: netProfit,
+                strategy: strategy,
+                riskLevel: liquidityScore > 80 ? 'LOW' : liquidityScore > 60 ? 'MODERATE' : 'HIGH',
+                timeHorizon: 'INTRADAY',
+                capitalRequirement: this.calculateETFCapitalRequirement(marketPrice, creationUnit),
+                recommendation: netProfit > 0.2 ? 'EXECUTE' : netProfit > 0 ? 'CONSIDER' : 'AVOID'
+            };
+        } catch (error) {
+            console.error(`ETF arbitrage analysis error for ${etf.symbol}:`, error.message);
+            return { error: error.message, symbol: etf.symbol };
+        }
+    }
+    
+    // 🔧 HELPER CALCULATION METHODS
+    
+    calculateTradingFees(buyPrice, sellPrice, buyExchange, sellExchange) {
+        const exchangeFees = {
+            'BINANCE': 0.001,
+            'COINBASE': 0.005,
+            'KRAKEN': 0.0026,
+            'NYSE': 0.0001,
+            'NASDAQ': 0.0001
+        };
+        
+        const buyFee = buyPrice * (exchangeFees[buyExchange] || 0.002);
+        const sellFee = sellPrice * (exchangeFees[sellExchange] || 0.002);
+        const networkFee = 0.01; // Simplified network/transfer fee
+        
+        return {
+            buyFee: buyFee,
+            sellFee: sellFee,
+            networkFee: networkFee,
+            totalFees: buyFee + sellFee + networkFee
+        };
+    }
+    
+    calculateArbitrageConfidence(profitPercentage, type) {
+        let baseConfidence = 50;
+        
+        if (type === 'PRICE') {
+            baseConfidence = Math.min(95, 50 + (profitPercentage * 1000));
+        } else if (type === 'STATISTICAL') {
+            baseConfidence = Math.min(90, 30 + (profitPercentage * 500));
+        }
+        
+        return Math.max(10, baseConfidence);
+    }
+    
+    calculateCorrelation(prices1, prices2) {
+        const n = Math.min(prices1.length, prices2.length);
+        
+        const mean1 = prices1.slice(0, n).reduce((sum, p) => sum + p, 0) / n;
+        const mean2 = prices2.slice(0, n).reduce((sum, p) => sum + p, 0) / n;
+        
+        let numerator = 0;
+        let sum1Sq = 0;
+        let sum2Sq = 0;
+        
+        for (let i = 0; i < n; i++) {
+            const diff1 = prices1[i] - mean1;
+            const diff2 = prices2[i] - mean2;
+            
+            numerator += diff1 * diff2;
+            sum1Sq += diff1 * diff1;
+            sum2Sq += diff2 * diff2;
+        }
+        
+        const denominator = Math.sqrt(sum1Sq * sum2Sq);
+        return denominator === 0 ? 0 : numerator / denominator;
+    }
+    
+    calculateCointegrationScore(prices1, prices2) {
+        // Simplified cointegration test (Engle-Granger approach)
+        const ratios = prices1.map((p1, i) => p1 / prices2[i]);
+        const meanRatio = ratios.reduce((sum, r) => sum + r, 0) / ratios.length;
+        
+        // Calculate residuals from mean
+        const residuals = ratios.map(r => r - meanRatio);
+        
+        // Test for stationarity (simplified)
+        let stationarityScore = 0;
+        for (let i = 1; i < residuals.length; i++) {
+            if (Math.abs(residuals[i]) < Math.abs(residuals[i-1])) {
+                stationarityScore++;
+            }
+        }
+        
+        return stationarityScore / (residuals.length - 1);
+    }
+    
+    calculateExpectedProfitStatArb(zscore, standardDeviation, meanRatio) {
+        // Expected profit assuming mean reversion
+        const expectedReversion = Math.abs(zscore) * standardDeviation;
+        const profitProbability = Math.min(0.9, Math.abs(zscore) / 3);
+        
+        return {
+            expectedProfit: expectedReversion * profitProbability,
+            profitProbability: profitProbability,
+            expectedReturn: (expectedReversion / meanRatio) * profitProbability * 100
+        };
+    }
+    
+    estimateReversionTime(zscore) {
+        // Estimate time for mean reversion based on z-score magnitude
+        const baseTime = 5; // 5 days base
+        const timeMultiplier = Math.max(0.5, 3 - Math.abs(zscore));
+        
+        return Math.round(baseTime * timeMultiplier);
+    }
+    
+    calculateOptimalLeverage(zscore, correlation) {
+        // Kelly Criterion inspired leverage calculation
+        const maxLeverage = 5;
+        const baseLeverage = Math.min(maxLeverage, Math.abs(zscore) * correlation);
+        
+        return Math.max(1, Math.round(baseLeverage * 10) / 10);
+    }
+    
+    calculateStatArbStopLoss(zscore, standardDeviation) {
+        // Stop loss at 1.5 standard deviations beyond current z-score
+        const stopLossZScore = zscore + (zscore > 0 ? 1.5 : -1.5);
+        return stopLossZScore * standardDeviation;
+    }
+    
+    calculateStatArbTarget(zscore, standardDeviation) {
+        // Target profit at mean reversion (z-score = 0)
+        return Math.abs(zscore) * standardDeviation * 0.8; // 80% of full reversion
+    }
+    
+    // 🤝 MERGER ARBITRAGE HELPERS
+    
+    assessMergerRisk(regulatoryRisk, daysToClose, spread, dealProbability) {
+        let riskScore = 50; // Base risk score
+        
+        // Regulatory risk adjustment
+        const regRiskMap = { 'LOW': -10, 'MODERATE': 0, 'HIGH': 15, 'VERY_HIGH': 25 };
+        riskScore += regRiskMap[regulatoryRisk] || 0;
+        
+        // Time risk adjustment
+        if (daysToClose > 365) riskScore += 15;
+        else if (daysToClose > 180) riskScore += 10;
+        else if (daysToClose < 30) riskScore += 5;
+        
+        // Spread risk adjustment
+        if (spread < 2) riskScore += 10; // Low spread = higher risk
+        if (spread > 20) riskScore += 15; // Very high spread = suspicious
+        
+        // Deal probability adjustment
+        riskScore += (1 - dealProbability) * 50;
+        
+        return Math.max(0, Math.min(100, riskScore));
+    }
+    
+    calculateMergerDownsideRisk(targetPrice, spread, dealProbability) {
+        const dealFailureProbability = 1 - dealProbability;
+        
+        // Estimate stock price drop if deal fails (typically 10-30%)
+        const estimatedDrop = 0.15 + (spread / 100 * 0.5); // Higher spread = higher drop risk
+        const maxLoss = targetPrice * estimatedDrop * dealFailureProbability;
+        
+        return {
+            maxLoss: maxLoss,
+            maxLossPercentage: estimatedDrop * dealFailureProbability * 100,
+            probability: dealFailureProbability
+        };
+    }
+    
+    getMergerArbitrageRecommendation(riskAdjustedReturn, riskScore, spread) {
+        if (riskAdjustedReturn > 15 && riskScore < 60 && spread > 3) return 'STRONG_BUY';
+        if (riskAdjustedReturn > 10 && riskScore < 70) return 'BUY';
+        if (riskAdjustedReturn > 5 && riskScore < 80) return 'CONSIDER';
+        return 'AVOID';
+    }
+    
+    // 💱 CARRY TRADE HELPERS
+    
+    assessCarryTradeRisk(volatility, carryYield) {
+        // Risk increases with volatility and decreases with carry yield
+        const volatilityRisk = volatility * 100;
+        const carryBenefit = Math.abs(carryYield) * 20;
+        
+        return Math.max(0, Math.min(100, volatilityRisk - carryBenefit + 30));
+    }
+    
+    calculateCurrencyMomentum(pair) {
+        // Simplified momentum calculation (would use actual price history)
+        return Math.random() * 2 - 1; // Placeholder: -1 to 1
+    }
+    
+    getCarryTradeRecommendation(carryYield, riskScore, momentumScore) {
+        const overallScore = carryYield * 100 - riskScore + (momentumScore * 10);
+        
+        if (overallScore > 5 && carryYield > 0.03) return 'STRONG_BUY';
+        if (overallScore > 2 && carryYield > 0.02) return 'BUY';
+        if (overallScore > 0) return 'CONSIDER';
+        return 'AVOID';
+    }
+    
+    calculateCarryTradeLeverage(carryYield, volatility) {
+        // Optimal leverage based on Kelly Criterion principles
+        const maxLeverage = 10;
+        const kellyLeverage = carryYield / (volatility * volatility);
+        
+        return Math.max(1, Math.min(maxLeverage, kellyLeverage * 0.5)); // Conservative Kelly
+    }
+    
+    // 📈 ETF ARBITRAGE HELPERS
+    
+    calculateETFLiquidity(volume, creationUnit) {
+        const volumeScore = Math.min(50, volume / 1000000 * 25); // Max 50 points for volume
+        const creationScore = creationUnit < 100000 ? 30 : creationUnit < 500000 ? 20 : 10;
+        
+        return volumeScore + creationScore + 20; // Base score of 20
+    }
+    
+    calculateETFTradingCosts(price, volume) {
+        const bidAskSpread = price * 0.001; // 0.1% spread estimate
+        const marketImpact = volume < 1000000 ? 0.002 : 0.001; // Market impact
+        const commissions = 0.01; // Fixed commission
+        
+        return bidAskSpread + (price * marketImpact) + commissions;
+    }
+    
+    calculateETFCapitalRequirement(price, creationUnit) {
+        return price * creationUnit;
+    }
+}
+
+// 🎯 MARKET INEFFICIENCY DETECTOR
+class MarketInefficiencyDetector {
+    constructor() {
+        this.inefficiencyTypes = {
+            MOMENTUM_ANOMALY: 'Price Momentum Anomaly',
+            REVERSAL_ANOMALY: 'Mean Reversion Anomaly',
+            SEASONAL_ANOMALY: 'Seasonal Pattern Anomaly',
+            EVENT_ANOMALY: 'Event-Driven Anomaly',
+            CORRELATION_BREAKDOWN: 'Correlation Breakdown',
+            VOLATILITY_ANOMALY: 'Volatility Mispricing'
+        };
+        
+        this.detectionThresholds = {
+            MOMENTUM: { minPeriod: 5, minStrength: 0.02 },
+            REVERSAL: { maxZScore: -2, minConfidence: 0.7 },
+            SEASONAL: { minOccurrence: 3, minSignificance: 0.05 },
+            VOLATILITY: { minDeviation: 2, lookbackPeriod: 30 }
+        };
+    }
+    
+    // 🔍 DETECT MOMENTUM ANOMALIES
+    detectMomentumAnomalies(priceData, lookbackPeriod = 20) {
+        try {
+            const anomalies = [];
+            
+            for (const [symbol, data] of Object.entries(priceData)) {
+                if (!data.prices || data.prices.length < lookbackPeriod + 10) continue;
+                
+                const prices = data.prices;
+                const returns = this.calculateReturns(prices);
+                
+                // Calculate momentum indicators
+                const momentum = this.calculateMomentum(prices, lookbackPeriod);
+                const rsi = this.calculateRSI(prices);
+                const bollingerPosition = this.calculateBollingerPosition(prices);
+                
+                // Detect momentum anomaly
+                if (momentum.strength > this.detectionThresholds.MOMENTUM.minStrength &&
+                    momentum.persistence > this.detectionThresholds.MOMENTUM.minPeriod) {
+                    
+                    anomalies.push({
+                        symbol: symbol,
+                        type: 'MOMENTUM_ANOMALY',
+                        direction: momentum.direction,
+                        strength: momentum.strength,
+                        persistence: momentum.persistence,
+                        currentPrice: prices[prices.length - 1],
+                        rsi: rsi,
+                        bollingerPosition: bollingerPosition,
+                        confidence: this.calculateAnomalyConfidence(momentum, rsi, bollingerPosition),
+                        expectedContinuation: this.estimateMomentumContinuation(momentum),
+                        riskLevel: this.assessMomentumRisk(momentum, rsi),
+                        recommendation: this.getMomentumRecommendation(momentum, rsi, bollingerPosition)
+                    });
+                }
+            }
+            
+            return {
+                anomalies: anomalies.sort((a, b) => b.confidence - a.confidence),
+                totalAnomalies: anomalies.length,
+                bullishAnomalies: anomalies.filter(a => a.direction === 'BULLISH').length,
+                bearishAnomalies: anomalies.filter(a => a.direction === 'BEARISH').length,
+                averageConfidence: anomalies.length > 0 ? 
+                    anomalies.reduce((sum, a) => sum + a.confidence, 0) / anomalies.length : 0,
+                detectionType: 'MOMENTUM_ANOMALY',
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Momentum anomaly detection error:', error.message);
+            return { error: error.message, anomalies: [] };
+        }
+    }
+    
+    // 🔄 DETECT MEAN REVERSION ANOMALIES
+    detectReversionAnomalies(priceData, lookbackPeriod = 50) {
+        try {
+            const anomalies = [];
+            
+            for (const [symbol, data] of Object.entries(priceData)) {
+                if (!data.prices || data.prices.length < lookbackPeriod + 20) continue;
+                
+                const prices = data.prices;
+                const currentPrice = prices[prices.length - 1];
+                
+                // Calculate mean reversion indicators
+                const meanReversionScore = this.calculateMeanReversionScore(prices, lookbackPeriod);
+                const zscore = this.calculateZScore(prices, lookbackPeriod);
+                const volatility = this.calculateVolatility(prices, 20);
+                
+                // Detect reversion anomaly
+                if (Math.abs(zscore) > Math.abs(this.detectionThresholds.REVERSAL.maxZScore) &&
+                    meanReversionScore.confidence > this.detectionThresholds.REVERSAL.minConfidence) {
+                    
+                    anomalies.push({
+                        symbol: symbol,
+                        type: 'REVERSAL_ANOMALY',
+                        currentPrice: currentPrice,
+                        zscore: zscore,
+                        meanReversionScore: meanReversionScore,
+                        volatility: volatility,
+                        direction: zscore > 0 ? 'REVERT_DOWN' : 'REVERT_UP',
+                        confidence: meanReversionScore.confidence * 100,
+                        expectedReversion: this.calculateExpectedReversion(zscore, meanReversionScore),
+                        timeHorizon: this.estimateReversionTimeHorizon(zscore, volatility),
+                        riskLevel: this.assessReversionRisk(zscore, volatility),
+                        recommendation: this.getReversionRecommendation(zscore, meanReversionScore)
+                    });
+                }
+            }
+            
+            return {
+                anomalies: anomalies.sort((a, b) => Math.abs(b.zscore) - Math.abs(a.zscore)),
+                totalAnomalies: anomalies.length,
+                revertUpAnomalies: anomalies.filter(a => a.direction === 'REVERT_UP').length,
+                revertDownAnomalies: anomalies.filter(a => a.direction === 'REVERT_DOWN').length,
+                averageZScore: anomalies.length > 0 ? 
+                    anomalies.reduce((sum, a) => sum + Math.abs(a.zscore), 0) / anomalies.length : 0,
+                detectionType: 'REVERSAL_ANOMALY',
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Reversion anomaly detection error:', error.message);
+            return { error: error.message, anomalies: [] };
+        }
+    }
+    
+    // 📊 HELPER CALCULATION METHODS
+    
+    calculateReturns(prices) {
+        const returns = [];
+        for (let i = 1; i < prices.length; i++) {
+            returns.push((prices[i] - prices[i-1]) / prices[i-1]);
+        }
+        return returns;
+    }
+    
+    calculateMomentum(prices, period) {
+        if (prices.length < period + 5) return { strength: 0, direction: 'NEUTRAL', persistence: 0 };
+        
+        const recent = prices.slice(-period);
+        const older = prices.slice(-period*2, -period);
+        
+        const recentAvg = recent.reduce((sum, p) => sum + p, 0) / recent.length;
+        const olderAvg = older.reduce((sum, p) => sum + p, 0) / older.length;
+        
+        const strength = Math.abs(recentAvg - olderAvg) / olderAvg;
+        const direction = recentAvg > olderAvg ? 'BULLISH' : 'BEARISH';
+        
+        // Calculate persistence (consecutive moves in same direction)
+        const returns = this.calculateReturns(recent);
+        let persistence = 0;
+        let currentStreak = 0;
+        const expectedDirection = direction === 'BULLISH' ? 1 : -1;
+        
+        for (let i = returns.length - 1; i >= 0; i--) {
+            if (Math.sign(returns[i]) === expectedDirection) {
+                currentStreak++;
+            } else {
+                break;
+            }
+        }
+        persistence = currentStreak;
+        
+        return { strength, direction, persistence };
+    }
+    
+    calculateRSI(prices, period = 14) {
+        if (prices.length < period + 1) return 50;
+        
+        const changes = this.calculateReturns(prices);
+        const gains = changes.map(change => change > 0 ? change : 0);
+        const losses = changes.map(change => change < 0 ? Math.abs(change) : 0);
+        
+        let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        
+        for (let i = period; i < changes.length; i++) {
+            avgGain = ((avgGain * (period - 1)) + gains[i]) / period;
+            avgLoss = ((avgLoss * (period - 1)) + losses[i]) / period;
+        }
+        
+        const rs = avgGain / avgLoss;
+        return 100 - (100 / (1 + rs));
+    }
+    
+    calculateBollingerPosition(prices, period = 20) {
+        if (prices.length < period) return 0.5;
+        
+        const recent = prices.slice(-period);
+        const mean = recent.reduce((sum, p) => sum + p, 0) / period;
+        const variance = recent.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / period;
+        const stdDev = Math.sqrt(variance);
+        
+        const currentPrice = prices[prices.length - 1];
+        const upperBand = mean + (2 * stdDev);
+        const lowerBand = mean - (2 * stdDev);
+        
+        return (currentPrice - lowerBand) / (upperBand - lowerBand);
+    }
+    
+    calculateMeanReversionScore(prices, period) {
+        const recent = prices.slice(-period);
+        const mean = recent.reduce((sum, p) => sum + p, 0) / period;
+        const variance = recent.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / period;
+        const stdDev = Math.sqrt(variance);
+        
+        const currentPrice = prices[prices.length - 1];
+        const zscore = (currentPrice - mean) / stdDev;
+        
+        // Calculate historical mean reversion tendency
+        let reversionCount = 0;
+        const halfPeriod = Math.floor(period / 2);
+        
+        for (let i = halfPeriod; i < recent.length - halfPeriod; i++) {
+            const pastMean = recent.slice(i - halfPeriod, i).reduce((sum, p) => sum + p, 0) / halfPeriod;
+            const futureMean = recent.slice(i, i + halfPeriod).reduce((sum, p) => sum + p, 0) / halfPeriod;
+            
+            if ((recent[i] > pastMean && futureMean < recent[i]) || 
+                (recent[i] < pastMean && futureMean > recent[i])) {
+                reversionCount++;
+            }
+        }
+        
+        const confidence = reversionCount / (recent.length - period);
+        
+        return {
+            score: Math.abs(zscore),
+            confidence: confidence,
+            historicalReversions: reversionCount
+        };
+    }
+    
+    calculateZScore(prices, period) {
+        if (prices.length < period) return 0;
+        
+        const recent = prices.slice(-period);
+        const mean = recent.reduce((sum, p) => sum + p, 0) / period;
+        const variance = recent.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / period;
+        const stdDev = Math.sqrt(variance);
+        
+        const currentPrice = prices[prices.length - 1];
+        return stdDev > 0 ? (currentPrice - mean) / stdDev : 0;
+    }
+    
+    calculateVolatility(prices, period) {
+        if (prices.length < period + 1) return 0;
+        
+        const returns = this.calculateReturns(prices.slice(-period - 1));
+        const meanReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+        const variance = returns.reduce((sum, r) => sum + Math.pow(r - meanReturn, 2), 0) / returns.length;
+        
+        return Math.sqrt(variance * 252); // Annualized volatility
+    }
+    
+    // 🎯 ANOMALY ASSESSMENT METHODS
+    
+    calculateAnomalyConfidence(momentum, rsi, bollingerPosition) {
+        let confidence = 30; // Base confidence
+        
+        // Momentum strength contribution
+        confidence += momentum.strength * 200;
+        
+        // Persistence contribution
+        confidence += momentum.persistence * 5;
+        
+        // RSI confirmation
+        if ((momentum.direction === 'BULLISH' && rsi > 60) || 
+            (momentum.direction === 'BEARISH' && rsi < 40)) {
+            confidence += 20;
+        }
+        
+        // Bollinger position confirmation
+        if ((momentum.direction === 'BULLISH' && bollingerPosition > 0.7) || 
+            (momentum.direction === 'BEARISH' && bollingerPosition < 0.3)) {
+            confidence += 15;
+        }
+        
+        return Math.min(95, Math.max(10, confidence));
+    }
+    
+    estimateMomentumContinuation(momentum) {
+        const baseDays = 5;
+        const strengthMultiplier = momentum.strength * 20;
+        const persistenceMultiplier = momentum.persistence * 0.5;
+        
+        return Math.round(baseDays + strengthMultiplier + persistenceMultiplier);
+    }
+    
+    assessMomentumRisk(momentum, rsi) {
+        let riskScore = 30; // Base risk
+        
+        if (momentum.strength > 0.1) riskScore += 20; // High momentum = higher risk
+        if (momentum.persistence > 10) riskScore += 15; // Long persistence = exhaustion risk
+        if (rsi > 80 || rsi < 20) riskScore += 25; // Extreme RSI = reversal risk
+        
+        if (riskScore < 40) return 'LOW';
+        if (riskScore < 70) return 'MODERATE';
+        return 'HIGH';
+    }
+    
+    getMomentumRecommendation(momentum, rsi, bollingerPosition) {
+        const strength = momentum.strength;
+        const direction = momentum.direction;
+        
+        if (strength > 0.05 && momentum.persistence > 3) {
+            if ((direction === 'BULLISH' && rsi < 70 && bollingerPosition < 0.9) ||
+                (direction === 'BEARISH' && rsi > 30 && bollingerPosition > 0.1)) {
+                return 'STRONG_FOLLOW';
+            }
+            return 'FOLLOW';
+        } else if (strength > 0.02) {
+            return 'CONSIDER';
+        }
+        return 'AVOID';
+    }
+    
+    calculateExpectedReversion(zscore, meanReversionScore) {
+        const maxReversion = Math.abs(zscore) * meanReversionScore.confidence;
+        const expectedMove = maxReversion * 0.7; // Conservative estimate
+        
+        return {
+            maxReversion: maxReversion,
+            expectedMove: expectedMove,
+            probability: meanReversionScore.confidence
+        };
+    }
+    
+    estimateReversionTimeHorizon(zscore, volatility) {
+        const baseTime = 10; // 10 days base
+        const zscoreMultiplier = Math.abs(zscore) * 2;
+        const volatilityMultiplier = volatility * 20;
+        
+        return Math.round(baseTime + zscoreMultiplier + volatilityMultiplier);
+    }
+    
+    assessReversionRisk(zscore, volatility) {
+        let riskScore = 20; // Base risk
+        
+        if (Math.abs(zscore) > 3) riskScore += 30; // Extreme moves = higher risk
+        if (volatility > 0.4) riskScore += 25; // High volatility = higher risk
+        if (Math.abs(zscore) < 1.5) riskScore += 20; // Weak signal = higher risk
+        
+        if (riskScore < 40) return 'LOW';
+        if (riskScore < 70) return 'MODERATE';
+        return 'HIGH';
+    }
+    
+    getReversionRecommendation(zscore, meanReversionScore) {
+        const signal = Math.abs(zscore);
+        const confidence = meanReversionScore.confidence;
+        
+        if (signal > 2.5 && confidence > 0.8) return 'STRONG_REVERT';
+        if (signal > 2 && confidence > 0.7) return 'REVERT';
+        if (signal > 1.5 && confidence > 0.6) return 'CONSIDER';
+        return 'AVOID';
+    }
+}
+
+// 🎯 MASTER ARBITRAGE ANALYSIS FUNCTION
+async function getComprehensiveArbitrageAnalysis(marketData, options = {}) {
+    try {
+        console.log('⚡ Running comprehensive arbitrage opportunity analysis...');
+        
+        const scanner = new ArbitrageOpportunityScanner();
+        const inefficiencyDetector = new MarketInefficiencyDetector();
+        
+        // Generate sample data for demonstration
+        const sampleData = generateSampleArbitrageData();
+        
+        // Get market context
+        const [regimeData, yieldCurve, anomalies] = await Promise.allSettled([
+            detectEconomicRegime(),
+            getYieldCurveAnalysis(),
+            detectMarketAnomalies()
+        ]);
+        
+        // Run parallel arbitrage scans
+        const [
+            priceArbitrage,
+            statisticalArbitrage,
+            mergerArbitrage,
+            carryTrade,
+            etfArbitrage,
+            momentumAnomalies,
+            reversionAnomalies
+        ] = await Promise.allSettled([
+            scanner.scanPriceArbitrageOpportunities(sampleData.priceData),
+            scanner.scanStatisticalArbitrageOpportunities(sampleData.assetPairs, sampleData.historicalData),
+            scanner.scanMergerArbitrageOpportunities(sampleData.mergerDeals),
+            scanner.scanCarryTradeOpportunities(sampleData.currencyPairs, sampleData.interestRates),
+            scanner.scanETFArbitrageOpportunities(sampleData.etfData),
+            inefficiencyDetector.detectMomentumAnomalies(sampleData.priceData),
+            inefficiencyDetector.detectReversionAnomalies(sampleData.priceData)
+        ]);
+        
+        // Compile all opportunities
+        const allOpportunities = [];
+        
+        [priceArbitrage, statisticalArbitrage, mergerArbitrage, carryTrade, etfArbitrage].forEach(result => {
+            if (result.status === 'fulfilled' && result.value.opportunities) {
+                allOpportunities.push(...result.value.opportunities);
+            }
+        });
+        
+        [momentumAnomalies, reversionAnomalies].forEach(result => {
+            if (result.status === 'fulfilled' && result.value.anomalies) {
+                allOpportunities.push(...result.value.anomalies);
+            }
+        });
+        
+        // Sort by expected return/profit
+        allOpportunities.sort((a, b) => {
+            const aReturn = a.netProfitPercentage || a.expectedReturn || a.annualizedReturn || 0;
+            const bReturn = b.netProfitPercentage || b.expectedReturn || b.annualizedReturn || 0;
+            return bReturn - aReturn;
+        });
+        
+        // Generate AI analysis
+        const topOpportunities = allOpportunities.slice(0, 8);
+        const aiAnalysisPrompt = `Analyze these arbitrage and market inefficiency opportunities:
+
+Market Context:
+- Economic Regime: ${regimeData.value?.currentRegime?.name || 'Unknown'}
+- Yield Curve: ${yieldCurve.value?.shape || 'Normal'}
+- Market Anomalies: ${anomalies.value?.anomalies?.length || 0} detected
+
+Top Opportunities:
+${topOpportunities.map(opp => {
+    const profit = opp.netProfitPercentage || opp.expectedReturn || opp.annualizedReturn || 0;
+    return `${opp.asset1 || opp.symbol || opp.targetSymbol || 'Unknown'}: ${opp.type} - ${profit.toFixed(2)}% expected return`;
+}).join('\n')}
+
+Risk Levels:
+- Low Risk: ${allOpportunities.filter(o => o.riskLevel === 'LOW').length}
+- Moderate Risk: ${allOpportunities.filter(o => o.riskLevel === 'MODERATE').length}
+- High Risk: ${allOpportunities.filter(o => o.riskLevel === 'HIGH').length}
+
+Provide strategic arbitrage recommendations with top 3 actionable strategies and risk management guidance.`;
+        
+        const aiInsights = await getUniversalAnalysis(aiAnalysisPrompt, {
+            isWealthCommand: true,
+            maxTokens: 1500
+        });
+        
+        return {
+            summary: {
+                totalOpportunities: allOpportunities.length,
+                averageExpectedReturn: calculateAverageReturn(allOpportunities),
+                opportunityBreakdown: {
+                    priceArbitrage: priceArbitrage.status === 'fulfilled' ? priceArbitrage.value.totalOpportunities : 0,
+                    statisticalArbitrage: statisticalArbitrage.status === 'fulfilled' ? statisticalArbitrage.value.totalOpportunities : 0,
+                    mergerArbitrage: mergerArbitrage.status === 'fulfilled' ? mergerArbitrage.value.totalOpportunities : 0,
+                    carryTrade: carryTrade.status === 'fulfilled' ? carryTrade.value.totalOpportunities : 0,
+                    etfArbitrage: etfArbitrage.status === 'fulfilled' ? etfArbitrage.value.totalOpportunities : 0,
+                    momentumAnomalies: momentumAnomalies.status === 'fulfilled' ? momentumAnomalies.value.totalAnomalies : 0,
+                    reversionAnomalies: reversionAnomalies.status === 'fulfilled' ? reversionAnomalies.value.totalAnomalies : 0
+                },
+                riskDistribution: {
+                    low: allOpportunities.filter(o => o.riskLevel === 'LOW').length,
+                    moderate: allOpportunities.filter(o => o.riskLevel === 'MODERATE').length,
+                    high: allOpportunities.filter(o => o.riskLevel === 'HIGH').length
+                }
+            },
+            topOpportunities: topOpportunities,
+            scanResults: {
+                priceArbitrage: priceArbitrage.status === 'fulfilled' ? priceArbitrage.value : { error: 'Failed' },
+                statisticalArbitrage: statisticalArbitrage.status === 'fulfilled' ? statisticalArbitrage.value : { error: 'Failed' },
+                mergerArbitrage: mergerArbitrage.status === 'fulfilled' ? mergerArbitrage.value : { error: 'Failed' },
+                carryTrade: carryTrade.status === 'fulfilled' ? carryTrade.value : { error: 'Failed' },
+                etfArbitrage: etfArbitrage.status === 'fulfilled' ? etfArbitrage.value : { error: 'Failed' }
+            },
+            anomalyResults: {
+                momentum: momentumAnomalies.status === 'fulfilled' ? momentumAnomalies.value : { error: 'Failed' },
+                reversion: reversionAnomalies.status === 'fulfilled' ? reversionAnomalies.value : { error: 'Failed' }
+            },
+            marketContext: {
+                regime: regimeData.value?.currentRegime?.name || 'Unknown',
+                regimeConfidence: regimeData.value?.confidence || 0,
+                yieldCurveShape: yieldCurve.value?.shape || 'Normal',
+                marketAnomalies: anomalies.value?.anomalies?.length || 0
+            },
+            riskManagement: generateArbitrageRiskGuidance(allOpportunities),
+            executionPriority: prioritizeOpportunities(topOpportunities),
+            aiInsights: aiInsights.response,
+            recommendations: generateArbitrageRecommendations(allOpportunities),
+            analysisDate: new Date().toISOString(),
+            dataQuality: {
+                priceArbitrage: priceArbitrage.status === 'fulfilled',
+                statisticalArbitrage: statisticalArbitrage.status === 'fulfilled',
+                mergerArbitrage: mergerArbitrage.status === 'fulfilled',
+                marketData: regimeData.status === 'fulfilled'
+            }
+        };
+        
+    } catch (error) {
+        console.error('Comprehensive arbitrage analysis error:', error.message);
+        return {
+            error: error.message,
+            summary: {
+                totalOpportunities: 0,
+                averageExpectedReturn: 0
+            },
+            recommendations: [
+                'Arbitrage analysis failed - check data connections',
+                'Monitor market conditions for manual opportunities',
+                'Review system configuration'
+            ],
+            analysisDate: new Date().toISOString()
+        };
+    }
+}
+
+// 🎯 HELPER FUNCTIONS
+
+function generateSampleArbitrageData() {
+    return {
+        priceData: {
+            'BTC': {
+                exchanges: {
+                    'BINANCE': { price: 43250, volume: 1500000 },
+                    'COINBASE': { price: 43180, volume: 800000 },
+                    'KRAKEN': { price: 43300, volume: 600000 }
+                }
+            },
+            'ETH': {
+                exchanges: {
+                    'BINANCE': { price: 2650, volume: 2000000 },
+                    'COINBASE': { price: 2635, volume: 1200000 }
+                }
+            }
+        },
+        assetPairs: [
+            { asset1: 'SPY', asset2: 'VOO' },
+            { asset1: 'GLD', asset2: 'IAU' },
+            { asset1: 'QQQ', asset2: 'TQQQ' }
+        ],
+        historicalData: generateSampleHistoricalData(),
+        mergerDeals: [
+            {
+                targetSymbol: 'TARGET1',
+                acquirerSymbol: 'ACQUIRER1',
+                targetPrice: 45.50,
+                acquirerPrice: 120.00,
+                offerPrice: 48.00,
+                offerType: 'CASH',
+                expectedCloseDate: '2024-06-15',
+                dealProbability: 0.85,
+                regulatoryRisk: 'MODERATE'
+            }
+        ],
+        currencyPairs: [
+            { baseCurrency: 'AUD', quoteCurrency: 'JPY', currentRate: 98.50, volatility: 0.12 },
+            { baseCurrency: 'NZD', quoteCurrency: 'USD', currentRate: 0.62, volatility: 0.10 }
+        ],
+        interestRates: {
+            'USD': 0.0525,
+            'EUR': 0.04,
+            'JPY': -0.001,
+            'GBP': 0.0525,
+            'AUD': 0.041,
+            'NZD': 0.055
+        },
+        etfData: [
+            {
+                symbol: 'SPY',
+                marketPrice: 485.50,
+                nav: 485.20,
+                volume: 45000000,
+                creationUnit: 50000,
+                holdings: ['AAPL', 'MSFT', 'AMZN']
+            }
+        ]
+    };
+}
+
+function generateSampleHistoricalData() {
+    const data = {};
+    const symbols = ['SPY', 'VOO', 'GLD', 'IAU', 'QQQ', 'TQQQ'];
+    
+    symbols.forEach(symbol => {
+        const prices = [];
+        let basePrice = 100 + Math.random() * 300;
+        
+        for (let i = 0; i < 100; i++) {
+            const change = (Math.random() - 0.5) * 0.04;
+            basePrice *= (1 + change);
+            prices.push(basePrice);
+        }
+        
+        data[symbol] = { prices };
+    });
+    
+    return data;
+}
+
+function calculateAverageReturn(opportunities) {
+    if (opportunities.length === 0) return 0;
+    
+    const returns = opportunities.map(opp => 
+        opp.netProfitPercentage || opp.expectedReturn || opp.annualizedReturn || 0
+    );
+    
+    return returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
+}
+
+function generateArbitrageRiskGuidance(opportunities) {
+    const guidance = [];
+    
+    const highRiskCount = opportunities.filter(o => o.riskLevel === 'HIGH').length;
+    const totalCount = opportunities.length;
+    
+    if (highRiskCount / totalCount > 0.3) {
+        guidance.push({
+            type: 'HIGH_RISK_WARNING',
+            priority: 'CRITICAL',
+            message: 'High concentration of risky arbitrage opportunities',
+            recommendation: 'Limit position sizes and use strict stop losses'
+        });
+    }
+    
+    const instantOpps = opportunities.filter(o => o.timeWindow === 'INSTANT' || o.timeHorizon === 'INTRADAY');
+    if (instantOpps.length > 5) {
+        guidance.push({
+            type: 'EXECUTION_SPEED',
+            priority: 'HIGH',
+            message: 'Multiple time-sensitive opportunities detected',
+            recommendation: 'Prioritize fastest execution systems and lowest latency'
+        });
+    }
+    
+    if (guidance.length === 0) {
+        guidance.push({
+            type: 'NORMAL_CONDITIONS',
+            priority: 'LOW',
+            message: 'Risk levels appear manageable',
+            recommendation: 'Standard risk management protocols apply'
+        });
+    }
+    
+    return guidance;
+}
+
+function prioritizeOpportunities(opportunities) {
+    return opportunities.map((opp, index) => ({
+        rank: index + 1,
+        opportunity: opp,
+        priority: index < 3 ? 'HIGH' : index < 6 ? 'MEDIUM' : 'LOW',
+        reasoning: index < 3 ? 'High expected return with manageable risk' : 
+                  index < 6 ? 'Good return potential' : 'Lower priority opportunity'
+    }));
+}
+
+function generateArbitrageRecommendations(opportunities) {
+    const recommendations = [];
+    
+    const priceArbs = opportunities.filter(o => o.type === 'PRICE_ARBITRAGE');
+    if (priceArbs.length > 0) {
+        recommendations.push({
+            type: 'PRICE_ARBITRAGE_FOCUS',
+            priority: 'HIGH',
+            message: `${priceArbs.length} price arbitrage opportunities available`,
+            action: 'EXECUTE_IMMEDIATELY'
+        });
+    }
+    
+    const statArbs = opportunities.filter(o => o.type === 'STATISTICAL_ARBITRAGE');
+    if (statArbs.length > 2) {
+        recommendations.push({
+            type: 'STATISTICAL_ARBITRAGE',
+            priority: 'MODERATE',
+            message: `${statArbs.length} statistical arbitrage pairs identified`,
+            action: 'IMPLEMENT_SYSTEMATIC_STRATEGY'
+        });
+    }
+    
+    const lowRiskOpps = opportunities.filter(o => o.riskLevel === 'LOW');
+    if (lowRiskOpps.length > 0) {
+        recommendations.push({
+            type: 'LOW_RISK_OPPORTUNITIES',
+            priority: 'HIGH',
+            message: `${lowRiskOpps.length} low-risk opportunities available`,
+            action: 'PRIORITIZE_ALLOCATION'
+        });
+    }
+    
+    return recommendations;
+}
+
+// 🎯 EXPORT ALL ARBITRAGE FUNCTIONS
+module.exports = {
+    // Main Functions
+    getComprehensiveArbitrageAnalysis,
+    
+    // Classes
+    ArbitrageOpportunityScanner,
+    MarketInefficiencyDetector,
+    
+    // Utility Functions
+    generateSampleArbitrageData,
+    generateSampleHistoricalData,
+    calculateAverageReturn,
+    generateArbitrageRiskGuidance,
+    prioritizeOpportunities,
+    generateArbitrageRecommendations
+};// 🏆 WEALTH MODULE 4: ARBITRAGE & MARKET INEFFICIENCY DETECTION
+// Advanced arbitrage detection and statistical arbitrage strategies
+
+// 🏆 WEALTH MODULE 5: ADVANCED PORTFOLIO TRACKING & ANALYTICS
+// Real-time portfolio monitoring, performance attribution, and advanced analytics
+
+// 📊 PORTFOLIO PERFORMANCE TRACKER
+class PortfolioPerformanceTracker {
+    constructor() {
+        this.performanceMetrics = {
+            TOTAL_RETURN: 'Total Return',
+            ANNUALIZED_RETURN: 'Annualized Return',
+            VOLATILITY: 'Portfolio Volatility',
+            SHARPE_RATIO: 'Sharpe Ratio',
+            SORTINO_RATIO: 'Sortino Ratio',
+            MAX_DRAWDOWN: 'Maximum Drawdown',
+            CALMAR_RATIO: 'Calmar Ratio',
+            BETA: 'Portfolio Beta',
+            ALPHA: 'Portfolio Alpha',
+            INFORMATION_RATIO: 'Information Ratio',
+            TREYNOR_RATIO: 'Treynor Ratio'
+        };
+        
+        this.timeframes = {
+            '1D': { days: 1, label: 'Daily' },
+            '1W': { days: 7, label: 'Weekly' },
+            '1M': { days: 30, label: 'Monthly' },
+            '3M': { days: 90, label: 'Quarterly' },
+            '6M': { days: 180, label: 'Semi-Annual' },
+            '1Y': { days: 365, label: 'Annual' },
+            '3Y': { days: 1095, label: '3-Year' },
+            '5Y': { days: 1825, label: '5-Year' },
+            'ALL': { days: null, label: 'All Time' }
+        };
+        
+        this.benchmarks = {
+            'SPY': 'S&P 500',
+            'QQQ': 'NASDAQ 100',
+            'IWM': 'Russell 2000',
+            'VTI': 'Total Stock Market',
+            'VTIAX': 'Total International',
+            'AGG': 'Total Bond Market',
+            '60_40': '60/40 Portfolio'
+        };
+    }
+    
+    // 📈 CALCULATE COMPREHENSIVE PERFORMANCE METRICS
+    async calculatePerformanceMetrics(portfolio, timeframe = '1Y') {
+        try {
+            const { positions, historicalValues, benchmarkData } = portfolio;
+            
+            if (!historicalValues || historicalValues.length < 2) {
+                return { error: 'Insufficient historical data for performance calculation' };
+            }
+            
+            // Calculate basic returns
+            const returns = this.calculateReturns(historicalValues);
+            const periodicReturns = this.getPeriodicReturns(returns, timeframe);
+            
+            // Core performance metrics
+            const totalReturn = this.calculateTotalReturn(historicalValues);
+            const annualizedReturn = this.calculateAnnualizedReturn(historicalValues);
+            const volatility = this.calculateVolatility(periodicReturns);
+            const maxDrawdown = this.calculateMaxDrawdown(historicalValues);
+            
+            // Risk-adjusted metrics
+            const sharpeRatio = this.calculateSharpeRatio(periodicReturns, 0.02); // 2% risk-free rate
+            const sortinoRatio = this.calculateSortinoRatio(periodicReturns, 0.02);
+            const calmarRatio = this.calculateCalmarRatio(annualizedReturn, maxDrawdown);
+            
+            // Benchmark comparison
+            let benchmarkMetrics = null;
+            if (benchmarkData) {
+                benchmarkMetrics = await this.calculateBenchmarkMetrics(
+                    periodicReturns, 
+                    benchmarkData, 
+                    timeframe
+                );
+            }
+            
+            // Attribution analysis
+            const attribution = await this.calculatePerformanceAttribution(positions, periodicReturns);
+            
+            return {
+                timeframe: timeframe,
+                totalReturn: totalReturn,
+                annualizedReturn: annualizedReturn,
+                volatility: volatility,
+                maxDrawdown: maxDrawdown,
+                sharpeRatio: sharpeRatio,
+                sortinoRatio: sortinoRatio,
+                calmarRatio: calmarRatio,
+                benchmarkMetrics: benchmarkMetrics,
+                attribution: attribution,
+                winRate: this.calculateWinRate(periodicReturns),
+                averageWin: this.calculateAverageWin(periodicReturns),
+                averageLoss: this.calculateAverageLoss(periodicReturns),
+                profitFactor: this.calculateProfitFactor(periodicReturns),
+                valueAtRisk: this.calculateVaR(periodicReturns, 0.05),
+                conditionalVaR: this.calculateCVaR(periodicReturns, 0.05),
+                skewness: this.calculateSkewness(periodicReturns),
+                kurtosis: this.calculateKurtosis(periodicReturns),
+                calculationDate: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Performance metrics calculation error:', error.message);
+            return { error: error.message };
+        }
+    }
+    
+    // 📊 PERFORMANCE ATTRIBUTION ANALYSIS
+    async calculatePerformanceAttribution(positions, returns) {
+        try {
+            const attribution = {
+                byAsset: {},
+                bySector: {},
+                byAssetClass: {},
+                byGeography: {},
+                totalAttribution: 0
+            };
+            
+            let totalWeight = 0;
+            
+            // Calculate asset-level attribution
+            for (const position of positions) {
+                const weight = position.marketValue / position.portfolioValue;
+                const assetReturn = position.periodReturn || 0;
+                const contribution = weight * assetReturn;
+                
+                attribution.byAsset[position.symbol] = {
+                    weight: weight * 100,
+                    return: assetReturn * 100,
+                    contribution: contribution * 100,
+                    sector: position.sector || 'Unknown',
+                    assetClass: position.assetClass || 'Equity',
+                    geography: position.geography || 'US'
+                };
+                
+                attribution.totalAttribution += contribution;
+                totalWeight += weight;
+            }
+            
+            // Aggregate by sector
+            const sectors = {};
+            const assetClasses = {};
+            const geographies = {};
+            
+            Object.values(attribution.byAsset).forEach(asset => {
+                // Sector attribution
+                if (!sectors[asset.sector]) {
+                    sectors[asset.sector] = { weight: 0, contribution: 0, return: 0, count: 0 };
+                }
+                sectors[asset.sector].weight += asset.weight;
+                sectors[asset.sector].contribution += asset.contribution;
+                sectors[asset.sector].return += asset.return;
+                sectors[asset.sector].count++;
+                
+                // Asset class attribution
+                if (!assetClasses[asset.assetClass]) {
+                    assetClasses[asset.assetClass] = { weight: 0, contribution: 0, return: 0, count: 0 };
+                }
+                assetClasses[asset.assetClass].weight += asset.weight;
+                assetClasses[asset.assetClass].contribution += asset.contribution;
+                assetClasses[asset.assetClass].return += asset.return;
+                assetClasses[asset.assetClass].count++;
+                
+                // Geography attribution
+                if (!geographies[asset.geography]) {
+                    geographies[asset.geography] = { weight: 0, contribution: 0, return: 0, count: 0 };
+                }
+                geographies[asset.geography].weight += asset.weight;
+                geographies[asset.geography].contribution += asset.contribution;
+                geographies[asset.geography].return += asset.return;
+                geographies[asset.geography].count++;
+            });
+            
+            // Calculate average returns for aggregations
+            Object.keys(sectors).forEach(sector => {
+                sectors[sector].averageReturn = sectors[sector].return / sectors[sector].count;
+            });
+            
+            Object.keys(assetClasses).forEach(assetClass => {
+                assetClasses[assetClass].averageReturn = assetClasses[assetClass].return / assetClasses[assetClass].count;
+            });
+            
+            Object.keys(geographies).forEach(geography => {
+                geographies[geography].averageReturn = geographies[geography].return / geographies[geography].count;
+            });
+            
+            attribution.bySector = sectors;
+            attribution.byAssetClass = assetClasses;
+            attribution.byGeography = geographies;
+            
+            return attribution;
+        } catch (error) {
+            console.error('Performance attribution error:', error.message);
+            return { error: error.message };
+        }
+    }
+    
+    // 🎯 BENCHMARK COMPARISON ANALYSIS
+    async calculateBenchmarkMetrics(portfolioReturns, benchmarkData, timeframe) {
+        try {
+            const benchmarkReturns = this.calculateReturns(benchmarkData.values);
+            const alignedReturns = this.alignReturnSeries(portfolioReturns, benchmarkReturns);
+            
+            // Calculate beta
+            const beta = this.calculateBeta(alignedReturns.portfolio, alignedReturns.benchmark);
+            
+            // Calculate alpha
+            const portfolioAnnualized = this.annualizeReturn(alignedReturns.portfolio);
+            const benchmarkAnnualized = this.annualizeReturn(alignedReturns.benchmark);
+            const riskFreeRate = 0.02; // 2% risk-free rate
+            
+            const alpha = portfolioAnnualized - (riskFreeRate + beta * (benchmarkAnnualized - riskFreeRate));
+            
+            // Calculate tracking error
+            const trackingError = this.calculateTrackingError(alignedReturns.portfolio, alignedReturns.benchmark);
+            
+            // Calculate information ratio
+            const informationRatio = alpha / trackingError;
+            
+            // Calculate Treynor ratio
+            const treynorRatio = (portfolioAnnualized - riskFreeRate) / beta;
+            
+            // Up/Down capture ratios
+            const captureRatios = this.calculateCaptureRatios(alignedReturns.portfolio, alignedReturns.benchmark);
+            
+            return {
+                benchmarkName: benchmarkData.name || 'Benchmark',
+                beta: beta,
+                alpha: alpha * 100, // Convert to percentage
+                trackingError: trackingError * 100,
+                informationRatio: informationRatio,
+                treynorRatio: treynorRatio * 100,
+                upCapture: captureRatios.upCapture * 100,
+                downCapture: captureRatios.downCapture * 100,
+                correlation: this.calculateCorrelation(alignedReturns.portfolio, alignedReturns.benchmark),
+                rSquared: Math.pow(this.calculateCorrelation(alignedReturns.portfolio, alignedReturns.benchmark), 2),
+                portfolioReturn: portfolioAnnualized * 100,
+                benchmarkReturn: benchmarkAnnualized * 100,
+                outperformance: (portfolioAnnualized - benchmarkAnnualized) * 100
+            };
+        } catch (error) {
+            console.error('Benchmark metrics calculation error:', error.message);
+            return { error: error.message };
+        }
+    }
+    
+    // 🔧 CORE CALCULATION METHODS
+    
+    calculateReturns(values) {
+        const returns = [];
+        for (let i = 1; i < values.length; i++) {
+            if (values[i-1] !== 0) {
+                returns.push((values[i] - values[i-1]) / values[i-1]);
+            }
+        }
+        return returns;
+    }
+    
+    getPeriodicReturns(returns, timeframe) {
+        const days = this.timeframes[timeframe]?.days;
+        if (!days || days >= returns.length) return returns;
+        return returns.slice(-days);
+    }
+    
+    calculateTotalReturn(values) {
+        if (values.length < 2) return 0;
+        return (values[values.length - 1] - values[0]) / values[0];
+    }
+    
+    calculateAnnualizedReturn(values) {
+        if (values.length < 2) return 0;
+        const totalReturn = this.calculateTotalReturn(values);
+        const years = values.length / 252; // Assuming daily values
+        return Math.pow(1 + totalReturn, 1 / years) - 1;
+    }
+    
+    calculateVolatility(returns) {
+        if (returns.length === 0) return 0;
+        const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+        const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+        return Math.sqrt(variance * 252); // Annualized
+    }
+    
+    calculateMaxDrawdown(values) {
+        let maxDrawdown = 0;
+        let peak = values[0];
+        
+        for (let i = 1; i < values.length; i++) {
+            if (values[i] > peak) {
+                peak = values[i];
+            } else {
+                const drawdown = (peak - values[i]) / peak;
+                maxDrawdown = Math.max(maxDrawdown, drawdown);
+            }
+        }
+        
+        return maxDrawdown;
+    }
+    
+    calculateSharpeRatio(returns, riskFreeRate) {
+        if (returns.length === 0) return 0;
+        const annualizedRiskFreeRate = riskFreeRate / 252; // Daily risk-free rate
+        const excessReturns = returns.map(r => r - annualizedRiskFreeRate);
+        const avgExcessReturn = excessReturns.reduce((sum, r) => sum + r, 0) / excessReturns.length;
+        const volatility = this.calculateVolatility(returns) / Math.sqrt(252); // Daily volatility
+        
+        return volatility !== 0 ? (avgExcessReturn * 252) / (volatility * Math.sqrt(252)) : 0;
+    }
+    
+    calculateSortinoRatio(returns, targetReturn) {
+        if (returns.length === 0) return 0;
+        const annualizedTargetReturn = targetReturn / 252;
+        const excessReturns = returns.map(r => r - annualizedTargetReturn);
+        const avgExcessReturn = excessReturns.reduce((sum, r) => sum + r, 0) / excessReturns.length;
+        
+        // Calculate downside deviation
+        const downsideReturns = excessReturns.filter(r => r < 0);
+        if (downsideReturns.length === 0) return avgExcessReturn > 0 ? Infinity : 0;
+        
+        const downsideVariance = downsideReturns.reduce((sum, r) => sum + r * r, 0) / returns.length;
+        const downsideDeviation = Math.sqrt(downsideVariance * 252);
+        
+        return downsideDeviation !== 0 ? (avgExcessReturn * 252) / downsideDeviation : 0;
+    }
+    
+    calculateCalmarRatio(annualizedReturn, maxDrawdown) {
+        return maxDrawdown !== 0 ? annualizedReturn / maxDrawdown : 0;
+    }
+    
+    calculateBeta(portfolioReturns, benchmarkReturns) {
+        if (portfolioReturns.length !== benchmarkReturns.length || portfolioReturns.length === 0) return 1;
+        
+        const portfolioMean = portfolioReturns.reduce((sum, r) => sum + r, 0) / portfolioReturns.length;
+        const benchmarkMean = benchmarkReturns.reduce((sum, r) => sum + r, 0) / benchmarkReturns.length;
+        
+        let numerator = 0;
+        let denominator = 0;
+        
+        for (let i = 0; i < portfolioReturns.length; i++) {
+            const portfolioDiff = portfolioReturns[i] - portfolioMean;
+            const benchmarkDiff = benchmarkReturns[i] - benchmarkMean;
+            
+            numerator += portfolioDiff * benchmarkDiff;
+            denominator += benchmarkDiff * benchmarkDiff;
+        }
+        
+        return denominator !== 0 ? numerator / denominator : 1;
+    }
+    
+    calculateTrackingError(portfolioReturns, benchmarkReturns) {
+        if (portfolioReturns.length !== benchmarkReturns.length) return 0;
+        
+        const trackingDifferences = portfolioReturns.map((pr, i) => pr - benchmarkReturns[i]);
+        const mean = trackingDifferences.reduce((sum, diff) => sum + diff, 0) / trackingDifferences.length;
+        const variance = trackingDifferences.reduce((sum, diff) => sum + Math.pow(diff - mean, 2), 0) / trackingDifferences.length;
+        
+        return Math.sqrt(variance * 252); // Annualized
+    }
+    
+    calculateCaptureRatios(portfolioReturns, benchmarkReturns) {
+        if (portfolioReturns.length !== benchmarkReturns.length) return { upCapture: 1, downCapture: 1 };
+        
+        const upPeriods = [];
+        const downPeriods = [];
+        
+        for (let i = 0; i < benchmarkReturns.length; i++) {
+            if (benchmarkReturns[i] > 0) {
+                upPeriods.push({ portfolio: portfolioReturns[i], benchmark: benchmarkReturns[i] });
+            } else if (benchmarkReturns[i] < 0) {
+                downPeriods.push({ portfolio: portfolioReturns[i], benchmark: benchmarkReturns[i] });
+            }
+        }
+        
+        const upCapture = upPeriods.length > 0 ? 
+            (upPeriods.reduce((sum, p) => sum + p.portfolio, 0) / upPeriods.length) /
+            (upPeriods.reduce((sum, p) => sum + p.benchmark, 0) / upPeriods.length) : 1;
+            
+        const downCapture = downPeriods.length > 0 ? 
+            (downPeriods.reduce((sum, p) => sum + p.portfolio, 0) / downPeriods.length) /
+            (downPeriods.reduce((sum, p) => sum + p.benchmark, 0) / downPeriods.length) : 1;
+        
+        return { upCapture, downCapture };
+    }
+    
+    calculateCorrelation(returns1, returns2) {
+        if (returns1.length !== returns2.length || returns1.length === 0) return 0;
+        
+        const mean1 = returns1.reduce((sum, r) => sum + r, 0) / returns1.length;
+        const mean2 = returns2.reduce((sum, r) => sum + r, 0) / returns2.length;
+        
+        let numerator = 0;
+        let sum1Sq = 0;
+        let sum2Sq = 0;
+        
+        for (let i = 0; i < returns1.length; i++) {
+            const diff1 = returns1[i] - mean1;
+            const diff2 = returns2[i] - mean2;
+            
+            numerator += diff1 * diff2;
+            sum1Sq += diff1 * diff1;
+            sum2Sq += diff2 * diff2;
+        }
+        
+        const denominator = Math.sqrt(sum1Sq * sum2Sq);
+        return denominator !== 0 ? numerator / denominator : 0;
+    }
+    
+    alignReturnSeries(returns1, returns2) {
+        const minLength = Math.min(returns1.length, returns2.length);
+        return {
+            portfolio: returns1.slice(-minLength),
+            benchmark: returns2.slice(-minLength)
+        };
+    }
+    
+    annualizeReturn(returns) {
+        if (returns.length === 0) return 0;
+        const totalReturn = returns.reduce((product, r) => product * (1 + r), 1) - 1;
+        const years = returns.length / 252;
+        return Math.pow(1 + totalReturn, 1 / years) - 1;
+    }
+    
+    // 📊 ADDITIONAL RISK METRICS
+    
+    calculateWinRate(returns) {
+        if (returns.length === 0) return 0;
+        const wins = returns.filter(r => r > 0).length;
+        return wins / returns.length;
+    }
+    
+    calculateAverageWin(returns) {
+        const wins = returns.filter(r => r > 0);
+        return wins.length > 0 ? wins.reduce((sum, r) => sum + r, 0) / wins.length : 0;
+    }
+    
+    calculateAverageLoss(returns) {
+        const losses = returns.filter(r => r < 0);
+        return losses.length > 0 ? losses.reduce((sum, r) => sum + r, 0) / losses.length : 0;
+    }
+    
+    calculateProfitFactor(returns) {
+        const totalWins = returns.filter(r => r > 0).reduce((sum, r) => sum + r, 0);
+        const totalLosses = Math.abs(returns.filter(r => r < 0).reduce((sum, r) => sum + r, 0));
+        return totalLosses !== 0 ? totalWins / totalLosses : totalWins > 0 ? Infinity : 0;
+    }
+    
+    calculateVaR(returns, confidenceLevel) {
+        if (returns.length === 0) return 0;
+        const sortedReturns = returns.slice().sort((a, b) => a - b);
+        const index = Math.floor((1 - confidenceLevel) * sortedReturns.length);
+        return -sortedReturns[index] || 0;
+    }
+    
+    calculateCVaR(returns, confidenceLevel) {
+        if (returns.length === 0) return 0;
+        const sortedReturns = returns.slice().sort((a, b) => a - b);
+        const cutoffIndex = Math.floor((1 - confidenceLevel) * sortedReturns.length);
+        const tailReturns = sortedReturns.slice(0, cutoffIndex);
+        return tailReturns.length > 0 ? -tailReturns.reduce((sum, r) => sum + r, 0) / tailReturns.length : 0;
+    }
+    
+    calculateSkewness(returns) {
+        if (returns.length === 0) return 0;
+        const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+        const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+        const stdDev = Math.sqrt(variance);
+        
+        if (stdDev === 0) return 0;
+        
+        const skewness = returns.reduce((sum, r) => sum + Math.pow((r - mean) / stdDev, 3), 0) / returns.length;
+        return skewness;
+    }
+    
+    calculateKurtosis(returns) {
+        if (returns.length === 0) return 0;
+        const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+        const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+        const stdDev = Math.sqrt(variance);
+        
+        if (stdDev === 0) return 0;
+        
+        const kurtosis = returns.reduce((sum, r) => sum + Math.pow((r - mean) / stdDev, 4), 0) / returns.length;
+        return kurtosis - 3; // Excess kurtosis
+    }
+}
+
+// 🎯 REAL-TIME PORTFOLIO MONITOR
+class RealTimePortfolioMonitor {
+    constructor() {
+        this.monitoringInterval = null;
+        this.alertThresholds = {
+            maxDrawdown: 0.05, // 5%
+            dailyLoss: 0.03, // 3%
+            positionConcentration: 0.25, // 25%
+            sectorConcentration: 0.30, // 30%
+            volatilitySpike: 2.0 // 2x normal volatility
+        };
+        
+        this.alertHistory = [];
+        this.lastPortfolioSnapshot = null;
+    }
+    
+    // 🔄 START REAL-TIME MONITORING
+    startMonitoring(portfolio, intervalMs = 60000) {
+        try {
+            console.log('📊 Starting real-time portfolio monitoring...');
+            
+            this.monitoringInterval = setInterval(async () => {
+                await this.checkPortfolioHealth(portfolio);
+            }, intervalMs);
+            
+            return {
+                status: 'MONITORING_STARTED',
+                intervalMs: intervalMs,
+                alertThresholds: this.alertThresholds,
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Portfolio monitoring start error:', error.message);
+            return { error: error.message };
+        }
+    }
+    
+    // 🔍 CHECK PORTFOLIO HEALTH
+    async checkPortfolioHealth(portfolio) {
+        try {
+            const currentSnapshot = await this.takePortfolioSnapshot(portfolio);
+            const alerts = [];
+            
+            // Drawdown alert
+            if (currentSnapshot.currentDrawdown > this.alertThresholds.maxDrawdown) {
+                alerts.push({
+                    type: 'MAX_DRAWDOWN_EXCEEDED',
+                    severity: 'HIGH',
+                    message: `Portfolio drawdown (${(currentSnapshot.currentDrawdown * 100).toFixed(2)}%) exceeds threshold`,
+                    value: currentSnapshot.currentDrawdown,
+                    threshold: this.alertThresholds.maxDrawdown,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            // Daily loss alert
+            if (currentSnapshot.dailyReturn < -this.alertThresholds.dailyLoss) {
+                alerts.push({
+                    type: 'DAILY_LOSS_ALERT',
+                    severity: 'MODERATE',
+                    message: `Daily loss (${(currentSnapshot.dailyReturn * 100).toFixed(2)}%) exceeds threshold`,
+                    value: currentSnapshot.dailyReturn,
+                    threshold: -this.alertThresholds.dailyLoss,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            // Position concentration alert
+            const maxPositionWeight = Math.max(...Object.values(currentSnapshot.positionWeights));
+            if (maxPositionWeight > this.alertThresholds.positionConcentration) {
+                alerts.push({
+                    type: 'POSITION_CONCENTRATION',
+                    severity: 'MODERATE',
+                    message: `Single position weight (${(maxPositionWeight * 100).toFixed(1)}%) exceeds threshold`,
+                    value: maxPositionWeight,
+                    threshold: this.alertThresholds.positionConcentration,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            // Volatility spike alert
+            if (this.lastPortfolioSnapshot) {
+                const volatilityRatio = currentSnapshot.volatility / this.lastPortfolioSnapshot.volatility;
+                if (volatilityRatio > this.alertThresholds.volatilitySpike) {
+                    alerts.push({
+                        type: 'VOLATILITY_SPIKE',
+                        severity: 'HIGH',
+                        message: `Portfolio volatility spike detected (${volatilityRatio.toFixed(2)}x normal)`,
+                        value: volatilityRatio,
+                        threshold: this.alertThresholds.volatilitySpike,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            }
+            
+            // Process alerts
+            if (alerts.length > 0) {
+                await this.processAlerts(alerts);
+            }
+            
+            this.lastPortfolioSnapshot = currentSnapshot;
+            
+            return {
+                snapshot: currentSnapshot,
+                alerts: alerts,
+                alertCount: alerts.length,
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Portfolio health check error:', error.message);
+            return { error: error.message };
+        }
+    }
+    
+    // 📸 TAKE PORTFOLIO SNAPSHOT
+    async takePortfolioSnapshot(portfolio) {
+        try {
+            const { positions, currentValue, historicalValues } = portfolio;
+            
+            // Calculate current metrics
+            const positionWeights = {};
+            const sectorWeights = {};
+            let totalValue = 0;
+            
+            positions.forEach(position => {
+                totalValue += position.marketValue;
+                positionWeights[position.symbol] = position.marketValue / currentValue;
+                
+                const sector = position.sector || 'Unknown';
+                sectorWeights[sector] = (sectorWeights[sector] || 0) + (position.marketValue / currentValue);
+            });
+            
+            // Calculate recent returns
+            const recentValues = historicalValues.slice(-30); // Last 30 days
+            const dailyReturn = recentValues.length >= 2 ? 
+                (recentValues[recentValues.length - 1] - recentValues[recentValues.length - 2]) / recentValues[recentValues.length - 2] : 0;
+            
+            // Calculate current drawdown
+            const peak = Math.max(...recentValues);
+            const currentDrawdown = (peak - currentValue) / peak;
+            
+            // Calculate volatility
+            const returns = [];
+            for (let i = 1; i < recentValues.length; i++) {
+                returns.push((recentValues[i] - recentValues[i-1]) / recentValues[i-1]);
+            }
+            const volatility = this.calculateVolatility(returns);
+            
+            return {
+                timestamp: new Date().toISOString(),
+                currentValue: currentValue,
+                dailyReturn: dailyReturn,
+                currentDrawdown: currentDrawdown,
+                volatility: volatility,
+                positionWeights: positionWeights,
+                sectorWeights: sectorWeights,
+                positionCount: positions.length,
+                largestPosition: Math.max(...Object.values(positionWeights)),
+                largestSector: Math.max(...Object.values(sectorWeights))
+            };
+        } catch (error) {
+            console.error('Portfolio snapshot error:', error.message);
+            return { error: error.message };
+        }
+    }
+    
+    // 🚨 PROCESS ALERTS
+    async processAlerts(alerts) {
+        try {
+            for (const alert of alerts) {
+                console.log(`🚨 Portfolio Alert: ${alert.type} - ${alert.message}`);
+                
+                // Add to alert history
+                this.alertHistory.push(alert);
+                
+                // Keep only last 100 alerts
+                if (this.alertHistory.length > 100) {
+                    this.alertHistory = this.alertHistory.slice(-50);
+                }
+                
+                // In production, this could trigger:
+                // - Email notifications
+                // - SMS alerts
+                // - Dashboard notifications
+                // - Automatic rebalancing triggers
+            }
+        } catch (error) {
+            console.error('Alert processing error:', error.message);
+        }
+    }
+    
+    // ⏹️ STOP MONITORING
+    stopMonitoring() {
+        if (this.monitoringInterval) {
+            clearInterval(this.monitoringInterval);
+            this.monitoringInterval = null;
+            
+            return {
+                status: 'MONITORING_STOPPED',
+                totalAlerts: this.alertHistory.length,
+                timestamp: new Date().toISOString()
+            };
+        }
+        
+        return {
+            status: 'NOT_MONITORING',
+            timestamp: new Date().toISOString()
+        };
+    }
+    
+    // 📊 GET ALERT SUMMARY
+    getAlertSummary(days = 7) {
+        const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+        const recentAlerts = this.alertHistory.filter(alert => 
+            new Date(alert.timestamp) > cutoffDate
+        );
+        
+        const alertCounts = {};
+        const severityCounts = { HIGH: 0, MODERATE: 0, LOW: 0 };
+        
+        recentAlerts.forEach(alert => {
+            alertCounts[alert.type] = (alertCounts[alert.type] || 0) + 1;
+            severityCounts[alert.severity] = (severityCounts[alert.severity] || 0) + 1;
+        });
+        
+        return {
+            totalAlerts: recentAlerts.length,
+            alertTypes: alertCounts,
+            severityBreakdown: severityCounts,
+            mostCommonAlert: Object.keys(alertCounts).reduce((a, b) => 
+                alertCounts[a] > alertCounts[b] ? a : b, Object.keys(alertCounts)[0]
+            ),
+            timeframe: `${days} days`,
+            timestamp: new Date().toISOString()
+        };
+    }
+    
+    // 🔧 HELPER METHODS
+    calculateVolatility(returns) {
+        if (returns.length === 0) return 0;
+        const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+        const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+        return Math.sqrt(variance * 252); // Annualized
+    }
+}
+
+// 📈 PORTFOLIO ANALYTICS DASHBOARD
+class PortfolioAnalyticsDashboard {
+    constructor() {
+        this.dashboardWidgets = {
+            PERFORMANCE_SUMMARY: 'Performance Summary',
+            ASSET_ALLOCATION: 'Asset Allocation',
+            SECTOR_BREAKDOWN: 'Sector Breakdown',
+            RISK_METRICS: 'Risk Metrics',
+            ATTRIBUTION_ANALYSIS: 'Attribution Analysis',
+            BENCHMARK_COMPARISON: 'Benchmark Comparison',
+            HISTORICAL_CHART: 'Historical Performance Chart',
+            ALERTS_SUMMARY: 'Alerts Summary'
+        };
+    }
+    
+    // 📊 GENERATE COMPREHENSIVE DASHBOARD
+    async generateDashboard(portfolio, options = {}) {
+        try {
+            const tracker = new PortfolioPerformanceTracker();
+            const monitor = new RealTimePortfolioMonitor();
+            
+            // Calculate performance metrics for multiple timeframes
+            const timeframes = ['1M', '3M', '6M', '1Y'];
+            const performanceData = {};
+            
+            for (const timeframe of timeframes) {
+                performanceData[timeframe] = await tracker.calculatePerformanceMetrics(
+                    portfolio, 
+                    timeframe
+                );
+            }
+            
+            // Generate current portfolio snapshot
+            const currentSnapshot = await monitor.takePortfolioSnapshot(portfolio);
+            
+            // Calculate allocation breakdowns
+            const allocations = this.calculateAllocationBreakdowns(portfolio.positions);
+            
+            // Generate risk analysis
+            const riskAnalysis = this.generateRiskAnalysis(performanceData, currentSnapshot);
+            
+            // Performance comparison
+            const benchmarkComparison = this.generateBenchmarkComparison(performanceData);
+            
+            // Top contributors and detractors
+            const topMovers = this.calculateTopMovers(portfolio.positions);
+            
+            return {
+                overview: {
+                    currentValue: portfolio.currentValue,
+                    dayChange: currentSnapshot.dailyReturn * 100,
+                    dayChangeValue: portfolio.currentValue * currentSnapshot.dailyReturn,
+                    totalReturn: performanceData['1Y']?.totalReturn * 100 || 0,
+                    totalReturnValue: portfolio.currentValue * (performanceData['1Y']?.totalReturn || 0),
+                    positionCount: portfolio.positions.length,
+                    lastUpdate: new Date().toISOString()
+                },
+                performance: {
+                    timeframes: performanceData,
+                    summary: {
+                        bestTimeframe: this.findBestPerformingTimeframe(performanceData),
+                        worstTimeframe: this.findWorstPerformingTimeframe(performanceData),
+                        consistency: this.calculatePerformanceConsistency(performanceData)
+                    }
+                },
+                allocations: allocations,
+                riskAnalysis: riskAnalysis,
+                benchmarkComparison: benchmarkComparison,
+                topMovers: topMovers,
+                currentSnapshot: currentSnapshot,
+                recommendations: this.generateDashboardRecommendations(
+                    performanceData, 
+                    allocations, 
+                    riskAnalysis
+                ),
+                generatedAt: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Dashboard generation error:', error.message);
+            return { 
+                error: error.message,
+                generatedAt: new Date().toISOString()
+            };
+        }
+    }
+    
+    // 📊 CALCULATE ALLOCATION BREAKDOWNS
+    calculateAllocationBreakdowns(positions) {
+        const allocations = {
+            byAsset: {},
+            bySector: {},
+            byAssetClass: {},
+            byGeography: {},
+            byMarketCap: {}
+        };
+        
+        let totalValue = positions.reduce((sum, pos) => sum + pos.marketValue, 0);
+        
+        positions.forEach(position => {
+            const weight = position.marketValue / totalValue;
+            
+            // By asset
+            allocations.byAsset[position.symbol] = {
+                weight: weight * 100,
+                value: position.marketValue,
+                shares: position.shares,
+                price: position.currentPrice,
+                dayChange: position.dayChange || 0
+            };
+            
+            // By sector
+            const sector = position.sector || 'Unknown';
+            if (!allocations.bySector[sector]) {
+                allocations.bySector[sector] = { weight: 0, value: 0, count: 0 };
+            }
+            allocations.bySector[sector].weight += weight * 100;
+            allocations.bySector[sector].value += position.marketValue;
+            allocations.bySector[sector].count += 1;
+            
+            // By asset class
+            const assetClass = position.assetClass || 'Equity';
+            if (!allocations.byAssetClass[assetClass]) {
+                allocations.byAssetClass[assetClass] = { weight: 0, value: 0, count: 0 };
+            }
+            allocations.byAssetClass[assetClass].weight += weight * 100;
+            allocations.byAssetClass[assetClass].value += position.marketValue;
+            allocations.byAssetClass[assetClass].count += 1;
+            
+            // By geography
+            const geography = position.geography || 'US';
+            if (!allocations.byGeography[geography]) {
+                allocations.byGeography[geography] = { weight: 0, value: 0, count: 0 };
+            }
+            allocations.byGeography[geography].weight += weight * 100;
+            allocations.byGeography[geography].value += position.marketValue;
+            allocations.byGeography[geography].count += 1;
+            
+            // By market cap
+            const marketCapCategory = this.categorizeMarketCap(position.marketCap);
+            if (!allocations.byMarketCap[marketCapCategory]) {
+                allocations.byMarketCap[marketCapCategory] = { weight: 0, value: 0, count: 0 };
+            }
+            allocations.byMarketCap[marketCapCategory].weight += weight * 100;
+            allocations.byMarketCap[marketCapCategory].value += position.marketValue;
+            allocations.byMarketCap[marketCapCategory].count += 1;
+        });
+        
+        return allocations;
+    }
+    
+    // 🎯 GENERATE RISK ANALYSIS
+    generateRiskAnalysis(performanceData, currentSnapshot) {
+        const riskMetrics = {
+            overall: 'MODERATE',
+            volatility: currentSnapshot.volatility,
+            maxDrawdown: currentSnapshot.currentDrawdown,
+            concentration: {
+                position: currentSnapshot.largestPosition,
+                sector: currentSnapshot.largestSector
+            },
+            riskScore: 0
+        };
+        
+        // Calculate composite risk score
+        let riskScore = 50; // Base score
+        
+        // Volatility adjustment
+        if (currentSnapshot.volatility > 0.25) riskScore += 20;
+        else if (currentSnapshot.volatility > 0.15) riskScore += 10;
+        else if (currentSnapshot.volatility < 0.08) riskScore -= 10;
+        
+        // Drawdown adjustment
+        if (currentSnapshot.currentDrawdown > 0.1) riskScore += 25;
+        else if (currentSnapshot.currentDrawdown > 0.05) riskScore += 15;
+        
+        // Concentration adjustment
+        if (currentSnapshot.largestPosition > 0.3) riskScore += 15;
+        if (currentSnapshot.largestSector > 0.4) riskScore += 10;
+        
+        // Determine overall risk level
+        if (riskScore >= 80) riskMetrics.overall = 'VERY_HIGH';
+        else if (riskScore >= 65) riskMetrics.overall = 'HIGH';
+        else if (riskScore >= 45) riskMetrics.overall = 'MODERATE';
+        else if (riskScore >= 30) riskMetrics.overall = 'LOW';
+        else riskMetrics.overall = 'VERY_LOW';
+        
+        riskMetrics.riskScore = riskScore;
+        
+        return riskMetrics;
+    }
+    
+    // 📈 GENERATE BENCHMARK COMPARISON
+    generateBenchmarkComparison(performanceData) {
+        const comparison = {};
+        
+        Object.keys(performanceData).forEach(timeframe => {
+            const data = performanceData[timeframe];
+            if (data && data.benchmarkMetrics) {
+                comparison[timeframe] = {
+                    portfolioReturn: data.annualizedReturn * 100,
+                    benchmarkReturn: data.benchmarkMetrics.benchmarkReturn,
+                    outperformance: data.benchmarkMetrics.outperformance,
+                    alpha: data.benchmarkMetrics.alpha,
+                    beta: data.benchmarkMetrics.beta,
+                    sharpeRatio: data.sharpeRatio
+                };
+            }
+        });
+        
+        return comparison;
+    }
+    
+    // 🔝 CALCULATE TOP MOVERS
+    calculateTopMovers(positions) {
+        const sortedByChange = positions
+            .filter(pos => pos.dayChange !== undefined)
+            .sort((a, b) => Math.abs(b.dayChange) - Math.abs(a.dayChange));
+        
+        return {
+            topGainers: sortedByChange
+                .filter(pos => pos.dayChange > 0)
+                .slice(0, 5)
+                .map(pos => ({
+                    symbol: pos.symbol,
+                    change: pos.dayChange,
+                    value: pos.marketValue,
+                    weight: pos.weight
+                })),
+            topLosers: sortedByChange
+                .filter(pos => pos.dayChange < 0)
+                .slice(0, 5)
+                .map(pos => ({
+                    symbol: pos.symbol,
+                    change: pos.dayChange,
+                    value: pos.marketValue,
+                    weight: pos.weight
+                }))
+        };
+    }
+    
+    // 🔧 HELPER METHODS
+    
+    categorizeMarketCap(marketCap) {
+        if (!marketCap) return 'Unknown';
+        
+        if (marketCap >= 200000) return 'Large Cap';
+        if (marketCap >= 10000) return 'Mid Cap';
+        if (marketCap >= 2000) return 'Small Cap';
+        return 'Micro Cap';
+    }
+    
+    findBestPerformingTimeframe(performanceData) {
+        let bestTimeframe = null;
+        let bestReturn = -Infinity;
+        
+        Object.keys(performanceData).forEach(timeframe => {
+            const data = performanceData[timeframe];
+            if (data && data.annualizedReturn > bestReturn) {
+                bestReturn = data.annualizedReturn;
+                bestTimeframe = timeframe;
+            }
+        });
+        
+        return { timeframe: bestTimeframe, return: bestReturn * 100 };
+    }
+    
+    findWorstPerformingTimeframe(performanceData) {
+        let worstTimeframe = null;
+        let worstReturn = Infinity;
+        
+        Object.keys(performanceData).forEach(timeframe => {
+            const data = performanceData[timeframe];
+            if (data && data.annualizedReturn < worstReturn) {
+                worstReturn = data.annualizedReturn;
+                worstTimeframe = timeframe;
+            }
+        });
+        
+        return { timeframe: worstTimeframe, return: worstReturn * 100 };
+    }
+    
+    calculatePerformanceConsistency(performanceData) {
+        const returns = Object.values(performanceData)
+            .filter(data => data && data.annualizedReturn)
+            .map(data => data.annualizedReturn);
+        
+        if (returns.length < 2) return 50;
+        
+        const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+        const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+        const stdDev = Math.sqrt(variance);
+        
+        // Lower standard deviation = higher consistency
+        const consistencyScore = Math.max(0, 100 - (stdDev * 1000));
+        return Math.round(consistencyScore);
+    }
+    
+    generateDashboardRecommendations(performanceData, allocations, riskAnalysis) {
+        const recommendations = [];
+        
+        // Risk-based recommendations
+        if (riskAnalysis.overall === 'HIGH' || riskAnalysis.overall === 'VERY_HIGH') {
+            recommendations.push({
+                type: 'RISK_REDUCTION',
+                priority: 'HIGH',
+                message: 'Portfolio risk level is elevated - consider reducing exposure to volatile assets',
+                action: 'REBALANCE_DEFENSIVE'
+            });
+        }
+        
+        // Concentration recommendations
+        if (riskAnalysis.concentration.position > 0.25) {
+            recommendations.push({
+                type: 'POSITION_CONCENTRATION',
+                priority: 'MODERATE',
+                message: `Largest position represents ${(riskAnalysis.concentration.position * 100).toFixed(1)}% of portfolio`,
+                action: 'DIVERSIFY_HOLDINGS'
+            });
+        }
+        
+        // Performance recommendations
+        const yearlyPerformance = performanceData['1Y'];
+        if (yearlyPerformance && yearlyPerformance.sharpeRatio < 1.0) {
+            recommendations.push({
+                type: 'PERFORMANCE_IMPROVEMENT',
+                priority: 'MODERATE',
+                message: 'Risk-adjusted returns could be improved',
+                action: 'REVIEW_ASSET_SELECTION'
+            });
+        }
+        
+        // Benchmark recommendations
+        if (yearlyPerformance && yearlyPerformance.benchmarkMetrics && 
+            yearlyPerformance.benchmarkMetrics.outperformance < -2) {
+            recommendations.push({
+                type: 'UNDERPERFORMANCE',
+                priority: 'HIGH',
+                message: 'Portfolio is underperforming benchmark significantly',
+                action: 'STRATEGIC_REVIEW'
+            });
+        }
+        
+        return recommendations;
+    }
+}
+
+// 🎯 MASTER PORTFOLIO TRACKING FUNCTION
+async function getComprehensivePortfolioAnalytics(portfolioData, options = {}) {
+    try {
+        console.log('📊 Running comprehensive portfolio analytics...');
+        
+        const tracker = new PortfolioPerformanceTracker();
+        const monitor = new RealTimePortfolioMonitor();
+        const dashboard = new PortfolioAnalyticsDashboard();
+        
+        // Generate sample portfolio data if not provided
+        const portfolio = portfolioData || generateSamplePortfolioData();
+        
+        // Get market context
+        const [regimeData, marketData] = await Promise.allSettled([
+            detectEconomicRegime(),
+            getRayDalioMarketData()
+        ]);
+        
+        // Generate comprehensive dashboard
+        const dashboardData = await dashboard.generateDashboard(portfolio, options);
+        
+        // Calculate detailed performance metrics
+        const detailedMetrics = await tracker.calculatePerformanceMetrics(portfolio, '1Y');
+        
+        // Get current portfolio health check
+        const healthCheck = await monitor.checkPortfolioHealth(portfolio);
+        
+        // Generate AI insights
+        const aiAnalysisPrompt = `Analyze this portfolio performance and provide strategic insights:
+
+Portfolio Overview:
+- Current Value: ${portfolio.currentValue?.toLocaleString() || 'N/A'}
+- Total Return (1Y): ${(detailedMetrics.totalReturn * 100 || 0).toFixed(2)}%
+- Volatility: ${(detailedMetrics.volatility * 100 || 0).toFixed(2)}%
+- Sharpe Ratio: ${detailedMetrics.sharpeRatio?.toFixed(2) || 'N/A'}
+- Max Drawdown: ${(detailedMetrics.maxDrawdown * 100 || 0).toFixed(2)}%
+
+Risk Analysis:
+- Overall Risk Level: ${dashboardData.riskAnalysis?.overall || 'Unknown'}
+- Largest Position: ${(dashboardData.currentSnapshot?.largestPosition * 100 || 0).toFixed(1)}%
+- Position Count: ${portfolio.positions?.length || 0}
+
+Market Context:
+- Economic Regime: ${regimeData.value?.currentRegime?.name || 'Unknown'}
+- Market Conditions: ${marketData.value?.rayDalio?.regime?.signals?.market?.risk || 'Neutral'}
+
+Provide specific recommendations for portfolio optimization, risk management, and performance improvement.`;
+        
+        const aiInsights = await getUniversalAnalysis(aiAnalysisPrompt, {
+            isWealthCommand: true,
+            maxTokens: 1500
+        });
+        
+        return {
+            summary: {
+                currentValue: portfolio.currentValue,
+                totalReturn: detailedMetrics.totalReturn * 100 || 0,
+                annualizedReturn: detailedMetrics.annualizedReturn * 100 || 0,
+                volatility: detailedMetrics.volatility * 100 || 0,
+                sharpeRatio: detailedMetrics.sharpeRatio || 0,
+                maxDrawdown: detailedMetrics.maxDrawdown * 100 || 0,
+                positionCount: portfolio.positions?.length || 0,
+                riskLevel: dashboardData.riskAnalysis?.overall || 'MODERATE'
+            },
+            detailedMetrics: detailedMetrics,
+            dashboard: dashboardData,
+            healthCheck: healthCheck,
+            marketContext: {
+                regime: regimeData.value?.currentRegime?.name || 'Unknown',
+                regimeConfidence: regimeData.value?.confidence || 0,
+                marketRisk: marketData.value?.rayDalio?.regime?.signals?.market?.risk || 'Neutral'
+            },
+            performanceAttribution: detailedMetrics.attribution || {},
+            benchmarkComparison: detailedMetrics.benchmarkMetrics || {},
+            riskMetrics: {
+                valueAtRisk: detailedMetrics.valueAtRisk * 100 || 0,
+                conditionalVaR: detailedMetrics.conditionalVaR * 100 || 0,
+                skewness: detailedMetrics.skewness || 0,
+                kurtosis: detailedMetrics.kurtosis || 0
+            },
+            aiInsights: aiInsights.response,
+            recommendations: generatePortfolioRecommendations(dashboardData, detailedMetrics),
+            monitoring: {
+                alertsActive: healthCheck.alertCount || 0,
+                lastHealthCheck: healthCheck.timestamp,
+                monitoringStatus: 'AVAILABLE'
+            },
+            analysisDate: new Date().toISOString(),
+            dataQuality: {
+                performanceMetrics: !detailedMetrics.error,
+                dashboard: !dashboardData.error,
+                healthCheck: !healthCheck.error,
+                marketData: marketData.status === 'fulfilled'
+            }
+        };
+        
+    } catch (error) {
+        console.error('Comprehensive portfolio analytics error:', error.message);
+        return {
+            error: error.message,
+            summary: {
+                currentValue: 0,
+                totalReturn: 0,
+                positionCount: 0,
+                riskLevel: 'UNKNOWN'
+            },
+            recommendations: [
+                'Portfolio analytics failed - check data connections',
+                'Verify portfolio data format and completeness',
+                'Review system configuration'
+            ],
+            analysisDate: new Date().toISOString()
+        };
+    }
+}
+
+// 🎯 HELPER FUNCTIONS
+
+function generateSamplePortfolioData() {
+    const positions = [
+        {
+            symbol: 'AAPL', shares: 100, currentPrice: 185.50, marketValue: 18550,
+            sector: 'Technology', assetClass: 'Equity', geography: 'US',
+            marketCap: 2900000, dayChange: 0.015, periodReturn: 0.12
+        },
+        {
+            symbol: 'MSFT', shares: 50, currentPrice: 420.00, marketValue: 21000,
+            sector: 'Technology', assetClass: 'Equity', geography: 'US',
+            marketCap: 3100000, dayChange: 0.008, periodReturn: 0.18
+        },
+        {
+            symbol: 'NVDA', shares: 25, currentPrice: 890.00, marketValue: 22250,
+            sector: 'Technology', assetClass: 'Equity', geography: 'US',
+            marketCap: 2200000, dayChange: 0.025, periodReturn: 0.85
+        },
+        {
+            symbol: 'JPM', shares: 75, currentPrice: 168.00, marketValue: 12600,
+            sector: 'Financial', assetClass: 'Equity', geography: 'US',
+            marketCap: 485000, dayChange: -0.012, periodReturn: 0.22
+        },
+        {
+            symbol: 'JNJ', shares: 60, currentPrice: 165.00, marketValue: 9900,
+            sector: 'Healthcare', assetClass: 'Equity', geography: 'US',
+            marketCap: 435000, dayChange: 0.003, periodReturn: 0.08
+        }
+    ];
+    
+    const currentValue = positions.reduce((sum, pos) => sum + pos.marketValue, 0);
+    
+    // Generate historical values (daily for 1 year)
+    const historicalValues = [];
+    let baseValue = currentValue * 0.85; // Started 15% lower
+    
+    for (let i = 0; i < 252; i++) {
+        const dailyChange = (Math.random() - 0.5) * 0.04; // ±2% daily volatility
+        baseValue *= (1 + dailyChange);
+        historicalValues.push(baseValue);
+    }
+    
+    // Ensure current value matches
+    historicalValues[historicalValues.length - 1] = currentValue;
+    
+    return {
+        positions: positions,
+        currentValue: currentValue,
+        historicalValues: historicalValues,
+        benchmarkData: {
+            name: 'S&P 500',
+            values: generateBenchmarkData(historicalValues.length)
+        }
+    };
+}
+
+function generateBenchmarkData(length) {
+    const benchmarkValues = [];
+    let baseValue = 4200; // S&P 500 base value
+    
+    for (let i = 0; i < length; i++) {
+        const dailyChange = (Math.random() - 0.5) * 0.025; // ±1.25% daily volatility
+        baseValue *= (1 + dailyChange);
+        benchmarkValues.push(baseValue);
+    }
+    
+    return benchmarkValues;
+}
+
+function generatePortfolioRecommendations(dashboardData, detailedMetrics) {
+    const recommendations = [];
+    
+    // Performance recommendations
+    if (detailedMetrics.sharpeRatio < 1.0) {
+        recommendations.push({
+            type: 'PERFORMANCE_OPTIMIZATION',
+            priority: 'HIGH',
+            message: `Sharpe ratio (${detailedMetrics.sharpeRatio?.toFixed(2)}) indicates suboptimal risk-adjusted returns`,
+            action: 'REVIEW_ASSET_ALLOCATION'
+        });
+    }
+    
+    // Risk recommendations
+    if (dashboardData.riskAnalysis?.overall === 'HIGH') {
+        recommendations.push({
+            type: 'RISK_MANAGEMENT',
+            priority: 'HIGH',
+            message: 'Portfolio risk level is elevated above target parameters',
+            action: 'IMPLEMENT_RISK_CONTROLS'
+        });
+    }
+    
+    // Diversification recommendations
+    if (dashboardData.currentSnapshot?.largestPosition > 0.25) {
+        recommendations.push({
+            type: 'DIVERSIFICATION',
+            priority: 'MODERATE',
+            message: 'Position concentration exceeds recommended limits',
+            action: 'REDUCE_CONCENTRATION'
+        });
+    }
+    
+    // Drawdown recommendations
+    if (detailedMetrics.maxDrawdown > 0.15) {
+        recommendations.push({
+            type: 'DRAWDOWN_CONTROL',
+            priority: 'HIGH',
+            message: `Maximum drawdown (${(detailedMetrics.maxDrawdown * 100).toFixed(1)}%) exceeds acceptable limits`,
+            action: 'IMPLEMENT_STOP_LOSSES'
+        });
+    }
+    
+    if (recommendations.length === 0) {
+        recommendations.push({
+            type: 'PORTFOLIO_HEALTH',
+            priority: 'LOW',
+            message: 'Portfolio metrics are within acceptable ranges',
+            action: 'CONTINUE_MONITORING'
+        });
+    }
+    
+    return recommendations;
+}
+
+// 🎯 EXPORT ALL TRACKING FUNCTIONS
+module.exports = {
+    // Main Functions
+    getComprehensivePortfolioAnalytics,
+    
+    // Classes
+    PortfolioPerformanceTracker,
+    RealTimePortfolioMonitor,
+    PortfolioAnalyticsDashboard,
+    
+    // Utility Functions
+    generateSamplePortfolioData,
+    generateBenchmarkData,
+    generatePortfolioRecommendations
+};
+
+
