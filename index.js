@@ -121,6 +121,7 @@ const { getTradingSummary, getAccountInfo } = require("./utils/metaTrader");
 
 // Import specialized AI clients (non-duplicate functions only)
 const { 
+    getClaudeAnalysis: getClaudeAnalysisRaw,  // Rename to avoid conflict
     getStrategicAnalysis: getClaudeStrategicAnalysis,
     getRegimeAnalysis,
     getPortfolioAnalysis,
