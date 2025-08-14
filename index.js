@@ -161,16 +161,6 @@ const {
     // Core database functions
     initializeDatabase,
     saveConversationDB,
-    // ... rest of your existing database imports ...
-} = require("./utils/database");
-
-// ... rest of your existing imports and code continues exactly the same ...
-
-// Import COMPLETE enhanced database system
-const {
-    // Core database functions
-    initializeDatabase,
-    saveConversationDB,
     getConversationHistoryDB,
     getUserProfileDB,
     getDatabaseStats,
