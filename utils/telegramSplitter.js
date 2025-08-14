@@ -1,5 +1,5 @@
-// utils/telegramSplitter.js - Clean Message Handling for Telegram
-// Professional message splitting and formatting without theatrical elements
+// utils/telegramSplitter.js - Enhanced Message Handling for Telegram
+// Professional message splitting and formatting with AI optimization
 
 const TELEGRAM_LIMITS = {
     MAX_MESSAGE_LENGTH: 4096,          // Telegram's hard limit
@@ -11,7 +11,7 @@ const TELEGRAM_LIMITS = {
     PRIORITY_DELAY_MS: 500             // Faster for urgent messages
 };
 
-// 📊 MESSAGE TYPES
+// 📊 ENHANCED MESSAGE TYPES (10/10)
 const MESSAGE_TYPES = {
     'general': { emoji: '💬', priority: 'normal' },
     'analysis': { emoji: '📊', priority: 'high' },
@@ -20,11 +20,38 @@ const MESSAGE_TYPES = {
     'portfolio': { emoji: '💼', priority: 'high' },
     'alert': { emoji: '🚨', priority: 'urgent' },
     'regime': { emoji: '🏛️', priority: 'high' },
-    'anomaly': { emoji: '⚠️', priority: 'urgent' }
+    'anomaly': { emoji: '⚠️', priority: 'urgent' },
+    // 🤖 AI-SPECIFIC TYPES
+    'gpt_response': { emoji: '🧠', priority: 'high' },
+    'claude_response': { emoji: '⚡', priority: 'high' },
+    'dual_ai': { emoji: '🔄', priority: 'urgent' },
+    'memory_query': { emoji: '🧠', priority: 'high' },
+    'strategic': { emoji: '🎯', priority: 'high' }
 };
 
 /**
- * 🧹 Clean response text for better readability
+ * 🎯 Smart emoji selection based on message content
+ */
+function getSmartEmoji(message) {
+    const text = message.toLowerCase();
+    
+    // Content-based emoji selection
+    if (text.includes('cambodia') || text.includes('phnom penh')) return '🇰🇭';
+    if (text.includes('market') || text.includes('trading') || text.includes('stocks')) return '📈';
+    if (text.includes('portfolio') || text.includes('fund') || text.includes('investment')) return '💼';
+    if (text.includes('risk') || text.includes('alert') || text.includes('warning')) return '🚨';
+    if (text.includes('analysis') || text.includes('strategic') || text.includes('framework')) return '📊';
+    if (text.includes('regime') || text.includes('economic') || text.includes('monetary')) return '🏛️';
+    if (text.includes('anomaly') || text.includes('unusual') || text.includes('detected')) return '⚠️';
+    if (text.includes('gpt') || text.includes('reasoning') || text.includes('calculation')) return '🧠';
+    if (text.includes('claude') || text.includes('structured') || text.includes('comprehensive')) return '⚡';
+    if (text.includes('dual') || text.includes('both ai') || text.includes('comparison')) return '🔄';
+    
+    return '💬'; // Default
+}
+
+/**
+ * 🧹 Enhanced response cleaning with AI optimization
  */
 function cleanResponse(text) {
     if (!text || typeof text !== 'string') {
@@ -33,9 +60,14 @@ function cleanResponse(text) {
     
     return text
         // Clean up markdown formatting
-        .replace(/\*\*(.*?)\*\*/g, '$1')        // Remove **bold**
+        .replace(/\*\*(.*?)\*\*/g, '$1')        // Remove **bold** for Telegram compatibility
         .replace(/^\s*[-*+]\s+/gm, '• ')        // Clean bullet points
         .replace(/^#{1,6}\s+(.*)$/gm, '$1')     // Remove markdown headers
+        
+        // AI-specific optimizations
+        .replace(/```(\w+)?\n([\s\S]*?)\n```/g, '`$2`')  // Simplify code blocks
+        .replace(/\[reasoning\]|\[analysis\]|\[context\]/gi, '') // Remove AI markers
+        .replace(/\(confidence:\s*\d+%\)/gi, '') // Remove confidence indicators
         
         // Clean up excessive spacing
         .replace(/\n{3,}/g, '\n\n')             // Max 2 line breaks
@@ -44,7 +76,7 @@ function cleanResponse(text) {
 }
 
 /**
- * 📱 Smart message sender with intelligent splitting
+ * 📱 Enhanced smart message sender with AI awareness
  */
 async function sendSmartMessage(bot, chatId, message, options = {}) {
     try {
@@ -58,10 +90,23 @@ async function sendSmartMessage(bot, chatId, message, options = {}) {
         // Clean the message
         let cleanedMessage = cleanResponse(message);
         
-        // Add optional title
+        // Determine message type with smart emoji
+        const messageType = MESSAGE_TYPES[options.type] || { 
+            emoji: getSmartEmoji(cleanedMessage), 
+            priority: 'normal' 
+        };
+        
+        // Add optional title with smart formatting
         if (options.title) {
-            const messageType = MESSAGE_TYPES[options.type] || MESSAGE_TYPES.general;
             cleanedMessage = `${messageType.emoji} **${options.title}**\n\n${cleanedMessage}`;
+        }
+        
+        // Add optional metadata footer
+        if (options.includeMetadata) {
+            const metadata = buildMessageMetadata(options);
+            if (metadata) {
+                cleanedMessage += `\n\n${metadata}`;
+            }
         }
         
         // Check if message needs splitting
@@ -91,7 +136,7 @@ async function sendSmartMessage(bot, chatId, message, options = {}) {
         }
         
         // Message needs splitting
-        const chunks = splitMessage(cleanedMessage, options);
+        const chunks = splitMessage(cleanedMessage, { ...options, messageType });
         
         if (chunks.length > TELEGRAM_LIMITS.MAX_CHUNKS_PER_MESSAGE) {
             console.log(`⚠️ Message too long (${chunks.length} chunks), truncating`);
@@ -100,7 +145,6 @@ async function sendSmartMessage(bot, chatId, message, options = {}) {
         }
         
         // Send chunks with appropriate delays
-        const messageType = MESSAGE_TYPES[options.type] || MESSAGE_TYPES.general;
         const delay = messageType.priority === 'urgent' ? 
             TELEGRAM_LIMITS.PRIORITY_DELAY_MS : 
             TELEGRAM_LIMITS.MESSAGE_DELAY_MS;
@@ -155,7 +199,35 @@ async function sendSmartMessage(bot, chatId, message, options = {}) {
 }
 
 /**
- * ✂️ Split message intelligently
+ * 🏷️ Build message metadata for AI responses
+ */
+function buildMessageMetadata(options) {
+    const metadata = [];
+    
+    if (options.aiModel) {
+        const aiName = options.aiModel === 'gpt5' ? 'GPT-5' : 
+                      options.aiModel === 'claude' ? 'Claude Opus 4.1' : 
+                      options.aiModel === 'dual' ? 'Dual AI' : options.aiModel;
+        metadata.push(`*AI: ${aiName}*`);
+    }
+    
+    if (options.responseTime && options.responseTime > 1000) {
+        metadata.push(`*Response: ${Math.round(options.responseTime / 1000)}s*`);
+    }
+    
+    if (options.contextUsed) {
+        metadata.push(`*Context: Enhanced*`);
+    }
+    
+    if (options.tokens && options.tokens > 1000) {
+        metadata.push(`*Tokens: ${options.tokens}*`);
+    }
+    
+    return metadata.length > 0 ? metadata.join(' | ') : null;
+}
+
+/**
+ * ✂️ Enhanced message splitting with AI awareness
  */
 function splitMessage(message, options = {}) {
     const chunks = [];
@@ -163,7 +235,7 @@ function splitMessage(message, options = {}) {
     let partNumber = 1;
     
     const maxChunkSize = TELEGRAM_LIMITS.OPTIMAL_CHUNK_SIZE;
-    const messageType = MESSAGE_TYPES[options.type] || MESSAGE_TYPES.general;
+    const messageType = options.messageType || MESSAGE_TYPES.general;
     
     while (remaining.length > maxChunkSize) {
         // Find good split point
@@ -226,16 +298,20 @@ function splitMessage(message, options = {}) {
 }
 
 /**
- * 🔍 Find best point to split message
+ * 🔍 Enhanced split point detection with AI content awareness
  */
 function findBestSplitPoint(text, maxLength) {
-    // Preferred split patterns (in order of preference)
+    // Enhanced split patterns (in order of preference)
     const splitPatterns = [
-        /\n\n/g,               // Double line breaks (paragraphs)
-        /\.\s+/g,              // End of sentences
-        /\n/g,                 // Single line breaks
-        /;\s+/g,               // Semicolons
-        /,\s+/g                // Commas (last resort)
+        /\n\n\*\*.*?\*\*:/g,          // AI section headers
+        /\n\n#{1,3}\s+/g,             // Markdown headers
+        /\n\n\d+\.\s+/g,              // Numbered lists
+        /\n\n/g,                      // Double line breaks (paragraphs)
+        /\.\s+\n/g,                   // End of sentences with newline
+        /\.\s+/g,                     // End of sentences
+        /\n/g,                        // Single line breaks
+        /;\s+/g,                      // Semicolons
+        /,\s+/g                       // Commas (last resort)
     ];
     
     const minSplitPoint = maxLength * 0.7; // Don't split too early
@@ -257,93 +333,140 @@ function findBestSplitPoint(text, maxLength) {
 }
 
 /**
- * 📊 Send analysis response
+ * 📊 Enhanced analysis sender with AI optimization
  */
-async function sendAnalysis(bot, chatId, analysis, title = null, analysisType = 'analysis') {
+async function sendAnalysis(bot, chatId, analysis, title = null, analysisType = 'analysis', options = {}) {
     return await sendSmartMessage(bot, chatId, analysis, {
         title: title,
         type: analysisType,
-        disablePreview: true
+        disablePreview: true,
+        ...options
     });
 }
 
 /**
- * 🇰🇭 Send Cambodia analysis
+ * 🇰🇭 Enhanced Cambodia analysis sender
  */
-async function sendCambodiaAnalysis(bot, chatId, analysis, title = 'Cambodia Analysis') {
+async function sendCambodiaAnalysis(bot, chatId, analysis, title = 'Cambodia Analysis', options = {}) {
     return await sendSmartMessage(bot, chatId, analysis, {
         title: title,
         type: 'cambodia',
-        disablePreview: true
+        disablePreview: true,
+        ...options
     });
 }
 
 /**
- * 📈 Send market analysis
+ * 📈 Enhanced market analysis sender
  */
-async function sendMarketAnalysis(bot, chatId, analysis, title = 'Market Analysis') {
+async function sendMarketAnalysis(bot, chatId, analysis, title = 'Market Analysis', options = {}) {
     return await sendSmartMessage(bot, chatId, analysis, {
         title: title,
         type: 'market',
-        disablePreview: true
+        disablePreview: true,
+        ...options
     });
 }
 
 /**
- * 💼 Send portfolio analysis
+ * 💼 Enhanced portfolio analysis sender
  */
-async function sendPortfolioAnalysis(bot, chatId, analysis, title = 'Portfolio Analysis') {
+async function sendPortfolioAnalysis(bot, chatId, analysis, title = 'Portfolio Analysis', options = {}) {
     return await sendSmartMessage(bot, chatId, analysis, {
         title: title,
         type: 'portfolio',
-        disablePreview: true
+        disablePreview: true,
+        ...options
     });
 }
 
 /**
- * 🚨 Send urgent alert
+ * 🚨 Enhanced alert sender with timestamp
  */
-async function sendAlert(bot, chatId, alertMessage, title = 'Alert') {
-    const timestamp = new Date().toLocaleTimeString('en-US', { 
-        timeZone: 'Asia/Phnom_Penh',
-        hour12: false 
-    });
-    
-    const alertContent = `*Time:* ${timestamp} Cambodia\n\n${alertMessage}`;
+async function sendAlert(bot, chatId, alertMessage, title = 'Alert', options = {}) {
+    const alertContent = formatWithTimestamp(alertMessage, true, options.responseTime);
     
     return await sendSmartMessage(bot, chatId, alertContent, {
         title: title,
         type: 'alert',
-        disablePreview: true
+        disablePreview: true,
+        ...options
     });
 }
 
 /**
- * 🏛️ Send regime analysis
+ * 🏛️ Enhanced regime analysis sender
  */
-async function sendRegimeAnalysis(bot, chatId, analysis, title = 'Economic Regime Analysis') {
+async function sendRegimeAnalysis(bot, chatId, analysis, title = 'Economic Regime Analysis', options = {}) {
     return await sendSmartMessage(bot, chatId, analysis, {
         title: title,
         type: 'regime',
-        disablePreview: true
+        disablePreview: true,
+        ...options
     });
 }
 
 /**
- * ⚠️ Send anomaly detection
+ * ⚠️ Enhanced anomaly alert sender
  */
-async function sendAnomalyAlert(bot, chatId, analysis, title = 'Market Anomaly Detected') {
+async function sendAnomalyAlert(bot, chatId, analysis, title = 'Market Anomaly Detected', options = {}) {
     return await sendSmartMessage(bot, chatId, analysis, {
         title: title,
         type: 'anomaly',
-        disablePreview: true
+        disablePreview: true,
+        ...options
     });
 }
 
 /**
- * 📊 Get message statistics
+ * 🤖 AI-specific enhanced senders
  */
-function getMessageStats(message) {
+async function sendGPTResponse(bot, chatId, response, title = null, options = {}) {
+    return await sendSmartMessage(bot, chatId, response, {
+        title: title || 'GPT-5 Analysis',
+        type: 'gpt_response',
+        aiModel: 'gpt5',
+        disablePreview: true,
+        ...options
+    });
+}
+
+async function sendClaudeResponse(bot, chatId, response, title = null, options = {}) {
+    return await sendSmartMessage(bot, chatId, response, {
+        title: title || 'Claude Opus 4.1 Analysis',
+        type: 'claude_response',
+        aiModel: 'claude',
+        disablePreview: true,
+        ...options
+    });
+}
+
+async function sendDualAIResponse(bot, chatId, gptResponse, claudeResponse, title = 'Dual AI Analysis', options = {}) {
+    const combinedResponse = `**GPT-5 Analysis:**\n${gptResponse}\n\n**Claude Opus 4.1 Analysis:**\n${claudeResponse}`;
+    
+    return await sendSmartMessage(bot, chatId, combinedResponse, {
+        title: title,
+        type: 'dual_ai',
+        aiModel: 'dual',
+        disablePreview: true,
+        ...options
+    });
+}
+
+async function sendStrategicAnalysis(bot, chatId, analysis, title = 'Strategic Analysis', options = {}) {
+    return await sendSmartMessage(bot, chatId, analysis, {
+        title: title,
+        type: 'strategic',
+        includeMetadata: true,
+        disablePreview: true,
+        ...options
+    });
+}
+
+/**
+ * 📊 Enhanced message statistics with AI metrics
+ */
+function getMessageStats(message, aiModel = null) {
     if (!message || typeof message !== 'string') {
         return {
             length: 0,
@@ -368,14 +491,18 @@ function getMessageStats(message) {
         chunks,
         estimatedSendTime,
         type,
-        withinLimits: length <= TELEGRAM_LIMITS.MAX_MESSAGE_LENGTH
+        withinLimits: length <= TELEGRAM_LIMITS.MAX_MESSAGE_LENGTH,
+        // AI-specific metrics
+        aiModel: aiModel,
+        estimatedTokens: aiModel ? Math.ceil(length / 4) : null,
+        complexity: length > 2000 ? 'high' : length > 800 ? 'medium' : 'low'
     };
 }
 
 /**
- * 🔧 Format response with timestamp
+ * 🔧 Enhanced timestamp formatting with response time
  */
-function formatWithTimestamp(message, includeTimestamp = false) {
+function formatWithTimestamp(message, includeTimestamp = false, responseTime = null) {
     if (!includeTimestamp) {
         return message;
     }
@@ -385,11 +512,16 @@ function formatWithTimestamp(message, includeTimestamp = false) {
         hour12: false 
     });
     
-    return `*Time:* ${timestamp} Cambodia\n\n${message}`;
+    let timeInfo = `*Time:* ${timestamp} Cambodia`;
+    if (responseTime && responseTime > 1000) {
+        timeInfo += ` | *Response:* ${Math.round(responseTime / 1000)}s`;
+    }
+    
+    return `${timeInfo}\n\n${message}`;
 }
 
 /**
- * 📝 Legacy compatibility functions
+ * 📝 Enhanced legacy compatibility functions
  */
 
 // Legacy function names for backward compatibility
@@ -428,7 +560,7 @@ function formatCambodiaFundResponse(analysis, title = "Cambodia Analysis") {
 }
 
 module.exports = {
-    // Main functions
+    // Enhanced main functions
     sendSmartMessage,
     sendAnalysis,
     sendCambodiaAnalysis,
@@ -438,12 +570,20 @@ module.exports = {
     sendRegimeAnalysis,
     sendAnomalyAlert,
     
-    // Utility functions
+    // AI-specific functions (NEW)
+    sendGPTResponse,
+    sendClaudeResponse,
+    sendDualAIResponse,
+    sendStrategicAnalysis,
+    
+    // Enhanced utility functions
     cleanResponse,
     splitMessage,
     findBestSplitPoint,
     getMessageStats,
     formatWithTimestamp,
+    getSmartEmoji,
+    buildMessageMetadata,
     
     // Legacy compatibility
     sendSmartResponse,
@@ -457,3 +597,8 @@ module.exports = {
     TELEGRAM_LIMITS,
     MESSAGE_TYPES
 };
+
+console.log('✅ Enhanced Telegram Splitter loaded (10/10)');
+console.log('🤖 AI-optimized message handling active');
+console.log('🎯 Smart emoji selection enabled');
+console.log('📊 Enhanced metadata support active');
