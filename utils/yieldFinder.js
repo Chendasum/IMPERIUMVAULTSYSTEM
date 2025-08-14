@@ -603,9 +603,9 @@ calculateYieldSharpeRatio(opportunity) {
         return opportunities.reduce((sum, opp) => sum + (opp.yield || 0), 0) / opportunities.length;
     }
 
-    calculateCompoundedIncome(principal, yield, years) {
-        return principal * Math.pow(1 + yield, years);
-    }
+calculateCompoundedIncome(principal, yieldRate, years) {
+    return principal * Math.pow(1 + yieldRate, years);
+}
 
     adjustForInflation(amount, years, inflationRate = 0.025) {
         return amount / Math.pow(1 + inflationRate, years);
