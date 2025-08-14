@@ -7,7 +7,7 @@ console.log(`TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? "SET" : "NOT
 console.log(`OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "SET" : "NOT SET"}`);
 console.log(`ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "SET" : "NOT SET"}`);
 console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? "SET" : "NOT SET"}`);
-console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}`); // 🔧 ADDED
+console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}`);
 
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
@@ -59,6 +59,112 @@ const {
     processDocumentMessage,
     processVideoMessage,
 } = require("./utils/multimodal");
+
+// 💰 COMPLETE AI WEALTH-BUILDING SYSTEM - ADD THESE 10 MODULES:
+
+// 🛡️ Risk Management & Capital Protection
+const { 
+    assessRisk, 
+    calculatePositionSize, 
+    monitorRisk, 
+    getDynamicStopLoss,
+    calculateVaR
+} = require("./utils/riskManager");
+
+// 📊 Market Opportunity Detection & Scanning
+const { 
+    scanMarkets, 
+    getTopOpportunities, 
+    scanStocks, 
+    scanCrypto,
+    scanOpportunities
+} = require("./utils/marketScanner");
+
+// 📈 Portfolio Optimization & Modern Portfolio Theory
+const { 
+    optimizePortfolio, 
+    calculateRebalancing, 
+    getOptimalAllocation, 
+    projectPerformance,
+    calculateEfficientFrontier
+} = require("./utils/portfolioOptimizer");
+
+// 💰 Income & Yield Generation Across All Assets
+const { 
+    findYields, 
+    getTopYields, 
+    projectIncome, 
+    createIncomePortfolio, 
+    scanDividends, 
+    scanCryptoYields
+} = require("./utils/yieldFinder");
+
+// 📊 Comprehensive Wealth Tracking & Performance Analytics
+const { 
+    trackWealth, 
+    getWealthSnapshot, 
+    calculatePerformance, 
+    checkMilestones,
+    projectWealth
+} = require("./utils/wealthTracker");
+
+// 🚨 Smart Alert System & Opportunity Notifications
+const { 
+    startAlerts, 
+    sendCustomAlert, 
+    getAlertStatus, 
+    configureAlerts, 
+    getAlertInsights
+} = require("./utils/alertSystem");
+
+// 🔄 Arbitrage Detection & Risk-Free Profit Opportunities
+const { 
+    scanArbitrage, 
+    findPriceArbitrage, 
+    scanImmediateOpportunities, 
+    monitorArbitrage,
+    findTriangularArbitrage
+} = require("./utils/arbitrageDetector");
+
+// ⚡ Trading Signals & Advanced Technical Analysis
+const { 
+    generateSignals, 
+    analyzeSymbol, 
+    getQuickSignals, 
+    scanForSignals, 
+    getSignalInsights
+} = require("./utils/tradingSignals");
+
+// 🧪 Strategy Backtesting & Validation System
+const { 
+    backtestStrategy, 
+    compareStrategies, 
+    quickBacktest, 
+    optimizeStrategy, 
+    stressTestStrategy
+} = require("./utils/backtester");
+
+// 💵 Cash Flow & Liquidity Optimization Mastery
+const { 
+    optimizeCashFlow, 
+    analyzeCurrentCashFlow, 
+    optimizeEmergencyFund, 
+    optimizeLiquidity, 
+    optimizeTaxes, 
+    optimizeDebt, 
+    projectCashFlow, 
+    monitorCashFlow
+} = require("./utils/cashFlowOptimizer");
+
+// Import COMPLETE enhanced database system
+const {
+    // Core database functions
+    initializeDatabase,
+    saveConversationDB,
+    // ... rest of your existing database imports ...
+} = require("./utils/database");
+
+// ... rest of your existing imports and code continues exactly the same ...
 
 // Import COMPLETE enhanced database system
 const {
