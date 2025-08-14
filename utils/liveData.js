@@ -3902,7 +3902,7 @@ class ArbitrageOpportunityScanner {
                 confidence: confidence,
                 expectedProfit: expectedProfit,
                 riskLevel: Math.abs(zscore) > 3 ? 'HIGH' : Math.abs(zscore) > 2 ? 'MODERATE' : 'LOW',
-                timeHorizon: this.estimateReversion Time(zscore),
+                timeHorizon: this.estimateReversionTime(zscore),
                 leverageRecommendation: this.calculateOptimalLeverage(zscore, correlation),
                 stopLoss: this.calculateStatArbStopLoss(zscore, standardDeviation),
                 targetProfit: this.calculateStatArbTarget(zscore, standardDeviation)
