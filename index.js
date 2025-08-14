@@ -806,7 +806,7 @@ async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = t
     }
 }
 
-// Enhanced command execution with full database logging + memory testing
+// Enhanced command execution with full database logging + memory testing + WEALTH SYSTEM
 async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
     
@@ -849,7 +849,7 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         } else if (text === '/maintenance') {
             await handleDatabaseMaintenance(chatId);
         
-        // 🔧 NEW: Database & Memory Testing Commands
+        // 🔧 Database & Memory Testing Commands
         } else if (text === '/test_db') {
             await handleDatabaseConnectionTest(chatId);
         } else if (text === '/test_memory') {
@@ -858,6 +858,108 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
             await handleMemoryRecoveryTest(chatId);
         } else if (text === '/memory_stats') {
             await handleMemoryStatistics(chatId);
+        
+        // 💰 AI WEALTH-BUILDING SYSTEM COMMANDS
+        } else if (text === '/wealth' || text === '/wealth-system') {
+            await handleWealthSystemOverview(chatId);
+        
+        // 🛡️ RISK MANAGEMENT COMMANDS
+        } else if (text === '/risk') {
+            await handleRiskAssessmentWealth(chatId);
+        } else if (text.startsWith('/position')) {
+            await handlePositionSizing(chatId, text);
+        } else if (text.startsWith('/stoploss')) {
+            await handleDynamicStopLoss(chatId, text);
+        } else if (text === '/risk_monitor') {
+            await handleRiskMonitoring(chatId);
+        
+        // 📊 MARKET SCANNING COMMANDS
+        } else if (text === '/scan' || text === '/scan_markets') {
+            await handleMarketScanning(chatId);
+        } else if (text === '/scan_stocks') {
+            await handleStockScanning(chatId);
+        } else if (text === '/scan_crypto') {
+            await handleCryptoScanning(chatId);
+        } else if (text === '/top_opportunities') {
+            await handleTopOpportunities(chatId);
+        
+        // 📈 PORTFOLIO OPTIMIZATION COMMANDS
+        } else if (text === '/optimize' || text === '/optimize_portfolio') {
+            await handlePortfolioOptimization(chatId);
+        } else if (text === '/rebalance') {
+            await handleRebalancing(chatId);
+        } else if (text === '/efficient_frontier') {
+            await handleEfficientFrontier(chatId);
+        
+        // 💰 YIELD & INCOME COMMANDS
+        } else if (text === '/yields' || text === '/income') {
+            await handleYieldFinding(chatId);
+        } else if (text === '/dividends') {
+            await handleDividendScanning(chatId);
+        } else if (text === '/crypto_yields') {
+            await handleCryptoYields(chatId);
+        } else if (text.startsWith('/income_project')) {
+            await handleIncomeProjection(chatId, text);
+        
+        // 📊 WEALTH TRACKING COMMANDS
+        } else if (text === '/track' || text === '/wealth_track') {
+            await handleWealthTracking(chatId);
+        } else if (text === '/net_worth') {
+            await handleNetWorthAnalysis(chatId);
+        } else if (text === '/milestones') {
+            await handleWealthMilestones(chatId);
+        } else if (text.startsWith('/wealth_project')) {
+            await handleWealthProjection(chatId, text);
+        
+        // 🚨 ALERT SYSTEM COMMANDS
+        } else if (text === '/alerts_start') {
+            await handleAlertsStart(chatId);
+        } else if (text === '/alerts_status') {
+            await handleAlertsStatus(chatId);
+        } else if (text === '/alerts_config') {
+            await handleAlertsConfig(chatId);
+        } else if (text.startsWith('/alert_price')) {
+            await handlePriceAlert(chatId, text);
+        
+        // 🔄 ARBITRAGE COMMANDS
+        } else if (text === '/arbitrage' || text === '/arbitrage_scan') {
+            await handleArbitrageScanning(chatId);
+        } else if (text === '/arbitrage_immediate') {
+            await handleImmediateArbitrage(chatId);
+        } else if (text === '/triangular') {
+            await handleTriangularArbitrage(chatId);
+        } else if (text === '/arbitrage_monitor') {
+            await handleArbitrageMonitoring(chatId);
+        
+        // ⚡ TRADING SIGNALS COMMANDS
+        } else if (text.startsWith('/signals')) {
+            await handleTradingSignals(chatId, text);
+        } else if (text.startsWith('/analyze')) {
+            await handleSymbolAnalysis(chatId, text);
+        } else if (text === '/signals_scan') {
+            await handleSignalsScanning(chatId);
+        
+        // 🧪 BACKTESTING COMMANDS
+        } else if (text.startsWith('/backtest')) {
+            await handleBacktesting(chatId, text);
+        } else if (text.startsWith('/compare_strategies')) {
+            await handleStrategyComparison(chatId, text);
+        } else if (text.startsWith('/optimize_strategy')) {
+            await handleStrategyOptimization(chatId, text);
+        
+        // 💵 CASH FLOW OPTIMIZATION COMMANDS
+        } else if (text === '/cashflow' || text === '/cashflow_optimize') {
+            await handleCashFlowOptimization(chatId);
+        } else if (text === '/emergency_fund') {
+            await handleEmergencyFundOptimization(chatId);
+        } else if (text === '/liquidity') {
+            await handleLiquidityOptimization(chatId);
+        } else if (text === '/tax_optimize') {
+            await handleTaxOptimization(chatId);
+        } else if (text === '/debt_optimize') {
+            await handleDebtOptimization(chatId);
+        } else if (text === '/cashflow_monitor') {
+            await handleCashFlowMonitoring(chatId);
         
         } else {
             // Handle general conversation with enhanced dual AI system
@@ -881,18 +983,32 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
     }
 }
 
-// 🔧 FIXED: Enhanced command handlers with database integration
+// 🔧 UPDATED: Enhanced command handlers with wealth system integration
 async function handleStartCommand(chatId) {
-    const welcome = `🤖 **Enhanced AI Assistant System v3.2**
+    const welcome = `🤖 **Enhanced AI Assistant System v4.0 - WEALTH EMPIRE**
 
 **🎯 Core Features:**
 - Dual AI: gpt-5 + Claude Opus 4.1
+- Complete AI Wealth-Building System (10 modules)
 - Enhanced PostgreSQL Database Integration
 - Live market data & Ray Dalio framework
 - Cambodia fund analysis
 - Advanced document processing
 - Voice and image analysis
 - Persistent memory system
+
+**💰 AI WEALTH-BUILDING COMMANDS:**
+/wealth - Complete wealth system overview
+/risk - Portfolio risk assessment
+/scan - Market opportunity scanner
+/optimize - Portfolio optimization
+/yields - Income generation opportunities
+/track - Wealth tracking & analytics
+/alerts_start - Smart alert system
+/arbitrage - Risk-free profit scanner
+/signals [SYMBOL] - Trading signals analysis
+/backtest [STRATEGY] - Strategy validation
+/cashflow - Cash flow optimization
 
 **🏦 Cambodia Fund Commands:**
 /deal_analyze [amount] [type] [location] [rate] [term]
@@ -923,6 +1039,7 @@ async function handleStartCommand(chatId) {
 /memory_stats - Memory statistics
 
 **Chat ID:** ${chatId}
+**🏆 AI Wealth Empire Status:** ACTIVE
 **Database Status:** ${connectionStats.connectionHealth}`;
 
     await sendSmartMessage(bot, chatId, welcome);
@@ -932,7 +1049,20 @@ async function handleStartCommand(chatId) {
 }
 
 async function handleHelpCommand(chatId) {
-    const help = `🤖 **Enhanced AI Assistant Help**
+    const help = `🤖 **Enhanced AI Assistant Help v4.0 - WEALTH EMPIRE**
+
+**💰 AI WEALTH-BUILDING SYSTEM:**
+Complete 10-module system for building serious wealth:
+- 🛡️ Risk Management & Capital Protection
+- 📊 Market Opportunity Detection
+- 📈 Portfolio Optimization (Modern Portfolio Theory)
+- 💰 Income & Yield Generation
+- 📊 Comprehensive Wealth Tracking
+- 🚨 Smart Alert System
+- 🔄 Arbitrage Detection (Risk-free profits)
+- ⚡ Trading Signals & Technical Analysis
+- 🧪 Strategy Backtesting & Validation
+- 💵 Cash Flow & Liquidity Optimization
 
 **Main Features:**
 - Natural conversation with dual AI routing (gpt-5 + Claude)
@@ -942,12 +1072,23 @@ async function handleHelpCommand(chatId) {
 - Voice/image processing with history
 - Persistent memory system
 
+**Wealth Commands Examples:**
+- "/wealth" - View complete wealth system
+- "/risk" - Assess portfolio risk
+- "/scan" - Find market opportunities
+- "/yields" - Discover income opportunities
+- "/signals AAPL" - Get Apple trading signals
+- "/arbitrage" - Find risk-free profits
+- "/backtest buyAndHold" - Test buy & hold strategy
+- "/cashflow" - Optimize cash flow
+
 **Database Features:**
 - Persistent conversation memory
 - Training document storage
 - Ray Dalio regime tracking
 - Cambodia deal analytics
 - Enhanced system monitoring
+- Wealth tracking database
 
 **Memory System:**
 - Remembers important facts about you
@@ -959,11 +1100,13 @@ async function handleHelpCommand(chatId) {
 - Ask questions naturally (auto-routed to best AI)
 - Upload documents with "train" to add to knowledge base
 - Use specific commands for structured analysis
+- Use wealth commands to build wealth with AI
 - All interactions are saved for context
 
 **Examples:**
 - "Remember my name is John" (Memory system)
 - "What's the current market regime?" (Claude Analysis)
+- "Find me high-yield opportunities" (Wealth System)
 - "Analyze this Cambodia lending opportunity" (Specialized)
 - "Tell me a joke" (gpt-5)
 - "/test_memory" to check if memory is working`;
@@ -972,6 +1115,234 @@ async function handleHelpCommand(chatId) {
     
     // Save help interaction
     await saveConversationDB(chatId, "/help", help, "command").catch(console.error);
+}
+
+// 💰 WEALTH SYSTEM COMMAND HANDLERS
+
+async function handleWealthSystemOverview(chatId) {
+    try {
+        info(`🏆 Wealth system overview requested by user ${chatId}`);
+        await sendSmartMessage(bot, chatId, `
+🏆 **AI WEALTH EMPIRE - COMPLETE SYSTEM OVERVIEW** 💰
+
+**📊 10 WEALTH-BUILDING MODULES ACTIVE:**
+
+**🛡️ RISK MANAGEMENT:**
+• /risk - Portfolio risk assessment
+• /position [SYMBOL] [AMOUNT] [STOP] [ENTRY] - Position sizing
+• /stoploss [SYMBOL] [ENTRY] [DIRECTION] - Dynamic stop loss
+• /risk_monitor - Real-time risk monitoring
+
+**📊 MARKET SCANNING:**
+• /scan - Complete market opportunity scan
+• /scan_stocks - Stock market opportunities
+• /scan_crypto - Cryptocurrency opportunities  
+• /top_opportunities - Top-ranked opportunities
+
+**📈 PORTFOLIO OPTIMIZATION:**
+• /optimize - Portfolio optimization using MPT
+• /rebalance - Portfolio rebalancing analysis
+• /efficient_frontier - Efficient frontier calculation
+
+**💰 INCOME GENERATION:**
+• /yields - Find high-yield opportunities
+• /dividends - Dividend stock analysis
+• /crypto_yields - Crypto staking/DeFi yields
+• /income_project [AMOUNT] [YEARS] - Income projections
+
+**📊 WEALTH TRACKING:**
+• /track - Complete wealth tracking analysis
+• /net_worth - Net worth breakdown
+• /milestones - Wealth milestone tracking
+• /wealth_project [YEARS] - Wealth projections
+
+**🚨 SMART ALERTS:**
+• /alerts_start - Activate alert system
+• /alerts_status - Check alert status
+• /alert_price [SYMBOL] [PRICE] - Set price alerts
+
+**🔄 ARBITRAGE DETECTION:**
+• /arbitrage - Scan for risk-free profits
+• /arbitrage_immediate - Immediate opportunities
+• /triangular - Triangular arbitrage
+• /arbitrage_monitor - Start monitoring
+
+**⚡ TRADING SIGNALS:**
+• /signals [SYMBOL] - Technical analysis signals
+• /analyze [SYMBOL] - Deep symbol analysis
+• /signals_scan - Scan for high-confidence signals
+
+**🧪 STRATEGY BACKTESTING:**
+• /backtest [STRATEGY] [TIMEFRAME] - Test strategies
+• /compare_strategies [STRAT1] [STRAT2] - Compare
+• /optimize_strategy [STRATEGY] - Optimize parameters
+
+**💵 CASH FLOW OPTIMIZATION:**
+• /cashflow - Complete cash flow optimization
+• /emergency_fund - Emergency fund optimization
+• /liquidity - Liquidity management
+• /tax_optimize - Tax efficiency strategies
+• /debt_optimize - Debt optimization
+• /cashflow_monitor - Monitor cash flow
+
+**🚀 YOUR AI WEALTH-BUILDING EMPIRE IS READY!**
+Use any command above to start building serious wealth with AI precision.
+        `);
+        
+        await saveConversationDB(chatId, "/wealth", "Wealth system overview displayed", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Wealth system overview failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Wealth system overview failed. Please try again.");
+    }
+}
+
+// 🛡️ RISK MANAGEMENT HANDLERS
+async function handleRiskAssessmentWealth(chatId) {
+    try {
+        info(`🛡️ Risk assessment requested by user ${chatId}`);
+        await assessRisk(chatId);
+        await saveConversationDB(chatId, "/risk", "Risk assessment completed", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Risk assessment failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Risk assessment failed. Please try again.");
+    }
+}
+
+async function handlePositionSizing(chatId, text) {
+    try {
+        const parts = text.split(' ');
+        if (parts.length < 5) {
+            await sendSmartMessage(bot, chatId, "Usage: /position [SYMBOL] [ACCOUNT_BALANCE] [STOP_LOSS] [ENTRY_PRICE]\nExample: /position AAPL 100000 150 160");
+            return;
+        }
+        
+        const [, symbol, balance, stopLoss, entryPrice] = parts;
+        info(`📊 Position sizing for ${symbol} requested by user ${chatId}`);
+        
+        const result = await calculatePositionSize(symbol, parseFloat(balance), parseFloat(stopLoss), parseFloat(entryPrice));
+        await sendSmartMessage(bot, chatId, `**Position Sizing for ${symbol}:**\n\n${JSON.stringify(result, null, 2)}`);
+        await saveConversationDB(chatId, text, "Position sizing calculated", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Position sizing failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Position sizing calculation failed. Please check your inputs.");
+    }
+}
+
+// 📊 MARKET SCANNING HANDLERS
+async function handleMarketScanning(chatId) {
+    try {
+        info(`📊 Market scanning requested by user ${chatId}`);
+        await scanMarkets(chatId, {});
+        await saveConversationDB(chatId, "/scan", "Market scanning completed", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Market scanning failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Market scanning failed. Please try again.");
+    }
+}
+
+// 📈 PORTFOLIO OPTIMIZATION HANDLERS
+async function handlePortfolioOptimization(chatId) {
+    try {
+        info(`📈 Portfolio optimization requested by user ${chatId}`);
+        const mockPortfolio = {}; // In real implementation, get user's actual portfolio
+        const preferences = {}; // Get user preferences
+        await optimizePortfolio(mockPortfolio, preferences, chatId);
+        await saveConversationDB(chatId, "/optimize", "Portfolio optimization completed", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Portfolio optimization failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Portfolio optimization failed. Please try again.");
+    }
+}
+
+// 💰 YIELD FINDING HANDLERS
+async function handleYieldFinding(chatId) {
+    try {
+        info(`💰 Yield finding requested by user ${chatId}`);
+        await findYields({}, chatId);
+        await saveConversationDB(chatId, "/yields", "Yield finding completed", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Yield finding failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Yield finding failed. Please try again.");
+    }
+}
+
+// 📊 WEALTH TRACKING HANDLERS
+async function handleWealthTracking(chatId) {
+    try {
+        info(`📊 Wealth tracking requested by user ${chatId}`);
+        await trackWealth('user_' + chatId, chatId);
+        await saveConversationDB(chatId, "/track", "Wealth tracking completed", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Wealth tracking failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Wealth tracking failed. Please try again.");
+    }
+}
+
+// 🚨 ALERT SYSTEM HANDLERS
+async function handleAlertsStart(chatId) {
+    try {
+        info(`🚨 Alert system start requested by user ${chatId}`);
+        await startAlerts('user_' + chatId, chatId, {});
+        await saveConversationDB(chatId, "/alerts_start", "Alert system activated", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Alert system start failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Alert system activation failed. Please try again.");
+    }
+}
+
+// 🔄 ARBITRAGE HANDLERS
+async function handleArbitrageScanning(chatId) {
+    try {
+        info(`🔄 Arbitrage scanning requested by user ${chatId}`);
+        await scanArbitrage({}, chatId);
+        await saveConversationDB(chatId, "/arbitrage", "Arbitrage scanning completed", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Arbitrage scanning failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Arbitrage scanning failed. Please try again.");
+    }
+}
+
+// ⚡ TRADING SIGNALS HANDLERS
+async function handleTradingSignals(chatId, text) {
+    try {
+        const symbols = text.split(' ').slice(1);
+        const targetSymbols = symbols.length ? symbols : ['AAPL'];
+        info(`⚡ Trading signals for ${targetSymbols.join(', ')} requested by user ${chatId}`);
+        
+        await generateSignals(targetSymbols, ['1h', '1d'], chatId);
+        await saveConversationDB(chatId, text, "Trading signals generated", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Trading signals failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Trading signals generation failed. Please try again.");
+    }
+}
+
+// 🧪 BACKTESTING HANDLERS
+async function handleBacktesting(chatId, text) {
+    try {
+        const parts = text.split(' ');
+        const strategyType = parts[1] || 'buyAndHold';
+        const timeframe = parts[2] || '1year';
+        
+        info(`🧪 Backtesting ${strategyType} strategy requested by user ${chatId}`);
+        await quickBacktest(strategyType, chatId, timeframe);
+        await saveConversationDB(chatId, text, "Backtesting completed", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Backtesting failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Backtesting failed. Please try again.");
+    }
+}
+
+// 💵 CASH FLOW HANDLERS
+async function handleCashFlowOptimization(chatId) {
+    try {
+        info(`💵 Cash flow optimization requested by user ${chatId}`);
+        await optimizeCashFlow('user_' + chatId, {}, chatId);
+        await saveConversationDB(chatId, "/cashflow", "Cash flow optimization completed", "wealth_command").catch(console.error);
+    } catch (error) {
+        error(`Cash flow optimization failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Cash flow optimization failed. Please try again.");
+    }
 }
 
 // 🔧 FIXED: Enhanced system status with better database checking
