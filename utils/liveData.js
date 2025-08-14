@@ -12121,7 +12121,7 @@ class AIInvestmentResearchEngine {
         };
 
         this.aiModels = {
-            GPT4: 'GPT-4 for comprehensive analysis',
+            GPT4: 'GPT-5 for comprehensive analysis',
             CLAUDE: 'Claude for detailed research',
             FINBERT: 'FinBERT for financial sentiment',
             CUSTOM_ML: 'Custom ML models for predictions'
