@@ -6421,4 +6421,1446 @@ module.exports = {
     generatePortfolioRecommendations
 };
 
+// 🏆 WEALTH MODULE 6: WEALTH BUILDING STRATEGIES & GOAL PLANNING
+// Advanced financial planning, goal tracking, and wealth accumulation strategies
 
+// 🎯 WEALTH GOAL PLANNER
+class WealthGoalPlanner {
+    constructor() {
+        this.goalTypes = {
+            RETIREMENT: 'Retirement Planning',
+            HOME_PURCHASE: 'Home Purchase',
+            EDUCATION: 'Education Funding',
+            EMERGENCY_FUND: 'Emergency Fund',
+            WEALTH_ACCUMULATION: 'General Wealth Building',
+            DEBT_PAYOFF: 'Debt Elimination',
+            BUSINESS_INVESTMENT: 'Business Investment',
+            TRAVEL: 'Travel Fund',
+            LUXURY_PURCHASE: 'Luxury Purchase',
+            CHARITABLE_GIVING: 'Charitable Goals'
+        };
+        
+        this.timeHorizons = {
+            SHORT_TERM: { years: 2, riskLevel: 'CONSERVATIVE', expectedReturn: 0.04 },
+            MEDIUM_TERM: { years: 7, riskLevel: 'MODERATE', expectedReturn: 0.07 },
+            LONG_TERM: { years: 15, riskLevel: 'AGGRESSIVE', expectedReturn: 0.10 },
+            VERY_LONG_TERM: { years: 30, riskLevel: 'AGGRESSIVE', expectedReturn: 0.10 }
+        };
+        
+        this.riskProfiles = {
+            CONSERVATIVE: { 
+                expectedReturn: 0.05, 
+                volatility: 0.08,
+                allocation: { stocks: 0.3, bonds: 0.6, alternatives: 0.05, cash: 0.05 }
+            },
+            MODERATE: { 
+                expectedReturn: 0.08, 
+                volatility: 0.12,
+                allocation: { stocks: 0.6, bonds: 0.3, alternatives: 0.05, cash: 0.05 }
+            },
+            AGGRESSIVE: { 
+                expectedReturn: 0.11, 
+                volatility: 0.18,
+                allocation: { stocks: 0.8, bonds: 0.1, alternatives: 0.05, cash: 0.05 }
+            },
+            VERY_AGGRESSIVE: { 
+                expectedReturn: 0.13, 
+                volatility: 0.25,
+                allocation: { stocks: 0.9, bonds: 0.0, alternatives: 0.05, cash: 0.05 }
+            }
+        };
+    }
+    
+    // 🎯 CREATE COMPREHENSIVE WEALTH GOAL
+    async createWealthGoal(goalData) {
+        try {
+            const {
+                goalName,
+                goalType,
+                targetAmount,
+                timeHorizon, // in years
+                currentSavings = 0,
+                monthlyContribution = 0,
+                riskTolerance = 'MODERATE',
+                inflationAdjusted = true,
+                priority = 'MEDIUM'
+            } = goalData;
+            
+            // Get current inflation expectations
+            const inflationData = await getInflationExpectations().catch(() => ({ expectations: { '5year': 0.025 } }));
+            const inflationRate = inflationData.expectations ? inflationData.expectations['5year'] / 100 : 0.025;
+            
+            // Adjust target amount for inflation if requested
+            const adjustedTargetAmount = inflationAdjusted ? 
+                targetAmount * Math.pow(1 + inflationRate, timeHorizon) : targetAmount;
+            
+            // Calculate required return and strategy
+            const strategy = this.calculateWealthBuildingStrategy({
+                targetAmount: adjustedTargetAmount,
+                currentSavings,
+                monthlyContribution,
+                timeHorizon,
+                riskTolerance,
+                inflationRate
+            });
+            
+            // Generate milestone tracking
+            const milestones = this.generateMilestones(adjustedTargetAmount, timeHorizon);
+            
+            // Calculate probability of success
+            const successProbability = this.calculateSuccessProbability(strategy, riskTolerance);
+            
+            // Generate recommendations
+            const recommendations = this.generateGoalRecommendations(strategy, successProbability);
+            
+            return {
+                goalId: `goal_${Date.now()}`,
+                goalName,
+                goalType,
+                originalTarget: targetAmount,
+                inflationAdjustedTarget: adjustedTargetAmount,
+                currentSavings,
+                monthlyContribution,
+                timeHorizon,
+                riskTolerance,
+                strategy,
+                milestones,
+                successProbability,
+                recommendations,
+                projectedOutcomes: this.generateProjectedOutcomes(strategy, riskTolerance),
+                trackingMetrics: this.generateTrackingMetrics(strategy),
+                createdDate: new Date().toISOString(),
+                lastUpdated: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Wealth goal creation error:', error.message);
+            return { error: error.message };
+        }
+    }
+    
+    // 📊 CALCULATE WEALTH BUILDING STRATEGY
+    calculateWealthBuildingStrategy(data) {
+        const { targetAmount, currentSavings, monthlyContribution, timeHorizon, riskTolerance, inflationRate } = data;
+        
+        // Get risk profile parameters
+        const riskProfile = this.riskProfiles[riskTolerance];
+        const expectedReturn = riskProfile.expectedReturn;
+        
+        // Calculate future value of current savings
+        const futureValueCurrentSavings = currentSavings * Math.pow(1 + expectedReturn, timeHorizon);
+        
+        // Calculate future value of monthly contributions (annuity)
+        const monthlyRate = expectedReturn / 12;
+        const futureValueContributions = monthlyContribution * 
+            (Math.pow(1 + monthlyRate, timeHorizon * 12) - 1) / monthlyRate;
+        
+        // Total projected value
+        const totalProjectedValue = futureValueCurrentSavings + futureValueContributions;
+        
+        // Gap analysis
+        const shortfall = Math.max(0, targetAmount - totalProjectedValue);
+        const surplus = Math.max(0, totalProjectedValue - targetAmount);
+        
+        // Required monthly contribution to meet goal
+        const requiredMonthlyToMeetGoal = shortfall > 0 ? 
+            (shortfall / ((Math.pow(1 + monthlyRate, timeHorizon * 12) - 1) / monthlyRate)) : 0;
+        
+        // Alternative scenarios
+        const alternativeStrategies = this.calculateAlternativeStrategies(data);
+        
+        return {
+            expectedReturn: expectedReturn,
+            projectedValue: totalProjectedValue,
+            shortfall: shortfall,
+            surplus: surplus,
+            onTrack: shortfall === 0,
+            requiredMonthlyContribution: requiredMonthlyToMeetGoal,
+            currentMonthlyContribution: monthlyContribution,
+            additionalMonthlyNeeded: Math.max(0, requiredMonthlyToMeetGoal - monthlyContribution),
+            riskProfile: riskProfile,
+            alternativeStrategies: alternativeStrategies,
+            inflationImpact: {
+                realTargetAmount: targetAmount,
+                inflationAdjustedAmount: targetAmount * Math.pow(1 + inflationRate, timeHorizon),
+                inflationRate: inflationRate,
+                purchasingPowerLoss: (1 - Math.pow(1 / (1 + inflationRate), timeHorizon)) * 100
+            }
+        };
+    }
+    
+    // 🔄 CALCULATE ALTERNATIVE STRATEGIES
+    calculateAlternativeStrategies(originalData) {
+        const alternatives = [];
+        
+        // Higher risk tolerance strategy
+        if (originalData.riskTolerance !== 'VERY_AGGRESSIVE') {
+            const higherRiskTolerance = this.getNextRiskLevel(originalData.riskTolerance);
+            const higherRiskStrategy = this.calculateWealthBuildingStrategy({
+                ...originalData,
+                riskTolerance: higherRiskTolerance
+            });
+            
+            alternatives.push({
+                name: 'Higher Risk Approach',
+                riskTolerance: higherRiskTolerance,
+                strategy: higherRiskStrategy,
+                tradeoff: 'Higher returns but increased volatility'
+            });
+        }
+        
+        // Extended timeline strategy
+        const extendedStrategy = this.calculateWealthBuildingStrategy({
+            ...originalData,
+            timeHorizon: originalData.timeHorizon + 2
+        });
+        
+        alternatives.push({
+            name: 'Extended Timeline',
+            timeHorizon: originalData.timeHorizon + 2,
+            strategy: extendedStrategy,
+            tradeoff: 'Lower monthly requirement with more time'
+        });
+        
+        // Increased contribution strategy
+        const increasedContributionStrategy = this.calculateWealthBuildingStrategy({
+            ...originalData,
+            monthlyContribution: originalData.monthlyContribution * 1.5
+        });
+        
+        alternatives.push({
+            name: 'Increased Contributions',
+            monthlyContribution: originalData.monthlyContribution * 1.5,
+            strategy: increasedContributionStrategy,
+            tradeoff: '50% higher monthly savings requirement'
+        });
+        
+        return alternatives;
+    }
+    
+    // 📈 GENERATE MILESTONES
+    generateMilestones(targetAmount, timeHorizon) {
+        const milestones = [];
+        const milestoneIntervals = Math.max(1, Math.floor(timeHorizon / 5)); // Every 20% of timeline
+        
+        for (let i = 1; i <= 5; i++) {
+            const percentComplete = i * 20;
+            const targetValue = targetAmount * (i / 5);
+            const timePoint = timeHorizon * (i / 5);
+            
+            milestones.push({
+                milestone: `${percentComplete}% Goal Achievement`,
+                targetValue: targetValue,
+                timePoint: timePoint,
+                description: `Reach ${(targetValue).toLocaleString()} by year ${timePoint.toFixed(1)}`,
+                percentComplete: percentComplete,
+                achieved: false
+            });
+        }
+        
+        return milestones;
+    }
+    
+    // 🎲 CALCULATE SUCCESS PROBABILITY
+    calculateSuccessProbability(strategy, riskTolerance) {
+        const riskProfile = this.riskProfiles[riskTolerance];
+        const volatility = riskProfile.volatility;
+        
+        // Monte Carlo simulation concept (simplified)
+        // Higher volatility = lower probability of hitting exact target
+        let baseProbability = 0.75; // 75% base probability
+        
+        // Adjust for volatility
+        if (volatility > 0.20) baseProbability -= 0.15;
+        else if (volatility > 0.15) baseProbability -= 0.10;
+        else if (volatility < 0.10) baseProbability += 0.10;
+        
+        // Adjust for gap between current trajectory and goal
+        if (strategy.onTrack) baseProbability += 0.15;
+        else if (strategy.shortfall > strategy.projectedValue * 0.5) baseProbability -= 0.20;
+        else if (strategy.shortfall > strategy.projectedValue * 0.2) baseProbability -= 0.10;
+        
+        // Adjust for time horizon
+        if (strategy.timeHorizon > 20) baseProbability += 0.10;
+        else if (strategy.timeHorizon < 5) baseProbability -= 0.15;
+        
+        return {
+            probability: Math.max(0.1, Math.min(0.95, baseProbability)),
+            confidence: 'MODERATE',
+            factors: {
+                volatilityImpact: volatility > 0.15 ? 'NEGATIVE' : 'NEUTRAL',
+                timeHorizonImpact: strategy.timeHorizon > 10 ? 'POSITIVE' : 'NEUTRAL',
+                gapImpact: strategy.onTrack ? 'POSITIVE' : 'NEGATIVE'
+            }
+        };
+    }
+    
+    // 💡 GENERATE GOAL RECOMMENDATIONS
+    generateGoalRecommendations(strategy, successProbability) {
+        const recommendations = [];
+        
+        // Shortfall recommendations
+        if (strategy.shortfall > 0) {
+            if (strategy.additionalMonthlyNeeded > 0) {
+                recommendations.push({
+                    type: 'INCREASE_CONTRIBUTIONS',
+                    priority: 'HIGH',
+                    message: `Increase monthly contributions by $${strategy.additionalMonthlyNeeded.toFixed(0)} to meet goal`,
+                    action: 'ADJUST_SAVINGS_RATE'
+                });
+            }
+            
+            recommendations.push({
+                type: 'CONSIDER_HIGHER_RISK',
+                priority: 'MODERATE',
+                message: 'Consider higher-growth investments to bridge the gap',
+                action: 'REVIEW_ASSET_ALLOCATION'
+            });
+        }
+        
+        // Low probability recommendations
+        if (successProbability.probability < 0.6) {
+            recommendations.push({
+                type: 'REVISE_EXPECTATIONS',
+                priority: 'HIGH',
+                message: 'Current plan has low success probability - consider adjusting goal or timeline',
+                action: 'REVISE_GOAL_PARAMETERS'
+            });
+        }
+        
+        // High risk recommendations
+        if (strategy.riskProfile.volatility > 0.2) {
+            recommendations.push({
+                type: 'RISK_MANAGEMENT',
+                priority: 'MODERATE',
+                message: 'High volatility strategy - ensure you can handle market fluctuations',
+                action: 'DIVERSIFY_APPROACH'
+            });
+        }
+        
+        // Timeline recommendations
+        if (strategy.timeHorizon < 5) {
+            recommendations.push({
+                type: 'SHORT_TIMELINE',
+                priority: 'HIGH',
+                message: 'Short timeline limits growth potential - consider extending goal deadline',
+                action: 'EXTEND_TIMELINE'
+            });
+        }
+        
+        // Success recommendations
+        if (strategy.surplus > 0) {
+            recommendations.push({
+                type: 'SURPLUS_OPPORTUNITY',
+                priority: 'LOW',
+                message: 'On track to exceed goal - consider additional objectives or risk reduction',
+                action: 'OPTIMIZE_STRATEGY'
+            });
+        }
+        
+        return recommendations;
+    }
+    
+    // 📊 GENERATE PROJECTED OUTCOMES
+    generateProjectedOutcomes(strategy, riskTolerance) {
+        const riskProfile = this.riskProfiles[riskTolerance];
+        const baseReturn = riskProfile.expectedReturn;
+        const volatility = riskProfile.volatility;
+        
+        // Generate scenarios
+        const scenarios = {
+            optimistic: {
+                return: baseReturn + volatility,
+                probability: 0.25,
+                description: 'Markets perform above average'
+            },
+            expected: {
+                return: baseReturn,
+                probability: 0.5,
+                description: 'Markets perform as expected'
+            },
+            pessimistic: {
+                return: Math.max(0.01, baseReturn - volatility),
+                probability: 0.25,
+                description: 'Markets underperform'
+            }
+        };
+        
+        const outcomes = {};
+        
+        Object.keys(scenarios).forEach(scenario => {
+            const scenarioReturn = scenarios[scenario].return;
+            const projectedValue = this.calculateFutureValue(
+                strategy.currentSavings,
+                strategy.currentMonthlyContribution,
+                scenarioReturn,
+                strategy.timeHorizon
+            );
+            
+            outcomes[scenario] = {
+                ...scenarios[scenario],
+                projectedValue: projectedValue,
+                targetAchievement: (projectedValue / strategy.projectedValue) * 100
+            };
+        });
+        
+        return outcomes;
+    }
+    
+    // 📋 GENERATE TRACKING METRICS
+    generateTrackingMetrics(strategy) {
+        return {
+            monthlyContributionTarget: strategy.currentMonthlyContribution,
+            requiredAnnualReturn: strategy.expectedReturn * 100,
+            targetGrowthRate: ((strategy.projectedValue / strategy.currentSavings) - 1) / strategy.timeHorizon * 100,
+            savingsRate: {
+                current: strategy.currentMonthlyContribution,
+                required: strategy.requiredMonthlyContribution,
+                deficit: strategy.additionalMonthlyNeeded
+            },
+            progressMetrics: {
+                timeElapsed: 0,
+                valueAccumulated: strategy.currentSavings,
+                percentToGoal: (strategy.currentSavings / strategy.projectedValue) * 100,
+                onTrackStatus: strategy.onTrack
+            }
+        };
+    }
+    
+    // 🔧 HELPER METHODS
+    
+    getNextRiskLevel(currentRisk) {
+        const riskLevels = ['CONSERVATIVE', 'MODERATE', 'AGGRESSIVE', 'VERY_AGGRESSIVE'];
+        const currentIndex = riskLevels.indexOf(currentRisk);
+        return currentIndex < riskLevels.length - 1 ? riskLevels[currentIndex + 1] : currentRisk;
+    }
+    
+    calculateFutureValue(presentValue, monthlyPayment, annualRate, years) {
+        const monthlyRate = annualRate / 12;
+        const months = years * 12;
+        
+        // Future value of present amount
+        const fvPresent = presentValue * Math.pow(1 + annualRate, years);
+        
+        // Future value of annuity
+        const fvAnnuity = monthlyPayment * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
+        
+        return fvPresent + fvAnnuity;
+    }
+}
+
+// 🏗️ WEALTH BUILDING STRATEGY ENGINE
+class WealthBuildingStrategyEngine {
+    constructor() {
+        this.strategies = {
+            DOLLAR_COST_AVERAGING: 'Dollar Cost Averaging',
+            VALUE_AVERAGING: 'Value Averaging',
+            AGGRESSIVE_GROWTH: 'Aggressive Growth Strategy',
+            BALANCED_APPROACH: 'Balanced Growth Strategy',
+            CONSERVATIVE_INCOME: 'Conservative Income Strategy',
+            RETIREMENT_GLIDE_PATH: 'Target Date Strategy',
+            TAX_OPTIMIZED: 'Tax-Optimized Strategy',
+            ESG_FOCUSED: 'ESG/Sustainable Strategy'
+        };
+        
+        this.wealthBuildingPrinciples = {
+            COMPOUND_INTEREST: 'Maximize Compound Growth',
+            DIVERSIFICATION: 'Spread Risk Across Assets',
+            COST_MINIMIZATION: 'Minimize Fees and Taxes',
+            CONSISTENT_INVESTING: 'Regular Investment Discipline',
+            REBALANCING: 'Maintain Target Allocation',
+            TAX_EFFICIENCY: 'Optimize Tax Treatment',
+            INFLATION_PROTECTION: 'Preserve Purchasing Power',
+            RISK_MANAGEMENT: 'Protect Against Major Losses'
+        };
+    }
+    
+    // 🎯 DESIGN OPTIMAL WEALTH STRATEGY
+    async designOptimalWealthStrategy(clientProfile, goals) {
+        try {
+            const {
+                age,
+                income,
+                currentNetWorth,
+                riskTolerance,
+                timeHorizon,
+                taxSituation,
+                liquidityNeeds,
+                investmentExperience
+            } = clientProfile;
+            
+            // Get market regime context
+            const regimeData = await detectEconomicRegime().catch(() => ({ currentRegime: { name: 'MODERATE' } }));
+            
+            // Calculate optimal asset allocation
+            const assetAllocation = this.calculateOptimalAllocation(clientProfile, regimeData);
+            
+            // Design investment strategy
+            const investmentStrategy = this.designInvestmentStrategy(clientProfile, assetAllocation);
+            
+            // Create implementation plan
+            const implementationPlan = this.createImplementationPlan(investmentStrategy, goals);
+            
+            // Generate tax optimization strategies
+            const taxOptimization = this.generateTaxOptimizationStrategies(clientProfile, investmentStrategy);
+            
+            // Create monitoring and rebalancing schedule
+            const monitoringPlan = this.createMonitoringPlan(investmentStrategy, timeHorizon);
+            
+            return {
+                clientProfile: clientProfile,
+                assetAllocation: assetAllocation,
+                investmentStrategy: investmentStrategy,
+                implementationPlan: implementationPlan,
+                taxOptimization: taxOptimization,
+                monitoringPlan: monitoringPlan,
+                expectedOutcomes: this.calculateExpectedOutcomes(investmentStrategy, timeHorizon),
+                riskAnalysis: this.analyzeStrategyRisks(investmentStrategy, clientProfile),
+                alternatives: this.generateAlternativeStrategies(clientProfile, assetAllocation),
+                marketRegimeConsiderations: this.getRegimeConsiderations(regimeData),
+                strategyDate: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Wealth strategy design error:', error.message);
+            return { error: error.message };
+        }
+    }
+    
+    // 📊 CALCULATE OPTIMAL ALLOCATION
+    calculateOptimalAllocation(clientProfile, regimeData) {
+        const { age, riskTolerance, timeHorizon, liquidityNeeds } = clientProfile;
+        
+        // Base allocation using age-based rule with adjustments
+        let stockAllocation = Math.max(0.3, Math.min(0.9, (100 - age) / 100));
+        
+        // Adjust for risk tolerance
+        const riskAdjustments = {
+            'CONSERVATIVE': -0.2,
+            'MODERATE': 0,
+            'AGGRESSIVE': 0.15,
+            'VERY_AGGRESSIVE': 0.25
+        };
+        
+        stockAllocation += riskAdjustments[riskTolerance] || 0;
+        
+        // Adjust for time horizon
+        if (timeHorizon < 5) stockAllocation -= 0.2;
+        else if (timeHorizon > 20) stockAllocation += 0.1;
+        
+        // Adjust for liquidity needs
+        const cashAllocation = Math.max(0.05, liquidityNeeds || 0.05);
+        
+        // Regime-based adjustments
+        const regimeAdjustments = this.getRegimeAllocationAdjustments(regimeData);
+        stockAllocation += regimeAdjustments.stocks;
+        
+        // Normalize allocations
+        stockAllocation = Math.max(0.2, Math.min(0.9, stockAllocation));
+        const remainingAllocation = 1 - stockAllocation - cashAllocation;
+        
+        const allocation = {
+            stocks: {
+                domestic: stockAllocation * 0.7,
+                international: stockAllocation * 0.25,
+                emerging: stockAllocation * 0.05
+            },
+            bonds: {
+                government: remainingAllocation * 0.4,
+                corporate: remainingAllocation * 0.3,
+                international: remainingAllocation * 0.2,
+                tips: remainingAllocation * 0.1
+            },
+            alternatives: {
+                reits: 0.05,
+                commodities: 0.02,
+                privateEquity: clientProfile.netWorth > 1000000 ? 0.03 : 0
+            },
+            cash: cashAllocation
+        };
+        
+        return {
+            allocation: allocation,
+            totalStocks: stockAllocation,
+            totalBonds: remainingAllocation,
+            totalAlternatives: allocation.alternatives.reits + allocation.alternatives.commodities + allocation.alternatives.privateEquity,
+            totalCash: cashAllocation,
+            riskLevel: this.assessAllocationRisk(allocation),
+            expectedReturn: this.calculateExpectedReturn(allocation),
+            expectedVolatility: this.calculateExpectedVolatility(allocation)
+        };
+    }
+    
+    // 💼 DESIGN INVESTMENT STRATEGY
+    designInvestmentStrategy(clientProfile, assetAllocation) {
+        const { investmentExperience, income, currentNetWorth } = clientProfile;
+        
+        // Determine investment vehicles
+        const investmentVehicles = this.selectInvestmentVehicles(clientProfile, assetAllocation);
+        
+        // Create funding strategy
+        const fundingStrategy = this.createFundingStrategy(clientProfile);
+        
+        // Design rebalancing approach
+        const rebalancingStrategy = this.designRebalancingStrategy(assetAllocation, clientProfile);
+        
+        return {
+            name: 'Optimized Wealth Building Strategy',
+            allocation: assetAllocation,
+            investmentVehicles: investmentVehicles,
+            fundingStrategy: fundingStrategy,
+            rebalancingStrategy: rebalancingStrategy,
+            costStructure: this.analyzeCostStructure(investmentVehicles),
+            taxEfficiency: this.assessTaxEfficiency(investmentVehicles, clientProfile),
+            implementation: {
+                priority: this.getImplementationPriority(investmentVehicles),
+                timeline: this.createImplementationTimeline(),
+                minimumInvestment: this.calculateMinimumInvestment(investmentVehicles)
+            }
+        };
+    }
+    
+    // 📋 CREATE IMPLEMENTATION PLAN
+    createImplementationPlan(investmentStrategy, goals) {
+        const phases = [];
+        
+        // Phase 1: Foundation (Months 1-3)
+        phases.push({
+            phase: 1,
+            name: 'Foundation Building',
+            duration: '1-3 months',
+            objectives: [
+                'Establish emergency fund',
+                'Set up investment accounts',
+                'Begin core portfolio construction'
+            ],
+            actions: [
+                'Open tax-advantaged accounts (401k, IRA, HSA)',
+                'Set up automatic transfers',
+                'Invest in core index funds'
+            ],
+            targetAllocation: {
+                emergency: 1.0,
+                investments: 0.0
+            }
+        });
+        
+        // Phase 2: Core Building (Months 4-12)
+        phases.push({
+            phase: 2,
+            name: 'Core Portfolio Development',
+            duration: '4-12 months',
+            objectives: [
+                'Build diversified core holdings',
+                'Establish investment discipline',
+                'Optimize tax-advantaged contributions'
+            ],
+            actions: [
+                'Dollar-cost average into target allocation',
+                'Maximize employer 401k match',
+                'Add international diversification'
+            ],
+            targetAllocation: {
+                emergency: 0.3,
+                investments: 0.7
+            }
+        });
+        
+        // Phase 3: Optimization (Year 2+)
+        phases.push({
+            phase: 3,
+            name: 'Strategy Optimization',
+            duration: 'Year 2 onwards',
+            objectives: [
+                'Refine asset allocation',
+                'Add alternative investments',
+                'Implement advanced tax strategies'
+            ],
+            actions: [
+                'Add REITs and alternatives',
+                'Implement tax-loss harvesting',
+                'Consider direct indexing'
+            ],
+            targetAllocation: investmentStrategy.allocation.allocation
+        });
+        
+        return {
+            phases: phases,
+            totalTimeframe: '24+ months',
+            milestoneReviews: [3, 6, 12, 24],
+            successMetrics: this.defineSuccessMetrics(goals),
+            contingencyPlans: this.createContingencyPlans()
+        };
+    }
+    
+    // 🔧 HELPER METHODS
+    
+    getRegimeAllocationAdjustments(regimeData) {
+        const regime = regimeData?.currentRegime?.name || 'MODERATE';
+        
+        const adjustments = {
+            'GROWTH_INFLATION_RISING': { stocks: 0.05, bonds: -0.05, commodities: 0.05 },
+            'GROWTH_RISING_INFLATION_FALLING': { stocks: 0.1, bonds: -0.05, commodities: -0.05 },
+            'GROWTH_FALLING_INFLATION_RISING': { stocks: -0.1, bonds: -0.05, commodities: 0.1 },
+            'GROWTH_FALLING_INFLATION_FALLING': { stocks: -0.05, bonds: 0.1, commodities: -0.05 }
+        };
+        
+        return adjustments[regime] || { stocks: 0, bonds: 0, commodities: 0 };
+    }
+    
+    selectInvestmentVehicles(clientProfile, assetAllocation) {
+        const vehicles = {
+            taxAdvantaged: [],
+            taxable: [],
+            alternatives: []
+        };
+        
+        // Tax-advantaged accounts
+        if (clientProfile.income > 0) {
+            vehicles.taxAdvantaged.push({
+                type: '401(k)',
+                priority: 1,
+                maxContribution: 23000, // 2024 limit
+                allocation: 'Aggressive growth (high stock allocation)'
+            });
+            
+            vehicles.taxAdvantaged.push({
+                type: 'IRA/Roth IRA',
+                priority: 2,
+                maxContribution: 7000, // 2024 limit
+                allocation: 'Growth focus'
+            });
+        }
+        
+        // Taxable accounts
+        vehicles.taxable.push({
+            type: 'Taxable Brokerage',
+            priority: 3,
+            purpose: 'Tax-efficient index funds and tax-loss harvesting',
+            allocation: 'Tax-efficient funds'
+        });
+        
+        // Alternatives for high net worth
+        if (clientProfile.currentNetWorth > 1000000) {
+            vehicles.alternatives.push({
+                type: 'REITs',
+                allocation: '5% of portfolio',
+                purpose: 'Real estate diversification'
+            });
+        }
+        
+        return vehicles;
+    }
+    
+    createFundingStrategy(clientProfile) {
+        const monthlyIncome = clientProfile.income / 12;
+        const recommendedSavingsRate = Math.min(0.25, Math.max(0.15, 0.20)); // 15-25%
+        const monthlyInvestment = monthlyIncome * recommendedSavingsRate;
+        
+        return {
+            savingsRate: recommendedSavingsRate * 100,
+            monthlyInvestment: monthlyInvestment,
+            priorityOrder: [
+                '1. Emergency fund (3-6 months expenses)',
+                '2. Employer 401(k) match',
+                '3. High-interest debt payoff',
+                '4. Max tax-advantaged accounts',
+                '5. Taxable investments'
+            ],
+            automationRecommendations: [
+                'Set up automatic 401(k) contributions',
+                'Automate IRA contributions',
+                'Use automatic investing for taxable accounts'
+            ]
+        };
+    }
+    
+    designRebalancingStrategy(assetAllocation, clientProfile) {
+        return {
+            method: 'THRESHOLD_BASED',
+            thresholds: {
+                minor: 0.05, // 5% deviation triggers review
+                major: 0.10  // 10% deviation triggers rebalancing
+            },
+            frequency: 'QUARTERLY',
+            taxConsiderations: true,
+            implementation: [
+                'Use new contributions to rebalance when possible',
+                'Tax-loss harvest in taxable accounts',
+                'Rebalance within tax-advantaged accounts first'
+            ],
+            costMinimization: true,
+            automationLevel: 'SEMI_AUTOMATIC'
+        };
+    }
+    
+    analyzeCostStructure(investmentVehicles) {
+        return {
+            estimatedAnnualCosts: {
+                managementFees: 0.05, // 0.05% for index funds
+                transactionCosts: 0.02,
+                taxDrag: 0.50, // 0.5% tax drag
+                total: 0.57
+            },
+            costOptimization: [
+                'Use low-cost index funds (expense ratios < 0.1%)',
+                'Minimize trading frequency',
+                'Implement tax-loss harvesting',
+                'Consider direct indexing for large accounts'
+            ]
+        };
+    }
+    
+    assessTaxEfficiency(investmentVehicles, clientProfile) {
+        const taxBracket = this.estimateTaxBracket(clientProfile.income);
+        
+        return {
+            taxBracket: taxBracket,
+            efficiency: 'HIGH',
+            strategies: [
+                'Maximize tax-deferred growth in 401(k)/IRA',
+                'Hold tax-inefficient assets in tax-advantaged accounts',
+                'Use tax-efficient index funds in taxable accounts',
+                'Implement tax-loss harvesting'
+            ],
+            estimatedTaxSavings: clientProfile.income * 0.02 // 2% of income
+        };
+    }
+    
+    calculateExpectedReturn(allocation) {
+        const returns = {
+            stocks: 0.10,
+            bonds: 0.04,
+            alternatives: 0.08,
+            cash: 0.02
+        };
+        
+        const totalStocks = allocation.stocks.domestic + allocation.stocks.international + allocation.stocks.emerging;
+        const totalBonds = allocation.bonds.government + allocation.bonds.corporate + allocation.bonds.international + allocation.bonds.tips;
+        const totalAlts = allocation.alternatives.reits + allocation.alternatives.commodities + allocation.alternatives.privateEquity;
+        
+        return (totalStocks * returns.stocks) + 
+               (totalBonds * returns.bonds) + 
+               (totalAlts * returns.alternatives) + 
+               (allocation.cash * returns.cash);
+    }
+    
+    calculateExpectedVolatility(allocation) {
+        // Simplified volatility calculation
+        const volatilities = {
+            stocks: 0.16,
+            bonds: 0.04,
+            alternatives: 0.12,
+            cash: 0.01
+        };
+        
+        const totalStocks = allocation.stocks.domestic + allocation.stocks.international + allocation.stocks.emerging;
+        const totalBonds = allocation.bonds.government + allocation.bonds.corporate + allocation.bonds.international + allocation.bonds.tips;
+        const totalAlts = allocation.alternatives.reits + allocation.alternatives.commodities + allocation.alternatives.privateEquity;
+        
+        // Weighted average with correlation adjustments
+        const portfolioVolatility = Math.sqrt(
+            Math.pow(totalStocks * volatilities.stocks, 2) +
+            Math.pow(totalBonds * volatilities.bonds, 2) +
+            Math.pow(totalAlts * volatilities.alternatives, 2) +
+            Math.pow(allocation.cash * volatilities.cash, 2) +
+            2 * totalStocks * totalBonds * volatilities.stocks * volatilities.bonds * 0.1 // 10% correlation
+        );
+        
+        return portfolioVolatility;
+    }
+    
+    estimateTaxBracket(income) {
+        if (income >= 578126) return 0.37;
+        if (income >= 231251) return 0.35;
+        if (income >= 182051) return 0.32;
+        if (income >= 95451) return 0.24;
+        if (income >= 44726) return 0.22;
+        if (income >= 11001) return 0.12;
+        return 0.10;
+    }
+    
+    defineSuccessMetrics(goals) {
+        return [
+            'Portfolio value growth vs. target',
+            'Actual vs. expected returns',
+            'Risk-adjusted performance (Sharpe ratio)',
+            'Goal progress percentage',
+            'Cost efficiency vs. benchmarks'
+        ];
+    }
+    
+    createContingencyPlans() {
+        return [
+            {
+                scenario: 'Market Crash (>20% decline)',
+                action: 'Continue investing, rebalance to target allocation'
+            },
+            {
+                scenario: 'Job Loss',
+                action: 'Pause investments, use emergency fund, maintain core holdings'
+            },
+            {
+                scenario: 'Major Expense',
+                action: 'Use designated savings, avoid early retirement account withdrawals'
+            },
+            {
+                scenario: 'Interest Rate Spike',
+                action: 'Reduce duration risk in bond holdings'
+            }
+        ];
+    }
+}
+
+// 📈 WEALTH PROGRESS TRACKER
+class WealthProgressTracker {
+    constructor() {
+        this.trackingMetrics = {
+            NET_WORTH: 'Net Worth Growth',
+            INVESTMENT_RETURNS: 'Investment Performance',
+            SAVINGS_RATE: 'Savings Rate',
+            GOAL_PROGRESS: 'Goal Achievement',
+            ALLOCATION_DRIFT: 'Asset Allocation Drift',
+            COST_EFFICIENCY: 'Cost Management',
+            TAX_EFFICIENCY: 'Tax Optimization'
+        };
+        
+        this.benchmarks = {
+            SAVINGS_RATE: 0.20, // 20%
+            ANNUAL_RETURN: 0.08, // 8%
+            EXPENSE_RATIO: 0.10, // 0.10%
+            REBALANCING_DRIFT: 0.05 // 5%
+        };
+    }
+    
+    // 📊 TRACK WEALTH PROGRESS
+    async trackWealthProgress(portfolioData, goals, timeframe = '1Y') {
+        try {
+            const progressAnalysis = {
+                netWorthProgress: this.analyzeNetWorthProgress(portfolioData, timeframe),
+                goalProgress: this.analyzeGoalProgress(goals, portfolioData),
+                performanceMetrics: this.calculatePerformanceMetrics(portfolioData, timeframe),
+                allocationAnalysis: this.analyzeAllocationDrift(portfolioData),
+                savingsRateAnalysis: this.analyzeSavingsRate(portfolioData),
+                costAnalysis: this.analyzeCostEfficiency(portfolioData),
+                recommendations: []
+            };
+            
+            // Generate recommendations based on analysis
+            progressAnalysis.recommendations = this.generateProgressRecommendations(progressAnalysis);
+            
+            return {
+                ...progressAnalysis,
+                overallScore: this.calculateOverallProgressScore(progressAnalysis),
+                nextReviewDate: this.calculateNextReviewDate(),
+                trackingDate: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Wealth progress tracking error:', error.message);
+            return { error: error.message };
+        }
+    }
+    
+    // 💰 ANALYZE NET WORTH PROGRESS
+    analyzeNetWorthProgress(portfolioData, timeframe) {
+        const currentNetWorth = portfolioData.currentValue || 0;
+        const previousNetWorth = portfolioData.previousValue || currentNetWorth * 0.95;
+        
+        const absoluteChange = currentNetWorth - previousNetWorth;
+        const percentageChange = previousNetWorth > 0 ? (absoluteChange / previousNetWorth) * 100 : 0;
+        
+        // Annualize if needed
+        const annualizedChange = timeframe === '1Y' ? percentageChange : 
+                               timeframe === '6M' ? percentageChange * 2 :
+                               timeframe === '3M' ? percentageChange * 4 : percentageChange;
+        
+        return {
+            current: currentNetWorth,
+            previous: previousNetWorth,
+            absoluteChange: absoluteChange,
+            percentageChange: percentageChange,
+            annualizedChange: annualizedChange,
+            benchmark: this.benchmarks.ANNUAL_RETURN * 100,
+            performance: annualizedChange >= this.benchmarks.ANNUAL_RETURN * 100 ? 'ABOVE_BENCHMARK' : 'BELOW_BENCHMARK',
+            trajectory: this.calculateNetWorthTrajectory(portfolioData)
+        };
+    }
+    
+    // 🎯 ANALYZE GOAL PROGRESS
+    analyzeGoalProgress(goals, portfolioData) {
+        const goalAnalysis = [];
+        
+        goals.forEach(goal => {
+            const currentValue = portfolioData.currentValue || 0;
+            const progressPercent = (currentValue / goal.inflationAdjustedTarget) * 100;
+            const timeElapsed = this.calculateTimeElapsed(goal.createdDate);
+            const timeRemaining = goal.timeHorizon - timeElapsed;
+            const onTrackStatus = this.assessGoalTrackingStatus(goal, currentValue, timeElapsed);
+            
+            goalAnalysis.push({
+                goalName: goal.goalName,
+                goalType: goal.goalType,
+                targetAmount: goal.inflationAdjustedTarget,
+                currentValue: currentValue,
+                progressPercent: progressPercent,
+                timeElapsed: timeElapsed,
+                timeRemaining: timeRemaining,
+                onTrackStatus: onTrackStatus,
+                projectedOutcome: this.projectGoalOutcome(goal, currentValue, timeRemaining),
+                requiredAdjustments: this.calculateRequiredAdjustments(goal, currentValue, timeRemaining)
+            });
+        });
+        
+        return {
+            goals: goalAnalysis,
+            overallProgress: goalAnalysis.reduce((sum, goal) => sum + goal.progressPercent, 0) / goalAnalysis.length,
+            onTrackCount: goalAnalysis.filter(goal => goal.onTrackStatus === 'ON_TRACK').length,
+            totalGoals: goalAnalysis.length
+        };
+    }
+    
+    // 📊 CALCULATE PERFORMANCE METRICS
+    calculatePerformanceMetrics(portfolioData, timeframe) {
+        // This would integrate with Module 5's performance tracking
+        return {
+            totalReturn: portfolioData.totalReturn || 0,
+            annualizedReturn: portfolioData.annualizedReturn || 0,
+            volatility: portfolioData.volatility || 0,
+            sharpeRatio: portfolioData.sharpeRatio || 0,
+            maxDrawdown: portfolioData.maxDrawdown || 0,
+            benchmarkComparison: {
+                outperformance: portfolioData.outperformance || 0,
+                tracking: 'MODERATE'
+            }
+        };
+    }
+    
+    // ⚖️ ANALYZE ALLOCATION DRIFT
+    analyzeAllocationDrift(portfolioData) {
+        const currentAllocation = portfolioData.currentAllocation || {};
+        const targetAllocation = portfolioData.targetAllocation || {};
+        
+        const driftAnalysis = {};
+        let maxDrift = 0;
+        
+        Object.keys(targetAllocation).forEach(asset => {
+            const targetWeight = targetAllocation[asset];
+            const currentWeight = currentAllocation[asset] || 0;
+            const drift = Math.abs(currentWeight - targetWeight);
+            
+            driftAnalysis[asset] = {
+                target: targetWeight * 100,
+                current: currentWeight * 100,
+                drift: drift * 100,
+                needsRebalancing: drift > this.benchmarks.REBALANCING_DRIFT
+            };
+            
+            maxDrift = Math.max(maxDrift, drift);
+        });
+        
+        return {
+            driftAnalysis: driftAnalysis,
+            maxDrift: maxDrift * 100,
+            needsRebalancing: maxDrift > this.benchmarks.REBALANCING_DRIFT,
+            rebalancingUrgency: maxDrift > 0.10 ? 'HIGH' : maxDrift > 0.05 ? 'MODERATE' : 'LOW'
+        };
+    }
+    
+    // 💵 ANALYZE SAVINGS RATE
+    analyzeSavingsRate(portfolioData) {
+        const monthlyIncome = portfolioData.monthlyIncome || 10000;
+        const monthlyInvestments = portfolioData.monthlyInvestments || 1500;
+        const currentSavingsRate = monthlyInvestments / monthlyIncome;
+        
+        return {
+            currentRate: currentSavingsRate * 100,
+            targetRate: this.benchmarks.SAVINGS_RATE * 100,
+            performance: currentSavingsRate >= this.benchmarks.SAVINGS_RATE ? 'ABOVE_TARGET' : 'BELOW_TARGET',
+            monthlyShortfall: currentSavingsRate < this.benchmarks.SAVINGS_RATE ? 
+                (this.benchmarks.SAVINGS_RATE - currentSavingsRate) * monthlyIncome : 0,
+            trend: this.calculateSavingsRateTrend(portfolioData)
+        };
+    }
+    
+    // 💰 ANALYZE COST EFFICIENCY
+    analyzeCostEfficiency(portfolioData) {
+        const totalFees = portfolioData.totalFees || portfolioData.currentValue * 0.008; // 0.8% estimate
+        const feePercentage = (totalFees / portfolioData.currentValue) * 100;
+        
+        return {
+            totalAnnualFees: totalFees,
+            feePercentage: feePercentage,
+            benchmark: this.benchmarks.EXPENSE_RATIO,
+            performance: feePercentage <= this.benchmarks.EXPENSE_RATIO ? 'EFFICIENT' : 'HIGH_COST',
+            potentialSavings: feePercentage > this.benchmarks.EXPENSE_RATIO ? 
+                (feePercentage - this.benchmarks.EXPENSE_RATIO) * portfolioData.currentValue / 100 : 0,
+            optimization: this.getCostOptimizationSuggestions(feePercentage)
+        };
+    }
+    
+    // 💡 GENERATE PROGRESS RECOMMENDATIONS
+    generateProgressRecommendations(progressAnalysis) {
+        const recommendations = [];
+        
+        // Net worth recommendations
+        if (progressAnalysis.netWorthProgress.performance === 'BELOW_BENCHMARK') {
+            recommendations.push({
+                type: 'PERFORMANCE_IMPROVEMENT',
+                priority: 'HIGH',
+                message: 'Portfolio underperforming benchmark - review asset allocation and strategy',
+                action: 'STRATEGY_REVIEW'
+            });
+        }
+        
+        // Goal progress recommendations
+        const behindGoals = progressAnalysis.goalProgress.goals.filter(g => g.onTrackStatus === 'BEHIND');
+        if (behindGoals.length > 0) {
+            recommendations.push({
+                type: 'GOAL_ADJUSTMENT',
+                priority: 'HIGH',
+                message: `${behindGoals.length} goals behind schedule - consider increasing contributions`,
+                action: 'INCREASE_SAVINGS'
+            });
+        }
+        
+        // Allocation drift recommendations
+        if (progressAnalysis.allocationAnalysis.needsRebalancing) {
+            recommendations.push({
+                type: 'REBALANCING',
+                priority: progressAnalysis.allocationAnalysis.rebalancingUrgency,
+                message: 'Portfolio allocation has drifted from target - rebalancing recommended',
+                action: 'REBALANCE_PORTFOLIO'
+            });
+        }
+        
+        // Savings rate recommendations
+        if (progressAnalysis.savingsRateAnalysis.performance === 'BELOW_TARGET') {
+            recommendations.push({
+                type: 'SAVINGS_RATE',
+                priority: 'MODERATE',
+                message: `Savings rate below 20% target - consider increasing by ${progressAnalysis.savingsRateAnalysis.monthlyShortfall.toFixed(0)}/month`,
+                action: 'INCREASE_AUTOMATION'
+            });
+        }
+        
+        // Cost efficiency recommendations
+        if (progressAnalysis.costAnalysis.performance === 'HIGH_COST') {
+            recommendations.push({
+                type: 'COST_REDUCTION',
+                priority: 'MODERATE',
+                message: `High investment costs detected - potential savings of ${progressAnalysis.costAnalysis.potentialSavings.toFixed(0)}/year`,
+                action: 'OPTIMIZE_COSTS'
+            });
+        }
+        
+        return recommendations;
+    }
+    
+    // 🔧 HELPER METHODS
+    
+    calculateTimeElapsed(createdDate) {
+        const created = new Date(createdDate);
+        const now = new Date();
+        return (now - created) / (1000 * 60 * 60 * 24 * 365.25); // Years
+    }
+    
+    assessGoalTrackingStatus(goal, currentValue, timeElapsed) {
+        const expectedProgress = timeElapsed / goal.timeHorizon;
+        const actualProgress = currentValue / goal.inflationAdjustedTarget;
+        
+        if (actualProgress >= expectedProgress * 1.1) return 'AHEAD';
+        if (actualProgress >= expectedProgress * 0.9) return 'ON_TRACK';
+        return 'BEHIND';
+    }
+    
+    projectGoalOutcome(goal, currentValue, timeRemaining) {
+        const requiredReturn = goal.strategy.expectedReturn;
+        const projectedValue = currentValue * Math.pow(1 + requiredReturn, timeRemaining);
+        
+        return {
+            projectedValue: projectedValue,
+            successProbability: projectedValue >= goal.inflationAdjustedTarget ? 0.8 : 0.4,
+            shortfall: Math.max(0, goal.inflationAdjustedTarget - projectedValue)
+        };
+    }
+    
+    calculateRequiredAdjustments(goal, currentValue, timeRemaining) {
+        const shortfall = Math.max(0, goal.inflationAdjustedTarget - currentValue);
+        const requiredAdditionalMonthly = shortfall > 0 ? 
+            shortfall / (timeRemaining * 12) / ((Math.pow(1 + goal.strategy.expectedReturn/12, timeRemaining * 12) - 1) / (goal.strategy.expectedReturn/12)) : 0;
+        
+        return {
+            additionalMonthlyRequired: requiredAdditionalMonthly,
+            alternativeTimelineYears: timeRemaining + 2,
+            higherRiskTolerance: this.getNextRiskLevel(goal.riskTolerance)
+        };
+    }
+    
+    calculateOverallProgressScore(progressAnalysis) {
+        let score = 50; // Base score
+        
+        // Net worth performance
+        if (progressAnalysis.netWorthProgress.performance === 'ABOVE_BENCHMARK') score += 20;
+        else score -= 10;
+        
+        // Goal progress
+        const goalSuccessRate = progressAnalysis.goalProgress.onTrackCount / progressAnalysis.goalProgress.totalGoals;
+        score += goalSuccessRate * 20;
+        
+        // Allocation discipline
+        if (!progressAnalysis.allocationAnalysis.needsRebalancing) score += 10;
+        
+        // Savings rate
+        if (progressAnalysis.savingsRateAnalysis.performance === 'ABOVE_TARGET') score += 10;
+        
+        // Cost efficiency
+        if (progressAnalysis.costAnalysis.performance === 'EFFICIENT') score += 10;
+        
+        return Math.max(0, Math.min(100, score));
+    }
+    
+    calculateNextReviewDate() {
+        const nextReview = new Date();
+        nextReview.setMonth(nextReview.getMonth() + 3); // Quarterly review
+        return nextReview.toISOString();
+    }
+    
+    getNextRiskLevel(currentRisk) {
+        const riskLevels = ['CONSERVATIVE', 'MODERATE', 'AGGRESSIVE', 'VERY_AGGRESSIVE'];
+        const currentIndex = riskLevels.indexOf(currentRisk);
+        return currentIndex < riskLevels.length - 1 ? riskLevels[currentIndex + 1] : currentRisk;
+    }
+}
+
+// 🎯 MASTER WEALTH PLANNING FUNCTION
+async function getComprehensiveWealthPlan(clientData, goals, options = {}) {
+    try {
+        console.log('🏗️ Creating comprehensive wealth building plan...');
+        
+        const goalPlanner = new WealthGoalPlanner();
+        const strategyEngine = new WealthBuildingStrategyEngine();
+        const progressTracker = new WealthProgressTracker();
+        
+        // Process each goal
+        const processedGoals = [];
+        for (const goalData of goals) {
+            const goal = await goalPlanner.createWealthGoal(goalData);
+            if (!goal.error) {
+                processedGoals.push(goal);
+            }
+        }
+        
+        // Create overall wealth strategy
+        const wealthStrategy = await strategyEngine.designOptimalWealthStrategy(clientData, processedGoals);
+        
+        // Track current progress
+        const progressAnalysis = await progressTracker.trackWealthProgress(
+            clientData.portfolioData || {},
+            processedGoals,
+            options.timeframe || '1Y'
+        );
+        
+        // Get market context
+        const [regimeData, inflationData] = await Promise.allSettled([
+            detectEconomicRegime(),
+            getInflationExpectations()
+        ]);
+        
+        // Generate AI strategic insights
+        const aiAnalysisPrompt = `Provide comprehensive wealth building strategy analysis:
+
+Client Profile:
+- Age: ${clientData.age}
+- Income: ${clientData.income?.toLocaleString() || 'N/A'}
+- Net Worth: ${clientData.currentNetWorth?.toLocaleString() || 'N/A'}
+- Risk Tolerance: ${clientData.riskTolerance}
+
+Goals Summary:
+${processedGoals.map(goal => 
+    `- ${goal.goalName}: ${goal.inflationAdjustedTarget?.toLocaleString()} in ${goal.timeHorizon} years`
+).join('\n')}
+
+Strategy Overview:
+- Expected Return: ${(wealthStrategy.assetAllocation?.expectedReturn * 100 || 0).toFixed(1)}%
+- Stock Allocation: ${(wealthStrategy.assetAllocation?.totalStocks * 100 || 0).toFixed(1)}%
+- Progress Score: ${progressAnalysis.overallScore || 0}/100
+
+Market Context:
+- Economic Regime: ${regimeData.value?.currentRegime?.name || 'Unknown'}
+- Inflation Outlook: ${inflationData.value?.risk || 'Moderate'}
+
+Provide strategic recommendations focusing on goal achievement, risk management, and optimization opportunities.`;
+        
+        const aiInsights = await getUniversalAnalysis(aiAnalysisPrompt, {
+            isWealthCommand: true,
+            maxTokens: 1500
+        });
+        
+        return {
+            clientProfile: clientData,
+            goals: processedGoals,
+            wealthStrategy: wealthStrategy,
+            progressAnalysis: progressAnalysis,
+            marketContext: {
+                regime: regimeData.value?.currentRegime?.name || 'Unknown',
+                regimeConfidence: regimeData.value?.confidence || 0,
+                inflationOutlook: inflationData.value?.risk || 'Moderate'
+            },
+            implementation: {
+                priorityActions: generatePriorityActions(processedGoals, wealthStrategy, progressAnalysis),
+                timeline: generateImplementationTimeline(wealthStrategy),
+                milestones: generateCombinedMilestones(processedGoals),
+                monitoring: generateMonitoringSchedule()
+            },
+            riskManagement: {
+                riskLevel: wealthStrategy.assetAllocation?.riskLevel || 'MODERATE',
+                hedgingStrategies: generateHedgingStrategies(wealthStrategy),
+                contingencyPlans: generateContingencyPlans(processedGoals)
+            },
+            optimization: {
+                taxStrategies: generateTaxOptimizationStrategies(clientData, wealthStrategy),
+                costReduction: generateCostReductionStrategies(wealthStrategy),
+                performanceEnhancement: generatePerformanceStrategies(progressAnalysis)
+            },
+            aiInsights: aiInsights.response,
+            recommendations: generateMasterRecommendations(processedGoals, wealthStrategy, progressAnalysis),
+            planDate: new Date().toISOString(),
+            nextReviewDate: progressAnalysis.nextReviewDate,
+            dataQuality: {
+                goals: processedGoals.filter(g => !g.error).length / goals.length,
+                strategy: !wealthStrategy.error,
+                progress: !progressAnalysis.error,
+                marketData: regimeData.status === 'fulfilled'
+            }
+        };
+        
+    } catch (error) {
+        console.error('Comprehensive wealth planning error:', error.message);
+        return {
+            error: error.message,
+            recommendations: [
+                'Wealth planning analysis failed - review input data',
+                'Ensure all required client information is provided',
+                'Check market data connections'
+            ],
+            planDate: new Date().toISOString()
+        };
+    }
+}
+
+// 🎯 HELPER FUNCTIONS
+
+function generatePriorityActions(goals, strategy, progress) {
+    const actions = [];
+    
+    // High priority: Goals behind schedule
+    const behindGoals = goals.filter(g => g.successProbability?.probability < 0.6);
+    if (behindGoals.length > 0) {
+        actions.push({
+            priority: 1,
+            action: 'Address underperforming goals',
+            details: `${behindGoals.length} goals need immediate attention`,
+            timeline: 'This month'
+        });
+    }
+    
+    // Medium priority: Strategy implementation
+    if (strategy.implementationPlan) {
+        actions.push({
+            priority: 2,
+            action: 'Implement investment strategy',
+            details: 'Begin systematic portfolio construction',
+            timeline: 'Next 3 months'
+        });
+    }
+    
+    // Low priority: Optimization
+    if (progress.costAnalysis?.performance === 'HIGH_COST') {
+        actions.push({
+            priority: 3,
+            action: 'Optimize investment costs',
+            details: 'Reduce fees and improve efficiency',
+            timeline: 'Next 6 months'
+        });
+    }
+    
+    return actions;
+}
+
+function generateImplementationTimeline(strategy) {
+    return strategy.implementationPlan?.phases || [
+        { phase: 1, name: 'Foundation', timeframe: '0-3 months' },
+        { phase: 2, name: 'Building', timeframe: '3-12 months' },
+        { phase: 3, name: 'Optimization', timeframe: '12+ months' }
+    ];
+}
+
+function generateCombinedMilestones(goals) {
+    const allMilestones = [];
+    
+    goals.forEach(goal => {
+        if (goal.milestones) {
+            goal.milestones.forEach(milestone => {
+                allMilestones.push({
+                    ...milestone,
+                    goalName: goal.goalName
+                });
+            });
+        }
+    });
+    
+    return allMilestones.sort((a, b) => a.timePoint - b.timePoint);
+}
+
+function generateMonitoringSchedule() {
+    return {
+        monthly: ['Contribution tracking', 'Basic performance review'],
+        quarterly: ['Goal progress assessment', 'Allocation review'],
+        annually: ['Comprehensive strategy review', 'Goal adjustments'],
+        asNeeded: ['Market regime changes', 'Life event adjustments']
+    };
+}
+
+function generateMasterRecommendations(goals, strategy, progress) {
+    const recommendations = [];
+    
+    // Goal-based recommendations
+    goals.forEach(goal => {
+        if (goal.recommendations) {
+            recommendations.push(...goal.recommendations);
+        }
+    });
+    
+    // Strategy recommendations
+    if (strategy.riskAnalysis) {
+        recommendations.push({
+            type: 'STRATEGY_OPTIMIZATION',
+            priority: 'MODERATE',
+            message: 'Regular strategy review recommended',
+            action: 'ANNUAL_REVIEW'
+        });
+    }
+    
+    // Progress recommendations
+    if (progress.recommendations) {
+        recommendations.push(...progress.recommendations);
+    }
+    
+    return recommendations.slice(0, 10); // Top 10 recommendations
+}
+
+// 🎯 EXPORT ALL WEALTH PLANNING FUNCTIONS
+module.exports = {
+    // Main Functions
+    getComprehensiveWealthPlan,
+    
+    // Classes
+    WealthGoalPlanner,
+    WealthBuildingStrategyEngine,
+    WealthProgressTracker,
+    
+    // Utility Functions
+    generatePriorityActions,
+    generateImplementationTimeline,
+    generateCombinedMilestones,
+    generateMonitoringSchedule,
+    generateMasterRecommendations
+};
