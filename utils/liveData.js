@@ -1,5 +1,41 @@
 // 🏆 WEALTH MODULE 1: RISK MANAGEMENT & PORTFOLIO OPTIMIZATION
 // Integrates with your Perfect 10/10 DualAISystem + LiveData
+const axios = require('axios');
+const marketDataCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+function getCachedData(key) {
+    const cached = marketDataCache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log(`📦 Using cached data for ${key}`);
+        return cached.data;
+    }
+    return null;
+}
+
+function setCachedData(key, data) {
+    marketDataCache.set(key, {
+        data: data,
+        timestamp: Date.now()
+    });
+}
+
+// Create optimized axios instance
+const optimizedAxios = axios.create({
+    timeout: 15000,
+    maxRedirects: 3,
+    headers: {
+        'User-Agent': 'IMPERIUM-VAULT-SYSTEM/3.0.0',
+        'Accept-Encoding': 'gzip, deflate',
+        'Connection': 'keep-alive'
+    }
+});
+
+// API KEYS - Your existing keys plus enhanced functionality
+const FRED_API_KEY = '4ac1a6dbcef67c4ae605b8630c67349e';
+const ALPHA_VANTAGE_API_KEY = 'S3E07NIPFYLMNDE1';
+const NEWS_API_KEY = '052410edf867484f8d280c09585631fa';
+const COINGECKO_API_KEY = 'CG-3LTPYmzL2wVCxDJLCkjVa145';
 const { getUniversalAnalysis, getDualAnalysis } = require('../utils/dualAISystem');
 const { getRayDalioMarketData, detectEconomicRegime, getYieldCurveAnalysis } = require('../utils/liveData');
 
