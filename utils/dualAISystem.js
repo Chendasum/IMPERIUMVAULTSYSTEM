@@ -855,15 +855,20 @@ const OpenAI = require('openai');
 require('dotenv').config();
 
 // Enhanced logger
-const logger = require('./logger') || {
-    info: (msg, data) => console.log(`ℹ️ ${msg}`, data || ''),
-    success: (msg, data) => console.log(`✅ ${msg}`, data || ''),
-    warn: (msg, data) => console.warn(`⚠️ ${msg}`, data || ''),
-    error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
-    debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
-    ai: (msg, data) => console.log(`🤖 AI: ${msg}`, data || ''),
-    performance: (msg, data) => console.log(`📊 PERF: ${msg}`, data || '')
-};
+let logger;
+try {
+    logger = require('./logger');
+} catch (error) {
+    logger = {
+        info: (msg, data) => console.log(`ℹ️ ${msg}`, data || ''),
+        success: (msg, data) => console.log(`✅ ${msg}`, data || ''),
+        warn: (msg, data) => console.warn(`⚠️ ${msg}`, data || ''),
+        error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
+        debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
+        ai: (msg, data) => console.log(`🤖 AI: ${msg}`, data || ''),
+        performance: (msg, data) => console.log(`📊 PERF: ${msg}`, data || '')
+    };
+}
 
 // 🚀 ADVANCED GPT-5 CLIENT - Mathematical & Speed Supremacy
 class UltimateGPT5Client {
