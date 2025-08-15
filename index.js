@@ -11,7 +11,6 @@ console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "N
 
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
-const express = require('express');
 
 // 🏆 ENHANCED LIVE DATA SYSTEM - Original imports + NEW WEALTH MODULES
 
