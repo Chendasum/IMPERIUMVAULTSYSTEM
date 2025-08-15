@@ -1176,9 +1176,9 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
 // 💰 LIVE DATA COMMANDS - Add at line 1175 (before the handleStartCommand section)
         
         // 💰 CRYPTO PRICE QUERIES - Connect to existing getEnhancedCryptoData()
-        } else if ((text.toLowerCase().includes('bitcoin') || text.toLowerCase().includes('btc')) && 
-                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('much') || text.toLowerCase().includes('cost'))) {
-            await handleLiveBitcoinPrice(chatId);
+} else if ((text.toLowerCase().includes('bitcoin') || text.toLowerCase().includes('btc')) && 
+           (text.toLowerCase().includes('price') || text.toLowerCase().includes('much') || text.toLowerCase().includes('cost'))) {
+    await handleLiveBitcoinPrice(chatId);
         } else if (text.toLowerCase().includes('crypto') && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('market'))) {
             await handleLiveCryptoMarket(chatId);
