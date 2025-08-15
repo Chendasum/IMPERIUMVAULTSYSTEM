@@ -7,222 +7,22 @@ console.log(`TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? "SET" : "NOT
 console.log(`OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "SET" : "NOT SET"}`);
 console.log(`ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "SET" : "NOT SET"}`);
 console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? "SET" : "NOT SET"}`);
-console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}`);
+console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}`); // 🔧 ADDED
 
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
 
-// 🏆 ENHANCED LIVE DATA SYSTEM - Original imports + NEW WEALTH MODULES
-
-// Original Live Data functions (keeping existing imports)
+// Import enhanced utility modules
 const { 
     getRealLiveData, 
     getEnhancedLiveData, 
     getEconomicIndicators,
     getStockMarketData,
-    getRayDalioMarketData
+    getRayDalioMarketData,
+    getFredData,           // 🔧 ADD THIS
+    getAlphaVantageData   // 🔧 ADD THIS
 } = require("./utils/liveData");
 
-// 🏆 NEW WEALTH MANAGEMENT MODULES - Added from liveData.js
-// Module 1: Risk Management & Portfolio Optimization
-let riskManagementSystem;
-try {
-    const {
-        analyzePortfolioRisk,
-        getRiskManagementDashboard,
-        AdvancedRiskCalculator,
-        PortfolioOptimizer,
-        RegimeAwareRiskManager
-    } = require('./utils/liveData');
-    
-    riskManagementSystem = {
-        analyzePortfolioRisk,
-        getRiskManagementDashboard,
-        AdvancedRiskCalculator,
-        PortfolioOptimizer,
-        RegimeAwareRiskManager
-    };
-    console.log('✅ Module 1: Risk Management & Portfolio Optimization - LOADED');
-} catch (error) {
-    console.warn('⚠️ Risk Management module from liveData.js not available:', error.message);
-    riskManagementSystem = null;
-}
-
-// Module 2: Market Opportunity Scanner & Signal Detection  
-let marketScannerSystem;
-try {
-    const {
-        runComprehensiveMarketScan,
-        getComprehensiveTechnicalAnalysis,
-        TechnicalIndicatorCalculator,
-        MarketScannerEngine,
-        SignalAggregator
-    } = require('./utils/liveData');
-    
-    marketScannerSystem = {
-        runComprehensiveMarketScan,
-        getComprehensiveTechnicalAnalysis,
-        TechnicalIndicatorCalculator,
-        MarketScannerEngine,
-        SignalAggregator
-    };
-    console.log('✅ Module 2: Market Scanner & Signal Detection - LOADED');
-} catch (error) {
-    console.warn('⚠️ Market Scanner module from liveData.js not available:', error.message);
-    marketScannerSystem = null;
-}
-
-// Module 3: Yield Generation & Income Optimization
-let yieldOptimizationSystem;
-try {
-    const {
-        getComprehensiveYieldAnalysis,
-        YieldStrategyAnalyzer,
-        IncomeLadderBuilder
-    } = require('./utils/liveData');
-    
-    yieldOptimizationSystem = {
-        getComprehensiveYieldAnalysis,
-        YieldStrategyAnalyzer,
-        IncomeLadderBuilder
-    };
-    console.log('✅ Module 3: Yield Generation & Income Optimization - LOADED');
-} catch (error) {
-    console.warn('⚠️ Yield Optimization module from liveData.js not available:', error.message);
-    yieldOptimizationSystem = null;
-}
-
-// Module 4: Arbitrage & Market Inefficiency Detection
-let arbitrageSystem;
-try {
-    const {
-        getComprehensiveArbitrageAnalysis,
-        ArbitrageOpportunityScanner,
-        MarketInefficiencyDetector
-    } = require('./utils/liveData');
-    
-    arbitrageSystem = {
-        getComprehensiveArbitrageAnalysis,
-        ArbitrageOpportunityScanner,
-        MarketInefficiencyDetector
-    };
-    console.log('✅ Module 4: Arbitrage & Market Inefficiency Detection - LOADED');
-} catch (error) {
-    console.warn('⚠️ Arbitrage module from liveData.js not available:', error.message);
-    arbitrageSystem = null;
-}
-
-// Module 5: Advanced Portfolio Tracking & Analytics
-let portfolioAnalyticsSystem;
-try {
-    const {
-        getComprehensivePortfolioAnalytics,
-        PortfolioPerformanceTracker,
-        RealTimePortfolioMonitor,
-        PortfolioAnalyticsDashboard
-    } = require('./utils/liveData');
-    
-    portfolioAnalyticsSystem = {
-        getComprehensivePortfolioAnalytics,
-        PortfolioPerformanceTracker,
-        RealTimePortfolioMonitor,
-        PortfolioAnalyticsDashboard
-    };
-    console.log('✅ Module 5: Advanced Portfolio Tracking & Analytics - LOADED');
-} catch (error) {
-    console.warn('⚠️ Portfolio Analytics module from liveData.js not available:', error.message);
-    portfolioAnalyticsSystem = null;
-}
-
-// Module 6: Wealth Building Strategies & Goal Planning
-let wealthPlanningSystem;
-try {
-    const {
-        getComprehensiveWealthPlan,
-        WealthGoalPlanner,
-        WealthBuildingStrategyEngine,
-        WealthProgressTracker
-    } = require('./utils/liveData');
-    
-    wealthPlanningSystem = {
-        getComprehensiveWealthPlan,
-        WealthGoalPlanner,
-        WealthBuildingStrategyEngine,
-        WealthProgressTracker
-    };
-    console.log('✅ Module 6: Wealth Building Strategies & Goal Planning - LOADED');
-} catch (error) {
-    console.warn('⚠️ Wealth Planning module from liveData.js not available:', error.message);
-    wealthPlanningSystem = null;
-}
-
-// Module 7: Tax Optimization & Legal Structures
-let taxOptimizationSystem;
-try {
-    const {
-        TaxOptimizationSystem,
-        TaxOptimizationEngine,
-        LegalStructureAnalyzer,
-        demonstrateTaxOptimization
-    } = require('./utils/liveData');
-    
-    taxOptimizationSystem = {
-        TaxOptimizationSystem,
-        TaxOptimizationEngine,
-        LegalStructureAnalyzer,
-        demonstrateTaxOptimization
-    };
-    console.log('✅ Module 7: Tax Optimization & Legal Structures - LOADED');
-} catch (error) {
-    console.warn('⚠️ Tax Optimization module from liveData.js not available:', error.message);
-    taxOptimizationSystem = null;
-}
-
-// Module 8: Alternative Investments & Private Markets
-let alternativeInvestmentsSystem;
-try {
-    const {
-        AlternativeInvestmentsSystem,
-        AlternativeInvestmentsEngine,
-        PrivateMarketAccess,
-        demonstrateAlternativeInvestments
-    } = require('./utils/liveData');
-    
-    alternativeInvestmentsSystem = {
-        AlternativeInvestmentsSystem,
-        AlternativeInvestmentsEngine,
-        PrivateMarketAccess,
-        demonstrateAlternativeInvestments
-    };
-    console.log('✅ Module 8: Alternative Investments & Private Markets - LOADED');
-} catch (error) {
-    console.warn('⚠️ Alternative Investments module from liveData.js not available:', error.message);
-    alternativeInvestmentsSystem = null;
-}
-
-// Module 10: AI-Powered Investment Research
-let aiResearchSystem;
-try {
-    const {
-        AIInvestmentResearchEngine,
-        ResearchWorkflowOrchestrator,
-        performQuickResearch,
-        performComprehensiveResearch
-    } = require('./utils/liveData');
-    
-    aiResearchSystem = {
-        AIInvestmentResearchEngine,
-        ResearchWorkflowOrchestrator,
-        performQuickResearch,
-        performComprehensiveResearch
-    };
-    console.log('✅ Module 10: AI-Powered Investment Research - LOADED');
-} catch (error) {
-    console.warn('⚠️ AI Research module from liveData.js not available:', error.message);
-    aiResearchSystem = null;
-}
-
-// Original Cambodia Lending System
 const { 
     analyzeLendingDeal, 
     getPortfolioStatus, 
@@ -261,237 +61,6 @@ const {
     processDocumentMessage,
     processVideoMessage,
 } = require("./utils/multimodal");
-
-// 💰 ORIGINAL AI WEALTH-BUILDING SYSTEM - ALL 10 MODULES WITH PROPER ERROR HANDLING
-// ✅ FIXED: Using try-catch instead of .catch() on require()
-
-// 🛡️ Risk Management & Capital Protection
-let riskManager;
-try {
-    riskManager = require("./utils/riskManager");
-} catch (error) {
-    console.warn("⚠️ riskManager module not found - using fallback functions");
-    riskManager = {
-        assessRisk: async () => ({ status: 'fallback', message: 'Risk assessment module not available' }),
-        calculatePositionSize: async () => ({ size: 0, message: 'Position sizing module not available' }),
-        monitorRisk: async () => ({ status: 'fallback' }),
-        getDynamicStopLoss: async () => ({ stopLoss: 0 }),
-        calculateVaR: async () => ({ var: 0 })
-    };
-}
-const { 
-    assessRisk, 
-    calculatePositionSize, 
-    monitorRisk, 
-    getDynamicStopLoss,
-    calculateVaR
-} = riskManager;
-
-// 📊 Market Opportunity Detection & Scanning
-let marketScanner;
-try {
-    marketScanner = require("./utils/marketScanner");
-} catch (error) {
-    console.warn("⚠️ marketScanner module not found - using fallback functions");
-    marketScanner = {
-        scanMarkets: async () => ({ opportunities: [], message: 'Market scanner module not available' }),
-        getTopOpportunities: async () => ({ opportunities: [] }),
-        scanStocks: async () => ({ stocks: [] }),
-        scanCrypto: async () => ({ crypto: [] }),
-        scanOpportunities: async () => ({ opportunities: [] })
-    };
-}
-const { 
-    scanMarkets, 
-    getTopOpportunities, 
-    scanStocks, 
-    scanCrypto,
-    scanOpportunities
-} = marketScanner;
-
-// 📈 Portfolio Optimization & Modern Portfolio Theory
-let portfolioOptimizer;
-try {
-    portfolioOptimizer = require("./utils/portfolioOptimizer");
-} catch (error) {
-    console.warn("⚠️ portfolioOptimizer module not found - using fallback functions");
-    portfolioOptimizer = {
-        optimizePortfolio: async () => ({ allocation: {}, message: 'Portfolio optimizer module not available' }),
-        calculateRebalancing: async () => ({ rebalancing: {} }),
-        getOptimalAllocation: async () => ({ allocation: {} }),
-        projectPerformance: async () => ({ performance: {} }),
-        calculateEfficientFrontier: async () => ({ frontier: {} })
-    };
-}
-const { 
-    optimizePortfolio, 
-    calculateRebalancing, 
-    getOptimalAllocation, 
-    projectPerformance,
-    calculateEfficientFrontier
-} = portfolioOptimizer;
-
-// 💰 Income & Yield Generation Across All Assets
-let yieldFinder;
-try {
-    yieldFinder = require("./utils/yieldFinder");
-} catch (error) {
-    console.warn("⚠️ yieldFinder module not found - using fallback functions");
-    yieldFinder = {
-        findYields: async () => ({ yields: [], message: 'Yield finder module not available' }),
-        getTopYields: async () => ({ yields: [] }),
-        projectIncome: async () => ({ income: {} }),
-        createIncomePortfolio: async () => ({ portfolio: {} }),
-        scanDividends: async () => ({ dividends: [] }),
-        scanCryptoYields: async () => ({ yields: [] })
-    };
-}
-const { 
-    findYields, 
-    getTopYields, 
-    projectIncome, 
-    createIncomePortfolio, 
-    scanDividends, 
-    scanCryptoYields
-} = yieldFinder;
-
-// 📊 Comprehensive Wealth Tracking & Performance Analytics
-let wealthTracker;
-try {
-    wealthTracker = require("./utils/wealthTracker");
-} catch (error) {
-    console.warn("⚠️ wealthTracker module not found - using fallback functions");
-    wealthTracker = {
-        trackWealth: async () => ({ wealth: {}, message: 'Wealth tracker module not available' }),
-        getWealthSnapshot: async () => ({ snapshot: {} }),
-        calculatePerformance: async () => ({ performance: {} }),
-        checkMilestones: async () => ({ milestones: [] }),
-        projectWealth: async () => ({ projection: {} })
-    };
-}
-const { 
-    trackWealth, 
-    getWealthSnapshot, 
-    calculatePerformance, 
-    checkMilestones,
-    projectWealth
-} = wealthTracker;
-
-// 🚨 Smart Alert System & Opportunity Notifications
-let alertSystem;
-try {
-    alertSystem = require("./utils/alertSystem");
-} catch (error) {
-    console.warn("⚠️ alertSystem module not found - using fallback functions");
-    alertSystem = {
-        startAlerts: async () => ({ status: 'fallback', message: 'Alert system module not available' }),
-        sendCustomAlert: async () => ({ sent: false }),
-        getAlertStatus: async () => ({ status: 'inactive' }),
-        configureAlerts: async () => ({ configured: false }),
-        getAlertInsights: async () => ({ insights: [] })
-    };
-}
-const { 
-    startAlerts, 
-    sendCustomAlert, 
-    getAlertStatus, 
-    configureAlerts, 
-    getAlertInsights
-} = alertSystem;
-
-// 🔄 Arbitrage Detection & Risk-Free Profit Opportunities
-let arbitrageDetector;
-try {
-    arbitrageDetector = require("./utils/arbitrageDetector");
-} catch (error) {
-    console.warn("⚠️ arbitrageDetector module not found - using fallback functions");
-    arbitrageDetector = {
-        scanArbitrage: async () => ({ opportunities: [], message: 'Arbitrage detector module not available' }),
-        findPriceArbitrage: async () => ({ arbitrage: [] }),
-        scanImmediateOpportunities: async () => ({ opportunities: [] }),
-        monitorArbitrage: async () => ({ monitoring: false }),
-        findTriangularArbitrage: async () => ({ triangular: [] })
-    };
-}
-const { 
-    scanArbitrage, 
-    findPriceArbitrage, 
-    scanImmediateOpportunities, 
-    monitorArbitrage,
-    findTriangularArbitrage
-} = arbitrageDetector;
-
-// ⚡ Trading Signals & Advanced Technical Analysis
-let tradingSignals;
-try {
-    tradingSignals = require("./utils/tradingSignals");
-} catch (error) {
-    console.warn("⚠️ tradingSignals module not found - using fallback functions");
-    tradingSignals = {
-        generateSignals: async () => ({ signals: [], message: 'Trading signals module not available' }),
-        analyzeSymbol: async () => ({ analysis: {} }),
-        getQuickSignals: async () => ({ signals: [] }),
-        scanForSignals: async () => ({ signals: [] }),
-        getSignalInsights: async () => ({ insights: [] })
-    };
-}
-const { 
-    generateSignals, 
-    analyzeSymbol, 
-    getQuickSignals, 
-    scanForSignals, 
-    getSignalInsights
-} = tradingSignals;
-
-// 🧪 Strategy Backtesting & Validation System
-let backtester;
-try {
-    backtester = require("./utils/backtester");
-} catch (error) {
-    console.warn("⚠️ backtester module not found - using fallback functions");
-    backtester = {
-        backtestStrategy: async () => ({ results: {}, message: 'Backtester module not available' }),
-        compareStrategies: async () => ({ comparison: {} }),
-        quickBacktest: async () => ({ results: {} }),
-        optimizeStrategy: async () => ({ optimized: {} }),
-        stressTestStrategy: async () => ({ stress: {} })
-    };
-}
-const { 
-    backtestStrategy, 
-    compareStrategies, 
-    quickBacktest, 
-    optimizeStrategy, 
-    stressTestStrategy
-} = backtester;
-
-// 💵 Cash Flow & Liquidity Optimization Mastery
-let cashFlowOptimizer;
-try {
-    cashFlowOptimizer = require("./utils/cashFlowOptimizer");
-} catch (error) {
-    console.warn("⚠️ cashFlowOptimizer module not found - using fallback functions");
-    cashFlowOptimizer = {
-        optimizeCashFlow: async () => ({ optimization: {}, message: 'Cash flow optimizer module not available' }),
-        analyzeCurrentCashFlow: async () => ({ analysis: {} }),
-        optimizeEmergencyFund: async () => ({ fund: {} }),
-        optimizeLiquidity: async () => ({ liquidity: {} }),
-        optimizeTaxes: async () => ({ taxes: {} }),
-        optimizeDebt: async () => ({ debt: {} }),
-        projectCashFlow: async () => ({ projection: {} }),
-        monitorCashFlow: async () => ({ monitoring: false })
-    };
-}
-const { 
-    optimizeCashFlow, 
-    analyzeCurrentCashFlow, 
-    optimizeEmergencyFund, 
-    optimizeLiquidity, 
-    optimizeTaxes, 
-    optimizeDebt, 
-    projectCashFlow, 
-    monitorCashFlow
-} = cashFlowOptimizer;
 
 // Import COMPLETE enhanced database system
 const {
@@ -678,37 +247,296 @@ function isAuthorizedUser(chatId) {
     return authorizedUsers.includes(parseInt(chatId));
 }
 
-// Enhanced comprehensive market data with database integration
+// Add missing logApiUsage function
+async function logApiUsage(service, endpoint, calls, success, responseTime, inputTokens, cost) {
+    try {
+        await logCommandUsage(`${service}_${endpoint}`, calls, success ? 'success' : 'error', cost);
+    } catch (error) {
+        // Silent fail for logging
+    }
+}
+
+// 🚀 ENHANCED COMPREHENSIVE MARKET DATA - With ALL Data Sources
 async function getComprehensiveMarketData() {
     try {
+        console.log("📊 Fetching comprehensive market data...");
         const startTime = Date.now();
         
-        const enhancedData = await getEnhancedLiveData();
-        const tradingData = await getTradingSummary().catch(() => null);
-        
+        // Parallel fetch all data sources for maximum efficiency
+        const [
+            enhancedData,
+            tradingData,
+            yield10Y,
+            yield2Y,
+            yield3M,
+            vixData,
+            dollarIndex,
+            goldData,
+            oilData,
+            economicData,
+            stockMarketData,
+            rayDalioData
+        ] = await Promise.all([
+            // Core market data
+            getEnhancedLiveData().catch(err => {
+                console.warn('Enhanced live data failed:', err.message);
+                return null;
+            }),
+            getTradingSummary().catch(err => {
+                console.warn('Trading data failed:', err.message);
+                return null;
+            }),
+            
+            // Treasury yields (FRED API)
+            getFredData('DGS10').catch(err => {
+                console.warn('10Y yield failed:', err.message);
+                return null;
+            }),
+            getFredData('DGS2').catch(err => {
+                console.warn('2Y yield failed:', err.message);
+                return null;
+            }),
+            getFredData('DGS3MO').catch(err => {
+                console.warn('3M yield failed:', err.message);
+                return null;
+            }),
+            
+            // Market indicators (AlphaVantage API)
+            getAlphaVantageData('VIX').catch(err => {
+                console.warn('VIX data failed:', err.message);
+                return null;
+            }),
+            getFredData('DTWEXBGS').catch(err => {
+                console.warn('Dollar index failed:', err.message);
+                return null;
+            }),
+            getAlphaVantageData('GLD').catch(err => {
+                console.warn('Gold data failed:', err.message);
+                return null;
+            }),
+            getAlphaVantageData('USO').catch(err => {
+                console.warn('Oil data failed:', err.message);
+                return null;
+            }),
+            
+            // Additional market data
+            getEconomicIndicators().catch(err => {
+                console.warn('Economic indicators failed:', err.message);
+                return null;
+            }),
+            getStockMarketData().catch(err => {
+                console.warn('Stock market data failed:', err.message);
+                return null;
+            }),
+            getRayDalioMarketData().catch(err => {
+                console.warn('Ray Dalio data failed:', err.message);
+                return null;
+            })
+        ]);
+
+        // Parse and structure the comprehensive data
         const marketData = {
-            markets: enhancedData,
-            trading: tradingData,
+            // Core market data
+            markets: enhancedData || {},
+            trading: tradingData || null,
+            
+            // Treasury yields & yield curve analysis
+            yields: {
+                yield10Y: yield10Y?.value ? parseFloat(yield10Y.value) : null,
+                yield2Y: yield2Y?.value ? parseFloat(yield2Y.value) : null,
+                yield3M: yield3M?.value ? parseFloat(yield3M.value) : null,
+                curve_10Y_2Y: (yield10Y?.value && yield2Y?.value) ? 
+                    (parseFloat(yield10Y.value) - parseFloat(yield2Y.value)) : null,
+                curve_2Y_3M: (yield2Y?.value && yield3M?.value) ? 
+                    (parseFloat(yield2Y.value) - parseFloat(yield3M.value)) : null,
+                inverted: null // Will calculate below
+            },
+            
+            // Market sentiment & risk indicators
+            sentiment: {
+                vix: vixData?.['Global Quote']?.['05. price'] ? 
+                    parseFloat(vixData['Global Quote']['05. price']) : null,
+                fear_greed_level: null, // Calculate based on VIX
+                market_regime: null // Will determine below
+            },
+            
+            // Currency & commodities
+            currencies: {
+                dollar_index: dollarIndex?.value ? parseFloat(dollarIndex.value) : null,
+                dollar_strength: null // Will calculate
+            },
+            
+            commodities: {
+                gold: goldData?.['Global Quote']?.['05. price'] ? 
+                    parseFloat(goldData['Global Quote']['05. price']) : null,
+                oil: oilData?.['Global Quote']?.['05. price'] ? 
+                    parseFloat(oilData['Global Quote']['05. price']) : null,
+                gold_oil_ratio: null // Will calculate
+            },
+            
+            // Economic indicators
+            economics: economicData || {},
+            
+            // Stock market specifics
+            stocks: stockMarketData || {},
+            
+            // Ray Dalio All Weather insights
+            ray_dalio: rayDalioData || {},
+            
+            // Metadata
             timestamp: new Date().toISOString(),
-            responseTime: Date.now() - startTime
+            responseTime: Date.now() - startTime,
+            data_quality: {
+                sources_available: 0,
+                sources_failed: 0,
+                completeness_score: 0
+            }
         };
+
+        // Calculate derived indicators
+        calculateDerivedIndicators(marketData);
         
-        // 🔧 FIXED: Log API usage with proper fallback
+        // Assess data quality
+        assessDataQuality(marketData);
+        
+        // Log successful API usage
         try {
-            await logApiUsage('live_data', 'comprehensive_market', 1, true, Date.now() - startTime, 0, 0.001);
+            await logApiUsage('live_data', 'comprehensive_market', 1, true, 
+                Date.now() - startTime, 0, 0.001);
         } catch (logError) {
             console.log('⚠️ API usage logging failed:', logError.message);
         }
         
+        console.log(`✅ Comprehensive market data fetched in ${Date.now() - startTime}ms`);
+        console.log(`📊 Data quality score: ${marketData.data_quality.completeness_score}%`);
+        
         return marketData;
+        
     } catch (error) {
-        console.error('Market data error:', error.message);
+        console.error('❌ Comprehensive market data error:', error.message);
+        
+        // Log failed API usage
         try {
             await logApiUsage('live_data', 'comprehensive_market', 1, false, 0, 0, 0);
         } catch (logError) {
             // Silent fail for logging
         }
+        
         return null;
+    }
+}
+
+// Helper function to calculate derived indicators
+function calculateDerivedIndicators(marketData) {
+    try {
+        // Yield curve analysis
+        if (marketData.yields.curve_10Y_2Y !== null) {
+            marketData.yields.inverted = marketData.yields.curve_10Y_2Y < 0;
+        }
+        
+        // VIX-based fear/greed assessment
+        if (marketData.sentiment.vix !== null) {
+            if (marketData.sentiment.vix < 15) {
+                marketData.sentiment.fear_greed_level = "EXTREME_GREED";
+            } else if (marketData.sentiment.vix < 20) {
+                marketData.sentiment.fear_greed_level = "GREED";
+            } else if (marketData.sentiment.vix < 30) {
+                marketData.sentiment.fear_greed_level = "NEUTRAL";
+            } else if (marketData.sentiment.vix < 40) {
+                marketData.sentiment.fear_greed_level = "FEAR";
+            } else {
+                marketData.sentiment.fear_greed_level = "EXTREME_FEAR";
+            }
+        }
+        
+        // Dollar strength assessment
+        if (marketData.currencies.dollar_index !== null) {
+            if (marketData.currencies.dollar_index > 100) {
+                marketData.currencies.dollar_strength = "STRONG";
+            } else if (marketData.currencies.dollar_index > 95) {
+                marketData.currencies.dollar_strength = "MODERATE";
+            } else {
+                marketData.currencies.dollar_strength = "WEAK";
+            }
+        }
+        
+        // Gold/Oil ratio
+        if (marketData.commodities.gold && marketData.commodities.oil) {
+            marketData.commodities.gold_oil_ratio = 
+                (marketData.commodities.gold / marketData.commodities.oil).toFixed(2);
+        }
+        
+        // Market regime determination
+        determineMarketRegime(marketData);
+        
+    } catch (error) {
+        console.warn('⚠️ Derived indicators calculation failed:', error.message);
+    }
+}
+
+// Helper function to determine market regime
+function determineMarketRegime(marketData) {
+    try {
+        let regime_score = 0;
+        
+        // VIX contribution
+        if (marketData.sentiment.vix !== null) {
+            if (marketData.sentiment.vix < 20) regime_score += 2;
+            else if (marketData.sentiment.vix > 30) regime_score -= 2;
+        }
+        
+        // Yield curve contribution
+        if (marketData.yields.inverted === true) regime_score -= 3;
+        else if (marketData.yields.curve_10Y_2Y > 1) regime_score += 1;
+        
+        // Dollar strength contribution
+        if (marketData.currencies.dollar_strength === "STRONG") regime_score += 1;
+        else if (marketData.currencies.dollar_strength === "WEAK") regime_score -= 1;
+        
+        // Determine regime
+        if (regime_score >= 2) {
+            marketData.sentiment.market_regime = "RISK_ON";
+        } else if (regime_score <= -2) {
+            marketData.sentiment.market_regime = "RISK_OFF";
+        } else {
+            marketData.sentiment.market_regime = "TRANSITIONAL";
+        }
+        
+    } catch (error) {
+        console.warn('⚠️ Market regime determination failed:', error.message);
+        marketData.sentiment.market_regime = "UNKNOWN";
+    }
+}
+
+// Helper function to assess data quality
+function assessDataQuality(marketData) {
+    try {
+        let available = 0;
+        let total = 0;
+        
+        // Count available data sources
+        const checks = [
+            marketData.markets && Object.keys(marketData.markets).length > 0,
+            marketData.yields.yield10Y !== null,
+            marketData.yields.yield2Y !== null,
+            marketData.sentiment.vix !== null,
+            marketData.currencies.dollar_index !== null,
+            marketData.commodities.gold !== null,
+            marketData.commodities.oil !== null,
+            marketData.economics && Object.keys(marketData.economics).length > 0,
+            marketData.stocks && Object.keys(marketData.stocks).length > 0
+        ];
+        
+        total = checks.length;
+        available = checks.filter(check => check).length;
+        
+        marketData.data_quality.sources_available = available;
+        marketData.data_quality.sources_failed = total - available;
+        marketData.data_quality.completeness_score = Math.round((available / total) * 100);
+        
+    } catch (error) {
+        console.warn('⚠️ Data quality assessment failed:', error.message);
+        marketData.data_quality.completeness_score = 0;
     }
 }
 
