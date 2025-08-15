@@ -1173,6 +1173,43 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
     }
 }
 
+// 💰 LIVE DATA COMMANDS - Add at line 1175 (before the handleStartCommand section)
+        
+        // 💰 CRYPTO PRICE QUERIES - Connect to existing getEnhancedCryptoData()
+        } else if ((text.toLowerCase().includes('bitcoin') || text.toLowerCase().includes('btc')) && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('much') || text.toLowerCase().includes('cost'))) {
+            await handleLiveBitcoinPrice(chatId);
+        } else if (text.toLowerCase().includes('crypto') && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('market'))) {
+            await handleLiveCryptoMarket(chatId);
+
+        // 📈 STOCK MARKET QUERIES - Connect to existing getStockMarketData()
+        } else if ((text.toLowerCase().includes('stock') || text.toLowerCase().includes('market') || text.toLowerCase().includes('sp500') || text.toLowerCase().includes('dow')) && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('today') || text.toLowerCase().includes('current'))) {
+            await handleLiveStockMarket(chatId);
+
+        // 🏦 ECONOMIC DATA QUERIES - Connect to existing getEconomicIndicators()
+        } else if ((text.toLowerCase().includes('inflation') || text.toLowerCase().includes('fed') || text.toLowerCase().includes('interest rate') || text.toLowerCase().includes('gdp')) && 
+                   (text.toLowerCase().includes('current') || text.toLowerCase().includes('today') || text.toLowerCase().includes('latest'))) {
+            await handleLiveEconomicData(chatId);
+
+        // 💱 FOREX QUERIES - Connect to existing getMajorForexPairs()
+        } else if ((text.toLowerCase().includes('dollar') || text.toLowerCase().includes('forex') || text.toLowerCase().includes('currency') || text.toLowerCase().includes('exchange rate')) && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('rate') || text.toLowerCase().includes('today'))) {
+            await handleLiveForexData(chatId);
+
+        // 📊 COMPREHENSIVE LIVE DATA COMMANDS
+        } else if (text === '/live_data' || text === '/market_data' || text === '/live_market') {
+            await handleComprehensiveLiveData(chatId);
+        } else if (text === '/live_crypto' || text === '/crypto_live') {
+            await handleLiveCryptoMarket(chatId);
+        } else if (text === '/live_stocks' || text === '/stocks_live') {
+            await handleLiveStockMarket(chatId);
+        } else if (text === '/live_forex' || text === '/forex_live') {
+            await handleLiveForexData(chatId);
+        } else if (text === '/live_economic' || text === '/economic_live') {
+            await handleLiveEconomicData(chatId);
+            
 // 🔧 UPDATED: Enhanced command handlers with wealth system integration
 async function handleStartCommand(chatId) {
     const welcome = `🤖 **Enhanced AI Assistant System v4.0 - WEALTH EMPIRE**
@@ -5038,6 +5075,329 @@ async function saveApiUsageDB(usageData) {
     }
 }
 
+// 💰 LIVE DATA HANDLER FUNCTIONS - Add before Express server setup (around line 4500)
+
+// 💰 BITCOIN PRICE using your existing getEnhancedCryptoData()
+async function handleLiveBitcoinPrice(chatId) {
+    const startTime = Date.now();
+    try {
+        await bot.sendMessage(chatId, "💰 Fetching live Bitcoin price from enhanced data feeds...");
+        
+        // Use your existing enhanced crypto data function
+        const cryptoData = await getEnhancedCryptoData();
+        const responseTime = Date.now() - startTime;
+        
+        if (cryptoData && cryptoData.bitcoin) {
+            const btc = cryptoData.bitcoin;
+            const change = btc.usd_24h_change || 0;
+            const emoji = change > 0 ? '🟢📈' : change < 0 ? '🔴📉' : '⚪';
+            
+            let response = `💰 **Live Bitcoin Price (Enhanced Data)**\n\n`;
+            response += `₿ **Bitcoin (BTC)**\n`;
+            response += `• Price: $${btc.usd?.toLocaleString() || 'N/A'}\n`;
+            response += `• 24h Change: ${emoji} ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n`;
+            response += `• Market Cap: $${btc.usd_market_cap?.toLocaleString() || 'N/A'}\n`;
+            response += `• 24h Volume: $${btc.usd_24h_vol?.toLocaleString() || 'N/A'}\n\n`;
+            response += `⚡ **Response Time:** ${responseTime}ms\n`;
+            response += `📊 **Data Source:** Enhanced Crypto Data System\n`;
+            response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
+            response += `💡 **Try:** /wealth for investment analysis or /crypto_live for all coins`;
+            
+            await sendSmartMessage(bot, chatId, response);
+            
+            // Save to database
+            await saveConversationDB(chatId, "Live Bitcoin price request", 
+                `BTC: $${btc.usd?.toLocaleString()} (${change > 0 ? '+' : ''}${change.toFixed(2)}%)`, 
+                "live_crypto_price").catch(console.error);
+            
+            console.log(`✅ Live Bitcoin price delivered: $${btc.usd?.toLocaleString()}`);
+            
+        } else {
+            throw new Error("Enhanced crypto data not available");
+        }
+        
+    } catch (error) {
+        console.error('❌ Live Bitcoin price error:', error.message);
+        await sendSmartMessage(bot, chatId, 
+            `❌ **Live Bitcoin data temporarily unavailable**\n\n` +
+            `**Error:** ${error.message}\n\n` +
+            `**Alternative:** Try /wealth for investment strategies or ask me about crypto analysis!`
+        );
+    }
+}
+
+// 📈 STOCK MARKET using your existing getStockMarketData()
+async function handleLiveStockMarket(chatId) {
+    const startTime = Date.now();
+    try {
+        await bot.sendMessage(chatId, "📈 Fetching live stock market data from enhanced feeds...");
+        
+        const stockData = await getStockMarketData();
+        const responseTime = Date.now() - startTime;
+        
+        if (stockData) {
+            let response = `📈 **Live Stock Market Data**\n\n`;
+            
+            if (stockData.sp500) {
+                const sp500Change = stockData.sp500.change || 0;
+                const sp500Emoji = sp500Change > 0 ? '🟢' : sp500Change < 0 ? '🔴' : '⚪';
+                response += `📊 **S&P 500:** ${stockData.sp500.value} ${sp500Emoji} ${sp500Change > 0 ? '+' : ''}${sp500Change}%\n`;
+            }
+            
+            if (stockData.nasdaq) {
+                const nasdaqChange = stockData.nasdaq.change || 0;
+                const nasdaqEmoji = nasdaqChange > 0 ? '🟢' : nasdaqChange < 0 ? '🔴' : '⚪';
+                response += `💻 **NASDAQ:** ${stockData.nasdaq.value} ${nasdaqEmoji} ${nasdaqChange > 0 ? '+' : ''}${nasdaqChange}%\n`;
+            }
+            
+            if (stockData.dow) {
+                const dowChange = stockData.dow.change || 0;
+                const dowEmoji = dowChange > 0 ? '🟢' : dowChange < 0 ? '🔴' : '⚪';
+                response += `🏭 **Dow Jones:** ${stockData.dow.value} ${dowEmoji} ${dowChange > 0 ? '+' : ''}${dowChange}%\n`;
+            }
+            
+            if (stockData.vix) {
+                response += `😰 **VIX (Fear Index):** ${stockData.vix.value}\n`;
+            }
+            
+            response += `\n⚡ **Response Time:** ${responseTime}ms\n`;
+            response += `📊 **Data Source:** Enhanced Stock Market System\n`;
+            response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
+            response += `💡 **Try:** /wealth for investment opportunities or /briefing for market analysis`;
+            
+            await sendSmartMessage(bot, chatId, response);
+            
+            await saveConversationDB(chatId, "Live stock market request", 
+                `Stock market data delivered`, "live_stock_data").catch(console.error);
+            
+            console.log(`✅ Live stock market data delivered successfully`);
+            
+        } else {
+            throw new Error("Enhanced stock data not available");
+        }
+        
+    } catch (error) {
+        console.error('❌ Live stock market error:', error.message);
+        await sendSmartMessage(bot, chatId, 
+            `❌ **Live stock market data temporarily unavailable**\n\n` +
+            `**Try:** /briefing for market analysis or /wealth for investment strategies!`
+        );
+    }
+}
+
+// 💰 COMPREHENSIVE CRYPTO using your existing getEnhancedCryptoData()
+async function handleLiveCryptoMarket(chatId) {
+    const startTime = Date.now();
+    try {
+        await bot.sendMessage(chatId, "💰 Fetching live crypto market from enhanced data feeds...");
+        
+        const cryptoData = await getEnhancedCryptoData();
+        const responseTime = Date.now() - startTime;
+        
+        if (cryptoData) {
+            let response = `💰 **Live Crypto Market Overview**\n\n`;
+            
+            // Top cryptocurrencies
+            const cryptos = ['bitcoin', 'ethereum', 'cardano', 'solana', 'polkadot'];
+            
+            cryptos.forEach(crypto => {
+                const data = cryptoData[crypto];
+                if (data && data.usd) {
+                    const change = data.usd_24h_change || 0;
+                    const emoji = change > 0 ? '🟢' : change < 0 ? '🔴' : '⚪';
+                    const symbol = {
+                        bitcoin: '₿',
+                        ethereum: 'Ξ',
+                        cardano: 'ADA',
+                        solana: 'SOL',
+                        polkadot: 'DOT'
+                    }[crypto] || crypto.toUpperCase();
+                    
+                    response += `${symbol} **${crypto.charAt(0).toUpperCase() + crypto.slice(1)}**\n`;
+                    response += `• $${data.usd < 1 ? data.usd.toFixed(6) : data.usd.toLocaleString()}\n`;
+                    response += `• ${emoji} ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n\n`;
+                }
+            });
+            
+            response += `⚡ **Response Time:** ${responseTime}ms\n`;
+            response += `📊 **Data Source:** Enhanced Crypto System\n`;
+            response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
+            response += `💡 **Try:** /wealth for crypto investment strategies`;
+            
+            await sendSmartMessage(bot, chatId, response);
+            
+            console.log(`✅ Live crypto market data delivered successfully`);
+            
+        } else {
+            throw new Error("Enhanced crypto data not available");
+        }
+        
+    } catch (error) {
+        console.error('❌ Live crypto market error:', error.message);
+        await sendSmartMessage(bot, chatId, 
+            `❌ **Live crypto market data temporarily unavailable**\n\n` +
+            `**Try:** /wealth for crypto strategies or ask me about cryptocurrency analysis!`
+        );
+    }
+}
+
+// 💱 FOREX DATA using your existing getMajorForexPairs()
+async function handleLiveForexData(chatId) {
+    const startTime = Date.now();
+    try {
+        await bot.sendMessage(chatId, "💱 Fetching live forex data from enhanced feeds...");
+        
+        const forexData = await getMajorForexPairs();
+        const responseTime = Date.now() - startTime;
+        
+        if (forexData) {
+            let response = `💱 **Live Forex Market Data**\n\n`;
+            
+            Object.entries(forexData).forEach(([pair, data]) => {
+                if (data && data.rate) {
+                    const change = data.change || 0;
+                    const emoji = change > 0 ? '🟢' : change < 0 ? '🔴' : '⚪';
+                    response += `💰 **${pair.toUpperCase()}:** ${data.rate} ${emoji} ${change > 0 ? '+' : ''}${change.toFixed(4)}\n`;
+                }
+            });
+            
+            response += `\n⚡ **Response Time:** ${responseTime}ms\n`;
+            response += `📊 **Data Source:** Enhanced Forex System\n`;
+            response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
+            response += `💡 **Try:** /wealth for currency strategies or /macro for economic analysis`;
+            
+            await sendSmartMessage(bot, chatId, response);
+            
+            console.log(`✅ Live forex data delivered successfully`);
+            
+        } else {
+            throw new Error("Enhanced forex data not available");
+        }
+        
+    } catch (error) {
+        console.error('❌ Live forex error:', error.message);
+        await sendSmartMessage(bot, chatId, 
+            `❌ **Live forex data temporarily unavailable**\n\n` +
+            `**Try:** /macro for economic analysis or ask me about currency strategies!`
+        );
+    }
+}
+
+// 🏦 ECONOMIC DATA using your existing getEconomicIndicators()
+async function handleLiveEconomicData(chatId) {
+    const startTime = Date.now();
+    try {
+        await bot.sendMessage(chatId, "🏦 Fetching live economic data from enhanced feeds...");
+        
+        const economicData = await getEconomicIndicators();
+        const responseTime = Date.now() - startTime;
+        
+        if (economicData) {
+            let response = `🏦 **Live Economic Indicators**\n\n`;
+            
+            if (economicData.inflation) response += `📈 **Inflation Rate:** ${economicData.inflation}%\n`;
+            if (economicData.fedRate) response += `🏛️ **Fed Funds Rate:** ${economicData.fedRate}%\n`;
+            if (economicData.unemployment) response += `👥 **Unemployment:** ${economicData.unemployment}%\n`;
+            if (economicData.gdp) response += `🏛️ **GDP Growth:** ${economicData.gdp}%\n`;
+            if (economicData.yieldCurve) response += `📊 **10Y-2Y Yield Curve:** ${economicData.yieldCurve}bp\n`;
+            
+            response += `\n⚡ **Response Time:** ${responseTime}ms\n`;
+            response += `📊 **Data Source:** Enhanced Economic System\n`;
+            response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
+            response += `💡 **Try:** /regime for economic analysis or /macro for macro outlook`;
+            
+            await sendSmartMessage(bot, chatId, response);
+            
+            console.log(`✅ Live economic data delivered successfully`);
+            
+        } else {
+            throw new Error("Enhanced economic data not available");
+        }
+        
+    } catch (error) {
+        console.error('❌ Live economic data error:', error.message);
+        await sendSmartMessage(bot, chatId, 
+            `❌ **Live economic data temporarily unavailable**\n\n` +
+            `**Try:** /regime for economic analysis or /macro for macro outlook!`
+        );
+    }
+}
+
+// 📊 COMPREHENSIVE LIVE DATA using your existing getComprehensiveMarketData()
+async function handleComprehensiveLiveData(chatId) {
+    const startTime = Date.now();
+    try {
+        await bot.sendMessage(chatId, "📊 Fetching comprehensive live market data from all enhanced feeds...");
+        
+        // Use your existing getComprehensiveMarketData() function!
+        const marketData = await getComprehensiveMarketData();
+        const responseTime = Date.now() - startTime;
+        
+        if (marketData) {
+            let response = `📊 **Comprehensive Live Market Data**\n\n`;
+            
+            // Crypto section
+            if (marketData.assets?.crypto) {
+                response += `💰 **Cryptocurrency:**\n`;
+                const btc = marketData.assets.crypto.bitcoin;
+                if (btc) {
+                    response += `₿ Bitcoin: $${btc.usd?.toLocaleString()} (${btc.usd_24h_change > 0 ? '+' : ''}${btc.usd_24h_change?.toFixed(2)}%)\n`;
+                }
+                response += `\n`;
+            }
+            
+            // Stock section
+            if (marketData.intelligence?.stocks) {
+                response += `📈 **Stock Market:**\n`;
+                const stocks = marketData.intelligence.stocks;
+                if (stocks.sp500) response += `📊 S&P 500: ${stocks.sp500.value} (${stocks.sp500.change}%)\n`;
+                if (stocks.nasdaq) response += `💻 NASDAQ: ${stocks.nasdaq.value} (${stocks.nasdaq.change}%)\n`;
+                response += `\n`;
+            }
+            
+            // Economic section
+            if (marketData.intelligence?.economics) {
+                response += `🏦 **Economic Indicators:**\n`;
+                const econ = marketData.intelligence.economics;
+                if (econ.inflation) response += `📈 Inflation: ${econ.inflation}%\n`;
+                if (econ.fedRate) response += `🏛️ Fed Rate: ${econ.fedRate}%\n`;
+                response += `\n`;
+            }
+            
+            // Forex section
+            if (marketData.assets?.forex) {
+                response += `💱 **Forex:**\n`;
+                const forex = marketData.assets.forex;
+                Object.entries(forex).slice(0, 3).forEach(([pair, data]) => {
+                    if (data?.rate) {
+                        response += `💰 ${pair.toUpperCase()}: ${data.rate}\n`;
+                    }
+                });
+                response += `\n`;
+            }
+            
+            response += `⚡ **Response Time:** ${responseTime}ms\n`;
+            response += `📊 **Data Quality:** ${marketData.data_quality?.completeness_score || 0}%\n`;
+            response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
+            response += `💡 **Try:** /wealth for AI investment analysis`;
+            
+            await sendMarketAnalysis(bot, chatId, response);
+            
+            console.log(`✅ Comprehensive live data delivered successfully`);
+            
+        } else {
+            throw new Error("Comprehensive market data not available");
+        }
+        
+    } catch (error) {
+        console.error('❌ Comprehensive live data error:', error.message);
+        await sendSmartMessage(bot, chatId, 
+            `❌ **Comprehensive live data temporarily unavailable**\n\n` +
+            `**Try:** Individual commands like /live_crypto, /live_stocks, or /wealth for analysis!`
+        );
+    }
+}
+            
 // 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP (Replace your duplicate sections)
 const express = require("express");
 const app = express();
