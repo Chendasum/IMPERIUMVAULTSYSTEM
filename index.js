@@ -12,7 +12,9 @@ console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "N
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
 
-// Import enhanced utility modules
+// 🏆 ENHANCED LIVE DATA SYSTEM - Original imports + NEW WEALTH MODULES
+
+// Original Live Data functions (keeping existing imports)
 const { 
     getRealLiveData, 
     getEnhancedLiveData, 
@@ -21,6 +23,206 @@ const {
     getRayDalioMarketData
 } = require("./utils/liveData");
 
+// 🏆 NEW WEALTH MANAGEMENT MODULES - Added from liveData.js
+// Module 1: Risk Management & Portfolio Optimization
+let riskManagementSystem;
+try {
+    const {
+        analyzePortfolioRisk,
+        getRiskManagementDashboard,
+        AdvancedRiskCalculator,
+        PortfolioOptimizer,
+        RegimeAwareRiskManager
+    } = require('./utils/liveData');
+    
+    riskManagementSystem = {
+        analyzePortfolioRisk,
+        getRiskManagementDashboard,
+        AdvancedRiskCalculator,
+        PortfolioOptimizer,
+        RegimeAwareRiskManager
+    };
+    console.log('✅ Module 1: Risk Management & Portfolio Optimization - LOADED');
+} catch (error) {
+    console.warn('⚠️ Risk Management module from liveData.js not available:', error.message);
+    riskManagementSystem = null;
+}
+
+// Module 2: Market Opportunity Scanner & Signal Detection  
+let marketScannerSystem;
+try {
+    const {
+        runComprehensiveMarketScan,
+        getComprehensiveTechnicalAnalysis,
+        TechnicalIndicatorCalculator,
+        MarketScannerEngine,
+        SignalAggregator
+    } = require('./utils/liveData');
+    
+    marketScannerSystem = {
+        runComprehensiveMarketScan,
+        getComprehensiveTechnicalAnalysis,
+        TechnicalIndicatorCalculator,
+        MarketScannerEngine,
+        SignalAggregator
+    };
+    console.log('✅ Module 2: Market Scanner & Signal Detection - LOADED');
+} catch (error) {
+    console.warn('⚠️ Market Scanner module from liveData.js not available:', error.message);
+    marketScannerSystem = null;
+}
+
+// Module 3: Yield Generation & Income Optimization
+let yieldOptimizationSystem;
+try {
+    const {
+        getComprehensiveYieldAnalysis,
+        YieldStrategyAnalyzer,
+        IncomeLadderBuilder
+    } = require('./utils/liveData');
+    
+    yieldOptimizationSystem = {
+        getComprehensiveYieldAnalysis,
+        YieldStrategyAnalyzer,
+        IncomeLadderBuilder
+    };
+    console.log('✅ Module 3: Yield Generation & Income Optimization - LOADED');
+} catch (error) {
+    console.warn('⚠️ Yield Optimization module from liveData.js not available:', error.message);
+    yieldOptimizationSystem = null;
+}
+
+// Module 4: Arbitrage & Market Inefficiency Detection
+let arbitrageSystem;
+try {
+    const {
+        getComprehensiveArbitrageAnalysis,
+        ArbitrageOpportunityScanner,
+        MarketInefficiencyDetector
+    } = require('./utils/liveData');
+    
+    arbitrageSystem = {
+        getComprehensiveArbitrageAnalysis,
+        ArbitrageOpportunityScanner,
+        MarketInefficiencyDetector
+    };
+    console.log('✅ Module 4: Arbitrage & Market Inefficiency Detection - LOADED');
+} catch (error) {
+    console.warn('⚠️ Arbitrage module from liveData.js not available:', error.message);
+    arbitrageSystem = null;
+}
+
+// Module 5: Advanced Portfolio Tracking & Analytics
+let portfolioAnalyticsSystem;
+try {
+    const {
+        getComprehensivePortfolioAnalytics,
+        PortfolioPerformanceTracker,
+        RealTimePortfolioMonitor,
+        PortfolioAnalyticsDashboard
+    } = require('./utils/liveData');
+    
+    portfolioAnalyticsSystem = {
+        getComprehensivePortfolioAnalytics,
+        PortfolioPerformanceTracker,
+        RealTimePortfolioMonitor,
+        PortfolioAnalyticsDashboard
+    };
+    console.log('✅ Module 5: Advanced Portfolio Tracking & Analytics - LOADED');
+} catch (error) {
+    console.warn('⚠️ Portfolio Analytics module from liveData.js not available:', error.message);
+    portfolioAnalyticsSystem = null;
+}
+
+// Module 6: Wealth Building Strategies & Goal Planning
+let wealthPlanningSystem;
+try {
+    const {
+        getComprehensiveWealthPlan,
+        WealthGoalPlanner,
+        WealthBuildingStrategyEngine,
+        WealthProgressTracker
+    } = require('./utils/liveData');
+    
+    wealthPlanningSystem = {
+        getComprehensiveWealthPlan,
+        WealthGoalPlanner,
+        WealthBuildingStrategyEngine,
+        WealthProgressTracker
+    };
+    console.log('✅ Module 6: Wealth Building Strategies & Goal Planning - LOADED');
+} catch (error) {
+    console.warn('⚠️ Wealth Planning module from liveData.js not available:', error.message);
+    wealthPlanningSystem = null;
+}
+
+// Module 7: Tax Optimization & Legal Structures
+let taxOptimizationSystem;
+try {
+    const {
+        TaxOptimizationSystem,
+        TaxOptimizationEngine,
+        LegalStructureAnalyzer,
+        demonstrateTaxOptimization
+    } = require('./utils/liveData');
+    
+    taxOptimizationSystem = {
+        TaxOptimizationSystem,
+        TaxOptimizationEngine,
+        LegalStructureAnalyzer,
+        demonstrateTaxOptimization
+    };
+    console.log('✅ Module 7: Tax Optimization & Legal Structures - LOADED');
+} catch (error) {
+    console.warn('⚠️ Tax Optimization module from liveData.js not available:', error.message);
+    taxOptimizationSystem = null;
+}
+
+// Module 8: Alternative Investments & Private Markets
+let alternativeInvestmentsSystem;
+try {
+    const {
+        AlternativeInvestmentsSystem,
+        AlternativeInvestmentsEngine,
+        PrivateMarketAccess,
+        demonstrateAlternativeInvestments
+    } = require('./utils/liveData');
+    
+    alternativeInvestmentsSystem = {
+        AlternativeInvestmentsSystem,
+        AlternativeInvestmentsEngine,
+        PrivateMarketAccess,
+        demonstrateAlternativeInvestments
+    };
+    console.log('✅ Module 8: Alternative Investments & Private Markets - LOADED');
+} catch (error) {
+    console.warn('⚠️ Alternative Investments module from liveData.js not available:', error.message);
+    alternativeInvestmentsSystem = null;
+}
+
+// Module 10: AI-Powered Investment Research
+let aiResearchSystem;
+try {
+    const {
+        AIInvestmentResearchEngine,
+        ResearchWorkflowOrchestrator,
+        performQuickResearch,
+        performComprehensiveResearch
+    } = require('./utils/liveData');
+    
+    aiResearchSystem = {
+        AIInvestmentResearchEngine,
+        ResearchWorkflowOrchestrator,
+        performQuickResearch,
+        performComprehensiveResearch
+    };
+    console.log('✅ Module 10: AI-Powered Investment Research - LOADED');
+} catch (error) {
+    console.warn('⚠️ AI Research module from liveData.js not available:', error.message);
+    aiResearchSystem = null;
+}
+
+// Original Cambodia Lending System
 const { 
     analyzeLendingDeal, 
     getPortfolioStatus, 
@@ -60,7 +262,7 @@ const {
     processVideoMessage,
 } = require("./utils/multimodal");
 
-// 💰 CORRECT AI WEALTH-BUILDING SYSTEM - ALL 10 MODULES WITH PROPER ERROR HANDLING
+// 💰 ORIGINAL AI WEALTH-BUILDING SYSTEM - ALL 10 MODULES WITH PROPER ERROR HANDLING
 // ✅ FIXED: Using try-catch instead of .catch() on require()
 
 // 🛡️ Risk Management & Capital Protection
