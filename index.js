@@ -1170,6 +1170,10 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
                    (text.toLowerCase().includes('current') || text.toLowerCase().includes('today') || text.toLowerCase().includes('latest'))) {
             await handleLiveEconomicData(chatId);
 
+        // 💰 SMART CRYPTO PRICE QUERIES - Recognizes ALL cryptocurrencies
+        } else if (isAnyCryptoRequest(text)) {
+            await handleSmartCryptoPrice(chatId, text);
+
         // 💱 FOREX QUERIES - Connect to existing getMajorForexPairs()
         } else if ((text.toLowerCase().includes('dollar') || text.toLowerCase().includes('forex') || text.toLowerCase().includes('currency') || text.toLowerCase().includes('exchange rate')) && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('rate') || text.toLowerCase().includes('today'))) {
@@ -5074,9 +5078,200 @@ async function saveApiUsageDB(usageData) {
     }
 }
 
-// 💰 LIVE DATA HANDLER FUNCTIONS - Add before Express server setup (around line 4500)
+// 💰 COMPLETE LIVE DATA HANDLER FUNCTIONS - Add before Express server setup (around line 4500)
 
-// 💰 BITCOIN PRICE using your existing getEnhancedCryptoData()
+// 🔧 SMART CRYPTO HELPER FUNCTIONS
+// Helper function to detect ANY crypto request
+function isAnyCryptoRequest(text) {
+    const lowerText = text.toLowerCase();
+    
+    // List of all major cryptocurrencies
+    const cryptoKeywords = [
+        'bitcoin', 'btc',
+        'ethereum', 'eth', 'ether',
+        'cardano', 'ada',
+        'solana', 'sol',
+        'polkadot', 'dot',
+        'chainlink', 'link',
+        'litecoin', 'ltc',
+        'dogecoin', 'doge',
+        'binance coin', 'bnb',
+        'ripple', 'xrp',
+        'avalanche', 'avax',
+        'polygon', 'matic',
+        'shiba', 'shib',
+        'crypto', 'cryptocurrency'
+    ];
+    
+    // Price request indicators
+    const priceKeywords = [
+        'price', 'cost', 'worth', 'value', 'much', 'today', 'current', 'now', 'latest'
+    ];
+    
+    // Check if text contains crypto + price keywords
+    const hasCrypto = cryptoKeywords.some(crypto => lowerText.includes(crypto));
+    const hasPrice = priceKeywords.some(price => lowerText.includes(price)) || 
+                     lowerText.includes('how much') || 
+                     lowerText.includes('what is') ||
+                     lowerText.includes('tell me');
+    
+    return hasCrypto && (hasPrice || lowerText.includes('?'));
+}
+
+// Helper function to extract crypto symbol from text
+function extractCryptoFromText(text) {
+    const lowerText = text.toLowerCase();
+    
+    // Crypto mappings
+    const cryptoMappings = {
+        'bitcoin': 'bitcoin',
+        'btc': 'bitcoin',
+        'ethereum': 'ethereum', 
+        'eth': 'ethereum',
+        'ether': 'ethereum',
+        'cardano': 'cardano',
+        'ada': 'cardano',
+        'solana': 'solana',
+        'sol': 'solana',
+        'polkadot': 'polkadot',
+        'dot': 'polkadot',
+        'chainlink': 'chainlink',
+        'link': 'chainlink',
+        'litecoin': 'litecoin',
+        'ltc': 'litecoin',
+        'dogecoin': 'dogecoin',
+        'doge': 'dogecoin',
+        'binance': 'binancecoin',
+        'bnb': 'binancecoin',
+        'ripple': 'ripple',
+        'xrp': 'ripple',
+        'avalanche': 'avalanche',
+        'avax': 'avalanche',
+        'polygon': 'polygon',
+        'matic': 'polygon',
+        'shiba': 'shiba-inu',
+        'shib': 'shiba-inu'
+    };
+    
+    // Find matching crypto
+    for (const [keyword, coinId] of Object.entries(cryptoMappings)) {
+        if (lowerText.includes(keyword)) {
+            return {
+                coinId: coinId,
+                symbol: keyword.toUpperCase(),
+                displayName: keyword.charAt(0).toUpperCase() + keyword.slice(1)
+            };
+        }
+    }
+    
+    // Default to Bitcoin if no specific crypto found but crypto keywords present
+    if (lowerText.includes('crypto')) {
+        return {
+            coinId: 'bitcoin',
+            symbol: 'BTC',
+            displayName: 'Bitcoin'
+        };
+    }
+    
+    return null;
+}
+
+// 💰 SMART CRYPTO HANDLER - Works for ANY cryptocurrency
+async function handleSmartCryptoPrice(chatId, text) {
+    const startTime = Date.now();
+    try {
+        // Extract crypto info from user message
+        const cryptoInfo = extractCryptoFromText(text);
+        
+        if (!cryptoInfo) {
+            await sendSmartMessage(bot, chatId, "🤔 I couldn't identify which cryptocurrency you're asking about. Try: 'bitcoin price' or 'ethereum price'");
+            return;
+        }
+        
+        await bot.sendMessage(chatId, `💰 Fetching live ${cryptoInfo.displayName} price...`);
+        
+        // Fetch data for the specific crypto + top ones for context
+        const cryptoIds = [cryptoInfo.coinId, 'bitcoin', 'ethereum'].filter((v, i, a) => a.indexOf(v) === i).join(',');
+        
+        const fetch = require('node-fetch');
+        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoIds}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`);
+        
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const responseTime = Date.now() - startTime;
+        
+        // Get the requested crypto data
+        const requestedCrypto = data[cryptoInfo.coinId];
+        
+        if (requestedCrypto && requestedCrypto.usd) {
+            const price = requestedCrypto.usd;
+            const change = requestedCrypto.usd_24h_change || 0;
+            const marketCap = requestedCrypto.usd_market_cap || 0;
+            
+            const emoji = change > 0 ? '🟢📈' : change < 0 ? '🔴📉' : '⚪';
+            
+            // Get appropriate symbol emoji
+            const symbolEmoji = {
+                'bitcoin': '₿',
+                'ethereum': 'Ξ', 
+                'cardano': '₳',
+                'solana': '◎',
+                'polkadot': '●',
+                'chainlink': '🔗',
+                'litecoin': 'Ł',
+                'dogecoin': 'Ð',
+                'binancecoin': '🟡',
+                'ripple': '◉'
+            }[cryptoInfo.coinId] || '💰';
+            
+            let response = `💰 **Live ${cryptoInfo.displayName} Price**\n\n`;
+            response += `${symbolEmoji} **${cryptoInfo.displayName} (${cryptoInfo.symbol})**\n`;
+            response += `• Price: $${price < 1 ? price.toFixed(6) : price.toLocaleString()}\n`;
+            response += `• 24h Change: ${emoji} ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n`;
+            
+            if (marketCap > 0) {
+                response += `• Market Cap: $${marketCap.toLocaleString()}\n`;
+            }
+            
+            // Show Bitcoin for context if user asked for different crypto
+            if (cryptoInfo.coinId !== 'bitcoin' && data.bitcoin) {
+                const btcChange = data.bitcoin.usd_24h_change || 0;
+                const btcEmoji = btcChange > 0 ? '🟢' : btcChange < 0 ? '🔴' : '⚪';
+                response += `\n📊 **Bitcoin Reference:** $${data.bitcoin.usd.toLocaleString()} ${btcEmoji} ${btcChange > 0 ? '+' : ''}${btcChange.toFixed(2)}%\n`;
+            }
+            
+            response += `\n⚡ **Response Time:** ${responseTime}ms\n`;
+            response += `📊 **Data Source:** CoinGecko API\n`;
+            response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
+            response += `💡 **Try:** "ethereum price" | "dogecoin price" | /wealth for investment analysis`;
+            
+            await sendSmartMessage(bot, chatId, response);
+            
+            // Save to database
+            await saveConversationDB(chatId, `${cryptoInfo.displayName} price request`, 
+                `${cryptoInfo.symbol}: $${price < 1 ? price.toFixed(6) : price.toLocaleString()} (${change > 0 ? '+' : ''}${change.toFixed(2)}%)`, 
+                "crypto_price").catch(console.error);
+            
+            console.log(`✅ ${cryptoInfo.displayName} price delivered: $${price < 1 ? price.toFixed(6) : price.toLocaleString()}`);
+            
+        } else {
+            throw new Error(`${cryptoInfo.displayName} data not available`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Smart crypto price error:', error.message);
+        await sendSmartMessage(bot, chatId, 
+            `❌ **Unable to fetch live crypto price**\n\n` +
+            `**Error:** ${error.message}\n\n` +
+            `**Try:** "bitcoin price" | "ethereum price" | /wealth for crypto strategies`
+        );
+    }
+}
+
+// 💰 BITCOIN PRICE using enhanced fallback system
 async function handleLiveBitcoinPrice(chatId) {
     const startTime = Date.now();
     try {
@@ -5246,13 +5441,33 @@ async function handleLiveStockMarket(chatId) {
     }
 }
 
-// 💰 COMPREHENSIVE CRYPTO using your existing getEnhancedCryptoData()
+// 💰 COMPREHENSIVE CRYPTO using enhanced fallback system
 async function handleLiveCryptoMarket(chatId) {
     const startTime = Date.now();
     try {
         await bot.sendMessage(chatId, "💰 Fetching live crypto market from enhanced data feeds...");
         
-        const cryptoData = await getEnhancedCryptoData();
+        let cryptoData = null;
+        let dataSource = '';
+        
+        // Try enhanced crypto data sources
+        try {
+            cryptoData = await getEnhancedCryptoData();
+            dataSource = 'Enhanced Crypto Data';
+        } catch (error) {
+            console.log('Enhanced crypto data not available:', error.message);
+            
+            // Fallback to direct API
+            try {
+                const fetch = require('node-fetch');
+                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,cardano,solana,polkadot&vs_currencies=usd&include_24hr_change=true');
+                cryptoData = await response.json();
+                dataSource = 'CoinGecko API Direct';
+            } catch (fallbackError) {
+                console.log('Direct crypto API also failed:', fallbackError.message);
+            }
+        }
+        
         const responseTime = Date.now() - startTime;
         
         if (cryptoData) {
@@ -5269,9 +5484,9 @@ async function handleLiveCryptoMarket(chatId) {
                     const symbol = {
                         bitcoin: '₿',
                         ethereum: 'Ξ',
-                        cardano: 'ADA',
-                        solana: 'SOL',
-                        polkadot: 'DOT'
+                        cardano: '₳',
+                        solana: '◎',
+                        polkadot: '●'
                     }[crypto] || crypto.toUpperCase();
                     
                     response += `${symbol} **${crypto.charAt(0).toUpperCase() + crypto.slice(1)}**\n`;
@@ -5281,16 +5496,16 @@ async function handleLiveCryptoMarket(chatId) {
             });
             
             response += `⚡ **Response Time:** ${responseTime}ms\n`;
-            response += `📊 **Data Source:** Enhanced Crypto System\n`;
+            response += `📊 **Data Source:** ${dataSource}\n`;
             response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
             response += `💡 **Try:** /wealth for crypto investment strategies`;
             
             await sendSmartMessage(bot, chatId, response);
             
-            console.log(`✅ Live crypto market data delivered successfully`);
+            console.log(`✅ Live crypto market data delivered successfully from ${dataSource}`);
             
         } else {
-            throw new Error("Enhanced crypto data not available");
+            throw new Error("All crypto data sources failed");
         }
         
     } catch (error) {
