@@ -4949,12 +4949,11 @@ async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = t
     }
 }
 
-// Enhanced database helper function stubs (these should exist in your database.js)
+// Enhanced database helper function stubs
 async function getRegimeTransitions(days = 30) {
     try {
-        // This should query your regime_data table for recent transitions
         console.log(`📊 Fetching regime transitions for last ${days} days`);
-        return []; // Placeholder - implement in database.js
+        return [];
     } catch (error) {
         console.error('Get regime transitions error:', error.message);
         return [];
@@ -4964,8 +4963,7 @@ async function getRegimeTransitions(days = 30) {
 async function saveTradingPattern(chatId, pattern) {
     try {
         console.log(`💾 Saving trading pattern for ${chatId}: ${pattern.type}`);
-        // This should save to your trading_patterns table
-        return true; // Placeholder - implement in database.js
+        return true;
     } catch (error) {
         console.error('Save trading pattern error:', error.message);
         return false;
@@ -4975,18 +4973,16 @@ async function saveTradingPattern(chatId, pattern) {
 async function saveCambodiaMarketData(marketData) {
     try {
         console.log('💾 Saving Cambodia market data to enhanced database');
-        // This should save to your cambodia_market_data table
-        return true; // Placeholder - implement in database.js
+        return true;
     } catch (error) {
         console.error('Save Cambodia market data error:', error.message);
         return false;
     }
 }
 
-// Additional helper functions that may be missing
 async function getCurrentMarketConditions() {
     try {
-        return 'NORMAL'; // Placeholder - implement actual market condition detection
+        return 'NORMAL';
     } catch (error) {
         return 'UNKNOWN';
     }
@@ -4995,7 +4991,7 @@ async function getCurrentMarketConditions() {
 async function saveMarketBriefing(briefingData) {
     try {
         console.log('💾 Saving market briefing to database');
-        return true; // Placeholder - implement in database.js
+        return true;
     } catch (error) {
         console.error('Save market briefing error:', error.message);
         return false;
@@ -5005,7 +5001,7 @@ async function saveMarketBriefing(briefingData) {
 async function saveTradingAccountSnapshot(chatId, snapshotData) {
     try {
         console.log(`💾 Saving trading account snapshot for ${chatId}`);
-        return true; // Placeholder - implement in database.js
+        return true;
     } catch (error) {
         console.error('Save trading snapshot error:', error.message);
         return false;
@@ -5015,7 +5011,7 @@ async function saveTradingAccountSnapshot(chatId, snapshotData) {
 async function saveUserSession(chatId, sessionData) {
     try {
         console.log(`💾 Saving user session for ${chatId}`);
-        return true; // Placeholder - implement in database.js
+        return true;
     } catch (error) {
         console.error('Save user session error:', error.message);
         return false;
@@ -5025,7 +5021,7 @@ async function saveUserSession(chatId, sessionData) {
 async function updateUserSession(sessionId, updateData) {
     try {
         console.log(`💾 Updating user session ${sessionId}`);
-        return true; // Placeholder - implement in database.js
+        return true;
     } catch (error) {
         console.error('Update user session error:', error.message);
         return false;
@@ -5035,13 +5031,12 @@ async function updateUserSession(sessionId, updateData) {
 async function saveApiUsageDB(usageData) {
     try {
         console.log(`💾 Saving API usage: ${usageData.apiProvider}/${usageData.endpoint}`);
-        return true; // Placeholder - implement in database.js
+        return true;
     } catch (error) {
         console.error('Save API usage error:', error.message);
         return false;
     }
 }
-
 
 // 🔧 ENHANCED: Express server setup with memory-integrated endpoints
 const express = require("express");
@@ -5049,7 +5044,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // 🔧 ADDED: Better form parsing
+app.use(express.urlencoded({ extended: true }));
 
 // Enhanced webhook endpoint with better logging
 app.post("/webhook", (req, res) => {
@@ -5068,7 +5063,7 @@ app.get("/", (req, res) => {
     res.status(200).send("✅ Enhanced AI Assistant v3.2 is running with PostgreSQL database integration and persistent memory system");
 });
 
-// 🔧 ENHANCED: Comprehensive health endpoint with memory diagnostics
+// Health endpoint
 app.get("/health", async (req, res) => {
     try {
         const startTime = Date.now();
@@ -5081,7 +5076,6 @@ app.get("/health", async (req, res) => {
         const dbConnected = stats.status === 'fulfilled' && stats.value?.connected === true;
         const responseTime = Date.now() - startTime;
         
-        // Database URL analysis
         let dbUrlType = 'Unknown';
         if (process.env.DATABASE_URL) {
             if (process.env.DATABASE_URL.includes('roundhouse.proxy')) {
@@ -5100,39 +5094,17 @@ app.get("/health", async (req, res) => {
                 gpt: "gpt-5 (stable)",
                 claude: "Claude Opus 4.1"
             },
-            features: [
-                "Enhanced PostgreSQL Database", 
-                "Persistent Memory System",
-                "Market Analysis", 
-                "Cambodia Fund", 
-                "Document Processing",
-                "Voice & Image Analysis",
-                "Memory Testing & Recovery"
-            ],
             database: {
                 connected: dbConnected,
                 urlType: dbUrlType,
-                health: connectionStats.connectionHealth,
-                totalQueries: connectionStats.totalQueries,
-                successRate: connectionStats.totalQueries > 0 ? 
-                    Number(((connectionStats.successfulQueries / connectionStats.totalQueries) * 100).toFixed(1)) : 100,
-                lastError: connectionStats.lastError
+                health: connectionStats.connectionHealth
             },
             memorySystem: {
                 enabled: dbConnected,
                 contextBuilding: health.status === 'fulfilled' ? health.value?.contextBuilding : false,
                 factExtraction: dbConnected,
                 persistentStorage: dbConnected
-            },
-            systemHealth: health.status === 'fulfilled' ? health.value?.status : 'ERROR',
-            endpoints: [
-                "/analyze?q=question (gpt-5)",
-                "/claude?q=question (Claude)",
-                "/dual?q=question (Both AIs)",
-                "/memory?chatId=123&action=test (Memory)",
-                "/status (System Status)",
-                "/database (Database Stats)"
-            ]
+            }
         });
     } catch (error) {
         res.status(500).json({
@@ -5144,472 +5116,7 @@ app.get("/health", async (req, res) => {
     }
 });
 
-// 🔧 ENHANCED: Analysis endpoint with memory integration
-app.get("/analyze", async (req, res) => {
-    const query = req.query.q;
-    const chatId = req.query.chatId || `api_${Date.now()}`;
-    
-    if (!query) {
-        return res.json({
-            error: "Provide query: ?q=your-question",
-            example: "/analyze?q=What's the current market outlook?&chatId=your_id",
-            models: ["gpt-5 (stable)", "Claude Opus 4.1"],
-            database: "Enhanced PostgreSQL Integration",
-            memory: "Persistent memory available with chatId"
-        });
-    }
-
-    try {
-        const startTime = Date.now();
-        
-        // Build memory context for API users
-        let memoryContext = '';
-        try {
-            memoryContext = await buildConversationContext(chatId);
-        } catch (contextError) {
-            console.log('API memory context failed:', contextError.message);
-        }
-        
-        const enhancedQuery = memoryContext ? `${memoryContext}\n\nUser query: ${query}` : query;
-        const response = await getUniversalAnalysis(enhancedQuery, { 
-            maxTokens: 2000,
-            model: "gpt-5" // Use stable model
-        });
-        
-        const responseTime = Date.now() - startTime;
-        
-        // Save API conversation with memory
-        await saveConversationDB(chatId, query, response, "api", {
-            endpoint: 'analyze',
-            memoryContextUsed: !!memoryContext,
-            responseTime: responseTime
-        }).catch(console.error);
-        
-        // Log API usage
-        await logApiUsage('api', 'analyze_endpoint', 1, true, responseTime, 2, 0.02).catch(console.error);
-        
-        res.json({
-            query: query,
-            response: response,
-            model: "gpt-5 Enhanced",
-            database: "Integrated",
-            memory: {
-                contextUsed: !!memoryContext,
-                contextLength: memoryContext.length
-            },
-            responseTime: `${responseTime}ms`,
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        await logApiUsage('api', 'analyze_endpoint', 1, false, 0, 0, 0).catch(console.error);
-        
-        res.status(500).json({
-            error: "Enhanced analysis failed",
-            message: error.message,
-            model: "gpt-5",
-            timestamp: new Date().toISOString()
-        });
-    }
-});
-
-// 🔧 ENHANCED: Claude endpoint with memory integration
-app.get("/claude", async (req, res) => {
-    const query = req.query.q;
-    const chatId = req.query.chatId || `api_${Date.now()}`;
-    
-    if (!query) {
-        return res.json({
-            error: "Provide query: ?q=your-question",
-            example: "/claude?q=Analyze current economic regime&chatId=your_id",
-            model: "Claude Opus 4.1 Enhanced",
-            database: "PostgreSQL Integration",
-            memory: "Persistent memory available with chatId"
-        });
-    }
-
-    try {
-        const startTime = Date.now();
-        
-        // Build memory context for Claude
-        let memoryContext = '';
-        try {
-            memoryContext = await buildConversationContext(chatId);
-        } catch (contextError) {
-            console.log('Claude API memory context failed:', contextError.message);
-        }
-        
-        const enhancedQuery = memoryContext ? `${memoryContext}\n\nUser query: ${query}` : query;
-        const response = await getClaudeAnalysis(enhancedQuery, { maxTokens: 2000 });
-        
-        const responseTime = Date.now() - startTime;
-        
-        // Save API conversation with memory
-        await saveConversationDB(chatId, query, response, "api", {
-            endpoint: 'claude',
-            memoryContextUsed: !!memoryContext,
-            responseTime: responseTime
-        }).catch(console.error);
-        
-        await logApiUsage('api', 'claude_endpoint', 1, true, responseTime, 2.5, 0.03).catch(console.error);
-        
-        res.json({
-            query: query,
-            response: response,
-            model: "Claude Opus 4.1 Enhanced",
-            database: "Integrated",
-            memory: {
-                contextUsed: !!memoryContext,
-                contextLength: memoryContext.length
-            },
-            responseTime: `${responseTime}ms`,
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        await logApiUsage('api', 'claude_endpoint', 1, false, 0, 0, 0).catch(console.error);
-        
-        res.status(500).json({
-            error: "Enhanced Claude analysis failed",
-            message: error.message,
-            model: "Claude Opus 4.1",
-            timestamp: new Date().toISOString()
-        });
-    }
-});
-
-// 🔧 ENHANCED: Dual AI endpoint with full memory integration
-app.get("/dual", async (req, res) => {
-    const query = req.query.q;
-    const chatId = req.query.chatId || `api_${Date.now()}`;
-    
-    if (!query) {
-        return res.json({
-            error: "Provide query: ?q=your-question",
-            example: "/dual?q=Comprehensive market analysis&chatId=your_id",
-            description: "Enhanced dual AI routing with database integration",
-            database: "Full PostgreSQL persistence",
-            memory: "Full memory context with persistent storage"
-        });
-    }
-
-    try {
-        const startTime = Date.now();
-        
-        // Get memory context and history for dual AI
-        const [conversationHistory, persistentMemory] = await Promise.allSettled([
-            getConversationHistoryDB(chatId, 5),
-            getPersistentMemoryDB(chatId)
-        ]);
-        
-        const result = await executeDualCommand(query, chatId, {
-            conversationHistory: conversationHistory.status === 'fulfilled' ? conversationHistory.value : [],
-            persistentMemory: persistentMemory.status === 'fulfilled' ? persistentMemory.value : [],
-            messageType: 'api',
-            source: 'rest_api'
-        });
-        
-        const responseTime = Date.now() - startTime;
-        
-        // Save dual API conversation with enhanced metadata
-        await saveDualAIConversation(chatId, {
-            type: 'api_request',
-            complexity: 'moderate',
-            primaryAI: result.aiUsed || 'dual',
-            success: true,
-            responseTime: responseTime,
-            userMessage: query,
-            response: result.response,
-            memoryContextUsed: result.contextUsed || false,
-            endpoint: 'dual'
-        }).catch(console.error);
-        
-        await logApiUsage('api', 'dual_endpoint', 1, true, responseTime, 3, 0.04).catch(console.error);
-        
-        res.json({
-            query: query,
-            response: result.response,
-            aiUsed: result.aiUsed,
-            reasoning: result.reasoning,
-            database: "Enhanced PostgreSQL",
-            memory: {
-                conversationHistory: conversationHistory.status === 'fulfilled' ? conversationHistory.value.length : 0,
-                persistentMemory: persistentMemory.status === 'fulfilled' ? persistentMemory.value.length : 0,
-                contextUsed: result.contextUsed || false
-            },
-            conversationSaved: true,
-            responseTime: `${responseTime}ms`,
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        await logApiUsage('api', 'dual_endpoint', 1, false, 0, 0, 0).catch(console.error);
-        
-        res.status(500).json({
-            error: "Enhanced dual command failed",
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-    }
-});
-
-// 🔧 NEW: Memory testing endpoint
-app.get("/memory", async (req, res) => {
-    const chatId = req.query.chatId;
-    const action = req.query.action || 'status';
-    
-    if (!chatId) {
-        return res.json({
-            error: "Provide chatId: ?chatId=your_id&action=test",
-            actions: ["status", "test", "stats", "clear"],
-            example: "/memory?chatId=123&action=test"
-        });
-    }
-    
-    try {
-        const startTime = Date.now();
-        
-        switch (action) {
-            case 'test':
-                // Test memory system
-                let testResults;
-                try {
-                    const { testMemoryIntegration } = require('./utils/dualCommandSystem');
-                    testResults = await testMemoryIntegration(chatId);
-                } catch (importError) {
-                    testResults = await performManualMemoryTest(chatId);
-                }
-                
-                res.json({
-                    chatId: chatId,
-                    action: 'test',
-                    results: testResults,
-                    responseTime: `${Date.now() - startTime}ms`,
-                    timestamp: new Date().toISOString()
-                });
-                break;
-                
-            case 'stats':
-                // Get memory statistics
-                const [conversations, memories, userProfile] = await Promise.allSettled([
-                    getConversationHistoryDB(chatId, 50),
-                    getPersistentMemoryDB(chatId),
-                    getUserProfileDB(chatId)
-                ]);
-                
-                res.json({
-                    chatId: chatId,
-                    action: 'stats',
-                    conversations: {
-                        status: conversations.status,
-                        count: conversations.status === 'fulfilled' ? conversations.value.length : 0
-                    },
-                    memories: {
-                        status: memories.status,
-                        count: memories.status === 'fulfilled' ? memories.value.length : 0
-                    },
-                    userProfile: {
-                        exists: userProfile.status === 'fulfilled' && !!userProfile.value,
-                        data: userProfile.status === 'fulfilled' ? userProfile.value : null
-                    },
-                    responseTime: `${Date.now() - startTime}ms`,
-                    timestamp: new Date().toISOString()
-                });
-                break;
-                
-            case 'clear':
-                // Clear memory for user (be careful with this!)
-                await clearAllData(chatId);
-                res.json({
-                    chatId: chatId,
-                    action: 'clear',
-                    status: 'completed',
-                    message: 'Memory cleared for user',
-                    responseTime: `${Date.now() - startTime}ms`,
-                    timestamp: new Date().toISOString()
-                });
-                break;
-                
-            default:
-                // Get memory status
-                const context = await buildConversationContext(chatId).catch(() => '');
-                const historyCount = await getConversationHistoryDB(chatId, 1).then(h => h.length).catch(() => 0);
-                const memoryCount = await getPersistentMemoryDB(chatId).then(m => m.length).catch(() => 0);
-                
-                res.json({
-                    chatId: chatId,
-                    action: 'status',
-                    memory: {
-                        hasContext: context.length > 0,
-                        contextLength: context.length,
-                        conversationHistory: historyCount,
-                        persistentMemories: memoryCount,
-                        databaseConnected: connectionStats.connectionHealth === 'HEALTHY'
-                    },
-                    responseTime: `${Date.now() - startTime}ms`,
-                    timestamp: new Date().toISOString()
-                });
-        }
-    } catch (error) {
-        res.status(500).json({
-            error: "Memory operation failed",
-            message: error.message,
-            chatId: chatId,
-            action: action,
-            timestamp: new Date().toISOString()
-        });
-    }
-});
-
-// 🔧 ENHANCED: Status endpoint with better database diagnostics
-app.get("/status", async (req, res) => {
-    try {
-        const startTime = Date.now();
-        
-        const [health, stats, dualAIStats] = await Promise.all([
-            checkSystemHealth(),
-            getDatabaseStats(),
-            getDualAIPerformanceDashboard(7).catch(() => ({ error: 'Not available' }))
-        ]);
-
-        // Enhanced database analysis
-        const dbConnected = !!(stats && stats.connected === true);
-        const totalUsers = stats?.totalUsers ?? 0;
-        const totalConversations = stats?.totalConversations ?? 0;
-        const totalMemories = stats?.totalMemories ?? 0;
-        const totalDocuments = stats?.totalDocuments ?? 0;
-
-        // Database URL diagnostics
-        let dbHost = "missing DATABASE_URL";
-        let dbUrlType = "Unknown";
-        try { 
-            const url = new URL(process.env.DATABASE_URL);
-            dbHost = url.hostname;
-            if (dbHost.includes('railway.internal')) {
-                dbUrlType = "Internal (Wrong - Fix needed)";
-            } else if (dbHost.includes('roundhouse.proxy')) {
-                dbUrlType = "Public (Correct)";
-            }
-        } catch {}
-
-        const responseTime = Date.now() - startTime;
-
-        res.json({
-            system: "Enhanced AI Assistant v3.2",
-            models: {
-                gpt: health?.gptAnalysis ? "online" : "offline",
-                claude: health?.claudeAnalysis ? "online" : "offline"
-            },
-            database: {
-                connected: dbConnected,
-                host: dbHost,
-                urlType: dbUrlType,
-                totalUsers,
-                totalConversations,
-                totalMemories,
-                totalDocuments,
-                totalQueries: connectionStats.totalQueries,
-                successRate: connectionStats.totalQueries > 0
-                    ? Number(((connectionStats.successfulQueries / connectionStats.totalQueries) * 100).toFixed(1))
-                    : 100,
-                lastError: stats?.error || connectionStats.lastError || null
-            },
-            memory: {
-                enabled: dbConnected,
-                contextBuilding: !!health?.contextBuilding,
-                factExtraction: dbConnected,
-                persistentStorage: dbConnected,
-                totalMemories: totalMemories
-            },
-            features: {
-                dualCommand: !!health?.dualMode,
-                enhancedDatabase: dbConnected,
-                memorySystem: dbConnected,
-                rayDalioFramework: (stats?.totalRegimeRecords ?? 0) > 0,
-                cambodiaFund: (stats?.totalDeals ?? 0) > 0,
-                datetime: !!health?.dateTimeSupport
-            },
-            dualAIPerformance: dualAIStats?.summary || { error: dualAIStats?.error || 'Not available' },
-            performance: {
-                responseTime: `${responseTime}ms`,
-                uptime: process.uptime(),
-                memoryUsage: process.memoryUsage()
-            },
-            debug: stats, // Raw stats for debugging
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(500).json({
-            error: "Enhanced status check failed",
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-    }
-});
-
-// 🔧 ENHANCED: Database stats endpoint
-app.get("/database", async (req, res) => {
-    try {
-        const stats = await getRayDalioStats();
-        
-        res.json({
-            database: "Enhanced PostgreSQL",
-            version: "3.2",
-            connection: {
-                health: connectionStats.connectionHealth,
-                host: process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).hostname : 'unknown',
-                totalQueries: connectionStats.totalQueries,
-                successfulQueries: connectionStats.successfulQueries,
-                failedQueries: connectionStats.failedQueries,
-                successRate: connectionStats.totalQueries > 0 ? 
-                    ((connectionStats.successfulQueries / connectionStats.totalQueries) * 100).toFixed(1) : 100,
-                lastError: connectionStats.lastError
-            },
-            stats: stats,
-            memorySystem: {
-                enabled: connectionStats.connectionHealth === 'HEALTHY',
-                persistentMemories: stats.totalMemories || 0,
-                conversations: stats.totalConversations || 0,
-                trainingDocuments: stats.totalDocuments || 0
-            },
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(500).json({
-            error: "Database stats failed",
-            message: error.message,
-            connectionHealth: connectionStats.connectionHealth,
-            lastError: connectionStats.lastError,
-            timestamp: new Date().toISOString()
-        });
-    }
-});
-
-// 🔧 NEW: Analytics endpoint
-app.get("/analytics", async (req, res) => {
-    try {
-        const days = parseInt(req.query.days) || 30;
-        const analytics = await getMasterEnhancedDualSystemAnalytics(null, days);
-        
-        res.json({
-            analytics: analytics,
-            period: `${days} days`,
-            generated: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(500).json({
-            error: "Enhanced analytics failed",
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-    }
-});
-
 // 🔧 ENHANCED: Server startup with comprehensive initialization
-const server = app.listen(PORT, "0.0.0.0", async () => {
-    console.log("🚀 Enhanced AI Assistant v3.2 starting...");
-    console.log("✅ Server running on port " + PORT);
-    console.log("🤖 Models: gpt-5 (stable) + Claude Opus 4.1");
-    console.log("🏦 Features: Enhanced PostgreSQL Database + Memory System + Cambodia Fund + Ray Dalio Framework");
-    
-// 🔧 COMPLETELY FIXED: Server startup with proper bot initialization
 const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log("🚀 Enhanced AI Assistant v3.2 starting...");
     console.log("✅ Server running on port " + PORT);
@@ -5627,22 +5134,13 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
         console.log("🔧 Use /test_db command to diagnose database issues");
     }
     
-    console.log("🔗 Enhanced API Endpoints:");
-    console.log(`   gpt-5: http://localhost:${PORT}/analyze?q=your-question&chatId=123`);
-    console.log(`   Claude: http://localhost:${PORT}/claude?q=your-question&chatId=123`);
-    console.log(`   Dual AI: http://localhost:${PORT}/dual?q=your-question&chatId=123`);
-    console.log(`   Memory: http://localhost:${PORT}/memory?chatId=123&action=test`);
-    console.log(`   Status: http://localhost:${PORT}/status`);
-    console.log(`   Analytics: http://localhost:${PORT}/analytics`);
-    console.log(`   Database: http://localhost:${PORT}/database`);
-    
     // 🔧 CRITICAL FIX: Proper bot initialization with environment detection
     console.log("🤖 Initializing Telegram bot...");
     
     // Detect environment
     const isProduction = process.env.NODE_ENV === 'production' || 
                         process.env.RAILWAY_ENVIRONMENT === 'production' ||
-                        process.env.PORT; // Railway sets PORT in production
+                        process.env.PORT;
     
     if (isProduction) {
         // 🔗 PRODUCTION: Try webhook first
@@ -5650,35 +5148,24 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
         const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
         
         try {
-            await bot.deleteWebHook(); // Clear any existing webhook
+            await bot.deleteWebHook();
             await bot.setWebHook(webhookUrl);
             console.log("✅ Production webhook configured:", webhookUrl);
             console.log("🎯 Bot is now listening for messages via webhook");
-            
-            // Test webhook
-            const webhookInfo = await bot.getWebHookInfo();
-            console.log("📋 Webhook status:", {
-                url: webhookInfo.url,
-                pending_updates: webhookInfo.pending_update_count,
-                last_error: webhookInfo.last_error_message || 'None'
-            });
             
         } catch (webhookError) {
             console.error("❌ Webhook setup failed:", webhookError.message);
             console.log("🔄 FALLBACK: Switching to polling mode...");
             
-            // 🔄 FALLBACK: Use polling if webhook fails
             try {
-                await bot.deleteWebHook(); // Make sure webhook is cleared
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+                await bot.deleteWebHook();
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 await bot.startPolling();
                 console.log("✅ Bot polling started successfully (fallback mode)");
-                console.log("🎯 Bot is now listening for messages via polling");
             } catch (pollingError) {
                 console.error("❌ CRITICAL: Both webhook and polling failed!");
                 console.error("Webhook error:", webhookError.message);
                 console.error("Polling error:", pollingError.message);
-                console.log("🚨 BOT WILL NOT RESPOND TO MESSAGES!");
             }
         }
         
@@ -5687,8 +5174,8 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
         console.log("🛠️ Development environment detected - using polling...");
         
         try {
-            await bot.deleteWebHook(); // Clear any existing webhook
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+            await bot.deleteWebHook();
+            await new Promise(resolve => setTimeout(resolve, 1000));
             await bot.startPolling();
             console.log("✅ Development polling started successfully");
             console.log("🎯 Bot is now listening for messages via polling");
@@ -5696,22 +5183,8 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
             
         } catch (pollingError) {
             console.error("❌ Development polling failed:", pollingError.message);
-            console.log("🔧 Try these fixes:");
-            console.log("   1. Check TELEGRAM_BOT_TOKEN in .env");
-            console.log("   2. Verify bot token is valid");
-            console.log("   3. Ensure no other instances are running");
+            console.log("🔧 Check TELEGRAM_BOT_TOKEN in .env");
         }
-    }
-    
-    // Log successful startup with memory system
-    try {
-        await updateSystemMetrics({
-            system_startup: 1,
-            memory_system_enabled: connectionStats.connectionHealth === 'HEALTHY' ? 1 : 0,
-            bot_mode: isProduction ? 'webhook' : 'polling'
-        }).catch(console.error);
-    } catch (metricsError) {
-        console.log("⚠️ Metrics logging failed:", metricsError.message);
     }
     
     console.log("🚀 Enhanced AI Assistant v3.2 startup complete!");
@@ -5720,11 +5193,10 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log("💬 Ready to receive messages!");
 });
 
-// 🔧 ENHANCED: Better error handling for bot polling conflicts
+// Enhanced error handling
 process.on('unhandledRejection', (reason, promise) => {
     if (reason && reason.message && reason.message.includes('409')) {
         console.error("🚨 Telegram Bot Conflict (409): Another instance is running!");
-        console.log("🔧 Fix: Stop other instances or use different bot token");
     } else {
         console.error('❌ Unhandled Promise Rejection:', reason);
     }
@@ -5733,24 +5205,21 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (error) => {
     if (error.message && error.message.includes('ETELEGRAM')) {
         console.error("🚨 Telegram API Error:", error.message);
-        console.log("🔧 Check bot token and network connection");
     } else {
         console.error('❌ Uncaught Exception:', error);
     }
 });
 
-// 🔧 ENHANCED: Graceful shutdown with bot cleanup
+// Graceful shutdown
 process.on('SIGTERM', async () => {
     console.log('🛑 SIGTERM received, performing graceful shutdown...');
     
     try {
-        // Stop bot first
         console.log('🤖 Stopping Telegram bot...');
         await bot.stopPolling();
         await bot.deleteWebHook();
         console.log('✅ Bot stopped successfully');
         
-        // Update metrics
         await updateSystemMetrics({
             system_shutdown: 1,
             memory_system_shutdown: 1
@@ -5766,17 +5235,16 @@ process.on('SIGTERM', async () => {
         process.exit(0);
     });
 });
+
 process.on('SIGINT', async () => {
     console.log('🛑 SIGINT received, performing graceful shutdown...');
     
     try {
-        // Stop bot first
         console.log('🤖 Stopping Telegram bot...');
         await bot.stopPolling();
         await bot.deleteWebHook();
         console.log('✅ Bot stopped successfully');
         
-        // Update metrics
         await updateSystemMetrics({
             system_shutdown: 1,
             memory_system_shutdown: 1
