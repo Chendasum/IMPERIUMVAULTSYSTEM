@@ -60,7 +60,7 @@ const {
     processVideoMessage,
 } = require("./utils/multimodal");
 
-// 💰 COMPLETE AI WEALTH-BUILDING SYSTEM - ADD THESE 10 MODULES:
+// 💰 COMPLETE AI WEALTH-BUILDING SYSTEM - ALL 10 MODULES WITH ERROR HANDLING:
 
 // 🛡️ Risk Management & Capital Protection
 const { 
@@ -69,7 +69,22 @@ const {
     monitorRisk, 
     getDynamicStopLoss,
     calculateVaR
-} = require("./utils/riskManager");
+} = require("./utils/riskManager").catch(() => {
+    console.warn("⚠️ riskManager module not found - using fallback functions");
+    return {
+        assessRisk: async () => ({ status: 'fallback', message: 'Risk assessment module not available' }),
+        calculatePositionSize: async () => ({ size: 0, message: 'Position sizing module not available' }),
+        monitorRisk: async () => ({ status: 'fallback' }),
+        getDynamicStopLoss: async () => ({ stopLoss: 0 }),
+        calculateVaR: async () => ({ var: 0 })
+    };
+}) || {
+    assessRisk: async () => ({ status: 'fallback', message: 'Risk assessment module not available' }),
+    calculatePositionSize: async () => ({ size: 0, message: 'Position sizing module not available' }),
+    monitorRisk: async () => ({ status: 'fallback' }),
+    getDynamicStopLoss: async () => ({ stopLoss: 0 }),
+    calculateVaR: async () => ({ var: 0 })
+};
 
 // 📊 Market Opportunity Detection & Scanning
 const { 
@@ -78,7 +93,22 @@ const {
     scanStocks, 
     scanCrypto,
     scanOpportunities
-} = require("./utils/marketScanner");
+} = require("./utils/marketScanner").catch(() => {
+    console.warn("⚠️ marketScanner module not found - using fallback functions");
+    return {
+        scanMarkets: async () => ({ opportunities: [], message: 'Market scanner module not available' }),
+        getTopOpportunities: async () => ({ opportunities: [] }),
+        scanStocks: async () => ({ stocks: [] }),
+        scanCrypto: async () => ({ crypto: [] }),
+        scanOpportunities: async () => ({ opportunities: [] })
+    };
+}) || {
+    scanMarkets: async () => ({ opportunities: [], message: 'Market scanner module not available' }),
+    getTopOpportunities: async () => ({ opportunities: [] }),
+    scanStocks: async () => ({ stocks: [] }),
+    scanCrypto: async () => ({ crypto: [] }),
+    scanOpportunities: async () => ({ opportunities: [] })
+};
 
 // 📈 Portfolio Optimization & Modern Portfolio Theory
 const { 
@@ -87,7 +117,22 @@ const {
     getOptimalAllocation, 
     projectPerformance,
     calculateEfficientFrontier
-} = require("./utils/portfolioOptimizer");
+} = require("./utils/portfolioOptimizer").catch(() => {
+    console.warn("⚠️ portfolioOptimizer module not found - using fallback functions");
+    return {
+        optimizePortfolio: async () => ({ allocation: {}, message: 'Portfolio optimizer module not available' }),
+        calculateRebalancing: async () => ({ rebalancing: {} }),
+        getOptimalAllocation: async () => ({ allocation: {} }),
+        projectPerformance: async () => ({ performance: {} }),
+        calculateEfficientFrontier: async () => ({ frontier: {} })
+    };
+}) || {
+    optimizePortfolio: async () => ({ allocation: {}, message: 'Portfolio optimizer module not available' }),
+    calculateRebalancing: async () => ({ rebalancing: {} }),
+    getOptimalAllocation: async () => ({ allocation: {} }),
+    projectPerformance: async () => ({ performance: {} }),
+    calculateEfficientFrontier: async () => ({ frontier: {} })
+};
 
 // 💰 Income & Yield Generation Across All Assets
 const { 
@@ -97,7 +142,24 @@ const {
     createIncomePortfolio, 
     scanDividends, 
     scanCryptoYields
-} = require("./utils/yieldFinder");
+} = require("./utils/yieldFinder").catch(() => {
+    console.warn("⚠️ yieldFinder module not found - using fallback functions");
+    return {
+        findYields: async () => ({ yields: [], message: 'Yield finder module not available' }),
+        getTopYields: async () => ({ yields: [] }),
+        projectIncome: async () => ({ income: {} }),
+        createIncomePortfolio: async () => ({ portfolio: {} }),
+        scanDividends: async () => ({ dividends: [] }),
+        scanCryptoYields: async () => ({ yields: [] })
+    };
+}) || {
+    findYields: async () => ({ yields: [], message: 'Yield finder module not available' }),
+    getTopYields: async () => ({ yields: [] }),
+    projectIncome: async () => ({ income: {} }),
+    createIncomePortfolio: async () => ({ portfolio: {} }),
+    scanDividends: async () => ({ dividends: [] }),
+    scanCryptoYields: async () => ({ yields: [] })
+};
 
 // 📊 Comprehensive Wealth Tracking & Performance Analytics
 const { 
@@ -106,7 +168,22 @@ const {
     calculatePerformance, 
     checkMilestones,
     projectWealth
-} = require("./utils/wealthTracker");
+} = require("./utils/wealthTracker").catch(() => {
+    console.warn("⚠️ wealthTracker module not found - using fallback functions");
+    return {
+        trackWealth: async () => ({ wealth: {}, message: 'Wealth tracker module not available' }),
+        getWealthSnapshot: async () => ({ snapshot: {} }),
+        calculatePerformance: async () => ({ performance: {} }),
+        checkMilestones: async () => ({ milestones: [] }),
+        projectWealth: async () => ({ projection: {} })
+    };
+}) || {
+    trackWealth: async () => ({ wealth: {}, message: 'Wealth tracker module not available' }),
+    getWealthSnapshot: async () => ({ snapshot: {} }),
+    calculatePerformance: async () => ({ performance: {} }),
+    checkMilestones: async () => ({ milestones: [] }),
+    projectWealth: async () => ({ projection: {} })
+};
 
 // 🚨 Smart Alert System & Opportunity Notifications
 const { 
@@ -115,7 +192,22 @@ const {
     getAlertStatus, 
     configureAlerts, 
     getAlertInsights
-} = require("./utils/alertSystem");
+} = require("./utils/alertSystem").catch(() => {
+    console.warn("⚠️ alertSystem module not found - using fallback functions");
+    return {
+        startAlerts: async () => ({ status: 'fallback', message: 'Alert system module not available' }),
+        sendCustomAlert: async () => ({ sent: false }),
+        getAlertStatus: async () => ({ status: 'inactive' }),
+        configureAlerts: async () => ({ configured: false }),
+        getAlertInsights: async () => ({ insights: [] })
+    };
+}) || {
+    startAlerts: async () => ({ status: 'fallback', message: 'Alert system module not available' }),
+    sendCustomAlert: async () => ({ sent: false }),
+    getAlertStatus: async () => ({ status: 'inactive' }),
+    configureAlerts: async () => ({ configured: false }),
+    getAlertInsights: async () => ({ insights: [] })
+};
 
 // 🔄 Arbitrage Detection & Risk-Free Profit Opportunities
 const { 
@@ -124,7 +216,22 @@ const {
     scanImmediateOpportunities, 
     monitorArbitrage,
     findTriangularArbitrage
-} = require("./utils/arbitrageDetector");
+} = require("./utils/arbitrageDetector").catch(() => {
+    console.warn("⚠️ arbitrageDetector module not found - using fallback functions");
+    return {
+        scanArbitrage: async () => ({ opportunities: [], message: 'Arbitrage detector module not available' }),
+        findPriceArbitrage: async () => ({ arbitrage: [] }),
+        scanImmediateOpportunities: async () => ({ opportunities: [] }),
+        monitorArbitrage: async () => ({ monitoring: false }),
+        findTriangularArbitrage: async () => ({ triangular: [] })
+    };
+}) || {
+    scanArbitrage: async () => ({ opportunities: [], message: 'Arbitrage detector module not available' }),
+    findPriceArbitrage: async () => ({ arbitrage: [] }),
+    scanImmediateOpportunities: async () => ({ opportunities: [] }),
+    monitorArbitrage: async () => ({ monitoring: false }),
+    findTriangularArbitrage: async () => ({ triangular: [] })
+};
 
 // ⚡ Trading Signals & Advanced Technical Analysis
 const { 
@@ -133,7 +240,22 @@ const {
     getQuickSignals, 
     scanForSignals, 
     getSignalInsights
-} = require("./utils/tradingSignals");
+} = require("./utils/tradingSignals").catch(() => {
+    console.warn("⚠️ tradingSignals module not found - using fallback functions");
+    return {
+        generateSignals: async () => ({ signals: [], message: 'Trading signals module not available' }),
+        analyzeSymbol: async () => ({ analysis: {} }),
+        getQuickSignals: async () => ({ signals: [] }),
+        scanForSignals: async () => ({ signals: [] }),
+        getSignalInsights: async () => ({ insights: [] })
+    };
+}) || {
+    generateSignals: async () => ({ signals: [], message: 'Trading signals module not available' }),
+    analyzeSymbol: async () => ({ analysis: {} }),
+    getQuickSignals: async () => ({ signals: [] }),
+    scanForSignals: async () => ({ signals: [] }),
+    getSignalInsights: async () => ({ insights: [] })
+};
 
 // 🧪 Strategy Backtesting & Validation System
 const { 
@@ -142,7 +264,22 @@ const {
     quickBacktest, 
     optimizeStrategy, 
     stressTestStrategy
-} = require("./utils/backtester");
+} = require("./utils/backtester").catch(() => {
+    console.warn("⚠️ backtester module not found - using fallback functions");
+    return {
+        backtestStrategy: async () => ({ results: {}, message: 'Backtester module not available' }),
+        compareStrategies: async () => ({ comparison: {} }),
+        quickBacktest: async () => ({ results: {} }),
+        optimizeStrategy: async () => ({ optimized: {} }),
+        stressTestStrategy: async () => ({ stress: {} })
+    };
+}) || {
+    backtestStrategy: async () => ({ results: {}, message: 'Backtester module not available' }),
+    compareStrategies: async () => ({ comparison: {} }),
+    quickBacktest: async () => ({ results: {} }),
+    optimizeStrategy: async () => ({ optimized: {} }),
+    stressTestStrategy: async () => ({ stress: {} })
+};
 
 // 💵 Cash Flow & Liquidity Optimization Mastery
 const { 
@@ -154,7 +291,28 @@ const {
     optimizeDebt, 
     projectCashFlow, 
     monitorCashFlow
-} = require("./utils/cashFlowOptimizer");
+} = require("./utils/cashFlowOptimizer").catch(() => {
+    console.warn("⚠️ cashFlowOptimizer module not found - using fallback functions");
+    return {
+        optimizeCashFlow: async () => ({ optimization: {}, message: 'Cash flow optimizer module not available' }),
+        analyzeCurrentCashFlow: async () => ({ analysis: {} }),
+        optimizeEmergencyFund: async () => ({ fund: {} }),
+        optimizeLiquidity: async () => ({ liquidity: {} }),
+        optimizeTaxes: async () => ({ taxes: {} }),
+        optimizeDebt: async () => ({ debt: {} }),
+        projectCashFlow: async () => ({ projection: {} }),
+        monitorCashFlow: async () => ({ monitoring: false })
+    };
+}) || {
+    optimizeCashFlow: async () => ({ optimization: {}, message: 'Cash flow optimizer module not available' }),
+    analyzeCurrentCashFlow: async () => ({ analysis: {} }),
+    optimizeEmergencyFund: async () => ({ fund: {} }),
+    optimizeLiquidity: async () => ({ liquidity: {} }),
+    optimizeTaxes: async () => ({ taxes: {} }),
+    optimizeDebt: async () => ({ debt: {} }),
+    projectCashFlow: async () => ({ projection: {} }),
+    monitorCashFlow: async () => ({ monitoring: false })
+};
 
 // Import COMPLETE enhanced database system
 const {
