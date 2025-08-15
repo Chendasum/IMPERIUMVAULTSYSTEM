@@ -1562,9 +1562,6 @@ module.exports = {
 // Advanced Execution System with Smart Learning and Performance Optimization
 // COMPLETE VERSION - All 2000+ lines included
 
-// Import dependencies
-const { UnifiedAIInterface } = require('./perfect_ai_clients');
-
 // Enhanced logger
 let logger;
 try {
