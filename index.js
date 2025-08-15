@@ -996,7 +996,7 @@ async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = t
     }
 }
 
-// Enhanced command execution with full database logging + memory testing + WEALTH SYSTEM
+// Enhanced command execution with full database logging + memory testing + WEALTH SYSTEM + LIVE DATA
 async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
     
@@ -1151,34 +1151,11 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         } else if (text === '/cashflow_monitor') {
             await handleCashFlowMonitoring(chatId);
         
-        } else {
-            // Handle general conversation with enhanced dual AI system
-            await handleEnhancedConversation(chatId, text, sessionId);
-        }
-        
-        const executionTime = Date.now() - startTime;
-        
-        // Log successful command execution
-        await logCommandUsage(chatId, text, executionTime, true).catch(console.error);
-        
-        return executionTime;
-        
-    } catch (error) {
-        const executionTime = Date.now() - startTime;
-        
-        // Log failed command execution
-        await logCommandUsage(chatId, text, executionTime, false, error.message).catch(console.error);
-        
-        throw error;
-    }
-}
-
-// 💰 LIVE DATA COMMANDS - Add at line 1175 (before the handleStartCommand section)
-        
+        // 💰 LIVE DATA COMMANDS - CORRECTLY INTEGRATED
         // 💰 CRYPTO PRICE QUERIES - Connect to existing getEnhancedCryptoData()
-} else if ((text.toLowerCase().includes('bitcoin') || text.toLowerCase().includes('btc')) && 
-           (text.toLowerCase().includes('price') || text.toLowerCase().includes('much') || text.toLowerCase().includes('cost'))) {
-    await handleLiveBitcoinPrice(chatId);
+        } else if ((text.toLowerCase().includes('bitcoin') || text.toLowerCase().includes('btc')) && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('much') || text.toLowerCase().includes('cost'))) {
+            await handleLiveBitcoinPrice(chatId);
         } else if (text.toLowerCase().includes('crypto') && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('market'))) {
             await handleLiveCryptoMarket(chatId);
@@ -1209,7 +1186,29 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
             await handleLiveForexData(chatId);
         } else if (text === '/live_economic' || text === '/economic_live') {
             await handleLiveEconomicData(chatId);
-            
+        
+        } else {
+            // Handle general conversation with enhanced dual AI system
+            await handleEnhancedConversation(chatId, text, sessionId);
+        }
+        
+        const executionTime = Date.now() - startTime;
+        
+        // Log successful command execution
+        await logCommandUsage(chatId, text, executionTime, true).catch(console.error);
+        
+        return executionTime;
+        
+    } catch (error) {
+        const executionTime = Date.now() - startTime;
+        
+        // Log failed command execution
+        await logCommandUsage(chatId, text, executionTime, false, error.message).catch(console.error);
+        
+        throw error;
+    }
+}
+
 // 🔧 UPDATED: Enhanced command handlers with wealth system integration
 async function handleStartCommand(chatId) {
     const welcome = `🤖 **Enhanced AI Assistant System v4.0 - WEALTH EMPIRE**
