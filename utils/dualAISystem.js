@@ -3024,7 +3024,6 @@ console.log('🏆 ===============================================');
 // Enterprise-Grade Monitoring, Health Checks, Analytics & Alerting System
 // Complete Production Monitoring Suite for 10/10 System
 
-const EventEmitter = require('events');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
