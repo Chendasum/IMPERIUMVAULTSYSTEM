@@ -866,10 +866,19 @@ try {
         error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
         debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
         ai: (msg, data) => console.log(`🤖 AI: ${msg}`, data || ''),
-        performance: (msg, data) => console.log(`📊 PERF: ${msg}`, data || '')
+        performance: (msg, data) => console.log(`📊 PERF: ${msg}`, data || ''),
+        strategic: (msg, data) => console.log(`🎯 STRATEGIC: ${msg}`, data || ''),
+        power: (msg, data) => console.log(`⚡ POWER: ${msg}`, data || ''),
+        execution: (msg, data) => console.log(`🚀 EXEC: ${msg}`, data || ''),
+        monitor: (msg, data) => console.log(`📊 MONITOR: ${msg}`, data || ''),
+        health: (msg, data) => console.log(`🏥 HEALTH: ${msg}`, data || ''),
+        alert: (msg, data) => console.log(`🚨 ALERT: ${msg}`, data || ''),
+        metrics: (msg, data) => console.log(`📈 METRICS: ${msg}`, data || ''),
+        system: (msg, data) => console.log(`🎯 SYSTEM: ${msg}`, data || ''),
+        ultimate: (msg, data) => console.log(`🏆 ULTIMATE: ${msg}`, data || ''),
+        ml: (msg, data) => console.log(`🧠 ML: ${msg}`, data || '')
     };
 }
-
 // 🚀 ADVANCED GPT-5 CLIENT - Mathematical & Speed Supremacy
 class UltimateGPT5Client {
     constructor() {
