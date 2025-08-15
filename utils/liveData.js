@@ -1597,6 +1597,92 @@ async function getNFTData() {
     }
 }
 
+// 💰 ADD THIS FUNCTION TO YOUR liveData.js FILE
+
+// Enhanced crypto data function using your CoinGecko API key
+async function getEnhancedCryptoData() {
+    const cacheKey = 'enhanced_crypto_data';
+    
+    // Check cache first
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+        return cached;
+    }
+    
+    try {
+        console.log('🔄 Fetching enhanced crypto data...');
+        
+        // Use your CoinGecko API key for enhanced data
+        const cryptoUrl = `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,cardano,solana,polkadot,chainlink,litecoin,dogecoin,binancecoin,ripple&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true&x_cg_demo_api_key=${COINGECKO_API_KEY}`;
+        
+        const response = await optimizedAxios.get(cryptoUrl);
+        
+        if (response.data) {
+            console.log('✅ Enhanced crypto data fetched successfully');
+            
+            // Cache the data
+            setCachedData(cacheKey, response.data);
+            
+            return response.data;
+        } else {
+            throw new Error('No crypto data received');
+        }
+        
+    } catch (error) {
+        console.error('❌ Enhanced crypto data error:', error.message);
+        
+        // Fallback to free API without key
+        try {
+            console.log('🔄 Trying fallback crypto API...');
+            const fallbackUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,cardano,solana,polkadot&vs_currencies=usd&include_24hr_change=true&include_market_cap=true';
+            
+            const fallbackResponse = await optimizedAxios.get(fallbackUrl);
+            
+            if (fallbackResponse.data) {
+                console.log('✅ Fallback crypto data fetched');
+                setCachedData(cacheKey, fallbackResponse.data);
+                return fallbackResponse.data;
+            }
+        } catch (fallbackError) {
+            console.error('❌ Fallback crypto API also failed:', fallbackError.message);
+        }
+        
+        throw new Error(`Enhanced crypto data failed: ${error.message}`);
+    }
+}
+
+// Alternative function using your existing structure
+async function getRealCryptoData() {
+    const cacheKey = 'real_crypto_data';
+    
+    // Check cache first
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+        return cached;
+    }
+    
+    try {
+        console.log('🔄 Fetching real crypto data...');
+        
+        // Simple, reliable crypto data
+        const response = await optimizedAxios.get(
+            'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true&include_market_cap=true'
+        );
+        
+        if (response.data) {
+            console.log('✅ Real crypto data fetched successfully');
+            setCachedData(cacheKey, response.data);
+            return response.data;
+        } else {
+            throw new Error('No crypto data received');
+        }
+        
+    } catch (error) {
+        console.error('❌ Real crypto data error:', error.message);
+        throw new Error(`Real crypto data failed: ${error.message}`);
+    }
+}
+
 // 🎯 RAY DALIO SPECIFIC EXPORT FUNCTIONS
 module.exports = {
     // 🌍 NEW DATE/TIME FUNCTIONS
