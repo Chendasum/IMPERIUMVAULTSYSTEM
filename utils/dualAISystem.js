@@ -1562,23 +1562,6 @@ module.exports = {
 // Advanced Execution System with Smart Learning and Performance Optimization
 // COMPLETE VERSION - All 2000+ lines included
 
-// Enhanced logger
-let logger;
-try {
-    logger = require('./logger');
-} catch (error) {
-    logger = {
-        info: (msg, data) => console.log(`ℹ️ ${msg}`, data || ''),
-        success: (msg, data) => console.log(`✅ ${msg}`, data || ''),
-        warn: (msg, data) => console.warn(`⚠️ ${msg}`, data || ''),
-        error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
-        debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
-        power: (msg, data) => console.log(`⚡ POWER: ${msg}`, data || ''),
-        execution: (msg, data) => console.log(`🚀 EXEC: ${msg}`, data || ''),
-        performance: (msg, data) => console.log(`📊 PERF: ${msg}`, data || '')
-    };
-}
-
 // 🚀 ULTIMATE POWER EXECUTOR - The Heart of the System
 class UltimatePowerExecutor extends EventEmitter {
     constructor() {
