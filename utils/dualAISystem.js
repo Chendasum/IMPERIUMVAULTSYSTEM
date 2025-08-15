@@ -2,8 +2,17 @@
 // 10/10 Rating - Enterprise Grade AI Routing System
 // Supports real GPT-5 + Claude Opus 4.1 with advanced intelligence
 
+const { OpenAI } = require("openai");
+require("dotenv").config({ path: ".env" });
+
+const { getClaudeAnalysis, getStrategicAnalysis: getClaudeStrategicAnalysis } = require('./claudeClient');
+const { getGptAnalysis, getMarketAnalysis: getGptMarketAnalysis } = require('./openaiClient');
 const EventEmitter = require('events');
 const crypto = require('crypto');
+const Anthropic = require('@anthropic-ai/sdk');
+const fs = require('fs').promises;
+const path = require('path');
+const os = require('os');
 
 // ✅ COMPREHENSIVE LOGGER - All methods needed for entire system
 let logger;
@@ -878,10 +887,6 @@ module.exports = {
 
 // 🏆 PERFECT DUAL AI SYSTEM - REAL AI CLIENTS (Part 2/5)
 // Authentic GPT-5 + Claude Opus 4.1 Integration with Advanced Features
-
-const Anthropic = require('@anthropic-ai/sdk');
-const OpenAI = require('openai');
-require('dotenv').config();
 
 // 🚀 ADVANCED GPT-5 CLIENT - Mathematical & Speed Supremacy
 class UltimateGPT5Client {
@@ -3006,10 +3011,6 @@ module.exports = {
 // 🏆 PERFECT DUAL AI SYSTEM - PRODUCTION MONITORING (Part 4/5)
 // Enterprise-Grade Monitoring, Health Checks, Analytics & Alerting System
 // Complete Production Monitoring Suite for 10/10 System
-
-const fs = require('fs').promises;
-const path = require('path');
-const os = require('os');
 
 // 🏥 COMPREHENSIVE SYSTEM HEALTH MONITOR
 class ComprehensiveSystemHealthMonitor extends EventEmitter {
@@ -5363,10 +5364,6 @@ module.exports = {
 
 // 🏆 PERFECT DUAL AI SYSTEM - COMPLETE INTEGRATION (Part 5/5)
 // Final Integration, Setup, and Main Export Module
-
-// Import all components
-const { UltimateGPT5Client, UltimateClaudeClient, UnifiedAIInterface } = require('./perfect_ai_clients');
-const { UltimatePowerExecutor } = require('./perfect_executor_engine');
 
 // 🏆 ULTIMATE DUAL AI SYSTEM - MAIN CLASS
 class UltimateDualAISystem {
