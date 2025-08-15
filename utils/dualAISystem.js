@@ -1563,7 +1563,6 @@ module.exports = {
 // COMPLETE VERSION - All 2000+ lines included
 
 // Import dependencies
-const { UltimateStrategicPowerRouter } = require('./perfect_dual_ai_core');
 const { UnifiedAIInterface } = require('./perfect_ai_clients');
 
 // Enhanced logger
