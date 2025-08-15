@@ -843,8 +843,8 @@ class AdaptiveLearningEngine {
 module.exports = {
     UltimateStrategicPowerRouter,
     AIIntelligenceMatrix,
-    AdaptiveLearningEngine,
-    logger
+    AdaptiveLearningEngine
+    // Remove logger from here
 };
 
 // 🏆 PERFECT DUAL AI SYSTEM - REAL AI CLIENTS (Part 2/5)
