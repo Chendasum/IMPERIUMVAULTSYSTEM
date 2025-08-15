@@ -36,8 +36,6 @@ const FRED_API_KEY = '4ac1a6dbcef67c4ae605b8630c67349e';
 const ALPHA_VANTAGE_API_KEY = 'S3E07NIPFYLMNDE1';
 const NEWS_API_KEY = '052410edf867484f8d280c09585631fa';
 const COINGECKO_API_KEY = 'CG-3LTPYmzL2wVCxDJLCkjVa145';
-const { getUniversalAnalysis, getDualAnalysis } = require('../utils/dualAISystem');
-const { getRayDalioMarketData, detectEconomicRegime, getYieldCurveAnalysis } = require('../utils/liveData');
 
 // 🏛️ RAY DALIO REGIME DETECTION CACHE
 let regimeCache = {
