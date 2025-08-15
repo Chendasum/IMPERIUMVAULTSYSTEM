@@ -5038,15 +5038,16 @@ async function saveApiUsageDB(usageData) {
     }
 }
 
-// 🔧 ENHANCED: Express server setup with memory-integrated endpoints
+// 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP (Replace your duplicate sections)
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Enhanced webhook endpoint with better logging
+// Enhanced webhook endpoint
 app.post("/webhook", (req, res) => {
     console.log("📨 Enhanced webhook received from Telegram");
     try {
@@ -5058,12 +5059,12 @@ app.post("/webhook", (req, res) => {
     }
 });
 
-// Enhanced health check with memory system status
+// Health check endpoint
 app.get("/", (req, res) => {
-    res.status(200).send("✅ Enhanced AI Assistant v3.2 is running with PostgreSQL database integration and persistent memory system");
+    res.status(200).send("✅ Enhanced AI Assistant v4.0 - WEALTH EMPIRE is running!");
 });
 
-// Health endpoint
+// Enhanced health endpoint with database status
 app.get("/health", async (req, res) => {
     try {
         const startTime = Date.now();
@@ -5076,127 +5077,122 @@ app.get("/health", async (req, res) => {
         const dbConnected = stats.status === 'fulfilled' && stats.value?.connected === true;
         const responseTime = Date.now() - startTime;
         
-        let dbUrlType = 'Unknown';
-        if (process.env.DATABASE_URL) {
-            if (process.env.DATABASE_URL.includes('roundhouse.proxy')) {
-                dbUrlType = 'Public (Correct)';
-            } else if (process.env.DATABASE_URL.includes('railway.internal')) {
-                dbUrlType = 'Internal (Wrong)';
-            }
-        }
-        
         res.status(200).json({ 
             status: "healthy", 
-            version: "3.2 Enhanced with Memory",
+            version: "4.0 - WEALTH EMPIRE",
             timestamp: new Date().toISOString(),
             responseTime: `${responseTime}ms`,
             models: {
-                gpt: "gpt-5 (stable)",
-                claude: "Claude Opus 4.1"
+                gpt: "gpt-5 (primary)",
+                claude: "Claude Opus 4.1 (strategic)"
             },
             database: {
                 connected: dbConnected,
-                urlType: dbUrlType,
-                health: connectionStats.connectionHealth
+                health: connectionStats?.connectionHealth || 'unknown'
             },
-            memorySystem: {
-                enabled: dbConnected,
-                contextBuilding: health.status === 'fulfilled' ? health.value?.contextBuilding : false,
-                factExtraction: dbConnected,
-                persistentStorage: dbConnected
+            wealthSystem: {
+                modules: 10,
+                status: "active"
             }
         });
     } catch (error) {
         res.status(500).json({
             status: "error",
-            version: "3.2 Enhanced",
+            version: "4.0 - WEALTH EMPIRE",
             error: error.message,
             timestamp: new Date().toISOString()
         });
     }
 });
 
-// 🔧 ENHANCED: Server startup with comprehensive initialization
+// 🚀 SINGLE SERVER STARTUP WITH PROPER BOT INITIALIZATION
 const server = app.listen(PORT, "0.0.0.0", async () => {
-    console.log("🚀 Enhanced AI Assistant v3.2 starting...");
-    console.log("✅ Server running on port " + PORT);
-    console.log("🤖 Models: gpt-5 (stable) + Claude Opus 4.1");
-    console.log("🏦 Features: Enhanced PostgreSQL Database + Memory System + Cambodia Fund + Ray Dalio Framework");
+    console.log("🚀 Enhanced AI Assistant v4.0 - WEALTH EMPIRE starting...");
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log("🤖 Models: gpt-5 + Claude Opus 4.1");
+    console.log("💰 AI Wealth-Building System: 10 modules loaded");
     
-    // Initialize enhanced database with memory system
+    // Initialize enhanced database
     try {
         await initializeEnhancedDatabase();
         console.log("💾 Enhanced database integration successful");
         console.log("🧠 Persistent memory system initialized");
     } catch (error) {
-        console.error("❌ Enhanced database initialization failed:", error.message);
+        console.error("❌ Database initialization failed:", error.message);
         console.log("⚠️ Running with limited database functionality");
-        console.log("🔧 Use /test_db command to diagnose database issues");
     }
     
-    // 🔧 CRITICAL FIX: Proper bot initialization with environment detection
+    // 🔧 FIXED: Single bot initialization with proper environment detection
     console.log("🤖 Initializing Telegram bot...");
     
-    // Detect environment
     const isProduction = process.env.NODE_ENV === 'production' || 
                         process.env.RAILWAY_ENVIRONMENT === 'production' ||
                         process.env.PORT;
     
+    let botInitialized = false;
+    
     if (isProduction) {
-        // 🔗 PRODUCTION: Try webhook first
-        console.log("🚀 Production environment detected - setting up webhook...");
+        // Production: Try webhook first, fallback to polling
+        console.log("🚀 Production environment - setting up webhook...");
         const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
         
         try {
             await bot.deleteWebHook();
+            await new Promise(resolve => setTimeout(resolve, 1000));
             await bot.setWebHook(webhookUrl);
             console.log("✅ Production webhook configured:", webhookUrl);
-            console.log("🎯 Bot is now listening for messages via webhook");
+            botInitialized = true;
             
         } catch (webhookError) {
             console.error("❌ Webhook setup failed:", webhookError.message);
-            console.log("🔄 FALLBACK: Switching to polling mode...");
+            console.log("🔄 FALLBACK: Switching to polling...");
             
             try {
                 await bot.deleteWebHook();
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                await bot.startPolling();
-                console.log("✅ Bot polling started successfully (fallback mode)");
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                await bot.startPolling({ restart: true });
+                console.log("✅ Bot polling started (fallback mode)");
+                botInitialized = true;
             } catch (pollingError) {
-                console.error("❌ CRITICAL: Both webhook and polling failed!");
-                console.error("Webhook error:", webhookError.message);
-                console.error("Polling error:", pollingError.message);
+                console.error("❌ Polling fallback failed:", pollingError.message);
             }
         }
         
     } else {
-        // 🔄 DEVELOPMENT: Use polling
-        console.log("🛠️ Development environment detected - using polling...");
+        // Development: Use polling
+        console.log("🛠️ Development environment - using polling...");
         
         try {
             await bot.deleteWebHook();
             await new Promise(resolve => setTimeout(resolve, 1000));
-            await bot.startPolling();
-            console.log("✅ Development polling started successfully");
-            console.log("🎯 Bot is now listening for messages via polling");
-            console.log("💡 Send a message to test: /start");
+            await bot.startPolling({ restart: true });
+            console.log("✅ Development polling started");
+            botInitialized = true;
             
         } catch (pollingError) {
             console.error("❌ Development polling failed:", pollingError.message);
-            console.log("🔧 Check TELEGRAM_BOT_TOKEN in .env");
         }
     }
     
-    console.log("🚀 Enhanced AI Assistant v3.2 startup complete!");
+    if (botInitialized) {
+        console.log("🎯 Bot is ready to receive messages!");
+        console.log("💡 Test with: /start or /wealth");
+    } else {
+        console.error("🚨 CRITICAL: Bot initialization completely failed!");
+        console.log("🔧 Check TELEGRAM_BOT_TOKEN and try restarting");
+    }
+    
+    console.log("🚀 AI WEALTH EMPIRE startup complete!");
     console.log(`📍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
-    console.log(`🤖 Bot Mode: ${isProduction ? 'Webhook' : 'Polling'}`);
-    console.log("💬 Ready to receive messages!");
+    console.log(`🤖 Bot Mode: ${isProduction ? 'Webhook (with polling fallback)' : 'Polling'}`);
+    console.log("💰 Ready to build wealth with AI!");
 });
 
 // Enhanced error handling
 process.on('unhandledRejection', (reason, promise) => {
     if (reason && reason.message && reason.message.includes('409')) {
-        console.error("🚨 Telegram Bot Conflict (409): Another instance is running!");
+        console.error("🚨 Telegram Bot Conflict (409): Another instance running!");
+        console.log("🔧 Solution: Stop other instances or wait 60 seconds");
     } else {
         console.error('❌ Unhandled Promise Rejection:', reason);
     }
@@ -5205,14 +5201,16 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (error) => {
     if (error.message && error.message.includes('ETELEGRAM')) {
         console.error("🚨 Telegram API Error:", error.message);
+    } else if (error.message && error.message.includes('EADDRINUSE')) {
+        console.error("🚨 Port already in use! Another server instance running.");
     } else {
         console.error('❌ Uncaught Exception:', error);
     }
 });
 
 // Graceful shutdown
-process.on('SIGTERM', async () => {
-    console.log('🛑 SIGTERM received, performing graceful shutdown...');
+const gracefulShutdown = async (signal) => {
+    console.log(`🛑 ${signal} received, performing graceful shutdown...`);
     
     try {
         console.log('🤖 Stopping Telegram bot...');
@@ -5220,46 +5218,26 @@ process.on('SIGTERM', async () => {
         await bot.deleteWebHook();
         console.log('✅ Bot stopped successfully');
         
-        await updateSystemMetrics({
-            system_shutdown: 1,
-            memory_system_shutdown: 1
-        }).catch(console.error);
+        if (typeof updateSystemMetrics === 'function') {
+            await updateSystemMetrics({
+                system_shutdown: 1,
+                wealth_system_shutdown: 1
+            }).catch(console.error);
+        }
         
-        console.log('💾 Database and memory system metrics updated');
+        console.log('💾 Cleanup completed');
     } catch (error) {
         console.error('❌ Shutdown cleanup error:', error.message);
     }
     
     server.close(() => {
-        console.log('✅ Enhanced AI Assistant v3.2 with memory system shut down gracefully');
+        console.log('✅ AI WEALTH EMPIRE shut down gracefully');
         process.exit(0);
     });
-});
+};
 
-process.on('SIGINT', async () => {
-    console.log('🛑 SIGINT received, performing graceful shutdown...');
-    
-    try {
-        console.log('🤖 Stopping Telegram bot...');
-        await bot.stopPolling();
-        await bot.deleteWebHook();
-        console.log('✅ Bot stopped successfully');
-        
-        await updateSystemMetrics({
-            system_shutdown: 1,
-            memory_system_shutdown: 1
-        }).catch(console.error);
-        
-        console.log('💾 Database and memory system cleanup completed');
-    } catch (error) {
-        console.error('❌ Shutdown cleanup error:', error.message);
-    }
-    
-    server.close(() => {
-        console.log('✅ Enhanced AI Assistant v3.2 with memory system shut down gracefully');
-        process.exit(0);
-    });
-});
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Export for testing
 module.exports = {
