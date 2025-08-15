@@ -5,22 +5,51 @@
 const EventEmitter = require('events');
 const crypto = require('crypto');
 
-// Enhanced logger with comprehensive tracking
-let logger = {};
+// ✅ COMPREHENSIVE LOGGER - All methods needed for entire system
+let logger;
 try {
     logger = require('./logger');
 } catch (error) {
+    // Complete logger with ALL methods used across all parts
     logger = {
-        info: (msg, data) => console.log(`ℹ️ ${msg}`, data || ''),
-        success: (msg, data) => console.log(`✅ ${msg}`, data || ''),
-        warn: (msg, data) => console.warn(`⚠️ ${msg}`, data || ''),
-        error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
-        debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
-        strategic: (msg, data) => console.log(`🎯 STRATEGIC: ${msg}`, data || ''),
-        power: (msg, data) => console.log(`⚡ POWER: ${msg}`, data || ''),
-        ml: (msg, data) => console.log(`🧠 ML: ${msg}`, data || ''),
-        performance: (msg, data) => console.log(`📊 PERF: ${msg}`, data || '')
+        // Basic logging
+        info: (msg, data) => console.log(`ℹ️ ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        success: (msg, data) => console.log(`✅ ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        warn: (msg, data) => console.warn(`⚠️ ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        error: (msg, error) => console.error(`❌ ${msg}`, error?.message || error || ''),
+        debug: (msg, data) => {
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`🐛 ${msg}`, data ? JSON.stringify(data, null, 2) : '');
+            }
+        },
+        
+        // Part 1 - Core & Routing
+        strategic: (msg, data) => console.log(`🎯 STRATEGIC: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        power: (msg, data) => console.log(`⚡ POWER: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        ml: (msg, data) => console.log(`🧠 ML: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        
+        // Part 2 - AI Clients
+        ai: (msg, data) => console.log(`🤖 AI: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        
+        // Part 3 - Executor
+        execution: (msg, data) => console.log(`🚀 EXEC: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        performance: (msg, data) => console.log(`📊 PERF: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        
+        // Part 4 - Monitoring
+        monitor: (msg, data) => console.log(`📊 MONITOR: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        health: (msg, data) => console.log(`🏥 HEALTH: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        alert: (msg, data) => console.log(`🚨 ALERT: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        metrics: (msg, data) => console.log(`📈 METRICS: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        
+        // Part 5 - System Integration
+        system: (msg, data) => console.log(`🎯 SYSTEM: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
+        ultimate: (msg, data) => console.log(`🏆 ULTIMATE: ${msg}`, data ? JSON.stringify(data, null, 2) : '')
     };
+}
+
+// 📦 EXPORT LOGGER for use in other parts
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { logger };
 }
 
 // 🧠 ADVANCED AI INTELLIGENCE MATRIX
@@ -854,31 +883,6 @@ const Anthropic = require('@anthropic-ai/sdk');
 const OpenAI = require('openai');
 require('dotenv').config();
 
-// ✅ FIXED LOGGER - No external dependencies
-let logger;
-try {
-    logger = require('./logger');
-} catch (error) {
-    logger = {
-        info: (msg, data) => console.log(`ℹ️ ${msg}`, data || ''),
-        success: (msg, data) => console.log(`✅ ${msg}`, data || ''),
-        warn: (msg, data) => console.warn(`⚠️ ${msg}`, data || ''),
-        error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
-        debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
-        ai: (msg, data) => console.log(`🤖 AI: ${msg}`, data || ''),
-        performance: (msg, data) => console.log(`📊 PERF: ${msg}`, data || ''),
-        strategic: (msg, data) => console.log(`🎯 STRATEGIC: ${msg}`, data || ''),
-        power: (msg, data) => console.log(`⚡ POWER: ${msg}`, data || ''),
-        execution: (msg, data) => console.log(`🚀 EXEC: ${msg}`, data || ''),
-        monitor: (msg, data) => console.log(`📊 MONITOR: ${msg}`, data || ''),
-        health: (msg, data) => console.log(`🏥 HEALTH: ${msg}`, data || ''),
-        alert: (msg, data) => console.log(`🚨 ALERT: ${msg}`, data || ''),
-        metrics: (msg, data) => console.log(`📈 METRICS: ${msg}`, data || ''),
-        system: (msg, data) => console.log(`🎯 SYSTEM: ${msg}`, data || ''),
-        ultimate: (msg, data) => console.log(`🏆 ULTIMATE: ${msg}`, data || ''),
-        ml: (msg, data) => console.log(`🧠 ML: ${msg}`, data || '')
-    };
-}
 // 🚀 ADVANCED GPT-5 CLIENT - Mathematical & Speed Supremacy
 class UltimateGPT5Client {
     constructor() {
@@ -3020,15 +3024,6 @@ module.exports = {
     PowerExecutor: UltimatePowerExecutor
 };
 
-// 🏆 COMPLETION NOTIFICATION
-console.log('🏆 ===============================================');
-console.log('🚀 ULTIMATE POWER EXECUTOR ENGINE (Part 3/5)');
-console.log('📊 COMPLETE - 2000+ Lines of Advanced AI Execution');
-console.log('⚡ Features: Smart Learning + Performance Optimization');
-console.log('✅ Production-Ready with Comprehensive Analytics');
-console.log('🎯 Compatible with Legacy Systems and APIs');
-console.log('🏆 ===============================================');
-
 // 🏆 PERFECT DUAL AI SYSTEM - PRODUCTION MONITORING (Part 4/5)
 // Enterprise-Grade Monitoring, Health Checks, Analytics & Alerting System
 // Complete Production Monitoring Suite for 10/10 System
@@ -3036,24 +3031,6 @@ console.log('🏆 ===============================================');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
-
-// Enhanced logger
-let logger;
-try {
-    logger = require('./logger');
-} catch (error) {
-    logger = {
-        info: (msg, data) => console.log(`ℹ️ ${msg}`, data || ''),
-        success: (msg, data) => console.log(`✅ ${msg}`, data || ''),
-        warn: (msg, data) => console.warn(`⚠️ ${msg}`, data || ''),
-        error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
-        debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
-        monitor: (msg, data) => console.log(`📊 MONITOR: ${msg}`, data || ''),
-        health: (msg, data) => console.log(`🏥 HEALTH: ${msg}`, data || ''),
-        alert: (msg, data) => console.log(`🚨 ALERT: ${msg}`, data || ''),
-        metrics: (msg, data) => console.log(`📈 METRICS: ${msg}`, data || '')
-    };
-}
 
 // 🏥 COMPREHENSIVE SYSTEM HEALTH MONITOR
 class ComprehensiveSystemHealthMonitor extends EventEmitter {
@@ -5405,16 +5382,6 @@ module.exports = {
     generateReport: MonitoringUtilities.generateHealthReport
 };
 
-// 🏆 COMPLETION NOTIFICATION
-console.log('🏆 ================================================');
-console.log('📊 PRODUCTION MONITORING SYSTEM (Part 4/5)');
-console.log('🏥 COMPLETE - Enterprise-Grade Health Monitoring');
-console.log('🚨 Features: Real-time Alerts + Auto-Recovery');
-console.log('📈 Advanced: Trend Analysis + Predictive Analytics');
-console.log('✅ Production-Ready with Comprehensive Reporting');
-console.log('🎯 Compatible with Ultimate DualAI System');
-console.log('🏆 ================================================');
-
 // 🏆 PERFECT DUAL AI SYSTEM - COMPLETE INTEGRATION (Part 5/5)
 // Final Integration, Setup, and Main Export Module
 
@@ -5422,18 +5389,6 @@ console.log('🏆 ================================================');
 const { UltimateStrategicPowerRouter, AIIntelligenceMatrix, AdaptiveLearningEngine } = require('./perfect_dual_ai_core');
 const { UltimateGPT5Client, UltimateClaudeClient, UnifiedAIInterface } = require('./perfect_ai_clients');
 const { UltimatePowerExecutor } = require('./perfect_executor_engine');
-
-// Enhanced logger
-const logger = {
-    info: (msg, data) => console.log(`ℹ️ ${msg}`, data || ''),
-    success: (msg, data) => console.log(`✅ ${msg}`, data || ''),
-    warn: (msg, data) => console.warn(`⚠️ ${msg}`, data || ''),
-    error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
-    debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
-    system: (msg, data) => console.log(`🎯 SYSTEM: ${msg}`, data || ''),
-    power: (msg, data) => console.log(`⚡ POWER: ${msg}`, data || ''),
-    ultimate: (msg, data) => console.log(`🏆 ULTIMATE: ${msg}`, data || '')
-};
 
 // 🏆 ULTIMATE DUAL AI SYSTEM - MAIN CLASS
 class UltimateDualAISystem {
