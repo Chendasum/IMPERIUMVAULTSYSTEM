@@ -14,7 +14,6 @@ const { OpenAI } = require("openai");
 const express = require('express');
 
 // 🏆 ENHANCED LIVE DATA SYSTEM - Original imports + NEW WEALTH MODULES
-console.log('🚀 Loading Enhanced Live Data + Complete Wealth Management System...');
 
 // Original Live Data functions (keeping existing imports)
 const { 
