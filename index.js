@@ -19,8 +19,14 @@ const {
     getEconomicIndicators,
     getStockMarketData,
     getRayDalioMarketData,
-    getFredData,           // 🔧 ADD THIS
-    getAlphaVantageData   // 🔧 ADD THIS
+    getFredData,                    // ADD THIS
+    getAlphaVantageData,           // ADD THIS
+    detectEconomicRegime,          // ADD THIS
+    getYieldCurveAnalysis,         // ADD THIS
+    detectMarketAnomalies,         // ADD THIS
+    generateMarketInsights,        // ADD THIS
+    getCurrentCambodiaDateTime,    // ADD THIS
+    getCurrentGlobalDateTime       // ADD THIS
 } = require("./utils/liveData");
 
 const { 
@@ -256,83 +262,131 @@ async function logApiUsage(service, endpoint, calls, success, responseTime, inpu
     }
 }
 
-// 🚀 ENHANCED COMPREHENSIVE MARKET DATA - With ALL Data Sources
+// 🚀 SUPER ENHANCED COMPREHENSIVE MARKET DATA
 async function getComprehensiveMarketData() {
     try {
-        console.log("📊 Fetching comprehensive market data...");
+        console.log("📊 Fetching SUPER comprehensive market data...");
         const startTime = Date.now();
         
-        // Parallel fetch all data sources for maximum efficiency
+        // Parallel fetch ALL your available data sources
         const [
             enhancedData,
             tradingData,
-            yield10Y,
-            yield2Y,
-            yield3M,
-            vixData,
-            dollarIndex,
-            goldData,
-            oilData,
-            economicData,
-            stockMarketData,
-            rayDalioData
+            rayDalioData,
+            economicRegime,
+            yieldCurveAnalysis,
+            creditSpreadAnalysis,
+            inflationExpectations,
+            sectorRotationSignals,
+            marketAnomalies,
+            assetCorrelations,
+            marketInsights,
+            cryptoData,
+            forexData,
+            commodityData,
+            newsData
         ] = await Promise.all([
             // Core market data
-            getEnhancedLiveData().catch(err => {
-                console.warn('Enhanced live data failed:', err.message);
-                return null;
-            }),
-            getTradingSummary().catch(err => {
-                console.warn('Trading data failed:', err.message);
-                return null;
-            }),
+            getEnhancedLiveData().catch(() => null),
+            getTradingSummary().catch(() => null),
             
-            // Treasury yields (FRED API)
-            getFredData('DGS10').catch(err => {
-                console.warn('10Y yield failed:', err.message);
-                return null;
-            }),
-            getFredData('DGS2').catch(err => {
-                console.warn('2Y yield failed:', err.message);
-                return null;
-            }),
-            getFredData('DGS3MO').catch(err => {
-                console.warn('3M yield failed:', err.message);
-                return null;
-            }),
+            // Ray Dalio enhanced analysis
+            getRayDalioMarketData().catch(() => null),
+            detectEconomicRegime().catch(() => null),
+            getYieldCurveAnalysis().catch(() => null),
+            getCreditSpreadAnalysis().catch(() => null),
+            getInflationExpectations().catch(() => null),
+            getSectorRotationSignals().catch(() => null),
             
-            // Market indicators (AlphaVantage API)
-            getAlphaVantageData('VIX').catch(err => {
-                console.warn('VIX data failed:', err.message);
-                return null;
-            }),
-            getFredData('DTWEXBGS').catch(err => {
-                console.warn('Dollar index failed:', err.message);
-                return null;
-            }),
-            getAlphaVantageData('GLD').catch(err => {
-                console.warn('Gold data failed:', err.message);
-                return null;
-            }),
-            getAlphaVantageData('USO').catch(err => {
-                console.warn('Oil data failed:', err.message);
-                return null;
-            }),
+            // Advanced market analysis
+            detectMarketAnomalies().catch(() => null),
+            calculateAssetCorrelations().catch(() => null),
+            generateMarketInsights().catch(() => null),
             
             // Additional market data
-            getEconomicIndicators().catch(err => {
-                console.warn('Economic indicators failed:', err.message);
-                return null;
-            }),
-            getStockMarketData().catch(err => {
-                console.warn('Stock market data failed:', err.message);
-                return null;
-            }),
-            getRayDalioMarketData().catch(err => {
-                console.warn('Ray Dalio data failed:', err.message);
-                return null;
-            })
+            getEnhancedCryptoData().catch(() => null),
+            getMajorForexPairs().catch(() => null),
+            getCommodityPrices().catch(() => null),
+            getBusinessHeadlines().catch(() => null)
         ]);
+
+        // Structure comprehensive market intelligence
+        const marketData = {
+            // Core market data
+            markets: enhancedData || {},
+            trading: tradingData || null,
+            
+            // Ray Dalio All Weather Intelligence
+            ray_dalio: {
+                market_data: rayDalioData || {},
+                economic_regime: economicRegime || {},
+                yield_curve: yieldCurveAnalysis || {},
+                credit_spreads: creditSpreadAnalysis || {},
+                inflation_expectations: inflationExpectations || {},
+                sector_rotation: sectorRotationSignals || {}
+            },
+            
+            // Advanced Market Analysis
+            analysis: {
+                anomalies: marketAnomalies || {},
+                correlations: assetCorrelations || {},
+                insights: marketInsights || {}
+            },
+            
+            // Multi-Asset Universe
+            assets: {
+                crypto: cryptoData || {},
+                forex: forexData || {},
+                commodities: commodityData || {}
+            },
+            
+            // Market Intelligence
+            intelligence: {
+                news: newsData || {},
+                sentiment: null, // Will calculate
+                regime_confidence: null // Will calculate
+            },
+            
+            // Metadata
+            timestamp: new Date().toISOString(),
+            cambodia_time: getCurrentCambodiaDateTime(),
+            global_time: getCurrentGlobalDateTime(),
+            responseTime: Date.now() - startTime,
+            data_quality: {
+                sources_available: 0,
+                completeness_score: 0
+            }
+        };
+
+        // Calculate advanced indicators
+        calculateAdvancedIndicators(marketData);
+        
+        // Assess comprehensive data quality
+        assessComprehensiveDataQuality(marketData);
+        
+        // Log successful API usage
+        try {
+            await logApiUsage('live_data', 'super_comprehensive_market', 1, true, 
+                Date.now() - startTime, 0, 0.001);
+        } catch (logError) {
+            console.log('⚠️ API usage logging failed:', logError.message);
+        }
+        
+        console.log(`✅ SUPER comprehensive market data fetched in ${Date.now() - startTime}ms`);
+        console.log(`📊 Data quality score: ${marketData.data_quality.completeness_score}%`);
+        
+        return marketData;
+        
+    } catch (error) {
+        console.error('❌ Super comprehensive market data error:', error.message);
+        try {
+            await logApiUsage('live_data', 'super_comprehensive_market', 1, false, 0, 0, 0);
+        } catch (logError) {
+            // Silent fail
+        }
+        return null;
+    }
+}
 
         // Parse and structure the comprehensive data
         const marketData = {
