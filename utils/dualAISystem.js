@@ -5365,7 +5365,6 @@ module.exports = {
 // Final Integration, Setup, and Main Export Module
 
 // Import all components
-const { UltimateStrategicPowerRouter, AIIntelligenceMatrix, AdaptiveLearningEngine } = require('./perfect_dual_ai_core');
 const { UltimateGPT5Client, UltimateClaudeClient, UnifiedAIInterface } = require('./perfect_ai_clients');
 const { UltimatePowerExecutor } = require('./perfect_executor_engine');
 
