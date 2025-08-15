@@ -7,7 +7,7 @@ console.log(`TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? "SET" : "NOT
 console.log(`OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? "SET" : "NOT SET"}`);
 console.log(`ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "SET" : "NOT SET"}`);
 console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? "SET" : "NOT SET"}`);
-console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}`); // 🔧 ADDED
+console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "NOT SET"}`);
 
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
@@ -19,14 +19,22 @@ const {
     getEconomicIndicators,
     getStockMarketData,
     getRayDalioMarketData,
-    getFredData,                    // ADD THIS
-    getAlphaVantageData,           // ADD THIS
-    detectEconomicRegime,          // ADD THIS
-    getYieldCurveAnalysis,         // ADD THIS
-    detectMarketAnomalies,         // ADD THIS
-    generateMarketInsights,        // ADD THIS
-    getCurrentCambodiaDateTime,    // ADD THIS
-    getCurrentGlobalDateTime       // ADD THIS
+    getFredData,
+    getAlphaVantageData,
+    detectEconomicRegime,
+    getYieldCurveAnalysis,
+    detectMarketAnomalies,
+    generateMarketInsights,
+    getCurrentCambodiaDateTime,
+    getCurrentGlobalDateTime,
+    getCreditSpreadAnalysis,
+    getInflationExpectations,
+    getSectorRotationSignals,
+    calculateAssetCorrelations,
+    getEnhancedCryptoData,
+    getMajorForexPairs,
+    getCommodityPrices,
+    getBusinessHeadlines
 } = require("./utils/liveData");
 
 const { 
@@ -262,52 +270,87 @@ async function logApiUsage(service, endpoint, calls, success, responseTime, inpu
     }
 }
 
-// 🚀 SUPER ENHANCED COMPREHENSIVE MARKET DATA
+// 🚀 COMPLETE ENHANCED COMPREHENSIVE MARKET DATA
 async function getComprehensiveMarketData() {
     try {
         console.log("📊 Fetching SUPER comprehensive market data...");
         const startTime = Date.now();
         
-        // Parallel fetch ALL your available data sources
+        // Parallel fetch ALL available data sources
         const [
             enhancedData,
             tradingData,
             rayDalioData,
             economicRegime,
             yieldCurveAnalysis,
-            creditSpreadAnalysis,
-            inflationExpectations,
-            sectorRotationSignals,
             marketAnomalies,
-            assetCorrelations,
             marketInsights,
+            economicData,
+            stockMarketData,
             cryptoData,
             forexData,
             commodityData,
             newsData
         ] = await Promise.all([
             // Core market data
-            getEnhancedLiveData().catch(() => null),
-            getTradingSummary().catch(() => null),
+            getEnhancedLiveData().catch(err => {
+                console.warn('Enhanced live data failed:', err.message);
+                return null;
+            }),
+            getTradingSummary().catch(err => {
+                console.warn('Trading data failed:', err.message);
+                return null;
+            }),
             
             // Ray Dalio enhanced analysis
-            getRayDalioMarketData().catch(() => null),
-            detectEconomicRegime().catch(() => null),
-            getYieldCurveAnalysis().catch(() => null),
-            getCreditSpreadAnalysis().catch(() => null),
-            getInflationExpectations().catch(() => null),
-            getSectorRotationSignals().catch(() => null),
+            getRayDalioMarketData().catch(err => {
+                console.warn('Ray Dalio data failed:', err.message);
+                return null;
+            }),
+            detectEconomicRegime().catch(err => {
+                console.warn('Economic regime detection failed:', err.message);
+                return null;
+            }),
+            getYieldCurveAnalysis().catch(err => {
+                console.warn('Yield curve analysis failed:', err.message);
+                return null;
+            }),
             
             // Advanced market analysis
-            detectMarketAnomalies().catch(() => null),
-            calculateAssetCorrelations().catch(() => null),
-            generateMarketInsights().catch(() => null),
+            detectMarketAnomalies().catch(err => {
+                console.warn('Market anomalies detection failed:', err.message);
+                return null;
+            }),
+            generateMarketInsights().catch(err => {
+                console.warn('Market insights generation failed:', err.message);
+                return null;
+            }),
             
             // Additional market data
-            getEnhancedCryptoData().catch(() => null),
-            getMajorForexPairs().catch(() => null),
-            getCommodityPrices().catch(() => null),
-            getBusinessHeadlines().catch(() => null)
+            getEconomicIndicators().catch(err => {
+                console.warn('Economic indicators failed:', err.message);
+                return null;
+            }),
+            getStockMarketData().catch(err => {
+                console.warn('Stock market data failed:', err.message);
+                return null;
+            }),
+            getEnhancedCryptoData().catch(err => {
+                console.warn('Crypto data failed:', err.message);
+                return null;
+            }),
+            getMajorForexPairs().catch(err => {
+                console.warn('Forex data failed:', err.message);
+                return null;
+            }),
+            getCommodityPrices().catch(err => {
+                console.warn('Commodity data failed:', err.message);
+                return null;
+            }),
+            getBusinessHeadlines().catch(err => {
+                console.warn('News data failed:', err.message);
+                return null;
+            })
         ]);
 
         // Structure comprehensive market intelligence
@@ -320,16 +363,12 @@ async function getComprehensiveMarketData() {
             ray_dalio: {
                 market_data: rayDalioData || {},
                 economic_regime: economicRegime || {},
-                yield_curve: yieldCurveAnalysis || {},
-                credit_spreads: creditSpreadAnalysis || {},
-                inflation_expectations: inflationExpectations || {},
-                sector_rotation: sectorRotationSignals || {}
+                yield_curve: yieldCurveAnalysis || {}
             },
             
             // Advanced Market Analysis
             analysis: {
                 anomalies: marketAnomalies || {},
-                correlations: assetCorrelations || {},
                 insights: marketInsights || {}
             },
             
@@ -343,8 +382,8 @@ async function getComprehensiveMarketData() {
             // Market Intelligence
             intelligence: {
                 news: newsData || {},
-                sentiment: null, // Will calculate
-                regime_confidence: null // Will calculate
+                economics: economicData || {},
+                stocks: stockMarketData || {}
             },
             
             // Metadata
@@ -358,11 +397,8 @@ async function getComprehensiveMarketData() {
             }
         };
 
-        // Calculate advanced indicators
-        calculateAdvancedIndicators(marketData);
-        
-        // Assess comprehensive data quality
-        assessComprehensiveDataQuality(marketData);
+        // Calculate data quality
+        calculateDataQuality(marketData);
         
         // Log successful API usage
         try {
@@ -388,95 +424,30 @@ async function getComprehensiveMarketData() {
     }
 }
 
-        // Parse and structure the comprehensive data
-        const marketData = {
-            // Core market data
-            markets: enhancedData || {},
-            trading: tradingData || null,
-            
-            // Treasury yields & yield curve analysis
-            yields: {
-                yield10Y: yield10Y?.value ? parseFloat(yield10Y.value) : null,
-                yield2Y: yield2Y?.value ? parseFloat(yield2Y.value) : null,
-                yield3M: yield3M?.value ? parseFloat(yield3M.value) : null,
-                curve_10Y_2Y: (yield10Y?.value && yield2Y?.value) ? 
-                    (parseFloat(yield10Y.value) - parseFloat(yield2Y.value)) : null,
-                curve_2Y_3M: (yield2Y?.value && yield3M?.value) ? 
-                    (parseFloat(yield2Y.value) - parseFloat(yield3M.value)) : null,
-                inverted: null // Will calculate below
-            },
-            
-            // Market sentiment & risk indicators
-            sentiment: {
-                vix: vixData?.['Global Quote']?.['05. price'] ? 
-                    parseFloat(vixData['Global Quote']['05. price']) : null,
-                fear_greed_level: null, // Calculate based on VIX
-                market_regime: null // Will determine below
-            },
-            
-            // Currency & commodities
-            currencies: {
-                dollar_index: dollarIndex?.value ? parseFloat(dollarIndex.value) : null,
-                dollar_strength: null // Will calculate
-            },
-            
-            commodities: {
-                gold: goldData?.['Global Quote']?.['05. price'] ? 
-                    parseFloat(goldData['Global Quote']['05. price']) : null,
-                oil: oilData?.['Global Quote']?.['05. price'] ? 
-                    parseFloat(oilData['Global Quote']['05. price']) : null,
-                gold_oil_ratio: null // Will calculate
-            },
-            
-            // Economic indicators
-            economics: economicData || {},
-            
-            // Stock market specifics
-            stocks: stockMarketData || {},
-            
-            // Ray Dalio All Weather insights
-            ray_dalio: rayDalioData || {},
-            
-            // Metadata
-            timestamp: new Date().toISOString(),
-            responseTime: Date.now() - startTime,
-            data_quality: {
-                sources_available: 0,
-                sources_failed: 0,
-                completeness_score: 0
-            }
-        };
-
-        // Calculate derived indicators
-        calculateDerivedIndicators(marketData);
+// Helper function to calculate data quality
+function calculateDataQuality(marketData) {
+    try {
+        let available = 0;
+        let total = 0;
         
-        // Assess data quality
-        assessDataQuality(marketData);
+        // Count available data sources
+        const checks = [
+            marketData.markets && Object.keys(marketData.markets).length > 0,
+            marketData.ray_dalio && Object.keys(marketData.ray_dalio).length > 0,
+            marketData.analysis && Object.keys(marketData.analysis).length > 0,
+            marketData.assets && Object.keys(marketData.assets).length > 0,
+            marketData.intelligence && Object.keys(marketData.intelligence).length > 0
+        ];
         
-        // Log successful API usage
-        try {
-            await logApiUsage('live_data', 'comprehensive_market', 1, true, 
-                Date.now() - startTime, 0, 0.001);
-        } catch (logError) {
-            console.log('⚠️ API usage logging failed:', logError.message);
-        }
+        total = checks.length;
+        available = checks.filter(check => check).length;
         
-        console.log(`✅ Comprehensive market data fetched in ${Date.now() - startTime}ms`);
-        console.log(`📊 Data quality score: ${marketData.data_quality.completeness_score}%`);
-        
-        return marketData;
+        marketData.data_quality.sources_available = available;
+        marketData.data_quality.completeness_score = Math.round((available / total) * 100);
         
     } catch (error) {
-        console.error('❌ Comprehensive market data error:', error.message);
-        
-        // Log failed API usage
-        try {
-            await logApiUsage('live_data', 'comprehensive_market', 1, false, 0, 0, 0);
-        } catch (logError) {
-            // Silent fail for logging
-        }
-        
-        return null;
+        console.warn('⚠️ Data quality calculation failed:', error.message);
+        marketData.data_quality.completeness_score = 0;
     }
 }
 
