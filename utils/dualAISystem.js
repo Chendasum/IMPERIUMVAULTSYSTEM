@@ -7,12 +7,7 @@ require("dotenv").config({ path: ".env" });
 
 const { getClaudeAnalysis, getStrategicAnalysis: getClaudeStrategicAnalysis } = require('./claudeClient');
 const { getGptAnalysis, getMarketAnalysis: getGptMarketAnalysis } = require('./openaiClient');
-const EventEmitter = require('events');
-const crypto = require('crypto');
-const Anthropic = require('@anthropic-ai/sdk');
-const fs = require('fs').promises;
-const path = require('path');
-const os = require('os');
+
 
 // ✅ COMPREHENSIVE LOGGER - All methods needed for entire system
 let logger;
@@ -54,11 +49,6 @@ try {
         system: (msg, data) => console.log(`🎯 SYSTEM: ${msg}`, data ? JSON.stringify(data, null, 2) : ''),
         ultimate: (msg, data) => console.log(`🏆 ULTIMATE: ${msg}`, data ? JSON.stringify(data, null, 2) : '')
     };
-}
-
-// 📦 EXPORT LOGGER for use in other parts
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { logger };
 }
 
 // 🧠 ADVANCED AI INTELLIGENCE MATRIX
