@@ -854,7 +854,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const OpenAI = require('openai');
 require('dotenv').config();
 
-// Enhanced logger
+// ✅ FIXED LOGGER - No external dependencies
 let logger;
 try {
     logger = require('./logger');
