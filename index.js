@@ -5082,8 +5082,66 @@ async function handleLiveBitcoinPrice(chatId) {
     try {
         await bot.sendMessage(chatId, "💰 Fetching live Bitcoin price from enhanced data feeds...");
         
-        // Use your existing enhanced crypto data function
-        const cryptoData = await getEnhancedCryptoData();
+        // Try different existing functions in order of preference
+        let cryptoData = null;
+        let dataSource = '';
+        
+        // Method 1: Try getEnhancedLiveData (comprehensive market data)
+        try {
+            const marketData = await getEnhancedLiveData();
+            if (marketData?.crypto?.bitcoin) {
+                cryptoData = { bitcoin: marketData.crypto.bitcoin };
+                dataSource = 'Enhanced Live Data';
+            }
+        } catch (error) {
+            console.log('Enhanced live data not available:', error.message);
+        }
+        
+        // Method 2: Try getRealLiveData 
+        if (!cryptoData) {
+            try {
+                const realData = await getRealLiveData();
+                if (realData?.bitcoin) {
+                    cryptoData = { bitcoin: realData.bitcoin };
+                    dataSource = 'Real Live Data';
+                }
+            } catch (error) {
+                console.log('Real live data not available:', error.message);
+            }
+        }
+        
+        // Method 3: Try getComprehensiveMarketData (your super function)
+        if (!cryptoData) {
+            try {
+                const marketData = await getComprehensiveMarketData();
+                if (marketData?.assets?.crypto?.bitcoin) {
+                    cryptoData = { bitcoin: marketData.assets.crypto.bitcoin };
+                    dataSource = 'Comprehensive Market Data';
+                }
+            } catch (error) {
+                console.log('Comprehensive market data not available:', error.message);
+            }
+        }
+        
+        // Method 4: Try direct CoinGecko API (fallback)
+        if (!cryptoData) {
+            try {
+                const fetch = require('node-fetch');
+                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_market_cap=true');
+                const data = await response.json();
+                if (data.bitcoin) {
+                    cryptoData = { bitcoin: {
+                        usd: data.bitcoin.usd,
+                        usd_24h_change: data.bitcoin.usd_24h_change,
+                        usd_market_cap: data.bitcoin.usd_market_cap
+                    }};
+                    dataSource = 'CoinGecko API Direct';
+                }
+            } catch (error) {
+                console.log('Direct API also failed:', error.message);
+            }
+        }
+        
         const responseTime = Date.now() - startTime;
         
         if (cryptoData && cryptoData.bitcoin) {
@@ -5091,14 +5149,17 @@ async function handleLiveBitcoinPrice(chatId) {
             const change = btc.usd_24h_change || 0;
             const emoji = change > 0 ? '🟢📈' : change < 0 ? '🔴📉' : '⚪';
             
-            let response = `💰 **Live Bitcoin Price (Enhanced Data)**\n\n`;
+            let response = `💰 **Live Bitcoin Price**\n\n`;
             response += `₿ **Bitcoin (BTC)**\n`;
             response += `• Price: $${btc.usd?.toLocaleString() || 'N/A'}\n`;
             response += `• 24h Change: ${emoji} ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n`;
-            response += `• Market Cap: $${btc.usd_market_cap?.toLocaleString() || 'N/A'}\n`;
-            response += `• 24h Volume: $${btc.usd_24h_vol?.toLocaleString() || 'N/A'}\n\n`;
-            response += `⚡ **Response Time:** ${responseTime}ms\n`;
-            response += `📊 **Data Source:** Enhanced Crypto Data System\n`;
+            
+            if (btc.usd_market_cap) {
+                response += `• Market Cap: $${btc.usd_market_cap.toLocaleString()}\n`;
+            }
+            
+            response += `\n⚡ **Response Time:** ${responseTime}ms\n`;
+            response += `📊 **Data Source:** ${dataSource}\n`;
             response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
             response += `💡 **Try:** /wealth for investment analysis or /crypto_live for all coins`;
             
@@ -5109,10 +5170,10 @@ async function handleLiveBitcoinPrice(chatId) {
                 `BTC: $${btc.usd?.toLocaleString()} (${change > 0 ? '+' : ''}${change.toFixed(2)}%)`, 
                 "live_crypto_price").catch(console.error);
             
-            console.log(`✅ Live Bitcoin price delivered: $${btc.usd?.toLocaleString()}`);
+            console.log(`✅ Live Bitcoin price delivered: $${btc.usd?.toLocaleString()} from ${dataSource}`);
             
         } else {
-            throw new Error("Enhanced crypto data not available");
+            throw new Error("All Bitcoin data sources failed");
         }
         
     } catch (error) {
@@ -5120,7 +5181,8 @@ async function handleLiveBitcoinPrice(chatId) {
         await sendSmartMessage(bot, chatId, 
             `❌ **Live Bitcoin data temporarily unavailable**\n\n` +
             `**Error:** ${error.message}\n\n` +
-            `**Alternative:** Try /wealth for investment strategies or ask me about crypto analysis!`
+            `**Manual check:** Visit CoinGecko.com or Binance.com\n` +
+            `**Alternative:** Try /wealth for investment strategies!`
         );
     }
 }
