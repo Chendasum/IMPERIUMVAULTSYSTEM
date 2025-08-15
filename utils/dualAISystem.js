@@ -1549,24 +1549,26 @@ module.exports = {
 // Advanced Execution System with Smart Learning and Performance Optimization
 // COMPLETE VERSION - All 2000+ lines included
 
-const EventEmitter = require('events');
-const crypto = require('crypto');
-
 // Import dependencies
 const { UltimateStrategicPowerRouter } = require('./perfect_dual_ai_core');
 const { UnifiedAIInterface } = require('./perfect_ai_clients');
 
 // Enhanced logger
-const logger = require('./logger') || {
-    info: (msg, data) => console.log(`ℹ️ ${msg}`, data || ''),
-    success: (msg, data) => console.log(`✅ ${msg}`, data || ''),
-    warn: (msg, data) => console.warn(`⚠️ ${msg}`, data || ''),
-    error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
-    debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
-    power: (msg, data) => console.log(`⚡ POWER: ${msg}`, data || ''),
-    execution: (msg, data) => console.log(`🚀 EXEC: ${msg}`, data || ''),
-    performance: (msg, data) => console.log(`📊 PERF: ${msg}`, data || '')
-};
+let logger;
+try {
+    logger = require('./logger');
+} catch (error) {
+    logger = {
+        info: (msg, data) => console.log(`ℹ️ ${msg}`, data || ''),
+        success: (msg, data) => console.log(`✅ ${msg}`, data || ''),
+        warn: (msg, data) => console.warn(`⚠️ ${msg}`, data || ''),
+        error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
+        debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
+        power: (msg, data) => console.log(`⚡ POWER: ${msg}`, data || ''),
+        execution: (msg, data) => console.log(`🚀 EXEC: ${msg}`, data || ''),
+        performance: (msg, data) => console.log(`📊 PERF: ${msg}`, data || '')
+    };
+}
 
 // 🚀 ULTIMATE POWER EXECUTOR - The Heart of the System
 class UltimatePowerExecutor extends EventEmitter {
@@ -3028,17 +3030,22 @@ const path = require('path');
 const os = require('os');
 
 // Enhanced logger
-const logger = require('./logger') || {
-    info: (msg, data) => console.log(`ℹ️ ${msg}`, data || ''),
-    success: (msg, data) => console.log(`✅ ${msg}`, data || ''),
-    warn: (msg, data) => console.warn(`⚠️ ${msg}`, data || ''),
-    error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
-    debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
-    monitor: (msg, data) => console.log(`📊 MONITOR: ${msg}`, data || ''),
-    health: (msg, data) => console.log(`🏥 HEALTH: ${msg}`, data || ''),
-    alert: (msg, data) => console.log(`🚨 ALERT: ${msg}`, data || ''),
-    metrics: (msg, data) => console.log(`📈 METRICS: ${msg}`, data || '')
-};
+let logger;
+try {
+    logger = require('./logger');
+} catch (error) {
+    logger = {
+        info: (msg, data) => console.log(`ℹ️ ${msg}`, data || ''),
+        success: (msg, data) => console.log(`✅ ${msg}`, data || ''),
+        warn: (msg, data) => console.warn(`⚠️ ${msg}`, data || ''),
+        error: (msg, error) => console.error(`❌ ${msg}`, error || ''),
+        debug: (msg, data) => console.log(`🐛 ${msg}`, data || ''),
+        monitor: (msg, data) => console.log(`📊 MONITOR: ${msg}`, data || ''),
+        health: (msg, data) => console.log(`🏥 HEALTH: ${msg}`, data || ''),
+        alert: (msg, data) => console.log(`🚨 ALERT: ${msg}`, data || ''),
+        metrics: (msg, data) => console.log(`📈 METRICS: ${msg}`, data || '')
+    };
+}
 
 // 🏥 COMPREHENSIVE SYSTEM HEALTH MONITOR
 class ComprehensiveSystemHealthMonitor extends EventEmitter {
@@ -5402,7 +5409,6 @@ console.log('🏆 ================================================');
 
 // 🏆 PERFECT DUAL AI SYSTEM - COMPLETE INTEGRATION (Part 5/5)
 // Final Integration, Setup, and Main Export Module
-// 10/10 Rating - Production Ready Enterprise System
 
 // Import all components
 const { UltimateStrategicPowerRouter, AIIntelligenceMatrix, AdaptiveLearningEngine } = require('./perfect_dual_ai_core');
