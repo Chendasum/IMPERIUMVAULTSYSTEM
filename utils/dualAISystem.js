@@ -2183,9 +2183,11 @@ module.exports = {
         }
     },
 
+    // 🔧 FIXED: dualAIRouter function with proper reference
     dualAIRouter: async (query, options = {}) => {
         try {
-            return await routeQuery(query, options.chatId);
+            const system = initializeUltimateStrategicPowerSystem();
+            return await system.router.routeWithUltimatePower(query, options);
         } catch (error) {
             return { primaryAI: 'GPT5', reasoning: 'Router fallback', error: error.message };
         }
