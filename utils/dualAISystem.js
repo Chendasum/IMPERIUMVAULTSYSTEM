@@ -2236,3 +2236,377 @@ module.exports = {
     AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
     OPTIMIZATION_LEVEL: 'MAXIMUM'
 };
+
+// 🤖 DUAL AI SYSTEM INTEGRATION FOR MONEY FLOW BOT
+// Add this to your dualAISystem.js file
+
+class DualAIMoneyFlowSystem {
+    constructor(apiKey1, apiKey2, model1 = 'gpt-3.5-turbo', model2 = 'gpt-4') {
+        this.apiKey1 = apiKey1 || process.env.OPENAI_API_KEY;
+        this.apiKey2 = apiKey2 || process.env.OPENAI_API_KEY_2 || this.apiKey1;
+        this.model1 = model1;
+        this.model2 = model2;
+        this.baseURL = 'https://api.openai.com/v1/chat/completions';
+        
+        // Money Flow specific configuration
+        this.moneyFlowConfig = {
+            maxRetries: 3,
+            timeout: 30000,
+            fallbackMode: false,
+            cambodiaContext: true
+        };
+        
+        console.log('🤖 DualAI Money Flow System initialized');
+    }
+
+    // 💰 SMART ALLOCATION AI ANALYSIS
+    async getUniversalAnalysis(prompt, options = {}) {
+        const {
+            maxTokens = 800,
+            temperature = 0.3,
+            timeout = 30000
+        } = options;
+
+        // Enhanced prompt for money flow context
+        const enhancedPrompt = this.enhancePromptForMoneyFlow(prompt);
+
+        try {
+            // Try primary AI first
+            const result = await this.callOpenAI(enhancedPrompt, {
+                model: this.model1,
+                maxTokens,
+                temperature,
+                timeout
+            });
+            
+            console.log('✅ Primary AI responded for money flow analysis');
+            return this.formatMoneyFlowResponse(result);
+            
+        } catch (error) {
+            console.warn('⚠️ Primary AI failed, trying secondary:', error.message);
+            
+            try {
+                // Try secondary AI
+                const result = await this.callOpenAI(enhancedPrompt, {
+                    model: this.model2,
+                    maxTokens,
+                    temperature,
+                    timeout
+                });
+                
+                console.log('✅ Secondary AI responded for money flow analysis');
+                return this.formatMoneyFlowResponse(result);
+                
+            } catch (secondError) {
+                console.error('❌ Both AI systems failed:', secondError.message);
+                throw new Error('AI analysis unavailable');
+            }
+        }
+    }
+
+    // 🧠 DUAL AI ANALYSIS FOR COMPLEX DECISIONS
+    async getDualAnalysis(prompt, options = {}) {
+        const {
+            maxTokens = 1000,
+            temperature = 0.4,
+            timeout = 30000
+        } = options;
+
+        const enhancedPrompt = this.enhancePromptForMoneyFlow(prompt);
+
+        try {
+            // Get analysis from both AIs in parallel
+            const [primary, secondary] = await Promise.allSettled([
+                this.callOpenAI(enhancedPrompt, {
+                    model: this.model1,
+                    maxTokens,
+                    temperature,
+                    timeout
+                }),
+                this.callOpenAI(enhancedPrompt, {
+                    model: this.model2,
+                    maxTokens,
+                    temperature: temperature + 0.1, // Slightly different temperature
+                    timeout
+                })
+            ]);
+
+            // Process results
+            if (primary.status === 'fulfilled' && secondary.status === 'fulfilled') {
+                console.log('✅ Dual AI analysis completed successfully');
+                return this.combineDualAnalysis(primary.value, secondary.value);
+            } else if (primary.status === 'fulfilled') {
+                console.log('✅ Primary AI analysis completed');
+                return this.formatMoneyFlowResponse(primary.value);
+            } else if (secondary.status === 'fulfilled') {
+                console.log('✅ Secondary AI analysis completed');
+                return this.formatMoneyFlowResponse(secondary.value);
+            } else {
+                throw new Error('Both AI analyses failed');
+            }
+
+        } catch (error) {
+            console.error('❌ Dual AI analysis failed:', error.message);
+            throw error;
+        }
+    }
+
+    // 🔧 ENHANCE PROMPT FOR MONEY FLOW CONTEXT
+    enhancePromptForMoneyFlow(originalPrompt) {
+        const cambodiaContext = `
+CONTEXT: You are analyzing for a 7-Day Money Flow Reset program for users in Cambodia. 
+Consider:
+- Cambodian economic conditions
+- USD and Khmer Riel currency usage
+- Local banking systems (ABA, ACLEDA, etc.)
+- Southeast Asian market conditions
+- Conservative investment approach suitable for developing markets
+- Focus on practical, actionable advice
+
+IMPORTANT: Always provide responses in valid JSON format when requesting structured data.
+`;
+
+        return cambodiaContext + "\n\n" + originalPrompt;
+    }
+
+    // 📊 FORMAT MONEY FLOW RESPONSE
+    formatMoneyFlowResponse(response) {
+        try {
+            // Clean up the response
+            let cleanedResponse = response.trim();
+            
+            // Remove any markdown code blocks
+            cleanedResponse = cleanedResponse.replace(/```json\n?/g, '');
+            cleanedResponse = cleanedResponse.replace(/```\n?/g, '');
+            
+            // Try to parse as JSON first
+            try {
+                const jsonResponse = JSON.parse(cleanedResponse);
+                return JSON.stringify(jsonResponse); // Return as clean JSON string
+            } catch (jsonError) {
+                // If not JSON, return cleaned text
+                return cleanedResponse;
+            }
+            
+        } catch (error) {
+            console.warn('Response formatting warning:', error.message);
+            return response; // Return original if formatting fails
+        }
+    }
+
+    // 🤝 COMBINE DUAL AI ANALYSIS
+    combineDualAnalysis(response1, response2) {
+        try {
+            // Try to parse both responses as JSON
+            let analysis1, analysis2;
+            
+            try {
+                analysis1 = JSON.parse(this.formatMoneyFlowResponse(response1));
+            } catch {
+                analysis1 = { text_response: response1 };
+            }
+            
+            try {
+                analysis2 = JSON.parse(this.formatMoneyFlowResponse(response2));
+            } catch {
+                analysis2 = { text_response: response2 };
+            }
+
+            // Combine the analyses intelligently
+            const combined = {
+                primary_analysis: analysis1,
+                secondary_analysis: analysis2,
+                consensus: this.findConsensus(analysis1, analysis2),
+                confidence_boost: true,
+                dual_ai_used: true
+            };
+
+            return JSON.stringify(combined);
+
+        } catch (error) {
+            console.warn('Failed to combine analyses, using primary:', error.message);
+            return this.formatMoneyFlowResponse(response1);
+        }
+    }
+
+    // 🎯 FIND CONSENSUS BETWEEN TWO AI RESPONSES
+    findConsensus(analysis1, analysis2) {
+        try {
+            const consensus = {};
+
+            // For allocation decisions
+            if (analysis1.stocks_percent && analysis2.stocks_percent) {
+                consensus.stocks_percent = Math.round((analysis1.stocks_percent + analysis2.stocks_percent) / 2);
+                consensus.bonds_percent = Math.round((analysis1.bonds_percent + analysis2.bonds_percent) / 2);
+                consensus.cash_percent = Math.round((analysis1.cash_percent + analysis2.cash_percent) / 2);
+                consensus.crypto_percent = Math.round((analysis1.crypto_percent + analysis2.crypto_percent) / 2);
+                consensus.confidence = Math.round(((analysis1.confidence || 80) + (analysis2.confidence || 80)) / 2);
+                consensus.reasoning = "Consensus analysis from dual AI systems";
+            }
+
+            // For market sentiment
+            if (analysis1.market_sentiment && analysis2.market_sentiment) {
+                if (analysis1.market_sentiment === analysis2.market_sentiment) {
+                    consensus.market_sentiment = analysis1.market_sentiment;
+                } else {
+                    consensus.market_sentiment = 'MIXED';
+                }
+            }
+
+            // For reset decisions
+            if (analysis1.decision && analysis2.decision) {
+                if (analysis1.decision === analysis2.decision) {
+                    consensus.decision = analysis1.decision;
+                    consensus.confidence = Math.round(((analysis1.confidence || 70) + (analysis2.confidence || 70)) / 2);
+                } else {
+                    consensus.decision = 'MIXED';
+                    consensus.confidence = 60;
+                    consensus.reasoning = 'AIs provided different recommendations - proceed with caution';
+                }
+            }
+
+            return consensus;
+
+        } catch (error) {
+            console.warn('Consensus analysis failed:', error.message);
+            return { reasoning: 'Analysis combination unavailable' };
+        }
+    }
+
+    // 🌐 CALL OPENAI API
+    async callOpenAI(prompt, options = {}) {
+        const {
+            model = this.model1,
+            maxTokens = 800,
+            temperature = 0.3,
+            timeout = 30000
+        } = options;
+
+        const requestBody = {
+            model: model,
+            messages: [
+                {
+                    role: "system",
+                    content: "You are an expert financial advisor specializing in money flow management and portfolio allocation for Cambodia and Southeast Asian markets. Always provide practical, conservative advice suitable for developing market conditions."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            max_tokens: maxTokens,
+            temperature: temperature,
+            top_p: 1,
+            frequency_penalty: 0,
+            presence_penalty: 0
+        };
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        try {
+            const response = await fetch(this.baseURL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.apiKey1}`
+                },
+                body: JSON.stringify(requestBody),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`AI API error: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.choices && data.choices[0] && data.choices[0].message) {
+                return data.choices[0].message.content;
+            } else {
+                throw new Error('Invalid AI response format');
+            }
+
+        } catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+        }
+    }
+
+    // 🧪 TEST CONNECTION
+    async testConnection() {
+        try {
+            const testPrompt = `Test connection for Money Flow Bot. Respond with JSON: {"status": "connected", "message": "Money Flow AI ready", "cambodia_support": true}`;
+            
+            const response = await this.getUniversalAnalysis(testPrompt, {
+                maxTokens: 100,
+                temperature: 0.1,
+                timeout: 10000
+            });
+            
+            return {
+                success: true,
+                message: 'AI connection successful for Money Flow',
+                response: response.substring(0, 100)
+            };
+            
+        } catch (error) {
+            return {
+                success: false,
+                message: `AI connection failed: ${error.message}`
+            };
+        }
+    }
+
+    // 📊 GET STATUS
+    getStatus() {
+        return {
+            ai_available: true,
+            fallback_mode: false,
+            system_version: '2.0.0-money-flow',
+            last_check: new Date().toISOString(),
+            cambodia_optimized: true,
+            dual_ai_enabled: !!this.apiKey2
+        };
+    }
+}
+
+// 🏭 FACTORY FUNCTION FOR MONEY FLOW BOT
+function createMoneyFlowAI(apiKey1, apiKey2) {
+    return new DualAIMoneyFlowSystem(apiKey1, apiKey2);
+}
+
+// 🚀 AUTO-INITIALIZATION
+let moneyFlowAI = null;
+
+try {
+    moneyFlowAI = createMoneyFlowAI(
+        process.env.OPENAI_API_KEY,
+        process.env.OPENAI_API_KEY_2
+    );
+    console.log('🤖 Money Flow AI system initialized successfully');
+} catch (error) {
+    console.error('❌ Money Flow AI initialization failed:', error.message);
+}
+
+// 📤 EXPORTS FOR MONEY FLOW BOT
+module.exports = {
+    // Main AI instance
+    moneyFlowAI,
+    
+    // Factory function
+    createMoneyFlowAI,
+    
+    // Class for custom initialization
+    DualAIMoneyFlowSystem,
+    
+    // Compatibility exports for existing integrations
+    getUniversalAnalysis: (prompt, options) => moneyFlowAI?.getUniversalAnalysis(prompt, options),
+    getDualAnalysis: (prompt, options) => moneyFlowAI?.getDualAnalysis(prompt, options),
+    testConnection: () => moneyFlowAI?.testConnection(),
+    getStatus: () => moneyFlowAI?.getStatus()
+};
+
+console.log('✅ DualAI Money Flow System module loaded');
