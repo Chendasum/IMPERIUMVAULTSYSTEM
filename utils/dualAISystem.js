@@ -103,10 +103,10 @@ const GPT5_POWER_MODELS = {
     }
 };
 
-// 🧠 CLAUDE OPUS 4 POWER CONFIGURATIONS
+// 🧠 CLAUDE OPUS 4.1 POWER CONFIGURATIONS (CORRECTED)
 const CLAUDE_POWER_MODES = {
     STRATEGIC_MASTERY: {
-        model: "claude-opus-4",
+        model: "claude-opus-4-1-20250805", // ✅ CORRECTED: Official API name
         description: "Maximum strategic analysis and risk assessment",
         maxTokens: 4000,
         temperature: 0.2,
@@ -115,7 +115,7 @@ const CLAUDE_POWER_MODES = {
     },
     
     STRATEGIC_STANDARD: {
-        model: "claude-opus-4",
+        model: "claude-opus-4-1-20250805", // ✅ CORRECTED: Official API name
         description: "Standard strategic analysis",
         maxTokens: 3000,
         temperature: 0.4,
@@ -124,7 +124,7 @@ const CLAUDE_POWER_MODES = {
     },
     
     STRATEGIC_EFFICIENT: {
-        model: "claude-opus-4",
+        model: "claude-opus-4-1-20250805", // ✅ CORRECTED: Official API name
         description: "Efficient strategic insights",
         maxTokens: 2000,
         temperature: 0.5,
