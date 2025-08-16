@@ -2237,46 +2237,43 @@ module.exports = {
     OPTIMIZATION_LEVEL: 'MAXIMUM'
 };
 
-// 🤖 IMPROVED DUAL AI SYSTEM WITH OPENAI SDK
-// Replace the Money Flow integration in your dualAISystem.js with this improved version
+// 🤖 COMPLETE MONEY FLOW AI INTEGRATION FOR YOUR dualAISystem.js
+// ADD THIS CODE TO THE END OF YOUR dualAISystem.js FILE
 
 const OpenAI = require('openai');
 
 class DualAIMoneyFlowSystem {
     constructor() {
-        // Initialize OpenAI clients
-        this.primaryAI = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY
-        });
-        
-        // Use secondary key if available, otherwise use primary
-        this.secondaryAI = process.env.OPENAI_API_KEY_2 ? 
-            new OpenAI({ apiKey: process.env.OPENAI_API_KEY_2 }) : 
-            this.primaryAI;
+        try {
+            // Initialize OpenAI clients
+            this.primaryAI = new OpenAI({
+                apiKey: process.env.OPENAI_API_KEY
+            });
             
-        this.model1 = 'gpt-3.5-turbo';
-        this.model2 = 'gpt-4o-mini'; // Faster and cheaper GPT-4 model
-        
-        console.log('🤖 DualAI Money Flow System initialized with OpenAI SDK');
+            // Use secondary key if available
+            this.secondaryAI = process.env.OPENAI_API_KEY_2 ? 
+                new OpenAI({ apiKey: process.env.OPENAI_API_KEY_2 }) : 
+                this.primaryAI;
+                
+            this.model1 = 'gpt-3.5-turbo';
+            this.model2 = 'gpt-4o-mini';
+            
+            console.log('🤖 DualAI Money Flow System initialized with OpenAI SDK');
+        } catch (error) {
+            console.error('❌ Failed to initialize Money Flow AI:', error.message);
+            throw error;
+        }
     }
 
     // 💰 SMART ALLOCATION AI ANALYSIS
     async getUniversalAnalysis(prompt, options = {}) {
-        const {
-            maxTokens = 800,
-            temperature = 0.3
-        } = options;
-
-        // Enhanced prompt for money flow context
+        const { maxTokens = 800, temperature = 0.3 } = options;
         const enhancedPrompt = this.enhancePromptForMoneyFlow(prompt);
 
         try {
-            // Try primary AI first
             console.log('🔄 Calling primary AI for money flow analysis...');
             const result = await this.callOpenAI(this.primaryAI, enhancedPrompt, {
-                model: this.model1,
-                maxTokens,
-                temperature
+                model: this.model1, maxTokens, temperature
             });
             
             console.log('✅ Primary AI responded successfully');
@@ -2286,11 +2283,8 @@ class DualAIMoneyFlowSystem {
             console.warn('⚠️ Primary AI failed, trying secondary:', error.message);
             
             try {
-                // Try secondary AI
                 const result = await this.callOpenAI(this.secondaryAI, enhancedPrompt, {
-                    model: this.model2,
-                    maxTokens,
-                    temperature
+                    model: this.model2, maxTokens, temperature
                 });
                 
                 console.log('✅ Secondary AI responded successfully');
@@ -2305,31 +2299,21 @@ class DualAIMoneyFlowSystem {
 
     // 🧠 DUAL AI ANALYSIS FOR COMPLEX DECISIONS
     async getDualAnalysis(prompt, options = {}) {
-        const {
-            maxTokens = 1000,
-            temperature = 0.4
-        } = options;
-
+        const { maxTokens = 1000, temperature = 0.4 } = options;
         const enhancedPrompt = this.enhancePromptForMoneyFlow(prompt);
 
         try {
             console.log('🔄 Running dual AI analysis...');
             
-            // Get analysis from both AIs in parallel
             const [primary, secondary] = await Promise.allSettled([
                 this.callOpenAI(this.primaryAI, enhancedPrompt, {
-                    model: this.model1,
-                    maxTokens,
-                    temperature
+                    model: this.model1, maxTokens, temperature
                 }),
                 this.callOpenAI(this.secondaryAI, enhancedPrompt, {
-                    model: this.model2,
-                    maxTokens,
-                    temperature: temperature + 0.1
+                    model: this.model2, maxTokens, temperature: temperature + 0.1
                 })
             ]);
 
-            // Process results
             if (primary.status === 'fulfilled' && secondary.status === 'fulfilled') {
                 console.log('✅ Dual AI analysis completed successfully');
                 return this.combineDualAnalysis(primary.value, secondary.value);
@@ -2356,24 +2340,19 @@ CONTEXT: You are analyzing for a 7-Day Money Flow Reset program for users in Cam
 Consider:
 - Cambodian economic conditions and USD usage
 - Local banking systems (ABA, ACLEDA, Wing)
-- Southeast Asian market conditions
+- Southeast Asian market conditions  
 - Conservative investment approach for developing markets
 - Practical, actionable advice for Cambodian users
 
 IMPORTANT: Always provide responses in valid JSON format when requesting structured data.
 Make recommendations suitable for Cambodia's economic environment.
 `;
-
         return cambodiaContext + "\n\n" + originalPrompt;
     }
 
     // 🌐 CALL OPENAI API WITH SDK
     async callOpenAI(aiClient, prompt, options = {}) {
-        const {
-            model = this.model1,
-            maxTokens = 800,
-            temperature = 0.3
-        } = options;
+        const { model = this.model1, maxTokens = 800, temperature = 0.3 } = options;
 
         try {
             const completion = await aiClient.chat.completions.create({
@@ -2410,19 +2389,14 @@ Make recommendations suitable for Cambodia's economic environment.
     // 📊 FORMAT MONEY FLOW RESPONSE
     formatMoneyFlowResponse(response) {
         try {
-            // Clean up the response
             let cleanedResponse = response.trim();
-            
-            // Remove any markdown code blocks
             cleanedResponse = cleanedResponse.replace(/```json\n?/g, '');
             cleanedResponse = cleanedResponse.replace(/```\n?/g, '');
             
-            // Try to parse as JSON first
             try {
                 const jsonResponse = JSON.parse(cleanedResponse);
                 return JSON.stringify(jsonResponse);
             } catch (jsonError) {
-                // If not JSON, return cleaned text
                 return cleanedResponse;
             }
             
@@ -2449,7 +2423,6 @@ Make recommendations suitable for Cambodia's economic environment.
                 analysis2 = { text_response: response2 };
             }
 
-            // Combine the analyses intelligently
             const combined = {
                 primary_analysis: analysis1,
                 secondary_analysis: analysis2,
@@ -2569,13 +2542,12 @@ try {
 
 // 📤 EXPORTS FOR MONEY FLOW BOT
 module.exports = {
-    // Main AI instance
+    // Your existing exports (keep these unchanged)
+    ...module.exports,
+    
+    // New Money Flow exports
     moneyFlowAI,
-    
-    // Factory function
     createMoneyFlowAI,
-    
-    // Class for custom initialization
     DualAIMoneyFlowSystem,
     
     // Compatibility exports for existing integrations
@@ -2585,4 +2557,4 @@ module.exports = {
     getStatus: () => moneyFlowAI?.getStatus()
 };
 
-console.log('✅ DualAI Money Flow System with OpenAI SDK loaded');
+console.log('✅ DualAI Money Flow System with OpenAI SDK loaded successfully');
