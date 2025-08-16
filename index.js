@@ -149,6 +149,11 @@ const {
     getStrategicAnalysis: getGptStrategicAnalysis
 } = require('./utils/openaiClient');
 
+const { 
+    executeDualCommand,
+    checkSystemHealth
+} = require('./utils/dualCommandSystem');
+
 // Load credentials
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
@@ -749,20 +754,15 @@ async function handleEnhancedConversation(chatId, text, sessionId) {
         let result;
         
         try {
-const enhancedPrompt = memoryContext ? 
-    `${memoryContext}\n\nUser: ${text}` : text;
-
-result = {
-    response: await getUniversalAnalysis(enhancedPrompt, {
-        maxTokens: 1200,
-        temperature: 0.7,
-        chatId: chatId
-    }),
-    aiUsed: 'DUAL_AI_DIRECT',
-    success: true,
-    contextUsed: !!memoryContext,
-    responseTime: Date.now() - startTime
-};
+            result = await executeDualCommand(text, chatId, {
+                conversationHistory: conversationHistory,
+                persistentMemory: persistentMemory,
+                conversationIntel: conversationIntel,
+                messageType: 'text',
+                hasMedia: false,
+                memoryContext: memoryContext,
+                originalMessage: text
+            });
             
             console.log("✅ Dual command executed successfully:", {
                 aiUsed: result.aiUsed,
@@ -1450,48 +1450,47 @@ async function handleDatabaseConnectionTest(chatId) {
     }
 }
 
-// 🧠 Memory System Test Handler
+// 🧠 NEW: Memory System Test Handler
 async function handleMemorySystemTest(chatId) {
     try {
-        await bot.sendMessage(chatId, "🧠 Testing memory system...");
+        await bot.sendMessage(chatId, "🧠 Testing memory system integration...");
         
-        // Direct memory test implementation (no dualCommandSystem needed)
-        const testMemoryIntegration = async (chatId) => {
-            return { 
-                success: true, 
-                message: "Memory integration test passed", 
-                chatId: chatId,
-                tests: { 
-                    memoryAccess: true, 
-                    contextBuilding: true,
-                    dataRetrieval: true
-                },
-                score: 3,
-                percentage: "100%",
-                status: "FULL_SUCCESS",
-                timestamp: new Date().toISOString()
-            };
-        };
-        
-        // Run the memory test
-        const testResults = await testMemoryIntegration(chatId);
-        
-        // Build response message
-        let message = "🧠 **Memory Test Results**\n\n";
-        
-        for (const [testName, passed] of Object.entries(testResults.tests)) {
-            const status = passed ? "✅" : "❌";
-            const readableName = testName.replace(/([A-Z])/g, ' $1').toLowerCase();
-            message += `${status} ${readableName}\n`;
+        // Test memory integration using dualCommandSystem if available
+        let results;
+        try {
+            const { testMemoryIntegration } = require('./utils/dualCommandSystem');
+            results = await testMemoryIntegration(chatId);
+        } catch (importError) {
+            // Fallback to manual testing
+            results = await performManualMemoryTest(chatId);
         }
         
-        message += `\n**Score:** ${testResults.score}/${Object.keys(testResults.tests).length}\n`;
-        message += `**Status:** 🟢 ${testResults.status}\n`;
+        let response = `🧠 **Memory Integration Test Results**\n\n`;
         
-        await sendAnalysis(bot, chatId, message, "Memory System Test");
+        if (results.tests) {
+            Object.entries(results.tests).forEach(([test, passed]) => {
+                const emoji = passed ? '✅' : '❌';
+                const testName = test.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                response += `${emoji} ${testName}\n`;
+            });
+            
+            response += `\n**Score:** ${results.score} (${results.percentage}%)\n`;
+            response += `**Status:** ${results.status === 'FULL_SUCCESS' ? '🟢 FULLY WORKING' : 
+                                      results.status === 'MOSTLY_WORKING' ? '🟡 MOSTLY WORKING' : 
+                                      '🔴 NEEDS ATTENTION'}\n\n`;
+        }
+        
+        if (results.status !== 'FULL_SUCCESS') {
+            response += `**Recommendations:**\n`;
+            response += `• Check database connection with /test_db\n`;
+            response += `• Verify DATABASE_URL is using public URL\n`;
+            response += `• Try memory recovery with /test_memory_fix\n`;
+        }
+        
+        await sendAnalysis(bot, chatId, response, "Memory System Test");
         
     } catch (error) {
-        await bot.sendMessage(chatId, `❌ Memory test failed: ${error.message}`);
+        await sendSmartMessage(bot, chatId, `❌ Memory system test failed: ${error.message}`);
     }
 }
 
