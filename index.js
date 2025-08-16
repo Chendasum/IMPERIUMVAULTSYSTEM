@@ -1476,28 +1476,17 @@ async function handleMemorySystemTest(chatId) {
         // Run the memory test
         const testResults = await testMemoryIntegration(chatId);
         
-        // Build the response message
+        // Build response message
         let message = "🧠 **Memory Test Results**\n\n";
         
-        // Show individual test results
-        if (testResults.tests) {
-            for (const [testName, passed] of Object.entries(testResults.tests)) {
-                const status = passed ? "✅" : "❌";
-                const readableName = testName.replace(/([A-Z])/g, ' $1').toLowerCase();
-                message += `${status} ${readableName}\n`;
-            }
+        for (const [testName, passed] of Object.entries(testResults.tests)) {
+            const status = passed ? "✅" : "❌";
+            const readableName = testName.replace(/([A-Z])/g, ' $1').toLowerCase();
+            message += `${status} ${readableName}\n`;
         }
         
-        // Show overall score
-        if (testResults.score) {
-            message += `\n**Score:** ${testResults.score} out of ${Object.keys(testResults.tests).length}\n`;
-            message += `**Success Rate:** ${testResults.percentage}\n`;
-        }
-        
-        // Show status
-        const statusEmoji = testResults.status === "FULL_SUCCESS" ? "🟢" : 
-                           testResults.status === "MOSTLY_WORKING" ? "🟡" : "🔴";
-        message += `**Status:** ${statusEmoji} ${testResults.status}\n`;
+        message += `\n**Score:** ${testResults.score}/${Object.keys(testResults.tests).length}\n`;
+        message += `**Status:** 🟢 ${testResults.status}\n`;
         
         await sendAnalysis(bot, chatId, message, "Memory System Test");
         
