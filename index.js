@@ -637,10 +637,10 @@ bot.on("message", async (msg) => {
     }
 });
 
-// 🔧 COMPLETELY REWRITTEN: Enhanced conversation handler with proper memory integration
+// 🔧 COMPLETELY REWRITTEN: Enhanced conversation handler with PERSONAL strategic intelligence
 async function handleEnhancedConversation(chatId, text, sessionId) {
     try {
-        console.log("🤖 Processing enhanced conversation with FIXED memory:", text.substring(0, 50));
+        console.log("🤖 Processing enhanced conversation with PERSONAL context:", text.substring(0, 50));
         
         // 🔧 FIXED: Robust memory retrieval with detailed logging
         let conversationHistory = [];
@@ -697,19 +697,49 @@ async function handleEnhancedConversation(chatId, text, sessionId) {
             persistentMemory = []; // Ensure it's an array
         }
         
-        // 🔧 FIXED: Build memory context using utils/memory.js
+        // 🔧 NEW: Detect if this is a personal strategic query
+        const isPersonalStrategic = detectPersonalStrategicQuery(text, persistentMemory);
+        console.log(`🎯 Personal strategic query detected: ${isPersonalStrategic}`);
+        
+        // 🔧 NEW: Build enhanced personal context
         let memoryContext = '';
+        let personalDynastyContext = '';
+        
         try {
-            console.log("🏗️ Building conversation context with memory...");
+            console.log("🏗️ Building enhanced conversation context...");
+            
+            // Build standard memory context
             memoryContext = await buildConversationContext(chatId);
-            console.log(`✅ SUCCESS: Built context (${memoryContext.length} chars)`);
+            console.log(`✅ SUCCESS: Built standard context (${memoryContext.length} chars)`);
+            
+            // Build personal Dynasty System context
+            personalDynastyContext = buildPersonalDynastyContext(persistentMemory, conversationHistory, text);
+            console.log(`✅ SUCCESS: Built Dynasty context (${personalDynastyContext.length} chars)`);
+            
         } catch (contextError) {
             console.log('❌ FAILED: Context building:', contextError.message);
             memoryErrors.push(`Context: ${contextError.message}`);
             
-            // 🔧 FALLBACK: Manual context building
+            // 🔧 FALLBACK: Manual context building with personal focus
             if (conversationHistory.length > 0 || persistentMemory.length > 0) {
                 memoryContext = `\n\n🧠 BASIC MEMORY CONTEXT:\n`;
+                
+                // Look for Dynasty System content first
+                const dynastyMemories = persistentMemory.filter(mem => 
+                    mem.fact && (
+                        mem.fact.toLowerCase().includes('dynasty') ||
+                        mem.fact.toLowerCase().includes('level 1') ||
+                        mem.fact.toLowerCase().includes('level 2') ||
+                        mem.fact.toLowerCase().includes('capital governance')
+                    )
+                );
+                
+                if (dynastyMemories.length > 0) {
+                    memoryContext += `\n🏛️ YOUR DYNASTY SYSTEM:\n`;
+                    dynastyMemories.slice(0, 2).forEach((mem, i) => {
+                        memoryContext += `${i + 1}. ${mem.fact}\n`;
+                    });
+                }
                 
                 if (persistentMemory.length > 0) {
                     memoryContext += `\nIMPORTANT FACTS TO REMEMBER:\n`;
@@ -728,77 +758,111 @@ async function handleEnhancedConversation(chatId, text, sessionId) {
             }
         }
         
-        // 🔧 FIXED: Enhanced conversation intelligence
+        // 🔧 ENHANCED: Smart conversation intelligence with personal detection
         const conversationIntel = {
-            type: determineConversationType(text),
+            type: determinePersonalConversationType(text, persistentMemory),
             complexity: determineComplexity(text),
             liveDataRequired: requiresLiveData(text),
-            primaryAI: 'GPT_COMMANDER',
-            enhancementLevel: 'ENHANCED',
-            style: 'helpful_intelligent_with_memory',
-            reasoning: 'Enhanced dual command routing with fixed memory integration',
+            primaryAI: isPersonalStrategic ? 'CLAUDE_STRATEGIC' : 'GPT_COMMANDER',
+            enhancementLevel: isPersonalStrategic ? 'PERSONAL_STRATEGIC' : 'ENHANCED',
+            style: isPersonalStrategic ? 'personal_strategic_advisor' : 'helpful_intelligent_with_memory',
+            reasoning: isPersonalStrategic ? 'Personal Dynasty System strategic conversation' : 'Enhanced dual command routing with fixed memory integration',
             memoryAvailable: memoryContext.length > 0,
+            personalContext: personalDynastyContext.length > 0,
             conversationCount: conversationHistory.length,
             memoryCount: persistentMemory.length,
-            memoryErrors: memoryErrors
+            memoryErrors: memoryErrors,
+            isPersonalStrategic: isPersonalStrategic,
+            hasDynastyContext: personalDynastyContext.length > 0
         };
         
-        console.log("🎯 Conversation Intel:", {
+        console.log("🎯 Enhanced Conversation Intel:", {
             type: conversationIntel.type,
+            primaryAI: conversationIntel.primaryAI,
+            isPersonalStrategic: conversationIntel.isPersonalStrategic,
+            personalContext: conversationIntel.personalContext,
             memoryAvailable: conversationIntel.memoryAvailable,
             errors: memoryErrors.length
         });
         
-        // 🔧 FIXED: Enhanced dual command with memory context
-        console.log("🤖 Executing dual command with memory context...");
+        // 🔧 ENHANCED: Route to appropriate AI with personal context
+        console.log("🤖 Executing enhanced command with personal context...");
         let result;
         
         try {
-            result = await executeDualCommand(text, chatId, {
-                conversationHistory: conversationHistory,
-                persistentMemory: persistentMemory,
-                conversationIntel: conversationIntel,
-                messageType: 'text',
-                hasMedia: false,
-                memoryContext: memoryContext,
-                originalMessage: text
-            });
+            if (isPersonalStrategic) {
+                // Route personal strategic queries to Claude with full context
+                result = await handlePersonalStrategicQuery(text, chatId, {
+                    conversationHistory: conversationHistory,
+                    persistentMemory: persistentMemory,
+                    conversationIntel: conversationIntel,
+                    memoryContext: memoryContext,
+                    personalDynastyContext: personalDynastyContext,
+                    originalMessage: text
+                });
+                console.log("✅ Personal strategic query processed with Claude");
+            } else {
+                // Use standard dual command for general queries
+                result = await executeDualCommand(text, chatId, {
+                    conversationHistory: conversationHistory,
+                    persistentMemory: persistentMemory,
+                    conversationIntel: conversationIntel,
+                    messageType: 'text',
+                    hasMedia: false,
+                    memoryContext: memoryContext,
+                    originalMessage: text
+                });
+                console.log("✅ General query processed with dual command");
+            }
             
-            console.log("✅ Dual command executed successfully:", {
+            console.log("✅ Enhanced command executed successfully:", {
                 aiUsed: result.aiUsed,
                 success: result.success,
-                responseLength: result.response?.length
+                responseLength: result.response?.length,
+                isPersonalStrategic: isPersonalStrategic
             });
             
-        } catch (dualError) {
-            console.log("❌ Dual command failed, using GPT fallback:", dualError.message);
+        } catch (commandError) {
+            console.log("❌ Enhanced command failed, using enhanced fallback:", commandError.message);
             
-            // 🔧 FALLBACK: Direct GPT with memory
-            const enhancedPrompt = memoryContext ? 
-                `${memoryContext}\n\nUser question: ${text}` : text;
-                
+            // 🔧 ENHANCED FALLBACK: Use appropriate AI with context
+            let enhancedPrompt;
+            let selectedModel;
+            
+            if (isPersonalStrategic && personalDynastyContext) {
+                // Personal strategic fallback with Claude
+                enhancedPrompt = `${personalDynastyContext}\n\nCURRENT USER QUESTION: ${text}\n\nProvide PERSONAL, SPECIFIC advice for Sum Chenda's Dynasty System situation. Focus on practical implementation and next steps.`;
+                selectedModel = "claude-3-opus-20240229";
+            } else {
+                // General fallback with GPT
+                enhancedPrompt = memoryContext ? 
+                    `${memoryContext}\n\nUser question: ${text}` : text;
+                selectedModel = "gpt-5";
+            }
+            
             const response = await getUniversalAnalysis(enhancedPrompt, { 
                 maxTokens: 1500,
                 temperature: 0.7,
-                model: "gpt-5" // Use stable model as fallback
+                model: selectedModel
             });
             
             result = {
                 response: response,
-                aiUsed: 'GPT_FALLBACK',
+                aiUsed: isPersonalStrategic ? 'CLAUDE_FALLBACK' : 'GPT_FALLBACK',
                 success: true,
-                contextUsed: !!memoryContext,
+                contextUsed: !!(memoryContext || personalDynastyContext),
                 responseTime: 2000,
-                memoryErrors: memoryErrors
+                memoryErrors: memoryErrors,
+                isPersonalStrategic: isPersonalStrategic
             };
         }
         
         // Send response to user
         await sendSmartMessage(bot, chatId, result.response);
         
-        // 🔧 FIXED: Enhanced conversation save with error handling
+        // 🔧 FIXED: Enhanced conversation save with personal context tracking
         try {
-            console.log("💾 Saving conversation to database...");
+            console.log("💾 Saving enhanced conversation to database...");
             await saveConversationDB(chatId, text, result.response, "text", {
                 aiUsed: result.aiUsed,
                 queryType: result.queryType || conversationIntel.type,
@@ -807,17 +871,20 @@ async function handleEnhancedConversation(chatId, text, sessionId) {
                 responseTime: result.responseTime || 2000,
                 success: result.success,
                 memoryAvailable: memoryContext.length > 0,
+                personalContext: personalDynastyContext.length > 0,
                 memoryErrors: memoryErrors,
-                enhanced: true
+                enhanced: true,
+                isPersonalStrategic: isPersonalStrategic,
+                primaryAI: conversationIntel.primaryAI
             });
-            console.log("✅ Conversation saved successfully");
+            console.log("✅ Enhanced conversation saved successfully");
             
         } catch (saveError) {
             console.log('⚠️ Could not save conversation:', saveError.message);
             // Continue execution even if save fails
         }
         
-        // 🔧 FIXED: Memory extraction with proper error handling
+        // 🔧 ENHANCED: Memory extraction with personal focus
         try {
             console.log("🧠 Extracting facts for persistent memory...");
             const { extractAndSaveFacts } = require('./utils/memory');
@@ -833,49 +900,74 @@ async function handleEnhancedConversation(chatId, text, sessionId) {
         } catch (extractError) {
             console.log('⚠️ Memory extraction failed:', extractError.message);
             
-            // 🔧 FALLBACK: Manual memory extraction for important conversations
-            if (shouldSaveToPersistentMemory(text, result.response)) {
+            // 🔧 ENHANCED FALLBACK: Manual memory extraction with personal focus
+            if (shouldSaveToPersistentMemory(text, result.response) || isPersonalStrategic) {
                 try {
-                    const memoryFact = extractMemoryFact(text, result.response);
+                    const memoryFact = extractEnhancedMemoryFact(text, result.response, isPersonalStrategic);
                     if (memoryFact) {
-                        await addPersistentMemoryDB(chatId, memoryFact, 'medium');
-                        console.log('✅ Manual memory save successful:', memoryFact.substring(0, 50));
+                        const importance = isPersonalStrategic ? 'high' : 'medium';
+                        await addPersistentMemoryDB(chatId, memoryFact, importance);
+                        console.log('✅ Enhanced memory save successful:', memoryFact.substring(0, 50));
                     }
                 } catch (manualError) {
-                    console.log('❌ Manual memory save also failed:', manualError.message);
+                    console.log('❌ Enhanced memory save also failed:', manualError.message);
                 }
             }
         }
         
-        // 🔧 SUCCESS SUMMARY
-        console.log("🎉 CONVERSATION COMPLETED:", {
+        // 🔧 ENHANCED SUCCESS SUMMARY
+        console.log("🎉 ENHANCED CONVERSATION COMPLETED:", {
             memoryAvailable: memoryContext.length > 0,
+            personalContext: personalDynastyContext.length > 0,
             aiUsed: result.aiUsed,
             conversationSaved: true,
             memoryErrors: memoryErrors.length,
-            enhanced: true
+            enhanced: true,
+            isPersonalStrategic: isPersonalStrategic,
+            primaryAI: conversationIntel.primaryAI
         });
         
     } catch (error) {
         console.error('❌ CRITICAL: Enhanced conversation error:', error.message);
         console.error('Stack:', error.stack);
         
-        // 🔧 EMERGENCY FALLBACK with basic memory attempt
+        // 🔧 EMERGENCY FALLBACK with personal context attempt
         try {
-            console.log('🚨 EMERGENCY FALLBACK: Basic GPT with minimal memory...');
+            console.log('🚨 EMERGENCY FALLBACK: Enhanced GPT with personal memory...');
             
-            // Try to get at least some memory context
-            let basicMemory = '';
+            // Try to get at least some personal context
+            let emergencyContext = '';
             try {
                 const recentHistory = await getConversationHistoryDB(chatId, 2);
-                if (recentHistory && recentHistory.length > 0) {
-                    basicMemory = `\n\nFor context: You previously discussed "${recentHistory[0]?.user_message?.substring(0, 80) || 'general topics'}" with this user.`;
+                const recentMemory = await getPersistentMemoryDB(chatId);
+                
+                // Look for Dynasty System content
+                const dynastyContent = recentMemory.find(mem => 
+                    mem.fact && mem.fact.toLowerCase().includes('dynasty')
+                );
+                
+                if (dynastyContent) {
+                    emergencyContext = `\n\nIMPORTANT: This user has a Dynasty System: ${dynastyContent.fact.substring(0, 200)}`;
+                } else if (recentHistory && recentHistory.length > 0) {
+                    emergencyContext = `\n\nFor context: You previously discussed "${recentHistory[0]?.user_message?.substring(0, 80) || 'general topics'}" with this user.`;
                 }
             } catch (contextError) {
-                console.log('⚠️ Even basic memory failed:', contextError.message);
+                console.log('⚠️ Even emergency context failed:', contextError.message);
             }
             
-            const response = await getUniversalAnalysis(text + basicMemory, { 
+            // Use appropriate emergency prompt
+            const isEmergencyPersonal = text.toLowerCase().includes('dynasty') || 
+                                      text.toLowerCase().includes('strategic') ||
+                                      text.toLowerCase().includes('my system');
+            
+            let emergencyPrompt;
+            if (isEmergencyPersonal && emergencyContext) {
+                emergencyPrompt = `${emergencyContext}\n\nUser question: ${text}\n\nProvide personal, specific advice rather than generic analysis.`;
+            } else {
+                emergencyPrompt = text + emergencyContext;
+            }
+            
+            const response = await getUniversalAnalysis(emergencyPrompt, { 
                 maxTokens: 1000,
                 temperature: 0.7,
                 model: "gpt-5"
@@ -887,8 +979,8 @@ async function handleEnhancedConversation(chatId, text, sessionId) {
             try {
                 await saveConversationDB(chatId, text, response, "text", { 
                     error: error.message,
-                    fallback: 'emergency',
-                    basicMemoryAttempted: !!basicMemory,
+                    fallback: 'emergency_enhanced',
+                    personalContextAttempted: !!emergencyContext,
                     emergency: true
                 });
             } catch (saveError) {
@@ -896,111 +988,215 @@ async function handleEnhancedConversation(chatId, text, sessionId) {
             }
             
         } catch (fallbackError) {
-            console.error('❌ TOTAL FAILURE: Even emergency fallback failed:', fallbackError.message);
+            console.error('❌ TOTAL FAILURE: Even emergency enhanced fallback failed:', fallbackError.message);
             await sendSmartMessage(bot, chatId, 
-                `🚨 I'm experiencing memory system difficulties. Let me try to help you anyway, but I may not remember our previous conversations right now. What can I help you with?`
+                `🚨 I'm experiencing system difficulties but I'm still here to help. What specific aspect of your Dynasty System or business strategy would you like to discuss?`
             );
         }
     }
 }
 
-// 🔧 MISSING HELPER FUNCTIONS - Add these to make the code work
-function determineConversationType(text) {
+// 🔧 NEW: Detect if this is a personal strategic query
+function detectPersonalStrategicQuery(text, persistentMemory) {
     const lowerText = text.toLowerCase();
     
-    if (lowerText.includes('regime') || lowerText.includes('economic')) return 'economic_regime';
-    if (lowerText.includes('cambodia') || lowerText.includes('lending')) return 'cambodia_fund';
-    if (lowerText.includes('time') || lowerText.includes('date')) return 'simple_datetime';
-    if (lowerText.includes('market') || lowerText.includes('trading')) return 'market_analysis';
-    if (lowerText.includes('joke') || lowerText.includes('story')) return 'casual';
-    if (lowerText.includes('analyze') || lowerText.includes('strategy')) return 'strategic_analysis';
-    if (lowerText.includes('remember') || lowerText.includes('memory')) return 'memory_query';
+    // Direct Dynasty System mentions
+    if (lowerText.includes('dynasty') || lowerText.includes('my system') || 
+        lowerText.includes('level 1') || lowerText.includes('level 2') || 
+        lowerText.includes('level 3') || lowerText.includes('capital governance')) {
+        return true;
+    }
     
+    // Personal business queries
+    if (lowerText.includes('my business') || lowerText.includes('my fund') || 
+        lowerText.includes('my strategy') || lowerText.includes('my structure') ||
+        lowerText.includes('my deals') || lowerText.includes('my approach')) {
+        return true;
+    }
+    
+    // Strategic queries when user has Dynasty System in memory
+    const hasDynastyInMemory = persistentMemory.some(mem => 
+        mem.fact && mem.fact.toLowerCase().includes('dynasty')
+    );
+    
+    if (hasDynastyInMemory && (
+        lowerText.includes('strategic') || lowerText.includes('strategy') || 
+        lowerText.includes('structure') || lowerText.includes('framework') ||
+        lowerText.includes('next step') || lowerText.includes('implement')
+    )) {
+        return true;
+    }
+    
+    return false;
+}
+
+// 🔧 NEW: Build personal Dynasty System context
+function buildPersonalDynastyContext(persistentMemory, conversationHistory, currentText) {
+    let context = '';
+    
+    // Look for Dynasty System content in memory
+    const dynastyMemories = persistentMemory.filter(mem => 
+        mem.fact && (
+            mem.fact.toLowerCase().includes('dynasty') ||
+            mem.fact.toLowerCase().includes('level 1') ||
+            mem.fact.toLowerCase().includes('level 2') ||
+            mem.fact.toLowerCase().includes('level 3') ||
+            mem.fact.toLowerCase().includes('capital governance') ||
+            mem.fact.toLowerCase().includes('personal redemption') ||
+            mem.fact.toLowerCase().includes('fund sovereignty')
+        )
+    );
+    
+    if (dynastyMemories.length > 0) {
+        context += `\n🏛️ SUM CHENDA'S 4-LEVEL DYNASTY SYSTEM:\n`;
+        dynastyMemories.forEach(mem => {
+            context += `${mem.fact}\n`;
+        });
+        context += `\n`;
+    }
+    
+    // Look for recent personal business context
+    const personalHistory = conversationHistory.filter(conv => 
+        conv.user_message && (
+            conv.user_message.toLowerCase().includes('my') ||
+            conv.user_message.toLowerCase().includes('dynasty') ||
+            conv.user_message.toLowerCase().includes('level') ||
+            conv.user_message.toLowerCase().includes('capital')
+        )
+    ).slice(0, 2);
+    
+    if (personalHistory.length > 0) {
+        context += `📝 RECENT PERSONAL BUSINESS CONTEXT:\n`;
+        personalHistory.forEach(conv => {
+            context += `- "${conv.user_message?.substring(0, 100)}..."\n`;
+        });
+        context += `\n`;
+    }
+    
+    return context;
+}
+
+// 🔧 NEW: Enhanced conversation type detection
+function determinePersonalConversationType(text, persistentMemory) {
+    const lowerText = text.toLowerCase();
+    
+    // Check if user has Dynasty System in memory
+    const hasDynastyInMemory = persistentMemory.some(mem => 
+        mem.fact && mem.fact.toLowerCase().includes('dynasty')
+    );
+    
+    // Personal strategic queries - HIGHEST PRIORITY
+    if (lowerText.includes('dynasty') || lowerText.includes('my system') || 
+        lowerText.includes('my strategy') || lowerText.includes('level 2') || 
+        lowerText.includes('level 3') || lowerText.includes('capital governance')) {
+        return 'personal_strategic_dynasty';
+    }
+    
+    // Personal business queries
+    if (lowerText.includes('my business') || lowerText.includes('my fund') || 
+        lowerText.includes('my deals') || lowerText.includes('my structure')) {
+        return 'personal_business';
+    }
+    
+    // Strategic queries with Dynasty context
+    if (hasDynastyInMemory && (
+        lowerText.includes('strategic') || lowerText.includes('strategy') || 
+        lowerText.includes('structure') || lowerText.includes('framework'))) {
+        return 'strategic_with_dynasty_context';
+    }
+    
+    // Memory-related queries
+    if (lowerText.includes('remember') || lowerText.includes('recall') || 
+        lowerText.includes('you mentioned') || lowerText.includes('save')) {
+        return 'memory_personal';
+    }
+    
+    // Cambodia-specific
+    if (lowerText.includes('cambodia') || lowerText.includes('lending') || 
+        lowerText.includes('phnom penh')) {
+        return 'cambodia_fund';
+    }
+    
+    // Generic strategic (fallback)
+    if (lowerText.includes('strategic') || lowerText.includes('strategy') || 
+        lowerText.includes('structure') || lowerText.includes('framework')) {
+        return 'strategic_analysis';
+    }
+    
+    // Everything else
     return 'balanced_strategic';
 }
 
-function determineComplexity(text) {
-    if (text.length < 50) return 'minimal';
-    if (text.length < 200) return 'moderate';
-    if (text.length < 500) return 'high';
-    return 'maximum';
-}
-
-function requiresLiveData(text) {
-    const lowerText = text.toLowerCase();
-    return lowerText.includes('current') || lowerText.includes('latest') || 
-           lowerText.includes('today') || lowerText.includes('now') ||
-           lowerText.includes('price') || lowerText.includes('market');
-}
-
-function shouldSaveToPersistentMemory(userMessage, aiResponse) {
+// 🔧 NEW: Enhanced memory fact extraction
+function extractEnhancedMemoryFact(userMessage, aiResponse, isPersonalStrategic) {
     const lowerMessage = userMessage.toLowerCase();
     const lowerResponse = aiResponse.toLowerCase();
     
-    return lowerMessage.includes('remember') || 
-           lowerMessage.includes('my preference') ||
-           lowerMessage.includes('my name') ||
-           lowerResponse.includes('important to note') ||
-           aiResponse.length > 500;
-}
-
-function extractMemoryFact(userMessage, aiResponse) {
-    if (userMessage.toLowerCase().includes('remember')) {
-        return `User preference: ${userMessage}`;
+    // Dynasty System content gets highest priority
+    if (lowerMessage.includes('dynasty') || lowerMessage.includes('level')) {
+        return `Dynasty System context: ${userMessage.substring(0, 200)}`;
     }
     
-    if (userMessage.toLowerCase().includes('my name is')) {
+    // Personal preferences and info
+    if (lowerMessage.includes('my name is')) {
         const nameMatch = userMessage.match(/my name is ([^.,\n]+)/i);
         if (nameMatch) {
             return `User's name: ${nameMatch[1].trim()}`;
         }
     }
     
-    if (aiResponse.includes('Key insight:')) {
-        const insight = aiResponse.split('Key insight:')[1]?.split('\n')[0];
-        return insight ? `Strategic insight: ${insight.trim()}` : null;
+    if (lowerMessage.includes('i prefer') || lowerMessage.includes('my preference')) {
+        const prefMatch = userMessage.match(/(?:i prefer|my preference (?:is )?)(.*?)(?:[.,\n!?]|$)/i);
+        if (prefMatch) {
+            return `User preference: ${prefMatch[1].trim()}`;
+        }
     }
     
-    return `Context: ${userMessage.substring(0, 100)}`;
-}
-
-// 🔧 MISSING SESSION FUNCTIONS - Add these placeholders
-async function startUserSession(chatId, sessionType = 'GENERAL') {
-    try {
-        console.log(`Starting session for ${chatId}: ${sessionType}`);
-        return `session_${chatId}_${Date.now()}`;
-    } catch (error) {
-        console.error('Start session error:', error.message);
-        return null;
+    // Strategic insights from AI responses
+    if (isPersonalStrategic && lowerResponse.includes('recommend')) {
+        const recommendation = aiResponse.match(/(?:i recommend|recommendation[:\s]*)(.*?)(?:[.,\n!?])/i);
+        if (recommendation && recommendation[1].length > 10) {
+            return `Strategic recommendation: ${recommendation[1].trim().substring(0, 150)}`;
+        }
     }
-}
-
-async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
-    try {
-        console.log(`Ending session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
-        return true;
-    } catch (error) {
-        console.error('End session error:', error.message);
-        return false;
+    
+    // Key insights
+    if (lowerResponse.includes('key insight') || lowerResponse.includes('important')) {
+        const insight = aiResponse.match(/(?:key insight|important)[:\s]*(.*?)(?:[.,\n!?])/i);
+        if (insight && insight[1].length > 10) {
+            return `Key insight: ${insight[1].trim().substring(0, 150)}`;
+        }
     }
-}
-
-// 🔧 MISSING API USAGE FUNCTION - Add this placeholder
-async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
-    try {
-        console.log(`API Usage: ${apiProvider}/${endpoint} - ${successful ? 'SUCCESS' : 'FAILED'} - ${responseTime}ms`);
-        return true;
-    } catch (error) {
-        console.error('Log API usage error:', error.message);
-        return false;
+    
+    // Fallback for important conversations
+    if (isPersonalStrategic || userMessage.length > 50) {
+        return `Conversation context: ${userMessage.substring(0, 100)}`;
     }
+    
+    return null;
 }
 
-// Enhanced command execution with full database logging + memory testing + WEALTH SYSTEM + LIVE DATA
+// Enhanced command execution with FIXED routing order + memory testing + WEALTH SYSTEM + LIVE DATA
 async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
     
     try {
+        // 🔧 HIGHEST PRIORITY: Check for personal strategic queries FIRST
+        if (text.toLowerCase().includes('dynasty') || 
+            text.toLowerCase().includes('my system') || 
+            text.toLowerCase().includes('level 1') || 
+            text.toLowerCase().includes('level 2') || 
+            text.toLowerCase().includes('level 3') ||
+            (text.toLowerCase().includes('strategic') && text.length > 100) ||
+            (text.toLowerCase().includes('strategy') && text.length > 100)) {
+            
+            console.log("🎯 PRIORITY ROUTE: Personal strategic conversation detected");
+            await handleEnhancedConversation(chatId, text, sessionId);
+            const executionTime = Date.now() - startTime;
+            await logCommandUsage(chatId, text, executionTime, true).catch(console.error);
+            return executionTime;
+        }
+
         // Command handlers with database integration
         if (text === "/start") {
             await handleStartCommand(chatId);
@@ -1008,6 +1204,11 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
             await handleHelpCommand(chatId);
         } else if (text === "/myid") {
             await sendSmartMessage(bot, chatId, `Your Chat ID: ${chatId}`);
+        
+        // 🔧 NEW: Add /save command handler
+        } else if (text.startsWith('/save ')) {
+            await handleSaveCommand(chatId, text);
+        
         } else if (text.startsWith('/deal_analyze')) {
             await handleDealAnalysis(chatId, text);
         } else if (text === '/portfolio') {
@@ -1151,35 +1352,7 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         } else if (text === '/cashflow_monitor') {
             await handleCashFlowMonitoring(chatId);
         
-        // 💰 LIVE DATA COMMANDS - CORRECTLY INTEGRATED
-        // 💰 CRYPTO PRICE QUERIES - Connect to existing getEnhancedCryptoData()
-        } else if ((text.toLowerCase().includes('bitcoin') || text.toLowerCase().includes('btc')) && 
-                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('much') || text.toLowerCase().includes('cost'))) {
-            await handleLiveBitcoinPrice(chatId);
-        } else if (text.toLowerCase().includes('crypto') && 
-                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('market'))) {
-            await handleLiveCryptoMarket(chatId);
-
-        // 📈 STOCK MARKET QUERIES - Connect to existing getStockMarketData()
-        } else if ((text.toLowerCase().includes('stock') || text.toLowerCase().includes('market') || text.toLowerCase().includes('sp500') || text.toLowerCase().includes('dow')) && 
-                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('today') || text.toLowerCase().includes('current'))) {
-            await handleLiveStockMarket(chatId);
-
-        // 🏦 ECONOMIC DATA QUERIES - Connect to existing getEconomicIndicators()
-        } else if ((text.toLowerCase().includes('inflation') || text.toLowerCase().includes('fed') || text.toLowerCase().includes('interest rate') || text.toLowerCase().includes('gdp')) && 
-                   (text.toLowerCase().includes('current') || text.toLowerCase().includes('today') || text.toLowerCase().includes('latest'))) {
-            await handleLiveEconomicData(chatId);
-
-        // 💰 SMART CRYPTO PRICE QUERIES - Recognizes ALL cryptocurrencies
-        } else if (isAnyCryptoRequest(text)) {
-            await handleSmartCryptoPrice(chatId, text);
-
-        // 💱 FOREX QUERIES - Connect to existing getMajorForexPairs()
-        } else if ((text.toLowerCase().includes('dollar') || text.toLowerCase().includes('forex') || text.toLowerCase().includes('currency') || text.toLowerCase().includes('exchange rate')) && 
-                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('rate') || text.toLowerCase().includes('today'))) {
-            await handleLiveForexData(chatId);
-
-        // 📊 COMPREHENSIVE LIVE DATA COMMANDS
+        // 📊 COMPREHENSIVE LIVE DATA COMMANDS (Explicit commands first)
         } else if (text === '/live_data' || text === '/market_data' || text === '/live_market') {
             await handleComprehensiveLiveData(chatId);
         } else if (text === '/live_crypto' || text === '/crypto_live') {
@@ -1191,8 +1364,43 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         } else if (text === '/live_economic' || text === '/economic_live') {
             await handleLiveEconomicData(chatId);
         
+        // 💰 LIVE DATA PATTERN MATCHING (More specific patterns first)
+        } else if ((text.toLowerCase().includes('bitcoin') || text.toLowerCase().includes('btc')) && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('much') || text.toLowerCase().includes('cost')) &&
+                   text.length < 50) {  // ← Length limit to avoid Dynasty System
+            await handleLiveBitcoinPrice(chatId);
+        
+        } else if (text.toLowerCase().includes('crypto') && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('market')) &&
+                   text.length < 50) {  // ← Length limit
+            await handleLiveCryptoMarket(chatId);
+
+        // 📈 STOCK MARKET QUERIES - With length limit
+        } else if ((text.toLowerCase().includes('stock') || text.toLowerCase().includes('market') || text.toLowerCase().includes('sp500') || text.toLowerCase().includes('dow')) && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('today') || text.toLowerCase().includes('current')) &&
+                   text.length < 50) {  // ← Length limit
+            await handleLiveStockMarket(chatId);
+
+        // 🏦 ECONOMIC DATA QUERIES - With length limit  
+        } else if ((text.toLowerCase().includes('inflation') || text.toLowerCase().includes('fed') || text.toLowerCase().includes('interest rate') || text.toLowerCase().includes('gdp')) && 
+                   (text.toLowerCase().includes('current') || text.toLowerCase().includes('today') || text.toLowerCase().includes('latest')) &&
+                   text.length < 50) {  // ← Length limit
+            await handleLiveEconomicData(chatId);
+
+        // 💱 FOREX QUERIES - With length limit
+        } else if ((text.toLowerCase().includes('dollar') || text.toLowerCase().includes('forex') || text.toLowerCase().includes('currency') || text.toLowerCase().includes('exchange rate')) && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('rate') || text.toLowerCase().includes('today')) &&
+                   text.length < 50) {  // ← Length limit
+            await handleLiveForexData(chatId);
+
+        // 💰 SMART CRYPTO PRICE QUERIES - MOVED TO END with STRICT filtering
+        } else if (isAnyCryptoRequest(text)) {
+            console.log("🔍 Crypto request detected (after all other checks)");
+            await handleSmartCryptoPrice(chatId, text);
+        
         } else {
-            // Handle general conversation with enhanced dual AI system
+            // 🔧 MAIN CONVERSATION HANDLER - This should catch Dynasty System queries
+            console.log("🤖 Routing to enhanced conversation handler");
             await handleEnhancedConversation(chatId, text, sessionId);
         }
         
@@ -1210,6 +1418,39 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         await logCommandUsage(chatId, text, executionTime, false, error.message).catch(console.error);
         
         throw error;
+    }
+}
+
+// 🔧 NEW: Add the missing /save command handler
+async function handleSaveCommand(chatId, text) {
+    try {
+        const contentToSave = text.replace('/save ', '').trim();
+        
+        if (contentToSave.length < 10) {
+            await sendSmartMessage(bot, chatId, "❌ Please provide content to save after /save");
+            return;
+        }
+        
+        console.log(`💾 Saving content for user ${chatId}: ${contentToSave.substring(0, 100)}`);
+        
+        // Save to persistent memory with high importance
+        await addPersistentMemoryDB(chatId, `Important user content: ${contentToSave}`, 'high');
+        
+        await sendSmartMessage(bot, chatId, 
+            `✅ **Content Saved to Enhanced Memory**\n\n` +
+            `📝 **Saved:** ${contentToSave.substring(0, 100)}${contentToSave.length > 100 ? '...' : ''}\n` +
+            `💾 **Storage:** Enhanced PostgreSQL Database\n` +
+            `🧠 **Priority:** High Importance\n\n` +
+            `Your AI will now remember this information across all conversations.`
+        );
+        
+        // Also process the content for analysis
+        console.log(`🤖 Processing saved content for enhanced analysis`);
+        await handleEnhancedConversation(chatId, contentToSave, null);
+        
+    } catch (error) {
+        console.error('Save command error:', error.message);
+        await sendSmartMessage(bot, chatId, `❌ Save failed: ${error.message}`);
     }
 }
 
@@ -1268,9 +1509,12 @@ async function handleStartCommand(chatId) {
 /test_memory_fix - Memory recovery test
 /memory_stats - Memory statistics
 
+**💾 Memory Commands:**
+/save [content] - Save important information to memory
+
 **Chat ID:** ${chatId}
 **🏆 AI Wealth Empire Status:** ACTIVE
-**Database Status:** ${connectionStats.connectionHealth}`;
+**Database Status:** ${connectionStats?.connectionHealth || 'Unknown'}`;
 
     await sendSmartMessage(bot, chatId, welcome);
     
@@ -1312,6 +1556,11 @@ Complete 10-module system for building serious wealth:
 - "/backtest buyAndHold" - Test buy & hold strategy
 - "/cashflow" - Optimize cash flow
 
+**Memory Commands:**
+- "/save [content]" - Save important information
+- "Remember my Dynasty System..." - AI learns your preferences
+- "/memory_stats" - Check your memory status
+
 **Database Features:**
 - Persistent conversation memory
 - Training document storage
@@ -1334,7 +1583,8 @@ Complete 10-module system for building serious wealth:
 - All interactions are saved for context
 
 **Examples:**
-- "Remember my name is John" (Memory system)
+- "/save MY 4-LEVEL DYNASTY SYSTEM..." (Save to memory)
+- "What's my Dynasty System strategy?" (Personal query)
 - "What's the current market regime?" (Claude Analysis)
 - "Find me high-yield opportunities" (Wealth System)
 - "Analyze this Cambodia lending opportunity" (Specialized)
@@ -1347,7 +1597,66 @@ Complete 10-module system for building serious wealth:
     await saveConversationDB(chatId, "/help", help, "command").catch(console.error);
 }
 
-// 💰 WEALTH SYSTEM COMMAND HANDLERS
+// 💰 PERSONALIZED WEALTH SYSTEM COMMAND HANDLERS
+
+// 🔧 NEW: Helper function to get personal context for wealth commands
+async function getPersonalWealthContext(chatId) {
+    try {
+        const [persistentMemory, conversationHistory] = await Promise.allSettled([
+            getPersistentMemoryDB(chatId),
+            getConversationHistoryDB(chatId, 5)
+        ]);
+        
+        const memory = persistentMemory.status === 'fulfilled' ? persistentMemory.value : [];
+        const history = conversationHistory.status === 'fulfilled' ? conversationHistory.value : [];
+        
+        // Look for Dynasty System content
+        const dynastyMemory = memory.find(mem => 
+            mem.fact && mem.fact.toLowerCase().includes('dynasty')
+        );
+        
+        // Look for personal business info
+        const personalBusiness = memory.filter(mem => 
+            mem.fact && (
+                mem.fact.toLowerCase().includes('capital governance') ||
+                mem.fact.toLowerCase().includes('fund sovereignty') ||
+                mem.fact.toLowerCase().includes('level 2') ||
+                mem.fact.toLowerCase().includes('level 3')
+            )
+        );
+        
+        let context = '';
+        if (dynastyMemory) {
+            context += `\n🏛️ USER'S DYNASTY SYSTEM:\n${dynastyMemory.fact.substring(0, 300)}\n\n`;
+        }
+        
+        if (personalBusiness.length > 0) {
+            context += `📊 PERSONAL BUSINESS CONTEXT:\n`;
+            personalBusiness.forEach(mem => {
+                context += `• ${mem.fact.substring(0, 150)}\n`;
+            });
+            context += `\n`;
+        }
+        
+        return {
+            hasPersonalContext: context.length > 0,
+            personalContext: context,
+            hasDynastySystem: !!dynastyMemory,
+            memory: memory,
+            history: history
+        };
+        
+    } catch (error) {
+        console.error('Error getting personal wealth context:', error.message);
+        return {
+            hasPersonalContext: false,
+            personalContext: '',
+            hasDynastySystem: false,
+            memory: [],
+            history: []
+        };
+    }
+}
 
 async function handleWealthSystemOverview(chatId) {
     try {
@@ -1454,24 +1763,42 @@ Use any command above to start building serious wealth with AI precision.
     }
 }
 
-// 🔧 ADD THESE MISSING LOGGING FUNCTIONS
-function info(message) {
-    console.log(`ℹ️ ${message}`);
-}
-
-function error(message, err) {
-    console.error(`❌ ${message}`, err ? err.message : '');
-}
-
-// 🛡️ FIXED RISK MANAGEMENT HANDLERS
+// 🔧 PERSONALIZED: Risk Management with Dynasty System context
 async function handleRiskAssessmentWealth(chatId) {
     try {
-        console.log(`🛡️ Risk assessment requested by user ${chatId}`);
+        console.log(`🛡️ Personalized risk assessment requested by user ${chatId}`);
         
-        await sendSmartMessage(bot, chatId, "🛡️ Performing comprehensive risk assessment with AI analysis...");
+        await sendSmartMessage(bot, chatId, "🛡️ Performing personalized risk assessment with AI analysis...");
         
-        // Use your working dual AI system instead of broken module
-        const riskPrompt = `Perform a comprehensive portfolio risk assessment:
+        // Get personal context
+        const personalContext = await getPersonalWealthContext(chatId);
+        
+        let riskPrompt;
+        let selectedAI;
+        
+        if (personalContext.hasDynastySystem) {
+            // Personal risk assessment for Dynasty System
+            riskPrompt = `${personalContext.personalContext}
+
+PERSONALIZED RISK ASSESSMENT FOR SUM CHENDA'S DYNASTY SYSTEM:
+
+Given the user's 4-Level Dynasty System and current focus on Level 2 (Capital Governance) and Level 3 (Fund Sovereignty), provide SPECIFIC risk management guidance:
+
+**Analysis Focus:**
+1. Risk management for Capital Clarity Assessments ($250-$500 deals)
+2. Credit MOU arrangement risk mitigation
+3. LP/investor matching risk factors
+4. Reputation risk management ("the guy who prevents capital disasters")
+5. Scaling risks for $500K-1M deployments
+6. Fund sovereignty risk considerations
+7. Systematic filtering process risks
+
+**Provide PERSONAL, ACTIONABLE risk management strategies for his specific situation, NOT generic portfolio advice.**`;
+            
+            selectedAI = 'claude'; // Use Claude for strategic personal advice
+        } else {
+            // Generic risk assessment
+            riskPrompt = `Perform a comprehensive portfolio risk assessment:
 
 **Analysis Requirements:**
 1. Current Market Risk Environment
@@ -1483,22 +1810,322 @@ async function handleRiskAssessmentWealth(chatId) {
 7. Stress Testing Scenarios
 
 **Provide actionable risk management recommendations with specific steps.**`;
+            
+            selectedAI = 'gpt';
+        }
         
-        const analysis = await getUniversalAnalysis(riskPrompt, { 
-            maxTokens: 1200,
-            temperature: 0.7 
-        });
+        let analysis;
+        if (selectedAI === 'claude') {
+            analysis = await getClaudeAnalysis(riskPrompt, { 
+                maxTokens: 1500,
+                temperature: 0.7 
+            });
+        } else {
+            analysis = await getUniversalAnalysis(riskPrompt, { 
+                maxTokens: 1200,
+                temperature: 0.7 
+            });
+        }
         
         await sendAnalysis(bot, chatId, analysis, "🛡️ AI Risk Assessment");
         
-        await saveConversationDB(chatId, "/risk", analysis, "wealth_command").catch(console.error);
-        console.log("✅ Risk assessment completed successfully");
+        await saveConversationDB(chatId, "/risk", analysis, "wealth_command", {
+            personalContext: personalContext.hasPersonalContext,
+            aiUsed: selectedAI,
+            dynastySystem: personalContext.hasDynastySystem
+        }).catch(console.error);
+        
+        console.log(`✅ Risk assessment completed successfully with ${selectedAI}`);
         
     } catch (error) {
         console.error(`❌ Risk assessment failed for user ${chatId}:`, error);
         await sendSmartMessage(bot, chatId, "❌ Risk assessment temporarily unavailable. Please try again or ask me directly about portfolio risk management.");
     }
 }
+
+// 📊 PERSONALIZED: Market Scanning with personal focus
+async function handleMarketScanning(chatId) {
+    try {
+        console.log(`📊 Personalized market scanning requested by user ${chatId}`);
+        
+        await sendSmartMessage(bot, chatId, "📊 Scanning markets with personalized AI intelligence...");
+        
+        // Get personal context
+        const personalContext = await getPersonalWealthContext(chatId);
+        
+        let scanPrompt;
+        
+        if (personalContext.hasDynastySystem) {
+            // Personal market scanning for Dynasty System
+            scanPrompt = `${personalContext.personalContext}
+
+PERSONALIZED MARKET OPPORTUNITIES FOR SUM CHENDA'S DYNASTY SYSTEM:
+
+Given the user's focus on Capital Governance (Level 2) and Fund Sovereignty (Level 3), identify market opportunities that align with his specific goals:
+
+**Market Analysis Focus:**
+1. Credit markets and structured lending opportunities
+2. Opportunities for Capital Clarity Assessments
+3. Markets suitable for Credit MOU arrangements  
+4. LP/investor opportunities in his target range ($250-$500K)
+5. Safe, systematic opportunities that build reputation
+6. Scaling opportunities toward $500K-1M deployments
+7. Markets that support "systematic filtering" approach
+
+**Provide SPECIFIC opportunities aligned with his Dynasty System, NOT generic market analysis.**`;
+        } else {
+            // Generic market scanning
+            scanPrompt = `Perform comprehensive market opportunity scanning:
+
+**Market Analysis:**
+1. Current Market Trends & Sentiment
+2. Sector Rotation Opportunities
+3. Technical Analysis Signals
+4. Fundamental Value Opportunities
+5. Risk/Reward Assessment
+6. Market Timing Considerations
+7. Top 3 Actionable Opportunities
+
+**Provide specific, implementable investment opportunities with entry strategies.**`;
+        }
+        
+        const analysis = await getUniversalAnalysis(scanPrompt, { 
+            maxTokens: 1200,
+            temperature: 0.7 
+        });
+        
+        await sendAnalysis(bot, chatId, analysis, "📊 AI Market Scanner");
+        
+        await saveConversationDB(chatId, "/scan", analysis, "wealth_command", {
+            personalContext: personalContext.hasPersonalContext,
+            dynastySystem: personalContext.hasDynastySystem
+        }).catch(console.error);
+        
+        console.log("✅ Market scanning completed successfully");
+        
+    } catch (error) {
+        console.error(`❌ Market scanning failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Market scanning temporarily unavailable. Please try again or ask me about market opportunities.");
+    }
+}
+
+// 📈 PERSONALIZED: Portfolio Optimization
+async function handlePortfolioOptimization(chatId) {
+    try {
+        console.log(`📈 Personalized portfolio optimization requested by user ${chatId}`);
+        
+        await sendSmartMessage(bot, chatId, "📈 Optimizing portfolio with personalized AI strategy...");
+        
+        // Get personal context
+        const personalContext = await getPersonalWealthContext(chatId);
+        
+        let optimizePrompt;
+        let selectedAI;
+        
+        if (personalContext.hasDynastySystem) {
+            // Personal portfolio optimization for Dynasty System
+            optimizePrompt = `${personalContext.personalContext}
+
+PERSONALIZED PORTFOLIO OPTIMIZATION FOR SUM CHENDA'S DYNASTY SYSTEM:
+
+Given the user's 4-Level Dynasty System and systematic approach to capital governance, provide SPECIFIC portfolio optimization guidance:
+
+**Optimization Framework for Dynasty System:**
+1. Asset allocation for Capital Governance activities (Level 2)
+2. Capital allocation for Credit MOU structures
+3. Diversification across LP/investor opportunities
+4. Portfolio structure for $500K-1M fund sovereignty goal
+5. Risk allocation that supports "systematic filtering" reputation
+6. Liquidity management for deal flow opportunities
+7. Performance tracking aligned with Dynasty System levels
+
+**Provide PERSONAL optimization strategy for his specific Dynasty System goals, NOT generic MPT advice.**`;
+            
+            selectedAI = 'claude'; // Use Claude for strategic advice
+        } else {
+            // Generic portfolio optimization
+            optimizePrompt = `Provide comprehensive portfolio optimization guidance:
+
+**Optimization Framework:**
+1. Modern Portfolio Theory Application
+2. Asset Allocation Strategies
+3. Diversification Optimization
+4. Risk-Adjusted Returns
+5. Rebalancing Strategies
+6. Tax-Efficient Allocation
+7. Performance Monitoring
+8. Implementation Steps
+
+**Include specific allocation percentages and practical next steps.**`;
+            
+            selectedAI = 'gpt';
+        }
+        
+        let analysis;
+        if (selectedAI === 'claude') {
+            analysis = await getClaudeAnalysis(optimizePrompt, { 
+                maxTokens: 1500,
+                temperature: 0.7 
+            });
+        } else {
+            analysis = await getUniversalAnalysis(optimizePrompt, { 
+                maxTokens: 1200,
+                temperature: 0.7 
+            });
+        }
+        
+        await sendAnalysis(bot, chatId, analysis, "📈 AI Portfolio Optimization");
+        
+        await saveConversationDB(chatId, "/optimize", analysis, "wealth_command", {
+            personalContext: personalContext.hasPersonalContext,
+            aiUsed: selectedAI,
+            dynastySystem: personalContext.hasDynastySystem
+        }).catch(console.error);
+        
+        console.log(`✅ Portfolio optimization completed successfully with ${selectedAI}`);
+        
+    } catch (error) {
+        console.error(`❌ Portfolio optimization failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Portfolio optimization temporarily unavailable. Please try again or ask me about portfolio strategies.");
+    }
+}
+
+// 💰 PERSONALIZED: Yield Finding
+async function handleYieldFinding(chatId) {
+    try {
+        console.log(`💰 Personalized yield finding requested by user ${chatId}`);
+        
+        await sendSmartMessage(bot, chatId, "💰 Scanning for personalized high-yield opportunities...");
+        
+        // Get personal context
+        const personalContext = await getPersonalWealthContext(chatId);
+        
+        let yieldPrompt;
+        
+        if (personalContext.hasDynastySystem) {
+            // Personal yield finding for Dynasty System
+            yieldPrompt = `${personalContext.personalContext}
+
+PERSONALIZED YIELD OPPORTUNITIES FOR SUM CHENDA'S DYNASTY SYSTEM:
+
+Given the user's focus on Capital Governance and Fund Sovereignty, identify yield opportunities that align with his systematic approach:
+
+**Yield Analysis for Dynasty System:**
+1. Credit and lending yields suitable for Capital Clarity Assessments
+2. Structured yields that complement Credit MOU arrangements
+3. Income streams that support LP/investor relationships
+4. Yields that enhance reputation as "capital disaster prevention expert"
+5. Scalable income opportunities for $500K-1M fund goals
+6. Systematic yield strategies that support filtering approach
+7. Risk-adjusted yields appropriate for fund sovereignty
+
+**Provide SPECIFIC yield opportunities that fit his Dynasty System strategy, NOT generic yield advice.**`;
+        } else {
+            // Generic yield finding
+            yieldPrompt = `Analyze current high-yield investment opportunities:
+
+**Yield Analysis:**
+1. Dividend-Paying Stocks (Current Leaders)
+2. Fixed Income & Bonds
+3. REITs & Real Estate Yields
+4. High-Yield Savings & CDs
+5. Crypto Staking Opportunities
+6. Alternative Income Sources
+7. Risk Assessment for Each Category
+8. Yield Sustainability Analysis
+
+**Provide balanced recommendations with risk considerations.**`;
+        }
+        
+        const analysis = await getUniversalAnalysis(yieldPrompt, { 
+            maxTokens: 1200,
+            temperature: 0.7 
+        });
+        
+        await sendAnalysis(bot, chatId, analysis, "💰 AI Yield Scanner");
+        
+        await saveConversationDB(chatId, "/yields", analysis, "wealth_command", {
+            personalContext: personalContext.hasPersonalContext,
+            dynastySystem: personalContext.hasDynastySystem
+        }).catch(console.error);
+        
+        console.log("✅ Yield finding completed successfully");
+        
+    } catch (error) {
+        console.error(`❌ Yield finding failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Yield analysis temporarily unavailable. Please try again or ask me about income-generating investments.");
+    }
+}
+
+// 📊 PERSONALIZED: Wealth Tracking
+async function handleWealthTracking(chatId) {
+    try {
+        console.log(`📊 Personalized wealth tracking requested by user ${chatId}`);
+        
+        await sendSmartMessage(bot, chatId, "📊 Analyzing personalized wealth tracking strategies...");
+        
+        // Get personal context
+        const personalContext = await getPersonalWealthContext(chatId);
+        
+        let trackPrompt;
+        
+        if (personalContext.hasDynastySystem) {
+            // Personal wealth tracking for Dynasty System
+            trackPrompt = `${personalContext.personalContext}
+
+PERSONALIZED WEALTH TRACKING FOR SUM CHENDA'S DYNASTY SYSTEM:
+
+Given the user's 4-Level Dynasty System and systematic approach, provide SPECIFIC wealth tracking guidance:
+
+**Dynasty System Wealth Tracking Framework:**
+1. Track progress through Dynasty System levels (1-4)
+2. Capital Governance metrics and performance (Level 2)
+3. Fund Sovereignty progress toward $500K-1M goal (Level 3)
+4. Credit MOU performance and scaling metrics
+5. Reputation building as "capital disaster prevention" expert
+6. LP/investor relationship and satisfaction tracking
+7. Systematic filtering process effectiveness metrics
+
+**Provide PERSONAL tracking strategy aligned with his Dynasty System goals, NOT generic wealth tracking advice.**`;
+        } else {
+            // Generic wealth tracking
+            trackPrompt = `Provide comprehensive wealth tracking guidance:
+
+**Wealth Tracking Framework:**
+1. Key Wealth Metrics to Monitor
+2. Asset Allocation Tracking
+3. Performance Benchmarking
+4. Wealth Milestone Planning
+5. Regular Review Processes
+6. Tax-Efficient Tracking
+7. Progress Monitoring Tools
+8. Automated Tracking Systems
+
+**Include practical implementation steps and tools.**`;
+        }
+        
+        const analysis = await getUniversalAnalysis(trackPrompt, { 
+            maxTokens: 1200,
+            temperature: 0.7 
+        });
+        
+        await sendAnalysis(bot, chatId, analysis, "📊 AI Wealth Tracker");
+        
+        await saveConversationDB(chatId, "/track", analysis, "wealth_command", {
+            personalContext: personalContext.hasPersonalContext,
+            dynastySystem: personalContext.hasDynastySystem
+        }).catch(console.error);
+        
+        console.log("✅ Wealth tracking completed successfully");
+        
+    } catch (error) {
+        console.error(`❌ Wealth tracking failed for user ${chatId}:`, error);
+        await sendSmartMessage(bot, chatId, "❌ Wealth tracking temporarily unavailable. Please try again or ask me about wealth management strategies.");
+    }
+}
+
+// Keep the other handlers (alerts, arbitrage, trading signals, backtesting, cashflow) as they were
+// since they work fine for general purposes
 
 async function handlePositionSizing(chatId, text) {
     try {
@@ -1536,154 +2163,6 @@ Provide:
     } catch (error) {
         console.error(`❌ Position sizing failed for user ${chatId}:`, error);
         await sendSmartMessage(bot, chatId, "❌ Position sizing calculation failed. Please check your inputs and try again.");
-    }
-}
-
-// 📊 FIXED MARKET SCANNING HANDLERS
-async function handleMarketScanning(chatId) {
-    try {
-        console.log(`📊 Market scanning requested by user ${chatId}`);
-        
-        await sendSmartMessage(bot, chatId, "📊 Scanning markets with AI intelligence...");
-        
-        // Use your working dual AI system
-        const scanPrompt = `Perform comprehensive market opportunity scanning:
-
-**Market Analysis:**
-1. Current Market Trends & Sentiment
-2. Sector Rotation Opportunities
-3. Technical Analysis Signals
-4. Fundamental Value Opportunities
-5. Risk/Reward Assessment
-6. Market Timing Considerations
-7. Top 3 Actionable Opportunities
-
-**Provide specific, implementable investment opportunities with entry strategies.**`;
-        
-        const analysis = await getUniversalAnalysis(scanPrompt, { 
-            maxTokens: 1200,
-            temperature: 0.7 
-        });
-        
-        await sendAnalysis(bot, chatId, analysis, "📊 AI Market Scanner");
-        
-        await saveConversationDB(chatId, "/scan", analysis, "wealth_command").catch(console.error);
-        console.log("✅ Market scanning completed successfully");
-        
-    } catch (error) {
-        console.error(`❌ Market scanning failed for user ${chatId}:`, error);
-        await sendSmartMessage(bot, chatId, "❌ Market scanning temporarily unavailable. Please try again or ask me about market opportunities.");
-    }
-}
-
-// 📈 FIXED PORTFOLIO OPTIMIZATION HANDLERS
-async function handlePortfolioOptimization(chatId) {
-    try {
-        console.log(`📈 Portfolio optimization requested by user ${chatId}`);
-        
-        await sendSmartMessage(bot, chatId, "📈 Optimizing portfolio with Modern Portfolio Theory...");
-        
-        const optimizePrompt = `Provide comprehensive portfolio optimization guidance:
-
-**Optimization Framework:**
-1. Modern Portfolio Theory Application
-2. Asset Allocation Strategies
-3. Diversification Optimization
-4. Risk-Adjusted Returns
-5. Rebalancing Strategies
-6. Tax-Efficient Allocation
-7. Performance Monitoring
-8. Implementation Steps
-
-**Include specific allocation percentages and practical next steps.**`;
-        
-        const analysis = await getUniversalAnalysis(optimizePrompt, { 
-            maxTokens: 1200,
-            temperature: 0.7 
-        });
-        
-        await sendAnalysis(bot, chatId, analysis, "📈 AI Portfolio Optimization");
-        
-        await saveConversationDB(chatId, "/optimize", analysis, "wealth_command").catch(console.error);
-        console.log("✅ Portfolio optimization completed successfully");
-        
-    } catch (error) {
-        console.error(`❌ Portfolio optimization failed for user ${chatId}:`, error);
-        await sendSmartMessage(bot, chatId, "❌ Portfolio optimization temporarily unavailable. Please try again or ask me about portfolio strategies.");
-    }
-}
-
-// 💰 FIXED YIELD FINDING HANDLERS
-async function handleYieldFinding(chatId) {
-    try {
-        console.log(`💰 Yield finding requested by user ${chatId}`);
-        
-        await sendSmartMessage(bot, chatId, "💰 Scanning for high-yield opportunities...");
-        
-        const yieldPrompt = `Analyze current high-yield investment opportunities:
-
-**Yield Analysis:**
-1. Dividend-Paying Stocks (Current Leaders)
-2. Fixed Income & Bonds
-3. REITs & Real Estate Yields
-4. High-Yield Savings & CDs
-5. Crypto Staking Opportunities
-6. Alternative Income Sources
-7. Risk Assessment for Each Category
-8. Yield Sustainability Analysis
-
-**Provide balanced recommendations with risk considerations.**`;
-        
-        const analysis = await getUniversalAnalysis(yieldPrompt, { 
-            maxTokens: 1200,
-            temperature: 0.7 
-        });
-        
-        await sendAnalysis(bot, chatId, analysis, "💰 AI Yield Scanner");
-        
-        await saveConversationDB(chatId, "/yields", analysis, "wealth_command").catch(console.error);
-        console.log("✅ Yield finding completed successfully");
-        
-    } catch (error) {
-        console.error(`❌ Yield finding failed for user ${chatId}:`, error);
-        await sendSmartMessage(bot, chatId, "❌ Yield analysis temporarily unavailable. Please try again or ask me about income-generating investments.");
-    }
-}
-
-// 📊 FIXED WEALTH TRACKING HANDLERS
-async function handleWealthTracking(chatId) {
-    try {
-        console.log(`📊 Wealth tracking requested by user ${chatId}`);
-        
-        await sendSmartMessage(bot, chatId, "📊 Analyzing wealth tracking strategies...");
-        
-        const trackPrompt = `Provide comprehensive wealth tracking guidance:
-
-**Wealth Tracking Framework:**
-1. Key Wealth Metrics to Monitor
-2. Asset Allocation Tracking
-3. Performance Benchmarking
-4. Wealth Milestone Planning
-5. Regular Review Processes
-6. Tax-Efficient Tracking
-7. Progress Monitoring Tools
-8. Automated Tracking Systems
-
-**Include practical implementation steps and tools.**`;
-        
-        const analysis = await getUniversalAnalysis(trackPrompt, { 
-            maxTokens: 1200,
-            temperature: 0.7 
-        });
-        
-        await sendAnalysis(bot, chatId, analysis, "📊 AI Wealth Tracker");
-        
-        await saveConversationDB(chatId, "/track", analysis, "wealth_command").catch(console.error);
-        console.log("✅ Wealth tracking completed successfully");
-        
-    } catch (error) {
-        console.error(`❌ Wealth tracking failed for user ${chatId}:`, error);
-        await sendSmartMessage(bot, chatId, "❌ Wealth tracking temporarily unavailable. Please try again or ask me about wealth management strategies.");
     }
 }
 
@@ -1875,6 +2354,15 @@ async function handleCashFlowOptimization(chatId) {
         console.error(`❌ Cash flow optimization failed for user ${chatId}:`, error);
         await sendSmartMessage(bot, chatId, "❌ Cash flow optimization temporarily unavailable. Please try again or ask me about cash flow strategies.");
     }
+}
+
+// 🔧 ADD THESE MISSING LOGGING FUNCTIONS
+function info(message) {
+    console.log(`ℹ️ ${message}`);
+}
+
+function error(message, err) {
+    console.error(`❌ ${message}`, err ? err.message : '');
 }
 
 // 🔧 FIXED: Enhanced system status with better database checking
