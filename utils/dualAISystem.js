@@ -2240,8 +2240,6 @@ module.exports = {
 // 🤖 COMPLETE MONEY FLOW AI INTEGRATION FOR YOUR dualAISystem.js
 // ADD THIS CODE TO THE END OF YOUR dualAISystem.js FILE
 
-const OpenAI = require('openai');
-
 class DualAIMoneyFlowSystem {
     constructor() {
         try {
