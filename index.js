@@ -754,15 +754,20 @@ async function handleEnhancedConversation(chatId, text, sessionId) {
         let result;
         
         try {
-            result = await executeDualCommand(text, chatId, {
-                conversationHistory: conversationHistory,
-                persistentMemory: persistentMemory,
-                conversationIntel: conversationIntel,
-                messageType: 'text',
-                hasMedia: false,
-                memoryContext: memoryContext,
-                originalMessage: text
-            });
+const enhancedPrompt = memoryContext ? 
+    `${memoryContext}\n\nUser: ${text}` : text;
+
+result = {
+    response: await getUniversalAnalysis(enhancedPrompt, {
+        maxTokens: 1200,
+        temperature: 0.7,
+        chatId: chatId
+    }),
+    aiUsed: 'DUAL_AI_DIRECT',
+    success: true,
+    contextUsed: !!memoryContext,
+    responseTime: Date.now() - startTime
+};
             
             console.log("✅ Dual command executed successfully:", {
                 aiUsed: result.aiUsed,
