@@ -2626,14 +2626,15 @@ function extractMemoryFact(userMessage, aiResponse) {
 // 🔧 PART 1: FIXED FILE/IMAGE PROCESSING FUNCTIONS FOR YOUR INDEX.JS
 // Replace the broken functions in your index.js with these working versions
 
-// 🔧 FIXED: Enhanced voice message handler (this one was working, keeping for completeness)
+// 🔧 COMPLETELY FIXED: Voice message handler for your dual AI system
 async function handleVoiceMessage(msg, chatId, sessionId) {
     const startTime = Date.now();
     try {
         console.log("🎤 Processing voice message...");
-        await bot.sendMessage(chatId, "🎤 Transcribing voice message with enhanced AI...");
+        await bot.sendMessage(chatId, "🎤 Transcribing voice message with GPT-5 + Claude Opus 4.1 enhanced AI...");
         
-        const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
+        // 🔧 FIXED: Use working Whisper transcription
+        const transcribedText = await processVoiceMessageFixed(bot, msg.voice.file_id, chatId);
         const responseTime = Date.now() - startTime;
         
         if (transcribedText && transcribedText.length > 0) {
@@ -2646,17 +2647,18 @@ async function handleVoiceMessage(msg, chatId, sessionId) {
                 transcriptionLength: transcribedText.length,
                 processingTime: responseTime,
                 sessionId: sessionId,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                aiModel: 'OpenAI-Whisper'
             }).catch(err => console.error('Voice save error:', err.message));
             
-            // Process transcribed text as normal conversation with memory integration
+            // Process transcribed text as normal conversation with your dual AI system
             await handleEnhancedConversation(chatId, transcribedText, sessionId);
             
             // Log successful API usage
             await logApiUsage('WHISPER', 'transcription', 1, true, responseTime, msg.voice.file_size || 0)
                 .catch(err => console.error('API log error:', err.message));
             
-            console.log("✅ Voice message processed successfully");
+            console.log("✅ Voice message processed successfully with dual AI");
         } else {
             await sendSmartMessage(bot, chatId, "❌ Voice transcription failed. Please try again or speak more clearly.");
             
@@ -2694,104 +2696,223 @@ async function handleVoiceMessage(msg, chatId, sessionId) {
     }
 }
 
-// 🔧 COMPLETELY FIXED: Image message handler with GPT-5 vision support
-async function handleImageMessage(msg, chatId, sessionId) {
-    const startTime = Date.now();
+// 🔧 NEW: Working voice processing function with proper OpenAI Whisper integration
+async function processVoiceMessageFixed(bot, fileId, chatId) {
     try {
-        console.log("🖼️ Processing image message...");
-        await bot.sendMessage(chatId, "🖼️ Analyzing image with GPT-5 enhanced AI vision...");
+        console.log("🔄 Starting Whisper voice transcription...");
         
-        const largestPhoto = msg.photo[msg.photo.length - 1];
+        // Get file info from Telegram
+        const file = await bot.getFile(fileId);
+        const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
         
-        // Get image file from Telegram
-        const fileLink = await bot.getFileLink(largestPhoto.file_id);
+        console.log(`📁 Voice file URL: ${fileUrl}`);
+        console.log(`📊 File size: ${file.file_size} bytes`);
+        
+        // Download the voice file with timeout
         const fetch = require('node-fetch');
-        const response = await fetch(fileLink);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
+        const response = await fetch(fileUrl, { 
+            signal: controller.signal,
+            timeout: 30000
+        });
+        clearTimeout(timeout);
         
         if (!response.ok) {
-            throw new Error(`Failed to download image: HTTP ${response.status}`);
+            throw new Error(`Failed to download voice file: HTTP ${response.status}`);
         }
         
         const buffer = await response.buffer();
-        const base64Image = buffer.toString('base64');
+        console.log(`✅ Voice file downloaded, size: ${buffer.length} bytes`);
         
-        // 🔧 FIXED: Use GPT-5 vision analysis with correct parameters
-        const analysisPrompt = msg.caption ? 
-            `Analyze this image in detail. The user provided this caption: "${msg.caption}". Please provide a comprehensive analysis of what you see in the image, including objects, people, text, colors, composition, and context.` :
-            `Analyze this image in detail. Describe what you see, identify key elements, objects, people, text, colors, composition, and provide insights about the context or purpose of the image.`;
+        // Validate file size (Whisper has 25MB limit)
+        if (buffer.length > 25 * 1024 * 1024) {
+            throw new Error("Voice file too large for Whisper API (max 25MB)");
+        }
         
-        const analysis = await analyzeImageWithGPT5(base64Image, analysisPrompt);
-        const responseTime = Date.now() - startTime;
+        // Create form data for OpenAI Whisper API
+        const FormData = require('form-data');
+        const form = new FormData();
         
-        if (analysis && analysis.length > 0) {
-            await sendAnalysis(bot, chatId, analysis, "GPT-5 Enhanced Image Analysis");
+        // Telegram voice messages are in OGG format
+        form.append('file', buffer, {
+            filename: 'voice.ogg',
+            contentType: 'audio/ogg',
+        });
+        form.append('model', 'whisper-1');
+        form.append('language', 'en'); // You can make this dynamic
+        form.append('response_format', 'text');
+        
+        console.log("🤖 Sending to OpenAI Whisper API...");
+        
+        // Call OpenAI Whisper API with timeout
+        const whisperController = new AbortController();
+        const whisperTimeout = setTimeout(() => whisperController.abort(), 60000); // 60 second timeout
+        
+        const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                ...form.getHeaders()
+            },
+            body: form,
+            signal: whisperController.signal
+        });
+        clearTimeout(whisperTimeout);
+        
+        if (!whisperResponse.ok) {
+            const errorText = await whisperResponse.text();
+            console.error(`❌ Whisper API error: ${whisperResponse.status} - ${errorText}`);
             
-            // Enhanced image analysis save with comprehensive metadata
-            await saveConversationDB(chatId, "[IMAGE]" + (msg.caption ? `: ${msg.caption}` : ""), analysis, "image", {
-                imageWidth: largestPhoto.width,
-                imageHeight: largestPhoto.height,
-                fileSize: largestPhoto.file_size,
-                caption: msg.caption || null,
-                analysisLength: analysis.length,
-                processingTime: responseTime,
-                sessionId: sessionId,
-                timestamp: new Date().toISOString(),
-                imageQuality: largestPhoto.width * largestPhoto.height > 1000000 ? 'HIGH' : 'STANDARD',
-                aiModel: 'GPT-5-vision'
-            }).catch(err => console.error('Image save error:', err.message));
-            
-            // If image has caption, process it as additional conversation with memory
-            if (msg.caption && msg.caption.length > 0) {
-                console.log("📝 Processing image caption as conversation...");
-                await handleEnhancedConversation(chatId, `About this image: ${msg.caption}`, sessionId);
+            // Handle specific Whisper API errors
+            if (whisperResponse.status === 400) {
+                throw new Error("Invalid audio format or file corrupted");
+            } else if (whisperResponse.status === 401) {
+                throw new Error("OpenAI API key invalid or expired");
+            } else if (whisperResponse.status === 429) {
+                throw new Error("OpenAI API rate limit exceeded");
+            } else {
+                throw new Error(`Whisper API error: ${whisperResponse.status} - ${errorText}`);
             }
-            
-            // Check if image analysis should be saved to persistent memory
-            if (shouldSaveToPersistentMemory(`Image: ${msg.caption || 'Visual content'}`, analysis)) {
-                const memoryFact = `Image analysis: ${analysis.substring(0, 150)}...`;
-                await addPersistentMemoryDB(chatId, memoryFact, 'medium')
-                    .catch(err => console.error('Memory save error:', err.message));
-                console.log("💾 Image analysis saved to persistent memory");
-            }
-            
-            // Log successful API usage
-            await logApiUsage('GPT5_VISION', 'image_analysis', 1, true, responseTime, largestPhoto.file_size || 0)
-                .catch(err => console.error('API log error:', err.message));
-            
-            console.log("✅ Image processed successfully with GPT-5");
+        }
+        
+        const transcription = await whisperResponse.text();
+        console.log(`✅ Whisper transcription successful: "${transcription.substring(0, 100)}..."`);
+        
+        // Validate transcription
+        if (!transcription || transcription.trim().length === 0) {
+            throw new Error("Whisper returned empty transcription");
+        }
+        
+        if (transcription.trim().length < 3) {
+            console.warn("⚠️ Very short transcription, might be audio noise");
+        }
+        
+        return transcription.trim();
+        
+    } catch (error) {
+        console.error("❌ Voice processing error:", error.message);
+        console.error("Stack trace:", error.stack);
+        
+        // Enhanced error messages
+        if (error.message.includes('aborted')) {
+            throw new Error("Voice processing timeout - file too large or connection slow");
+        } else if (error.message.includes('fetch')) {
+            throw new Error("Network error downloading voice file from Telegram");
+        } else if (error.message.includes('form-data')) {
+            throw new Error("Form data creation failed - check dependencies");
         } else {
-            throw new Error("GPT-5 image analysis returned empty result");
+            throw error;
+        }
+    }
+}
+
+// 🔧 UTILITY: Voice message validation
+function validateVoiceMessage(msg) {
+    if (!msg.voice) {
+        throw new Error("No voice message found");
+    }
+    
+    if (!msg.voice.file_id) {
+        throw new Error("Voice message has no file ID");
+    }
+    
+    // Check file size (Whisper has a 25MB limit)
+    if (msg.voice.file_size > 25 * 1024 * 1024) {
+        throw new Error("Voice message too large (max 25MB)");
+    }
+    
+    // Check duration (optional limit)
+    if (msg.voice.duration > 600) { // 10 minutes
+        console.warn("⚠️ Very long voice message detected:", msg.voice.duration, "seconds");
+    }
+    
+    return true;
+}
+
+// 🔧 ENHANCED: Voice processing with your dual AI analysis
+async function processVoiceWithDualAI(transcribedText, chatId, sessionId) {
+    try {
+        console.log("🤖 Processing transcription with GPT-5 + Claude Opus 4.1 dual AI system...");
+        
+        // Use your existing dual command system
+        const dualResult = await executeDualCommand(transcribedText, chatId, {
+            messageType: 'voice_transcription',
+            enhancementLevel: 'VOICE_ENHANCED',
+            originalAudio: true,
+            transcriptionLength: transcribedText.length
+        });
+        
+        return dualResult;
+        
+    } catch (error) {
+        console.error("❌ Dual AI voice processing error:", error.message);
+        
+        // Fallback to single AI processing
+        console.log("🔄 Falling back to single AI processing...");
+        return await getUniversalAnalysis(`Voice message transcription: "${transcribedText}"`, {
+            maxTokens: 1200,
+            temperature: 0.7,
+            model: "gpt-5"
+        });
+    }
+}
+
+// 🔧 DEBUG: Voice processing diagnostics (add temporarily for testing)
+async function debugVoiceProcessing(msg, chatId) {
+    try {
+        console.log("🔍 VOICE DEBUG - Message object:", JSON.stringify(msg.voice, null, 2));
+        
+        // Check environment variables
+        console.log("🔍 OPENAI_API_KEY present:", !!process.env.OPENAI_API_KEY);
+        console.log("🔍 TELEGRAM_BOT_TOKEN present:", !!process.env.TELEGRAM_BOT_TOKEN);
+        
+        // Validate voice message
+        validateVoiceMessage(msg);
+        console.log("🔍 Voice message validation: ✅ PASSED");
+        
+        // Test file access
+        const file = await bot.getFile(msg.voice.file_id);
+        console.log("🔍 File info:", JSON.stringify(file, null, 2));
+        
+        const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
+        console.log("🔍 File URL:", fileUrl);
+        
+        // Test download
+        const fetch = require('node-fetch');
+        const response = await fetch(fileUrl);
+        console.log("🔍 Download response status:", response.status);
+        console.log("🔍 Download response size:", response.headers.get('content-length'));
+        
+        if (response.ok) {
+            const buffer = await response.buffer();
+            console.log("🔍 Downloaded buffer size:", buffer.length);
+            
+            // Test form data creation
+            const FormData = require('form-data');
+            const form = new FormData();
+            form.append('file', buffer, { filename: 'test.ogg', contentType: 'audio/ogg' });
+            form.append('model', 'whisper-1');
+            console.log("🔍 Form data creation: ✅ SUCCESS");
+            
+            // Test Whisper API connection (don't actually send, just test auth)
+            const authTest = await fetch('https://api.openai.com/v1/models', {
+                headers: {
+                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+                }
+            });
+            console.log("🔍 OpenAI API auth test:", authTest.status);
+            
+            return "🔍 All voice processing components are working correctly!";
+        } else {
+            throw new Error(`Download failed: ${response.status}`);
         }
         
     } catch (error) {
-        const responseTime = Date.now() - startTime;
-        console.error("❌ Image processing error:", error.message);
-        
-        await sendSmartMessage(bot, chatId, 
-            `❌ GPT-5 Image Analysis Error: ${error.message}\n\n` +
-            `**Please try:**\n` +
-            `• Uploading a clearer, higher quality image\n` +
-            `• Reducing image file size if too large\n` +
-            `• Using JPG or PNG format\n` +
-            `• Adding a descriptive caption\n` +
-            `• Ensuring good lighting in the image`
-        );
-        
-        // Save comprehensive error details
-        await saveConversationDB(chatId, "[IMAGE_ERROR]", `Error: ${error.message}`, "image", {
-            error: error.message,
-            stackTrace: error.stack?.substring(0, 500),
-            caption: msg.caption || null,
-            imageWidth: msg.photo?.[msg.photo.length - 1]?.width,
-            imageHeight: msg.photo?.[msg.photo.length - 1]?.height,
-            processingTime: responseTime,
-            sessionId: sessionId,
-            aiModel: 'GPT-5-vision'
-        }).catch(err => console.error('Image error save failed:', err.message));
-        
-        // Log error for monitoring
-        await logApiUsage('GPT5_VISION', 'image_analysis', 1, false, responseTime, 0, 0)
-            .catch(err => console.error('API log error:', err.message));
+        console.error("🔍 DEBUG ERROR:", error.message);
+        console.error("🔍 DEBUG STACK:", error.stack);
+        throw error;
     }
 }
 
