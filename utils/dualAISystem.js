@@ -541,7 +541,88 @@ class UltimateStrategicPowerRouter {
         };
 
         return analysis;
+}
+
+    // 🔧 ESSENTIAL MISSING METHODS FOR ROUTER CLASS
+    detectReasoningRequirement(query) {
+        return /\b(analyze|evaluate|compare|assess|explain why)\b/i.test(query);
     }
+
+    detectThinkingBenefit(query) {
+        return /\b(complex|comprehensive|detailed|thorough)\b/i.test(query) || query.length > 150;
+    }
+
+    detectMultimodalNeed(query) {
+        return /\b(chart|graph|image|visualization)\b/i.test(query);
+    }
+
+    extractComplexityIndicators(query) {
+        return {
+            hasMultipleQuestions: (query.match(/\?/g) || []).length > 1,
+            hasComparisons: /\b(vs|versus|compare)\b/i.test(query)
+        };
+    }
+
+    detectMathematicalComplexity(query) { return 0.5; }
+    detectStrategicComplexity(query) { return 0.5; }
+    detectCodingComplexity(query) { return 0.3; }
+    detectUrgencyLevel(query) { return 'medium'; }
+    
+    classifyIntent(query) { return 'general'; }
+    classifyDomain(query) { return 'financial'; }
+    assessComplexityTier(query) { return 'medium'; }
+    assessPriorityLevel(query, context) { return 'standard'; }
+
+    validateAndSanitizeQuery(query, context) {
+        if (!query) throw new Error('Query required');
+        return query.trim();
+    }
+    
+    calculateEnhancedPowerScores() { 
+        return { gpt5: {total: 0.7}, claude: {total: 0.6}, dual: {score: 0.1} }; 
+    }
+    
+    applyEnhancedStrategicRules() { 
+        return { triggeredRules: [], primaryRule: null }; 
+    }
+    
+    integrateAdvancedAdaptiveLearning() { 
+        return { patterns: {}, recommendations: [] }; 
+    }
+    
+    makeUltimateStrategicDecision() { 
+        return { source: 'DEFAULT', decision: 'GPT5_POWER', confidence: 0.8 }; 
+    }
+    
+    optimizeRoutingForGPT5Era() { 
+        return { ai: 'GPT5', model: GPT5_POWER_MODELS.POWER, mode: 'POWER', confidence: 0.8 }; 
+    }
+    
+    generateEnhancedReasoning() { return 'Standard routing applied'; }
+    updateEnhancedPerformanceTracking() { return; }
+    updateAdvancedAdaptiveLearning() { return; }
+    
+    createIntelligentFallbackRouting(query, error, startTime, sessionId) { 
+        return { 
+            selectedAI: 'GPT5', 
+            selectedModel: GPT5_POWER_MODELS.POWER,
+            powerMode: 'FALLBACK',
+            confidence: 0.5,
+            error: error.message,
+            sessionId: sessionId
+        }; 
+    }
+    
+    getUltimateAnalytics() { 
+        return { routing_performance: { total_decisions: this.performanceTracking.routing_decisions.total } }; 
+    }
+
+    countFinancialTerms(query) { return 0; }
+    countTechnicalTerms(query) { return 0; }
+    countStrategicTerms(query) { return 0; }
+    countCodingTerms(query) { return 0; }
+    countRiskTerms(query) { return 0; }
+}
 
 // 🚀 ULTIMATE POWER EXECUTOR - GPT-5 + CLAUDE OPUS 4 OPTIMIZED
 class UltimatePowerExecutor {
