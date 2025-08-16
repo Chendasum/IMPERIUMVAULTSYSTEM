@@ -34,8 +34,7 @@ const { buildConversationContext } = require("./utils/memory");
 const {
     getUniversalAnalysis,
     getDualAnalysis,
-    getClaudeAnalysis,
-    checkSystemHealth
+    getClaudeAnalysis
 } = require("./utils/dualAISystem");
 
 const {
@@ -67,6 +66,77 @@ const openai = new OpenAI({
     timeout: 60000,
     maxRetries: 3
 });
+
+// 🔧 CORE: System Health Check Function (Fixed)
+async function checkSystemHealth() {
+    try {
+        console.log("🔧 Running system health check...");
+        
+        const health = {
+            gptAnalysis: false,
+            claudeAnalysis: false,
+            contextBuilding: false,
+            memorySystem: false,
+            overallHealth: false
+        };
+        
+        // Test GPT-5 Analysis
+        try {
+            const testGPT = await getUniversalAnalysis("Test", { maxTokens: 50 });
+            health.gptAnalysis = testGPT && testGPT.length > 0;
+        } catch (error) {
+            console.log("⚠️ GPT health check failed:", error.message);
+        }
+        
+        // Test Claude Analysis
+        try {
+            const testClaude = await getClaudeAnalysis("Test", { maxTokens: 50 });
+            health.claudeAnalysis = testClaude && testClaude.length > 0;
+        } catch (error) {
+            console.log("⚠️ Claude health check failed:", error.message);
+        }
+        
+        // Test Context Building
+        try {
+            const testContext = await buildConversationContext(123, [], []);
+            health.contextBuilding = true;
+        } catch (error) {
+            console.log("⚠️ Context building check failed:", error.message);
+        }
+        
+        // Test Memory System
+        try {
+            const testMemory = await getPersistentMemoryDB(123);
+            health.memorySystem = Array.isArray(testMemory);
+        } catch (error) {
+            console.log("⚠️ Memory system check failed:", error.message);
+        }
+        
+        // Overall health
+        health.overallHealth = health.gptAnalysis && health.memorySystem;
+        
+        console.log("✅ Health check completed:", {
+            GPT: health.gptAnalysis ? '✅' : '❌',
+            Claude: health.claudeAnalysis ? '✅' : '❌',
+            Context: health.contextBuilding ? '✅' : '❌',
+            Memory: health.memorySystem ? '✅' : '❌',
+            Overall: health.overallHealth ? '✅' : '❌'
+        });
+        
+        return health;
+        
+    } catch (error) {
+        console.error("❌ Health check failed:", error.message);
+        return {
+            gptAnalysis: false,
+            claudeAnalysis: false,
+            contextBuilding: false,
+            memorySystem: false,
+            overallHealth: false,
+            error: error.message
+        };
+    }
+}
 
 // 🔧 CORE: Enhanced Database Initialization
 async function initializeCleanDatabase() {
@@ -723,6 +793,8 @@ async function extractTextFromWord(buffer) {
         throw new Error(`Word document extraction failed: ${error.message}`);
     }
 }
+
+// 🔧 MEMORY: Enhanced Memory Extraction
 async function extractAndSaveMemory(chatId, userMessage, aiResponse, isPersonalStrategic) {
     try {
         console.log("🧠 Extracting memory facts...");
@@ -1315,7 +1387,8 @@ module.exports = {
     isPersonalStrategicQuery,
     buildEnhancedMemoryContext,
     routeToOptimalAI,
-    handleCleanConversation
+    handleCleanConversation,
+    checkSystemHealth
 };
 
 console.log("🎯 Clean Dual AI System v5.0 loaded successfully!");
