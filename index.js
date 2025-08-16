@@ -5078,94 +5078,115 @@ async function saveApiUsageDB(usageData) {
     }
 }
 
-// 💰 COMPLETE LIVE DATA HANDLER FUNCTIONS - Add before Express server setup (around line 4500)
+// 💰 COMPLETE LIVE DATA HANDLER FUNCTIONS - FIXED VERSION
+// 🔧 FIXED: Smart crypto detection that WON'T hijack conversations
 
-// 🔧 SMART CRYPTO HELPER FUNCTIONS
-// Helper function to detect ANY crypto request
+// 🔧 COMPLETELY REWRITTEN: Much stricter crypto detection
 function isAnyCryptoRequest(text) {
-    const lowerText = text.toLowerCase();
+    const trimmedText = text.trim();
     
-    // List of all major cryptocurrencies
-    const cryptoKeywords = [
-        'bitcoin', 'btc',
-        'ethereum', 'eth', 'ether',
-        'cardano', 'ada',
-        'solana', 'sol',
-        'polkadot', 'dot',
-        'chainlink', 'link',
-        'litecoin', 'ltc',
-        'dogecoin', 'doge',
-        'binance coin', 'bnb',
-        'ripple', 'xrp',
-        'avalanche', 'avax',
-        'polygon', 'matic',
-        'shiba', 'shib',
-        'crypto', 'cryptocurrency'
+    // 🚫 REJECT long messages immediately (this fixes your Dynasty System issue)
+    if (trimmedText.length > 100) {
+        console.log(`🚫 Crypto detection SKIPPED - message too long (${trimmedText.length} chars)`);
+        return false;
+    }
+    
+    // 🚫 REJECT messages with business/strategic keywords
+    const businessKeywords = [
+        'dynasty', 'system', 'capital', 'governance', 'fund', 'sovereignty',
+        'deployment', 'systematic', 'strategic', 'business', 'structure',
+        'level', 'complete', 'active', 'progress', 'redemption', 'filtering'
     ];
     
-    // Price request indicators
-    const priceKeywords = [
-        'price', 'cost', 'worth', 'value', 'much', 'today', 'current', 'now', 'latest'
+    const lowerText = trimmedText.toLowerCase();
+    const hasBusinessContext = businessKeywords.some(keyword => lowerText.includes(keyword));
+    
+    if (hasBusinessContext) {
+        console.log(`🚫 Crypto detection SKIPPED - business context detected`);
+        return false;
+    }
+    
+    // ✅ ONLY allow very explicit crypto price patterns
+    const strictCryptoPricePatterns = [
+        // Direct price questions
+        /^(?:what(?:'s| is)?|how much|price of|cost of|value of)\s+(?:bitcoin|btc|ethereum|eth|crypto|matic|polygon)(?:\s+(?:price|cost|worth|value))?\??$/i,
+        /^(?:bitcoin|btc|ethereum|eth|crypto|matic|polygon)\s+(?:price|cost|worth|value)\??$/i,
+        /^(?:price|cost|value|worth)\s+(?:of\s+)?(?:bitcoin|btc|ethereum|eth|crypto|matic|polygon)\??$/i,
+        
+        // Ultra-short crypto queries
+        /^(?:bitcoin|btc|ethereum|eth|crypto)\s*\??$/i,
+        
+        // "X price" format
+        /^(?:bitcoin|btc|ethereum|eth|matic|polygon)\s+price\s*(?:today|now)?\??$/i,
+        
+        // "Current X" format
+        /^current\s+(?:bitcoin|btc|ethereum|eth|crypto|matic|polygon)(?:\s+price)?\??$/i,
+        
+        // "How much is X" format
+        /^how\s+much\s+(?:is\s+)?(?:bitcoin|btc|ethereum|eth|crypto|matic|polygon)\??$/i
     ];
     
-    // Check if text contains crypto + price keywords
-    const hasCrypto = cryptoKeywords.some(crypto => lowerText.includes(crypto));
-    const hasPrice = priceKeywords.some(price => lowerText.includes(price)) || 
-                     lowerText.includes('how much') || 
-                     lowerText.includes('what is') ||
-                     lowerText.includes('tell me');
+    const isExplicitCryptoRequest = strictCryptoPricePatterns.some(pattern => {
+        const matches = pattern.test(trimmedText);
+        if (matches) {
+            console.log(`✅ Crypto pattern matched: ${pattern.source}`);
+        }
+        return matches;
+    });
     
-    return hasCrypto && (hasPrice || lowerText.includes('?'));
+    console.log(`🔍 Crypto detection result: ${isExplicitCryptoRequest ? 'CRYPTO REQUEST' : 'NOT CRYPTO'} for "${trimmedText.substring(0, 50)}"`);
+    return isExplicitCryptoRequest;
 }
 
-// Helper function to extract crypto symbol from text
+// 🔧 IMPROVED: Better crypto extraction with exact word matching
 function extractCryptoFromText(text) {
-    const lowerText = text.toLowerCase();
+    const lowerText = text.toLowerCase().trim();
     
-    // Crypto mappings
+    // Split into words for exact matching (prevents "systematic" → "matic" issue)
+    const words = lowerText.split(/\s+/);
+    
+    // Crypto mappings with exact word matching
     const cryptoMappings = {
-        'bitcoin': 'bitcoin',
-        'btc': 'bitcoin',
-        'ethereum': 'ethereum', 
-        'eth': 'ethereum',
-        'ether': 'ethereum',
-        'cardano': 'cardano',
-        'ada': 'cardano',
-        'solana': 'solana',
-        'sol': 'solana',
-        'polkadot': 'polkadot',
-        'dot': 'polkadot',
-        'chainlink': 'chainlink',
-        'link': 'chainlink',
-        'litecoin': 'litecoin',
-        'ltc': 'litecoin',
-        'dogecoin': 'dogecoin',
-        'doge': 'dogecoin',
-        'binance': 'binancecoin',
-        'bnb': 'binancecoin',
-        'ripple': 'ripple',
-        'xrp': 'ripple',
-        'avalanche': 'avalanche',
-        'avax': 'avalanche',
-        'polygon': 'polygon',
-        'matic': 'polygon',
-        'shiba': 'shiba-inu',
-        'shib': 'shiba-inu'
+        'bitcoin': { coinId: 'bitcoin', symbol: 'BTC', displayName: 'Bitcoin' },
+        'btc': { coinId: 'bitcoin', symbol: 'BTC', displayName: 'Bitcoin' },
+        'ethereum': { coinId: 'ethereum', symbol: 'ETH', displayName: 'Ethereum' },
+        'eth': { coinId: 'ethereum', symbol: 'ETH', displayName: 'Ethereum' },
+        'ether': { coinId: 'ethereum', symbol: 'ETH', displayName: 'Ethereum' },
+        'cardano': { coinId: 'cardano', symbol: 'ADA', displayName: 'Cardano' },
+        'ada': { coinId: 'cardano', symbol: 'ADA', displayName: 'Cardano' },
+        'solana': { coinId: 'solana', symbol: 'SOL', displayName: 'Solana' },
+        'sol': { coinId: 'solana', symbol: 'SOL', displayName: 'Solana' },
+        'polkadot': { coinId: 'polkadot', symbol: 'DOT', displayName: 'Polkadot' },
+        'dot': { coinId: 'polkadot', symbol: 'DOT', displayName: 'Polkadot' },
+        'chainlink': { coinId: 'chainlink', symbol: 'LINK', displayName: 'Chainlink' },
+        'link': { coinId: 'chainlink', symbol: 'LINK', displayName: 'Chainlink' },
+        'litecoin': { coinId: 'litecoin', symbol: 'LTC', displayName: 'Litecoin' },
+        'ltc': { coinId: 'litecoin', symbol: 'LTC', displayName: 'Litecoin' },
+        'dogecoin': { coinId: 'dogecoin', symbol: 'DOGE', displayName: 'Dogecoin' },
+        'doge': { coinId: 'dogecoin', symbol: 'DOGE', displayName: 'Dogecoin' },
+        'binance': { coinId: 'binancecoin', symbol: 'BNB', displayName: 'Binance Coin' },
+        'bnb': { coinId: 'binancecoin', symbol: 'BNB', displayName: 'Binance Coin' },
+        'ripple': { coinId: 'ripple', symbol: 'XRP', displayName: 'Ripple' },
+        'xrp': { coinId: 'ripple', symbol: 'XRP', displayName: 'Ripple' },
+        'avalanche': { coinId: 'avalanche', symbol: 'AVAX', displayName: 'Avalanche' },
+        'avax': { coinId: 'avalanche', symbol: 'AVAX', displayName: 'Avalanche' },
+        'polygon': { coinId: 'polygon', symbol: 'MATIC', displayName: 'Polygon' },
+        'matic': { coinId: 'polygon', symbol: 'MATIC', displayName: 'Polygon' },
+        'shiba': { coinId: 'shiba-inu', symbol: 'SHIB', displayName: 'Shiba Inu' },
+        'shib': { coinId: 'shiba-inu', symbol: 'SHIB', displayName: 'Shiba Inu' }
     };
     
-    // Find matching crypto
-    for (const [keyword, coinId] of Object.entries(cryptoMappings)) {
-        if (lowerText.includes(keyword)) {
-            return {
-                coinId: coinId,
-                symbol: keyword.toUpperCase(),
-                displayName: keyword.charAt(0).toUpperCase() + keyword.slice(1)
-            };
+    // Find matching crypto using EXACT word matching
+    for (const word of words) {
+        if (cryptoMappings[word]) {
+            console.log(`✅ Crypto extracted: ${word} → ${cryptoMappings[word].displayName}`);
+            return cryptoMappings[word];
         }
     }
     
-    // Default to Bitcoin if no specific crypto found but crypto keywords present
-    if (lowerText.includes('crypto')) {
+    // Special case: if message contains "crypto" as exact word AND is short
+    if (words.includes('crypto') && lowerText.length < 30) {
+        console.log(`✅ Generic crypto request → defaulting to Bitcoin`);
         return {
             coinId: 'bitcoin',
             symbol: 'BTC',
@@ -5173,35 +5194,85 @@ function extractCryptoFromText(text) {
         };
     }
     
+    console.log(`❌ No crypto identified from words: ${words.join(', ')}`);
     return null;
 }
 
-// 💰 SMART CRYPTO HANDLER - Works for ANY cryptocurrency
+// 💰 FIXED: Smart crypto handler with much better validation
 async function handleSmartCryptoPrice(chatId, text) {
     const startTime = Date.now();
     try {
+        console.log(`🔍 Processing crypto request: "${text.substring(0, 50)}"`);
+        
+        // Double-check that this is really a crypto request
+        if (!isAnyCryptoRequest(text)) {
+            console.log(`❌ Failed double-check - not a crypto request`);
+            await sendSmartMessage(bot, chatId, 
+                "🤔 I'm not sure that was a crypto price request.\n\n" +
+                "**For crypto prices, try:**\n" +
+                "• `bitcoin price`\n" +
+                "• `ethereum price`\n" +
+                "• `btc`\n" +
+                "• `eth price`"
+            );
+            return;
+        }
+        
         // Extract crypto info from user message
         const cryptoInfo = extractCryptoFromText(text);
         
         if (!cryptoInfo) {
-            await sendSmartMessage(bot, chatId, "🤔 I couldn't identify which cryptocurrency you're asking about. Try: 'bitcoin price' or 'ethereum price'");
+            console.log("❌ No valid crypto identified in message");
+            await sendSmartMessage(bot, chatId, 
+                "🤔 I couldn't identify which cryptocurrency you're asking about.\n\n" +
+                "**Try these exact formats:**\n" +
+                "• `bitcoin price`\n" +
+                "• `ethereum price` \n" +
+                "• `btc`\n" +
+                "• `eth`\n" +
+                "• `dogecoin price`"
+            );
             return;
         }
         
+        console.log(`💰 Fetching ${cryptoInfo.displayName} (${cryptoInfo.coinId}) price data...`);
         await bot.sendMessage(chatId, `💰 Fetching live ${cryptoInfo.displayName} price...`);
         
-        // Fetch data for the specific crypto + top ones for context
-        const cryptoIds = [cryptoInfo.coinId, 'bitcoin', 'ethereum'].filter((v, i, a) => a.indexOf(v) === i).join(',');
+        // Fetch data with timeout and error handling
+        const cryptoIds = [cryptoInfo.coinId, 'bitcoin', 'ethereum']
+            .filter((v, i, a) => a.indexOf(v) === i)
+            .join(',');
         
         const fetch = require('node-fetch');
-        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoIds}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        let response;
+        try {
+            response = await fetch(
+                `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoIds}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`,
+                { 
+                    signal: controller.signal,
+                    headers: {
+                        'User-Agent': 'IMPERIUM-VAULT-SYSTEM/1.0'
+                    }
+                }
+            );
+        } catch (fetchError) {
+            clearTimeout(timeout);
+            throw new Error(`Network error: ${fetchError.message}`);
+        }
+        
+        clearTimeout(timeout);
         
         if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
+            throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
         const responseTime = Date.now() - startTime;
+        
+        console.log(`📊 API Response received: ${Object.keys(data).join(', ')}`);
         
         // Get the requested crypto data
         const requestedCrypto = data[cryptoInfo.coinId];
@@ -5224,31 +5295,34 @@ async function handleSmartCryptoPrice(chatId, text) {
                 'litecoin': 'Ł',
                 'dogecoin': 'Ð',
                 'binancecoin': '🟡',
-                'ripple': '◉'
+                'ripple': '◉',
+                'polygon': '🟣',
+                'avalanche': '🔺',
+                'shiba-inu': '🐕'
             }[cryptoInfo.coinId] || '💰';
             
-            let response = `💰 **Live ${cryptoInfo.displayName} Price**\n\n`;
-            response += `${symbolEmoji} **${cryptoInfo.displayName} (${cryptoInfo.symbol})**\n`;
-            response += `• Price: $${price < 1 ? price.toFixed(6) : price.toLocaleString()}\n`;
-            response += `• 24h Change: ${emoji} ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n`;
+            let responseText = `💰 **Live ${cryptoInfo.displayName} Price**\n\n`;
+            responseText += `${symbolEmoji} **${cryptoInfo.displayName} (${cryptoInfo.symbol})**\n`;
+            responseText += `• **Price:** $${price < 1 ? price.toFixed(6) : price.toLocaleString()}\n`;
+            responseText += `• **24h Change:** ${emoji} ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n`;
             
             if (marketCap > 0) {
-                response += `• Market Cap: $${marketCap.toLocaleString()}\n`;
+                responseText += `• **Market Cap:** $${(marketCap / 1e9).toFixed(1)}B\n`;
             }
             
             // Show Bitcoin for context if user asked for different crypto
             if (cryptoInfo.coinId !== 'bitcoin' && data.bitcoin) {
                 const btcChange = data.bitcoin.usd_24h_change || 0;
                 const btcEmoji = btcChange > 0 ? '🟢' : btcChange < 0 ? '🔴' : '⚪';
-                response += `\n📊 **Bitcoin Reference:** $${data.bitcoin.usd.toLocaleString()} ${btcEmoji} ${btcChange > 0 ? '+' : ''}${btcChange.toFixed(2)}%\n`;
+                responseText += `\n📊 **Bitcoin Reference:** $${data.bitcoin.usd.toLocaleString()} ${btcEmoji} ${btcChange > 0 ? '+' : ''}${btcChange.toFixed(2)}%\n`;
             }
             
-            response += `\n⚡ **Response Time:** ${responseTime}ms\n`;
-            response += `📊 **Data Source:** CoinGecko API\n`;
-            response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
-            response += `💡 **Try:** "ethereum price" | "dogecoin price" | /wealth for investment analysis`;
+            responseText += `\n⚡ **Response Time:** ${responseTime}ms\n`;
+            responseText += `📊 **Data Source:** CoinGecko API\n`;
+            responseText += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
+            responseText += `💡 **Try:** "ethereum price" | "dogecoin price" | /wealth for investment analysis`;
             
-            await sendSmartMessage(bot, chatId, response);
+            await sendSmartMessage(bot, chatId, responseText);
             
             // Save to database
             await saveConversationDB(chatId, `${cryptoInfo.displayName} price request`, 
@@ -5258,16 +5332,36 @@ async function handleSmartCryptoPrice(chatId, text) {
             console.log(`✅ ${cryptoInfo.displayName} price delivered: $${price < 1 ? price.toFixed(6) : price.toLocaleString()}`);
             
         } else {
-            throw new Error(`${cryptoInfo.displayName} data not available`);
+            throw new Error(`${cryptoInfo.displayName} data not available in API response`);
         }
         
     } catch (error) {
+        const responseTime = Date.now() - startTime;
         console.error('❌ Smart crypto price error:', error.message);
-        await sendSmartMessage(bot, chatId, 
-            `❌ **Unable to fetch live crypto price**\n\n` +
-            `**Error:** ${error.message}\n\n` +
-            `**Try:** "bitcoin price" | "ethereum price" | /wealth for crypto strategies`
-        );
+        
+        let errorResponse = `❌ **Unable to fetch live crypto price**\n\n`;
+        
+        if (error.message.includes('aborted')) {
+            errorResponse += `**Error:** Request timeout (API too slow)\n\n`;
+        } else if (error.message.includes('Network error')) {
+            errorResponse += `**Error:** Network connection failed\n\n`;
+        } else if (error.message.includes('API error')) {
+            errorResponse += `**Error:** ${error.message}\n\n`;
+        } else {
+            errorResponse += `**Error:** ${error.message}\n\n`;
+        }
+        
+        errorResponse += `**Alternatives:**\n`;
+        errorResponse += `• Try again: "bitcoin price" or "ethereum price"\n`;
+        errorResponse += `• Manual check: CoinGecko.com or Binance.com\n`;
+        errorResponse += `• For strategies: /wealth command\n`;
+        errorResponse += `• For analysis: Ask me "What's your crypto outlook?"`;
+        
+        await sendSmartMessage(bot, chatId, errorResponse);
+        
+        // Log failed API usage
+        await logApiUsage('COINGECKO', 'crypto_price', 1, false, responseTime, 0, 0)
+            .catch(err => console.error('API log error:', err.message));
     }
 }
 
@@ -5275,32 +5369,44 @@ async function handleSmartCryptoPrice(chatId, text) {
 async function handleLiveBitcoinPrice(chatId) {
     const startTime = Date.now();
     try {
+        console.log("💰 Bitcoin price request initiated");
         await bot.sendMessage(chatId, "💰 Fetching live Bitcoin price from enhanced data feeds...");
         
         // Try different existing functions in order of preference
         let cryptoData = null;
         let dataSource = '';
+        let attempts = [];
         
         // Method 1: Try getEnhancedLiveData (comprehensive market data)
         try {
+            console.log("🔄 Trying getEnhancedLiveData...");
             const marketData = await getEnhancedLiveData();
-            if (marketData?.crypto?.bitcoin) {
+            if (marketData?.crypto?.bitcoin?.usd) {
                 cryptoData = { bitcoin: marketData.crypto.bitcoin };
                 dataSource = 'Enhanced Live Data';
+                console.log("✅ Enhanced live data successful");
+            } else {
+                attempts.push("Enhanced Live Data: No bitcoin data");
             }
         } catch (error) {
+            attempts.push(`Enhanced Live Data: ${error.message}`);
             console.log('Enhanced live data not available:', error.message);
         }
         
         // Method 2: Try getRealLiveData 
         if (!cryptoData) {
             try {
+                console.log("🔄 Trying getRealLiveData...");
                 const realData = await getRealLiveData();
-                if (realData?.bitcoin) {
+                if (realData?.bitcoin?.usd) {
                     cryptoData = { bitcoin: realData.bitcoin };
                     dataSource = 'Real Live Data';
+                    console.log("✅ Real live data successful");
+                } else {
+                    attempts.push("Real Live Data: No bitcoin data");
                 }
             } catch (error) {
+                attempts.push(`Real Live Data: ${error.message}`);
                 console.log('Real live data not available:', error.message);
             }
         }
@@ -5308,12 +5414,17 @@ async function handleLiveBitcoinPrice(chatId) {
         // Method 3: Try getComprehensiveMarketData (your super function)
         if (!cryptoData) {
             try {
+                console.log("🔄 Trying getComprehensiveMarketData...");
                 const marketData = await getComprehensiveMarketData();
-                if (marketData?.assets?.crypto?.bitcoin) {
+                if (marketData?.assets?.crypto?.bitcoin?.usd) {
                     cryptoData = { bitcoin: marketData.assets.crypto.bitcoin };
                     dataSource = 'Comprehensive Market Data';
+                    console.log("✅ Comprehensive market data successful");
+                } else {
+                    attempts.push("Comprehensive Market Data: No bitcoin data");
                 }
             } catch (error) {
+                attempts.push(`Comprehensive Market Data: ${error.message}`);
                 console.log('Comprehensive market data not available:', error.message);
             }
         }
@@ -5321,18 +5432,35 @@ async function handleLiveBitcoinPrice(chatId) {
         // Method 4: Try direct CoinGecko API (fallback)
         if (!cryptoData) {
             try {
+                console.log("🔄 Trying direct CoinGecko API...");
                 const fetch = require('node-fetch');
-                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_market_cap=true');
-                const data = await response.json();
-                if (data.bitcoin) {
-                    cryptoData = { bitcoin: {
-                        usd: data.bitcoin.usd,
-                        usd_24h_change: data.bitcoin.usd_24h_change,
-                        usd_market_cap: data.bitcoin.usd_market_cap
-                    }};
-                    dataSource = 'CoinGecko API Direct';
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 10000);
+                
+                const response = await fetch(
+                    'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_market_cap=true',
+                    { signal: controller.signal }
+                );
+                clearTimeout(timeout);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.bitcoin?.usd) {
+                        cryptoData = { bitcoin: {
+                            usd: data.bitcoin.usd,
+                            usd_24h_change: data.bitcoin.usd_24h_change,
+                            usd_market_cap: data.bitcoin.usd_market_cap
+                        }};
+                        dataSource = 'CoinGecko API Direct';
+                        console.log("✅ Direct API successful");
+                    } else {
+                        attempts.push("Direct API: No bitcoin data in response");
+                    }
+                } else {
+                    attempts.push(`Direct API: HTTP ${response.status}`);
                 }
             } catch (error) {
+                attempts.push(`Direct API: ${error.message}`);
                 console.log('Direct API also failed:', error.message);
             }
         }
@@ -5346,11 +5474,11 @@ async function handleLiveBitcoinPrice(chatId) {
             
             let response = `💰 **Live Bitcoin Price**\n\n`;
             response += `₿ **Bitcoin (BTC)**\n`;
-            response += `• Price: $${btc.usd?.toLocaleString() || 'N/A'}\n`;
-            response += `• 24h Change: ${emoji} ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n`;
+            response += `• **Price:** $${btc.usd?.toLocaleString() || 'N/A'}\n`;
+            response += `• **24h Change:** ${emoji} ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n`;
             
             if (btc.usd_market_cap) {
-                response += `• Market Cap: $${btc.usd_market_cap.toLocaleString()}\n`;
+                response += `• **Market Cap:** $${(btc.usd_market_cap / 1e12).toFixed(2)}T\n`;
             }
             
             response += `\n⚡ **Response Time:** ${responseTime}ms\n`;
@@ -5368,17 +5496,25 @@ async function handleLiveBitcoinPrice(chatId) {
             console.log(`✅ Live Bitcoin price delivered: $${btc.usd?.toLocaleString()} from ${dataSource}`);
             
         } else {
-            throw new Error("All Bitcoin data sources failed");
+            throw new Error(`All Bitcoin data sources failed. Attempts: ${attempts.join('; ')}`);
         }
         
     } catch (error) {
+        const responseTime = Date.now() - startTime;
         console.error('❌ Live Bitcoin price error:', error.message);
         await sendSmartMessage(bot, chatId, 
             `❌ **Live Bitcoin data temporarily unavailable**\n\n` +
-            `**Error:** ${error.message}\n\n` +
-            `**Manual check:** Visit CoinGecko.com or Binance.com\n` +
-            `**Alternative:** Try /wealth for investment strategies!`
+            `**Error:** All data sources failed\n` +
+            `**Response Time:** ${responseTime}ms\n\n` +
+            `**Alternatives:**\n` +
+            `• Manual check: Visit CoinGecko.com or Binance.com\n` +
+            `• Try: /wealth for investment strategies\n` +
+            `• Use: "bitcoin price" for direct lookup`
         );
+        
+        // Log error for monitoring
+        await logApiUsage('ALL_SOURCES', 'bitcoin_price', 1, false, responseTime, 0, 0)
+            .catch(err => console.error('API log error:', err.message));
     }
 }
 
@@ -5386,12 +5522,13 @@ async function handleLiveBitcoinPrice(chatId) {
 async function handleLiveStockMarket(chatId) {
     const startTime = Date.now();
     try {
+        console.log("📈 Stock market request initiated");
         await bot.sendMessage(chatId, "📈 Fetching live stock market data from enhanced feeds...");
         
         const stockData = await getStockMarketData();
         const responseTime = Date.now() - startTime;
         
-        if (stockData) {
+        if (stockData && Object.keys(stockData).length > 0) {
             let response = `📈 **Live Stock Market Data**\n\n`;
             
             if (stockData.sp500) {
@@ -5429,15 +5566,25 @@ async function handleLiveStockMarket(chatId) {
             console.log(`✅ Live stock market data delivered successfully`);
             
         } else {
-            throw new Error("Enhanced stock data not available");
+            throw new Error("Enhanced stock data returned empty or invalid");
         }
         
     } catch (error) {
+        const responseTime = Date.now() - startTime;
         console.error('❌ Live stock market error:', error.message);
         await sendSmartMessage(bot, chatId, 
             `❌ **Live stock market data temporarily unavailable**\n\n` +
-            `**Try:** /briefing for market analysis or /wealth for investment strategies!`
+            `**Error:** ${error.message}\n` +
+            `**Response Time:** ${responseTime}ms\n\n` +
+            `**Alternatives:**\n` +
+            `• Try: /briefing for market analysis\n` +
+            `• Use: /wealth for investment strategies\n` +
+            `• Manual check: Yahoo Finance or Bloomberg`
         );
+        
+        // Log error for monitoring
+        await logApiUsage('STOCK_MARKET', 'live_stocks', 1, false, responseTime, 0, 0)
+            .catch(err => console.error('API log error:', err.message));
     }
 }
 
@@ -5445,6 +5592,7 @@ async function handleLiveStockMarket(chatId) {
 async function handleLiveCryptoMarket(chatId) {
     const startTime = Date.now();
     try {
+        console.log("💰 Comprehensive crypto market request initiated");
         await bot.sendMessage(chatId, "💰 Fetching live crypto market from enhanced data feeds...");
         
         let cryptoData = null;
@@ -5452,29 +5600,51 @@ async function handleLiveCryptoMarket(chatId) {
         
         // Try enhanced crypto data sources
         try {
+            console.log("🔄 Trying getEnhancedCryptoData...");
             cryptoData = await getEnhancedCryptoData();
-            dataSource = 'Enhanced Crypto Data';
+            if (cryptoData && Object.keys(cryptoData).length > 0) {
+                dataSource = 'Enhanced Crypto Data';
+                console.log("✅ Enhanced crypto data successful");
+            } else {
+                throw new Error("Enhanced crypto data returned empty");
+            }
         } catch (error) {
             console.log('Enhanced crypto data not available:', error.message);
             
             // Fallback to direct API
             try {
+                console.log("🔄 Trying direct CoinGecko API...");
                 const fetch = require('node-fetch');
-                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,cardano,solana,polkadot&vs_currencies=usd&include_24hr_change=true');
-                cryptoData = await response.json();
-                dataSource = 'CoinGecko API Direct';
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 15000);
+                
+                const response = await fetch(
+                    'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,cardano,solana,polkadot&vs_currencies=usd&include_24hr_change=true',
+                    { signal: controller.signal }
+                );
+                clearTimeout(timeout);
+                
+                if (response.ok) {
+                    cryptoData = await response.json();
+                    dataSource = 'CoinGecko API Direct';
+                    console.log("✅ Direct crypto API successful");
+                } else {
+                    throw new Error(`API responded with ${response.status}`);
+                }
             } catch (fallbackError) {
                 console.log('Direct crypto API also failed:', fallbackError.message);
+                throw new Error(`All crypto data sources failed: ${fallbackError.message}`);
             }
         }
         
         const responseTime = Date.now() - startTime;
         
-        if (cryptoData) {
+        if (cryptoData && Object.keys(cryptoData).length > 0) {
             let response = `💰 **Live Crypto Market Overview**\n\n`;
             
             // Top cryptocurrencies
             const cryptos = ['bitcoin', 'ethereum', 'cardano', 'solana', 'polkadot'];
+            let cryptoCount = 0;
             
             cryptos.forEach(crypto => {
                 const data = cryptoData[crypto];
@@ -5490,10 +5660,15 @@ async function handleLiveCryptoMarket(chatId) {
                     }[crypto] || crypto.toUpperCase();
                     
                     response += `${symbol} **${crypto.charAt(0).toUpperCase() + crypto.slice(1)}**\n`;
-                    response += `• $${data.usd < 1 ? data.usd.toFixed(6) : data.usd.toLocaleString()}\n`;
+                    response += `• ${data.usd < 1 ? data.usd.toFixed(6) : data.usd.toLocaleString()}\n`;
                     response += `• ${emoji} ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n\n`;
+                    cryptoCount++;
                 }
             });
+            
+            if (cryptoCount === 0) {
+                throw new Error("No valid crypto data found in response");
+            }
             
             response += `⚡ **Response Time:** ${responseTime}ms\n`;
             response += `📊 **Data Source:** ${dataSource}\n`;
@@ -5505,15 +5680,25 @@ async function handleLiveCryptoMarket(chatId) {
             console.log(`✅ Live crypto market data delivered successfully from ${dataSource}`);
             
         } else {
-            throw new Error("All crypto data sources failed");
+            throw new Error("All crypto data sources returned empty data");
         }
         
     } catch (error) {
+        const responseTime = Date.now() - startTime;
         console.error('❌ Live crypto market error:', error.message);
         await sendSmartMessage(bot, chatId, 
             `❌ **Live crypto market data temporarily unavailable**\n\n` +
-            `**Try:** /wealth for crypto strategies or ask me about cryptocurrency analysis!`
+            `**Error:** ${error.message}\n` +
+            `**Response Time:** ${responseTime}ms\n\n` +
+            `**Alternatives:**\n` +
+            `• Try: /wealth for crypto strategies\n` +
+            `• Ask me: "What's your crypto analysis?"\n` +
+            `• Manual check: CoinGecko.com or CoinMarketCap.com`
         );
+        
+        // Log error for monitoring
+        await logApiUsage('CRYPTO_MARKET', 'live_crypto', 1, false, responseTime, 0, 0)
+            .catch(err => console.error('API log error:', err.message));
     }
 }
 
@@ -5603,21 +5788,31 @@ async function handleLiveEconomicData(chatId) {
 async function handleComprehensiveLiveData(chatId) {
     const startTime = Date.now();
     try {
+        console.log("📊 Comprehensive live data request initiated");
         await bot.sendMessage(chatId, "📊 Fetching comprehensive live market data from all enhanced feeds...");
         
         // Use your existing getComprehensiveMarketData() function!
         const marketData = await getComprehensiveMarketData();
         const responseTime = Date.now() - startTime;
         
-        if (marketData) {
+        if (marketData && typeof marketData === 'object') {
             let response = `📊 **Comprehensive Live Market Data**\n\n`;
+            let sectionsAdded = 0;
             
             // Crypto section
             if (marketData.assets?.crypto) {
                 response += `💰 **Cryptocurrency:**\n`;
                 const btc = marketData.assets.crypto.bitcoin;
-                if (btc) {
-                    response += `₿ Bitcoin: $${btc.usd?.toLocaleString()} (${btc.usd_24h_change > 0 ? '+' : ''}${btc.usd_24h_change?.toFixed(2)}%)\n`;
+                if (btc && btc.usd) {
+                    const change = btc.usd_24h_change || 0;
+                    response += `₿ Bitcoin: ${btc.usd.toLocaleString()} (${change > 0 ? '+' : ''}${change.toFixed(2)}%)\n`;
+                    sectionsAdded++;
+                }
+                
+                const eth = marketData.assets.crypto.ethereum;
+                if (eth && eth.usd) {
+                    const change = eth.usd_24h_change || 0;
+                    response += `Ξ Ethereum: ${eth.usd.toLocaleString()} (${change > 0 ? '+' : ''}${change.toFixed(2)}%)\n`;
                 }
                 response += `\n`;
             }
@@ -5626,7 +5821,10 @@ async function handleComprehensiveLiveData(chatId) {
             if (marketData.intelligence?.stocks) {
                 response += `📈 **Stock Market:**\n`;
                 const stocks = marketData.intelligence.stocks;
-                if (stocks.sp500) response += `📊 S&P 500: ${stocks.sp500.value} (${stocks.sp500.change}%)\n`;
+                if (stocks.sp500) {
+                    response += `📊 S&P 500: ${stocks.sp500.value} (${stocks.sp500.change}%)\n`;
+                    sectionsAdded++;
+                }
                 if (stocks.nasdaq) response += `💻 NASDAQ: ${stocks.nasdaq.value} (${stocks.nasdaq.change}%)\n`;
                 response += `\n`;
             }
@@ -5635,7 +5833,10 @@ async function handleComprehensiveLiveData(chatId) {
             if (marketData.intelligence?.economics) {
                 response += `🏦 **Economic Indicators:**\n`;
                 const econ = marketData.intelligence.economics;
-                if (econ.inflation) response += `📈 Inflation: ${econ.inflation}%\n`;
+                if (econ.inflation) {
+                    response += `📈 Inflation: ${econ.inflation}%\n`;
+                    sectionsAdded++;
+                }
                 if (econ.fedRate) response += `🏛️ Fed Rate: ${econ.fedRate}%\n`;
                 response += `\n`;
             }
@@ -5644,36 +5845,55 @@ async function handleComprehensiveLiveData(chatId) {
             if (marketData.assets?.forex) {
                 response += `💱 **Forex:**\n`;
                 const forex = marketData.assets.forex;
+                let forexCount = 0;
                 Object.entries(forex).slice(0, 3).forEach(([pair, data]) => {
                     if (data?.rate) {
                         response += `💰 ${pair.toUpperCase()}: ${data.rate}\n`;
+                        forexCount++;
                     }
                 });
+                if (forexCount > 0) sectionsAdded++;
                 response += `\n`;
             }
             
+            // Check if we got meaningful data
+            if (sectionsAdded === 0) {
+                throw new Error("No meaningful market data sections available");
+            }
+            
             response += `⚡ **Response Time:** ${responseTime}ms\n`;
-            response += `📊 **Data Quality:** ${marketData.data_quality?.completeness_score || 0}%\n`;
-            response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n\n`;
+            response += `📊 **Data Quality:** ${marketData.data_quality?.completeness_score || 'Unknown'}%\n`;
+            response += `🕐 **Updated:** ${new Date().toLocaleTimeString()}\n`;
+            response += `📋 **Sections:** ${sectionsAdded} available\n\n`;
             response += `💡 **Try:** /wealth for AI investment analysis`;
             
             await sendMarketAnalysis(bot, chatId, response);
             
-            console.log(`✅ Comprehensive live data delivered successfully`);
+            console.log(`✅ Comprehensive live data delivered successfully (${sectionsAdded} sections)`);
             
         } else {
-            throw new Error("Comprehensive market data not available");
+            throw new Error("Comprehensive market data returned invalid format");
         }
         
     } catch (error) {
+        const responseTime = Date.now() - startTime;
         console.error('❌ Comprehensive live data error:', error.message);
         await sendSmartMessage(bot, chatId, 
             `❌ **Comprehensive live data temporarily unavailable**\n\n` +
-            `**Try:** Individual commands like /live_crypto, /live_stocks, or /wealth for analysis!`
+            `**Error:** ${error.message}\n` +
+            `**Response Time:** ${responseTime}ms\n\n` +
+            `**Alternatives:**\n` +
+            `• Try individual commands: /live_crypto, /live_stocks\n` +
+            `• Use: /wealth for investment analysis\n` +
+            `• Ask me: "What's your market outlook?"`
         );
+        
+        // Log error for monitoring
+        await logApiUsage('COMPREHENSIVE', 'live_data', 1, false, responseTime, 0, 0)
+            .catch(err => console.error('API log error:', err.message));
     }
 }
-            
+
 // 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP (Replace your duplicate sections)
 const express = require("express");
 const app = express();
