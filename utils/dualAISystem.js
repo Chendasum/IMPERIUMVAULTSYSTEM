@@ -6,6 +6,15 @@
 const { OpenAI } = require("openai");
 require("dotenv").config({ path: ".env" });
 
+// Fix all missing logger functions - ADD THIS HERE ⬇️
+const logger = console; // Use console as logger
+logger.strategic = (...args) => console.log('🎯', ...args);
+logger.success = (...args) => console.log('✅', ...args);
+logger.power = (...args) => console.log('⚡', ...args);
+logger.info = (...args) => console.log('ℹ️', ...args);
+logger.warn = (...args) => console.log('⚠️', ...args);
+logger.error = (...args) => console.log('❌', ...args);
+
 // 🔧 ENHANCED SAFE IMPORTS WITH INTELLIGENT FALLBACKS
 let claudeClient, openaiClient, logger;
 
@@ -351,12 +360,12 @@ class UltimateStrategicPowerRouter {
         };
 
         this.initializeAdvancedStrategicRules();
-        logger.success('✅ Ultimate Strategic Power Router initialized with GPT-5 + Claude Opus 4');
+        console.log('✅ Ultimate Strategic Power Router initialized with GPT-5 + Claude Opus 4');
     }
 
     // 🚀 INITIALIZE ADVANCED STRATEGIC RULES FOR GPT-5 ERA
     initializeAdvancedStrategicRules() {
-        logger.strategic('Initializing GPT-5 Enhanced Strategic Power Rules...');
+        console.log('Initializing GPT-5 Enhanced Strategic Power Rules...');
         
         this.powerOptimizationRules = [
             {
@@ -409,7 +418,7 @@ class UltimateStrategicPowerRouter {
             }
         ];
 
-        logger.success(`Initialized ${this.powerOptimizationRules.length} GPT-5 enhanced strategic rules`);
+        console.log(`Initialized ${this.powerOptimizationRules.length} GPT-5 enhanced strategic rules`);
     }
 
     // 🎯 ULTIMATE STRATEGIC ROUTING ENGINE - GPT-5 OPTIMIZED
@@ -417,7 +426,7 @@ class UltimateStrategicPowerRouter {
         const startTime = Date.now();
         const sessionId = context.sessionId || `session_${Date.now()}`;
         
-        logger.strategic(`🎯 Starting ultimate GPT-5 + Claude routing for session ${sessionId}`);
+        console.log(`🎯 Starting ultimate GPT-5 + Claude routing for session ${sessionId}`);
         
         try {
             // 1. ENHANCED QUERY VALIDATION AND SANITIZATION
@@ -473,7 +482,7 @@ class UltimateStrategicPowerRouter {
             return routingResult;
 
         } catch (error) {
-            logger.error('Ultimate power routing failed:', error);
+            console.log('Ultimate power routing failed:', error);
             return this.createIntelligentFallbackRouting(query, error, startTime, sessionId);
         }
     }
@@ -664,7 +673,7 @@ class UltimatePowerExecutor {
             }
         };
         
-        logger.success('✅ Ultimate Power Executor initialized for GPT-5 + Claude Opus 4');
+        console.log('✅ Ultimate Power Executor initialized for GPT-5 + Claude Opus 4');
     }
 
     // 🎯 MAIN EXECUTION METHOD WITH GPT-5 OPTIMIZATION
@@ -685,7 +694,7 @@ class UltimatePowerExecutor {
                 sessionId
             });
             
-            logger.strategic(routing.reasoning);
+            console.log(routing.reasoning);
             
             // 3. Power-Optimized Execution with model-specific optimization
             let result;
@@ -705,7 +714,7 @@ class UltimatePowerExecutor {
                     break;
                     
                 default:
-                    logger.warn(`Unknown AI type: ${routing.selectedAI}, defaulting to GPT-5`);
+                    console.log(`Unknown AI type: ${routing.selectedAI}, defaulting to GPT-5`);
                     result = await this.executeGPT5Ultimate(sanitizedQuery, routing, executionConfig);
             }
             
@@ -738,12 +747,12 @@ class UltimatePowerExecutor {
             // 5. Update execution tracking and learning
             this.updateExecutionTracking(finalResult);
             
-            logger.success(`🎯 Ultimate execution completed in ${executionTime}ms using ${routing.selectedAI}/${routing.selectedModel?.model || 'default'}`);
+            console.log(`🎯 Ultimate execution completed in ${executionTime}ms using ${routing.selectedAI}/${routing.selectedModel?.model || 'default'}`);
             
             return finalResult;
             
         } catch (error) {
-            logger.error('Ultimate power execution failed:', error);
+            console.log('Ultimate power execution failed:', error);
             return await this.handleExecutionFailure(query, error, startTime, sessionId, options);
         }
     }
@@ -770,11 +779,11 @@ class UltimatePowerExecutor {
             logger.gpt5(`GPT-5 execution successful with ${modelConfig.model}`);
             return result;
         } catch (error) {
-            logger.error(`GPT-5 execution failed with ${modelConfig.model}:`, error);
+            console.log(`GPT-5 execution failed with ${modelConfig.model}:`, error);
             
             // Intelligent model fallback within GPT-5 family
             if (modelConfig.model !== 'gpt-5-nano') {
-                logger.warn('Attempting fallback to GPT-5 Nano...');
+                console.log('Attempting fallback to GPT-5 Nano...');
                 const fallbackOptions = {
                     ...apiOptions,
                     model: 'gpt-5-nano',
@@ -805,11 +814,11 @@ class UltimatePowerExecutor {
             logger.claude(`Claude Opus 4 execution successful in ${modeConfig.analysis_mode} mode`);
             return result;
         } catch (error) {
-            logger.error(`Claude Opus 4 execution failed:`, error);
+            console.log(`Claude Opus 4 execution failed:`, error);
             
             // Intelligent mode fallback within Claude
             if (modeConfig !== CLAUDE_POWER_MODES.STRATEGIC_EFFICIENT) {
-                logger.warn('Attempting fallback to Claude efficient mode...');
+                console.log('Attempting fallback to Claude efficient mode...');
                 const fallbackOptions = {
                     ...claudeOptions,
                     maxTokens: CLAUDE_POWER_MODES.STRATEGIC_EFFICIENT.maxTokens,
@@ -862,7 +871,7 @@ class UltimatePowerExecutor {
                 );
                 response += `**⚡ ULTIMATE STRATEGIC SYNTHESIS:**\n${synthesis}`;
             } catch (synthesisError) {
-                logger.warn('Ultimate synthesis failed:', synthesisError);
+                console.log('Ultimate synthesis failed:', synthesisError);
                 response += `**⚡ Synthesis:** ⚠️ Advanced synthesis temporarily unavailable - individual analyses above provide comprehensive insights`;
             }
         } else {
@@ -980,7 +989,7 @@ Provide a concise but comprehensive synthesis that maximizes the unique strength
                 verbosity: "medium"
             });
         } catch (error) {
-            logger.warn('Synthesis generation failed, using fallback approach');
+            console.log('Synthesis generation failed, using fallback approach');
             return `**MANUAL SYNTHESIS REQUIRED**
 
 **GPT-5 Key Strengths Identified:**
@@ -1207,7 +1216,7 @@ class UltimateSystemHealthMonitor {
             last_test: 0
         };
         
-        logger.success('✅ Ultimate System Health Monitor initialized for GPT-5 + Claude Opus 4');
+        console.log('✅ Ultimate System Health Monitor initialized for GPT-5 + Claude Opus 4');
     }
 
     get router() {
@@ -1225,7 +1234,7 @@ class UltimateSystemHealthMonitor {
     // 🔍 COMPREHENSIVE HEALTH CHECK WITH GPT-5 OPTIMIZATION
     async performComprehensiveHealthCheck() {
         const startTime = Date.now();
-        logger.info('🔍 Performing comprehensive GPT-5 + Claude Opus 4 health check...');
+        console.log('🔍 Performing comprehensive GPT-5 + Claude Opus 4 health check...');
         
         const healthStatus = {
             timestamp: new Date().toISOString(),
@@ -1260,12 +1269,12 @@ class UltimateSystemHealthMonitor {
             this.updateEnhancedSystemHealth(healthStatus);
             
             const checkTime = Date.now() - startTime;
-            logger.success(`🎯 Health check completed in ${checkTime}ms - Status: ${healthStatus.overall_status} (Score: ${healthStatus.health_score})`);
+            console.log(`🎯 Health check completed in ${checkTime}ms - Status: ${healthStatus.overall_status} (Score: ${healthStatus.health_score})`);
             
             return healthStatus;
             
         } catch (error) {
-            logger.error('Comprehensive health check failed:', error);
+            console.log('Comprehensive health check failed:', error);
             healthStatus.overall_status = 'CRITICAL_ERROR';
             healthStatus.error = error.message;
             healthStatus.health_score = 0;
@@ -1716,18 +1725,18 @@ class UltimateSystemHealthMonitor {
             try {
                 await this.performComprehensiveHealthCheck();
             } catch (error) {
-                logger.error('Continuous monitoring error:', error);
+                console.log('Continuous monitoring error:', error);
             }
         }, intervalMinutes * 60 * 1000);
         
-        logger.success(`🔄 Continuous health monitoring started (${intervalMinutes}min intervals)`);
+        console.log(`🔄 Continuous health monitoring started (${intervalMinutes}min intervals)`);
     }
 
     stopContinuousMonitoring() {
         if (this.monitoringInterval) {
             clearInterval(this.monitoringInterval);
             this.monitoringInterval = null;
-            logger.info('🔄 Continuous health monitoring stopped');
+            console.log('🔄 Continuous health monitoring stopped');
         }
     }
 
@@ -1772,8 +1781,8 @@ function initializeUltimateStrategicPowerSystem() {
     // Configuration validation with GPT-5 support
     const configCheck = validateSystemConfiguration();
     if (!configCheck.valid) {
-        logger.warn('⚠️ Configuration issues detected:', configCheck.issues);
-        logger.info('🔄 Continuing with available components and intelligent fallbacks...');
+        console.log('⚠️ Configuration issues detected:', configCheck.issues);
+        console.log('🔄 Continuing with available components and intelligent fallbacks...');
     }
     
     try {
@@ -1783,18 +1792,18 @@ function initializeUltimateStrategicPowerSystem() {
         const healthMonitor = new UltimateSystemHealthMonitor(router, executor);
         
         // Perform initial system validation
-        logger.info('🔍 Performing initial system validation...');
+        console.log('🔍 Performing initial system validation...');
         
         // Test router functionality
         router.performDeepQueryAnalysis("System initialization test", {}).catch(error => {
-            logger.warn('Router initialization test completed with fallback:', error.message);
+            console.log('Router initialization test completed with fallback:', error.message);
         });
         
         // Start health monitoring with enhanced settings
         try {
             healthMonitor.startContinuousMonitoring(3); // 3-minute intervals for GPT-5 era
         } catch (error) {
-            logger.warn('Health monitoring failed to start:', error.message);
+            console.log('Health monitoring failed to start:', error.message);
         }
         
         // System information with GPT-5 capabilities
@@ -1852,7 +1861,7 @@ function initializeUltimateStrategicPowerSystem() {
                 try {
                     return await executor.executeWithUltimatePower(query, options);
                 } catch (error) {
-                    logger.error('System analysis failed:', error);
+                    console.log('System analysis failed:', error);
                     throw new Error(`Analysis failed: ${error.message}`);
                 }
             },
@@ -1871,7 +1880,7 @@ function initializeUltimateStrategicPowerSystem() {
                 try {
                     return await healthMonitor.performComprehensiveHealthCheck();
                 } catch (error) {
-                    logger.error('Health check failed:', error);
+                    console.log('Health check failed:', error);
                     return {
                         overall_status: 'ERROR',
                         error: error.message,
@@ -1884,7 +1893,7 @@ function initializeUltimateStrategicPowerSystem() {
                 try {
                     healthMonitor.startContinuousMonitoring(interval);
                 } catch (error) {
-                    logger.error('Failed to start monitoring:', error);
+                    console.log('Failed to start monitoring:', error);
                 }
             },
             
@@ -1892,7 +1901,7 @@ function initializeUltimateStrategicPowerSystem() {
                 try {
                     healthMonitor.stopContinuousMonitoring();
                 } catch (error) {
-                    logger.error('Failed to stop monitoring:', error);
+                    console.log('Failed to stop monitoring:', error);
                 }
             },
             
@@ -1959,21 +1968,21 @@ function initializeUltimateStrategicPowerSystem() {
         process.on('SIGINT', () => system.shutdown());
         process.on('SIGTERM', () => system.shutdown());
         process.on('uncaughtException', (error) => {
-            logger.error('Uncaught exception:', error);
+            console.log('Uncaught exception:', error);
             system.shutdown();
         });
         
-        logger.success('✅ GPT-5 optimized for: Mathematical supremacy (94.6% AIME), coding excellence (74.9% SWE-bench)');
-        logger.success('✅ Claude Opus 4 optimized for: Strategic mastery, complex reasoning, risk assessment');
-        logger.success('✅ Ultimate power routing with multi-dimensional scoring and model selection');
-        logger.success('✅ Adaptive learning with model preferences and confidence calibration');
-        logger.success('✅ Comprehensive health monitoring with GPT-5 + Claude Opus 4 tracking active');
+        console.log('✅ GPT-5 optimized for: Mathematical supremacy (94.6% AIME), coding excellence (74.9% SWE-bench)');
+        console.log('✅ Claude Opus 4 optimized for: Strategic mastery, complex reasoning, risk assessment');
+        console.log('✅ Ultimate power routing with multi-dimensional scoring and model selection');
+        console.log('✅ Adaptive learning with model preferences and confidence calibration');
+        console.log('✅ Comprehensive health monitoring with GPT-5 + Claude Opus 4 tracking active');
         console.log('🏆 ULTIMATE STRATEGIC POWER SYSTEM FULLY OPERATIONAL - GPT-5 + CLAUDE OPUS 4');
         
         return system;
         
     } catch (error) {
-        logger.error('❌ System initialization failed:', error);
+        console.log('❌ System initialization failed:', error);
         throw new Error(`System initialization failed: ${error.message}`);
     }
 }
@@ -2018,35 +2027,35 @@ function validateSystemConfiguration() {
 
 // 🔄 GRACEFUL SYSTEM SHUTDOWN
 async function gracefulSystemShutdown(system) {
-    logger.info('🔄 Initiating graceful system shutdown...');
+    console.log('🔄 Initiating graceful system shutdown...');
     
     try {
         // Stop monitoring
         if (system.healthMonitor) {
             system.healthMonitor.stopContinuousMonitoring();
-            logger.info('✅ Health monitoring stopped');
+            console.log('✅ Health monitoring stopped');
         }
         
         // Save final analytics
         try {
             const finalAnalytics = system.getAnalytics();
-            logger.info('📊 Final system analytics:', {
+            console.log('📊 Final system analytics:', {
                 total_routing_decisions: finalAnalytics.routing?.routing_performance?.total_decisions || 0,
                 total_executions: finalAnalytics.execution?.total_executions || 0,
                 average_health_score: finalAnalytics.health?.average_health_score || 0,
                 system_uptime: Date.now() - new Date(system.lastInitialized).getTime()
             });
         } catch (analyticsError) {
-            logger.warn('Could not save final analytics:', analyticsError.message);
+            console.log('Could not save final analytics:', analyticsError.message);
         }
         
         // Clear any remaining intervals and timeouts
         if (global.gc) {
             global.gc(); // Force garbage collection if available
-            logger.info('🧹 Memory cleanup completed');
+            console.log('🧹 Memory cleanup completed');
         }
         
-        logger.success('✅ System shutdown completed successfully');
+        console.log('✅ System shutdown completed successfully');
         
         return {
             success: true,
@@ -2055,7 +2064,7 @@ async function gracefulSystemShutdown(system) {
         };
         
     } catch (error) {
-        logger.error('❌ Error during shutdown:', error);
+        console.log('❌ Error during shutdown:', error);
         return {
             success: false,
             error: error.message,
@@ -2070,7 +2079,7 @@ async function getUltimateStrategicAnalysis(query, options = {}) {
         const system = initializeUltimateStrategicPowerSystem();
         return await system.analyze(query, options);
     } catch (error) {
-        logger.error('Ultimate strategic analysis failed:', error);
+        console.log('Ultimate strategic analysis failed:', error);
         return {
             response: `System temporarily unavailable: ${error.message}\n\nPlease try again or contact support if the issue persists.`,
             error: true,
@@ -2213,14 +2222,14 @@ module.exports = {
             const system = initializeUltimateStrategicPowerSystem();
             
             console.log('🚀 ULTIMATE STRATEGIC POWER SYSTEM - QUICK SETUP COMPLETE');
-            logger.info('📈 Ready for maximum power financial analysis with GPT-5 + Claude Opus 4');
-            logger.info('🎯 GPT-5 family + Claude Opus 4 strategic optimization active');
-            logger.info('⚡ Use system.analyze(query, options) for ultimate power analysis');
-            logger.info('🧠 Available models: GPT-5, GPT-5-Mini, GPT-5-Nano, GPT-5-Chat + Claude Opus 4');
+            console.log('📈 Ready for maximum power financial analysis with GPT-5 + Claude Opus 4');
+            console.log('🎯 GPT-5 family + Claude Opus 4 strategic optimization active');
+            console.log('⚡ Use system.analyze(query, options) for ultimate power analysis');
+            console.log('🧠 Available models: GPT-5, GPT-5-Mini, GPT-5-Nano, GPT-5-Chat + Claude Opus 4');
             
             return system;
         } catch (error) {
-            logger.error('Quick setup failed:', error);
+            console.log('Quick setup failed:', error);
             throw error;
         }
     },
