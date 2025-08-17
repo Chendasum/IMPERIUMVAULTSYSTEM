@@ -996,33 +996,6 @@ async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = t
     }
 }
 
-// 🔧 HEALTH CHECK FUNCTION
-async function performHealthCheck() {
-    try {
-        // Test database connection
-        // const dbTest = await testDatabaseConnection();
-        
-        // For now, return a basic health status
-        return {
-            status: 'healthy',
-            database: 'connected',
-            timestamp: new Date().toISOString(),
-            services: {
-                memory: 'operational',
-                conversation: 'operational',
-                dualAI: 'operational'
-            }
-        };
-    } catch (error) {
-        console.error('❌ Health check failed:', error.message);
-        return {
-            status: 'unhealthy',
-            error: error.message,
-            timestamp: new Date().toISOString()
-        };
-    }
-}
-
 // Enhanced command execution with full database logging + memory testing + WEALTH SYSTEM + LIVE DATA
 async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
