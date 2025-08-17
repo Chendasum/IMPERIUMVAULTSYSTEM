@@ -171,11 +171,11 @@ class UltimateStrategicPowerRouter {
                     'historical data', 'market data', 'price action', 'volume', 'tick data',
                     'order book', 'level 2', 'market depth', 'time series', 'cross-sectional'
                 ],
-                power_multiplier: 2.2, // Enhanced for GPT-5
+                power_multiplier: 2.2,
                 confidence_boost: 0.20
             },
 
-            // CLAUDE OPUS 4 STRATEGIC MASTERY ZONE (Enhanced strategic capabilities)
+            // CLAUDE OPUS 4 STRATEGIC MASTERY ZONE
             claude_strategic_supremacy: {
                 strategic_reasoning_advanced: [
                     'strategy', 'strategic', 'comprehensive analysis', 'deep dive', 'framework',
@@ -211,11 +211,11 @@ class UltimateStrategicPowerRouter {
                     'estate planning', 'retirement planning', 'financial planning',
                     'investment policy', 'investment committee', 'fiduciary duty'
                 ],
-                power_multiplier: 2.4, // Enhanced for Claude Opus 4
+                power_multiplier: 2.4,
                 confidence_boost: 0.22
             },
 
-            // DUAL POWER CONSENSUS ZONE (Enhanced for critical decisions)
+            // DUAL POWER CONSENSUS ZONE
             dual_power_ultimate_consensus: {
                 critical_financial_decisions: [
                     'major decision', 'critical choice', 'important investment', 'large allocation',
@@ -233,28 +233,28 @@ class UltimateStrategicPowerRouter {
                     'consensus', 'agreement', 'confirmation', 'multiple perspectives',
                     'devil advocate', 'contrarian analysis', 'independent verification'
                 ],
-                power_multiplier: 2.6, // Maximum for dual analysis
+                power_multiplier: 2.6,
                 confidence_boost: 0.25
             }
         };
 
-    // 🔥 ENHANCED AI POWER METRICS WITH GPT-5 CAPABILITIES
+        // 🔥 ENHANCED AI POWER METRICS WITH GPT-5 CAPABILITIES
         this.aiPowerMetrics = {
             gpt5: {
-                mathematical_processing: { strength: 0.99, weight: 0.28 }, // Enhanced for GPT-5
+                mathematical_processing: { strength: 0.99, weight: 0.28 },
                 speed_execution: { strength: 0.97, weight: 0.22 },
                 quantitative_analysis: { strength: 0.96, weight: 0.24 },
                 technical_analysis: { strength: 0.94, weight: 0.16 },
                 pattern_recognition: { strength: 0.95, weight: 0.10 },
-                overall_power_rating: 0.96 // Increased for GPT-5
+                overall_power_rating: 0.96
             },
             claude_opus4: {
-                strategic_reasoning: { strength: 0.98, weight: 0.32 }, // Enhanced for Opus 4
+                strategic_reasoning: { strength: 0.98, weight: 0.32 },
                 complex_analysis: { strength: 0.97, weight: 0.26 },
                 fundamental_analysis: { strength: 0.95, weight: 0.20 },
                 risk_assessment: { strength: 0.94, weight: 0.15 },
                 narrative_synthesis: { strength: 0.92, weight: 0.07 },
-                overall_power_rating: 0.97 // Increased for Opus 4
+                overall_power_rating: 0.97
             }
         };
 
@@ -543,6 +543,7 @@ class UltimateStrategicPowerRouter {
 
         return analysis;
     }
+
     // 🔧 ESSENTIAL MISSING METHODS FOR ROUTER CLASS
     detectReasoningRequirement(query) {
         return /\b(analyze|evaluate|compare|assess|explain why)\b/i.test(query);
@@ -563,46 +564,244 @@ class UltimateStrategicPowerRouter {
         };
     }
 
-    detectMathematicalComplexity(query) { return 0.5; }
-    detectStrategicComplexity(query) { return 0.5; }
-    detectCodingComplexity(query) { return 0.3; }
-    detectUrgencyLevel(query) { return 'medium'; }
-    detectHighValueDecision(query, context) { return false; }
-    isRiskAssessmentQuery(query) { return /\b(risk|hedge|protect)\b/i.test(query); }
+    detectMathematicalComplexity(query) { 
+        const mathKeywords = ['calculate', 'formula', 'equation', 'algorithm', 'optimization'];
+        const matches = mathKeywords.filter(keyword => query.toLowerCase().includes(keyword)).length;
+        return Math.min(matches / mathKeywords.length, 1.0);
+    }
+
+    detectStrategicComplexity(query) { 
+        const strategicKeywords = ['strategy', 'planning', 'framework', 'analysis', 'assessment'];
+        const matches = strategicKeywords.filter(keyword => query.toLowerCase().includes(keyword)).length;
+        return Math.min(matches / strategicKeywords.length, 1.0);
+    }
+
+    detectCodingComplexity(query) { 
+        const codingKeywords = ['code', 'programming', 'algorithm', 'function', 'debug'];
+        const matches = codingKeywords.filter(keyword => query.toLowerCase().includes(keyword)).length;
+        return Math.min(matches / codingKeywords.length, 1.0);
+    }
+
+    detectUrgencyLevel(query) { 
+        if (/\b(emergency|critical|urgent|asap)\b/i.test(query)) return 'critical';
+        if (/\b(quick|fast|immediate|now)\b/i.test(query)) return 'high';
+        return 'medium';
+    }
+
+    detectHighValueDecision(query, context) { 
+        return /\b(major|critical|important|significant|large)\b/i.test(query) || 
+               (context.investmentAmount && context.investmentAmount > 100000);
+    }
+
+    isRiskAssessmentQuery(query) { 
+        return /\b(risk|hedge|protect|volatility|drawdown|var|stress)\b/i.test(query);
+    }
     
-    classifyIntent(query) { return 'general'; }
-    classifyDomain(query) { return 'financial'; }
-    assessComplexityTier(query) { return 'medium'; }
-    assessPriorityLevel(query, context) { return 'standard'; }
+    classifyIntent(query) { 
+        if (/\b(analyze|analysis)\b/i.test(query)) return 'analysis';
+        if (/\b(calculate|compute)\b/i.test(query)) return 'calculation';
+        if (/\b(recommend|suggest)\b/i.test(query)) return 'recommendation';
+        return 'general';
+    }
+
+    classifyDomain(query) { 
+        if (/\b(trading|investment|financial|market)\b/i.test(query)) return 'financial';
+        if (/\b(code|programming|software)\b/i.test(query)) return 'technical';
+        return 'general';
+    }
+
+    assessComplexityTier(query) { 
+        const complexity = this.detectMathematicalComplexity(query) + this.detectStrategicComplexity(query);
+        if (complexity > 0.7) return 'high';
+        if (complexity > 0.4) return 'medium';
+        return 'low';
+    }
+
+    assessPriorityLevel(query, context) { 
+        const urgency = this.detectUrgencyLevel(query);
+        if (urgency === 'critical') return 'urgent';
+        if (context.highPriority) return 'high';
+        return 'standard';
+    }
 
     validateAndSanitizeQuery(query, context) {
         if (!query) throw new Error('Query required');
         return query.trim();
     }
     
-    calculateEnhancedPowerScores() { 
-        return { gpt5: {total: 0.7}, claude: {total: 0.6}, dual: {score: 0.1} }; 
+    calculateEnhancedPowerScores(query, queryAnalysis) { 
+        return { 
+            gpt5: {
+                total: 0.7 + (queryAnalysis.mathematicalComplexity * 0.3),
+                mathematical: queryAnalysis.mathematicalComplexity,
+                speed: queryAnalysis.urgencyLevel === 'critical' ? 0.9 : 0.7
+            }, 
+            claude: {
+                total: 0.6 + (queryAnalysis.strategicComplexity * 0.4),
+                strategic: queryAnalysis.strategicComplexity,
+                risk: queryAnalysis.patterns?.isRisk ? 0.9 : 0.6
+            }, 
+            dual: {
+                score: Math.min((queryAnalysis.mathematicalComplexity + queryAnalysis.strategicComplexity) / 2, 1.0)
+            }
+        }; 
     }
     
-    applyEnhancedStrategicRules() { 
-        return { triggeredRules: [], primaryRule: null }; 
+    applyEnhancedStrategicRules(query, queryAnalysis, context) { 
+        const triggeredRules = [];
+        
+        for (const rule of this.powerOptimizationRules) {
+            try {
+                if (rule.condition(query, context, queryAnalysis)) {
+                    triggeredRules.push(rule);
+                }
+            } catch (error) {
+                console.log(`Rule ${rule.name} evaluation failed:`, error.message);
+            }
+        }
+        
+        return { 
+            triggeredRules: triggeredRules,
+            primaryRule: triggeredRules.length > 0 ? triggeredRules[0] : null
+        }; 
     }
     
-    integrateAdvancedAdaptiveLearning() { 
-        return { patterns: {}, recommendations: [] }; 
+    integrateAdvancedAdaptiveLearning(query, queryAnalysis) { 
+        return { 
+            patterns: this.adaptiveLearning.successful_patterns,
+            recommendations: []
+        }; 
     }
     
-    makeUltimateStrategicDecision() { 
-        return { source: 'DEFAULT', decision: 'GPT5_POWER', confidence: 0.8 }; 
+    makeUltimateStrategicDecision(powerScores, ruleBasedDecision, adaptiveInsights, queryAnalysis) { 
+        // Rule-based override first
+        if (ruleBasedDecision.primaryRule) {
+            const rule = ruleBasedDecision.primaryRule;
+            if (rule.action === 'FORCE_GPT5_ULTIMATE_POWER') {
+                return { source: 'RULE_OVERRIDE', decision: 'GPT5_ULTIMATE', confidence: 0.95 };
+            }
+            if (rule.action === 'FORCE_CLAUDE_STRATEGIC_MASTERY') {
+                return { source: 'RULE_OVERRIDE', decision: 'CLAUDE_STRATEGIC', confidence: 0.95 };
+            }
+            if (rule.action === 'FORCE_DUAL_ULTIMATE_CONSENSUS') {
+                return { source: 'RULE_OVERRIDE', decision: 'DUAL_CONSENSUS', confidence: 0.90 };
+            }
+        }
+        
+        // Power score based decision
+        if (powerScores.gpt5.total > powerScores.claude.total + 0.2) {
+            return { source: 'POWER_SCORE', decision: 'GPT5_POWER', confidence: 0.8 };
+        } else if (powerScores.claude.total > powerScores.gpt5.total + 0.2) {
+            return { source: 'POWER_SCORE', decision: 'CLAUDE_STRATEGIC', confidence: 0.8 };
+        } else if (powerScores.dual.score > 0.7) {
+            return { source: 'POWER_SCORE', decision: 'DUAL_CONSENSUS', confidence: 0.85 };
+        }
+        
+        return { source: 'DEFAULT', decision: 'GPT5_POWER', confidence: 0.7 };
     }
     
-    optimizeRoutingForGPT5Era() { 
-        return { ai: 'GPT5', model: GPT5_POWER_MODELS.POWER, mode: 'POWER', confidence: 0.8 }; 
+    optimizeRoutingForGPT5Era(finalSelection, queryAnalysis, context) { 
+        let selectedModel, selectedMode;
+        
+        switch (finalSelection.decision) {
+            case 'GPT5_ULTIMATE':
+                selectedModel = GPT5_POWER_MODELS.ULTIMATE;
+                selectedMode = 'ULTIMATE_POWER';
+                break;
+            case 'GPT5_POWER':
+                selectedModel = queryAnalysis.urgencyLevel === 'critical' 
+                    ? GPT5_POWER_MODELS.SPEED 
+                    : GPT5_POWER_MODELS.POWER;
+                selectedMode = 'POWER';
+                break;
+            case 'CLAUDE_STRATEGIC':
+                selectedModel = CLAUDE_POWER_MODES.STRATEGIC_MASTERY;
+                selectedMode = 'STRATEGIC_MASTERY';
+                break;
+            case 'DUAL_CONSENSUS':
+                selectedModel = {
+                    gpt5: GPT5_POWER_MODELS.POWER,
+                    claude: CLAUDE_POWER_MODES.STRATEGIC_MASTERY
+                };
+                selectedMode = 'DUAL_CONSENSUS';
+                break;
+            default:
+                selectedModel = GPT5_POWER_MODELS.POWER;
+                selectedMode = 'POWER';
+        }
+        
+        return { 
+            ai: finalSelection.decision.includes('CLAUDE') ? 'CLAUDE' : 
+                finalSelection.decision.includes('DUAL') ? 'DUAL' : 'GPT5',
+            model: selectedModel, 
+            mode: selectedMode, 
+            confidence: finalSelection.confidence,
+            modelRecommendation: selectedModel
+        }; 
     }
     
-    generateEnhancedReasoning() { return 'Standard routing applied'; }
-    updateEnhancedPerformanceTracking() { return; }
-    updateAdvancedAdaptiveLearning() { return; }
+    generateEnhancedReasoning(optimizedRouting, powerScores, queryAnalysis) { 
+        const ai = optimizedRouting.ai;
+        const confidence = (optimizedRouting.confidence * 100).toFixed(1);
+        
+        let reasoning = `🎯 ULTIMATE ROUTING DECISION: Selected ${ai} with ${confidence}% confidence\n\n`;
+        
+        if (ai === 'GPT5') {
+            reasoning += `🚀 GPT-5 Selection Rationale:\n`;
+            reasoning += `• Mathematical Complexity: ${(queryAnalysis.mathematicalComplexity * 100).toFixed(1)}%\n`;
+            reasoning += `• Speed Requirements: ${queryAnalysis.urgencyLevel}\n`;
+            reasoning += `• Model: ${optimizedRouting.model?.model || 'gpt-5-mini'}\n`;
+            reasoning += `• Optimization: Enhanced for quantitative analysis and computational excellence\n`;
+        } else if (ai === 'CLAUDE') {
+            reasoning += `🧠 Claude Opus 4 Selection Rationale:\n`;
+            reasoning += `• Strategic Complexity: ${(queryAnalysis.strategicComplexity * 100).toFixed(1)}%\n`;
+            reasoning += `• Risk Assessment Need: ${queryAnalysis.patterns?.isRisk ? 'High' : 'Standard'}\n`;
+            reasoning += `• Mode: ${optimizedRouting.mode}\n`;
+            reasoning += `• Optimization: Enhanced for strategic reasoning and risk analysis\n`;
+        } else if (ai === 'DUAL') {
+            reasoning += `🤝 Dual AI Consensus Selection Rationale:\n`;
+            reasoning += `• Complex Decision Detected: Requires multiple AI perspectives\n`;
+            reasoning += `• GPT-5 Score: ${(powerScores.gpt5.total * 100).toFixed(1)}%\n`;
+            reasoning += `• Claude Score: ${(powerScores.claude.total * 100).toFixed(1)}%\n`;
+            reasoning += `• Optimization: Maximum intelligence synthesis for critical decisions\n`;
+        }
+        
+        reasoning += `\n🔧 Technical Details:\n`;
+        reasoning += `• Query Complexity: ${queryAnalysis.complexityTier}\n`;
+        reasoning += `• Domain: ${queryAnalysis.domainClassification}\n`;
+        reasoning += `• Priority: ${queryAnalysis.priorityLevel}\n`;
+        reasoning += `• Word Count: ${queryAnalysis.wordCount}\n`;
+        
+        return reasoning;
+    }
+
+    updateEnhancedPerformanceTracking(routingResult) { 
+        this.performanceTracking.routing_decisions.total++;
+        
+        // Track AI selection
+        if (routingResult.selectedAI === 'GPT5') {
+            this.performanceTracking.routing_decisions.gpt5_selections++;
+        } else if (routingResult.selectedAI === 'CLAUDE') {
+            this.performanceTracking.routing_decisions.claude_selections++;
+        } else if (routingResult.selectedAI === 'DUAL') {
+            this.performanceTracking.routing_decisions.dual_selections++;
+        }
+        
+        // Track power optimization
+        if (routingResult.powerMode === 'ULTIMATE_POWER') {
+            this.performanceTracking.power_optimization.ultimate_power_routes++;
+        }
+    }
+
+    updateAdvancedAdaptiveLearning(routingResult) { 
+        // Store successful patterns
+        const pattern = `${routingResult.queryAnalysis.domainClassification}_${routingResult.selectedAI}`;
+        if (!this.adaptiveLearning.successful_patterns.has(pattern)) {
+            this.adaptiveLearning.successful_patterns.set(pattern, 0);
+        }
+        this.adaptiveLearning.successful_patterns.set(pattern, 
+            this.adaptiveLearning.successful_patterns.get(pattern) + 1);
+    }
     
     createIntelligentFallbackRouting(query, error, startTime, sessionId) { 
         return { 
@@ -611,19 +810,63 @@ class UltimateStrategicPowerRouter {
             powerMode: 'FALLBACK',
             confidence: 0.5,
             error: error.message,
-            sessionId: sessionId
+            sessionId: sessionId,
+            queryAnalysis: {
+                complexityTier: 'unknown',
+                domainClassification: 'general',
+                priorityLevel: 'standard'
+            },
+            powerScores: { gpt5: { total: 0.5 }, claude: { total: 0.5 } },
+            reasoning: 'Fallback routing due to system error',
+            routingTime: Date.now() - startTime,
+            timestamp: new Date().toISOString(),
+            optimizationLevel: 'FALLBACK'
         }; 
     }
     
     getUltimateAnalytics() { 
-        return { routing_performance: { total_decisions: this.performanceTracking.routing_decisions.total } }; 
+        return { 
+            routing_performance: { 
+                total_decisions: this.performanceTracking.routing_decisions.total,
+                gpt5_selections: this.performanceTracking.routing_decisions.gpt5_selections,
+                claude_selections: this.performanceTracking.routing_decisions.claude_selections,
+                dual_selections: this.performanceTracking.routing_decisions.dual_selections,
+                success_rate: this.performanceTracking.routing_decisions.total > 0 ? 
+                    (this.performanceTracking.accuracy_metrics.successful_routes / this.performanceTracking.routing_decisions.total * 100).toFixed(1) + '%' : '0%'
+            },
+            power_optimization: this.performanceTracking.power_optimization,
+            adaptive_learning: {
+                successful_patterns_count: this.adaptiveLearning.successful_patterns.size,
+                optimization_cycles: this.adaptiveLearning.optimization_cycles
+            },
+            system_health: this.systemHealth
+        }; 
     }
 
-    countFinancialTerms(query) { return 0; }
-    countTechnicalTerms(query) { return 0; }
-    countStrategicTerms(query) { return 0; }
-    countCodingTerms(query) { return 0; }
-    countRiskTerms(query) { return 0; }
+    countFinancialTerms(query) { 
+        const financialTerms = ['trading', 'investment', 'portfolio', 'stock', 'bond', 'dividend', 'yield', 'return'];
+        return financialTerms.filter(term => query.toLowerCase().includes(term)).length;
+    }
+
+    countTechnicalTerms(query) { 
+        const technicalTerms = ['rsi', 'macd', 'bollinger', 'fibonacci', 'support', 'resistance', 'volume'];
+        return technicalTerms.filter(term => query.toLowerCase().includes(term)).length;
+    }
+
+    countStrategicTerms(query) { 
+        const strategicTerms = ['strategy', 'planning', 'framework', 'analysis', 'assessment', 'evaluation'];
+        return strategicTerms.filter(term => query.toLowerCase().includes(term)).length;
+    }
+
+    countCodingTerms(query) { 
+        const codingTerms = ['code', 'programming', 'algorithm', 'function', 'debug', 'script'];
+        return codingTerms.filter(term => query.toLowerCase().includes(term)).length;
+    }
+
+    countRiskTerms(query) { 
+        const riskTerms = ['risk', 'volatility', 'drawdown', 'hedge', 'protection', 'var'];
+        return riskTerms.filter(term => query.toLowerCase().includes(term)).length;
+    }
 }
 
 // 🚀 ULTIMATE POWER EXECUTOR - GPT-5 + CLAUDE OPUS 4 OPTIMIZED
@@ -768,7 +1011,7 @@ class UltimatePowerExecutor {
         }
     }
 
-// 🚀 GPT-5 ULTIMATE EXECUTION WITH ENHANCED CAPABILITIES
+    // 🚀 GPT-5 ULTIMATE EXECUTION WITH ENHANCED CAPABILITIES
     async executeGPT5Ultimate(query, routing, executionConfig) {
         const prompt = this.buildGPT5UltimatePrompt(query, routing);
         const modelConfig = routing.selectedModel || GPT5_POWER_MODELS.POWER;
@@ -815,7 +1058,7 @@ class UltimatePowerExecutor {
         }
     }
 
-// 🧠 CLAUDE OPUS 4 ULTIMATE EXECUTION WITH STRATEGIC MASTERY
+    // 🧠 CLAUDE OPUS 4 ULTIMATE EXECUTION WITH STRATEGIC MASTERY
     async executeClaudeUltimate(query, routing, executionConfig) {
         const prompt = this.buildClaudeUltimatePrompt(query, routing);
         const modeConfig = routing.selectedModel || CLAUDE_POWER_MODES.STRATEGIC_STANDARD;
@@ -858,7 +1101,7 @@ class UltimatePowerExecutor {
         }
     }
 
-// 🤝 DUAL ULTIMATE EXECUTION WITH CONSENSUS INTELLIGENCE
+    // 🤝 DUAL ULTIMATE EXECUTION WITH CONSENSUS INTELLIGENCE
     async executeDualUltimate(query, routing, executionConfig) {
         console.log('🤝 DUAL ULTIMATE POWER: Maximum consensus analysis with GPT-5 + Claude Opus 4...');
         
@@ -1207,7 +1450,7 @@ Review both analyses above for complementary insights. The quantitative data fro
         };
     }
 }
-    
+
 // 🔧 ULTIMATE SYSTEM HEALTH MONITOR - GPT-5 + CLAUDE OPUS 4 OPTIMIZED
 class UltimateSystemHealthMonitor {
     constructor(router, executor) {
@@ -1492,7 +1735,10 @@ class UltimateSystemHealthMonitor {
         if (recentExecutions.length === 0) {
             return {
                 status: 'UNKNOWN',
-                message: 'No recent executions to analyze'
+                message: 'No recent executions to analyze',
+                total_executions: analytics.total_executions,
+                success_rate: analytics.success_rate,
+                last_check: new Date().toISOString()
             };
         }
         
@@ -1517,7 +1763,7 @@ class UltimateSystemHealthMonitor {
         };
     }
 
-// 🔍 MODEL-SPECIFIC HEALTH ASSESSMENT
+    // 🔍 MODEL-SPECIFIC HEALTH ASSESSMENT
     async assessModelSpecificHealth() {
         const modelHealth = {
             gpt5_models: this.gpt5ModelHealth,
@@ -1616,7 +1862,7 @@ class UltimateSystemHealthMonitor {
             system_utilization: {
                 gpt5_family_usage: this.calculateGPT5FamilyUsage(executorAnalytics),
                 claude_opus4_usage: this.calculateClaudeOpus4Usage(executorAnalytics),
-                dual_consensus_usage: routerAnalytics.routing_performance.dual_selection_rate
+                dual_consensus_usage: '0%'
             },
             efficiency_metrics: {
                 decisions_per_minute: this.calculateDecisionsPerMinute(),
@@ -1742,10 +1988,9 @@ class UltimateSystemHealthMonitor {
         return 'POOR';
     }
 
-    // Helper methods that were missing
+    // Helper methods
     updateEnhancedSystemHealth(healthStatus) {
         this.healthChecks.push(healthStatus);
-        // Keep only last 100 health checks to prevent memory issues
         if (this.healthChecks.length > 100) {
             this.healthChecks = this.healthChecks.slice(-100);
         }
@@ -1761,8 +2006,8 @@ class UltimateSystemHealthMonitor {
         return `${claudeUsage}%`;
     }
 
-    calculateDecisionsPerMinute() {
-        const recentHistory = this.router.routingHistory.slice(-60); // Last 60 decisions
+        calculateDecisionsPerMinute() {
+        const recentHistory = this.router.routingHistory.slice(-60);
         if (recentHistory.length < 2) return 0;
         
         const timeSpan = Date.now() - new Date(recentHistory[0].timestamp).getTime();
@@ -1787,8 +2032,8 @@ class UltimateSystemHealthMonitor {
         return `${percentage}%`;
     }
 
-// 🔄 CONTINUOUS MONITORING MANAGEMENT
-    startContinuousMonitoring(intervalMinutes = 3) { // Faster monitoring for GPT-5 era
+    // 🔄 CONTINUOUS MONITORING MANAGEMENT
+    startContinuousMonitoring(intervalMinutes = 3) {
         if (this.monitoringInterval) {
             clearInterval(this.monitoringInterval);
         }
@@ -1845,6 +2090,7 @@ class UltimateSystemHealthMonitor {
         return 'STABLE';
     }
 }
+
 // 🚀 ULTIMATE SYSTEM INITIALIZATION AND EXPORTS - GPT-5 + CLAUDE OPUS 4
 function initializeUltimateStrategicPowerSystem() {
     console.log('🏆 Initializing ULTIMATE Strategic Power Dual AI System - GPT-5 + Claude Opus 4...');
@@ -2181,7 +2427,7 @@ module.exports = {
     getStrategicAnalysis: getUltimateStrategicAnalysis,
     getDualAnalysis: getUltimateStrategicAnalysis,
     
-    // 🔧 MISSING WRAPPER FUNCTIONS FOR INDEX.JS COMPATIBILITY
+    // 🔧 WRAPPER FUNCTIONS FOR INDEX.JS COMPATIBILITY
     routeQuery: async (query, chatId = null) => {
         try {
             const system = initializeUltimateStrategicPowerSystem();
