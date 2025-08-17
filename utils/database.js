@@ -3474,17 +3474,17 @@ async function performHealthCheck() {
             details: 'Database connection successful'
         };
 
-        // Table count checks
-        const tableCounts = await pool.query(`
-            SELECT 
-                table_schema,
-                table_name,
-                n_tup_ins as inserts,
-                n_tup_upd as updates,
-                n_tup_del as deletes
-            FROM pg_stat_user_tables 
-            WHERE table_schema = 'public'
-        `);
+// Change the table counts query to:
+const tableCounts = await pool.query(`
+    SELECT 
+        schemaname,
+        tablename,
+        n_tup_ins as inserts,
+        n_tup_upd as updates,
+        n_tup_del as deletes
+    FROM pg_stat_user_tables 
+    WHERE schemaname = 'public'
+`);
 
         healthCheck.checks.tables = {
             status: 'PASS',
