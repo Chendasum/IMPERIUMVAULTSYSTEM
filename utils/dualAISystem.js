@@ -769,12 +769,16 @@ class UltimatePowerExecutor {
         }
     }
 
-    // 🚀 GPT-5 ULTIMATE EXECUTION WITH ENHANCED CAPABILITIES
+// 🚀 GPT-5 ULTIMATE EXECUTION WITH ENHANCED CAPABILITIES
     async executeGPT5Ultimate(query, routing, executionConfig) {
         const prompt = this.buildGPT5UltimatePrompt(query, routing);
         const modelConfig = routing.selectedModel || GPT5_POWER_MODELS.POWER;
         
-        logger.gpt5(`Executing with ${modelConfig.model} in ${modelConfig.description}`);
+        if (logger && typeof logger.gpt5 === 'function') {
+            logger.gpt5(`Executing with ${modelConfig.model} in ${modelConfig.description}`);
+        } else {
+            console.log(`🚀 GPT-5: Executing with ${modelConfig.model} in ${modelConfig.description}`);
+        }
         
         const apiOptions = {
             max_completion_tokens: modelConfig.maxTokens,
@@ -788,7 +792,11 @@ class UltimatePowerExecutor {
         
         try {
             const result = await openaiClient.getGptAnalysis(prompt, apiOptions);
-            logger.gpt5(`GPT-5 execution successful with ${modelConfig.model}`);
+            if (logger && typeof logger.gpt5 === 'function') {
+                logger.gpt5(`GPT-5 execution successful with ${modelConfig.model}`);
+            } else {
+                console.log(`🚀 GPT-5: Execution successful with ${modelConfig.model}`);
+            }
             return result;
         } catch (error) {
             console.log(`GPT-5 execution failed with ${modelConfig.model}:`, error);
@@ -808,12 +816,16 @@ class UltimatePowerExecutor {
         }
     }
 
-    // 🧠 CLAUDE OPUS 4 ULTIMATE EXECUTION WITH STRATEGIC MASTERY
+// 🧠 CLAUDE OPUS 4 ULTIMATE EXECUTION WITH STRATEGIC MASTERY
     async executeClaudeUltimate(query, routing, executionConfig) {
         const prompt = this.buildClaudeUltimatePrompt(query, routing);
         const modeConfig = routing.selectedModel || CLAUDE_POWER_MODES.STRATEGIC_STANDARD;
         
-        logger.claude(`Executing with Claude Opus 4 in ${modeConfig.description}`);
+        if (logger && typeof logger.claude === 'function') {
+            logger.claude(`Executing with Claude Opus 4 in ${modeConfig.description}`);
+        } else {
+            console.log(`🧠 CLAUDE: Executing with Claude Opus 4 in ${modeConfig.description}`);
+        }
         
         const claudeOptions = {
             maxTokens: modeConfig.maxTokens,
@@ -823,7 +835,11 @@ class UltimatePowerExecutor {
         
         try {
             const result = await claudeClient.getClaudeAnalysis(prompt, claudeOptions);
-            logger.claude(`Claude Opus 4 execution successful in ${modeConfig.analysis_mode} mode`);
+            if (logger && typeof logger.claude === 'function') {
+                logger.claude(`Claude Opus 4 execution successful in ${modeConfig.analysis_mode} mode`);
+            } else {
+                console.log(`🧠 CLAUDE: Execution successful in ${modeConfig.analysis_mode} mode`);
+            }
             return result;
         } catch (error) {
             console.log(`Claude Opus 4 execution failed:`, error);
