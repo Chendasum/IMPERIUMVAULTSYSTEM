@@ -1126,7 +1126,7 @@ Review both analyses above for complementary insights. The quantitative data fro
         }
     }
 
-getExecutionAnalytics() {
+    getExecutionAnalytics() {
         const recent = this.executionHistory.slice(-200); // Last 200 executions
         const totalExecutions = this.executionHistory.length;
         
@@ -1207,7 +1207,7 @@ getExecutionAnalytics() {
         };
     }
 }
-
+    
 // 🔧 ULTIMATE SYSTEM HEALTH MONITOR - GPT-5 + CLAUDE OPUS 4 OPTIMIZED
 class UltimateSystemHealthMonitor {
     constructor(router, executor) {
