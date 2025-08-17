@@ -734,9 +734,9 @@ async function executeDualAICommand(text, chatId, context, intel) {
         
         console.log("✅ Dual AI command successful:", dualResult?.aiUsed || 'DUAL_AI');
         
-        // Ensure proper response format
+        // Ensure proper response format - FIXED
         return {
-            response: dualResult || "I've processed your request with dual AI analysis.",
+            response: (typeof dualResult === 'string') ? dualResult : "I've processed your request with dual AI analysis.",
             aiUsed: dualResult?.aiUsed || 'DUAL_AI_SYSTEM',
             success: true,
             memoryUsed: !!context.memoryContext,
@@ -757,7 +757,7 @@ async function executeDualAICommand(text, chatId, context, intel) {
         });
         
         return {
-            response: response || "I've processed your request.",
+            response: (typeof response === 'string') ? response : "I've processed your request.",
             aiUsed: 'GPT_FALLBACK',
             success: true,
             memoryUsed: !!context.memoryContext,
@@ -788,8 +788,11 @@ async function saveConversationToDatabase(chatId, userMessage, result, context) 
 // 🧠 Extract and Save Memories
 async function extractAndSaveMemories(chatId, userMessage, aiResponse) {
     try {
+        // Ensure aiResponse is a string
+        const responseText = (typeof aiResponse === 'string') ? aiResponse : String(aiResponse || '');
+        
         const { extractAndSaveFacts } = require('./utils/memory');
-        const result = await extractAndSaveFacts(chatId, userMessage, aiResponse);
+        const result = await extractAndSaveFacts(chatId, userMessage, responseText);
         
         if (result?.extractedFacts > 0) {
             console.log(`✅ Extracted ${result.extractedFacts} new memories`);
