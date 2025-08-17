@@ -2306,14 +2306,14 @@ module.exports = {
         }
     },
 
-    // 🔧 UTILITY FUNCTIONS
-    validateSystemConfiguration,
-    gracefulSystemShutdown,
+// 🔧 UTILITY FUNCTIONS
+validateSystemConfiguration,
+gracefulSystemShutdown,
 
-    // 📋 SYSTEM CONSTANTS
-    SYSTEM_VERSION: '2.0-GPT5-CLAUDE4',
-    POWER_LEVEL: 'ULTIMATE',
-    LINE_COUNT: '2000+',
-    AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
-    OPTIMIZATION_LEVEL: 'MAXIMUM'
+// 📋 SYSTEM CONSTANTS
+SYSTEM_VERSION: '2.0-GPT5-CLAUDE4',
+POWER_LEVEL: 'ULTIMATE',
+LINE_COUNT: '2000+',
+AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
+OPTIMIZATION_LEVEL: 'MAXIMUM'
 };
