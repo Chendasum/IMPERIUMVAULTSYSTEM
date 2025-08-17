@@ -35,18 +35,18 @@ try {
         }
     };
     
-    logger = {
-        info: (msg, data) => console.log(`ℹ️ ${new Date().toISOString()} ${msg}`, data || ''),
-        success: (msg, data) => console.log(`✅ ${new Date().toISOString()} ${msg}`, data || ''),
-        warn: (msg, data) => console.warn(`⚠️ ${new Date().toISOString()} ${msg}`, data || ''),
-        error: (msg, error) => console.error(`❌ ${new Date().toISOString()} ${msg}`, error || ''),
-        debug: (msg, data) => console.log(`🐛 ${new Date().toISOString()} ${msg}`, data || ''),
-        strategic: (msg, data) => console.log(`🎯 ${new Date().toISOString()} STRATEGIC: ${msg}`, data || ''),
-        power: (msg, data) => console.log(`⚡ ${new Date().toISOString()} POWER: ${msg}`, data || ''),
-        gpt5: (msg, data) => console.log(`🚀 ${new Date().toISOString()} GPT-5: ${msg}`, data || ''),
-        claude: (msg, data) => console.log(`🧠 ${new Date().toISOString()} CLAUDE: ${msg}`, data || '')
-    };
-}
+logger = {
+    info: (msg, data) => console.log(`ℹ️ ${new Date().toISOString()} ${msg}`, data || ''),
+    success: (msg, data) => console.log(`✅ ${new Date().toISOString()} ${msg}`, data || ''),
+    warn: (msg, data) => console.warn(`⚠️ ${new Date().toISOString()} ${msg}`, data || ''),
+    error: (msg, error) => console.error(`❌ ${new Date().toISOString()} ${msg}`, error || ''),
+    debug: (msg, data) => console.log(`🐛 ${new Date().toISOString()} ${msg}`, data || ''),
+    strategic: (msg, data) => console.log(`🎯 ${new Date().toISOString()} STRATEGIC: ${msg}`, data || ''),
+    power: (msg, data) => console.log(`⚡ ${new Date().toISOString()} POWER: ${msg}`, data || ''),
+    gpt5: (msg, data) => console.log(`🚀 ${new Date().toISOString()} GPT-5: ${msg}`, data || ''),
+    claude: (msg, data) => console.log(`🧠 ${new Date().toISOString()} CLAUDE: ${msg}`, data || ''),
+    opt5: (msg, data) => console.log(`🚀 ${new Date().toISOString()} OPT5: ${msg}`, data || '')   // ADD THIS LINE
+};
 
 // 🚀 GPT-5 OFFICIAL MODEL CONFIGURATIONS
 const GPT5_POWER_MODELS = {
