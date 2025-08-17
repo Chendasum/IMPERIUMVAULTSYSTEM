@@ -1780,10 +1780,6 @@ try {
 }
 
 // 🔧 PLACEHOLDER HANDLERS - These need to be implemented in Part 3
-async function handleDealAnalysis(chatId, text) {
-    await sendSmartMessage(bot, chatId, "🏗️ Deal analysis handler - Implementation in Part 3");
-}
-
 async function handleCambodiaMarket(chatId) {
     await sendSmartMessage(bot, chatId, "🏗️ Cambodia market handler - Implementation in Part 3");
 }
