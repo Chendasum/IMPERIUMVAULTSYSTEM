@@ -735,16 +735,34 @@ class UltimatePowerExecutor {
                 systemVersion: '2.0-GPT5-CLAUDE4'
             };
             
-            // 5. Update execution tracking and learning
-            this.updateExecutionTracking(finalResult);
+// 5. Update execution tracking and learning
+            try {
+                this.updateExecutionTracking(finalResult);
+            } catch (trackingError) {
+                console.warn('⚠️ Execution tracking failed:', trackingError.message);
+            }
             
             console.log(`🎯 Ultimate execution completed in ${executionTime}ms using ${routing.selectedAI}/${routing.selectedModel?.model || 'default'}`);
             
             return finalResult;
             
         } catch (error) {
-            console.log('Ultimate power execution failed:', error);
-            return await this.handleExecutionFailure(query, error, startTime, sessionId, options);
+            console.error('❌ Ultimate power execution failed:', error.message);
+            
+            // Calculate execution time for error response
+            const executionTime = Date.now() - startTime;
+            
+            // Return proper error response instead of calling missing function
+            return {
+                success: false,
+                error: error.message,
+                query: query.substring(0, 100),
+                executionTime: executionTime,
+                fallback: true,
+                aiUsed: 'ERROR_FALLBACK',
+                timestamp: new Date().toISOString(),
+                sessionId: sessionId || 'unknown'
+            };
         }
     }
 
