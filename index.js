@@ -261,12 +261,13 @@ function isAuthorizedUser(chatId) {
     return authorizedUsers.includes(parseInt(chatId));
 }
 
-// Add missing logApiUsage function
-async function logApiUsage(service, endpoint, calls, success, responseTime, inputTokens, cost) {
+async function logApiUsage(service, endpoint, calls = 1, success = true, responseTime = 0, inputTokens = 0, cost = 0) {
     try {
-        await logCommandUsage(`${service}_${endpoint}`, calls, success ? 'success' : 'error', cost);
+        console.log(`🔌 API: ${service}/${endpoint} | ${success ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | $${cost}`);
+        return true;
     } catch (error) {
-        // Silent fail for logging
+        console.error('❌ API logging error:', error.message);
+        return false;
     }
 }
 
