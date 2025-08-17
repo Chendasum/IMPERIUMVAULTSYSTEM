@@ -3474,23 +3474,17 @@ async function performHealthCheck() {
             details: 'Database connection successful'
         };
 
-// Change the table counts query to:
+// Simple working table check:
 const tableCounts = await pool.query(`
-    SELECT 
-        schemaname,
-        tablename,
-        n_tup_ins as inserts,
-        n_tup_upd as updates,
-        n_tup_del as deletes
-    FROM pg_stat_user_tables 
-    WHERE schemaname = 'public'
+    SELECT COUNT(*) as table_count
+    FROM information_schema.tables 
+    WHERE table_type = 'BASE TABLE' AND table_schema = 'public'
 `);
-
-        healthCheck.checks.tables = {
-            status: 'PASS',
-            count: tableCounts.rows.length,
-            details: tableCounts.rows
-        };
+healthCheck.checks.tables = {
+    status: 'PASS',
+    count: tableCounts.rows[0].table_count,
+    details: 'Database tables accessible'
+};
 
         // Index usage check
         const indexUsage = await pool.query(`
