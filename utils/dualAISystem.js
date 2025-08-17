@@ -2247,10 +2247,15 @@ module.exports = {
     validateSystemConfiguration,
     gracefulSystemShutdown,
     
-    // 📋 SYSTEM CONSTANTS
+// 📋 SYSTEM CONSTANTS
     SYSTEM_VERSION: '2.0-GPT5-CLAUDE4',
     POWER_LEVEL: 'ULTIMATE',
     LINE_COUNT: '2000+',
     AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
     OPTIMIZATION_LEVEL: 'MAXIMUM'
+};
+
+// ADD THIS IF MISSING:
+module.exports = {
+    // Your exports here - all the functions you're exporting
 };
