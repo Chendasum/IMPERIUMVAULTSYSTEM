@@ -2254,8 +2254,3 @@ module.exports = {
     AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
     OPTIMIZATION_LEVEL: 'MAXIMUM'
 };
-
-// ADD THIS IF MISSING:
-module.exports = {
-    // Your exports here - all the functions you're exporting
-};
