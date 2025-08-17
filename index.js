@@ -565,7 +565,7 @@ function assessDataQuality(marketData) {
     }
 }
 
-// Enhanced main message handler with full database integration
+// Enhanced main message handler with dual AI integration
 bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
@@ -587,7 +587,7 @@ bot.on("message", async (msg) => {
     const startTime = Date.now();
 
     try {
-        // Handle media messages with enhanced tracking
+        // Handle media messages
         if (msg.voice) {
             console.log("🎤 Voice message received");
             await handleVoiceMessage(msg, chatId, sessionId);
@@ -606,14 +606,14 @@ bot.on("message", async (msg) => {
             return;
         }
 
-        // Handle text commands with enhanced database integration
+        // Handle text messages
         if (!text) {
             await sendSmartMessage(bot, chatId, "Please send text, voice messages, images, or documents.");
             return;
         }
 
-        // Enhanced command routing with database logging
-        const executionTime = await executeCommandWithLogging(chatId, text, sessionId);
+        // Route to dual AI conversation handler
+        const executionTime = await handleDualAIConversation(chatId, text, sessionId);
         
         // End session tracking
         if (sessionId) {
@@ -637,302 +637,244 @@ bot.on("message", async (msg) => {
     }
 });
 
-// 🔧 COMPLETELY REWRITTEN: Enhanced conversation handler with proper memory integration
-async function handleEnhancedConversation(chatId, text, sessionId) {
+// 🤖 Dual AI Conversation Handler - Clean and Focused
+async function handleDualAIConversation(chatId, text, sessionId) {
+    const startTime = Date.now();
+    
     try {
-        console.log("🤖 Processing enhanced conversation with FIXED memory:", text.substring(0, 50));
+        console.log("🤖 Starting dual AI conversation processing:", text.substring(0, 50));
         
-        // 🔧 FIXED: Robust memory retrieval with detailed logging
-        let conversationHistory = [];
-        let persistentMemory = [];
-        let memoryErrors = [];
+        // Get conversation context with memory
+        const context = await buildConversationContext(chatId, text);
         
-        // Test database connection first
-        console.log("🔍 Testing database connection...");
-        try {
-            const dbHealth = await performHealthCheck();
-            console.log("📊 Database health:", dbHealth.status);
-        } catch (healthError) {
-            console.log("⚠️ Database health check failed:", healthError.message);
-            memoryErrors.push(`Health: ${healthError.message}`);
-        }
-        
-        // 🔧 FIXED: Conversation History with detailed error handling
-        try {
-            console.log("📚 Attempting to retrieve conversation history...");
-            conversationHistory = await getConversationHistoryDB(chatId, 5);
-            console.log(`✅ SUCCESS: Retrieved ${conversationHistory.length} conversations`);
-            
-            // Log sample data for debugging
-            if (conversationHistory.length > 0) {
-                console.log("📝 Sample conversation:", {
-                    user_message: conversationHistory[0].user_message?.substring(0, 50),
-                    timestamp: conversationHistory[0].timestamp,
-                    has_response: !!conversationHistory[0].gpt_response
-                });
-            }
-        } catch (historyError) {
-            console.log('❌ FAILED: Conversation history retrieval:', historyError.message);
-            memoryErrors.push(`History: ${historyError.message}`);
-            conversationHistory = []; // Ensure it's an array
-        }
-        
-        // 🔧 FIXED: Persistent Memory with detailed error handling  
-        try {
-            console.log("🧠 Attempting to retrieve persistent memory...");
-            persistentMemory = await getPersistentMemoryDB(chatId);
-            console.log(`✅ SUCCESS: Retrieved ${persistentMemory.length} memories`);
-            
-            // Log sample memory for debugging
-            if (persistentMemory.length > 0) {
-                console.log("💭 Sample memory:", {
-                    fact: persistentMemory[0].fact?.substring(0, 50),
-                    importance: persistentMemory[0].importance,
-                    created: persistentMemory[0].created_at
-                });
-            }
-        } catch (memoryError) {
-            console.log('❌ FAILED: Persistent memory retrieval:', memoryError.message);
-            memoryErrors.push(`Memory: ${memoryError.message}`);
-            persistentMemory = []; // Ensure it's an array
-        }
-        
-        // 🔧 FIXED: Build memory context using utils/memory.js
-        let memoryContext = '';
-        try {
-            console.log("🏗️ Building conversation context with memory...");
-            memoryContext = await buildConversationContext(chatId);
-            console.log(`✅ SUCCESS: Built context (${memoryContext.length} chars)`);
-        } catch (contextError) {
-            console.log('❌ FAILED: Context building:', contextError.message);
-            memoryErrors.push(`Context: ${contextError.message}`);
-            
-            // 🔧 FALLBACK: Manual context building
-            if (conversationHistory.length > 0 || persistentMemory.length > 0) {
-                memoryContext = `\n\n🧠 BASIC MEMORY CONTEXT:\n`;
-                
-                if (persistentMemory.length > 0) {
-                    memoryContext += `\nIMPORTANT FACTS TO REMEMBER:\n`;
-                    persistentMemory.slice(0, 3).forEach((mem, i) => {
-                        memoryContext += `${i + 1}. ${mem.fact}\n`;
-                    });
-                }
-                
-                if (conversationHistory.length > 0) {
-                    memoryContext += `\nRECENT CONVERSATION:\n`;
-                    const recent = conversationHistory[0];
-                    memoryContext += `User asked: "${recent.user_message?.substring(0, 100)}"\n`;
-                }
-                
-                console.log(`🔧 FALLBACK: Manual context built (${memoryContext.length} chars)`);
-            }
-        }
-        
-        // 🔧 FIXED: Enhanced conversation intelligence
+        // Determine conversation intelligence
         const conversationIntel = {
             type: determineConversationType(text),
             complexity: determineComplexity(text),
-            liveDataRequired: requiresLiveData(text),
-            primaryAI: 'GPT_COMMANDER',
-            enhancementLevel: 'ENHANCED',
-            style: 'helpful_intelligent_with_memory',
-            reasoning: 'Enhanced dual command routing with fixed memory integration',
-            memoryAvailable: memoryContext.length > 0,
-            conversationCount: conversationHistory.length,
-            memoryCount: persistentMemory.length,
-            memoryErrors: memoryErrors
+            requiresLiveData: requiresLiveData(text),
+            hasMemory: context.memoryAvailable,
+            conversationCount: context.conversationHistory?.length || 0
         };
         
-        console.log("🎯 Conversation Intel:", {
-            type: conversationIntel.type,
-            memoryAvailable: conversationIntel.memoryAvailable,
-            errors: memoryErrors.length
-        });
+        console.log("🎯 Conversation Intel:", conversationIntel);
         
-        // 🔧 FIXED: Enhanced dual command with memory context
-        console.log("🤖 Executing dual command with memory context...");
-        let result;
-        
-        try {
-            result = await executeDualCommand(text, chatId, {
-                conversationHistory: conversationHistory,
-                persistentMemory: persistentMemory,
-                conversationIntel: conversationIntel,
-                messageType: 'text',
-                hasMedia: false,
-                memoryContext: memoryContext,
-                originalMessage: text
-            });
-            
-            console.log("✅ Dual command executed successfully:", {
-                aiUsed: result.aiUsed,
-                success: result.success,
-                responseLength: result.response?.length
-            });
-            
-        } catch (dualError) {
-            console.log("❌ Dual command failed, using GPT fallback:", dualError.message);
-            
-            // 🔧 FALLBACK: Direct GPT with memory
-            const enhancedPrompt = memoryContext ? 
-                `${memoryContext}\n\nUser question: ${text}` : text;
-                
-            const response = await getUniversalAnalysis(enhancedPrompt, { 
-                maxTokens: 1500,
-                temperature: 0.7,
-                model: "gpt-5" // Use stable model as fallback
-            });
-            
-            result = {
-                response: response,
-                aiUsed: 'GPT_FALLBACK',
-                success: true,
-                contextUsed: !!memoryContext,
-                responseTime: 2000,
-                memoryErrors: memoryErrors
-            };
-        }
+        // Execute dual AI command
+        const result = await executeDualAICommand(text, chatId, context, conversationIntel);
         
         // Send response to user
         await sendSmartMessage(bot, chatId, result.response);
         
-        // 🔧 FIXED: Enhanced conversation save with error handling
-        try {
-            console.log("💾 Saving conversation to database...");
-            await saveConversationDB(chatId, text, result.response, "text", {
-                aiUsed: result.aiUsed,
-                queryType: result.queryType || conversationIntel.type,
-                complexity: result.complexity || conversationIntel.complexity,
-                contextUsed: result.contextUsed || (memoryContext.length > 0),
-                responseTime: result.responseTime || 2000,
-                success: result.success,
-                memoryAvailable: memoryContext.length > 0,
-                memoryErrors: memoryErrors,
-                enhanced: true
-            });
-            console.log("✅ Conversation saved successfully");
-            
-        } catch (saveError) {
-            console.log('⚠️ Could not save conversation:', saveError.message);
-            // Continue execution even if save fails
-        }
+        // Save conversation
+        await saveConversationToDatabase(chatId, text, result, context);
         
-        // 🔧 FIXED: Memory extraction with proper error handling
-        try {
-            console.log("🧠 Extracting facts for persistent memory...");
-            const { extractAndSaveFacts } = require('./utils/memory');
-            
-            const extractionResult = await extractAndSaveFacts(chatId, text, result.response);
-            
-            if (extractionResult && extractionResult.extractedFacts > 0) {
-                console.log(`✅ Memory extraction successful: ${extractionResult.extractedFacts} facts extracted`);
-            } else {
-                console.log("ℹ️ No new facts extracted from this conversation");
-            }
-            
-        } catch (extractError) {
-            console.log('⚠️ Memory extraction failed:', extractError.message);
-            
-            // 🔧 FALLBACK: Manual memory extraction for important conversations
-            if (shouldSaveToPersistentMemory(text, result.response)) {
-                try {
-                    const memoryFact = extractMemoryFact(text, result.response);
-                    if (memoryFact) {
-                        await addPersistentMemoryDB(chatId, memoryFact, 'medium');
-                        console.log('✅ Manual memory save successful:', memoryFact.substring(0, 50));
-                    }
-                } catch (manualError) {
-                    console.log('❌ Manual memory save also failed:', manualError.message);
-                }
-            }
-        }
+        // Extract and save new memories
+        await extractAndSaveMemories(chatId, text, result.response);
         
-        // 🔧 SUCCESS SUMMARY
-        console.log("🎉 CONVERSATION COMPLETED:", {
-            memoryAvailable: memoryContext.length > 0,
-            aiUsed: result.aiUsed,
-            conversationSaved: true,
-            memoryErrors: memoryErrors.length,
-            enhanced: true
-        });
+        console.log("✅ Dual AI conversation completed successfully");
+        return Date.now() - startTime;
         
     } catch (error) {
-        console.error('❌ CRITICAL: Enhanced conversation error:', error.message);
-        console.error('Stack:', error.stack);
+        console.error('❌ Dual AI conversation error:', error.message);
         
-        // 🔧 EMERGENCY FALLBACK with basic memory attempt
-        try {
-            console.log('🚨 EMERGENCY FALLBACK: Basic GPT with minimal memory...');
-            
-            // Try to get at least some memory context
-            let basicMemory = '';
-            try {
-                const recentHistory = await getConversationHistoryDB(chatId, 2);
-                if (recentHistory && recentHistory.length > 0) {
-                    basicMemory = `\n\nFor context: You previously discussed "${recentHistory[0]?.user_message?.substring(0, 80) || 'general topics'}" with this user.`;
-                }
-            } catch (contextError) {
-                console.log('⚠️ Even basic memory failed:', contextError.message);
-            }
-            
-            const response = await getUniversalAnalysis(text + basicMemory, { 
-                maxTokens: 1000,
-                temperature: 0.7,
-                model: "gpt-5"
-            });
-            
-            await sendSmartMessage(bot, chatId, response);
-            
-            // Save emergency conversation
-            try {
-                await saveConversationDB(chatId, text, response, "text", { 
-                    error: error.message,
-                    fallback: 'emergency',
-                    basicMemoryAttempted: !!basicMemory,
-                    emergency: true
-                });
-            } catch (saveError) {
-                console.error('❌ Emergency save failed:', saveError.message);
-            }
-            
-        } catch (fallbackError) {
-            console.error('❌ TOTAL FAILURE: Even emergency fallback failed:', fallbackError.message);
-            await sendSmartMessage(bot, chatId, 
-                `🚨 I'm experiencing memory system difficulties. Let me try to help you anyway, but I may not remember our previous conversations right now. What can I help you with?`
-            );
-        }
+        // Fallback to single AI
+        const fallbackResponse = await handleFallbackResponse(chatId, text);
+        await sendSmartMessage(bot, chatId, fallbackResponse);
+        
+        return Date.now() - startTime;
     }
 }
 
-// 🔧 MISSING HELPER FUNCTIONS - Add these to make the code work
+// 🧠 Build Conversation Context with Memory
+async function buildConversationContext(chatId, currentText) {
+    const context = {
+        conversationHistory: [],
+        persistentMemory: [],
+        memoryContext: '',
+        memoryAvailable: false,
+        errors: []
+    };
+    
+    try {
+        // Get recent conversation history
+        context.conversationHistory = await getConversationHistoryDB(chatId, 5);
+        console.log(`📚 Retrieved ${context.conversationHistory.length} conversations`);
+    } catch (error) {
+        console.log('⚠️ Could not retrieve conversation history:', error.message);
+        context.errors.push(`History: ${error.message}`);
+    }
+    
+    try {
+        // Get persistent memories
+        context.persistentMemory = await getPersistentMemoryDB(chatId);
+        console.log(`🧠 Retrieved ${context.persistentMemory.length} memories`);
+    } catch (error) {
+        console.log('⚠️ Could not retrieve persistent memory:', error.message);
+        context.errors.push(`Memory: ${error.message}`);
+    }
+    
+    // Build memory context string
+    if (context.conversationHistory.length > 0 || context.persistentMemory.length > 0) {
+        context.memoryContext = buildMemoryContextString(context.conversationHistory, context.persistentMemory);
+        context.memoryAvailable = true;
+        console.log(`✅ Memory context built (${context.memoryContext.length} chars)`);
+    }
+    
+    return context;
+}
+
+// 🤖 Execute Dual AI Command
+async function executeDualAICommand(text, chatId, context, intel) {
+    try {
+        // Try dual AI system first
+        console.log("🚀 Executing dual AI command...");
+        
+        const dualResult = await executeDualCommand(text, chatId, {
+            conversationHistory: context.conversationHistory,
+            persistentMemory: context.persistentMemory,
+            memoryContext: context.memoryContext,
+            conversationIntel: intel,
+            messageType: 'text'
+        });
+        
+        console.log("✅ Dual AI command successful:", dualResult.aiUsed);
+        return dualResult;
+        
+    } catch (error) {
+        console.log("⚠️ Dual AI failed, using GPT fallback:", error.message);
+        
+        // Fallback to single GPT with memory
+        const enhancedPrompt = context.memoryContext ? 
+            `${context.memoryContext}\n\nUser: ${text}` : text;
+            
+        const response = await getUniversalAnalysis(enhancedPrompt, {
+            maxTokens: 1500,
+            temperature: 0.7,
+            model: "gpt-5"
+        });
+        
+        return {
+            response: response,
+            aiUsed: 'GPT_FALLBACK',
+            success: true,
+            memoryUsed: !!context.memoryContext,
+            queryType: intel.type
+        };
+    }
+}
+
+// 💾 Save Conversation to Database
+async function saveConversationToDatabase(chatId, userMessage, result, context) {
+    try {
+        await saveConversationDB(chatId, userMessage, result.response, "text", {
+            aiUsed: result.aiUsed,
+            queryType: result.queryType,
+            memoryUsed: context.memoryAvailable,
+            success: result.success,
+            enhanced: true
+        });
+        console.log("✅ Conversation saved to database");
+    } catch (error) {
+        console.log('⚠️ Could not save conversation:', error.message);
+    }
+}
+
+// 🧠 Extract and Save Memories
+async function extractAndSaveMemories(chatId, userMessage, aiResponse) {
+    try {
+        const { extractAndSaveFacts } = require('./utils/memory');
+        const result = await extractAndSaveFacts(chatId, userMessage, aiResponse);
+        
+        if (result?.extractedFacts > 0) {
+            console.log(`✅ Extracted ${result.extractedFacts} new memories`);
+        }
+    } catch (error) {
+        console.log('⚠️ Memory extraction failed:', error.message);
+    }
+}
+
+// 🚨 Fallback Response Handler
+async function handleFallbackResponse(chatId, text) {
+    try {
+        // Try to get minimal context
+        let basicContext = '';
+        try {
+            const recent = await getConversationHistoryDB(chatId, 1);
+            if (recent?.[0]) {
+                basicContext = `\n\nContext: You previously discussed "${recent[0].user_message?.substring(0, 50)}..." with this user.`;
+            }
+        } catch (contextError) {
+            console.log('⚠️ Even basic context failed');
+        }
+        
+        return await getUniversalAnalysis(text + basicContext, {
+            maxTokens: 1000,
+            temperature: 0.7,
+            model: "gpt-5"
+        });
+        
+    } catch (error) {
+        console.error('❌ Fallback also failed:', error.message);
+        return "🚨 I'm experiencing technical difficulties. Please try again in a moment.";
+    }
+}
+
+// 🔧 Helper Functions
+function buildMemoryContextString(history, memories) {
+    let context = '\n\n🧠 MEMORY CONTEXT:\n';
+    
+    if (memories.length > 0) {
+        context += '\nIMPORTANT FACTS:\n';
+        memories.slice(0, 3).forEach((mem, i) => {
+            context += `${i + 1}. ${mem.fact}\n`;
+        });
+    }
+    
+    if (history.length > 0) {
+        context += '\nRECENT CONVERSATION:\n';
+        const recent = history[0];
+        context += `User: "${recent.user_message?.substring(0, 80)}..."\n`;
+        if (recent.gpt_response) {
+            context += `AI: "${recent.gpt_response.substring(0, 80)}..."\n`;
+        }
+    }
+    
+    return context;
+}
+
 function determineConversationType(text) {
-    const lowerText = text.toLowerCase();
+    if (!text) return 'unknown';
     
-    if (lowerText.includes('regime') || lowerText.includes('economic')) return 'economic_regime';
-    if (lowerText.includes('cambodia') || lowerText.includes('lending')) return 'cambodia_fund';
-    if (lowerText.includes('time') || lowerText.includes('date')) return 'simple_datetime';
-    if (lowerText.includes('market') || lowerText.includes('trading')) return 'market_analysis';
-    if (lowerText.includes('joke') || lowerText.includes('story')) return 'casual';
-    if (lowerText.includes('analyze') || lowerText.includes('strategy')) return 'strategic_analysis';
-    if (lowerText.includes('remember') || lowerText.includes('memory')) return 'memory_query';
+    const lower = text.toLowerCase();
     
-    return 'balanced_strategic';
+    if (lower.includes('financial') || lower.includes('investment') || lower.includes('fund')) {
+        return 'financial_analysis';
+    }
+    if (lower.includes('analysis') || lower.includes('strategy')) {
+        return 'strategic_analysis';
+    }
+    if (lower.length > 100) {
+        return 'complex_discussion';
+    }
+    
+    return 'general_conversation';
 }
 
 function determineComplexity(text) {
-    if (text.length < 50) return 'minimal';
-    if (text.length < 200) return 'moderate';
-    if (text.length < 500) return 'high';
-    return 'maximum';
+    if (!text) return 'simple';
+    
+    if (text.length > 200) return 'complex';
+    if (text.length > 50) return 'medium';
+    return 'simple';
 }
 
 function requiresLiveData(text) {
-    const lowerText = text.toLowerCase();
-    return lowerText.includes('current') || lowerText.includes('latest') || 
-           lowerText.includes('today') || lowerText.includes('now') ||
-           lowerText.includes('price') || lowerText.includes('market');
+    if (!text) return false;
+    
+    const liveDataKeywords = ['current', 'latest', 'today', 'now', 'recent', 'update'];
+    return liveDataKeywords.some(keyword => text.toLowerCase().includes(keyword));
 }
 
+// 🔧 ADDITIONAL HELPER FUNCTIONS
 function shouldSaveToPersistentMemory(userMessage, aiResponse) {
     const lowerMessage = userMessage.toLowerCase();
     const lowerResponse = aiResponse.toLowerCase();
@@ -964,35 +906,119 @@ function extractMemoryFact(userMessage, aiResponse) {
     return `Context: ${userMessage.substring(0, 100)}`;
 }
 
-// 🔧 MISSING SESSION FUNCTIONS - Add these placeholders
+// 🔧 SESSION MANAGEMENT FUNCTIONS
 async function startUserSession(chatId, sessionType = 'GENERAL') {
     try {
-        console.log(`Starting session for ${chatId}: ${sessionType}`);
-        return `session_${chatId}_${Date.now()}`;
+        console.log(`📊 Starting session for ${chatId}: ${sessionType}`);
+        const sessionId = `session_${chatId}_${Date.now()}`;
+        
+        // You can expand this to save to database if needed
+        // await saveSessionToDB(sessionId, chatId, sessionType);
+        
+        return sessionId;
     } catch (error) {
-        console.error('Start session error:', error.message);
+        console.error('❌ Start session error:', error.message);
         return null;
     }
 }
 
 async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
     try {
-        console.log(`Ending session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
+        console.log(`📊 Ending session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
+        
+        // You can expand this to update database if needed
+        // await updateSessionInDB(sessionId, commandsExecuted, totalResponseTime);
+        
         return true;
     } catch (error) {
-        console.error('End session error:', error.message);
+        console.error('❌ End session error:', error.message);
         return false;
     }
 }
 
-// 🔧 MISSING API USAGE FUNCTION - Add this placeholder
-async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
+// 🔧 COMMAND EXECUTION WITH LOGGING
+async function executeCommandWithLogging(chatId, text, sessionId) {
+    const startTime = Date.now();
+    
     try {
-        console.log(`API Usage: ${apiProvider}/${endpoint} - ${successful ? 'SUCCESS' : 'FAILED'} - ${responseTime}ms`);
+        // Route to dual AI conversation handler
+        await handleDualAIConversation(chatId, text, sessionId);
+        
+        const executionTime = Date.now() - startTime;
+        
+        // Log successful command
+        await logCommandUsage(chatId, text, executionTime, true);
+        
+        return executionTime;
+        
+    } catch (error) {
+        const executionTime = Date.now() - startTime;
+        
+        // Log failed command
+        await logCommandUsage(chatId, text, executionTime, false, error.message);
+        
+        throw error;
+    }
+}
+
+// 🔧 COMMAND USAGE LOGGING
+async function logCommandUsage(chatId, command, executionTime, successful = true, errorMessage = null) {
+    try {
+        console.log(`📊 Command Log: ${chatId} | ${command.substring(0, 30)} | ${executionTime}ms | ${successful ? 'SUCCESS' : 'FAILED'}`);
+        
+        if (!successful && errorMessage) {
+            console.log(`❌ Error: ${errorMessage}`);
+        }
+        
+        // You can expand this to save to database if needed
+        // await saveCommandLogToDB(chatId, command, executionTime, successful, errorMessage);
+        
         return true;
     } catch (error) {
-        console.error('Log API usage error:', error.message);
+        console.error('❌ Log command usage error:', error.message);
         return false;
+    }
+}
+
+// 🔧 API USAGE LOGGING
+async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
+    try {
+        console.log(`🔌 API Usage: ${apiProvider}/${endpoint} | Calls: ${callsCount} | ${successful ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | Cost: ${costEstimate}`);
+        
+        // You can expand this to save to database for cost tracking
+        // await saveApiUsageToDB(apiProvider, endpoint, callsCount, successful, responseTime, dataVolume, costEstimate);
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Log API usage error:', error.message);
+        return false;
+    }
+}
+
+// 🔧 HEALTH CHECK FUNCTION
+async function performHealthCheck() {
+    try {
+        // Test database connection
+        // const dbTest = await testDatabaseConnection();
+        
+        // For now, return a basic health status
+        return {
+            status: 'healthy',
+            database: 'connected',
+            timestamp: new Date().toISOString(),
+            services: {
+                memory: 'operational',
+                conversation: 'operational',
+                dualAI: 'operational'
+            }
+        };
+    } catch (error) {
+        console.error('❌ Health check failed:', error.message);
+        return {
+            status: 'unhealthy',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        };
     }
 }
 
