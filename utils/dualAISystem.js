@@ -2310,7 +2310,6 @@ module.exports = {
 validateSystemConfiguration,
 gracefulSystemShutdown,
 
-// 📋 SYSTEM CONSTANTS
 SYSTEM_VERSION: '2.0-GPT5-CLAUDE4',
 POWER_LEVEL: 'ULTIMATE',
 LINE_COUNT: '2000+',
