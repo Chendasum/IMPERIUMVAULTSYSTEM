@@ -6,13 +6,6 @@
 const { OpenAI } = require("openai");
 require("dotenv").config({ path: ".env" });
 
-// Quick fix for logger.power
-if (!logger.power) {
-    logger.power = function(...args) {
-        console.log('⚡', ...args);
-    };
-}
-
 // 🔧 ENHANCED SAFE IMPORTS WITH INTELLIGENT FALLBACKS
 let claudeClient, openaiClient, logger;
 
