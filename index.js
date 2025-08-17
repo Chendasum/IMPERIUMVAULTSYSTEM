@@ -1779,43 +1779,6 @@ try {
     };
 }
 
-// 🔧 PLACEHOLDER HANDLERS - These need to be implemented in Part 3
-async function handleCambodiaMarket(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Cambodia market handler - Implementation in Part 3");
-}
-
-async function handleRiskAssessment(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Risk assessment handler - Implementation in Part 3");
-}
-
-async function handleMarketBriefing(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Market briefing handler - Implementation in Part 3");
-}
-
-async function handleRegimeAnalysis(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Regime analysis handler - Implementation in Part 3");
-}
-
-async function handleOpportunities(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Opportunities handler - Implementation in Part 3");
-}
-
-async function handleMacroAnalysis(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Macro analysis handler - Implementation in Part 3");
-}
-
-async function handleTradingStatus(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Trading status handler - Implementation in Part 3");
-}
-
-async function handlePositions(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Positions handler - Implementation in Part 3");
-}
-
-async function handleDocumentsList(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Documents list handler - Implementation in Part 3");
-}
-
 // 🔧 ENHANCED: Helper functions for conversation handling with memory integration
 function determineConversationType(text) {
     const lowerText = text.toLowerCase();
