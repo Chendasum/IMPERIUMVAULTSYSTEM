@@ -1401,74 +1401,13 @@ async function logCommandUsage(chatId, command, executionTime, successful = true
     }
 }
 
-// 🔧 ADDITIONAL ENHANCED HELPER FUNCTIONS for ULTIMATE Strategic Power System
-function formatUltimateResponse(response, metadata = {}) {
-    if (typeof response === 'string') {
-        return response;
-    }
-    
-    if (response && typeof response === 'object') {
-        let formatted = response.response || response.toString();
-        
-        if (metadata.showSystemInfo && response.aiUsed) {
-            formatted += `\n\n🏆 *Powered by ${response.aiUsed}*`;
-            if (response.confidence) {
-                formatted += ` | Confidence: ${(response.confidence * 100).toFixed(1)}%`;
-            }
-            if (response.executionTime) {
-                formatted += ` | Time: ${response.executionTime}ms`;
-            }
-        }
-        
-        return formatted;
-    }
-    
-    return "🏆 ULTIMATE Strategic Power System analysis complete.";
-}
-
-function calculateResponseQuality(response, executionTime, aiUsed) {
-    let quality = 'STANDARD';
-    
-    if (typeof response === 'string' && response.length > 200) {
-        if (executionTime < 3000 && aiUsed?.includes('ULTIMATE')) {
-            quality = 'EXCELLENT';
-        } else if (executionTime < 8000) {
-            quality = 'GOOD';
-        } else {
-            quality = 'ACCEPTABLE';
-        }
-    }
-    
-    return quality;
-}
-
-// 🔧 ULTIMATE Strategic Power System Status Functions
-function getSystemStatus() {
-    return {
-        name: 'ULTIMATE Strategic Power Dual AI System',
-        version: '2.0-GPT5-CLAUDE4',
-        status: 'OPERATIONAL',
-        powerLevel: 'MAXIMUM',
-        aiModels: 'GPT-5 + Claude Opus 4',
-        optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4',
-        lastUpdated: new Date().toISOString()
-    };
-}
-
-function isUltimateSystemActive() {
-    try {
-        // Check if ULTIMATE Strategic Power System is properly loaded
-        return typeof getUltimateStrategicAnalysis === 'function';
-    } catch (error) {
-        return false;
-    }
-}
-
-// Enhanced command execution with full database logging + memory testing + WEALTH SYSTEM + LIVE DATA + ULTIMATE Strategic Power System
+// 🔧 SINGLE ENHANCED COMMAND EXECUTION with ULTIMATE Strategic Power System
 async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
     
     try {
+        console.log(`🚀 Executing ULTIMATE Strategic command: ${text.substring(0, 50)}...`);
+        
         // Command handlers with database integration
         if (text === "/start") {
             await handleStartCommand(chatId);
@@ -1517,36 +1456,24 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         } else if (text === '/memory_stats') {
             await handleMemoryStatistics(chatId);
     
-        
         // 💰 LIVE DATA COMMANDS - CORRECTLY INTEGRATED
-        // 💰 CRYPTO PRICE QUERIES - Connect to existing getEnhancedCryptoData()
         } else if ((text.toLowerCase().includes('bitcoin') || text.toLowerCase().includes('btc')) && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('much') || text.toLowerCase().includes('cost'))) {
             await handleLiveBitcoinPrice(chatId);
         } else if (text.toLowerCase().includes('crypto') && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('market'))) {
             await handleLiveCryptoMarket(chatId);
-
-        // 📈 STOCK MARKET QUERIES - Connect to existing getStockMarketData()
         } else if ((text.toLowerCase().includes('stock') || text.toLowerCase().includes('market') || text.toLowerCase().includes('sp500') || text.toLowerCase().includes('dow')) && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('today') || text.toLowerCase().includes('current'))) {
             await handleLiveStockMarket(chatId);
-
-        // 🏦 ECONOMIC DATA QUERIES - Connect to existing getEconomicIndicators()
         } else if ((text.toLowerCase().includes('inflation') || text.toLowerCase().includes('fed') || text.toLowerCase().includes('interest rate') || text.toLowerCase().includes('gdp')) && 
                    (text.toLowerCase().includes('current') || text.toLowerCase().includes('today') || text.toLowerCase().includes('latest'))) {
             await handleLiveEconomicData(chatId);
-
-        // 💰 SMART CRYPTO PRICE QUERIES - Recognizes ALL cryptocurrencies
         } else if (isAnyCryptoRequest(text)) {
             await handleSmartCryptoPrice(chatId, text);
-
-        // 💱 FOREX QUERIES - Connect to existing getMajorForexPairs()
         } else if ((text.toLowerCase().includes('dollar') || text.toLowerCase().includes('forex') || text.toLowerCase().includes('currency') || text.toLowerCase().includes('exchange rate')) && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('rate') || text.toLowerCase().includes('today'))) {
             await handleLiveForexData(chatId);
-
-        // 📊 COMPREHENSIVE LIVE DATA COMMANDS
         } else if (text === '/live_data' || text === '/market_data' || text === '/live_market') {
             await handleComprehensiveLiveData(chatId);
         } else if (text === '/live_crypto' || text === '/crypto_live') {
@@ -1591,7 +1518,7 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
                     powerLevel: conversationIntel.powerLevel || 'MAXIMUM',
                     urgency: conversationIntel.urgency || 'standard',
                     domain: conversationIntel.domain || 'financial',
-                    optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4'
+                    optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4.1'
                 });
                 
                 // Process and format response
@@ -1661,6 +1588,8 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         // Log successful command execution with enhanced metadata
         await logCommandUsage(chatId, text, executionTime, true, null, 'ULTIMATE_STRATEGIC').catch(console.error);
         
+        console.log(`✅ ULTIMATE Strategic command completed in ${executionTime}ms`);
+        
         return executionTime;
         
     } catch (error) {
@@ -1703,8 +1632,8 @@ async function saveUltimateConversationToDatabase(chatId, userMessage, result, c
         const responseToSave = result.response || `🏆 ULTIMATE System response: ${result.error || 'Processing completed with maximum intelligence'}`;
         
         await saveConversationDB(chatId, userMessage, responseToSave, "text", {
-            aiUsed: result.aiUsed || 'ULTIMATE_GPT5_CLAUDE4',
-            modelUsed: result.modelUsed || 'GPT-5 + Claude Opus 4',
+            aiUsed: result.aiUsed || 'ULTIMATE_GPT5_CLAUDE4.1',
+            modelUsed: result.modelUsed || 'GPT-5 + Claude Opus 4.1',
             powerMode: result.powerMode || 'ULTIMATE_POWER',
             confidence: result.confidence || 0.95,
             executionTime: result.executionTime || 0,
@@ -1713,12 +1642,75 @@ async function saveUltimateConversationToDatabase(chatId, userMessage, result, c
             success: result.success !== false, // Default to true unless explicitly false
             enhanced: true,
             ultimate: true,
-            systemVersion: '2.0-GPT5-CLAUDE4',
-            optimizationLevel: result.optimizationLevel || 'ULTIMATE_GPT5_CLAUDE4'
+            systemVersion: '2.1-GPT5-CLAUDE4.1',
+            optimizationLevel: result.optimizationLevel || 'ULTIMATE_GPT5_CLAUDE4.1'
         });
         console.log("✅ ULTIMATE conversation saved to database with enhanced metadata");
     } catch (error) {
         console.log('⚠️ Could not save ULTIMATE conversation:', error.message);
+    }
+}
+
+// 🔧 ADDITIONAL ENHANCED HELPER FUNCTIONS for ULTIMATE Strategic Power System
+function formatUltimateResponse(response, metadata = {}) {
+    if (typeof response === 'string') {
+        return response;
+    }
+    
+    if (response && typeof response === 'object') {
+        let formatted = response.response || response.toString();
+        
+        if (metadata.showSystemInfo && response.aiUsed) {
+            formatted += `\n\n🏆 *Powered by ${response.aiUsed}*`;
+            if (response.confidence) {
+                formatted += ` | Confidence: ${(response.confidence * 100).toFixed(1)}%`;
+            }
+            if (response.executionTime) {
+                formatted += ` | Time: ${response.executionTime}ms`;
+            }
+        }
+        
+        return formatted;
+    }
+    
+    return "🏆 ULTIMATE Strategic Power System analysis complete.";
+}
+
+function calculateResponseQuality(response, executionTime, aiUsed) {
+    let quality = 'STANDARD';
+    
+    if (typeof response === 'string' && response.length > 200) {
+        if (executionTime < 3000 && aiUsed?.includes('ULTIMATE')) {
+            quality = 'EXCELLENT';
+        } else if (executionTime < 8000) {
+            quality = 'GOOD';
+        } else {
+            quality = 'ACCEPTABLE';
+        }
+    }
+    
+    return quality;
+}
+
+// 🔧 ULTIMATE Strategic Power System Status Functions
+function getSystemStatus() {
+    return {
+        name: 'ULTIMATE Strategic Power Dual AI System',
+        version: '2.1-GPT5-CLAUDE4.1',
+        status: 'OPERATIONAL',
+        powerLevel: 'MAXIMUM',
+        aiModels: 'GPT-5 + Claude Opus 4.1',
+        optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4.1',
+        lastUpdated: new Date().toISOString()
+    };
+}
+
+function isUltimateSystemActive() {
+    try {
+        // Check if ULTIMATE Strategic Power System is properly loaded
+        return typeof getUltimateStrategicAnalysis === 'function';
+    } catch (error) {
+        return false;
     }
 }
 
