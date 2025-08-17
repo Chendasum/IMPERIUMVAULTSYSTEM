@@ -5441,3 +5441,6 @@ module.exports = {
     initializeEnhancedDatabase,
     connectionStats
 };
+
+}  // ✅ Try adding this
+}  // ✅ Or even this if needed
