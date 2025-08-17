@@ -685,7 +685,7 @@ async function handleDualAIConversation(chatId, text, sessionId) {
 }
 
 // 🧠 Build Conversation Context with Memory
-async function buildConversationContext(chatId, currentText) {
+async function buildConversationContextWithMemory(chatId, currentText) {
     const context = {
         conversationHistory: [],
         persistentMemory: [],
