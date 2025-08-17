@@ -149,11 +149,6 @@ const {
     getStrategicAnalysis: getGptStrategicAnalysis
 } = require('./utils/openaiClient');
 
-const { 
-    executeDualCommand,
-    checkSystemHealth
-} = require('./utils/dualCommandSystem');
-
 // Load credentials
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
@@ -729,13 +724,13 @@ async function executeDualAICommand(text, chatId, context, intel) {
         // Try dual AI system first
         console.log("🚀 Executing dual AI command...");
         
-        const dualResult = await executeDualCommand(text, chatId, {
-            conversationHistory: context.conversationHistory,
-            persistentMemory: context.persistentMemory,
-            memoryContext: context.memoryContext,
-            conversationIntel: intel,
-            messageType: 'text'
-        });
+const dualResult = await getDualAnalysis(text, {
+    conversationHistory: context.conversationHistory,
+    persistentMemory: context.persistentMemory,
+    memoryContext: context.memoryContext,
+    conversationIntel: intel,
+    messageType: 'text'
+});
         
         console.log("✅ Dual AI command successful:", dualResult.aiUsed);
         return dualResult;
@@ -1664,13 +1659,13 @@ async function handleMemoryStatistics(chatId) {
 }
 
 // 🔧 HELPER: Manual Memory Test (fallback) - FIXED
-async function performManualMemoryTest(chatId) {
-    const tests = {
-        conversationHistory: false,
-        persistentMemory: false,
-        memoryBuilding: false,
-        dualCommandWithMemory: false
-    };
+try {
+    const result = await getDualAnalysis('Hello, test message');
+    tests.dualCommandWithMemory = !!result; // Convert to boolean
+} catch (error) {
+    console.log('Manual test - dual command failed:', error.message);
+    tests.dualCommandWithMemory = false;
+}
     
     try {
         // Test 1: Conversation History
@@ -1697,9 +1692,9 @@ async function performManualMemoryTest(chatId) {
     }
     
     try {
-        // Test 4: Dual Command with Memory
-        const result = await executeDualCommand('Hello, test message', chatId);
-        tests.dualCommandWithMemory = result.success;
+// Test 4: Dual Command with Memory
+const result = await getDualAnalysis('Hello, test message');
+tests.dualCommandWithMemory = result ? true : false; // Convert response to boolean
     } catch (error) {
         console.log('Manual test - dual command failed:', error.message);
     }
@@ -2129,15 +2124,21 @@ async function processVoiceWithDualAI(transcribedText, chatId, sessionId) {
     try {
         console.log("🤖 Processing transcription with GPT-5 + Claude Opus 4.1 dual AI system...");
         
-        // Use your existing dual command system
-        const dualResult = await executeDualCommand(transcribedText, chatId, {
-            messageType: 'voice_transcription',
-            enhancementLevel: 'VOICE_ENHANCED',
-            originalAudio: true,
-            transcriptionLength: transcribedText.length
-        });
-        
-        return dualResult;
+// Use your real dual AI system
+const dualResult = await getDualAnalysis(transcribedText, {
+    messageType: 'voice_transcription',
+    enhancementLevel: 'VOICE_ENHANCED',
+    originalAudio: true,
+    transcriptionLength: transcribedText.length
+});
+
+// Format result for compatibility
+return {
+    response: dualResult,
+    aiUsed: 'DUAL_AI_SYSTEM',
+    success: !!dualResult,
+    queryType: 'voice_transcription'
+};
         
     } catch (error) {
         console.error("❌ Dual AI voice processing error:", error.message);
