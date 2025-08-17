@@ -5442,4 +5442,7 @@ module.exports = {
     connectionStats
 };
 
-}  // ✅ Try adding tdhis
+// ✅ ADD THESE CLOSING BRACES:
+}
+}
+}
