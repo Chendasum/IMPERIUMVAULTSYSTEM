@@ -243,14 +243,13 @@ async function testDatabaseFunctions() {
 async function initializeDailyMetrics() {
     try {
         await updateSystemMetrics({
-            system_startup: 1
+            total_users: 0    // ✅ Use a column that actually exists
         });
         console.log("📊 Daily metrics initialized");
     } catch (error) {
         console.error("⚠️ Daily metrics initialization failed:", error.message);
     }
 }
-
 // User Authentication
 function isAuthorizedUser(chatId) {
     const authorizedUsers = process.env.ADMIN_CHAT_ID
