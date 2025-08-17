@@ -268,7 +268,7 @@ async function logApiUsage(service, endpoint, calls = 1, success = true, respons
     }
 }
 
-// 🚀 COMPLETE ENHANCED COMPREHENSIVE MARKET DATA
+// 🚀 COMPLETE ENHANCED COMPREHENSIVE MARKET DATA - FIXED
 async function getComprehensiveMarketData() {
     try {
         console.log("📊 Fetching SUPER comprehensive market data...");
@@ -420,7 +420,7 @@ async function getComprehensiveMarketData() {
         }
         return null;
     }
-}
+} // ✅ FIXED: Added missing closing brace
 
 // Helper function to calculate data quality
 function calculateDataQuality(marketData) {
@@ -453,12 +453,12 @@ function calculateDataQuality(marketData) {
 function calculateDerivedIndicators(marketData) {
     try {
         // Yield curve analysis
-        if (marketData.yields.curve_10Y_2Y !== null) {
+        if (marketData.yields && marketData.yields.curve_10Y_2Y !== null) {
             marketData.yields.inverted = marketData.yields.curve_10Y_2Y < 0;
         }
         
         // VIX-based fear/greed assessment
-        if (marketData.sentiment.vix !== null) {
+        if (marketData.sentiment && marketData.sentiment.vix !== null) {
             if (marketData.sentiment.vix < 15) {
                 marketData.sentiment.fear_greed_level = "EXTREME_GREED";
             } else if (marketData.sentiment.vix < 20) {
@@ -473,7 +473,7 @@ function calculateDerivedIndicators(marketData) {
         }
         
         // Dollar strength assessment
-        if (marketData.currencies.dollar_index !== null) {
+        if (marketData.currencies && marketData.currencies.dollar_index !== null) {
             if (marketData.currencies.dollar_index > 100) {
                 marketData.currencies.dollar_strength = "STRONG";
             } else if (marketData.currencies.dollar_index > 95) {
@@ -484,7 +484,7 @@ function calculateDerivedIndicators(marketData) {
         }
         
         // Gold/Oil ratio
-        if (marketData.commodities.gold && marketData.commodities.oil) {
+        if (marketData.commodities && marketData.commodities.gold && marketData.commodities.oil) {
             marketData.commodities.gold_oil_ratio = 
                 (marketData.commodities.gold / marketData.commodities.oil).toFixed(2);
         }
@@ -503,20 +503,22 @@ function determineMarketRegime(marketData) {
         let regime_score = 0;
         
         // VIX contribution
-        if (marketData.sentiment.vix !== null) {
+        if (marketData.sentiment && marketData.sentiment.vix !== null) {
             if (marketData.sentiment.vix < 20) regime_score += 2;
             else if (marketData.sentiment.vix > 30) regime_score -= 2;
         }
         
         // Yield curve contribution
-        if (marketData.yields.inverted === true) regime_score -= 3;
-        else if (marketData.yields.curve_10Y_2Y > 1) regime_score += 1;
+        if (marketData.yields && marketData.yields.inverted === true) regime_score -= 3;
+        else if (marketData.yields && marketData.yields.curve_10Y_2Y > 1) regime_score += 1;
         
         // Dollar strength contribution
-        if (marketData.currencies.dollar_strength === "STRONG") regime_score += 1;
-        else if (marketData.currencies.dollar_strength === "WEAK") regime_score -= 1;
+        if (marketData.currencies && marketData.currencies.dollar_strength === "STRONG") regime_score += 1;
+        else if (marketData.currencies && marketData.currencies.dollar_strength === "WEAK") regime_score -= 1;
         
         // Determine regime
+        if (!marketData.sentiment) marketData.sentiment = {};
+        
         if (regime_score >= 2) {
             marketData.sentiment.market_regime = "RISK_ON";
         } else if (regime_score <= -2) {
@@ -527,6 +529,7 @@ function determineMarketRegime(marketData) {
         
     } catch (error) {
         console.warn('⚠️ Market regime determination failed:', error.message);
+        if (!marketData.sentiment) marketData.sentiment = {};
         marketData.sentiment.market_regime = "UNKNOWN";
     }
 }
@@ -537,15 +540,15 @@ function assessDataQuality(marketData) {
         let available = 0;
         let total = 0;
         
-        // Count available data sources
+        // Count available data sources with null checks
         const checks = [
             marketData.markets && Object.keys(marketData.markets).length > 0,
-            marketData.yields.yield10Y !== null,
-            marketData.yields.yield2Y !== null,
-            marketData.sentiment.vix !== null,
-            marketData.currencies.dollar_index !== null,
-            marketData.commodities.gold !== null,
-            marketData.commodities.oil !== null,
+            marketData.yields && marketData.yields.yield10Y !== null,
+            marketData.yields && marketData.yields.yield2Y !== null,
+            marketData.sentiment && marketData.sentiment.vix !== null,
+            marketData.currencies && marketData.currencies.dollar_index !== null,
+            marketData.commodities && marketData.commodities.gold !== null,
+            marketData.commodities && marketData.commodities.oil !== null,
             marketData.economics && Object.keys(marketData.economics).length > 0,
             marketData.stocks && Object.keys(marketData.stocks).length > 0
         ];
@@ -553,87 +556,17 @@ function assessDataQuality(marketData) {
         total = checks.length;
         available = checks.filter(check => check).length;
         
+        if (!marketData.data_quality) marketData.data_quality = {};
         marketData.data_quality.sources_available = available;
         marketData.data_quality.sources_failed = total - available;
         marketData.data_quality.completeness_score = Math.round((available / total) * 100);
         
     } catch (error) {
         console.warn('⚠️ Data quality assessment failed:', error.message);
+        if (!marketData.data_quality) marketData.data_quality = {};
         marketData.data_quality.completeness_score = 0;
     }
 }
-
-// Enhanced main message handler with dual AI integration
-bot.on("message", async (msg) => {
-    const chatId = msg.chat.id;
-    const text = msg.text;
-    const messageId = `${chatId}_${Date.now()}`;
-    
-    console.log(`📨 Message from ${chatId}: ${text?.substring(0, 50) || 'Media message'}`);
-    
-    // Security check
-    if (!isAuthorizedUser(chatId)) {
-        console.log(`🚫 Unauthorized access from ${chatId}`);
-        await sendSmartMessage(bot, chatId, 
-            `🚫 Access denied. This is a private AI system.\n\nYour Chat ID: ${chatId}\n\nContact admin if this is your account.`
-        );
-        return;
-    }
-
-    // Start session tracking
-    const sessionId = await startUserSession(chatId, 'TELEGRAM_BOT').catch(() => null);
-    const startTime = Date.now();
-
-    try {
-        // Handle media messages
-        if (msg.voice) {
-            console.log("🎤 Voice message received");
-            await handleVoiceMessage(msg, chatId, sessionId);
-            return;
-        }
-
-        if (msg.photo) {
-            console.log("🖼️ Image received");
-            await handleImageMessage(msg, chatId, sessionId);
-            return;
-        }
-
-        if (msg.document) {
-            console.log("📄 Document received:", msg.document.file_name);
-            await handleDocumentMessage(msg, chatId, sessionId);
-            return;
-        }
-
-        // Handle text messages
-        if (!text) {
-            await sendSmartMessage(bot, chatId, "Please send text, voice messages, images, or documents.");
-            return;
-        }
-
-        // Route to dual AI conversation handler
-        const executionTime = await handleDualAIConversation(chatId, text, sessionId);
-        
-        // End session tracking
-        if (sessionId) {
-            await endUserSession(sessionId, 1, executionTime).catch(console.error);
-        }
-
-    } catch (error) {
-        console.error('❌ Message handling error:', error.message);
-        
-        // Log error
-        await logCommandUsage(chatId, text || 'MEDIA', Date.now() - startTime, false, error.message).catch(console.error);
-        
-        // End session with error
-        if (sessionId) {
-            await endUserSession(sessionId, 0, Date.now() - startTime).catch(console.error);
-        }
-        
-        await sendSmartMessage(bot, chatId, 
-            `Sorry, I encountered an error processing your request. Please try again. 🔧`
-        );
-    }
-});
 
 // 🤖 Dual AI Conversation Handler - Clean and Focused
 async function handleDualAIConversation(chatId, text, sessionId) {
