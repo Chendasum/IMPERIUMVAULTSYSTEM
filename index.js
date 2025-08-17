@@ -641,7 +641,7 @@ async function handleDualAIConversation(chatId, text, sessionId) {
         console.log("🤖 Starting dual AI conversation processing:", text.substring(0, 50));
         
         // Get conversation context with memory
-        const context = await buildConversationContext(chatId, text);
+        const context = await buildConversationContextWithMemory(chatId, text);
         
         // Determine conversation intelligence
         const conversationIntel = {
@@ -681,7 +681,7 @@ async function handleDualAIConversation(chatId, text, sessionId) {
 }
 
 // 🧠 Build Conversation Context with Memory
-async function buildConversationContext(chatId, currentText) {
+async function buildConversationContextWithMemory(chatId, currentText) {
     const context = {
         conversationHistory: [],
         persistentMemory: [],
