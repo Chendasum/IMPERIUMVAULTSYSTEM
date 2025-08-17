@@ -43,11 +43,11 @@ logger = {
     debug: (msg, data) => console.log(`🐛 ${new Date().toISOString()} ${msg}`, data || ''),
     strategic: (msg, data) => console.log(`🎯 ${new Date().toISOString()} STRATEGIC: ${msg}`, data || ''),
     power: (msg, data) => console.log(`⚡ ${new Date().toISOString()} POWER: ${msg}`, data || ''),
-    // 🔧 FIXED: Ensure these functions always exist
     gpt5: (msg, data) => console.log(`🚀 ${new Date().toISOString()} GPT-5: ${msg}`, data || ''),
     claude: (msg, data) => console.log(`🧠 ${new Date().toISOString()} CLAUDE: ${msg}`, data || ''),
     opt5: (msg, data) => console.log(`🚀 ${new Date().toISOString()} OPT5: ${msg}`, data || '')
 };
+}
 
 // 🚀 GPT-5 OFFICIAL MODEL CONFIGURATIONS
 const GPT5_POWER_MODELS = {
