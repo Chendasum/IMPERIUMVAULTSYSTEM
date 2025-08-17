@@ -1363,7 +1363,7 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
     }
 }
 
-// 🔧 ENHANCED COMMAND USAGE LOGGING for ULTIMATE Strategic Power System
+// 🔧 SINGLE UNIFIED COMMAND USAGE LOGGING for ULTIMATE Strategic Power System
 async function logCommandUsage(chatId, command, executionTime, successful = true, errorMessage = null, commandType = 'ULTIMATE_STRATEGIC') {
     try {
         const logData = {
@@ -1374,7 +1374,7 @@ async function logCommandUsage(chatId, command, executionTime, successful = true
             successful: successful,
             errorMessage: errorMessage,
             timestamp: new Date().toISOString(),
-            systemVersion: '2.0-GPT5-CLAUDE4',
+            systemVersion: '2.1-GPT5-CLAUDE4.1',
             performance: executionTime < 3000 ? 'EXCELLENT' : executionTime < 8000 ? 'GOOD' : 'NEEDS_OPTIMIZATION'
         };
         
@@ -1384,9 +1384,19 @@ async function logCommandUsage(chatId, command, executionTime, successful = true
             console.log(`❌ Error Details: ${errorMessage}`);
         }
         
+        // Enhanced database integration with fallback
+        try {
+            // Try to save to database if available
+            const { saveDualAIConversation } = require('./utils/database');
+            await saveDualAIConversation(chatId, logData);
+        } catch (dbError) {
+            // Silent fallback - don't break the system if database fails
+            console.log('⚠️ Database log failed, continuing...');
+        }
+        
         return true;
     } catch (error) {
-        console.error('❌ Log ULTIMATE command usage error:', error.message);
+        console.error('❌ Log command usage error:', error.message);
         return false;
     }
 }
