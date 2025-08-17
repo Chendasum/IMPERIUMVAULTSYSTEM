@@ -775,44 +775,42 @@ async function executeDualAICommand(text, chatId, context, intel) {
         console.log("⚠️ Ultimate Strategic Analysis failed, using Universal Analysis fallback:", error.message);
         
 } else {
-            // 🔧 ENHANCED: Better fallback with context
-            const enhancedPrompt = context.memoryContext ? 
-                `${context.memoryContext}\n\nUser: ${text}` : text;
-                
-            const fallbackResult = await getUniversalAnalysis(enhancedPrompt, {
-                chatId: chatId,
-                maxTokens: 1500,
-                temperature: 0.7
-            });
-            
-            // Handle fallback result
-            const fallbackResponse = (typeof fallbackResult === 'string') ? 
-                fallbackResult : fallbackResult?.response || "I've processed your request.";
-            
-            return {
-                response: fallbackResponse,
-                aiUsed: 'UNIVERSAL_FALLBACK',
-                success: true,
-                memoryUsed: !!context.memoryContext,
-                queryType: intel.type,
-                fallback: true,
-                error: error.message
-            };
-            
-        } catch (fallbackError) {
-            console.error("❌ Even Universal Analysis fallback failed:", fallbackError.message);
-            
-            // Final emergency fallback
-            return {
-                response: "I apologize, but I'm experiencing technical difficulties. Please try again in a moment.",
-                aiUsed: 'EMERGENCY_FALLBACK',
-                success: false,
-                memoryUsed: false,
-                queryType: intel.type,
-                error: `Primary: ${error.message}, Fallback: ${fallbackError.message}`
-            };
-        }
-    }
+    // 🔧 ENHANCED: Better fallback with context
+    const enhancedPrompt = context.memoryContext ? 
+        `${context.memoryContext}\n\nUser: ${text}` : text;
+        
+    const fallbackResult = await getUniversalAnalysis(enhancedPrompt, {
+        chatId: chatId,
+        maxTokens: 1500,
+        temperature: 0.7
+    });
+    
+    // Handle fallback result
+    const fallbackResponse = (typeof fallbackResult === 'string') ? 
+        fallbackResult : fallbackResult?.response || "I've processed your request.";
+    
+    return {
+        response: fallbackResponse,
+        aiUsed: 'UNIVERSAL_FALLBACK',
+        success: true,
+        memoryUsed: !!context.memoryContext,
+        queryType: intel.type,
+        fallback: true,
+        error: error.message
+    };
+    
+} catch (fallbackError) {
+    console.error("❌ Even Universal Analysis fallback failed:", fallbackError.message);
+    
+    // Final emergency fallback
+    return {
+        response: "I apologize, but I'm experiencing technical difficulties. Please try again in a moment.",
+        aiUsed: 'EMERGENCY_FALLBACK',
+        success: false,
+        memoryUsed: false,
+        queryType: intel.type,
+        error: `Primary: ${error.message}, Fallback: ${fallbackError.message}`
+    };
 }
 
 // 💾 Save Conversation to Database - FIXED
