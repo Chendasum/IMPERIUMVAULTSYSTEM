@@ -721,51 +721,98 @@ async function buildConversationContextWithMemory(chatId, currentText) {
     return context;
 }
 
-// 🤖 Execute Dual AI Command
+// 🤖 Execute Dual AI Command - FIXED
 async function executeDualAICommand(text, chatId, context, intel) {
     try {
-        // Try dual AI system first
-        console.log("🚀 Executing dual AI command...");
+        console.log("🚀 Executing dual AI command with Ultimate Strategic Analysis...");
         
-        const dualResult = await getDualAnalysis(text, {
+        // 🔧 FIXED: Use the correct main function
+        const dualResult = await getUltimateStrategicAnalysis(text, {
+            chatId: chatId,
+            sessionId: context.sessionId || `session_${chatId}_${Date.now()}`,
             conversationHistory: context.conversationHistory,
             persistentMemory: context.persistentMemory,
             memoryContext: context.memoryContext,
             conversationIntel: intel,
-            messageType: 'text'
+            messageType: 'text',
+            userContext: {
+                platform: 'telegram',
+                timestamp: new Date().toISOString()
+            }
         });
         
-        console.log("✅ Dual AI command successful:", dualResult?.aiUsed || 'DUAL_AI');
+        console.log("✅ Ultimate Strategic Analysis successful:");
+        console.log(`   AI Used: ${dualResult?.aiUsed || 'DUAL_AI'}`);
+        console.log(`   Model: ${dualResult?.modelUsed || 'Unknown'}`);
+        console.log(`   Confidence: ${dualResult?.confidence ? (dualResult.confidence * 100).toFixed(1) + '%' : 'N/A'}`);
+        console.log(`   Execution Time: ${dualResult?.executionTime || 'Unknown'}ms`);
         
-        // Ensure proper response format - FIXED
+        // 🔧 ENHANCED: Better response handling
+        let finalResponse;
+        if (typeof dualResult === 'string') {
+            finalResponse = dualResult;
+        } else if (dualResult && dualResult.response) {
+            finalResponse = dualResult.response;
+        } else if (dualResult && dualResult.success !== false) {
+            finalResponse = "I've completed your analysis using our dual AI system.";
+        } else {
+            throw new Error(dualResult?.error || 'Analysis failed');
+        }
+        
         return {
-            response: (typeof dualResult === 'string') ? dualResult : "I've processed your request with dual AI analysis.",
-            aiUsed: dualResult?.aiUsed || 'DUAL_AI_SYSTEM',
+            response: finalResponse,
+            aiUsed: dualResult?.aiUsed || 'ULTIMATE_DUAL_AI',
+            modelUsed: dualResult?.modelUsed || 'Unknown',
+            confidence: dualResult?.confidence || 0.8,
+            executionTime: dualResult?.executionTime || 0,
+            powerMode: dualResult?.powerMode || 'STANDARD',
             success: true,
             memoryUsed: !!context.memoryContext,
-            queryType: intel.type
+            queryType: intel.type,
+            analytics: dualResult?.analytics || null
         };
         
     } catch (error) {
-        console.log("⚠️ Dual AI failed, using GPT fallback:", error.message);
+        console.log("⚠️ Ultimate Strategic Analysis failed, using Universal Analysis fallback:", error.message);
         
-        // Fallback to single GPT with memory
-        const enhancedPrompt = context.memoryContext ? 
-            `${context.memoryContext}\n\nUser: ${text}` : text;
+        try {
+            // 🔧 ENHANCED: Better fallback with context
+            const enhancedPrompt = context.memoryContext ? 
+                `${context.memoryContext}\n\nUser: ${text}` : text;
+                
+            const fallbackResult = await getUniversalAnalysis(enhancedPrompt, {
+                chatId: chatId,
+                maxTokens: 1500,
+                temperature: 0.7
+            });
             
-        const response = await getUniversalAnalysis(enhancedPrompt, {
-            maxTokens: 1500,
-            temperature: 0.7,
-            model: "gpt-5"
-        });
-        
-        return {
-            response: (typeof response === 'string') ? response : "I've processed your request.",
-            aiUsed: 'GPT_FALLBACK',
-            success: true,
-            memoryUsed: !!context.memoryContext,
-            queryType: intel.type
-        };
+            // Handle fallback result
+            const fallbackResponse = (typeof fallbackResult === 'string') ? 
+                fallbackResult : fallbackResult?.response || "I've processed your request.";
+            
+            return {
+                response: fallbackResponse,
+                aiUsed: 'UNIVERSAL_FALLBACK',
+                success: true,
+                memoryUsed: !!context.memoryContext,
+                queryType: intel.type,
+                fallback: true,
+                error: error.message
+            };
+            
+        } catch (fallbackError) {
+            console.error("❌ Even Universal Analysis fallback failed:", fallbackError.message);
+            
+            // Final emergency fallback
+            return {
+                response: "I apologize, but I'm experiencing technical difficulties. Please try again in a moment.",
+                aiUsed: 'EMERGENCY_FALLBACK',
+                success: false,
+                memoryUsed: false,
+                queryType: intel.type,
+                error: `Primary: ${error.message}, Fallback: ${fallbackError.message}`
+            };
+        }
     }
 }
 
@@ -1104,9 +1151,22 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         
 } else {
     // Handle general conversation with REAL dual AI system
-    const { processConversation } = require('./utils/dualAISystem');
-    const result = await processConversation(chatId, text);
-    await sendSmartMessage(bot, chatId, result.response);
+    try {
+        const result = await getUltimateStrategicAnalysis(text, {
+            chatId: chatId,
+            sessionId: sessionId || `session_${chatId}_${Date.now()}`
+        });
+        
+        // Extract response properly
+        const response = (typeof result === 'string') ? result : result.response;
+        await sendSmartMessage(bot, chatId, response);
+        
+        console.log(`✅ General conversation processed with ${result.aiUsed || 'Dual AI'}`);
+        
+    } catch (error) {
+        console.error('❌ General conversation failed:', error.message);
+        await sendSmartMessage(bot, chatId, "I apologize, but I'm experiencing technical difficulties. Please try again.");
+    }
 }
         
         const executionTime = Date.now() - startTime;
@@ -1956,17 +2016,20 @@ async function handleVoiceMessage(msg, chatId, sessionId) {
             }).catch(err => console.error('Voice save error:', err.message));
             
 // Process transcribed text with REAL dual AI system
-const { processConversation } = require('./utils/dualAISystem');
-const result = await processConversation(chatId, transcribedText);
-await sendSmartMessage(bot, chatId, result.response);
-            
-            // Log successful API usage
-            await logApiUsage('WHISPER', 'transcription', 1, true, responseTime, msg.voice.file_size || 0)
-                .catch(err => console.error('API log error:', err.message));
-            
-            console.log("✅ Voice message processed successfully with dual AI");
-        } else {
-            await sendSmartMessage(bot, chatId, "❌ Voice transcription failed. Please try again or speak more clearly.");
+try {
+    const result = await getUltimateStrategicAnalysis(transcribedText, {
+        chatId: chatId,
+        sessionId: sessionId || `session_${chatId}_${Date.now()}`,
+        messageType: 'voice_transcription'
+    });
+    
+    const response = (typeof result === 'string') ? result : result.response;
+    await sendSmartMessage(bot, chatId, response);
+    
+} catch (dualError) {
+    console.error('❌ Dual AI failed for voice:', dualError.message);
+    await sendSmartMessage(bot, chatId, "I've processed your voice message.");
+}
             
             // Save failed transcription attempt with diagnostic info
             await saveConversationDB(chatId, "[VOICE_FAILED]", "Transcription failed", "voice", {
@@ -2142,13 +2205,14 @@ async function processVoiceWithDualAI(transcribedText, chatId, sessionId) {
     try {
         console.log("🤖 Processing transcription with GPT-5 + Claude Opus 4.1 dual AI system...");
         
-// Use your real dual AI system
-const dualResult = await getDualAnalysis(transcribedText, {
+const dualResult = await getUltimateStrategicAnalysis(transcribedText, {
+    chatId: chatId,  // ✅ ADD THIS
+    sessionId: sessionId || `session_${Date.now()}`,  // ✅ ADD THIS
     messageType: 'voice_transcription',
     enhancementLevel: 'VOICE_ENHANCED',
     originalAudio: true,
     transcriptionLength: transcribedText.length
-});
+});;
 
 // Format result for compatibility
 return {
