@@ -774,7 +774,7 @@ async function executeDualAICommand(text, chatId, context, intel) {
     } catch (error) {
         console.log("⚠️ Ultimate Strategic Analysis failed, using Universal Analysis fallback:", error.message);
         
-        try {
+} else {
             // 🔧 ENHANCED: Better fallback with context
             const enhancedPrompt = context.memoryContext ? 
                 `${context.memoryContext}\n\nUser: ${text}` : text;
@@ -5441,8 +5441,3 @@ module.exports = {
     initializeEnhancedDatabase,
     connectionStats
 };
-
-// ✅ ADD THESE CLOSING BRACES:
-}
-}
-}
