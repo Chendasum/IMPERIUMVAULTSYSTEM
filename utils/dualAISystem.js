@@ -6,15 +6,6 @@
 const { OpenAI } = require("openai");
 require("dotenv").config({ path: ".env" });
 
-// Fix all missing logger functions - ADD THIS HERE ⬇️
-const logger = console; // Use console as logger
-logger.strategic = (...args) => console.log('🎯', ...args);
-logger.success = (...args) => console.log('✅', ...args);
-logger.power = (...args) => console.log('⚡', ...args);
-logger.info = (...args) => console.log('ℹ️', ...args);
-logger.warn = (...args) => console.log('⚠️', ...args);
-logger.error = (...args) => console.log('❌', ...args);
-
 // 🔧 ENHANCED SAFE IMPORTS WITH INTELLIGENT FALLBACKS
 let claudeClient, openaiClient, logger;
 
