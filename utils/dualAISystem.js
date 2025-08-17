@@ -1787,7 +1787,7 @@ class UltimateSystemHealthMonitor {
         return `${percentage}%`;
     }
 
-    // 🔄 CONTINUOUS MONITORING MANAGEMENT
+// 🔄 CONTINUOUS MONITORING MANAGEMENT
     startContinuousMonitoring(intervalMinutes = 3) { // Faster monitoring for GPT-5 era
         if (this.monitoringInterval) {
             clearInterval(this.monitoringInterval);
@@ -1845,7 +1845,6 @@ class UltimateSystemHealthMonitor {
         return 'STABLE';
     }
 }
-
 // 🚀 ULTIMATE SYSTEM INITIALIZATION AND EXPORTS - GPT-5 + CLAUDE OPUS 4
 function initializeUltimateStrategicPowerSystem() {
     console.log('🏆 Initializing ULTIMATE Strategic Power Dual AI System - GPT-5 + Claude Opus 4...');
