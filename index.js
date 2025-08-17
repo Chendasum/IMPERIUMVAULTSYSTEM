@@ -1090,10 +1090,12 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         } else if (text === '/live_economic' || text === '/economic_live') {
             await handleLiveEconomicData(chatId);
         
-        } else {
-            // Handle general conversation with enhanced dual AI system
-            await handleEnhancedConversation(chatId, text, sessionId);
-        }
+} else {
+    // Handle general conversation with REAL dual AI system
+    const { processConversation } = require('./utils/dualAISystem');
+    const result = await processConversation(chatId, text);
+    await sendSmartMessage(bot, chatId, result.response);
+}
         
         const executionTime = Date.now() - startTime;
         
@@ -1940,8 +1942,10 @@ async function handleVoiceMessage(msg, chatId, sessionId) {
                 aiModel: 'OpenAI-Whisper'
             }).catch(err => console.error('Voice save error:', err.message));
             
-            // Process transcribed text as normal conversation with your dual AI system
-            await handleEnhancedConversation(chatId, transcribedText, sessionId);
+// Process transcribed text with REAL dual AI system
+const { processConversation } = require('./utils/dualAISystem');
+const result = await processConversation(chatId, transcribedText);
+await sendSmartMessage(bot, chatId, result.response);
             
             // Log successful API usage
             await logApiUsage('WHISPER', 'transcription', 1, true, responseTime, msg.voice.file_size || 0)
