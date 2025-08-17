@@ -1691,13 +1691,14 @@ try {
         console.log('Manual test - memory building failed:', error.message);
     }
     
-    try {
-// Test 4: Dual Command with Memory
-const result = await getDualAnalysis('Hello, test message');
-tests.dualCommandWithMemory = result ? true : false; // Convert response to boolean
-    } catch (error) {
-        console.log('Manual test - dual command failed:', error.message);
-    }
+try {
+    // Test 4: Dual Command with Memory
+    const result = await getDualAnalysis('Hello, test message');
+    tests.dualCommandWithMemory = !!result; // Convert to boolean
+} catch (error) {
+    console.log('Manual test - dual command failed:', error.message);
+    tests.dualCommandWithMemory = false;
+}
     
     const successCount = Object.values(tests).filter(Boolean).length;
     const totalTests = Object.keys(tests).length;
