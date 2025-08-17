@@ -2261,61 +2261,59 @@ module.exports = {
             return await getUltimateStrategicAnalysis(prompt, { ...options, domain: 'cambodia', specialization: 'regional' });
         } catch (error) {
             return `Cambodia analysis failed: ${error.message}`;
-    }
-},
+        }
+    },
 
-// 🔧 FIXED: dualAIRouter function with proper reference
-dualAIRouter: async (query, options = {}) => {
-    try {
-        const system = initializeUltimateStrategicPowerSystem();
-        return await system.router.routeWithUltimatePower(query, options);
-    } catch (error) {
-        return { primaryAI: 'GPT5', reasoning: 'Router fallback', error: error.message };
-    }
-},
+    // 🔧 FIXED: dualAIRouter function with proper reference
+    dualAIRouter: async (query, options = {}) => {
+        try {
+            const system = initializeUltimateStrategicPowerSystem();
+            return await system.router.routeWithUltimatePower(query, options);
+        } catch (error) {
+            return { primaryAI: 'GPT5', reasoning: 'Router fallback', error: error.message };
+        }
+    },
 
-getPerformanceStats: () => {
-    try {
-        const system = initializeUltimateStrategicPowerSystem();
-        return system.getAnalytics();
-    } catch (error) {
-        return { 
-            error: error.message, 
-            total_executions: 0, 
-            success_rate: '0%',
-            ai_distribution: { gpt5: '0%', claude: '0%', dual: '0%' }
-        };
-    }
-},
+    getPerformanceStats: () => {
+        try {
+            const system = initializeUltimateStrategicPowerSystem();
+            return system.getAnalytics();
+        } catch (error) {
+            return { 
+                error: error.message, 
+                total_executions: 0, 
+                success_rate: '0%',
+                ai_distribution: { gpt5: '0%', claude: '0%', dual: '0%' }
+            };
+        }
+    },
 
-// 🎯 QUICK SETUP - Enhanced for GPT-5 Era
-quickSetup: () => {
-    try {
-        const system = initializeUltimateStrategicPowerSystem();
-        
-        console.log('🚀 ULTIMATE STRATEGIC POWER SYSTEM - QUICK SETUP COMPLETE');
-        console.log('📈 Ready for maximum power financial analysis with GPT-5 + Claude Opus 4');
-        console.log('🎯 GPT-5 family + Claude Opus 4 strategic optimization active');
-        console.log('⚡ Use system.analyze(query, options) for ultimate power analysis');
-        console.log('🧠 Available models: GPT-5, GPT-5-Mini, GPT-5-Nano, GPT-5-Chat + Claude Opus 4');
-        
-        return system;
-    } catch (error) {
-        console.log('Quick setup failed:', error);
-        throw error;
-    }
-},
+    // 🎯 QUICK SETUP - Enhanced for GPT-5 Era
+    quickSetup: () => {
+        try {
+            const system = initializeUltimateStrategicPowerSystem();
+            
+            console.log('🚀 ULTIMATE STRATEGIC POWER SYSTEM - QUICK SETUP COMPLETE');
+            console.log('📈 Ready for maximum power financial analysis with GPT-5 + Claude Opus 4');
+            console.log('🎯 GPT-5 family + Claude Opus 4 strategic optimization active');
+            console.log('⚡ Use system.analyze(query, options) for ultimate power analysis');
+            console.log('🧠 Available models: GPT-5, GPT-5-Mini, GPT-5-Nano, GPT-5-Chat + Claude Opus 4');
+            
+            return system;
+        } catch (error) {
+            console.log('Quick setup failed:', error);
+            throw error;
+        }
+    },
 
-// 🔧 UTILITY FUNCTIONS
-validateSystemConfiguration,
-gracefulSystemShutdown,
+    // 🔧 UTILITY FUNCTIONS
+    validateSystemConfiguration,
+    gracefulSystemShutdown,
 
-// 📋 SYSTEM CONSTANTS
-SYSTEM_VERSION: '2.0-GPT5-CLAUDE4',
-POWER_LEVEL: 'ULTIMATE',
-LINE_COUNT: '2000+',
-AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
-OPTIMIZATION_LEVEL: 'MAXIMUM'
-}; // <-- This closes the main exports object
-
-}; /
+    // 📋 SYSTEM CONSTANTS
+    SYSTEM_VERSION: '2.0-GPT5-CLAUDE4',
+    POWER_LEVEL: 'ULTIMATE',
+    LINE_COUNT: '2000+',
+    AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
+    OPTIMIZATION_LEVEL: 'MAXIMUM'
+};
