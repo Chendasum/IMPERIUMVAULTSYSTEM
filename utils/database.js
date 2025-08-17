@@ -143,7 +143,7 @@ async function initializeDatabase() {
             -- 🏛️ RAY DALIO ENHANCED TABLES (Updated)
             
             -- Economic Regime Tracking (Enhanced)
-            CREATE TABLE IF NOT EXISTS regime_history (
+            CREATE TABLE IF NOT EXISTS regime_records (
                 id SERIAL PRIMARY KEY,
                 regime_name VARCHAR(100) NOT NULL,
                 confidence DECIMAL(5,2) NOT NULL,
@@ -527,8 +527,8 @@ CREATE TABLE IF NOT EXISTS realtime_system_metrics (
             CREATE INDEX IF NOT EXISTS idx_training_type ON training_documents(document_type);
             
             -- Ray Dalio indexes
-            CREATE INDEX IF NOT EXISTS idx_regime_history_date_name ON regime_history(date_detected, regime_name);
-            CREATE INDEX IF NOT EXISTS idx_regime_history_confidence ON regime_history(confidence DESC);
+            CREATE INDEX IF NOT EXISTS idx_regime_records_date_name ON regime_records(date_detected, regime_name);
+            CREATE INDEX IF NOT EXISTS idx_regime_records_confidence ON regime_records(confidence DESC);
             CREATE INDEX IF NOT EXISTS idx_portfolio_allocations_chat_regime ON portfolio_allocations(chat_id, regime_name);
             CREATE INDEX IF NOT EXISTS idx_regime_performance_chat_regime ON regime_performance(chat_id, regime_name);
             CREATE INDEX IF NOT EXISTS idx_regime_performance_pnl ON regime_performance(profit_loss DESC);
@@ -914,7 +914,7 @@ async function saveRegimeData(regimeData) {
         // Calculate regime duration
         const lastRegime = await pool.query(`
             SELECT regime_name, date_detected 
-            FROM regime_history 
+            FROM regime_records 
             ORDER BY timestamp DESC 
             LIMIT 1
         `);
@@ -926,7 +926,7 @@ async function saveRegimeData(regimeData) {
         }
 
         await pool.query(`
-            INSERT INTO regime_history (
+            INSERT INTO regime_records (
                 regime_name, confidence, growth_direction, inflation_direction,
                 policy_stance, market_sentiment, regime_data, fed_rate,
                 inflation_rate, yield_curve_2s10s, vix_level, credit_spread_high_yield,
@@ -951,9 +951,9 @@ async function saveRegimeData(regimeData) {
 
         // Cleanup old data
         await pool.query(`
-            DELETE FROM regime_history 
+            DELETE FROM regime_records 
             WHERE id NOT IN (
-                SELECT id FROM regime_history 
+                SELECT id FROM regime_records 
                 ORDER BY timestamp DESC 
                 LIMIT 2000
             )
@@ -1849,7 +1849,7 @@ async function getRegimeTransitions(days = 30) {
                 confidence,
                 LAG(regime_name) OVER (ORDER BY date_detected) as previous_regime,
                 LAG(date_detected) OVER (ORDER BY date_detected) as previous_date
-            FROM regime_history 
+            FROM regime_records 
             WHERE date_detected >= CURRENT_DATE - INTERVAL '${days} days'
             ORDER BY date_detected DESC
         `);
@@ -1959,7 +1959,7 @@ async function getCurrentRegime() {
     try {
         const result = await pool.query(`
             SELECT regime_name, confidence, growth_direction, inflation_direction, regime_duration, timestamp
-            FROM regime_history 
+            FROM regime_records 
             ORDER BY timestamp DESC 
             LIMIT 1
         `);
@@ -2064,7 +2064,7 @@ async function cleanupOldData() {
 
         // Clean old regime history (keep last 2 years)
         const regimeResult = await pool.query(`
-            DELETE FROM regime_history 
+            DELETE FROM regime_records 
             WHERE timestamp < NOW() - INTERVAL '2 years'
         `);
         cleanupResults.regimeHistoryDeleted = regimeResult.rowCount;
@@ -2100,7 +2100,7 @@ async function getRegimePerformanceSummary() {
                 COUNT(rp.id) as trade_count,
                 AVG(rp.profit_loss) as avg_performance,
                 SUM(rp.profit_loss) as total_performance
-            FROM regime_history rh
+            FROM regime_records rh
             LEFT JOIN regime_performance rp ON rh.regime_name = rp.regime_name
             WHERE rh.timestamp >= NOW() - INTERVAL '1 year'
             GROUP BY rh.regime_name, rh.confidence
@@ -2159,7 +2159,7 @@ async function getSystemAnalytics() {
         ] = await Promise.all([
             pool.query('SELECT COUNT(DISTINCT chat_id) as total_users FROM conversations'),
             pool.query('SELECT COUNT(*) as total_conversations FROM conversations'),
-            pool.query('SELECT COUNT(*) as regime_records FROM regime_history'),
+            pool.query('SELECT COUNT(*) as regime_records FROM regime_records'),
             pool.query('SELECT COUNT(*) as total_deals FROM cambodia_deals'),
             pool.query('SELECT COUNT(*) as total_commands FROM command_analytics'),
             pool.query(`
@@ -2243,7 +2243,7 @@ async function getRegimeChanges(days) {
             FROM (
                 SELECT regime_name,
                        LAG(regime_name) OVER (ORDER BY date_detected) as prev_regime
-                FROM regime_history 
+                FROM regime_records 
                 WHERE date_detected >= CURRENT_DATE - INTERVAL '${days} days'
             ) t
             WHERE regime_name != prev_regime OR prev_regime IS NULL
@@ -2454,7 +2454,7 @@ async function getRayDalioStats() {
             pool.query('SELECT COUNT(*) as count FROM conversations'),
             pool.query('SELECT COUNT(*) as count FROM persistent_memories'),
             pool.query('SELECT COUNT(*) as count FROM training_documents'),
-            pool.query('SELECT COUNT(*) as count FROM regime_history'),
+            pool.query('SELECT COUNT(*) as count FROM regime_records'),
             pool.query('SELECT COUNT(*) as count FROM portfolio_allocations'),
             pool.query('SELECT COUNT(*) as count FROM risk_assessments'),
             pool.query('SELECT COUNT(*) as count FROM market_signals'),
@@ -2464,7 +2464,7 @@ async function getRayDalioStats() {
         // Get current regime
         const currentRegimeResult = await pool.query(`
             SELECT regime_name, confidence, timestamp 
-            FROM regime_history 
+            FROM regime_records 
             ORDER BY timestamp DESC 
             LIMIT 1
         `);
@@ -2531,7 +2531,7 @@ async function performDatabaseMaintenance() {
 
         // Analyze table statistics
         const tables = [
-            'conversations', 'persistent_memories', 'regime_history', 
+            'conversations', 'persistent_memories', 'regime_records', 
             'portfolio_allocations', 'cambodia_deals', 'command_analytics'
         ];
 
@@ -2551,7 +2551,7 @@ async function performDatabaseMaintenance() {
                 description: 'Old low-importance conversations'
             },
             {
-                query: 'DELETE FROM regime_history WHERE timestamp < NOW() - INTERVAL \'1 year\'',
+                query: 'DELETE FROM regime_records WHERE timestamp < NOW() - INTERVAL \'1 year\'',
                 description: 'Old regime history'
             },
             {
@@ -3567,7 +3567,7 @@ function getDataSourcesUsed(command) {
 async function getCurrentRegimeForLogging() {
     try {
         const result = await pool.query(`
-            SELECT regime_name FROM regime_history 
+            SELECT regime_name FROM regime_records 
             ORDER BY timestamp DESC LIMIT 1
         `);
         return result.rows[0]?.regime_name || 'UNKNOWN';
