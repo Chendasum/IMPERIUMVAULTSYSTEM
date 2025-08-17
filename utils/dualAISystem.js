@@ -35,18 +35,20 @@ try {
         }
     };
     
-logger = {
-    info: (msg, data) => console.log(`ℹ️ ${new Date().toISOString()} ${msg}`, data || ''),
-    success: (msg, data) => console.log(`✅ ${new Date().toISOString()} ${msg}`, data || ''),
-    warn: (msg, data) => console.warn(`⚠️ ${new Date().toISOString()} ${msg}`, data || ''),
-    error: (msg, error) => console.error(`❌ ${new Date().toISOString()} ${msg}`, error || ''),
-    debug: (msg, data) => console.log(`🐛 ${new Date().toISOString()} ${msg}`, data || ''),
-    strategic: (msg, data) => console.log(`🎯 ${new Date().toISOString()} STRATEGIC: ${msg}`, data || ''),
-    power: (msg, data) => console.log(`⚡ ${new Date().toISOString()} POWER: ${msg}`, data || ''),
-    gpt5: (msg, data) => console.log(`🚀 ${new Date().toISOString()} GPT-5: ${msg}`, data || ''),
-    claude: (msg, data) => console.log(`🧠 ${new Date().toISOString()} CLAUDE: ${msg}`, data || ''),
-    opt5: (msg, data) => console.log(`🚀 ${new Date().toISOString()} OPT5: ${msg}`, data || '')   // ADD THIS LINE
-};
+    // FIXED: Proper emoji encoding for logger
+    logger = {
+        info: (msg, data) => console.log(`ℹ️ ${new Date().toISOString()} ${msg}`, data || ''),
+        success: (msg, data) => console.log(`✅ ${new Date().toISOString()} ${msg}`, data || ''),
+        warn: (msg, data) => console.warn(`⚠️ ${new Date().toISOString()} ${msg}`, data || ''),
+        error: (msg, error) => console.error(`❌ ${new Date().toISOString()} ${msg}`, error || ''),
+        debug: (msg, data) => console.log(`🐛 ${new Date().toISOString()} ${msg}`, data || ''),
+        strategic: (msg, data) => console.log(`🎯 ${new Date().toISOString()} STRATEGIC: ${msg}`, data || ''),
+        power: (msg, data) => console.log(`⚡ ${new Date().toISOString()} POWER: ${msg}`, data || ''),
+        gpt5: (msg, data) => console.log(`🚀 ${new Date().toISOString()} GPT-5: ${msg}`, data || ''),
+        claude: (msg, data) => console.log(`🧠 ${new Date().toISOString()} CLAUDE: ${msg}`, data || ''),
+        opt5: (msg, data) => console.log(`🚀 ${new Date().toISOString()} OPT5: ${msg}`, data || '')
+    };
+}
 
 // 🚀 GPT-5 OFFICIAL MODEL CONFIGURATIONS
 const GPT5_POWER_MODELS = {
@@ -237,7 +239,7 @@ class UltimateStrategicPowerRouter {
             }
         };
 
-        // 🔥 ENHANCED AI POWER METRICS WITH GPT-5 CAPABILITIES
+    // 🔥 ENHANCED AI POWER METRICS WITH GPT-5 CAPABILITIES
         this.aiPowerMetrics = {
             gpt5: {
                 mathematical_processing: { strength: 0.99, weight: 0.28 }, // Enhanced for GPT-5
@@ -541,8 +543,7 @@ class UltimateStrategicPowerRouter {
         };
 
         return analysis;
-}
-
+    }
     // 🔧 ESSENTIAL MISSING METHODS FOR ROUTER CLASS
     detectReasoningRequirement(query) {
         return /\b(analyze|evaluate|compare|assess|explain why)\b/i.test(query);
@@ -567,6 +568,8 @@ class UltimateStrategicPowerRouter {
     detectStrategicComplexity(query) { return 0.5; }
     detectCodingComplexity(query) { return 0.3; }
     detectUrgencyLevel(query) { return 'medium'; }
+    detectHighValueDecision(query, context) { return false; }
+    isRiskAssessmentQuery(query) { return /\b(risk|hedge|protect)\b/i.test(query); }
     
     classifyIntent(query) { return 'general'; }
     classifyDomain(query) { return 'financial'; }
@@ -735,7 +738,7 @@ class UltimatePowerExecutor {
                 systemVersion: '2.0-GPT5-CLAUDE4'
             };
             
-// 5. Update execution tracking and learning
+            // 5. Update execution tracking and learning
             try {
                 this.updateExecutionTracking(finalResult);
             } catch (trackingError) {
@@ -840,7 +843,7 @@ class UltimatePowerExecutor {
         }
     }
 
-    // 🤝 DUAL ULTIMATE EXECUTION WITH CONSENSUS INTELLIGENCE
+// 🤝 DUAL ULTIMATE EXECUTION WITH CONSENSUS INTELLIGENCE
     async executeDualUltimate(query, routing, executionConfig) {
         console.log('🤝 DUAL ULTIMATE POWER: Maximum consensus analysis with GPT-5 + Claude Opus 4...');
         
@@ -1108,7 +1111,7 @@ Review both analyses above for complementary insights. The quantitative data fro
         }
     }
 
-    getExecutionAnalytics() {
+getExecutionAnalytics() {
         const recent = this.executionHistory.slice(-200); // Last 200 executions
         const totalExecutions = this.executionHistory.length;
         
@@ -1499,7 +1502,7 @@ class UltimateSystemHealthMonitor {
         };
     }
 
-    // 🔍 MODEL-SPECIFIC HEALTH ASSESSMENT
+// 🔍 MODEL-SPECIFIC HEALTH ASSESSMENT
     async assessModelSpecificHealth() {
         const modelHealth = {
             gpt5_models: this.gpt5ModelHealth,
@@ -1722,6 +1725,51 @@ class UltimateSystemHealthMonitor {
         if (matches >= 2) return 'GOOD';
         if (matches >= 1) return 'FAIR';
         return 'POOR';
+    }
+
+    // Helper methods that were missing
+    updateEnhancedSystemHealth(healthStatus) {
+        this.healthChecks.push(healthStatus);
+        // Keep only last 100 health checks to prevent memory issues
+        if (this.healthChecks.length > 100) {
+            this.healthChecks = this.healthChecks.slice(-100);
+        }
+    }
+
+    calculateGPT5FamilyUsage(analytics) {
+        const gpt5Usage = parseFloat(analytics.ai_distribution.gpt5) || 0;
+        return `${gpt5Usage}%`;
+    }
+
+    calculateClaudeOpus4Usage(analytics) {
+        const claudeUsage = parseFloat(analytics.ai_distribution.claude) || 0;
+        return `${claudeUsage}%`;
+    }
+
+    calculateDecisionsPerMinute() {
+        const recentHistory = this.router.routingHistory.slice(-60); // Last 60 decisions
+        if (recentHistory.length < 2) return 0;
+        
+        const timeSpan = Date.now() - new Date(recentHistory[0].timestamp).getTime();
+        const minutes = timeSpan / (1000 * 60);
+        return minutes > 0 ? (recentHistory.length / minutes).toFixed(1) : 0;
+    }
+
+    calculateAverageConfidence() {
+        const recentHistory = this.router.routingHistory.slice(-100);
+        if (recentHistory.length === 0) return 0;
+        
+        const totalConfidence = recentHistory.reduce((sum, h) => sum + (h.confidence || 0), 0);
+        return (totalConfidence / recentHistory.length).toFixed(2);
+    }
+
+    calculateOptimizationEffectiveness() {
+        const recentHistory = this.router.routingHistory.slice(-50);
+        if (recentHistory.length === 0) return 'UNKNOWN';
+        
+        const optimizedRoutes = recentHistory.filter(h => h.optimizationLevel === 'ULTIMATE_GPT5_POWER').length;
+        const percentage = (optimizedRoutes / recentHistory.length * 100).toFixed(1);
+        return `${percentage}%`;
     }
 
     // 🔄 CONTINUOUS MONITORING MANAGEMENT
@@ -2198,59 +2246,59 @@ module.exports = {
             return await getUltimateStrategicAnalysis(prompt, { ...options, domain: 'cambodia', specialization: 'regional' });
         } catch (error) {
             return `Cambodia analysis failed: ${error.message}`;
-        }
-    },
+    }
+},
 
-    // 🔧 FIXED: dualAIRouter function with proper reference
-    dualAIRouter: async (query, options = {}) => {
-        try {
-            const system = initializeUltimateStrategicPowerSystem();
-            return await system.router.routeWithUltimatePower(query, options);
-        } catch (error) {
-            return { primaryAI: 'GPT5', reasoning: 'Router fallback', error: error.message };
-        }
-    },
+// 🔧 FIXED: dualAIRouter function with proper reference
+dualAIRouter: async (query, options = {}) => {
+    try {
+        const system = initializeUltimateStrategicPowerSystem();
+        return await system.router.routeWithUltimatePower(query, options);
+    } catch (error) {
+        return { primaryAI: 'GPT5', reasoning: 'Router fallback', error: error.message };
+    }
+},
 
-    getPerformanceStats: () => {
-        try {
-            const system = initializeUltimateStrategicPowerSystem();
-            return system.getAnalytics();
-        } catch (error) {
-            return { 
-                error: error.message, 
-                total_executions: 0, 
-                success_rate: '0%',
-                ai_distribution: { gpt5: '0%', claude: '0%', dual: '0%' }
-            };
-        }
-    },
-    
-    // 🎯 QUICK SETUP - Enhanced for GPT-5 Era
-    quickSetup: () => {
-        try {
-            const system = initializeUltimateStrategicPowerSystem();
-            
-            console.log('🚀 ULTIMATE STRATEGIC POWER SYSTEM - QUICK SETUP COMPLETE');
-            console.log('📈 Ready for maximum power financial analysis with GPT-5 + Claude Opus 4');
-            console.log('🎯 GPT-5 family + Claude Opus 4 strategic optimization active');
-            console.log('⚡ Use system.analyze(query, options) for ultimate power analysis');
-            console.log('🧠 Available models: GPT-5, GPT-5-Mini, GPT-5-Nano, GPT-5-Chat + Claude Opus 4');
-            
-            return system;
-        } catch (error) {
-            console.log('Quick setup failed:', error);
-            throw error;
-        }
-    },
-    
-    // 🔧 UTILITY FUNCTIONS
-    validateSystemConfiguration,
-    gracefulSystemShutdown,
-    
+getPerformanceStats: () => {
+    try {
+        const system = initializeUltimateStrategicPowerSystem();
+        return system.getAnalytics();
+    } catch (error) {
+        return { 
+            error: error.message, 
+            total_executions: 0, 
+            success_rate: '0%',
+            ai_distribution: { gpt5: '0%', claude: '0%', dual: '0%' }
+        };
+    }
+},
+
+// 🎯 QUICK SETUP - Enhanced for GPT-5 Era
+quickSetup: () => {
+    try {
+        const system = initializeUltimateStrategicPowerSystem();
+        
+        console.log('🚀 ULTIMATE STRATEGIC POWER SYSTEM - QUICK SETUP COMPLETE');
+        console.log('📈 Ready for maximum power financial analysis with GPT-5 + Claude Opus 4');
+        console.log('🎯 GPT-5 family + Claude Opus 4 strategic optimization active');
+        console.log('⚡ Use system.analyze(query, options) for ultimate power analysis');
+        console.log('🧠 Available models: GPT-5, GPT-5-Mini, GPT-5-Nano, GPT-5-Chat + Claude Opus 4');
+        
+        return system;
+    } catch (error) {
+        console.log('Quick setup failed:', error);
+        throw error;
+    }
+},
+
+// 🔧 UTILITY FUNCTIONS
+validateSystemConfiguration,
+gracefulSystemShutdown,
+
 // 📋 SYSTEM CONSTANTS
-    SYSTEM_VERSION: '2.0-GPT5-CLAUDE4',
-    POWER_LEVEL: 'ULTIMATE',
-    LINE_COUNT: '2000+',
-    AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
-    OPTIMIZATION_LEVEL: 'MAXIMUM'
+SYSTEM_VERSION: '2.0-GPT5-CLAUDE4',
+POWER_LEVEL: 'ULTIMATE',
+LINE_COUNT: '2000+',
+AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
+OPTIMIZATION_LEVEL: 'MAXIMUM'
 };
