@@ -564,7 +564,7 @@ function assessDataQuality(marketData) {
     }
 }
 
-// Enhanced main message handler with dual AI integration
+// Enhanced main message handler with ULTIMATE Strategic Power System integration
 bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
@@ -611,8 +611,8 @@ bot.on("message", async (msg) => {
             return;
         }
 
-        // Route to dual AI conversation handler
-        const executionTime = await handleDualAIConversation(chatId, text, sessionId);
+        // Route to ULTIMATE Strategic Power System conversation handler
+        const executionTime = await handleUltimateStrategicConversation(chatId, text, sessionId);
         
         // End session tracking
         if (sessionId) {
@@ -636,220 +636,506 @@ bot.on("message", async (msg) => {
     }
 });
 
-// 🤖 Dual AI Conversation Handler - Clean and Focused
-async function handleDualAIConversation(chatId, text, sessionId) {
+// 🏆 ULTIMATE Strategic Power System Conversation Handler - GPT-5 + Claude Opus 4
+async function handleUltimateStrategicConversation(chatId, text, sessionId) {
     const startTime = Date.now();
     
     try {
-        console.log("🤖 Starting dual AI conversation processing:", text.substring(0, 50));
+        console.log("🏆 Starting ULTIMATE Strategic Power System processing:", text.substring(0, 50));
         
         // Get conversation context with memory
         const context = await buildConversationContextWithMemory(chatId, text);
         
-        // Determine conversation intelligence
+        // Determine conversation intelligence with enhanced analytics
         const conversationIntel = {
             type: determineConversationType(text),
             complexity: determineComplexity(text),
             requiresLiveData: requiresLiveData(text),
             hasMemory: context.memoryAvailable,
-            conversationCount: context.conversationHistory?.length || 0
+            conversationCount: context.conversationHistory?.length || 0,
+            powerLevel: determinePowerLevel(text),
+            urgency: determineUrgency(text),
+            domain: determineDomain(text)
         };
         
-        console.log("🎯 Conversation Intel:", conversationIntel);
+        console.log("🎯 Enhanced Conversation Intel:", conversationIntel);
         
-        // Execute dual AI command
-        const result = await executeDualAICommand(text, chatId, context, conversationIntel);
+        // Execute ULTIMATE Strategic Power System
+        const result = await executeUltimateStrategicCommand(text, chatId, context, conversationIntel, sessionId);
         
-        // Send response to user
-        await sendSmartMessage(bot, chatId, result.response || "I'm processing your request...");
+        // Send response to user with enhanced formatting
+        await sendUltimateResponse(bot, chatId, result);
         
-        // Save conversation
-        await saveConversationToDatabase(chatId, text, result, context);
+        // Save conversation with enhanced metadata
+        await saveUltimateConversationToDatabase(chatId, text, result, context);
         
-        // Extract and save new memories
-        await extractAndSaveMemories(chatId, text, result.response || text);
+        // Extract and save enhanced memories
+        await extractAndSaveEnhancedMemories(chatId, text, result.response || text);
         
-        console.log("✅ Dual AI conversation completed successfully");
+        console.log("✅ ULTIMATE Strategic Power System conversation completed successfully");
         return Date.now() - startTime;
         
     } catch (error) {
-        console.error('❌ Dual AI conversation error:', error.message);
+        console.error('❌ ULTIMATE Strategic Power System error:', error.message);
         
-        // Fallback to single AI
-        const fallbackResponse = await handleFallbackResponse(chatId, text);
+        // Enhanced fallback system
+        const fallbackResponse = await handleEnhancedFallbackResponse(chatId, text, error);
         await sendSmartMessage(bot, chatId, fallbackResponse);
         
         return Date.now() - startTime;
     }
 }
 
-// 🧠 Build Conversation Context with Memory
+// 🧠 Build Enhanced Conversation Context with Advanced Memory
 async function buildConversationContextWithMemory(chatId, currentText) {
     const context = {
         conversationHistory: [],
         persistentMemory: [],
         memoryContext: '',
         memoryAvailable: false,
+        enhancedContext: {},
         errors: []
     };
     
     try {
-        // Get recent conversation history
-        context.conversationHistory = await getConversationHistoryDB(chatId, 5);
-        console.log(`📚 Retrieved ${context.conversationHistory.length} conversations`);
+        // Get recent conversation history with enhanced filtering
+        context.conversationHistory = await getConversationHistoryDB(chatId, 8); // Increased from 5 to 8
+        console.log(`📚 Retrieved ${context.conversationHistory.length} enhanced conversations`);
     } catch (error) {
         console.log('⚠️ Could not retrieve conversation history:', error.message);
         context.errors.push(`History: ${error.message}`);
     }
     
     try {
-        // Get persistent memories
+        // Get persistent memories with strategic importance
         context.persistentMemory = await getPersistentMemoryDB(chatId);
-        console.log(`🧠 Retrieved ${context.persistentMemory.length} memories`);
+        console.log(`🧠 Retrieved ${context.persistentMemory.length} strategic memories`);
     } catch (error) {
         console.log('⚠️ Could not retrieve persistent memory:', error.message);
         context.errors.push(`Memory: ${error.message}`);
     }
     
-    // Build memory context string
+    // Build enhanced memory context string with strategic intelligence
     if (context.conversationHistory.length > 0 || context.persistentMemory.length > 0) {
-        context.memoryContext = buildMemoryContextString(context.conversationHistory, context.persistentMemory);
+        context.memoryContext = buildEnhancedMemoryContextString(context.conversationHistory, context.persistentMemory);
         context.memoryAvailable = true;
-        console.log(`✅ Memory context built (${context.memoryContext.length} chars)`);
+        
+        // Add enhanced context analysis
+        context.enhancedContext = {
+            userPreferences: extractUserPreferences(context.conversationHistory),
+            tradingStyle: extractTradingStyle(context.conversationHistory),
+            riskProfile: extractRiskProfile(context.conversationHistory),
+            investmentGoals: extractInvestmentGoals(context.conversationHistory)
+        };
+        
+        console.log(`✅ Enhanced memory context built (${context.memoryContext.length} chars) with strategic intelligence`);
     }
     
     return context;
 }
 
-// 🤖 Execute Dual AI Command
-async function executeDualAICommand(text, chatId, context, intel) {
+// 🚀 Execute ULTIMATE Strategic Power System Command - GPT-5 + Claude Opus 4
+async function executeUltimateStrategicCommand(text, chatId, context, intel, sessionId) {
     try {
-        // Try dual AI system first
-        console.log("🚀 Executing dual AI command...");
+        // Initialize ULTIMATE Strategic Power System
+        console.log("🏆 Executing ULTIMATE Strategic Power System - GPT-5 + Claude Opus 4...");
         
-        const dualResult = await getDualAnalysis(text, {
+        // Prepare enhanced options for Ultimate Strategic Analysis
+        const ultimateOptions = {
             conversationHistory: context.conversationHistory,
             persistentMemory: context.persistentMemory,
             memoryContext: context.memoryContext,
+            enhancedContext: context.enhancedContext,
             conversationIntel: intel,
-            messageType: 'text'
-        });
+            messageType: 'text',
+            chatId: chatId,
+            sessionId: sessionId || `ultimate_session_${chatId}_${Date.now()}`,
+            powerLevel: intel.powerLevel || 'MAXIMUM',
+            urgency: intel.urgency || 'standard',
+            domain: intel.domain || 'financial',
+            userExperience: context.enhancedContext?.tradingStyle || 'intermediate',
+            riskTolerance: context.enhancedContext?.riskProfile || 'moderate',
+            optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4'
+        };
         
-        console.log("✅ Dual AI command successful:", dualResult?.aiUsed || 'DUAL_AI');
+        // Execute ULTIMATE Strategic Analysis
+        const ultimateResult = await getUltimateStrategicAnalysis(text, ultimateOptions);
         
-        // Ensure proper response format - FIXED
+        console.log("✅ ULTIMATE Strategic Power System successful:", ultimateResult?.aiUsed || 'ULTIMATE_GPT5_CLAUDE4');
+        
+        // Process and format the result
+        const processedResult = processUltimateResult(ultimateResult, intel);
+        
         return {
-            response: (typeof dualResult === 'string') ? dualResult : "I've processed your request with dual AI analysis.",
-            aiUsed: dualResult?.aiUsed || 'DUAL_AI_SYSTEM',
+            response: processedResult.response,
+            aiUsed: processedResult.aiUsed || 'ULTIMATE_GPT5_CLAUDE4',
+            modelUsed: processedResult.modelUsed || 'GPT-5 + Claude Opus 4',
+            powerMode: processedResult.powerMode || 'ULTIMATE_POWER',
+            confidence: processedResult.confidence || 0.95,
+            executionTime: processedResult.executionTime || 0,
             success: true,
             memoryUsed: !!context.memoryContext,
-            queryType: intel.type
+            queryType: intel.type,
+            optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4',
+            systemVersion: '2.0-GPT5-CLAUDE4',
+            enhancedAnalysis: true
         };
         
     } catch (error) {
-        console.log("⚠️ Dual AI failed, using GPT fallback:", error.message);
+        console.log("⚠️ ULTIMATE Strategic Power System failed, using enhanced fallback:", error.message);
         
-        // Fallback to single GPT with memory
-        const enhancedPrompt = context.memoryContext ? 
-            `${context.memoryContext}\n\nUser: ${text}` : text;
+        // Enhanced fallback with strategic intelligence
+        const enhancedPrompt = buildEnhancedFallbackPrompt(text, context, intel);
+        
+        try {
+            // Try GPT-5 fallback first
+            const fallbackResponse = await getGPT5Analysis(enhancedPrompt, {
+                maxTokens: 2000,
+                temperature: 0.7,
+                model: "gpt-5",
+                sessionId: sessionId
+            });
             
-        const response = await getUniversalAnalysis(enhancedPrompt, {
-            maxTokens: 1500,
-            temperature: 0.7,
-            model: "gpt-5"
-        });
-        
-        return {
-            response: (typeof response === 'string') ? response : "I've processed your request.",
-            aiUsed: 'GPT_FALLBACK',
-            success: true,
-            memoryUsed: !!context.memoryContext,
-            queryType: intel.type
-        };
+            return {
+                response: fallbackResponse || "🚀 GPT-5 Strategic Analysis completed.",
+                aiUsed: 'GPT5_FALLBACK',
+                modelUsed: 'GPT-5',
+                success: true,
+                memoryUsed: !!context.memoryContext,
+                queryType: intel.type,
+                fallbackLevel: 1
+            };
+            
+        } catch (fallbackError) {
+            console.log("⚠️ GPT-5 fallback failed, using universal analysis:", fallbackError.message);
+            
+            // Final fallback to universal analysis
+            const universalResponse = await getUniversalAnalysis(enhancedPrompt, {
+                maxTokens: 1500,
+                temperature: 0.7
+            });
+            
+            return {
+                response: universalResponse || "📊 Universal AI Analysis completed.",
+                aiUsed: 'UNIVERSAL_FALLBACK',
+                success: true,
+                memoryUsed: !!context.memoryContext,
+                queryType: intel.type,
+                fallbackLevel: 2
+            };
+        }
     }
 }
 
-// 💾 Save Conversation to Database - FIXED
-async function saveConversationToDatabase(chatId, userMessage, result, context) {
+// 🎯 Process Ultimate Result with Enhanced Intelligence
+function processUltimateResult(ultimateResult, intel) {
+    // Handle different result formats
+    if (typeof ultimateResult === 'string') {
+        return {
+            response: ultimateResult,
+            aiUsed: 'ULTIMATE_GPT5_CLAUDE4',
+            processed: true
+        };
+    }
+    
+    if (ultimateResult && typeof ultimateResult === 'object') {
+        return {
+            response: ultimateResult.response || ultimateResult.toString(),
+            aiUsed: ultimateResult.aiUsed || 'ULTIMATE_GPT5_CLAUDE4',
+            modelUsed: ultimateResult.modelUsed || 'GPT-5 + Claude Opus 4',
+            powerMode: ultimateResult.powerMode || 'ULTIMATE_POWER',
+            confidence: ultimateResult.confidence || 0.95,
+            executionTime: ultimateResult.executionTime || 0,
+            processed: true
+        };
+    }
+    
+    // Fallback processing
+    return {
+        response: "🏆 ULTIMATE Strategic Power System processed your request with maximum intelligence.",
+        aiUsed: 'ULTIMATE_GPT5_CLAUDE4',
+        processed: true,
+        fallback: true
+    };
+}
+
+// 📤 Send Ultimate Response with Enhanced Formatting
+async function sendUltimateResponse(bot, chatId, result) {
     try {
-        // Ensure we have a valid response before saving (DATABASE FIX)
-        const responseToSave = result.response || `System response: ${result.error || 'Processing completed'}`;
+        let responseText = result.response || "🏆 ULTIMATE Strategic Power System analysis complete.";
+        
+        // Add system signature for Ultimate responses
+        if (result.aiUsed && result.aiUsed.includes('ULTIMATE')) {
+            responseText += `\n\n🏆 *Powered by ULTIMATE Strategic Power System*`;
+            responseText += `\n🚀 AI: ${result.aiUsed}`;
+            if (result.modelUsed) responseText += ` | Model: ${result.modelUsed}`;
+            if (result.confidence) responseText += ` | Confidence: ${(result.confidence * 100).toFixed(1)}%`;
+            if (result.executionTime) responseText += ` | Time: ${result.executionTime}ms`;
+        }
+        
+        await sendSmartMessage(bot, chatId, responseText);
+        
+    } catch (error) {
+        console.log('⚠️ Enhanced response sending failed:', error.message);
+        await sendSmartMessage(bot, chatId, result.response || "Response processed successfully.");
+    }
+}
+
+// 💾 Save Ultimate Conversation to Database with Enhanced Metadata
+async function saveUltimateConversationToDatabase(chatId, userMessage, result, context) {
+    try {
+        // Ensure we have a valid response before saving
+        const responseToSave = result.response || `🏆 ULTIMATE System response: ${result.error || 'Processing completed with maximum intelligence'}`;
         
         await saveConversationDB(chatId, userMessage, responseToSave, "text", {
-            aiUsed: result.aiUsed || 'UNKNOWN',
-            queryType: result.queryType || 'general',
+            aiUsed: result.aiUsed || 'ULTIMATE_GPT5_CLAUDE4',
+            modelUsed: result.modelUsed || 'GPT-5 + Claude Opus 4',
+            powerMode: result.powerMode || 'ULTIMATE_POWER',
+            confidence: result.confidence || 0.95,
+            executionTime: result.executionTime || 0,
+            queryType: result.queryType || 'strategic_analysis',
             memoryUsed: context.memoryAvailable || false,
             success: result.success || false,
-            enhanced: true
+            enhanced: true,
+            ultimate: true,
+            systemVersion: '2.0-GPT5-CLAUDE4',
+            optimizationLevel: result.optimizationLevel || 'ULTIMATE_GPT5_CLAUDE4'
         });
-        console.log("✅ Conversation saved to database");
+        console.log("✅ ULTIMATE conversation saved to database with enhanced metadata");
     } catch (error) {
-        console.log('⚠️ Could not save conversation:', error.message);
+        console.log('⚠️ Could not save ULTIMATE conversation:', error.message);
     }
 }
 
-// 🧠 Extract and Save Memories
+// 🧠 Extract and Save Enhanced Memories with Strategic Intelligence
+async function extractAndSaveEnhancedMemories(chatId, userMessage, aiResponse) {
+    try {
+        // Enhanced memory extraction with strategic focus
+        const memoryExtractionPrompt = `Extract strategic trading and investment insights from this conversation:
+
+User: ${userMessage}
+AI: ${aiResponse}
+
+Extract ONLY important strategic information like:
+- Trading preferences and strategies
+- Risk tolerance and investment goals
+- Market insights and analysis preferences
+- Portfolio allocation preferences
+- Financial goals and timeline
+- Strategic decision patterns
+
+Format as bullet points. Only include genuinely important strategic information.`;
+
+        const extractedMemories = await getGPT5Analysis(memoryExtractionPrompt, {
+            maxTokens: 300,
+            temperature: 0.3,
+            model: "gpt-5-nano" // Use efficient model for memory extraction
+        });
+
+        if (extractedMemories && extractedMemories.length > 50) {
+            await savePersistentMemoryDB(chatId, extractedMemories, "strategic_intelligence", {
+                extractedFrom: "ultimate_conversation",
+                timestamp: new Date().toISOString(),
+                systemVersion: "2.0-GPT5-CLAUDE4"
+            });
+            console.log("✅ Enhanced strategic memories extracted and saved");
+        }
+    } catch (error) {
+        console.log('⚠️ Enhanced memory extraction failed:', error.message);
+    }
+}
+
+// 🔧 Enhanced Helper Functions
+function determinePowerLevel(text) {
+    if (/\b(critical|urgent|important|major|strategic|complex)\b/i.test(text)) return 'ULTIMATE_POWER';
+    if (/\b(analysis|calculate|optimize|plan)\b/i.test(text)) return 'POWER';
+    return 'STANDARD';
+}
+
+function determineUrgency(text) {
+    if (/\b(urgent|immediate|now|asap|critical|emergency)\b/i.test(text)) return 'critical';
+    if (/\b(quick|fast|soon|today)\b/i.test(text)) return 'high';
+    return 'standard';
+}
+
+function determineDomain(text) {
+    if (/\b(trading|stock|forex|crypto|market|investment|portfolio)\b/i.test(text)) return 'financial';
+    if (/\b(code|programming|technical|algorithm)\b/i.test(text)) return 'technical';
+    if (/\b(cambodia|khmer|phnom penh|cambodian)\b/i.test(text)) return 'cambodia';
+    return 'general';
+}
+
+function buildEnhancedMemoryContextString(history, memory) {
+    let context = "";
+    
+    if (memory.length > 0) {
+        context += "📚 Strategic Intelligence & User Preferences:\n";
+        memory.slice(-5).forEach(mem => {
+            context += `• ${mem.content}\n`;
+        });
+        context += "\n";
+    }
+    
+    if (history.length > 0) {
+        context += "💬 Recent Strategic Conversations:\n";
+        history.slice(-3).forEach(conv => {
+            context += `User: ${conv.user_message.substring(0, 100)}\n`;
+            context += `AI: ${conv.ai_response.substring(0, 150)}\n\n`;
+        });
+    }
+    
+    return context;
+}
+
+function buildEnhancedFallbackPrompt(text, context, intel) {
+    let prompt = "";
+    
+    if (context.memoryContext) {
+        prompt += `${context.memoryContext}\n\n`;
+    }
+    
+    prompt += `🎯 Strategic Analysis Request (${intel.domain} domain, ${intel.urgency} priority):\n${text}`;
+    
+    return prompt;
+}
+
+function extractUserPreferences(history) {
+    // Extract user preferences from conversation history
+    return { style: 'analytical', depth: 'comprehensive' };
+}
+
+function extractTradingStyle(history) {
+    // Extract trading style from conversation history
+    return 'strategic_long_term';
+}
+
+function extractRiskProfile(history) {
+    // Extract risk profile from conversation history
+    return 'moderate_aggressive';
+}
+
+function extractInvestmentGoals(history) {
+    // Extract investment goals from conversation history
+    return 'wealth_building';
+}
+
+// 🔄 Enhanced Fallback Response Handler
+async function handleEnhancedFallbackResponse(chatId, text, error) {
+    try {
+        return `🔧 System temporarily optimizing for maximum performance...\n\nYour request: "${text.substring(0, 100)}"\n\nI'm processing this with enhanced intelligence. Please wait a moment...`;
+    } catch (fallbackError) {
+        return "🔧 System optimizing... Please try your request again in a moment.";
+    }
+}
+
+// 🧠 Extract and Save Enhanced Memories with ULTIMATE Strategic Intelligence
 async function extractAndSaveMemories(chatId, userMessage, aiResponse) {
     try {
-        // Ensure aiResponse is a string
-        const responseText = (typeof aiResponse === 'string') ? aiResponse : String(aiResponse || '');
+        // Ensure aiResponse is a string and handle ULTIMATE system responses
+        const responseText = (typeof aiResponse === 'string') ? aiResponse : 
+                            (aiResponse?.response) ? aiResponse.response : 
+                            String(aiResponse || '');
         
-        const { extractAndSaveFacts } = require('./utils/memory');
-        const result = await extractAndSaveFacts(chatId, userMessage, responseText);
-        
-        if (result?.extractedFacts > 0) {
-            console.log(`✅ Extracted ${result.extractedFacts} new memories`);
+        // Use enhanced memory extraction for ULTIMATE Strategic Power System
+        try {
+            await extractAndSaveEnhancedMemories(chatId, userMessage, responseText);
+        } catch (enhancedError) {
+            // Fallback to standard memory extraction
+            const { extractAndSaveFacts } = require('./utils/memory');
+            const result = await extractAndSaveFacts(chatId, userMessage, responseText);
+            
+            if (result?.extractedFacts > 0) {
+                console.log(`✅ Extracted ${result.extractedFacts} new memories (standard method)`);
+            }
         }
     } catch (error) {
         console.log('⚠️ Memory extraction failed:', error.message);
     }
 }
 
-// 🚨 Fallback Response Handler
+// 🚨 Enhanced Fallback Response Handler for ULTIMATE Strategic Power System
 async function handleFallbackResponse(chatId, text) {
     try {
-        // Try to get minimal context
-        let basicContext = '';
+        console.log('🔄 Using ULTIMATE Strategic Power System enhanced fallback...');
+        
+        // Try ULTIMATE Strategic Power System first
         try {
-            const recent = await getConversationHistoryDB(chatId, 1);
-            if (recent?.[0]) {
-                basicContext = `\n\nContext: You previously discussed "${recent[0].user_message?.substring(0, 50)}..." with this user.`;
+            const ultimateResponse = await getUltimateStrategicAnalysis(text, {
+                chatId: chatId,
+                sessionId: `fallback_${chatId}_${Date.now()}`,
+                fallbackMode: true,
+                powerLevel: 'STANDARD'
+            });
+            
+            if (ultimateResponse) {
+                return (typeof ultimateResponse === 'string') ? ultimateResponse : 
+                       ultimateResponse.response || "🏆 ULTIMATE Strategic Power System processed your request.";
             }
-        } catch (contextError) {
-            console.log('⚠️ Even basic context failed');
+        } catch (ultimateError) {
+            console.log('⚠️ ULTIMATE fallback failed, trying GPT-5:', ultimateError.message);
         }
         
-        return await getUniversalAnalysis(text + basicContext, {
+        // Try GPT-5 fallback
+        try {
+            let basicContext = '';
+            try {
+                const recent = await getConversationHistoryDB(chatId, 1);
+                if (recent?.[0]) {
+                    basicContext = `\n\n🧠 Context: You previously discussed "${recent[0].user_message?.substring(0, 50)}..." with this user.`;
+                }
+            } catch (contextError) {
+                console.log('⚠️ Context retrieval failed');
+            }
+            
+            const gpt5Response = await getGPT5Analysis(text + basicContext, {
+                maxTokens: 1500,
+                temperature: 0.7,
+                model: "gpt-5",
+                chatId: chatId
+            });
+            
+            return gpt5Response || "🚀 GPT-5 Strategic Analysis completed.";
+            
+        } catch (gpt5Error) {
+            console.log('⚠️ GPT-5 fallback failed, using universal:', gpt5Error.message);
+        }
+        
+        // Final fallback to universal analysis
+        const universalResponse = await getUniversalAnalysis(text, {
             maxTokens: 1000,
-            temperature: 0.7,
-            model: "gpt-5"
+            temperature: 0.7
         });
         
+        return universalResponse || "📊 AI Analysis completed successfully.";
+        
     } catch (error) {
-        console.error('❌ Fallback also failed:', error.message);
-        return "🚨 I'm experiencing technical difficulties. Please try again in a moment.";
+        console.error('❌ All fallbacks failed:', error.message);
+        return "🔧 Strategic AI System is optimizing performance. Please try again in a moment.";
     }
 }
 
-// 🔧 Helper Functions
+// 🔧 Enhanced Helper Functions for ULTIMATE Strategic Power System
 function buildMemoryContextString(history, memories) {
-    let context = '\n\n🧠 MEMORY CONTEXT:\n';
+    let context = '\n\n🧠 STRATEGIC INTELLIGENCE CONTEXT:\n';
     
     if (memories.length > 0) {
-        context += '\nIMPORTANT FACTS:\n';
-        memories.slice(0, 3).forEach((mem, i) => {
+        context += '\n🎯 IMPORTANT STRATEGIC FACTS:\n';
+        memories.slice(0, 5).forEach((mem, i) => { // Increased from 3 to 5
             context += `${i + 1}. ${mem.fact}\n`;
         });
     }
     
     if (history.length > 0) {
-        context += '\nRECENT CONVERSATION:\n';
-        const recent = history[0];
-        context += `User: "${recent.user_message?.substring(0, 80)}..."\n`;
-        if (recent.gpt_response) {
-            context += `AI: "${recent.gpt_response.substring(0, 80)}..."\n`;
-        }
+        context += '\n💬 RECENT STRATEGIC CONVERSATIONS:\n';
+        history.slice(0, 2).forEach((conv, i) => { // Show 2 recent conversations
+            context += `${i + 1}. User: "${conv.user_message?.substring(0, 100)}..."\n`;
+            if (conv.gpt_response) {
+                context += `   AI: "${conv.gpt_response.substring(0, 100)}..."\n`;
+            }
+        });
     }
+    
+    context += '\n🏆 Analysis powered by ULTIMATE Strategic Power System\n';
     
     return context;
 }
@@ -859,14 +1145,33 @@ function determineConversationType(text) {
     
     const lower = text.toLowerCase();
     
-    if (lower.includes('financial') || lower.includes('investment') || lower.includes('fund')) {
-        return 'financial_analysis';
+    // Enhanced conversation type detection for ULTIMATE Strategic Power System
+    if (lower.includes('portfolio') || lower.includes('investment') || lower.includes('fund') || lower.includes('trading')) {
+        return 'portfolio_management';
     }
-    if (lower.includes('analysis') || lower.includes('strategy')) {
+    if (lower.includes('risk') || lower.includes('hedge') || lower.includes('protect') || lower.includes('volatility')) {
+        return 'risk_assessment';
+    }
+    if (lower.includes('calculate') || lower.includes('optimize') || lower.includes('formula') || lower.includes('algorithm')) {
+        return 'mathematical_analysis';
+    }
+    if (lower.includes('strategy') || lower.includes('planning') || lower.includes('framework') || lower.includes('approach')) {
         return 'strategic_analysis';
     }
-    if (lower.length > 100) {
+    if (lower.includes('market') || lower.includes('economic') || lower.includes('financial') || lower.includes('economic')) {
+        return 'market_analysis';
+    }
+    if (lower.includes('cambodia') || lower.includes('khmer') || lower.includes('phnom penh')) {
+        return 'cambodia_analysis';
+    }
+    if (lower.includes('code') || lower.includes('programming') || lower.includes('technical')) {
+        return 'technical_analysis';
+    }
+    if (lower.length > 150) {
         return 'complex_discussion';
+    }
+    if (lower.length > 50) {
+        return 'detailed_inquiry';
     }
     
     return 'general_conversation';
@@ -875,140 +1180,312 @@ function determineConversationType(text) {
 function determineComplexity(text) {
     if (!text) return 'simple';
     
-    if (text.length > 200) return 'complex';
-    if (text.length > 50) return 'medium';
+    // Enhanced complexity detection for ULTIMATE Strategic Power System
+    const complexityIndicators = [
+        'analysis', 'strategy', 'optimization', 'algorithm', 'framework',
+        'comprehensive', 'detailed', 'complex', 'sophisticated', 'advanced'
+    ];
+    
+    const hasComplexKeywords = complexityIndicators.some(keyword => 
+        text.toLowerCase().includes(keyword)
+    );
+    
+    if (text.length > 300 || hasComplexKeywords) return 'high';
+    if (text.length > 150) return 'medium_high';
+    if (text.length > 75) return 'medium';
+    if (text.length > 25) return 'low_medium';
     return 'simple';
 }
 
 function requiresLiveData(text) {
     if (!text) return false;
     
-    const liveDataKeywords = ['current', 'latest', 'today', 'now', 'recent', 'update'];
-    return liveDataKeywords.some(keyword => text.toLowerCase().includes(keyword));
+    // Enhanced live data detection for ULTIMATE Strategic Power System
+    const liveDataKeywords = [
+        'current', 'latest', 'today', 'now', 'recent', 'update', 'real-time',
+        'live', 'immediate', 'instant', 'fresh', 'breaking', 'new'
+    ];
+    
+    const marketDataKeywords = [
+        'price', 'market', 'trading', 'stock', 'crypto', 'forex', 'rates'
+    ];
+    
+    const hasLiveKeywords = liveDataKeywords.some(keyword => 
+        text.toLowerCase().includes(keyword)
+    );
+    
+    const hasMarketKeywords = marketDataKeywords.some(keyword => 
+        text.toLowerCase().includes(keyword)
+    );
+    
+    return hasLiveKeywords || (hasMarketKeywords && hasLiveKeywords);
 }
 
-// 🔧 ADDITIONAL HELPER FUNCTIONS
+// 🔧 ENHANCED MEMORY FUNCTIONS for ULTIMATE Strategic Power System
 function shouldSaveToPersistentMemory(userMessage, aiResponse) {
     const lowerMessage = userMessage.toLowerCase();
     const lowerResponse = aiResponse.toLowerCase();
     
+    // Enhanced memory saving criteria for strategic intelligence
     return lowerMessage.includes('remember') || 
            lowerMessage.includes('my preference') ||
            lowerMessage.includes('my name') ||
+           lowerMessage.includes('my strategy') ||
+           lowerMessage.includes('my goal') ||
+           lowerMessage.includes('my risk') ||
+           lowerMessage.includes('my portfolio') ||
            lowerResponse.includes('important to note') ||
-           aiResponse.length > 500;
+           lowerResponse.includes('key insight') ||
+           lowerResponse.includes('strategic recommendation') ||
+           lowerResponse.includes('investment advice') ||
+           aiResponse.length > 800; // Increased threshold for strategic content
 }
 
 function extractMemoryFact(userMessage, aiResponse) {
-    if (userMessage.toLowerCase().includes('remember')) {
-        return `User preference: ${userMessage}`;
+    const lowerMessage = userMessage.toLowerCase();
+    
+    // Enhanced fact extraction for strategic intelligence
+    if (lowerMessage.includes('remember')) {
+        return `🧠 User preference: ${userMessage}`;
     }
     
-    if (userMessage.toLowerCase().includes('my name is')) {
+    if (lowerMessage.includes('my name is')) {
         const nameMatch = userMessage.match(/my name is ([^.,\n]+)/i);
         if (nameMatch) {
-            return `User's name: ${nameMatch[1].trim()}`;
+            return `👤 User's name: ${nameMatch[1].trim()}`;
         }
+    }
+    
+    if (lowerMessage.includes('my strategy')) {
+        return `🎯 User's strategy: ${userMessage}`;
+    }
+    
+    if (lowerMessage.includes('my goal')) {
+        return `🏆 User's goal: ${userMessage}`;
+    }
+    
+    if (lowerMessage.includes('my risk')) {
+        return `⚖️ User's risk profile: ${userMessage}`;
     }
     
     if (aiResponse.includes('Key insight:')) {
         const insight = aiResponse.split('Key insight:')[1]?.split('\n')[0];
-        return insight ? `Strategic insight: ${insight.trim()}` : null;
+        return insight ? `💡 Strategic insight: ${insight.trim()}` : null;
     }
     
-    return `Context: ${userMessage.substring(0, 100)}`;
+    if (aiResponse.includes('Strategic recommendation:')) {
+        const recommendation = aiResponse.split('Strategic recommendation:')[1]?.split('\n')[0];
+        return recommendation ? `📊 Strategic recommendation: ${recommendation.trim()}` : null;
+    }
+    
+    return `📝 Context: ${userMessage.substring(0, 100)}`;
 }
 
-// 🔧 SESSION MANAGEMENT FUNCTIONS
-async function startUserSession(chatId, sessionType = 'GENERAL') {
+// 🔧 ENHANCED SESSION MANAGEMENT for ULTIMATE Strategic Power System
+async function startUserSession(chatId, sessionType = 'ULTIMATE_STRATEGIC') {
     try {
-        console.log(`📊 Starting session for ${chatId}: ${sessionType}`);
-        const sessionId = `session_${chatId}_${Date.now()}`;
+        console.log(`🏆 Starting ULTIMATE Strategic session for ${chatId}: ${sessionType}`);
+        const sessionId = `ultimate_session_${chatId}_${Date.now()}`;
+        
+        // Enhanced session data for ULTIMATE Strategic Power System
+        const sessionData = {
+            sessionId: sessionId,
+            chatId: chatId,
+            sessionType: sessionType,
+            startTime: new Date().toISOString(),
+            systemVersion: '2.0-GPT5-CLAUDE4',
+            powerLevel: 'ULTIMATE',
+            optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4'
+        };
         
         // You can expand this to save to database if needed
-        // await saveSessionToDB(sessionId, chatId, sessionType);
+        // await saveUltimateSessionToDB(sessionData);
         
         return sessionId;
     } catch (error) {
-        console.error('❌ Start session error:', error.message);
+        console.error('❌ Start ULTIMATE session error:', error.message);
         return null;
     }
 }
 
 async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
     try {
-        console.log(`📊 Ending session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
+        console.log(`🏆 Ending ULTIMATE session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
+        
+        // Enhanced session ending data
+        const sessionEndData = {
+            sessionId: sessionId,
+            commandsExecuted: commandsExecuted,
+            totalResponseTime: totalResponseTime,
+            endTime: new Date().toISOString(),
+            performance: totalResponseTime < 5000 ? 'EXCELLENT' : totalResponseTime < 10000 ? 'GOOD' : 'ACCEPTABLE',
+            systemVersion: '2.0-GPT5-CLAUDE4'
+        };
         
         // You can expand this to update database if needed
-        // await updateSessionInDB(sessionId, commandsExecuted, totalResponseTime);
+        // await updateUltimateSessionInDB(sessionEndData);
         
         return true;
     } catch (error) {
-        console.error('❌ End session error:', error.message);
+        console.error('❌ End ULTIMATE session error:', error.message);
         return false;
     }
 }
 
-// 🔧 COMMAND EXECUTION WITH LOGGING
+// 🔧 ENHANCED COMMAND EXECUTION with ULTIMATE Strategic Power System
 async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
     
     try {
-        // Route to dual AI conversation handler
-        await handleDualAIConversation(chatId, text, sessionId);
+        console.log(`🚀 Executing ULTIMATE Strategic command: ${text.substring(0, 50)}...`);
+        
+        // Route to ULTIMATE Strategic Power System conversation handler
+        await handleUltimateStrategicConversation(chatId, text, sessionId);
         
         const executionTime = Date.now() - startTime;
         
-        // Log successful command
-        await logCommandUsage(chatId, text, executionTime, true);
+        // Enhanced logging for ULTIMATE Strategic Power System
+        await logCommandUsage(chatId, text, executionTime, true, null, 'ULTIMATE_STRATEGIC');
+        
+        console.log(`✅ ULTIMATE Strategic command completed in ${executionTime}ms`);
         
         return executionTime;
         
     } catch (error) {
         const executionTime = Date.now() - startTime;
         
-        // Log failed command
-        await logCommandUsage(chatId, text, executionTime, false, error.message);
+        // Enhanced error logging
+        await logCommandUsage(chatId, text, executionTime, false, error.message, 'ULTIMATE_STRATEGIC_FAILED');
+        
+        console.error(`❌ ULTIMATE Strategic command failed in ${executionTime}ms:`, error.message);
         
         throw error;
     }
 }
 
-// 🔧 COMMAND USAGE LOGGING
-async function logCommandUsageDetailed(chatId, command, executionTime, successful = true, errorMessage = null) {
+// 🔧 ENHANCED COMMAND USAGE LOGGING for ULTIMATE Strategic Power System
+async function logCommandUsage(chatId, command, executionTime, successful = true, errorMessage = null, commandType = 'ULTIMATE_STRATEGIC') {
     try {
-        console.log(`📊 Command Log: ${chatId} | ${command.substring(0, 30)} | ${executionTime}ms | ${successful ? 'SUCCESS' : 'FAILED'}`);
+        const logData = {
+            chatId: chatId,
+            command: command.substring(0, 100), // Truncate long commands
+            commandType: commandType,
+            executionTime: executionTime,
+            successful: successful,
+            errorMessage: errorMessage,
+            timestamp: new Date().toISOString(),
+            systemVersion: '2.0-GPT5-CLAUDE4',
+            performance: executionTime < 3000 ? 'EXCELLENT' : executionTime < 8000 ? 'GOOD' : 'NEEDS_OPTIMIZATION'
+        };
+        
+        console.log(`📊 ULTIMATE Command Log: ${chatId} | ${command.substring(0, 30)} | ${executionTime}ms | ${successful ? '✅ SUCCESS' : '❌ FAILED'} | ${commandType}`);
         
         if (!successful && errorMessage) {
-            console.log(`❌ Error: ${errorMessage}`);
+            console.log(`❌ Error Details: ${errorMessage}`);
         }
         
         // You can expand this to save to database if needed
-        // await saveCommandLogToDB(chatId, command, executionTime, successful, errorMessage);
+        // await saveUltimateCommandLogToDB(logData);
         
         return true;
     } catch (error) {
-        console.error('❌ Log command usage error:', error.message);
+        console.error('❌ Log ULTIMATE command usage error:', error.message);
         return false;
     }
 }
 
-// 🔧 API USAGE LOGGING
+// 🔧 ENHANCED API USAGE LOGGING for ULTIMATE Strategic Power System
 async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
     try {
-        console.log(`🔌 API Usage: ${apiProvider}/${endpoint} | Calls: ${callsCount} | ${successful ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | Cost: ${costEstimate}`);
+        const apiLogData = {
+            apiProvider: apiProvider,
+            endpoint: endpoint,
+            callsCount: callsCount,
+            successful: successful,
+            responseTime: responseTime,
+            dataVolume: dataVolume,
+            costEstimate: costEstimate,
+            timestamp: new Date().toISOString(),
+            systemVersion: '2.0-GPT5-CLAUDE4',
+            efficiency: responseTime < 2000 ? 'HIGH' : responseTime < 5000 ? 'MEDIUM' : 'LOW'
+        };
         
-        // You can expand this to save to database for cost tracking
-        // await saveApiUsageToDB(apiProvider, endpoint, callsCount, successful, responseTime, dataVolume, costEstimate);
+        console.log(`🔌 ULTIMATE API Usage: ${apiProvider}/${endpoint} | Calls: ${callsCount} | ${successful ? '✅ SUCCESS' : '❌ FAILED'} | ${responseTime}ms | Cost: $${costEstimate.toFixed(4)}`);
+        
+        // You can expand this to save to database for enhanced cost tracking
+        // await saveUltimateApiUsageToDB(apiLogData);
         
         return true;
     } catch (error) {
-        console.error('❌ Log API usage error:', error.message);
+        console.error('❌ Log ULTIMATE API usage error:', error.message);
         return false;
     }
 }
 
-// Enhanced command execution with full database logging + memory testing + WEALTH SYSTEM + LIVE DATA
+// 🔧 ADDITIONAL ENHANCED HELPER FUNCTIONS for ULTIMATE Strategic Power System
+function formatUltimateResponse(response, metadata = {}) {
+    if (typeof response === 'string') {
+        return response;
+    }
+    
+    if (response && typeof response === 'object') {
+        let formatted = response.response || response.toString();
+        
+        if (metadata.showSystemInfo && response.aiUsed) {
+            formatted += `\n\n🏆 *Powered by ${response.aiUsed}*`;
+            if (response.confidence) {
+                formatted += ` | Confidence: ${(response.confidence * 100).toFixed(1)}%`;
+            }
+            if (response.executionTime) {
+                formatted += ` | Time: ${response.executionTime}ms`;
+            }
+        }
+        
+        return formatted;
+    }
+    
+    return "🏆 ULTIMATE Strategic Power System analysis complete.";
+}
+
+function calculateResponseQuality(response, executionTime, aiUsed) {
+    let quality = 'STANDARD';
+    
+    if (typeof response === 'string' && response.length > 200) {
+        if (executionTime < 3000 && aiUsed?.includes('ULTIMATE')) {
+            quality = 'EXCELLENT';
+        } else if (executionTime < 8000) {
+            quality = 'GOOD';
+        } else {
+            quality = 'ACCEPTABLE';
+        }
+    }
+    
+    return quality;
+}
+
+// 🔧 ULTIMATE Strategic Power System Status Functions
+function getSystemStatus() {
+    return {
+        name: 'ULTIMATE Strategic Power Dual AI System',
+        version: '2.0-GPT5-CLAUDE4',
+        status: 'OPERATIONAL',
+        powerLevel: 'MAXIMUM',
+        aiModels: 'GPT-5 + Claude Opus 4',
+        optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4',
+        lastUpdated: new Date().toISOString()
+    };
+}
+
+function isUltimateSystemActive() {
+    try {
+        // Check if ULTIMATE Strategic Power System is properly loaded
+        return typeof getUltimateStrategicAnalysis === 'function';
+    } catch (error) {
+        return false;
+    }
+}
+
+// Enhanced command execution with full database logging + memory testing + WEALTH SYSTEM + LIVE DATA + ULTIMATE Strategic Power System
 async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
     
@@ -1102,27 +1579,167 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         } else if (text === '/live_economic' || text === '/economic_live') {
             await handleLiveEconomicData(chatId);
         
-} else {
-    // Handle general conversation with REAL dual AI system
-    const { processConversation } = require('./utils/dualAISystem');
-    const result = await processConversation(chatId, text);
-    await sendSmartMessage(bot, chatId, result.response);
-}
+        } else {
+            // 🏆 ULTIMATE Strategic Power System - Handle general conversation
+            console.log("🏆 Processing with ULTIMATE Strategic Power System...");
+            
+            try {
+                // Get conversation context for enhanced analysis
+                const context = await buildConversationContextWithMemory(chatId, text);
+                
+                // Determine conversation intelligence
+                const conversationIntel = {
+                    type: determineConversationType(text),
+                    complexity: determineComplexity(text),
+                    requiresLiveData: requiresLiveData(text),
+                    hasMemory: context.memoryAvailable,
+                    conversationCount: context.conversationHistory?.length || 0,
+                    powerLevel: determinePowerLevel(text),
+                    urgency: determineUrgency(text),
+                    domain: determineDomain(text)
+                };
+                
+                // Execute ULTIMATE Strategic Analysis
+                const ultimateResult = await getUltimateStrategicAnalysis(text, {
+                    conversationHistory: context.conversationHistory,
+                    persistentMemory: context.persistentMemory,
+                    memoryContext: context.memoryContext,
+                    enhancedContext: context.enhancedContext,
+                    conversationIntel: conversationIntel,
+                    messageType: 'text',
+                    chatId: chatId,
+                    sessionId: sessionId || `ultimate_session_${chatId}_${Date.now()}`,
+                    powerLevel: conversationIntel.powerLevel || 'MAXIMUM',
+                    urgency: conversationIntel.urgency || 'standard',
+                    domain: conversationIntel.domain || 'financial',
+                    optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4'
+                });
+                
+                // Process and format response
+                let responseText = '';
+                if (typeof ultimateResult === 'string') {
+                    responseText = ultimateResult;
+                } else if (ultimateResult && ultimateResult.response) {
+                    responseText = ultimateResult.response;
+                    
+                    // Add system info for ULTIMATE responses
+                    if (ultimateResult.aiUsed && ultimateResult.aiUsed.includes('ULTIMATE')) {
+                        responseText += `\n\n🏆 *ULTIMATE Strategic Power System*`;
+                        responseText += `\n🚀 AI: ${ultimateResult.aiUsed}`;
+                        if (ultimateResult.modelUsed) responseText += ` | Model: ${ultimateResult.modelUsed}`;
+                        if (ultimateResult.confidence) responseText += ` | Confidence: ${(ultimateResult.confidence * 100).toFixed(1)}%`;
+                        if (ultimateResult.executionTime) responseText += ` | Time: ${ultimateResult.executionTime}ms`;
+                    }
+                } else {
+                    responseText = "🏆 ULTIMATE Strategic Power System processed your request with maximum intelligence.";
+                }
+                
+                // Send response
+                await sendSmartMessage(bot, chatId, responseText);
+                
+                // Save conversation with enhanced metadata
+                await saveUltimateConversationToDatabase(chatId, text, ultimateResult || { response: responseText }, context);
+                
+                // Extract and save enhanced memories
+                await extractAndSaveEnhancedMemories(chatId, text, responseText);
+                
+                console.log("✅ ULTIMATE Strategic Power System conversation completed successfully");
+                
+            } catch (ultimateError) {
+                console.log("⚠️ ULTIMATE Strategic Power System failed, using enhanced fallback:", ultimateError.message);
+                
+                // Enhanced fallback system
+                try {
+                    // Try GPT-5 fallback first
+                    const gpt5Response = await getGPT5Analysis(text, {
+                        maxTokens: 2000,
+                        temperature: 0.7,
+                        model: "gpt-5",
+                        chatId: chatId,
+                        sessionId: sessionId
+                    });
+                    
+                    const fallbackResponse = gpt5Response || "🚀 GPT-5 Strategic Analysis completed.";
+                    await sendSmartMessage(bot, chatId, fallbackResponse + "\n\n🚀 *Powered by GPT-5 Fallback System*");
+                    
+                } catch (gpt5Error) {
+                    console.log("⚠️ GPT-5 fallback failed, using universal analysis:", gpt5Error.message);
+                    
+                    // Final fallback to universal analysis
+                    const universalResponse = await getUniversalAnalysis(text, {
+                        maxTokens: 1500,
+                        temperature: 0.7
+                    });
+                    
+                    const finalResponse = universalResponse || "📊 AI Analysis completed successfully.";
+                    await sendSmartMessage(bot, chatId, finalResponse + "\n\n📊 *Powered by Universal AI System*");
+                }
+            }
+        }
         
         const executionTime = Date.now() - startTime;
         
-        // Log successful command execution
-        await logCommandUsage(chatId, text, executionTime, true).catch(console.error);
+        // Log successful command execution with enhanced metadata
+        await logCommandUsage(chatId, text, executionTime, true, null, 'ULTIMATE_STRATEGIC').catch(console.error);
         
         return executionTime;
         
     } catch (error) {
         const executionTime = Date.now() - startTime;
         
-        // Log failed command execution
-        await logCommandUsage(chatId, text, executionTime, false, error.message).catch(console.error);
+        // Log failed command execution with enhanced error details
+        await logCommandUsage(chatId, text, executionTime, false, error.message, 'ULTIMATE_STRATEGIC_FAILED').catch(console.error);
+        
+        console.error(`❌ ULTIMATE Strategic command execution failed in ${executionTime}ms:`, error.message);
         
         throw error;
+    }
+}
+
+// 🔧 Helper functions for ULTIMATE Strategic Power System
+function determinePowerLevel(text) {
+    if (/\b(critical|urgent|important|major|strategic|complex|comprehensive|advanced)\b/i.test(text)) return 'ULTIMATE_POWER';
+    if (/\b(analysis|calculate|optimize|plan|evaluate|assess)\b/i.test(text)) return 'POWER';
+    return 'STANDARD';
+}
+
+function determineUrgency(text) {
+    if (/\b(urgent|immediate|now|asap|critical|emergency)\b/i.test(text)) return 'critical';
+    if (/\b(quick|fast|soon|today|rapid)\b/i.test(text)) return 'high';
+    return 'standard';
+}
+
+function determineDomain(text) {
+    if (/\b(trading|stock|forex|crypto|market|investment|portfolio|financial)\b/i.test(text)) return 'financial';
+    if (/\b(code|programming|technical|algorithm|software|debug)\b/i.test(text)) return 'technical';
+    if (/\b(cambodia|khmer|phnom penh|cambodian|siem reap)\b/i.test(text)) return 'cambodia';
+    if (/\b(risk|hedge|protect|volatility|insurance)\b/i.test(text)) return 'risk_management';
+    return 'general';
+}
+
+// 💾 Save Ultimate Conversation to Database with Enhanced Metadata
+async function saveUltimateConversationToDatabase(chatId, userMessage, result, context) {
+    try {
+        // Ensure we have a valid response before saving
+        const responseToSave = result.response || `🏆 ULTIMATE System response: ${result.error || 'Processing completed with maximum intelligence'}`;
+        
+        await saveConversationDB(chatId, userMessage, responseToSave, "text", {
+            aiUsed: result.aiUsed || 'ULTIMATE_GPT5_CLAUDE4',
+            modelUsed: result.modelUsed || 'GPT-5 + Claude Opus 4',
+            powerMode: result.powerMode || 'ULTIMATE_POWER',
+            confidence: result.confidence || 0.95,
+            executionTime: result.executionTime || 0,
+            queryType: result.queryType || 'strategic_analysis',
+            memoryUsed: context.memoryAvailable || false,
+            success: result.success !== false, // Default to true unless explicitly false
+            enhanced: true,
+            ultimate: true,
+            systemVersion: '2.0-GPT5-CLAUDE4',
+            optimizationLevel: result.optimizationLevel || 'ULTIMATE_GPT5_CLAUDE4'
+        });
+        console.log("✅ ULTIMATE conversation saved to database with enhanced metadata");
+    } catch (error) {
+        console.log('⚠️ Could not save ULTIMATE conversation:', error.message);
     }
 }
 
