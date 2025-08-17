@@ -1293,18 +1293,24 @@ async function startUserSession(chatId, sessionType = 'ULTIMATE_STRATEGIC') {
             chatId: chatId,
             sessionType: sessionType,
             startTime: new Date().toISOString(),
-            systemVersion: '2.0-GPT5-CLAUDE4',
+            systemVersion: '2.1-GPT5-CLAUDE4.1',  // ✅ Updated version
             powerLevel: 'ULTIMATE',
-            optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4'
+            optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4.1'  // ✅ Updated optimization
         };
         
-        // You can expand this to save to database if needed
-        // await saveUltimateSessionToDB(sessionData);
+        // Enhanced database integration
+        try {
+            const { saveUserSession } = require('./utils/database');
+            await saveUserSession(chatId, sessionData);
+            console.log('✅ Session saved to database');
+        } catch (dbError) {
+            console.log('⚠️ Session save failed, continuing without persistence:', dbError.message);
+        }
         
         return sessionId;
     } catch (error) {
         console.error('❌ Start ULTIMATE session error:', error.message);
-        return null;
+        return `fallback_session_${chatId}_${Date.now()}`;  // ✅ Always return valid session
     }
 }
 
@@ -1319,11 +1325,17 @@ async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime
             totalResponseTime: totalResponseTime,
             endTime: new Date().toISOString(),
             performance: totalResponseTime < 5000 ? 'EXCELLENT' : totalResponseTime < 10000 ? 'GOOD' : 'ACCEPTABLE',
-            systemVersion: '2.0-GPT5-CLAUDE4'
+            systemVersion: '2.1-GPT5-CLAUDE4.1'  // ✅ Updated version
         };
         
-        // You can expand this to update database if needed
-        // await updateUltimateSessionInDB(sessionEndData);
+        // Enhanced database integration
+        try {
+            const { updateUserSession } = require('./utils/database');
+            await updateUserSession(sessionId, sessionEndData);
+            console.log('✅ Session updated in database');
+        } catch (dbError) {
+            console.log('⚠️ Session update failed:', dbError.message);
+        }
         
         return true;
     } catch (error) {
@@ -1332,66 +1344,63 @@ async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime
     }
 }
 
-// 🔧 ENHANCED COMMAND EXECUTION with ULTIMATE Strategic Power System
-async function executeCommandWithLogging(chatId, text, sessionId) {
-    const startTime = Date.now();
-    
-    try {
-        console.log(`🚀 Executing ULTIMATE Strategic command: ${text.substring(0, 50)}...`);
-        
-        // Route to ULTIMATE Strategic Power System conversation handler
-        await handleUltimateStrategicConversation(chatId, text, sessionId);
-        
-        const executionTime = Date.now() - startTime;
-        
-        // Enhanced logging for ULTIMATE Strategic Power System
-        await logCommandUsage(chatId, text, executionTime, true, null, 'ULTIMATE_STRATEGIC');
-        
-        console.log(`✅ ULTIMATE Strategic command completed in ${executionTime}ms`);
-        
-        return executionTime;
-        
-    } catch (error) {
-        const executionTime = Date.now() - startTime;
-        
-        // Enhanced error logging
-        await logCommandUsage(chatId, text, executionTime, false, error.message, 'ULTIMATE_STRATEGIC_FAILED');
-        
-        console.error(`❌ ULTIMATE Strategic command failed in ${executionTime}ms:`, error.message);
-        
-        throw error;
-    }
-}
-
 // 🔧 SINGLE UNIFIED COMMAND USAGE LOGGING for ULTIMATE Strategic Power System
 async function logCommandUsage(chatId, command, executionTime, successful = true, errorMessage = null, commandType = 'ULTIMATE_STRATEGIC') {
     try {
+        // Normalize inputs to prevent errors
+        const normalizedChatId = String(chatId);
+        const normalizedCommand = String(command || 'unknown_command');
+        const normalizedExecutionTime = Number(executionTime) || 0;
+        const normalizedSuccessful = Boolean(successful);
+        const normalizedErrorMessage = errorMessage ? String(errorMessage) : null;
+        const normalizedCommandType = String(commandType || 'GENERAL');
+        
         const logData = {
-            chatId: chatId,
-            command: command.substring(0, 100), // Truncate long commands
-            commandType: commandType,
-            executionTime: executionTime,
-            successful: successful,
-            errorMessage: errorMessage,
+            chatId: normalizedChatId,
+            command: normalizedCommand.substring(0, 100), // Truncate long commands
+            commandType: normalizedCommandType,
+            executionTime: normalizedExecutionTime,
+            successful: normalizedSuccessful,
+            errorMessage: normalizedErrorMessage,
             timestamp: new Date().toISOString(),
             systemVersion: '2.1-GPT5-CLAUDE4.1',
-            performance: executionTime < 3000 ? 'EXCELLENT' : executionTime < 8000 ? 'GOOD' : 'NEEDS_OPTIMIZATION'
+            performance: normalizedExecutionTime < 3000 ? 'EXCELLENT' : 
+                        normalizedExecutionTime < 8000 ? 'GOOD' : 'NEEDS_OPTIMIZATION'
         };
         
-        console.log(`📊 ULTIMATE Command Log: ${chatId} | ${command.substring(0, 30)} | ${executionTime}ms | ${successful ? '✅ SUCCESS' : '❌ FAILED'} | ${commandType}`);
-        
-        if (!successful && errorMessage) {
-            console.log(`❌ Error Details: ${errorMessage}`);
+        // Enhanced logging with command type indicators
+        if (normalizedCommandType.includes('ULTIMATE')) {
+            console.log(`🏆 ULTIMATE Log: ${normalizedChatId} | ${normalizedCommand.substring(0, 30)} | ${normalizedExecutionTime}ms | ${normalizedSuccessful ? '✅' : '❌'}`);
+        } else if (normalizedCommandType.includes('WEALTH')) {
+            console.log(`💰 WEALTH Log: ${normalizedChatId} | ${normalizedCommand.substring(0, 30)} | ${normalizedExecutionTime}ms | ${normalizedSuccessful ? '✅' : '❌'}`);
+        } else if (normalizedCommandType.includes('CAMBODIA')) {
+            console.log(`🇰🇭 CAMBODIA Log: ${normalizedChatId} | ${normalizedCommand.substring(0, 30)} | ${normalizedExecutionTime}ms | ${normalizedSuccessful ? '✅' : '❌'}`);
+        } else {
+            console.log(`📊 Command Log: ${normalizedChatId} | ${normalizedCommand.substring(0, 30)} | ${normalizedExecutionTime}ms | ${normalizedSuccessful ? '✅' : '❌'} | ${normalizedCommandType}`);
         }
         
-        // Enhanced database integration with fallback
+        if (!normalizedSuccessful && normalizedErrorMessage) {
+            console.log(`❌ Error Details: ${normalizedErrorMessage}`);
+        }
+        
+        // Enhanced database integration with multiple fallbacks
         try {
-            // Try to save to database if available
-            const { saveDualAIConversation } = require('./utils/database');
-            await saveDualAIConversation(chatId, logData);
+            const database = require('./utils/database');
+            
+            // Try multiple database save methods
+            if (database.saveDualAIConversation) {
+                await database.saveDualAIConversation(normalizedChatId, logData);
+            } else if (database.saveConversationDB) {
+                await database.saveConversationDB(normalizedChatId, normalizedCommand, 
+                    `${normalizedCommandType}: ${normalizedSuccessful ? 'SUCCESS' : 'FAILED'}`, 
+                    'command', logData);
+            } else if (database.saveEnhancedFunctionPerformance) {
+                await database.saveEnhancedFunctionPerformance(normalizedChatId, logData);
+            }
+            
         } catch (dbError) {
             // Silent fallback - don't break the system if database fails
-            console.log('⚠️ Database log failed, continuing...');
+            console.log(`⚠️ Database log failed for ${normalizedCommandType}:`, dbError.message);
         }
         
         return true;
@@ -1401,7 +1410,7 @@ async function logCommandUsage(chatId, command, executionTime, successful = true
     }
 }
 
-// 🔧 SINGLE ENHANCED COMMAND EXECUTION with ULTIMATE Strategic Power System
+// 🔧 SINGLE COMPREHENSIVE COMMAND EXECUTION with ULTIMATE Strategic Power System
 async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
     
@@ -1469,7 +1478,7 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         } else if ((text.toLowerCase().includes('inflation') || text.toLowerCase().includes('fed') || text.toLowerCase().includes('interest rate') || text.toLowerCase().includes('gdp')) && 
                    (text.toLowerCase().includes('current') || text.toLowerCase().includes('today') || text.toLowerCase().includes('latest'))) {
             await handleLiveEconomicData(chatId);
-        } else if (isAnyCryptoRequest(text)) {
+        } else if (isAnyCryptoRequest && isAnyCryptoRequest(text)) {
             await handleSmartCryptoPrice(chatId, text);
         } else if ((text.toLowerCase().includes('dollar') || text.toLowerCase().includes('forex') || text.toLowerCase().includes('currency') || text.toLowerCase().includes('exchange rate')) && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('rate') || text.toLowerCase().includes('today'))) {
@@ -1490,66 +1499,8 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
             console.log("🏆 Processing with ULTIMATE Strategic Power System...");
             
             try {
-                // Get conversation context for enhanced analysis
-                const context = await buildConversationContextWithMemory(chatId, text);
-                
-                // Determine conversation intelligence
-                const conversationIntel = {
-                    type: determineConversationType(text),
-                    complexity: determineComplexity(text),
-                    requiresLiveData: requiresLiveData(text),
-                    hasMemory: context.memoryAvailable,
-                    conversationCount: context.conversationHistory?.length || 0,
-                    powerLevel: determinePowerLevel(text),
-                    urgency: determineUrgency(text),
-                    domain: determineDomain(text)
-                };
-                
-                // Execute ULTIMATE Strategic Analysis
-                const ultimateResult = await getUltimateStrategicAnalysis(text, {
-                    conversationHistory: context.conversationHistory,
-                    persistentMemory: context.persistentMemory,
-                    memoryContext: context.memoryContext,
-                    enhancedContext: context.enhancedContext,
-                    conversationIntel: conversationIntel,
-                    messageType: 'text',
-                    chatId: chatId,
-                    sessionId: sessionId || `ultimate_session_${chatId}_${Date.now()}`,
-                    powerLevel: conversationIntel.powerLevel || 'MAXIMUM',
-                    urgency: conversationIntel.urgency || 'standard',
-                    domain: conversationIntel.domain || 'financial',
-                    optimizationLevel: 'ULTIMATE_GPT5_CLAUDE4.1'
-                });
-                
-                // Process and format response
-                let responseText = '';
-                if (typeof ultimateResult === 'string') {
-                    responseText = ultimateResult;
-                } else if (ultimateResult && ultimateResult.response) {
-                    responseText = ultimateResult.response;
-                    
-                    // Add system info for ULTIMATE responses
-                    if (ultimateResult.aiUsed && ultimateResult.aiUsed.includes('ULTIMATE')) {
-                        responseText += `\n\n🏆 *ULTIMATE Strategic Power System*`;
-                        responseText += `\n🚀 AI: ${ultimateResult.aiUsed}`;
-                        if (ultimateResult.modelUsed) responseText += ` | Model: ${ultimateResult.modelUsed}`;
-                        if (ultimateResult.confidence) responseText += ` | Confidence: ${(ultimateResult.confidence * 100).toFixed(1)}%`;
-                        if (ultimateResult.executionTime) responseText += ` | Time: ${ultimateResult.executionTime}ms`;
-                    }
-                } else {
-                    responseText = "🏆 ULTIMATE Strategic Power System processed your request with maximum intelligence.";
-                }
-                
-                // Send response
-                await sendSmartMessage(bot, chatId, responseText);
-                
-                // Save conversation with enhanced metadata
-                await saveUltimateConversationToDatabase(chatId, text, ultimateResult || { response: responseText }, context);
-                
-                // Extract and save enhanced memories
-                await extractAndSaveEnhancedMemories(chatId, text, responseText);
-                
-                console.log("✅ ULTIMATE Strategic Power System conversation completed successfully");
+                // Enhanced conversation handling
+                await handleUltimateStrategicConversation(chatId, text, sessionId);
                 
             } catch (ultimateError) {
                 console.log("⚠️ ULTIMATE Strategic Power System failed, using enhanced fallback:", ultimateError.message);
@@ -1557,6 +1508,7 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
                 // Enhanced fallback system
                 try {
                     // Try GPT-5 fallback first
+                    const { getGPT5Analysis } = require('./utils/openaiClient');
                     const gpt5Response = await getGPT5Analysis(text, {
                         maxTokens: 2000,
                         temperature: 0.7,
@@ -1572,6 +1524,7 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
                     console.log("⚠️ GPT-5 fallback failed, using universal analysis:", gpt5Error.message);
                     
                     // Final fallback to universal analysis
+                    const { getUniversalAnalysis } = require('./utils/dualAISystem');
                     const universalResponse = await getUniversalAnalysis(text, {
                         maxTokens: 1500,
                         temperature: 0.7
