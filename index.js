@@ -962,7 +962,7 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
 }
 
 // 🔧 COMMAND USAGE LOGGING
-async function logCommandUsage(chatId, command, executionTime, successful = true, errorMessage = null) {
+async function logCommandUsageDetailed(chatId, command, executionTime, successful = true, errorMessage = null) {
     try {
         console.log(`📊 Command Log: ${chatId} | ${command.substring(0, 30)} | ${executionTime}ms | ${successful ? 'SUCCESS' : 'FAILED'}`);
         
