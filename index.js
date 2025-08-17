@@ -1659,13 +1659,13 @@ async function handleMemoryStatistics(chatId) {
 }
 
 // 🔧 HELPER: Manual Memory Test (fallback) - FIXED
-try {
-    const result = await getDualAnalysis('Hello, test message');
-    tests.dualCommandWithMemory = !!result; // Convert to boolean
-} catch (error) {
-    console.log('Manual test - dual command failed:', error.message);
-    tests.dualCommandWithMemory = false;
-}
+async function performManualMemoryTest(chatId) {
+    const tests = {
+        conversationHistory: false,
+        persistentMemory: false,
+        memoryBuilding: false,
+        dualCommandWithMemory: false
+    };
     
     try {
         // Test 1: Conversation History
@@ -1692,7 +1692,7 @@ try {
     }
     
 try {
-    // Test 4: Dual Command with Memory
+    // Test 4: Dual Command with Memory  
     const result = await getDualAnalysis('Hello, test message');
     tests.dualCommandWithMemory = !!result; // Convert to boolean
 } catch (error) {
