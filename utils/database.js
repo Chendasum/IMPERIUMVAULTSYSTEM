@@ -3477,13 +3477,13 @@ async function performHealthCheck() {
         // Table count checks
         const tableCounts = await pool.query(`
             SELECT 
-                schemaname,
-                tablename,
+                table_schema,
+                table_name,
                 n_tup_ins as inserts,
                 n_tup_upd as updates,
                 n_tup_del as deletes
             FROM pg_stat_user_tables 
-            WHERE schemaname = 'public'
+            WHERE table_schema = 'public'
         `);
 
         healthCheck.checks.tables = {
