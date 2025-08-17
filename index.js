@@ -1384,40 +1384,9 @@ async function logCommandUsage(chatId, command, executionTime, successful = true
             console.log(`❌ Error Details: ${errorMessage}`);
         }
         
-        // You can expand this to save to database if needed
-        // await saveUltimateCommandLogToDB(logData);
-        
         return true;
     } catch (error) {
         console.error('❌ Log ULTIMATE command usage error:', error.message);
-        return false;
-    }
-}
-
-// 🔧 ENHANCED API USAGE LOGGING for ULTIMATE Strategic Power System
-async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
-    try {
-        const apiLogData = {
-            apiProvider: apiProvider,
-            endpoint: endpoint,
-            callsCount: callsCount,
-            successful: successful,
-            responseTime: responseTime,
-            dataVolume: dataVolume,
-            costEstimate: costEstimate,
-            timestamp: new Date().toISOString(),
-            systemVersion: '2.0-GPT5-CLAUDE4',
-            efficiency: responseTime < 2000 ? 'HIGH' : responseTime < 5000 ? 'MEDIUM' : 'LOW'
-        };
-        
-        console.log(`🔌 ULTIMATE API Usage: ${apiProvider}/${endpoint} | Calls: ${callsCount} | ${successful ? '✅ SUCCESS' : '❌ FAILED'} | ${responseTime}ms | Cost: $${costEstimate.toFixed(4)}`);
-        
-        // You can expand this to save to database for enhanced cost tracking
-        // await saveUltimateApiUsageToDB(apiLogData);
-        
-        return true;
-    } catch (error) {
-        console.error('❌ Log ULTIMATE API usage error:', error.message);
         return false;
     }
 }
