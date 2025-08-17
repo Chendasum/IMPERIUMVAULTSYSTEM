@@ -2316,4 +2316,6 @@ POWER_LEVEL: 'ULTIMATE',
 LINE_COUNT: '2000+',
 AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
 OPTIMIZATION_LEVEL: 'MAXIMUM'
-};
+}; // <-- This closes the main exports object
+
+}; /
