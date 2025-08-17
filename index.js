@@ -658,13 +658,13 @@ async function handleDualAIConversation(chatId, text, sessionId) {
         const result = await executeDualAICommand(text, chatId, context, conversationIntel);
         
         // Send response to user
-        await sendSmartMessage(bot, chatId, result.response);
+        await sendSmartMessage(bot, chatId, result.response || "I'm processing your request...");
         
         // Save conversation
         await saveConversationToDatabase(chatId, text, result, context);
         
         // Extract and save new memories
-        await extractAndSaveMemories(chatId, text, result.response);
+        await extractAndSaveMemories(chatId, text, result.response || text);
         
         console.log("✅ Dual AI conversation completed successfully");
         return Date.now() - startTime;
@@ -681,7 +681,7 @@ async function handleDualAIConversation(chatId, text, sessionId) {
 }
 
 // 🧠 Build Conversation Context with Memory
-async function buildConversationContextWithMemory(chatId, currentText) {
+async function buildConversationContext(chatId, currentText) {
     const context = {
         conversationHistory: [],
         persistentMemory: [],
@@ -724,16 +724,24 @@ async function executeDualAICommand(text, chatId, context, intel) {
         // Try dual AI system first
         console.log("🚀 Executing dual AI command...");
         
-const dualResult = await getDualAnalysis(text, {
-    conversationHistory: context.conversationHistory,
-    persistentMemory: context.persistentMemory,
-    memoryContext: context.memoryContext,
-    conversationIntel: intel,
-    messageType: 'text'
-});
+        const dualResult = await getDualAnalysis(text, {
+            conversationHistory: context.conversationHistory,
+            persistentMemory: context.persistentMemory,
+            memoryContext: context.memoryContext,
+            conversationIntel: intel,
+            messageType: 'text'
+        });
         
-        console.log("✅ Dual AI command successful:", dualResult.aiUsed);
-        return dualResult;
+        console.log("✅ Dual AI command successful:", dualResult?.aiUsed || 'DUAL_AI');
+        
+        // Ensure proper response format
+        return {
+            response: dualResult || "I've processed your request with dual AI analysis.",
+            aiUsed: dualResult?.aiUsed || 'DUAL_AI_SYSTEM',
+            success: true,
+            memoryUsed: !!context.memoryContext,
+            queryType: intel.type
+        };
         
     } catch (error) {
         console.log("⚠️ Dual AI failed, using GPT fallback:", error.message);
@@ -749,7 +757,7 @@ const dualResult = await getDualAnalysis(text, {
         });
         
         return {
-            response: response,
+            response: response || "I've processed your request.",
             aiUsed: 'GPT_FALLBACK',
             success: true,
             memoryUsed: !!context.memoryContext,
@@ -758,14 +766,17 @@ const dualResult = await getDualAnalysis(text, {
     }
 }
 
-// 💾 Save Conversation to Database
+// 💾 Save Conversation to Database - FIXED
 async function saveConversationToDatabase(chatId, userMessage, result, context) {
     try {
-        await saveConversationDB(chatId, userMessage, result.response, "text", {
-            aiUsed: result.aiUsed,
-            queryType: result.queryType,
-            memoryUsed: context.memoryAvailable,
-            success: result.success,
+        // Ensure we have a valid response before saving (DATABASE FIX)
+        const responseToSave = result.response || `System response: ${result.error || 'Processing completed'}`;
+        
+        await saveConversationDB(chatId, userMessage, responseToSave, "text", {
+            aiUsed: result.aiUsed || 'UNKNOWN',
+            queryType: result.queryType || 'general',
+            memoryUsed: context.memoryAvailable || false,
+            success: result.success || false,
             enhanced: true
         });
         console.log("✅ Conversation saved to database");
