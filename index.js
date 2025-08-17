@@ -1148,13 +1148,18 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         } else if (text === '/live_economic' || text === '/economic_live') {
             await handleLiveEconomicData(chatId);
         
-} else {
-    // Handle general conversation with REAL dual AI system
-    try {
-        const result = await getUltimateStrategicAnalysis(text, {
-            chatId: chatId,
-            sessionId: sessionId || `session_${chatId}_${Date.now()}`
-        });
+try {
+        console.log(`🤖 Processing: "${text}"`); // Add debugging
+        
+        const result = await Promise.race([
+            getUltimateStrategicAnalysis(text, {
+                chatId: chatId,
+                sessionId: sessionId || `session_${chatId}_${Date.now()}`
+            }),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout after 30 seconds')), 30000)
+            )
+        ]);
         
         // Extract response properly
         const response = (typeof result === 'string') ? result : result.response;
@@ -1164,27 +1169,13 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         
     } catch (error) {
         console.error('❌ General conversation failed:', error.message);
-        await sendSmartMessage(bot, chatId, "I apologize, but I'm experiencing technical difficulties. Please try again.");
+        if (error.message.includes('Timeout')) {
+            await sendSmartMessage(bot, chatId, "⏰ Response taking too long. Please try a shorter message.");
+        } else {
+            await sendSmartMessage(bot, chatId, "I apologize, but I'm experiencing technical difficulties. Please try again.");
+        }
     }
-}
-        
-        const executionTime = Date.now() - startTime;
-        
-        // Log successful command execution
-        await logCommandUsage(chatId, text, executionTime, true).catch(console.error);
-        
-        return executionTime;
-        
-    } catch (error) {
-        const executionTime = Date.now() - startTime;
-        
-        // Log failed command execution
-        await logCommandUsage(chatId, text, executionTime, false, error.message).catch(console.error);
-        
-        throw error;
-    }
-}
-
+            
 // 🔧 UPDATED: Enhanced command handlers with wealth system integration
 async function handleStartCommand(chatId) {
     const welcome = `🤖 **Enhanced AI Assistant System v4.0 - WEALTH EMPIRE**
