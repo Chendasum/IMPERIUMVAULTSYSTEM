@@ -2264,7 +2264,6 @@ module.exports = {
         }
     },
 
-    // 🔧 FIXED: dualAIRouter function with proper reference
     dualAIRouter: async (query, options = {}) => {
         try {
             const system = initializeUltimateStrategicPowerSystem();
@@ -2288,7 +2287,6 @@ module.exports = {
         }
     },
 
-    // 🎯 QUICK SETUP - Enhanced for GPT-5 Era
     quickSetup: () => {
         try {
             const system = initializeUltimateStrategicPowerSystem();
@@ -2306,13 +2304,14 @@ module.exports = {
         }
     },
 
-// 🔧 UTILITY FUNCTIONS
-validateSystemConfiguration,
-gracefulSystemShutdown,
+    // 🔧 UTILITY FUNCTIONS
+    validateSystemConfiguration,
+    gracefulSystemShutdown,
 
-SYSTEM_VERSION: '2.0-GPT5-CLAUDE4',
-POWER_LEVEL: 'ULTIMATE',
-LINE_COUNT: '2000+',
-AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
-OPTIMIZATION_LEVEL: 'MAXIMUM'
+    // 📋 SYSTEM CONSTANTS
+    SYSTEM_VERSION: '2.0-GPT5-CLAUDE4',
+    POWER_LEVEL: 'ULTIMATE',
+    LINE_COUNT: '2000+',
+    AI_MODELS: 'GPT-5-FAMILY + CLAUDE-OPUS-4',
+    OPTIMIZATION_LEVEL: 'MAXIMUM'
 };
