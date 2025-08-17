@@ -6,6 +6,13 @@
 const { OpenAI } = require("openai");
 require("dotenv").config({ path: ".env" });
 
+// Quick fix for logger.power
+if (!logger.power) {
+    logger.power = function(...args) {
+        console.log('⚡', ...args);
+    };
+}
+
 // 🔧 ENHANCED SAFE IMPORTS WITH INTELLIGENT FALLBACKS
 let claudeClient, openaiClient, logger;
 
@@ -136,7 +143,7 @@ const CLAUDE_POWER_MODES = {
 // 🎯 ULTIMATE STRATEGIC POWER ROUTER - NEXT GENERATION
 class UltimateStrategicPowerRouter {
     constructor() {
-        logger.power('🏆 Initializing Ultimate Strategic Power Router with GPT-5 + Claude Opus 4...');
+        console.log('🏆 Initializing Ultimate Strategic Power Router with GPT-5 + Claude Opus 4...');
         
         // 🧠 ADVANCED STRATEGIC POWER ZONES - ENHANCED FOR GPT-5
         this.strategicPowerZones = {
@@ -468,7 +475,7 @@ class UltimateStrategicPowerRouter {
             this.updateAdvancedAdaptiveLearning(routingResult);
             this.routingHistory.push(routingResult);
 
-            logger.power(`🚀 Ultimate routing completed: ${optimizedRouting.ai}/${optimizedRouting.model} in ${routingTime}ms`);
+            console.log(`🚀 Ultimate routing completed: ${optimizedRouting.ai}/${optimizedRouting.model} in ${routingTime}ms`);
             
             return routingResult;
 
@@ -672,7 +679,7 @@ class UltimatePowerExecutor {
         const startTime = Date.now();
         const sessionId = options.sessionId || `session_${Date.now()}`;
         
-        logger.power(`🚀 Starting ultimate GPT-5 + Claude execution: ${query.substring(0, 50)}...`);
+        console.log(`🚀 Starting ultimate GPT-5 + Claude execution: ${query.substring(0, 50)}...`);
         
         try {
             // 1. Enhanced validation and sanitization
@@ -824,7 +831,7 @@ class UltimatePowerExecutor {
 
     // 🤝 DUAL ULTIMATE EXECUTION WITH CONSENSUS INTELLIGENCE
     async executeDualUltimate(query, routing, executionConfig) {
-        logger.power('🤝 DUAL ULTIMATE POWER: Maximum consensus analysis with GPT-5 + Claude Opus 4...');
+        console.log('🤝 DUAL ULTIMATE POWER: Maximum consensus analysis with GPT-5 + Claude Opus 4...');
         
         const [gpt5Result, claudeResult] = await Promise.allSettled([
             this.executeGPT5Ultimate(query, {
@@ -1767,7 +1774,7 @@ class UltimateSystemHealthMonitor {
 
 // 🚀 ULTIMATE SYSTEM INITIALIZATION AND EXPORTS - GPT-5 + CLAUDE OPUS 4
 function initializeUltimateStrategicPowerSystem() {
-    logger.power('🏆 Initializing ULTIMATE Strategic Power Dual AI System - GPT-5 + Claude Opus 4...');
+    console.log('🏆 Initializing ULTIMATE Strategic Power Dual AI System - GPT-5 + Claude Opus 4...');
     
     // Configuration validation with GPT-5 support
     const configCheck = validateSystemConfiguration();
@@ -1968,7 +1975,7 @@ function initializeUltimateStrategicPowerSystem() {
         logger.success('✅ Ultimate power routing with multi-dimensional scoring and model selection');
         logger.success('✅ Adaptive learning with model preferences and confidence calibration');
         logger.success('✅ Comprehensive health monitoring with GPT-5 + Claude Opus 4 tracking active');
-        logger.power('🏆 ULTIMATE STRATEGIC POWER SYSTEM FULLY OPERATIONAL - GPT-5 + CLAUDE OPUS 4');
+        console.log('🏆 ULTIMATE STRATEGIC POWER SYSTEM FULLY OPERATIONAL - GPT-5 + CLAUDE OPUS 4');
         
         return system;
         
@@ -2212,7 +2219,7 @@ module.exports = {
         try {
             const system = initializeUltimateStrategicPowerSystem();
             
-            logger.power('🚀 ULTIMATE STRATEGIC POWER SYSTEM - QUICK SETUP COMPLETE');
+            console.log('🚀 ULTIMATE STRATEGIC POWER SYSTEM - QUICK SETUP COMPLETE');
             logger.info('📈 Ready for maximum power financial analysis with GPT-5 + Claude Opus 4');
             logger.info('🎯 GPT-5 family + Claude Opus 4 strategic optimization active');
             logger.info('⚡ Use system.analyze(query, options) for ultimate power analysis');
