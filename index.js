@@ -879,17 +879,39 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
             await handleLiveStockMarket(chatId);
         } else if (text === '/live_forex' || text === '/forex_live') {
             await handleLiveForexData(chatId);
-        } else if (text === '/live_economic' || text === '/economic_live') {
+} else if (text === '/live_economic' || text === '/economic_live') {
             await handleLiveEconomicData(chatId);
         } else {
-            // 🎯 DIRECT DUAL AI PROCESSING - No intermediate functions
+            // 🎯 ENHANCED DIRECT DUAL AI PROCESSING - With Date Context
             console.log(`🤖 Processing with DIRECT dual AI: "${text}"`);
             
+            // Get current Cambodia date and time
+            const cambodiaTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Phnom_Penh"});
+            const currentDate = new Date(cambodiaTime).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            // Add date context for time-related questions
+            let contextualText = text;
+            if (text.toLowerCase().includes('today') || 
+                text.toLowerCase().includes('date') || 
+                text.toLowerCase().includes('time') ||
+                text.toLowerCase().includes('when') ||
+                text.toLowerCase().includes('what day')) {
+                contextualText = `IMPORTANT: Today's date is ${currentDate} (Cambodia time). User question: ${text}`;
+                console.log(`📅 Added date context: ${currentDate}`);
+            }
+            
             const result = await Promise.race([
-                getUltimateStrategicAnalysis(text, {
+                getUltimateStrategicAnalysis(contextualText, {
                     chatId: chatId,
                     sessionId: sessionId || `session_${chatId}_${Date.now()}`,
-                    messageType: 'general_conversation'
+                    messageType: 'general_conversation',
+                    currentDate: currentDate,
+                    timeZone: 'Asia/Phnom_Penh'
                 }),
                 new Promise((_, reject) => 
                     setTimeout(() => reject(new Error('Timeout after 30 seconds')), 30000)
