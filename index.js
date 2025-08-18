@@ -679,10 +679,57 @@ async function buildConversationContextWithMemory(chatId, currentText) {
     return context;
 }
 
-// 🧠 SIMPLIFIED: Extract and Save Memories Directly
+// 🧠 ENHANCED: Extract and Save Memories Directly - REPLACE YOUR CURRENT VERSION
 async function extractAndSaveMemoriesDirect(chatId, userMessage, aiResponse) {
     try {
-        // Check if we should save this conversation as memory
+        console.log(`🧠 Processing memory extraction for: "${userMessage}"`);
+        
+        // 🎯 ENHANCED: Name detection (highest priority)
+        if (userMessage.toLowerCase().includes('my name is') || userMessage.toLowerCase().includes('name is')) {
+            const nameMatch = userMessage.match(/(?:my )?name is ([^.,\n!?]+)/i);
+            if (nameMatch) {
+                const name = nameMatch[1].trim();
+                await addPersistentMemoryDB(chatId, `User's name: ${name}`, 'high');
+                console.log(`💾 SAVED NAME: ${name}`);
+                return; // Exit early after saving name
+            }
+        }
+        
+        // 🎯 ENHANCED: "I am" statements
+        if (userMessage.toLowerCase().includes('i am ') && !userMessage.toLowerCase().includes('i am asking')) {
+            const iAmMatch = userMessage.match(/i am ([^.,\n!?]+)/i);
+            if (iAmMatch) {
+                const identity = iAmMatch[1].trim();
+                await addPersistentMemoryDB(chatId, `User identity: ${identity}`, 'high');
+                console.log(`💾 SAVED IDENTITY: ${identity}`);
+            }
+        }
+        
+        // 🎯 ENHANCED: Preferences
+        if (userMessage.toLowerCase().includes('i prefer') || userMessage.toLowerCase().includes('i like')) {
+            await addPersistentMemoryDB(chatId, `User preference: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED PREFERENCE: ${userMessage}`);
+        }
+        
+        // 🎯 ENHANCED: Location
+        if (userMessage.toLowerCase().includes('i live in') || userMessage.toLowerCase().includes('i am from')) {
+            await addPersistentMemoryDB(chatId, `User location: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED LOCATION: ${userMessage}`);
+        }
+        
+        // 🎯 ENHANCED: Work/Job
+        if (userMessage.toLowerCase().includes('i work') || userMessage.toLowerCase().includes('my job')) {
+            await addPersistentMemoryDB(chatId, `User work: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED WORK INFO: ${userMessage}`);
+        }
+        
+        // 🎯 ENHANCED: Goals
+        if (userMessage.toLowerCase().includes('my goal') || userMessage.toLowerCase().includes('i want to')) {
+            await addPersistentMemoryDB(chatId, `User goal: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED GOAL: ${userMessage}`);
+        }
+        
+        // Original logic - check if we should save this conversation as memory
         if (shouldSaveToPersistentMemory(userMessage, aiResponse)) {
             const memoryFact = extractMemoryFact(userMessage, aiResponse);
             if (memoryFact && memoryFact.length > 10) {
@@ -690,45 +737,68 @@ async function extractAndSaveMemoriesDirect(chatId, userMessage, aiResponse) {
                 console.log(`💾 Saved memory: ${memoryFact.substring(0, 50)}...`);
             }
         }
+        
     } catch (error) {
         console.log('⚠️ Memory extraction failed:', error.message);
     }
 }
+// 🔧 ENHANCED: Helper Functions with Better Memory Support
 
-// 🔧 SIMPLIFIED: Helper Functions
+// 🧠 ENHANCED: Memory Context Builder - Makes memories more prominent
 function buildMemoryContextString(history, memories) {
-    let context = '\n\n🧠 MEMORY CONTEXT:\n';
+    let context = '\n\n🧠 IMPORTANT MEMORY CONTEXT FOR THIS USER:\n';
     
     if (memories.length > 0) {
-        context += '\nIMPORTANT FACTS:\n';
-        memories.slice(0, 3).forEach((mem, i) => {
-            context += `${i + 1}. ${mem.fact}\n`;
+        context += '\nKEY FACTS YOU MUST REMEMBER:\n';
+        memories.slice(0, 5).forEach((mem, i) => {
+            context += `• ${mem.fact}\n`;
         });
+        context += '\n';
     }
     
     if (history.length > 0) {
-        context += '\nRECENT CONVERSATION:\n';
-        const recent = history[0];
-        context += `User: "${recent.user_message?.substring(0, 80)}..."\n`;
-        if (recent.gpt_response) {
-            context += `AI: "${recent.gpt_response.substring(0, 80)}..."\n`;
-        }
+        context += 'RECENT CONVERSATION HISTORY:\n';
+        history.slice(0, 3).forEach((conv, i) => {
+            context += `${i + 1}. User: "${conv.user_message?.substring(0, 80)}..."\n`;
+            if (conv.gpt_response) {
+                context += `   AI: "${conv.gpt_response.substring(0, 80)}..."\n`;
+            }
+        });
+        context += '\n';
     }
+    
+    context += 'USE THIS INFORMATION TO PROVIDE PERSONALIZED RESPONSES THAT ACKNOWLEDGE WHAT YOU KNOW ABOUT THIS USER.\n';
     
     return context;
 }
 
+// 🎯 ENHANCED: Conversation Type Detection - Added memory queries
 function determineConversationType(text) {
     if (!text) return 'unknown';
     
     const lower = text.toLowerCase();
     
+    // Memory-related queries (high priority)
+    if (lower.includes('remember') || lower.includes('my name') || lower.includes('what is my') || lower.includes('do you know')) {
+        return 'memory_query';
+    }
+    
+    // Financial and investment
     if (lower.includes('financial') || lower.includes('investment') || lower.includes('fund')) {
         return 'financial_analysis';
     }
+    
+    // Analysis and strategy
     if (lower.includes('analysis') || lower.includes('strategy')) {
         return 'strategic_analysis';
     }
+    
+    // Personal information sharing
+    if (lower.includes('my name is') || lower.includes('i am') || lower.includes('i live') || lower.includes('i work')) {
+        return 'personal_info';
+    }
+    
+    // Complex discussions
     if (lower.length > 100) {
         return 'complex_discussion';
     }
@@ -747,42 +817,109 @@ function determineComplexity(text) {
 function requiresLiveData(text) {
     if (!text) return false;
     
-    const liveDataKeywords = ['current', 'latest', 'today', 'now', 'recent', 'update'];
+    const liveDataKeywords = ['current', 'latest', 'today', 'now', 'recent', 'update', 'price', 'market'];
     return liveDataKeywords.some(keyword => text.toLowerCase().includes(keyword));
 }
 
+// 🧠 ENHANCED: Memory Detection - More comprehensive
 function shouldSaveToPersistentMemory(userMessage, aiResponse) {
     const lowerMessage = userMessage.toLowerCase();
     const lowerResponse = aiResponse.toLowerCase();
     
-    return lowerMessage.includes('remember') || 
-           lowerMessage.includes('my preference') ||
-           lowerMessage.includes('my name') ||
-           lowerResponse.includes('important to note') ||
-           aiResponse.length > 500;
+    // High priority memory triggers
+    if (lowerMessage.includes('my name is') || lowerMessage.includes('i am ')) return true;
+    if (lowerMessage.includes('remember') || lowerMessage.includes('don\'t forget')) return true;
+    if (lowerMessage.includes('my preference') || lowerMessage.includes('i prefer')) return true;
+    if (lowerMessage.includes('i like') || lowerMessage.includes('i love')) return true;
+    if (lowerMessage.includes('i live') || lowerMessage.includes('i work')) return true;
+    if (lowerMessage.includes('my goal') || lowerMessage.includes('i want to')) return true;
+    
+    // Response indicators
+    if (lowerResponse.includes('important to note') || lowerResponse.includes('key insight')) return true;
+    if (lowerResponse.includes('strategic') || lowerResponse.includes('critical')) return true;
+    
+    // Length-based (detailed responses likely contain important info)
+    if (aiResponse.length > 500) return true;
+    
+    return false;
 }
 
+// 🧠 ENHANCED: Memory Fact Extraction - Better patterns
 function extractMemoryFact(userMessage, aiResponse) {
-    if (userMessage.toLowerCase().includes('remember')) {
-        return `User preference: ${userMessage}`;
-    }
+    const lowerMessage = userMessage.toLowerCase();
     
-    if (userMessage.toLowerCase().includes('my name is')) {
-        const nameMatch = userMessage.match(/my name is ([^.,\n]+)/i);
+    // Name extraction (highest priority)
+    if (lowerMessage.includes('my name is')) {
+        const nameMatch = userMessage.match(/my name is ([^.,\n!?]+)/i);
         if (nameMatch) {
             return `User's name: ${nameMatch[1].trim()}`;
         }
     }
     
+    // Identity extraction
+    if (lowerMessage.includes('i am ') && !lowerMessage.includes('i am asking') && !lowerMessage.includes('i am wondering')) {
+        const identityMatch = userMessage.match(/i am ([^.,\n!?]+)/i);
+        if (identityMatch) {
+            return `User identity: ${identityMatch[1].trim()}`;
+        }
+    }
+    
+    // Preference extraction
+    if (lowerMessage.includes('i prefer')) {
+        const prefMatch = userMessage.match(/i prefer ([^.,\n!?]+)/i);
+        if (prefMatch) {
+            return `User preference: ${prefMatch[1].trim()}`;
+        }
+    }
+    
+    // Goal extraction
+    if (lowerMessage.includes('my goal') || lowerMessage.includes('i want to')) {
+        const goalMatch = userMessage.match(/(?:my goal is|i want to) ([^.,\n!?]+)/i);
+        if (goalMatch) {
+            return `User goal: ${goalMatch[1].trim()}`;
+        }
+    }
+    
+    // Location extraction
+    if (lowerMessage.includes('i live in') || lowerMessage.includes('i am from')) {
+        const locationMatch = userMessage.match(/i (?:live in|am from) ([^.,\n!?]+)/i);
+        if (locationMatch) {
+            return `User location: ${locationMatch[1].trim()}`;
+        }
+    }
+    
+    // Work extraction
+    if (lowerMessage.includes('i work')) {
+        const workMatch = userMessage.match(/i work (?:at|for|as) ([^.,\n!?]+)/i);
+        if (workMatch) {
+            return `User work: ${workMatch[1].trim()}`;
+        }
+    }
+    
+    // Remember directive
+    if (lowerMessage.includes('remember')) {
+        const rememberMatch = userMessage.match(/remember (?:that )?([^.,\n!?]+)/i);
+        if (rememberMatch) {
+            return `Important fact: ${rememberMatch[1].trim()}`;
+        }
+        return `User request: ${userMessage.trim()}`;
+    }
+    
+    // Key insights from AI response
     if (aiResponse.includes('Key insight:')) {
         const insight = aiResponse.split('Key insight:')[1]?.split('\n')[0];
         return insight ? `Strategic insight: ${insight.trim()}` : null;
     }
     
-    return `Context: ${userMessage.substring(0, 100)}`;
+    // Fallback for general context
+    if (userMessage.length > 10 && userMessage.length < 150) {
+        return `Conversation context: ${userMessage.trim()}`;
+    }
+    
+    return null;
 }
 
-// 🔧 SIMPLIFIED: Session Management
+// 🔧 SIMPLIFIED: Session Management (unchanged - these work fine)
 async function startUserSession(chatId, sessionType = 'GENERAL') {
     try {
         const sessionId = `session_${chatId}_${Date.now()}`;
