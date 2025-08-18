@@ -1081,47 +1081,70 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         } else if (text === '/live_economic' || text === '/economic_live') {
             await handleLiveEconomicData(chatId);
         
-try {
-        console.log(`🤖 Processing: "${text}"`); // Add debugging
+        // 🔧 FIXED: Complete the else block for general conversation processing
+        } else {
+            // General conversation processing with dual AI system
+            try {
+                console.log(`🤖 Processing: "${text}"`); // Add debugging
+                
+                const result = await Promise.race([
+                    getUltimateStrategicAnalysis(text, {
+                        chatId: chatId,
+                        sessionId: sessionId || `session_${chatId}_${Date.now()}`
+                    }),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Timeout after 30 seconds')), 30000)
+                    )
+                ]);
+                
+                // Extract response properly
+                const response = (typeof result === 'string') ? result : result.response;
+                await sendSmartMessage(bot, chatId, response);
+                
+                console.log(`✅ General conversation processed with ${result.aiUsed || 'Dual AI'}`);
+                
+            } catch (error) {
+                console.error('❌ General conversation failed:', error.message);
+                if (error.message.includes('Timeout')) {
+                    await sendSmartMessage(bot, chatId, "⏰ Response taking too long. Please try a shorter message.");
+                } else {
+                    await sendSmartMessage(bot, chatId, "I apologize, but I'm experiencing technical difficulties. Please try again.");
+                }
+            }
+        }
         
-        const result = await Promise.race([
-            getUltimateStrategicAnalysis(text, {
-                chatId: chatId,
-                sessionId: sessionId || `session_${chatId}_${Date.now()}`
-            }),
-            new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout after 30 seconds')), 30000)
-            )
-        ]);
+        const executionTime = Date.now() - startTime;
         
-        // Extract response properly
-        const response = (typeof result === 'string') ? result : result.response;
-        await sendSmartMessage(bot, chatId, response);
+        // Log successful command
+        await logCommandUsage(chatId, text, executionTime, true);
         
-        console.log(`✅ General conversation processed with ${result.aiUsed || 'Dual AI'}`);
+        return executionTime;
         
     } catch (error) {
-        console.error('❌ General conversation failed:', error.message);
-        if (error.message.includes('Timeout')) {
-            await sendSmartMessage(bot, chatId, "⏰ Response taking too long. Please try a shorter message.");
-        } else {
-            await sendSmartMessage(bot, chatId, "I apologize, but I'm experiencing technical difficulties. Please try again.");
-        }
+        const executionTime = Date.now() - startTime;
+        
+        // Log failed command
+        await logCommandUsage(chatId, text, executionTime, false, error.message);
+        
+        throw error;
     }
+} // 
             
 // 🔧 UPDATED: Enhanced command handlers with wealth system integration
-async function handleStartCommand(chatId) {
-    const welcome = `🤖 **Enhanced AI Assistant System v4.0 - WEALTH EMPIRE**
+async function handleHelpCommand(chatId) {
+    const help = `🤖 **Enhanced AI Assistant v4.0 - WEALTH EMPIRE**
 
-**🎯 Core Features:**
-- Dual AI: gpt-5 + Claude Opus 4.1
-- Complete AI Wealth-Building System (10 modules)
-- Enhanced PostgreSQL Database Integration
-- Live market data & Ray Dalio framework
-- Cambodia fund analysis
-- Advanced document processing
-- Voice and image analysis
-- Persistent memory system
+**🎯 Core AI Features:**
+• Dual AI: GPT-5 + Claude Opus 4.1
+• Enhanced memory system
+• Live market data integration
+• Document analysis & training
+
+**💰 AI WEALTH-BUILDING SYSTEM (10 MODULES):**
+/wealth - Complete wealth-building system
+/scan_stocks - AI stock scanner
+/scan_crypto - Crypto opportunities
+/top_opportunities - Cross-asset analysis
 
 **🏦 Cambodia Fund Commands:**
 /deal_analyze [amount] [type] [location] [rate] [term]
@@ -1139,26 +1162,31 @@ async function handleStartCommand(chatId) {
 /trading - Account status
 /positions - Open positions
 
+**💰 Live Data Commands:**
+/live_data - Comprehensive market data
+/live_crypto - Cryptocurrency prices
+/live_stocks - Stock market data
+/live_forex - Currency rates
+/live_economic - Economic indicators
+
 **🔧 System Management:**
-/analytics - Master system analytics
-/db_stats - Database statistics
 /status - Enhanced system status
+/analytics - Master analytics
+/db_stats - Database statistics
 /maintenance - Database maintenance
 
-**🧪 Memory & Database Testing:**
+**🧪 Testing & Memory:**
 /test_db - Test database connection
 /test_memory - Test memory system
-/test_memory_fix - Memory recovery test
 /memory_stats - Memory statistics
 
 **Chat ID:** ${chatId}
-**🏆 AI Wealth Empire Status:** ACTIVE
-**Database Status:** ${connectionStats.connectionHealth}`;
+**🏆 Status:** AI WEALTH EMPIRE ACTIVE`;
 
-    await sendSmartMessage(bot, chatId, welcome);
+    await sendSmartMessage(bot, chatId, help);
     
-    // Save welcome interaction
-    await saveConversationDB(chatId, "/start", welcome, "command").catch(console.error);
+    // Save help interaction
+    await saveConversationDB(chatId, "/help", help, "command").catch(console.error);
 }
 
 
@@ -5233,6 +5261,85 @@ app.get("/health", async (req, res) => {
     }
 });
 
+// 🔧 FIXED: Complete the checkSystemHealth function
+async function checkSystemHealth() {
+    try {
+        console.log("🔍 Checking system health...");
+        
+        const health = {
+            gptAnalysis: false,
+            claudeAnalysis: false,
+            contextBuilding: false,
+            memorySystem: false,
+            dateTimeSupport: false,
+            dualMode: false,
+            overallHealth: false
+        };
+        
+        // Test GPT-5 availability
+        try {
+            await getUniversalAnalysis('test', { maxTokens: 10 });
+            health.gptAnalysis = true;
+        } catch (error) {
+            console.log('GPT health check failed:', error.message);
+        }
+        
+        // Test Claude availability
+        try {
+            await getClaudeAnalysis('test', { maxTokens: 10 });
+            health.claudeAnalysis = true;
+        } catch (error) {
+            console.log('Claude health check failed:', error.message);
+        }
+        
+        // Test context building
+        try {
+            const context = await buildConversationContextWithMemory('test_user', 'test message');
+            health.contextBuilding = !!context;
+        } catch (error) {
+            console.log('Context building health check failed:', error.message);
+        }
+        
+        // Test memory system
+        try {
+            await getPersistentMemoryDB('test_user');
+            health.memorySystem = true;
+        } catch (error) {
+            console.log('Memory system health check failed:', error.message);
+        }
+        
+        // Test date/time support
+        try {
+            const cambodiaTime = getCurrentCambodiaDateTime();
+            health.dateTimeSupport = !!cambodiaTime;
+        } catch (error) {
+            console.log('DateTime health check failed:', error.message);
+        }
+        
+        // Test dual mode
+        health.dualMode = health.gptAnalysis && health.claudeAnalysis;
+        
+        // Overall health
+        const healthyComponents = Object.values(health).filter(Boolean).length;
+        health.overallHealth = healthyComponents >= 4; // At least 4 out of 6 components working
+        
+        console.log(`✅ System health check completed: ${healthyComponents}/6 components healthy`);
+        return health;
+        
+    } catch (error) {
+        console.error('❌ System health check failed:', error.message);
+        return {
+            gptAnalysis: false,
+            claudeAnalysis: false,
+            contextBuilding: false,
+            memorySystem: false,
+            dateTimeSupport: false,
+            dualMode: false,
+            overallHealth: false
+        };
+    }
+}
+
 // 🚀 SINGLE SERVER STARTUP WITH PROPER BOT INITIALIZATION - FIXED
 const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log("🚀 Enhanced AI Assistant v4.0 - WEALTH EMPIRE starting...");
@@ -5314,6 +5421,7 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log(`📍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
     console.log(`🤖 Bot Mode: ${isProduction ? 'Webhook (with polling fallback)' : 'Polling'}`);
     console.log("💰 Ready to build wealth with AI!");
+    
 }); // ✅ CRITICAL FIX: This closing brace was missing proper placement
 
 // Enhanced error handling
@@ -5342,10 +5450,15 @@ const gracefulShutdown = async (signal) => {
     
     try {
         console.log('🤖 Stopping Telegram bot...');
-        await bot.stopPolling();
-        await bot.deleteWebHook();
+        if (bot && typeof bot.stopPolling === 'function') {
+            await bot.stopPolling().catch(console.error);
+        }
+        if (bot && typeof bot.deleteWebHook === 'function') {
+            await bot.deleteWebHook().catch(console.error);
+        }
         console.log('✅ Bot stopped successfully');
         
+        // Update system metrics if function exists
         if (typeof updateSystemMetrics === 'function') {
             await updateSystemMetrics({
                 system_shutdown: 1,
@@ -5358,16 +5471,43 @@ const gracefulShutdown = async (signal) => {
         console.error('❌ Shutdown cleanup error:', error.message);
     }
     
-    server.close(() => {
+    // Close server gracefully
+    if (server && typeof server.close === 'function') {
+        server.close(() => {
+            console.log('✅ AI WEALTH EMPIRE shut down gracefully');
+            process.exit(0);
+        });
+    } else {
         console.log('✅ AI WEALTH EMPIRE shut down gracefully');
         process.exit(0);
-    });
+    }
 };
 
+// Process event listeners
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// Export for testing
+// Enhanced error handling
+process.on('unhandledRejection', (reason, promise) => {
+    if (reason && reason.message && reason.message.includes('409')) {
+        console.error("🚨 Telegram Bot Conflict (409): Another instance running!");
+        console.log("🔧 Solution: Stop other instances or wait 60 seconds");
+    } else {
+        console.error('❌ Unhandled Promise Rejection:', reason);
+    }
+});
+
+process.on('uncaughtException', (error) => {
+    if (error.message && error.message.includes('ETELEGRAM')) {
+        console.error("🚨 Telegram API Error:", error.message);
+    } else if (error.message && error.message.includes('EADDRINUSE')) {
+        console.error("🚨 Port already in use! Another server instance running.");
+    } else {
+        console.error('❌ Uncaught Exception:', error);
+    }
+});
+
+// Export for testing (this should be at the very end)
 module.exports = {
     app,
     server,
