@@ -957,11 +957,98 @@ async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime
     }
 }
 
-// 🎯 MAIN EXECUTION FUNCTION - DIRECT to dualAISystem.js
+// 🔧 REPLACE YOUR executeCommandWithLogging FUNCTION WITH THIS FIXED VERSION
+
 async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
     
     try {
+        // 🔧 ADD EXPLICIT MEMORY HANDLING FOR NAME COMMANDS
+        if (text.toLowerCase().includes('/save my name is') || text.toLowerCase().includes('my name is')) {
+            console.log(`💾 Processing name save command: "${text}"`);
+            
+            // Extract name more reliably
+            let nameMatch = text.match(/my name is ([^.,\n!?]+)/i);
+            if (nameMatch) {
+                const name = nameMatch[1].trim();
+                console.log(`💾 Extracted name: "${name}"`);
+                
+                // Save name with HIGH priority
+                await addPersistentMemoryDB(chatId, `User's name: ${name}`, 'high');
+                console.log(`💾 Saved name to database: ${name}`);
+                
+                // Send confirmation
+                await sendSmartMessage(bot, chatId, 
+                    `✅ **I've saved your name: ${name}**\n\n` +
+                    `💾 This has been stored in my persistent memory.\n` +
+                    `🧠 I will remember this in future conversations.\n\n` +
+                    `**Test it:** Ask me "What is my name?" to verify!`
+                );
+                
+                // Save this interaction
+                await saveConversationDB(chatId, text, `Name saved: ${name}`, "memory_save", {
+                    userName: name,
+                    memoryType: 'identity',
+                    priority: 'high',
+                    processingTime: Date.now() - startTime
+                }).catch(console.error);
+                
+                return Date.now() - startTime;
+            }
+        }
+        
+        // 🔧 ADD EXPLICIT MEMORY RECALL FOR NAME QUESTIONS
+        if (text.toLowerCase().includes('what is my name') || 
+            text.toLowerCase().includes('do you remember my name') ||
+            text.toLowerCase().includes('my name?')) {
+            
+            console.log(`🧠 Processing name recall question: "${text}"`);
+            
+            try {
+                // Get user's memories
+                const memories = await getPersistentMemoryDB(chatId);
+                console.log(`🧠 Retrieved ${memories.length} memories for user`);
+                
+                // Find name in memories
+                const nameMemory = memories.find(mem => 
+                    mem.fact && mem.fact.toLowerCase().includes("user's name:")
+                );
+                
+                if (nameMemory) {
+                    const name = nameMemory.fact.replace(/user's name:\s*/i, '').trim();
+                    console.log(`🧠 Found name in memory: "${name}"`);
+                    
+                    await sendSmartMessage(bot, chatId, 
+                        `🧠 **Yes, I remember!**\n\n` +
+                        `👤 **Your name is: ${name}**\n\n` +
+                        `💾 I retrieved this from my persistent memory database.\n` +
+                        `📅 Saved on: ${new Date(nameMemory.created_at).toLocaleDateString()}\n\n` +
+                        `✅ My memory system is working correctly!`
+                    );
+                } else {
+                    console.log(`🧠 No name found in memories`);
+                    await sendSmartMessage(bot, chatId, 
+                        `🤔 **I don't have your name saved yet.**\n\n` +
+                        `💡 **To save your name, say:**\n` +
+                        `"My name is [Your Name]"\n\n` +
+                        `💾 I'll store it in my persistent memory for future conversations.`
+                    );
+                }
+                
+                return Date.now() - startTime;
+                
+            } catch (memoryError) {
+                console.error('🧠 Memory recall error:', memoryError.message);
+                await sendSmartMessage(bot, chatId, 
+                    `❌ **Memory system error:**\n\n` +
+                    `I'm having trouble accessing my memory database.\n` +
+                    `Error: ${memoryError.message}\n\n` +
+                    `Please try: /test_memory to diagnose the issue.`
+                );
+                return Date.now() - startTime;
+            }
+        }
+        
         // Command handlers (keep all your existing ones)
         if (text === "/start") {
             await handleStartCommand(chatId);
@@ -1032,10 +1119,10 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
             await handleLiveStockMarket(chatId);
         } else if (text === '/live_forex' || text === '/forex_live') {
             await handleLiveForexData(chatId);
-} else if (text === '/live_economic' || text === '/economic_live') {
+        } else if (text === '/live_economic' || text === '/economic_live') {
             await handleLiveEconomicData(chatId);
         } else {
-            // 🎯 ENHANCED DIRECT DUAL AI PROCESSING - With Date Context
+            // 🔧 ENHANCED DUAL AI PROCESSING WITH MEMORY INTEGRATION
             console.log(`🤖 Processing with DIRECT dual AI: "${text}"`);
             
             // Get current Cambodia date and time
@@ -1046,6 +1133,26 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
                 month: 'long',
                 day: 'numeric'
             });
+            
+            // 🧠 BUILD MEMORY CONTEXT FIRST
+            let memoryContext = '';
+            try {
+                console.log(`🧠 Building memory context for user ${chatId}...`);
+                const memories = await getPersistentMemoryDB(chatId);
+                
+                if (memories && memories.length > 0) {
+                    memoryContext = '\n\n🧠 IMPORTANT MEMORY CONTEXT:\n';
+                    memories.slice(0, 5).forEach((mem, i) => {
+                        memoryContext += `• ${mem.fact}\n`;
+                    });
+                    memoryContext += '\nUSE THIS INFORMATION TO PROVIDE PERSONALIZED RESPONSES.\n';
+                    console.log(`🧠 Added ${memories.length} memories to context`);
+                } else {
+                    console.log(`🧠 No memories found for user ${chatId}`);
+                }
+            } catch (memoryError) {
+                console.error('🧠 Memory context building failed:', memoryError.message);
+            }
             
             // Add date context for time-related questions
             let contextualText = text;
@@ -1058,13 +1165,17 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
                 console.log(`📅 Added date context: ${currentDate}`);
             }
             
+            // 🔧 ADD MEMORY CONTEXT TO AI REQUEST
+            const fullContext = contextualText + memoryContext;
+            
             const result = await Promise.race([
-                getUltimateStrategicAnalysis(contextualText, {
+                getUltimateStrategicAnalysis(fullContext, {
                     chatId: chatId,
                     sessionId: sessionId || `session_${chatId}_${Date.now()}`,
                     messageType: 'general_conversation',
                     currentDate: currentDate,
-                    timeZone: 'Asia/Phnom_Penh'
+                    timeZone: 'Asia/Phnom_Penh',
+                    hasMemoryContext: memories && memories.length > 0
                 }),
                 new Promise((_, reject) => 
                     setTimeout(() => reject(new Error('Timeout after 30 seconds')), 30000)
@@ -1077,6 +1188,14 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
                            "I've processed your request with our dual AI system.";
                            
             await sendSmartMessage(bot, chatId, response);
+            
+            // 🔧 ENHANCED MEMORY EXTRACTION AND SAVING
+            try {
+                console.log(`💾 Processing memory extraction for: "${text}"`);
+                await extractAndSaveMemoriesEnhanced(chatId, text, response);
+            } catch (memoryError) {
+                console.error('💾 Memory extraction failed:', memoryError.message);
+            }
             
             console.log(`✅ DIRECT dual AI processing completed`);
         }
@@ -1102,6 +1221,67 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
         
         await logCommandUsage(chatId, text, executionTime, false, error.message);
         throw error;
+    }
+}
+
+// 🔧 NEW: Enhanced memory extraction function
+async function extractAndSaveMemoriesEnhanced(chatId, userMessage, aiResponse) {
+    try {
+        console.log(`🧠 Enhanced memory extraction for: "${userMessage}"`);
+        
+        // 🎯 HIGH PRIORITY: Name detection
+        const namePatterns = [
+            /my name is ([^.,\n!?]+)/i,
+            /i'm ([^.,\n!?]+)/i,
+            /call me ([^.,\n!?]+)/i,
+            /i am ([^.,\n!?]+) and/i
+        ];
+        
+        for (const pattern of namePatterns) {
+            const match = userMessage.match(pattern);
+            if (match) {
+                const name = match[1].trim();
+                if (name.length > 1 && name.length < 50) {
+                    await addPersistentMemoryDB(chatId, `User's name: ${name}`, 'high');
+                    console.log(`💾 SAVED NAME: ${name}`);
+                    return; // Exit early after saving name
+                }
+            }
+        }
+        
+        // 🎯 OTHER IDENTITY INFO
+        const identityPatterns = [
+            { pattern: /i work (?:at|for) ([^.,\n!?]+)/i, type: 'work' },
+            { pattern: /i live in ([^.,\n!?]+)/i, type: 'location' },
+            { pattern: /i'm from ([^.,\n!?]+)/i, type: 'origin' },
+            { pattern: /i prefer ([^.,\n!?]+)/i, type: 'preference' },
+            { pattern: /my goal is to ([^.,\n!?]+)/i, type: 'goal' },
+            { pattern: /i like ([^.,\n!?]+)/i, type: 'preference' },
+            { pattern: /remember (?:that )?([^.,\n!?]+)/i, type: 'remember' }
+        ];
+        
+        for (const { pattern, type } of identityPatterns) {
+            const match = userMessage.match(pattern);
+            if (match) {
+                const value = match[1].trim();
+                if (value.length > 2) {
+                    await addPersistentMemoryDB(chatId, `User ${type}: ${value}`, 'medium');
+                    console.log(`💾 SAVED ${type.toUpperCase()}: ${value}`);
+                }
+            }
+        }
+        
+        // 🎯 SAVE IMPORTANT CONVERSATIONS
+        if (shouldSaveToPersistentMemory(userMessage, aiResponse)) {
+            const memoryFact = extractMemoryFact(userMessage, aiResponse);
+            if (memoryFact && memoryFact.length > 10) {
+                await addPersistentMemoryDB(chatId, memoryFact, 'medium');
+                console.log(`💾 Saved conversation memory: ${memoryFact.substring(0, 50)}...`);
+            }
+        }
+        
+    } catch (error) {
+        console.log('⚠️ Enhanced memory extraction failed:', error.message);
     }
 }
 
