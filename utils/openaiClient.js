@@ -89,7 +89,7 @@ async function testGPT5Capabilities() {
             multimodal: true,
             codeGeneration: true,
             contextWindow: GPT5_CONFIG.ENHANCED_CONTEXT_WINDOW,
-            maxTokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
+            max_completion_tokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
             testResponse: basicTest.choices[0].message.content,
             reasoningQuality: reasoningTest.choices[0].message.content.length > 1000
         };
@@ -152,7 +152,7 @@ function analyzeQueryForGPT5(prompt) {
     // Determine optimal configuration
     let config = {
         type: 'general',
-        maxTokens: 1500,
+        max_completion_tokens: 1500,
         temperature: GPT5_CONFIG.ENHANCED_REASONING_TEMP,
         useEnhancedReasoning: false,
         useLargeContext: false,
@@ -164,7 +164,7 @@ function analyzeQueryForGPT5(prompt) {
     if (complexReasoningPatterns.some(pattern => pattern.test(message))) {
         config = {
             type: 'complex_reasoning',
-            maxTokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
+            max_completion_tokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
             temperature: GPT5_CONFIG.ENHANCED_REASONING_TEMP,
             useEnhancedReasoning: true,
             useLargeContext: false,
@@ -175,7 +175,7 @@ function analyzeQueryForGPT5(prompt) {
     } else if (largeContextPatterns.some(pattern => pattern.test(message))) {
         config = {
             type: 'large_context',
-            maxTokens: 4000,
+            max_completion_tokens: 4000,
             temperature: 0.6,
             useEnhancedReasoning: true,
             useLargeContext: true,
@@ -186,7 +186,7 @@ function analyzeQueryForGPT5(prompt) {
     } else if (financialPatterns.some(pattern => pattern.test(message))) {
         config = {
             type: 'financial_analysis',
-            maxTokens: 3000,
+            max_completion_tokens: 3000,
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP,
             useEnhancedReasoning: true,
             useLargeContext: false,
@@ -276,7 +276,7 @@ async function getGPT5Analysis(prompt, options = {}) {
                 }
             ],
             temperature: options.temperature || queryConfig.temperature,
-            max_completion_tokens: options.maxTokens || queryConfig.maxTokens,  // 🔧 FIXED: Correct parameter
+            max_completion_tokens: options.max_completion_tokens || queryConfig.max_completion_tokens,  // 🔧 FIXED: Correct parameter
             top_p: options.top_p || 0.95,
             frequency_penalty: options.frequency_penalty || 0,
             presence_penalty: options.presence_penalty || 0
@@ -360,7 +360,7 @@ async function getEnhancedMarketAnalysis(query, marketData = null, options = {})
         return await getGPT5Analysis(enhancedQuery, {
             ...options,
             context: "Advanced financial market analysis using institutional-grade methodologies",
-            maxTokens: 4000,
+            max_completion_tokens: 4000,
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP
         });
         
@@ -404,7 +404,7 @@ async function getEnhancedCambodiaAnalysis(dealQuery, dealData = null, options =
         return await getGPT5Analysis(enhancedQuery, {
             ...options,
             context: "Specialized Cambodia real estate and lending market expertise with institutional risk management",
-            maxTokens: 3500,
+            max_completion_tokens: 3500,
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP
         });
         
@@ -446,7 +446,7 @@ async function getEnhancedVisionAnalysis(base64Image, prompt, options = {}) {
                     ]
                 }
             ],
-            max_completion_tokens: options.maxTokens || 3000,  // 🔧 FIXED: Correct parameter
+            max_completion_tokens: options.max_completion_tokens || 3000,  // 🔧 FIXED: Correct parameter
             temperature: options.temperature || GPT5_CONFIG.MULTIMODAL_TEMP
         };
         
@@ -569,7 +569,7 @@ module.exports = {
     },
     
     getQuickGptResponse: async (query, options = {}) => {
-        return await getGPT5Analysis(query, { ...options, maxTokens: 800 });
+        return await getGPT5Analysis(query, { ...options, max_completion_tokens: 800 });
     },
     
     getStrategicAnalysis: async (query, options = {}) => {
