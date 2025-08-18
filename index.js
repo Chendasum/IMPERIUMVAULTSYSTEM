@@ -152,6 +152,11 @@ const {
     getStrategicAnalysis: getGptStrategicAnalysis
 } = require('./utils/openaiClient');
 
+const { 
+    executeDualCommand,
+    checkSystemHealth
+} = require('./utils/dualCommandSystem');
+
 // Load credentials
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
 const openaiKey = process.env.OPENAI_API_KEY;
