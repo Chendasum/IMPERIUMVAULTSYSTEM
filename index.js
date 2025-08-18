@@ -3675,65 +3675,60 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
     let botInitialized = false;
     let initializationMethod = 'unknown';
     
-    if (isProduction) {
-        // Production: Determine webhook URL dynamically
-        console.log("🚀 Production environment detected - setting up webhook...");
-        
-        let webhookUrl;
-        if (process.env.RAILWAY_STATIC_URL) {
-            webhookUrl = `${process.env.RAILWAY_STATIC_URL}/webhook`;
-        } else if (process.env.VERCEL_URL) {
-            webhookUrl = `https://${process.env.VERCEL_URL}/webhook`;
-        } else if (process.env.WEBHOOK_URL) {
-            webhookUrl = `${process.env.WEBHOOK_URL}/webhook`;
-        } else {
-            // Fallback - you should set this in your environment
-            webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
-            console.log("⚠️ Using fallback webhook URL. Set RAILWAY_STATIC_URL or WEBHOOK_URL");
-        }
-        
-        console.log(`🔗 Webhook URL: ${webhookUrl}`);
-        
+if (isProduction) {
+    // 🚀 PRODUCTION: Use WEBHOOK with correct Railway URL
+    console.log("🚀 Production environment - using WEBHOOK ONLY...");
+    
+    try {
+        // Stop any existing polling first
+        console.log("🛑 Ensuring no polling conflicts...");
         try {
-            // Clean up any existing webhook
-            await bot.deleteWebHook();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Set new webhook
-            await bot.setWebHook(webhookUrl, {
-                max_connections: 100,
-                allowed_updates: ['message', 'callback_query']
-            });
-            
-            console.log("✅ Production webhook configured successfully");
-            botInitialized = true;
-            initializationMethod = 'webhook';
-            
-        } catch (webhookError) {
-            console.error("❌ Webhook setup failed:", webhookError.message);
-            console.log("🔄 FALLBACK: Switching to polling mode...");
-            
-            try {
-                await bot.deleteWebHook();
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                await bot.startPolling({ 
-                    restart: true,
-                    polling: {
-                        interval: 300,
-                        autoStart: true,
-                        params: {
-                            timeout: 10,
-                            allowed_updates: ['message', 'callback_query']
-                        }
-                    }
-                });
-                console.log("✅ Bot polling started (fallback mode)");
-                botInitialized = true;
-                initializationMethod = 'polling-fallback';
-            } catch (pollingError) {
-                console.error("❌ Polling fallback failed:", pollingError.message);
-            }
+            await bot.stopPolling();
+            console.log("✅ Stopped any existing polling");
+        } catch (stopError) {
+            console.log("ℹ️ No polling to stop:", stopError.message);
         }
+        
+        // Wait for cleanup
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // 🔧 CORRECT: Use the exact Railway domain
+        const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
+        
+        console.log(`🔗 Setting webhook URL: ${webhookUrl}`);
+        
+        // Clean up any existing webhook
+        await bot.deleteWebHook();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Set new webhook with proper configuration
+        const webhookResult = await bot.setWebHook(webhookUrl, {
+            max_connections: 40,
+            allowed_updates: ['message', 'callback_query'],
+            drop_pending_updates: true
+        });
+        
+        console.log("🔗 Webhook result:", webhookResult);
+        console.log("✅ Production webhook configured successfully");
+        
+        // Verify webhook is working
+        const webhookInfo = await bot.getWebHookInfo();
+        console.log("📋 Webhook info:", {
+            url: webhookInfo.url,
+            pending_update_count: webhookInfo.pending_update_count,
+            last_error_date: webhookInfo.last_error_date,
+            last_error_message: webhookInfo.last_error_message
+        });
+        
+        botInitialized = true;
+        initializationMethod = 'webhook-production';
+        
+    } catch (webhookError) {
+        console.error("❌ Webhook setup failed:", webhookError.message);
+        console.error("❌ Full error:", webhookError);
+        botInitialized = false;
+    }
+}
         
     } else {
         // Development: Use polling with enhanced configuration
