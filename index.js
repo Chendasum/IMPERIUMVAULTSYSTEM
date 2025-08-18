@@ -756,35 +756,6 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
             await handleMemoryRecoveryTest(chatId);
         } else if (text === '/memory_stats') {
             await handleMemoryStatistics(chatId);
-    
-        
-        // 💰 LIVE DATA COMMANDS - CORRECTLY INTEGRATED
-        // 💰 CRYPTO PRICE QUERIES - Connect to existing getEnhancedCryptoData()
-        } else if ((text.toLowerCase().includes('bitcoin') || text.toLowerCase().includes('btc')) && 
-                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('much') || text.toLowerCase().includes('cost'))) {
-            await handleLiveBitcoinPrice(chatId);
-        } else if (text.toLowerCase().includes('crypto') && 
-                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('market'))) {
-            await handleLiveCryptoMarket(chatId);
-
-        // 📈 STOCK MARKET QUERIES - Connect to existing getStockMarketData()
-        } else if ((text.toLowerCase().includes('stock') || text.toLowerCase().includes('market') || text.toLowerCase().includes('sp500') || text.toLowerCase().includes('dow')) && 
-                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('today') || text.toLowerCase().includes('current'))) {
-            await handleLiveStockMarket(chatId);
-
-        // 🏦 ECONOMIC DATA QUERIES - Connect to existing getEconomicIndicators()
-        } else if ((text.toLowerCase().includes('inflation') || text.toLowerCase().includes('fed') || text.toLowerCase().includes('interest rate') || text.toLowerCase().includes('gdp')) && 
-                   (text.toLowerCase().includes('current') || text.toLowerCase().includes('today') || text.toLowerCase().includes('latest'))) {
-            await handleLiveEconomicData(chatId);
-
-        // 💰 SMART CRYPTO PRICE QUERIES - Recognizes ALL cryptocurrencies
-        } else if (isAnyCryptoRequest(text)) {
-            await handleSmartCryptoPrice(chatId, text);
-
-        // 💱 FOREX QUERIES - Connect to existing getMajorForexPairs()
-        } else if ((text.toLowerCase().includes('dollar') || text.toLowerCase().includes('forex') || text.toLowerCase().includes('currency') || text.toLowerCase().includes('exchange rate')) && 
-                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('rate') || text.toLowerCase().includes('today'))) {
-            await handleLiveForexData(chatId);
 
         // 📊 COMPREHENSIVE LIVE DATA COMMANDS
         } else if (text === '/live_data' || text === '/market_data' || text === '/live_market') {
