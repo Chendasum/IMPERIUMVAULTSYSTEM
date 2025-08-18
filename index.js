@@ -3474,9 +3474,7 @@ app.use((req, res, next) => {
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     next();
-});
-
-});
+}); // ✅ FIXED: Removed extra closing brace
 
 // Simple rate limiting for webhook
 const webhookLimiter = new Map();
@@ -3502,6 +3500,8 @@ app.use('/webhook', (req, res, next) => {
     }
     next();
 });
+
+console.log('✅ Express middleware configured with security headers and rate limiting');
 
 // 🔧 FIXED: Enhanced webhook endpoint with better debugging
 app.post("/webhook", async (req, res) => {
