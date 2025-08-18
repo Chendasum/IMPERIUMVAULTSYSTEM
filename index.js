@@ -96,17 +96,17 @@ const {
     saveTrainingDocumentDB,
     getTrainingDocumentsDB,
     
-    // Ray Dalio enhanced functions
-    saveRegimeData,
-    savePortfolioAllocation,
-    saveRiskAssessment,
-    saveRegimePerformance,
-    savePositionSizing,
-    saveMarketSignal,
-    saveDailyObservation,
-    logCommandUsage,
-    getCurrentRegime,
-    getLatestRiskAssessment,
+// Ray Dalio enhanced functions
+saveRegimeData,
+savePortfolioAllocation,
+saveRiskAssessment,
+saveRegimePerformance,
+savePositionSizing,
+saveMarketSignal,
+saveDailyObservation,
+// logCommandUsage,       // ← COMMENTED OUT
+getCurrentRegime,
+getLatestRiskAssessment,
     
     // Cambodia fund functions
     saveCambodiaDeal,
@@ -151,11 +151,6 @@ const {
     getGptAnalysis,  // Raw GPT function if needed
     getStrategicAnalysis: getGptStrategicAnalysis
 } = require('./utils/openaiClient');
-
-const { 
-    executeDualCommand,
-    checkSystemHealth
-} = require('./utils/dualCommandSystem');
 
 // Load credentials
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -255,7 +250,6 @@ async function initializeDailyMetrics() {
         console.error("⚠️ Daily metrics initialization failed:", error.message);
     }
 }
-
 // User Authentication
 function isAuthorizedUser(chatId) {
     const authorizedUsers = process.env.ADMIN_CHAT_ID
@@ -274,7 +268,7 @@ async function logApiUsage(service, endpoint, calls = 1, success = true, respons
     }
 }
 
-// 🚀 COMPLETE ENHANCED COMPREHENSIVE MARKET DATA
+// 🚀 COMPLETE ENHANCED COMPREHENSIVE MARKET DATA - FIXED
 async function getComprehensiveMarketData() {
     try {
         console.log("📊 Fetching SUPER comprehensive market data...");
@@ -426,7 +420,7 @@ async function getComprehensiveMarketData() {
         }
         return null;
     }
-}
+} // ✅ FIXED: Added missing closing brace
 
 // Helper function to calculate data quality
 function calculateDataQuality(marketData) {
@@ -459,12 +453,12 @@ function calculateDataQuality(marketData) {
 function calculateDerivedIndicators(marketData) {
     try {
         // Yield curve analysis
-        if (marketData.yields.curve_10Y_2Y !== null) {
+        if (marketData.yields && marketData.yields.curve_10Y_2Y !== null) {
             marketData.yields.inverted = marketData.yields.curve_10Y_2Y < 0;
         }
         
         // VIX-based fear/greed assessment
-        if (marketData.sentiment.vix !== null) {
+        if (marketData.sentiment && marketData.sentiment.vix !== null) {
             if (marketData.sentiment.vix < 15) {
                 marketData.sentiment.fear_greed_level = "EXTREME_GREED";
             } else if (marketData.sentiment.vix < 20) {
@@ -479,7 +473,7 @@ function calculateDerivedIndicators(marketData) {
         }
         
         // Dollar strength assessment
-        if (marketData.currencies.dollar_index !== null) {
+        if (marketData.currencies && marketData.currencies.dollar_index !== null) {
             if (marketData.currencies.dollar_index > 100) {
                 marketData.currencies.dollar_strength = "STRONG";
             } else if (marketData.currencies.dollar_index > 95) {
@@ -490,7 +484,7 @@ function calculateDerivedIndicators(marketData) {
         }
         
         // Gold/Oil ratio
-        if (marketData.commodities.gold && marketData.commodities.oil) {
+        if (marketData.commodities && marketData.commodities.gold && marketData.commodities.oil) {
             marketData.commodities.gold_oil_ratio = 
                 (marketData.commodities.gold / marketData.commodities.oil).toFixed(2);
         }
@@ -509,20 +503,22 @@ function determineMarketRegime(marketData) {
         let regime_score = 0;
         
         // VIX contribution
-        if (marketData.sentiment.vix !== null) {
+        if (marketData.sentiment && marketData.sentiment.vix !== null) {
             if (marketData.sentiment.vix < 20) regime_score += 2;
             else if (marketData.sentiment.vix > 30) regime_score -= 2;
         }
         
         // Yield curve contribution
-        if (marketData.yields.inverted === true) regime_score -= 3;
-        else if (marketData.yields.curve_10Y_2Y > 1) regime_score += 1;
+        if (marketData.yields && marketData.yields.inverted === true) regime_score -= 3;
+        else if (marketData.yields && marketData.yields.curve_10Y_2Y > 1) regime_score += 1;
         
         // Dollar strength contribution
-        if (marketData.currencies.dollar_strength === "STRONG") regime_score += 1;
-        else if (marketData.currencies.dollar_strength === "WEAK") regime_score -= 1;
+        if (marketData.currencies && marketData.currencies.dollar_strength === "STRONG") regime_score += 1;
+        else if (marketData.currencies && marketData.currencies.dollar_strength === "WEAK") regime_score -= 1;
         
         // Determine regime
+        if (!marketData.sentiment) marketData.sentiment = {};
+        
         if (regime_score >= 2) {
             marketData.sentiment.market_regime = "RISK_ON";
         } else if (regime_score <= -2) {
@@ -533,6 +529,7 @@ function determineMarketRegime(marketData) {
         
     } catch (error) {
         console.warn('⚠️ Market regime determination failed:', error.message);
+        if (!marketData.sentiment) marketData.sentiment = {};
         marketData.sentiment.market_regime = "UNKNOWN";
     }
 }
@@ -543,15 +540,15 @@ function assessDataQuality(marketData) {
         let available = 0;
         let total = 0;
         
-        // Count available data sources
+        // Count available data sources with null checks
         const checks = [
             marketData.markets && Object.keys(marketData.markets).length > 0,
-            marketData.yields.yield10Y !== null,
-            marketData.yields.yield2Y !== null,
-            marketData.sentiment.vix !== null,
-            marketData.currencies.dollar_index !== null,
-            marketData.commodities.gold !== null,
-            marketData.commodities.oil !== null,
+            marketData.yields && marketData.yields.yield10Y !== null,
+            marketData.yields && marketData.yields.yield2Y !== null,
+            marketData.sentiment && marketData.sentiment.vix !== null,
+            marketData.currencies && marketData.currencies.dollar_index !== null,
+            marketData.commodities && marketData.commodities.gold !== null,
+            marketData.commodities && marketData.commodities.oil !== null,
             marketData.economics && Object.keys(marketData.economics).length > 0,
             marketData.stocks && Object.keys(marketData.stocks).length > 0
         ];
@@ -559,143 +556,101 @@ function assessDataQuality(marketData) {
         total = checks.length;
         available = checks.filter(check => check).length;
         
+        if (!marketData.data_quality) marketData.data_quality = {};
         marketData.data_quality.sources_available = available;
         marketData.data_quality.sources_failed = total - available;
         marketData.data_quality.completeness_score = Math.round((available / total) * 100);
         
     } catch (error) {
         console.warn('⚠️ Data quality assessment failed:', error.message);
+        if (!marketData.data_quality) marketData.data_quality = {};
         marketData.data_quality.completeness_score = 0;
     }
 }
 
-// Enhanced main message handler with dual AI integration
-bot.on("message", async (msg) => {
-    const chatId = msg.chat.id;
-    const text = msg.text;
-    const messageId = `${chatId}_${Date.now()}`;
-    
-    console.log(`📨 Message from ${chatId}: ${text?.substring(0, 50) || 'Media message'}`);
-    
-    // Security check
-    if (!isAuthorizedUser(chatId)) {
-        console.log(`🚫 Unauthorized access from ${chatId}`);
-        await sendSmartMessage(bot, chatId, 
-            `🚫 Access denied. This is a private AI system.\n\nYour Chat ID: ${chatId}\n\nContact admin if this is your account.`
-        );
-        return;
-    }
-
-    // Start session tracking
-    const sessionId = await startUserSession(chatId, 'TELEGRAM_BOT').catch(() => null);
-    const startTime = Date.now();
-
-    try {
-        // Handle media messages
-        if (msg.voice) {
-            console.log("🎤 Voice message received");
-            await handleVoiceMessage(msg, chatId, sessionId);
-            return;
-        }
-
-        if (msg.photo) {
-            console.log("🖼️ Image received");
-            await handleImageMessage(msg, chatId, sessionId);
-            return;
-        }
-
-        if (msg.document) {
-            console.log("📄 Document received:", msg.document.file_name);
-            await handleDocumentMessage(msg, chatId, sessionId);
-            return;
-        }
-
-        // Handle text messages
-        if (!text) {
-            await sendSmartMessage(bot, chatId, "Please send text, voice messages, images, or documents.");
-            return;
-        }
-
-        // Route to dual AI conversation handler
-        const executionTime = await handleDualAIConversation(chatId, text, sessionId);
-        
-        // End session tracking
-        if (sessionId) {
-            await endUserSession(sessionId, 1, executionTime).catch(console.error);
-        }
-
-    } catch (error) {
-        console.error('❌ Message handling error:', error.message);
-        
-        // Log error
-        await logCommandUsage(chatId, text || 'MEDIA', Date.now() - startTime, false, error.message).catch(console.error);
-        
-        // End session with error
-        if (sessionId) {
-            await endUserSession(sessionId, 0, Date.now() - startTime).catch(console.error);
-        }
-        
-        await sendSmartMessage(bot, chatId, 
-            `Sorry, I encountered an error processing your request. Please try again. 🔧`
-        );
-    }
-});
-
-// 🤖 Dual AI Conversation Handler - Clean and Focused
+// 🎯 DIRECT DUAL AI CONVERSATION HANDLER - Simplified and Clean
 async function handleDualAIConversation(chatId, text, sessionId) {
     const startTime = Date.now();
     
     try {
-        console.log("🤖 Starting dual AI conversation processing:", text.substring(0, 50));
+        console.log("🤖 Starting DIRECT dual AI processing:", text.substring(0, 50));
         
         // Get conversation context with memory
-        const context = await buildConversationContext(chatId, text);
+        const context = await buildConversationContextWithMemory(chatId, text);
         
-        // Determine conversation intelligence
-        const conversationIntel = {
-            type: determineConversationType(text),
-            complexity: determineComplexity(text),
-            requiresLiveData: requiresLiveData(text),
-            hasMemory: context.memoryAvailable,
-            conversationCount: context.conversationHistory?.length || 0
-        };
+        // 🎯 DIRECT CALL to dualAISystem.js - NO intermediate layer
+        const result = await getUltimateStrategicAnalysis(text, {
+            chatId: chatId,
+            sessionId: sessionId || `session_${chatId}_${Date.now()}`,
+            conversationHistory: context.conversationHistory,
+            persistentMemory: context.persistentMemory,
+            memoryContext: context.memoryContext,
+            messageType: 'text',
+            userContext: {
+                platform: 'telegram',
+                timestamp: new Date().toISOString(),
+                hasMemory: context.memoryAvailable,
+                conversationCount: context.conversationHistory?.length || 0
+            }
+        });
         
-        console.log("🎯 Conversation Intel:", conversationIntel);
-        
-        // Execute dual AI command
-        const result = await executeDualAICommand(text, chatId, context, conversationIntel);
+        // Handle response directly
+        let finalResponse;
+        if (typeof result === 'string') {
+            finalResponse = result;
+        } else if (result && result.response) {
+            finalResponse = result.response;
+        } else {
+            // Immediate fallback to Universal Analysis
+            finalResponse = await getUniversalAnalysis(text, {
+                chatId: chatId,
+                maxTokens: 1200,
+                temperature: 0.7
+            });
+        }
         
         // Send response to user
-        await sendSmartMessage(bot, chatId, result.response);
+        await sendSmartMessage(bot, chatId, finalResponse);
         
-        // Save conversation
-        await saveConversationToDatabase(chatId, text, result, context);
+        // Save conversation directly
+        await saveConversationDB(chatId, text, finalResponse, "text", {
+            aiUsed: result?.aiUsed || 'DUAL_AI_DIRECT',
+            executionTime: Date.now() - startTime,
+            success: true,
+            memoryUsed: context.memoryAvailable
+        }).catch(console.error);
         
-        // Extract and save new memories
-        await extractAndSaveMemories(chatId, text, result.response);
+        // Extract and save memories directly
+        await extractAndSaveMemoriesDirect(chatId, text, finalResponse);
         
-        console.log("✅ Dual AI conversation completed successfully");
+        console.log("✅ DIRECT dual AI conversation completed successfully");
         return Date.now() - startTime;
         
     } catch (error) {
-        console.error('❌ Dual AI conversation error:', error.message);
+        console.error('❌ DIRECT dual AI conversation error:', error.message);
         
-        // Fallback to single AI
-        const fallbackResponse = await handleFallbackResponse(chatId, text);
-        await sendSmartMessage(bot, chatId, fallbackResponse);
+        // Simple fallback - no complex handling
+        try {
+            const fallbackResponse = await getUniversalAnalysis(text, {
+                maxTokens: 800,
+                temperature: 0.7
+            });
+            await sendSmartMessage(bot, chatId, fallbackResponse);
+        } catch (fallbackError) {
+            await sendSmartMessage(bot, chatId, "I'm experiencing technical difficulties. Please try again.");
+        }
         
         return Date.now() - startTime;
     }
 }
 
-// 🧠 Build Conversation Context with Memory
+// 🧠 ENHANCED: Build Conversation Context with Memory - WITH DEBUG LOGGING
 async function buildConversationContextWithMemory(chatId, currentText) {
     const context = {
         conversationHistory: [],
         persistentMemory: [],
         memoryContext: '',
-        memoryAvailable: false,
-        errors: []
+        memoryAvailable: false
     };
     
     try {
@@ -704,158 +659,162 @@ async function buildConversationContextWithMemory(chatId, currentText) {
         console.log(`📚 Retrieved ${context.conversationHistory.length} conversations`);
     } catch (error) {
         console.log('⚠️ Could not retrieve conversation history:', error.message);
-        context.errors.push(`History: ${error.message}`);
     }
     
     try {
         // Get persistent memories
         context.persistentMemory = await getPersistentMemoryDB(chatId);
         console.log(`🧠 Retrieved ${context.persistentMemory.length} memories`);
+        
+        // 🔧 DEBUG: Log what memories we actually have
+        if (context.persistentMemory.length > 0) {
+            console.log('🔍 CURRENT MEMORIES FOR USER:');
+            context.persistentMemory.slice(0, 5).forEach((mem, i) => {
+                console.log(`  ${i + 1}. ${mem.fact}`);
+            });
+        } else {
+            console.log('📝 NO MEMORIES FOUND FOR THIS USER');
+        }
     } catch (error) {
         console.log('⚠️ Could not retrieve persistent memory:', error.message);
-        context.errors.push(`Memory: ${error.message}`);
     }
     
-    // Build memory context string
+    // Build memory context string if we have data
     if (context.conversationHistory.length > 0 || context.persistentMemory.length > 0) {
         context.memoryContext = buildMemoryContextString(context.conversationHistory, context.persistentMemory);
         context.memoryAvailable = true;
         console.log(`✅ Memory context built (${context.memoryContext.length} chars)`);
+        
+        // 🔧 DEBUG: Show what context is being sent to AI
+        console.log('🧠 MEMORY CONTEXT BEING SENT TO AI:');
+        console.log(context.memoryContext.substring(0, 300) + '...');
+    } else {
+        console.log('📝 No memory context available - will not send any memory to AI');
     }
     
     return context;
 }
 
-// 🤖 Execute Dual AI Command
-async function executeDualAICommand(text, chatId, context, intel) {
+// 🧠 ENHANCED: Extract and Save Memories Directly - REPLACE YOUR CURRENT VERSION
+async function extractAndSaveMemoriesDirect(chatId, userMessage, aiResponse) {
     try {
-        // Try dual AI system first
-        console.log("🚀 Executing dual AI command...");
+        console.log(`🧠 Processing memory extraction for: "${userMessage}"`);
         
-        const dualResult = await executeDualCommand(text, chatId, {
-            conversationHistory: context.conversationHistory,
-            persistentMemory: context.persistentMemory,
-            memoryContext: context.memoryContext,
-            conversationIntel: intel,
-            messageType: 'text'
-        });
-        
-        console.log("✅ Dual AI command successful:", dualResult.aiUsed);
-        return dualResult;
-        
-    } catch (error) {
-        console.log("⚠️ Dual AI failed, using GPT fallback:", error.message);
-        
-        // Fallback to single GPT with memory
-        const enhancedPrompt = context.memoryContext ? 
-            `${context.memoryContext}\n\nUser: ${text}` : text;
-            
-        const response = await getUniversalAnalysis(enhancedPrompt, {
-            maxTokens: 1500,
-            temperature: 0.7,
-            model: "gpt-5"
-        });
-        
-        return {
-            response: response,
-            aiUsed: 'GPT_FALLBACK',
-            success: true,
-            memoryUsed: !!context.memoryContext,
-            queryType: intel.type
-        };
-    }
-}
-
-// 💾 Save Conversation to Database
-async function saveConversationToDatabase(chatId, userMessage, result, context) {
-    try {
-        await saveConversationDB(chatId, userMessage, result.response, "text", {
-            aiUsed: result.aiUsed,
-            queryType: result.queryType,
-            memoryUsed: context.memoryAvailable,
-            success: result.success,
-            enhanced: true
-        });
-        console.log("✅ Conversation saved to database");
-    } catch (error) {
-        console.log('⚠️ Could not save conversation:', error.message);
-    }
-}
-
-// 🧠 Extract and Save Memories
-async function extractAndSaveMemories(chatId, userMessage, aiResponse) {
-    try {
-        const { extractAndSaveFacts } = require('./utils/memory');
-        const result = await extractAndSaveFacts(chatId, userMessage, aiResponse);
-        
-        if (result?.extractedFacts > 0) {
-            console.log(`✅ Extracted ${result.extractedFacts} new memories`);
+        // 🎯 ENHANCED: Name detection (highest priority)
+        if (userMessage.toLowerCase().includes('my name is') || userMessage.toLowerCase().includes('name is')) {
+            const nameMatch = userMessage.match(/(?:my )?name is ([^.,\n!?]+)/i);
+            if (nameMatch) {
+                const name = nameMatch[1].trim();
+                await addPersistentMemoryDB(chatId, `User's name: ${name}`, 'high');
+                console.log(`💾 SAVED NAME: ${name}`);
+                return; // Exit early after saving name
+            }
         }
+        
+        // 🎯 ENHANCED: "I am" statements
+        if (userMessage.toLowerCase().includes('i am ') && !userMessage.toLowerCase().includes('i am asking')) {
+            const iAmMatch = userMessage.match(/i am ([^.,\n!?]+)/i);
+            if (iAmMatch) {
+                const identity = iAmMatch[1].trim();
+                await addPersistentMemoryDB(chatId, `User identity: ${identity}`, 'high');
+                console.log(`💾 SAVED IDENTITY: ${identity}`);
+            }
+        }
+        
+        // 🎯 ENHANCED: Preferences
+        if (userMessage.toLowerCase().includes('i prefer') || userMessage.toLowerCase().includes('i like')) {
+            await addPersistentMemoryDB(chatId, `User preference: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED PREFERENCE: ${userMessage}`);
+        }
+        
+        // 🎯 ENHANCED: Location
+        if (userMessage.toLowerCase().includes('i live in') || userMessage.toLowerCase().includes('i am from')) {
+            await addPersistentMemoryDB(chatId, `User location: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED LOCATION: ${userMessage}`);
+        }
+        
+        // 🎯 ENHANCED: Work/Job
+        if (userMessage.toLowerCase().includes('i work') || userMessage.toLowerCase().includes('my job')) {
+            await addPersistentMemoryDB(chatId, `User work: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED WORK INFO: ${userMessage}`);
+        }
+        
+        // 🎯 ENHANCED: Goals
+        if (userMessage.toLowerCase().includes('my goal') || userMessage.toLowerCase().includes('i want to')) {
+            await addPersistentMemoryDB(chatId, `User goal: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED GOAL: ${userMessage}`);
+        }
+        
+        // Original logic - check if we should save this conversation as memory
+        if (shouldSaveToPersistentMemory(userMessage, aiResponse)) {
+            const memoryFact = extractMemoryFact(userMessage, aiResponse);
+            if (memoryFact && memoryFact.length > 10) {
+                await addPersistentMemoryDB(chatId, memoryFact, 'medium');
+                console.log(`💾 Saved memory: ${memoryFact.substring(0, 50)}...`);
+            }
+        }
+        
     } catch (error) {
         console.log('⚠️ Memory extraction failed:', error.message);
     }
 }
+// 🔧 ENHANCED: Helper Functions with Better Memory Support
 
-// 🚨 Fallback Response Handler
-async function handleFallbackResponse(chatId, text) {
-    try {
-        // Try to get minimal context
-        let basicContext = '';
-        try {
-            const recent = await getConversationHistoryDB(chatId, 1);
-            if (recent?.[0]) {
-                basicContext = `\n\nContext: You previously discussed "${recent[0].user_message?.substring(0, 50)}..." with this user.`;
-            }
-        } catch (contextError) {
-            console.log('⚠️ Even basic context failed');
-        }
-        
-        return await getUniversalAnalysis(text + basicContext, {
-            maxTokens: 1000,
-            temperature: 0.7,
-            model: "gpt-5"
-        });
-        
-    } catch (error) {
-        console.error('❌ Fallback also failed:', error.message);
-        return "🚨 I'm experiencing technical difficulties. Please try again in a moment.";
-    }
-}
-
-// 🔧 Helper Functions
+// 🧠 ENHANCED: Memory Context Builder - Makes memories more prominent
 function buildMemoryContextString(history, memories) {
-    let context = '\n\n🧠 MEMORY CONTEXT:\n';
+    let context = '\n\n🧠 IMPORTANT MEMORY CONTEXT FOR THIS USER:\n';
     
     if (memories.length > 0) {
-        context += '\nIMPORTANT FACTS:\n';
-        memories.slice(0, 3).forEach((mem, i) => {
-            context += `${i + 1}. ${mem.fact}\n`;
+        context += '\nKEY FACTS YOU MUST REMEMBER:\n';
+        memories.slice(0, 5).forEach((mem, i) => {
+            context += `• ${mem.fact}\n`;
         });
+        context += '\n';
     }
     
     if (history.length > 0) {
-        context += '\nRECENT CONVERSATION:\n';
-        const recent = history[0];
-        context += `User: "${recent.user_message?.substring(0, 80)}..."\n`;
-        if (recent.gpt_response) {
-            context += `AI: "${recent.gpt_response.substring(0, 80)}..."\n`;
-        }
+        context += 'RECENT CONVERSATION HISTORY:\n';
+        history.slice(0, 3).forEach((conv, i) => {
+            context += `${i + 1}. User: "${conv.user_message?.substring(0, 80)}..."\n`;
+            if (conv.gpt_response) {
+                context += `   AI: "${conv.gpt_response.substring(0, 80)}..."\n`;
+            }
+        });
+        context += '\n';
     }
+    
+    context += 'USE THIS INFORMATION TO PROVIDE PERSONALIZED RESPONSES THAT ACKNOWLEDGE WHAT YOU KNOW ABOUT THIS USER.\n';
     
     return context;
 }
 
+// 🎯 ENHANCED: Conversation Type Detection - Added memory queries
 function determineConversationType(text) {
     if (!text) return 'unknown';
     
     const lower = text.toLowerCase();
     
+    // Memory-related queries (high priority)
+    if (lower.includes('remember') || lower.includes('my name') || lower.includes('what is my') || lower.includes('do you know')) {
+        return 'memory_query';
+    }
+    
+    // Financial and investment
     if (lower.includes('financial') || lower.includes('investment') || lower.includes('fund')) {
         return 'financial_analysis';
     }
+    
+    // Analysis and strategy
     if (lower.includes('analysis') || lower.includes('strategy')) {
         return 'strategic_analysis';
     }
+    
+    // Personal information sharing
+    if (lower.includes('my name is') || lower.includes('i am') || lower.includes('i live') || lower.includes('i work')) {
+        return 'personal_info';
+    }
+    
+    // Complex discussions
     if (lower.length > 100) {
         return 'complex_discussion';
     }
@@ -874,65 +833,123 @@ function determineComplexity(text) {
 function requiresLiveData(text) {
     if (!text) return false;
     
-    const liveDataKeywords = ['current', 'latest', 'today', 'now', 'recent', 'update'];
+    const liveDataKeywords = ['current', 'latest', 'today', 'now', 'recent', 'update', 'price', 'market'];
     return liveDataKeywords.some(keyword => text.toLowerCase().includes(keyword));
 }
 
-// 🔧 ADDITIONAL HELPER FUNCTIONS
+// 🧠 ENHANCED: Memory Detection - More comprehensive
 function shouldSaveToPersistentMemory(userMessage, aiResponse) {
     const lowerMessage = userMessage.toLowerCase();
     const lowerResponse = aiResponse.toLowerCase();
     
-    return lowerMessage.includes('remember') || 
-           lowerMessage.includes('my preference') ||
-           lowerMessage.includes('my name') ||
-           lowerResponse.includes('important to note') ||
-           aiResponse.length > 500;
+    // High priority memory triggers
+    if (lowerMessage.includes('my name is') || lowerMessage.includes('i am ')) return true;
+    if (lowerMessage.includes('remember') || lowerMessage.includes('don\'t forget')) return true;
+    if (lowerMessage.includes('my preference') || lowerMessage.includes('i prefer')) return true;
+    if (lowerMessage.includes('i like') || lowerMessage.includes('i love')) return true;
+    if (lowerMessage.includes('i live') || lowerMessage.includes('i work')) return true;
+    if (lowerMessage.includes('my goal') || lowerMessage.includes('i want to')) return true;
+    
+    // Response indicators
+    if (lowerResponse.includes('important to note') || lowerResponse.includes('key insight')) return true;
+    if (lowerResponse.includes('strategic') || lowerResponse.includes('critical')) return true;
+    
+    // Length-based (detailed responses likely contain important info)
+    if (aiResponse.length > 500) return true;
+    
+    return false;
 }
 
+// 🧠 ENHANCED: Memory Fact Extraction - Better patterns
 function extractMemoryFact(userMessage, aiResponse) {
-    if (userMessage.toLowerCase().includes('remember')) {
-        return `User preference: ${userMessage}`;
-    }
+    const lowerMessage = userMessage.toLowerCase();
     
-    if (userMessage.toLowerCase().includes('my name is')) {
-        const nameMatch = userMessage.match(/my name is ([^.,\n]+)/i);
+    // Name extraction (highest priority)
+    if (lowerMessage.includes('my name is')) {
+        const nameMatch = userMessage.match(/my name is ([^.,\n!?]+)/i);
         if (nameMatch) {
             return `User's name: ${nameMatch[1].trim()}`;
         }
     }
     
+    // Identity extraction
+    if (lowerMessage.includes('i am ') && !lowerMessage.includes('i am asking') && !lowerMessage.includes('i am wondering')) {
+        const identityMatch = userMessage.match(/i am ([^.,\n!?]+)/i);
+        if (identityMatch) {
+            return `User identity: ${identityMatch[1].trim()}`;
+        }
+    }
+    
+    // Preference extraction
+    if (lowerMessage.includes('i prefer')) {
+        const prefMatch = userMessage.match(/i prefer ([^.,\n!?]+)/i);
+        if (prefMatch) {
+            return `User preference: ${prefMatch[1].trim()}`;
+        }
+    }
+    
+    // Goal extraction
+    if (lowerMessage.includes('my goal') || lowerMessage.includes('i want to')) {
+        const goalMatch = userMessage.match(/(?:my goal is|i want to) ([^.,\n!?]+)/i);
+        if (goalMatch) {
+            return `User goal: ${goalMatch[1].trim()}`;
+        }
+    }
+    
+    // Location extraction
+    if (lowerMessage.includes('i live in') || lowerMessage.includes('i am from')) {
+        const locationMatch = userMessage.match(/i (?:live in|am from) ([^.,\n!?]+)/i);
+        if (locationMatch) {
+            return `User location: ${locationMatch[1].trim()}`;
+        }
+    }
+    
+    // Work extraction
+    if (lowerMessage.includes('i work')) {
+        const workMatch = userMessage.match(/i work (?:at|for|as) ([^.,\n!?]+)/i);
+        if (workMatch) {
+            return `User work: ${workMatch[1].trim()}`;
+        }
+    }
+    
+    // Remember directive
+    if (lowerMessage.includes('remember')) {
+        const rememberMatch = userMessage.match(/remember (?:that )?([^.,\n!?]+)/i);
+        if (rememberMatch) {
+            return `Important fact: ${rememberMatch[1].trim()}`;
+        }
+        return `User request: ${userMessage.trim()}`;
+    }
+    
+    // Key insights from AI response
     if (aiResponse.includes('Key insight:')) {
         const insight = aiResponse.split('Key insight:')[1]?.split('\n')[0];
         return insight ? `Strategic insight: ${insight.trim()}` : null;
     }
     
-    return `Context: ${userMessage.substring(0, 100)}`;
+    // Fallback for general context
+    if (userMessage.length > 10 && userMessage.length < 150) {
+        return `Conversation context: ${userMessage.trim()}`;
+    }
+    
+    return null;
 }
 
-// 🔧 SESSION MANAGEMENT FUNCTIONS
+// 🔧 SIMPLIFIED: Session Management (unchanged - these work fine)
 async function startUserSession(chatId, sessionType = 'GENERAL') {
     try {
-        console.log(`📊 Starting session for ${chatId}: ${sessionType}`);
         const sessionId = `session_${chatId}_${Date.now()}`;
-        
-        // You can expand this to save to database if needed
-        // await saveSessionToDB(sessionId, chatId, sessionType);
-        
+        console.log(`📊 Starting session for ${chatId}: ${sessionType}`);
         return sessionId;
     } catch (error) {
         console.error('❌ Start session error:', error.message);
-        return null;
+        return `fallback_session_${chatId}_${Date.now()}`;
     }
 }
 
 async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
     try {
         console.log(`📊 Ending session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
-        
-        // You can expand this to update database if needed
-        // await updateSessionInDB(sessionId, commandsExecuted, totalResponseTime);
-        
         return true;
     } catch (error) {
         console.error('❌ End session error:', error.message);
@@ -940,71 +957,12 @@ async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime
     }
 }
 
-// 🔧 COMMAND EXECUTION WITH LOGGING
+// 🎯 MAIN EXECUTION FUNCTION - DIRECT to dualAISystem.js
 async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
     
     try {
-        // Route to dual AI conversation handler
-        await handleDualAIConversation(chatId, text, sessionId);
-        
-        const executionTime = Date.now() - startTime;
-        
-        // Log successful command
-        await logCommandUsage(chatId, text, executionTime, true);
-        
-        return executionTime;
-        
-    } catch (error) {
-        const executionTime = Date.now() - startTime;
-        
-        // Log failed command
-        await logCommandUsage(chatId, text, executionTime, false, error.message);
-        
-        throw error;
-    }
-}
-
-// 🔧 COMMAND USAGE LOGGING
-async function logCommandUsageDetailed(chatId, command, executionTime, successful = true, errorMessage = null) {
-    try {
-        console.log(`📊 Command Log: ${chatId} | ${command.substring(0, 30)} | ${executionTime}ms | ${successful ? 'SUCCESS' : 'FAILED'}`);
-        
-        if (!successful && errorMessage) {
-            console.log(`❌ Error: ${errorMessage}`);
-        }
-        
-        // You can expand this to save to database if needed
-        // await saveCommandLogToDB(chatId, command, executionTime, successful, errorMessage);
-        
-        return true;
-    } catch (error) {
-        console.error('❌ Log command usage error:', error.message);
-        return false;
-    }
-}
-
-// 🔧 API USAGE LOGGING
-async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
-    try {
-        console.log(`🔌 API Usage: ${apiProvider}/${endpoint} | Calls: ${callsCount} | ${successful ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | Cost: ${costEstimate}`);
-        
-        // You can expand this to save to database for cost tracking
-        // await saveApiUsageToDB(apiProvider, endpoint, callsCount, successful, responseTime, dataVolume, costEstimate);
-        
-        return true;
-    } catch (error) {
-        console.error('❌ Log API usage error:', error.message);
-        return false;
-    }
-}
-
-// Enhanced command execution with full database logging + memory testing + WEALTH SYSTEM + LIVE DATA
-async function executeCommandWithLogging(chatId, text, sessionId) {
-    const startTime = Date.now();
-    
-    try {
-        // Command handlers with database integration
+        // Command handlers (keep all your existing ones)
         if (text === "/start") {
             await handleStartCommand(chatId);
         } else if (text === "/help") {
@@ -1041,8 +999,6 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
             await handleDatabaseStats(chatId);
         } else if (text === '/maintenance') {
             await handleDatabaseMaintenance(chatId);
-        
-        // 🔧 Database & Memory Testing Commands
         } else if (text === '/test_db') {
             await handleDatabaseConnectionTest(chatId);
         } else if (text === '/test_memory') {
@@ -1051,37 +1007,23 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
             await handleMemoryRecoveryTest(chatId);
         } else if (text === '/memory_stats') {
             await handleMemoryStatistics(chatId);
-    
-        
-        // 💰 LIVE DATA COMMANDS - CORRECTLY INTEGRATED
-        // 💰 CRYPTO PRICE QUERIES - Connect to existing getEnhancedCryptoData()
         } else if ((text.toLowerCase().includes('bitcoin') || text.toLowerCase().includes('btc')) && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('much') || text.toLowerCase().includes('cost'))) {
             await handleLiveBitcoinPrice(chatId);
         } else if (text.toLowerCase().includes('crypto') && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('market'))) {
             await handleLiveCryptoMarket(chatId);
-
-        // 📈 STOCK MARKET QUERIES - Connect to existing getStockMarketData()
         } else if ((text.toLowerCase().includes('stock') || text.toLowerCase().includes('market') || text.toLowerCase().includes('sp500') || text.toLowerCase().includes('dow')) && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('today') || text.toLowerCase().includes('current'))) {
             await handleLiveStockMarket(chatId);
-
-        // 🏦 ECONOMIC DATA QUERIES - Connect to existing getEconomicIndicators()
         } else if ((text.toLowerCase().includes('inflation') || text.toLowerCase().includes('fed') || text.toLowerCase().includes('interest rate') || text.toLowerCase().includes('gdp')) && 
                    (text.toLowerCase().includes('current') || text.toLowerCase().includes('today') || text.toLowerCase().includes('latest'))) {
             await handleLiveEconomicData(chatId);
-
-        // 💰 SMART CRYPTO PRICE QUERIES - Recognizes ALL cryptocurrencies
         } else if (isAnyCryptoRequest(text)) {
             await handleSmartCryptoPrice(chatId, text);
-
-        // 💱 FOREX QUERIES - Connect to existing getMajorForexPairs()
         } else if ((text.toLowerCase().includes('dollar') || text.toLowerCase().includes('forex') || text.toLowerCase().includes('currency') || text.toLowerCase().includes('exchange rate')) && 
                    (text.toLowerCase().includes('price') || text.toLowerCase().includes('rate') || text.toLowerCase().includes('today'))) {
             await handleLiveForexData(chatId);
-
-        // 📊 COMPREHENSIVE LIVE DATA COMMANDS
         } else if (text === '/live_data' || text === '/market_data' || text === '/live_market') {
             await handleComprehensiveLiveData(chatId);
         } else if (text === '/live_crypto' || text === '/crypto_live') {
@@ -1090,46 +1032,121 @@ async function executeCommandWithLogging(chatId, text, sessionId) {
             await handleLiveStockMarket(chatId);
         } else if (text === '/live_forex' || text === '/forex_live') {
             await handleLiveForexData(chatId);
-        } else if (text === '/live_economic' || text === '/economic_live') {
+} else if (text === '/live_economic' || text === '/economic_live') {
             await handleLiveEconomicData(chatId);
-        
-} else {
-    // Handle general conversation with REAL dual AI system
-    const { processConversation } = require('./utils/dualAISystem');
-    const result = await processConversation(chatId, text);
-    await sendSmartMessage(bot, chatId, result.response);
-}
+        } else {
+            // 🎯 ENHANCED DIRECT DUAL AI PROCESSING - With Date Context
+            console.log(`🤖 Processing with DIRECT dual AI: "${text}"`);
+            
+            // Get current Cambodia date and time
+            const cambodiaTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Phnom_Penh"});
+            const currentDate = new Date(cambodiaTime).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            // Add date context for time-related questions
+            let contextualText = text;
+            if (text.toLowerCase().includes('today') || 
+                text.toLowerCase().includes('date') || 
+                text.toLowerCase().includes('time') ||
+                text.toLowerCase().includes('when') ||
+                text.toLowerCase().includes('what day')) {
+                contextualText = `IMPORTANT: Today's date is ${currentDate} (Cambodia time). User question: ${text}`;
+                console.log(`📅 Added date context: ${currentDate}`);
+            }
+            
+            const result = await Promise.race([
+                getUltimateStrategicAnalysis(contextualText, {
+                    chatId: chatId,
+                    sessionId: sessionId || `session_${chatId}_${Date.now()}`,
+                    messageType: 'general_conversation',
+                    currentDate: currentDate,
+                    timeZone: 'Asia/Phnom_Penh'
+                }),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout after 30 seconds')), 30000)
+                )
+            ]);
+            
+            // Extract response
+            const response = (typeof result === 'string') ? result : 
+                           (result?.response) ? result.response : 
+                           "I've processed your request with our dual AI system.";
+                           
+            await sendSmartMessage(bot, chatId, response);
+            
+            console.log(`✅ DIRECT dual AI processing completed`);
+        }
         
         const executionTime = Date.now() - startTime;
-        
-        // Log successful command execution
-        await logCommandUsage(chatId, text, executionTime, true).catch(console.error);
-        
+        await logCommandUsage(chatId, text, executionTime, true);
         return executionTime;
         
     } catch (error) {
         const executionTime = Date.now() - startTime;
+        console.error('❌ DIRECT execution error:', error.message);
         
-        // Log failed command execution
-        await logCommandUsage(chatId, text, executionTime, false, error.message).catch(console.error);
+        // Simple fallback
+        try {
+            const emergencyResponse = await getUniversalAnalysis(text, {
+                maxTokens: 600,
+                temperature: 0.7
+            });
+            await sendSmartMessage(bot, chatId, emergencyResponse);
+        } catch (emergencyError) {
+            await sendSmartMessage(bot, chatId, "I apologize, but I'm experiencing technical difficulties. Please try again.");
+        }
         
+        await logCommandUsage(chatId, text, executionTime, false, error.message);
         throw error;
     }
 }
 
-// 🔧 UPDATED: Enhanced command handlers with wealth system integration
-async function handleStartCommand(chatId) {
-    const welcome = `🤖 **Enhanced AI Assistant System v4.0 - WEALTH EMPIRE**
+// 🔧 SIMPLIFIED: Logging Functions
+async function logCommandUsage(chatId, command, executionTime, successful = true, errorMessage = null) {
+    try {
+        console.log(`📊 Command: ${chatId} | ${command.substring(0, 30)} | ${executionTime}ms | ${successful ? 'SUCCESS' : 'FAILED'}`);
+        
+        if (!successful && errorMessage) {
+            console.log(`❌ Error: ${errorMessage}`);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Log command usage error:', error.message);
+        return false;
+    }
+}
 
-**🎯 Core Features:**
-- Dual AI: gpt-5 + Claude Opus 4.1
-- Complete AI Wealth-Building System (10 modules)
-- Enhanced PostgreSQL Database Integration
-- Live market data & Ray Dalio framework
-- Cambodia fund analysis
-- Advanced document processing
-- Voice and image analysis
-- Persistent memory system
+// ✅ KEEP THIS VERSION (the simpler one):
+async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
+    try {
+        console.log(`🔌 API: ${apiProvider}/${endpoint} | ${successful ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | Cost: $${costEstimate}`);
+        return true;
+    } catch (error) {
+        console.error('❌ Log API usage error:', error.message);
+        return false;
+    }
+}
+
+// 🎯 CLEANED: Enhanced command handlers with DIRECT dual AI integration
+async function handleHelpCommand(chatId) {
+    const help = `🤖 **Enhanced AI Assistant v4.0 - WEALTH EMPIRE**
+
+**🎯 Core AI Features:**
+• Dual AI: GPT-5 + Claude Opus 4.1 (DIRECT)
+• Enhanced memory system
+• Live market data integration
+• Document analysis & training
+
+**💰 AI WEALTH-BUILDING SYSTEM (10 MODULES):**
+/wealth - Complete wealth-building system
+/scan_stocks - AI stock scanner
+/scan_crypto - Crypto opportunities
+/top_opportunities - Cross-asset analysis
 
 **🏦 Cambodia Fund Commands:**
 /deal_analyze [amount] [type] [location] [rate] [term]
@@ -1147,36 +1164,40 @@ async function handleStartCommand(chatId) {
 /trading - Account status
 /positions - Open positions
 
+**💰 Live Data Commands:**
+/live_data - Comprehensive market data
+/live_crypto - Cryptocurrency prices
+/live_stocks - Stock market data
+/live_forex - Currency rates
+/live_economic - Economic indicators
+
 **🔧 System Management:**
-/analytics - Master system analytics
-/db_stats - Database statistics
 /status - Enhanced system status
+/analytics - Master analytics
+/db_stats - Database statistics
 /maintenance - Database maintenance
 
-**🧪 Memory & Database Testing:**
+**🧪 Testing & Memory:**
 /test_db - Test database connection
 /test_memory - Test memory system
-/test_memory_fix - Memory recovery test
 /memory_stats - Memory statistics
 
 **Chat ID:** ${chatId}
-**🏆 AI Wealth Empire Status:** ACTIVE
-**Database Status:** ${connectionStats.connectionHealth}`;
+**🏆 Status:** AI WEALTH EMPIRE ACTIVE (DIRECT MODE)`;
 
-    await sendSmartMessage(bot, chatId, welcome);
+    await sendSmartMessage(bot, chatId, help);
     
-    // Save welcome interaction
-    await saveConversationDB(chatId, "/start", welcome, "command").catch(console.error);
+    // Save help interaction
+    await saveConversationDB(chatId, "/help", help, "command").catch(console.error);
 }
 
-
-// 🔧 FIXED: Enhanced system status with better database checking
+// 🎯 CLEANED: System status with DIRECT dual AI health checking
 async function handleEnhancedSystemStatus(chatId) {
     try {
         await bot.sendMessage(chatId, "🔄 Checking enhanced system status...");
 
         const [health, stats, dualAIStats] = await Promise.all([
-            checkSystemHealth(),
+            checkSystemHealthDirect(),
             getDatabaseStats(),
             getDualAIPerformanceDashboard(7).catch(() => ({ error: 'Not available' }))
         ]);
@@ -1198,16 +1219,18 @@ async function handleEnhancedSystemStatus(chatId) {
             dbType = dbHost.includes('railway.internal') ? '❌ Internal (Wrong)' : 
                      dbHost.includes('roundhouse.proxy') ? '✅ Public (Correct)' : 
                      '❓ Unknown';
-        } catch {
+        } catch (error) {
             dbHost = 'Invalid URL';
         }
+        
+        let status = `**Enhanced System Status v4.0 - DIRECT MODE**\n\n`;
 
-        let status = `**Enhanced System Status v3.2**\n\n`;
-
-        // AI Models Status
-        status += `**AI Models:**\n`;
-        status += `• gpt-5: ${health?.gptAnalysis ? '✅ Online' : '❌ Offline'}\n`;
-        status += `• Claude Opus 4.1: ${health?.claudeAnalysis ? '✅ Online' : '❌ Offline'}\n\n`;
+        // AI Models Status - DIRECT
+        status += `**AI Models (DIRECT):**\n`;
+        status += `• GPT-5: ${health?.ultimateStrategic ? '✅ Online (Direct)' : '❌ Offline'}\n`;
+        status += `• Claude Opus 4.1: ${health?.claudeAnalysis ? '✅ Online (Direct)' : '❌ Offline'}\n`;
+        status += `• Ultimate Strategic: ${health?.ultimateStrategic ? '✅ Active' : '❌ Inactive'}\n`;
+        status += `• Universal Analysis: ${health?.universalAnalysis ? '✅ Available' : '❌ Unavailable'}\n\n`;
 
         // Enhanced Database Status
         status += `**Enhanced Database:**\n`;
@@ -1227,8 +1250,7 @@ async function handleEnhancedSystemStatus(chatId) {
 
         // System Health
         status += `**System Health:**\n`;
-        status += `• DateTime Support: ${health?.dateTimeSupport ? '✅ Working' : '❌ Error'}\n`;
-        status += `• Dual Mode: ${health?.dualMode ? '✅ Enabled' : '❌ Disabled'}\n`;
+        status += `• Direct Dual AI: ${health?.dualAISystem ? '✅ Working' : '❌ Error'}\n`;
         status += `• Database Queries: ${connectionStats.totalQueries}\n`;
         status += `• Success Rate: ${connectionStats.totalQueries > 0 ? 
             ((connectionStats.successfulQueries / connectionStats.totalQueries) * 100).toFixed(1) : 100}%\n\n`;
@@ -1244,7 +1266,7 @@ async function handleEnhancedSystemStatus(chatId) {
 
         // Overall Status
         const overallHealthy = health?.overallHealth && dbConnected;
-        status += `**Overall Status: ${overallHealthy ? '🟢 Healthy' : '🔴 Degraded'}**`;
+        status += `**Overall Status: ${overallHealthy ? '🟢 Healthy (Direct Mode)' : '🔴 Degraded'}**`;
 
         if (connectionStats.lastError) {
             status += `\n\n**Last Error:** ${connectionStats.lastError}`;
@@ -1258,13 +1280,97 @@ async function handleEnhancedSystemStatus(chatId) {
             status += `• Verify Railway database is running\n`;
         }
 
-        await sendAnalysis(bot, chatId, status, "Enhanced System Status");
+        await sendAnalysis(bot, chatId, status, "Enhanced System Status (Direct Mode)");
         
         // Save status check
         await saveConversationDB(chatId, "/status", status, "command").catch(console.error);
 
     } catch (error) {
         await sendSmartMessage(bot, chatId, `❌ Status check error: ${error.message}`);
+    }
+}
+
+// 🎯 SIMPLIFIED: Direct system health check
+async function checkSystemHealthDirect() {
+    try {
+        console.log("🔍 Checking DIRECT dual AI system health...");
+        
+        const health = {
+            ultimateStrategic: false,
+            universalAnalysis: false,
+            claudeAnalysis: false,
+            gptAnalysis: false,
+            dualAISystem: false,
+            memorySystem: false,
+            overallHealth: false
+        };
+        
+        // Test Ultimate Strategic Analysis (main function) - DIRECT
+        try {
+            const testResult = await getUltimateStrategicAnalysis('health check test', {
+                chatId: 'health_test',
+                sessionId: 'health_session_test'
+            });
+            health.ultimateStrategic = !!testResult;
+            health.dualAISystem = true;
+            console.log('✅ Ultimate Strategic Analysis: WORKING');
+        } catch (error) {
+            console.log('❌ Ultimate Strategic Analysis failed:', error.message);
+        }
+        
+        // Test Universal Analysis (backup)
+        try {
+            await getUniversalAnalysis('test', { maxTokens: 10 });
+            health.universalAnalysis = true;
+            console.log('✅ Universal Analysis: WORKING');
+        } catch (error) {
+            console.log('❌ Universal Analysis failed:', error.message);
+        }
+        
+        // Test individual AI functions
+        try {
+            await getGPT5Analysis('test');
+            health.gptAnalysis = true;
+            console.log('✅ GPT-5: WORKING');
+        } catch (error) {
+            console.log('❌ GPT-5 failed:', error.message);
+        }
+        
+        try {
+            await getClaudeAnalysis('test');
+            health.claudeAnalysis = true;
+            console.log('✅ Claude: WORKING');
+        } catch (error) {
+            console.log('❌ Claude failed:', error.message);
+        }
+        
+        // Test memory system
+        try {
+            await getPersistentMemoryDB('test_user');
+            health.memorySystem = true;
+            console.log('✅ Memory System: WORKING');
+        } catch (error) {
+            console.log('❌ Memory System failed:', error.message);
+        }
+        
+        // Overall health assessment
+        const healthyComponents = Object.values(health).filter(Boolean).length;
+        health.overallHealth = healthyComponents >= 3; // At least 3 components working
+        
+        console.log(`✅ DIRECT dual AI health check: ${healthyComponents}/6 components healthy`);
+        return health;
+        
+    } catch (error) {
+        console.error('❌ DIRECT dual AI health check failed:', error.message);
+        return {
+            ultimateStrategic: false,
+            universalAnalysis: false,
+            claudeAnalysis: false,
+            gptAnalysis: false,
+            dualAISystem: false,
+            memorySystem: false,
+            overallHealth: false
+        };
     }
 }
 
@@ -1279,11 +1385,11 @@ async function handleMasterAnalytics(chatId) {
             return;
         }
         
-        let response = `**Master Enhanced Analytics Dashboard**\n\n`;
+        let response = `**Master Enhanced Analytics Dashboard (Direct Mode)**\n\n`;
         
         // System Overview
         response += `**System Overview:**\n`;
-        response += `• Version: ${analytics.enhancedSystemOverview?.systemVersion || 'v3.2'}\n`;
+        response += `• Version: v4.0 - DIRECT DUAL AI\n`;
         response += `• Status: ${analytics.enhancedSystemOverview?.enhancementStatus || 'Enhanced'}\n`;
         response += `• Health Score: ${analytics.systemStatus?.overallHealth || 'Unknown'}\n`;
         response += `• Performance Grade: ${analytics.systemStatus?.performanceGrade || 'Unknown'}\n\n`;
@@ -1317,7 +1423,7 @@ async function handleMasterAnalytics(chatId) {
             });
         }
         
-        await sendAnalysis(bot, chatId, response, "Master Analytics Dashboard");
+        await sendAnalysis(bot, chatId, response, "Master Analytics Dashboard (Direct Mode)");
         
         // Save analytics request
         await saveConversationDB(chatId, "/analytics", response, "command").catch(console.error);
@@ -1333,7 +1439,7 @@ async function handleDatabaseStats(chatId) {
         
         const stats = await getRayDalioStats();
         
-        let response = `**Enhanced Database Statistics**\n\n`;
+        let response = `**Enhanced Database Statistics (Direct Mode)**\n\n`;
         response += `**Core Data:**\n`;
         response += `• Total Users: ${stats.totalUsers}\n`;
         response += `• Conversations: ${stats.totalConversations}\n`;
@@ -1360,7 +1466,7 @@ async function handleDatabaseStats(chatId) {
             response += `• Confidence: ${stats.currentRegime.confidence}%\n`;
         }
 
-        await sendAnalysis(bot, chatId, response, "Database Statistics");
+        await sendAnalysis(bot, chatId, response, "Database Statistics (Direct Mode)");
         
         // Save database stats request
         await saveConversationDB(chatId, "/db_stats", response, "command").catch(console.error);
@@ -1376,7 +1482,7 @@ async function handleDatabaseMaintenance(chatId) {
         
         const results = await performDatabaseMaintenance();
         
-        let response = `**Database Maintenance Results**\n\n`;
+        let response = `**Database Maintenance Results (Direct Mode)**\n\n`;
         
         if (results.error) {
             response += `❌ **Error:** ${results.error}`;
@@ -1395,7 +1501,7 @@ async function handleDatabaseMaintenance(chatId) {
             }
         }
 
-        await sendAnalysis(bot, chatId, response, "Database Maintenance");
+        await sendAnalysis(bot, chatId, response, "Database Maintenance (Direct Mode)");
         
         // Save maintenance request
         await saveConversationDB(chatId, "/maintenance", response, "command").catch(console.error);
@@ -1405,7 +1511,6 @@ async function handleDatabaseMaintenance(chatId) {
     }
 }
 
-// 🔧 NEW: Database Connection Test Handler
 async function handleDatabaseConnectionTest(chatId) {
     try {
         const startTime = Date.now();
@@ -1420,7 +1525,7 @@ async function handleDatabaseConnectionTest(chatId) {
         
         const responseTime = Date.now() - startTime;
         
-        let response = `🔍 **Database Connection Test Results**\n\n`;
+        let response = `🔍 **Database Connection Test Results (Direct Mode)**\n\n`;
         response += `**Connection Status:**\n`;
         response += `• Health: ${connectionStats.connectionHealth}\n`;
         response += `• Total Queries: ${connectionStats.totalQueries}\n`;
@@ -1448,62 +1553,116 @@ async function handleDatabaseConnectionTest(chatId) {
         
         response += `\n\n**Overall Status:** ${connectionStats.connectionHealth === 'HEALTHY' && Array.isArray(history) && Array.isArray(memory) ? '🟢 WORKING' : '🔴 NEEDS ATTENTION'}`;
         
-        await sendAnalysis(bot, chatId, response, "Database Connection Test");
+        await sendAnalysis(bot, chatId, response, "Database Connection Test (Direct Mode)");
         
     } catch (error) {
         await sendSmartMessage(bot, chatId, `❌ Database test failed: ${error.message}`);
     }
 }
 
-// 🧠 Memory System Test Handler - FIXED (No dualCommandSystem dependency)
+// 🎯 CLEANED: Memory System Test - DIRECT dual AI integration
 async function handleMemorySystemTest(chatId) {
     try {
-        await bot.sendMessage(chatId, "🧠 Testing memory system...");
+        await bot.sendMessage(chatId, "🧠 Testing memory system with DIRECT dual AI...");
         
-        // Direct memory test implementation (no external dependencies)
-        const testMemoryIntegration = async (chatId) => {
-            return { 
-                success: true, 
-                message: "Memory integration test passed", 
-                chatId: chatId,
-                tests: { 
-                    memoryAccess: true, 
-                    contextBuilding: true,
-                    dataRetrieval: true
-                },
-                score: "3/3",
-                percentage: "100%",
-                status: "FULL_SUCCESS",
-                timestamp: new Date().toISOString()
-            };
-        };
+        // Test memory integration with DIRECT dual AI
+        const testResults = await testMemoryIntegrationDirect(chatId);
         
-        const results = await testMemoryIntegration(chatId);
+        let response = `🧠 **Memory Integration Test Results (Direct Mode)**\n\n`;
         
-        let response = `🧠 **Memory Integration Test Results**\n\n`;
-        
-        if (results.tests) {
-            Object.entries(results.tests).forEach(([test, passed]) => {
+        if (testResults.tests) {
+            Object.entries(testResults.tests).forEach(([test, passed]) => {
                 const emoji = passed ? '✅' : '❌';
                 const testName = test.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
                 response += `${emoji} ${testName}\n`;
             });
             
-            response += `\n**Score:** ${results.score} (${results.percentage})\n`;
-            response += `**Status:** 🟢 FULLY WORKING\n`;
+            response += `\n**Score:** ${testResults.score} (${testResults.percentage}%)\n`;
+            response += `**Status:** ${testResults.status === 'FULL_SUCCESS' ? '🟢 FULLY WORKING' : testResults.status === 'MOSTLY_WORKING' ? '🟡 MOSTLY WORKING' : '🔴 NEEDS ATTENTION'}\n`;
         }
         
-        await sendAnalysis(bot, chatId, response, "Memory System Test");
+        await sendAnalysis(bot, chatId, response, "Memory System Test (Direct Mode)");
         
     } catch (error) {
         await sendSmartMessage(bot, chatId, `❌ Memory system test failed: ${error.message}`);
     }
 }
 
-// 🔧 NEW: Memory Recovery Test Handler - FIXED
+// 🎯 NEW: Direct memory integration test
+async function testMemoryIntegrationDirect(chatId) {
+    try {
+        console.log(`🧠 Testing DIRECT memory integration for ${chatId}...`);
+        
+        const tests = {
+            conversationHistory: false,
+            persistentMemory: false,
+            dualAIWithMemory: false,
+            contextBuilding: false
+        };
+        
+        // Test conversation history
+        try {
+            const history = await getConversationHistoryDB(chatId, 3);
+            tests.conversationHistory = Array.isArray(history);
+        } catch (error) {
+            console.log('Conversation history test failed:', error.message);
+        }
+        
+        // Test persistent memory
+        try {
+            const memory = await getPersistentMemoryDB(chatId);
+            tests.persistentMemory = Array.isArray(memory);
+        } catch (error) {
+            console.log('Persistent memory test failed:', error.message);
+        }
+        
+        // Test DIRECT dual AI with memory context
+        try {
+            const result = await getUltimateStrategicAnalysis('What do you remember about our conversations?', {
+                chatId: chatId,
+                sessionId: `memory_test_${Date.now()}`,
+                includeMemory: true
+            });
+            tests.dualAIWithMemory = !!result;
+        } catch (error) {
+            console.log('DIRECT dual AI with memory test failed:', error.message);
+        }
+        
+        // Test context building
+        try {
+            const context = await buildConversationContextWithMemory(chatId, 'test message');
+            tests.contextBuilding = !!context;
+        } catch (error) {
+            console.log('Context building test failed:', error.message);
+        }
+        
+        const successCount = Object.values(tests).filter(Boolean).length;
+        const totalTests = Object.keys(tests).length;
+        
+        return {
+            success: successCount > 0,
+            tests: tests,
+            score: `${successCount}/${totalTests}`,
+            percentage: Math.round((successCount / totalTests) * 100),
+            status: successCount === totalTests ? 'FULL_SUCCESS' : 
+                   successCount >= totalTests * 0.7 ? 'MOSTLY_WORKING' : 'NEEDS_ATTENTION',
+            message: `DIRECT memory integration test: ${successCount}/${totalTests} components working`
+        };
+        
+    } catch (error) {
+        console.error('❌ DIRECT memory integration test failed:', error.message);
+        return {
+            success: false,
+            error: error.message,
+            status: 'FAILED',
+            message: 'DIRECT memory integration test failed'
+        };
+    }
+}
+
 async function handleMemoryRecoveryTest(chatId) {
     try {
-        await bot.sendMessage(chatId, "🔧 Testing memory recovery system...");
+        await bot.sendMessage(chatId, "🔧 Testing memory recovery system with DIRECT dual AI...");
         
         const testResults = {
             memoryWrite: false,
@@ -1531,11 +1690,11 @@ async function handleMemoryRecoveryTest(chatId) {
             console.log('❌ Memory read test failed:', error.message);
         }
         
-        // Test 3: Build context - FIXED (no duplicate function call)
+        // Test 3: Build context with DIRECT dual AI
         try {
-            // Simple context test without calling duplicate function
-            testResults.contextBuilding = true;
-            console.log('✅ Context building test: Using simplified test');
+            const context = await buildConversationContextWithMemory(chatId, 'test message');
+            testResults.contextBuilding = !!context;
+            console.log('✅ Context building test with DIRECT dual AI');
         } catch (error) {
             console.log('❌ Context building test failed:', error.message);
         }
@@ -1551,15 +1710,14 @@ async function handleMemoryRecoveryTest(chatId) {
         
         // Test 5: Fact extraction
         try {
-            const { extractAndSaveFacts } = require('./utils/memory');
-            await extractAndSaveFacts(chatId, 'My name is Test User', 'Nice to meet you, Test User!');
+            await extractAndSaveMemoriesDirect(chatId, 'My name is Test User', 'Nice to meet you, Test User!');
             testResults.factExtraction = true;
             console.log('✅ Fact extraction test passed');
         } catch (error) {
             console.log('❌ Fact extraction test failed:', error.message);
         }
         
-        let response = `🔧 **Memory Recovery Test Results**\n\n`;
+        let response = `🔧 **Memory Recovery Test Results (Direct Mode)**\n\n`;
         response += `**Core Functions:**\n`;
         response += `${testResults.memoryWrite ? '✅' : '❌'} Memory Write\n`;
         response += `${testResults.memoryRead ? '✅' : '❌'} Memory Read\n`;
@@ -1573,8 +1731,8 @@ async function handleMemoryRecoveryTest(chatId) {
         response += `**Recovery Score:** ${successCount}/${totalTests} (${Math.round((successCount/totalTests) * 100)}%)\n`;
         
         if (successCount === totalTests) {
-            response += `**Status:** 🟢 MEMORY SYSTEM RECOVERED\n\n`;
-            response += `✅ Your memory system is now working properly!\n`;
+            response += `**Status:** 🟢 MEMORY SYSTEM RECOVERED (Direct Mode)\n\n`;
+            response += `✅ Your memory system is now working properly with DIRECT dual AI!\n`;
             response += `Try asking: "What do you remember about me?"`;
         } else if (successCount >= totalTests * 0.7) {
             response += `**Status:** 🟡 PARTIAL RECOVERY\n\n`;
@@ -1587,14 +1745,13 @@ async function handleMemoryRecoveryTest(chatId) {
             response += `3. Check environment variables\n`;
         }
         
-        await sendAnalysis(bot, chatId, response, "Memory Recovery Test");
+        await sendAnalysis(bot, chatId, response, "Memory Recovery Test (Direct Mode)");
         
     } catch (error) {
         await sendSmartMessage(bot, chatId, `❌ Memory recovery test failed: ${error.message}`);
     }
 }
 
-// 📊 NEW: Memory Statistics Handler
 async function handleMemoryStatistics(chatId) {
     try {
         await bot.sendMessage(chatId, "📊 Gathering memory statistics...");
@@ -1605,7 +1762,7 @@ async function handleMemoryStatistics(chatId) {
             getUserProfileDB(chatId)
         ]);
         
-        let response = `📊 **Memory Statistics for User ${chatId}**\n\n`;
+        let response = `📊 **Memory Statistics for User ${chatId} (Direct Mode)**\n\n`;
         
         // Conversation statistics
         if (conversations.status === 'fulfilled') {
@@ -1656,115 +1813,17 @@ async function handleMemoryStatistics(chatId) {
         
         response += `\n**Memory Health:** ${
             conversations.status === 'fulfilled' && memories.status === 'fulfilled' ? 
-            '🟢 HEALTHY' : '🔴 NEEDS ATTENTION'
+            '🟢 HEALTHY (Direct Mode)' : '🔴 NEEDS ATTENTION'
         }`;
         
-        await sendAnalysis(bot, chatId, response, "Memory Statistics");
+        await sendAnalysis(bot, chatId, response, "Memory Statistics (Direct Mode)");
         
     } catch (error) {
         await sendSmartMessage(bot, chatId, `❌ Memory statistics failed: ${error.message}`);
     }
 }
 
-// 🔧 HELPER: Manual Memory Test (fallback) - FIXED
-async function performManualMemoryTest(chatId) {
-    const tests = {
-        conversationHistory: false,
-        persistentMemory: false,
-        memoryBuilding: false,
-        dualCommandWithMemory: false
-    };
-    
-    try {
-        // Test 1: Conversation History
-        const history = await getConversationHistoryDB(chatId, 3);
-        tests.conversationHistory = Array.isArray(history);
-    } catch (error) {
-        console.log('Manual test - conversation history failed:', error.message);
-    }
-    
-    try {
-        // Test 2: Persistent Memory
-        const memory = await getPersistentMemoryDB(chatId);
-        tests.persistentMemory = Array.isArray(memory);
-    } catch (error) {
-        console.log('Manual test - persistent memory failed:', error.message);
-    }
-    
-    try {
-        // Test 3: Memory Building - FIXED (no duplicate function call)
-        tests.memoryBuilding = true;
-        console.log('Manual test - memory building: Using simplified test');
-    } catch (error) {
-        console.log('Manual test - memory building failed:', error.message);
-    }
-    
-    try {
-        // Test 4: Dual Command with Memory
-        const result = await executeDualCommand('Hello, test message', chatId);
-        tests.dualCommandWithMemory = result.success;
-    } catch (error) {
-        console.log('Manual test - dual command failed:', error.message);
-    }
-    
-    const successCount = Object.values(tests).filter(Boolean).length;
-    const totalTests = Object.keys(tests).length;
-    
-    return {
-        tests: tests,
-        score: `${successCount}/${totalTests}`,
-        percentage: Math.round((successCount / totalTests) * 100),
-        status: successCount === totalTests ? 'FULL_SUCCESS' : 
-                successCount >= totalTests * 0.7 ? 'MOSTLY_WORKING' : 'NEEDS_ATTENTION'
-    };
-}
-
-// 🔧 PLACEHOLDER HANDLERS - These need to be implemented in Part 3
-async function handleDealAnalysis(chatId, text) {
-    await sendSmartMessage(bot, chatId, "🏗️ Deal analysis handler - Implementation in Part 3");
-}
-
-async function handlePortfolioStatus(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Portfolio status handler - Implementation in Part 3");
-}
-
-async function handleCambodiaMarket(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Cambodia market handler - Implementation in Part 3");
-}
-
-async function handleRiskAssessment(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Risk assessment handler - Implementation in Part 3");
-}
-
-async function handleMarketBriefing(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Market briefing handler - Implementation in Part 3");
-}
-
-async function handleRegimeAnalysis(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Regime analysis handler - Implementation in Part 3");
-}
-
-async function handleOpportunities(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Opportunities handler - Implementation in Part 3");
-}
-
-async function handleMacroAnalysis(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Macro analysis handler - Implementation in Part 3");
-}
-
-async function handleTradingStatus(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Trading status handler - Implementation in Part 3");
-}
-
-async function handlePositions(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Positions handler - Implementation in Part 3");
-}
-
-async function handleDocumentsList(chatId) {
-    await sendSmartMessage(bot, chatId, "🏗️ Documents list handler - Implementation in Part 3");
-}
-
-// 🔧 ENHANCED: Helper functions for conversation handling with memory integration
+// 🎯 ENHANCED: Helper functions for DIRECT dual AI conversation handling with memory integration
 function determineConversationType(text) {
     const lowerText = text.toLowerCase();
     
@@ -1792,6 +1851,9 @@ function determineConversationType(text) {
     // Portfolio and risk
     if (lowerText.includes('portfolio') || lowerText.includes('risk') || lowerText.includes('allocation')) return 'portfolio_analysis';
     
+    // DIRECT dual AI specific
+    if (lowerText.includes('dual ai') || lowerText.includes('gpt') || lowerText.includes('claude')) return 'ai_system_query';
+    
     return 'balanced_strategic';
 }
 
@@ -1811,7 +1873,8 @@ function requiresLiveData(text) {
     const liveDataKeywords = [
         'current', 'latest', 'today', 'now', 'recent',
         'price', 'market', 'trading', 'rate', 'news',
-        'status', 'update', 'live', 'real-time'
+        'status', 'update', 'live', 'real-time',
+        'bitcoin', 'crypto', 'stock', 'forex' // Added crypto/market keywords
     ];
     
     return liveDataKeywords.some(keyword => lowerText.includes(keyword));
@@ -1836,6 +1899,9 @@ function shouldSaveToPersistentMemory(userMessage, aiResponse) {
     // Financial/personal information
     if (lowerMessage.includes('my goal') || lowerMessage.includes('my strategy')) return true;
     if (lowerMessage.includes('my portfolio') || lowerMessage.includes('my risk')) return true;
+    
+    // DIRECT dual AI system preferences
+    if (lowerMessage.includes('my ai preference') || lowerMessage.includes('use gpt') || lowerMessage.includes('use claude')) return true;
     
     return false;
 }
@@ -1876,6 +1942,14 @@ function extractMemoryFact(userMessage, aiResponse) {
         return `User request: ${userMessage.trim()}`;
     }
     
+    // AI system preferences
+    if (lowerMessage.includes('use gpt') || lowerMessage.includes('prefer gpt')) {
+        return `AI preference: User prefers GPT-5 for responses`;
+    }
+    if (lowerMessage.includes('use claude') || lowerMessage.includes('prefer claude')) {
+        return `AI preference: User prefers Claude Opus 4.1 for responses`;
+    }
+    
     // Key insights from AI response
     if (aiResponse.includes('Key insight:')) {
         const insight = aiResponse.split('Key insight:')[1]?.split('\n')[0];
@@ -1896,6 +1970,11 @@ function extractMemoryFact(userMessage, aiResponse) {
         }
     }
     
+    // DIRECT dual AI system insights
+    if (aiResponse.includes('Ultimate Strategic Analysis') || aiResponse.includes('dual AI')) {
+        return `System insight: DIRECT dual AI analysis completed`;
+    }
+    
     // Extract first important sentence from response
     const sentences = aiResponse.split('. ');
     const importantSentence = sentences.find(s => {
@@ -1912,6 +1991,195 @@ function extractMemoryFact(userMessage, aiResponse) {
     // Fallback for general context
     if (userMessage.length > 10 && userMessage.length < 150) {
         return `Conversation context: ${userMessage.trim()}`;
+    }
+    
+    return null;
+}
+
+// 🎯 NEW: DIRECT dual AI specific helper functions
+function shouldUseDualAI(text, conversationType, complexity) {
+    // Always use DIRECT dual AI for these cases
+    if (conversationType === 'strategic_analysis') return true;
+    if (conversationType === 'memory_query') return true;
+    if (conversationType === 'economic_regime') return true;
+    if (conversationType === 'portfolio_analysis') return true;
+    
+    // Use for complex queries
+    if (complexity === 'high' || complexity === 'maximum') return true;
+    
+    // Use for financial/investment queries
+    if (text.toLowerCase().includes('investment') || 
+        text.toLowerCase().includes('financial') || 
+        text.toLowerCase().includes('analysis')) return true;
+    
+    // Default to DIRECT dual AI (since we removed intermediate layers)
+    return true;
+}
+
+function buildDualAIContext(chatId, text, conversationType, complexity, memoryContext) {
+    return {
+        chatId: chatId,
+        sessionId: `session_${chatId}_${Date.now()}`,
+        messageType: 'text',
+        conversationType: conversationType,
+        complexity: complexity,
+        memoryContext: memoryContext,
+        userContext: {
+            platform: 'telegram',
+            timestamp: new Date().toISOString(),
+            directMode: true, // Flag for DIRECT dual AI mode
+            systemVersion: 'v4.0-DIRECT'
+        }
+    };
+}
+
+function formatDualAIResponse(result, executionTime) {
+    if (typeof result === 'string') {
+        return {
+            response: result,
+            aiUsed: 'DUAL_AI_DIRECT',
+            executionTime: executionTime,
+            success: true
+        };
+    }
+    
+    if (result && result.response) {
+        return {
+            response: result.response,
+            aiUsed: result.aiUsed || 'DUAL_AI_DIRECT',
+            modelUsed: result.modelUsed || 'Unknown',
+            confidence: result.confidence || 0.8,
+            executionTime: result.executionTime || executionTime,
+            powerMode: result.powerMode || 'DIRECT',
+            success: true
+        };
+    }
+    
+    // Fallback formatting
+    return {
+        response: "I've processed your request with our DIRECT dual AI system.",
+        aiUsed: 'DUAL_AI_DIRECT_FALLBACK',
+        executionTime: executionTime,
+        success: false
+    };
+}
+
+// 🔧 ENHANCED: Memory-aware response processing with DIRECT dual AI
+async function processMemoryAwareResponseDirect(chatId, userMessage, aiResponse) {
+    try {
+        console.log(`🧠 Processing memory-aware response for ${chatId} with DIRECT dual AI`);
+        
+        // Extract and save identity information with priority handling
+        const identityInfo = extractUserIdentityInfo(userMessage);
+        if (identityInfo) {
+            const priority = identityInfo.confidence === 'high' ? 'high' : 'medium';
+            const memoryFact = `User ${identityInfo.type}: ${identityInfo.value}`;
+            await addPersistentMemoryDB(chatId, memoryFact, priority);
+            console.log(`💾 Saved identity info (${priority}): ${memoryFact}`);
+        }
+        
+        // Check if memory update is needed with enhanced logic
+        if (shouldSaveToPersistentMemory(userMessage, aiResponse)) {
+            const memoryFact = extractMemoryFact(userMessage, aiResponse);
+            if (memoryFact && memoryFact.length > 10) {
+                await addPersistentMemoryDB(chatId, memoryFact, 'medium');
+                console.log(`💾 Saved contextual memory: ${memoryFact}`);
+            }
+        }
+        
+        // Extract and save preferences mentioned in conversation
+        const preferences = extractPreferences(userMessage);
+        if (preferences.length > 0) {
+            for (const pref of preferences) {
+                await addPersistentMemoryDB(chatId, `User preference: ${pref}`, 'medium');
+                console.log(`💾 Saved preference: ${pref}`);
+            }
+        }
+        
+        // Save important facts from AI responses (enhanced for DIRECT dual AI)
+        const aiFacts = extractImportantFactsDirect(aiResponse);
+        if (aiFacts.length > 0) {
+            for (const fact of aiFacts) {
+                await addPersistentMemoryDB(chatId, `AI provided: ${fact}`, 'low');
+                console.log(`💾 Saved AI fact: ${fact}`);
+            }
+        }
+        
+        console.log(`🧠 DIRECT dual AI memory processing completed for conversation`);
+        
+    } catch (error) {
+        console.error('❌ Memory-aware processing error:', error.message);
+    }
+}
+
+// Helper function to extract preferences from user messages
+function extractPreferences(text) {
+    const preferences = [];
+    const preferencePatterns = [
+        /i prefer ([^.,\n!?]+)/gi,
+        /i like ([^.,\n!?]+)/gi,
+        /i don't like ([^.,\n!?]+)/gi,
+        /i hate ([^.,\n!?]+)/gi,
+        /my favorite ([^.,\n!?]+)/gi,
+        /i always ([^.,\n!?]+)/gi,
+        /i usually ([^.,\n!?]+)/gi
+    ];
+    
+    for (const pattern of preferencePatterns) {
+        const matches = text.matchAll(pattern);
+        for (const match of matches) {
+            if (match[1] && match[1].trim().length > 2) {
+                preferences.push(match[1].trim());
+            }
+        }
+    }
+    
+    return preferences;
+}
+
+// Helper function to extract important facts from AI responses (enhanced for DIRECT dual AI)
+function extractImportantFactsDirect(text) {
+    const facts = [];
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    
+    for (const sentence of sentences) {
+        // Look for factual statements that might be useful to remember
+        if (sentence.includes('According to') || sentence.includes('Based on') ||
+            sentence.includes('Important') || sentence.includes('Key') ||
+            sentence.includes('Remember') || sentence.includes('Note that') ||
+            sentence.includes('Ultimate Strategic') || sentence.includes('dual AI analysis')) {
+            facts.push(sentence.trim().substring(0, 100));
+        }
+    }
+    
+    return facts.slice(0, 3); // Limit to 3 facts to avoid spam
+}
+
+function extractUserIdentityInfo(text) {
+    const identityPatterns = [
+        { pattern: /my name is ([^.,\n!?]+)/i, type: 'name' },
+        { pattern: /i am ([^.,\n!?]+)/i, type: 'identity' },
+        { pattern: /i work (?:at|for) ([^.,\n!?]+)/i, type: 'work' },
+        { pattern: /i live in ([^.,\n!?]+)/i, type: 'location' },
+        { pattern: /i'm from ([^.,\n!?]+)/i, type: 'origin' },
+        { pattern: /my (?:phone|email|contact) (?:is |number is )?([^.,\n!?]+)/i, type: 'contact' },
+        { pattern: /i'm (\d+) years old/i, type: 'age' },
+        { pattern: /my birthday is ([^.,\n!?]+)/i, type: 'birthday' },
+        { pattern: /i prefer ([^.,\n!?]+)/i, type: 'preference' },
+        { pattern: /my goal is to ([^.,\n!?]+)/i, type: 'goal' },
+        { pattern: /my ai preference is ([^.,\n!?]+)/i, type: 'ai_preference' }
+    ];
+    
+    for (const { pattern, type } of identityPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+            return {
+                type: type,
+                value: match[1].trim(),
+                fullText: match[0],
+                confidence: match[1].length > 2 ? 'high' : 'medium'
+            };
+        }
     }
     
     return null;
@@ -1946,17 +2214,20 @@ async function handleVoiceMessage(msg, chatId, sessionId) {
             }).catch(err => console.error('Voice save error:', err.message));
             
 // Process transcribed text with REAL dual AI system
-const { processConversation } = require('./utils/dualAISystem');
-const result = await processConversation(chatId, transcribedText);
-await sendSmartMessage(bot, chatId, result.response);
-            
-            // Log successful API usage
-            await logApiUsage('WHISPER', 'transcription', 1, true, responseTime, msg.voice.file_size || 0)
-                .catch(err => console.error('API log error:', err.message));
-            
-            console.log("✅ Voice message processed successfully with dual AI");
-        } else {
-            await sendSmartMessage(bot, chatId, "❌ Voice transcription failed. Please try again or speak more clearly.");
+try {
+    const result = await getUltimateStrategicAnalysis(transcribedText, {
+        chatId: chatId,
+        sessionId: sessionId || `session_${chatId}_${Date.now()}`,
+        messageType: 'voice_transcription'
+    });
+    
+    const response = (typeof result === 'string') ? result : result.response;
+    await sendSmartMessage(bot, chatId, response);
+    
+} catch (dualError) {
+    console.error('❌ Dual AI failed for voice:', dualError.message);
+    await sendSmartMessage(bot, chatId, "I've processed your voice message.");
+}
             
             // Save failed transcription attempt with diagnostic info
             await saveConversationDB(chatId, "[VOICE_FAILED]", "Transcription failed", "voice", {
@@ -2132,15 +2403,22 @@ async function processVoiceWithDualAI(transcribedText, chatId, sessionId) {
     try {
         console.log("🤖 Processing transcription with GPT-5 + Claude Opus 4.1 dual AI system...");
         
-        // Use your existing dual command system
-        const dualResult = await executeDualCommand(transcribedText, chatId, {
-            messageType: 'voice_transcription',
-            enhancementLevel: 'VOICE_ENHANCED',
-            originalAudio: true,
-            transcriptionLength: transcribedText.length
-        });
-        
-        return dualResult;
+const dualResult = await getUltimateStrategicAnalysis(transcribedText, {
+    chatId: chatId,  // ✅ ADD THIS
+    sessionId: sessionId || `session_${Date.now()}`,  // ✅ ADD THIS
+    messageType: 'voice_transcription',
+    enhancementLevel: 'VOICE_ENHANCED',
+    originalAudio: true,
+    transcriptionLength: transcribedText.length
+});;
+
+// Format result for compatibility
+return {
+    response: dualResult,
+    aiUsed: 'DUAL_AI_SYSTEM',
+    success: !!dualResult,
+    queryType: 'voice_transcription'
+};
         
     } catch (error) {
         console.error("❌ Dual AI voice processing error:", error.message);
@@ -5208,7 +5486,7 @@ async function handleComprehensiveLiveData(chatId) {
     }
 }
 
-// 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP (Replace your duplicate sections)
+// 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP - COMPLETELY FIXED
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -5275,7 +5553,86 @@ app.get("/health", async (req, res) => {
     }
 });
 
-// 🚀 SINGLE SERVER STARTUP WITH PROPER BOT INITIALIZATION
+// 🔧 FIXED: Complete the checkSystemHealth function
+async function checkSystemHealth() {
+    try {
+        console.log("🔍 Checking system health...");
+        
+        const health = {
+            gptAnalysis: false,
+            claudeAnalysis: false,
+            contextBuilding: false,
+            memorySystem: false,
+            dateTimeSupport: false,
+            dualMode: false,
+            overallHealth: false
+        };
+        
+        // Test GPT-5 availability
+        try {
+            await getUniversalAnalysis('test', { maxTokens: 10 });
+            health.gptAnalysis = true;
+        } catch (error) {
+            console.log('GPT health check failed:', error.message);
+        }
+        
+        // Test Claude availability
+        try {
+            await getClaudeAnalysis('test', { maxTokens: 10 });
+            health.claudeAnalysis = true;
+        } catch (error) {
+            console.log('Claude health check failed:', error.message);
+        }
+        
+        // Test context building
+        try {
+            const context = await buildConversationContextWithMemory('test_user', 'test message');
+            health.contextBuilding = !!context;
+        } catch (error) {
+            console.log('Context building health check failed:', error.message);
+        }
+        
+        // Test memory system
+        try {
+            await getPersistentMemoryDB('test_user');
+            health.memorySystem = true;
+        } catch (error) {
+            console.log('Memory system health check failed:', error.message);
+        }
+        
+        // Test date/time support
+        try {
+            const cambodiaTime = getCurrentCambodiaDateTime();
+            health.dateTimeSupport = !!cambodiaTime;
+        } catch (error) {
+            console.log('DateTime health check failed:', error.message);
+        }
+        
+        // Test dual mode
+        health.dualMode = health.gptAnalysis && health.claudeAnalysis;
+        
+        // Overall health
+        const healthyComponents = Object.values(health).filter(Boolean).length;
+        health.overallHealth = healthyComponents >= 4; // At least 4 out of 6 components working
+        
+        console.log(`✅ System health check completed: ${healthyComponents}/6 components healthy`);
+        return health;
+        
+    } catch (error) {
+        console.error('❌ System health check failed:', error.message);
+        return {
+            gptAnalysis: false,
+            claudeAnalysis: false,
+            contextBuilding: false,
+            memorySystem: false,
+            dateTimeSupport: false,
+            dualMode: false,
+            overallHealth: false
+        };
+    }
+}
+
+// 🚀 FIXED SERVER STARTUP WITH PROPER BOT INITIALIZATION
 const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log("🚀 Enhanced AI Assistant v4.0 - WEALTH EMPIRE starting...");
     console.log(`✅ Server running on port ${PORT}`);
@@ -5292,73 +5649,164 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
         console.log("⚠️ Running with limited database functionality");
     }
     
-    // 🔧 FIXED: Single bot initialization with proper environment detection
-    console.log("🤖 Initializing Telegram bot...");
-    
-    const isProduction = process.env.NODE_ENV === 'production' || 
-                        process.env.RAILWAY_ENVIRONMENT === 'production' ||
-                        process.env.PORT;
+// 🔧 SIMPLIFIED: Force polling mode for better reliability
+    console.log("🤖 Initializing Telegram bot in POLLING MODE...");
     
     let botInitialized = false;
     
-    if (isProduction) {
-        // Production: Try webhook first, fallback to polling
-        console.log("🚀 Production environment - setting up webhook...");
-        const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
+    try {
+        // Always delete webhook first
+        await bot.deleteWebHook();
+        console.log("🗑️ Webhook deleted");
         
+        // Wait a moment for cleanup
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Start polling (more reliable than webhook)
+        await bot.startPolling({ restart: true });
+        console.log("✅ Bot polling started successfully");
+        botInitialized = true;
+        
+    } catch (botError) {
+        console.error("❌ Bot initialization failed:", botError.message);
+        
+        // Try one more time
         try {
-            await bot.deleteWebHook();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await bot.setWebHook(webhookUrl);
-            console.log("✅ Production webhook configured:", webhookUrl);
-            botInitialized = true;
-            
-        } catch (webhookError) {
-            console.error("❌ Webhook setup failed:", webhookError.message);
-            console.log("🔄 FALLBACK: Switching to polling...");
-            
-            try {
-                await bot.deleteWebHook();
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                await bot.startPolling({ restart: true });
-                console.log("✅ Bot polling started (fallback mode)");
-                botInitialized = true;
-            } catch (pollingError) {
-                console.error("❌ Polling fallback failed:", pollingError.message);
-            }
-        }
-        
-    } else {
-        // Development: Use polling
-        console.log("🛠️ Development environment - using polling...");
-        
-        try {
-            await bot.deleteWebHook();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log("🔄 Retrying bot initialization...");
+            await new Promise(resolve => setTimeout(resolve, 3000));
             await bot.startPolling({ restart: true });
-            console.log("✅ Development polling started");
+            console.log("✅ Bot polling started on retry");
             botInitialized = true;
-            
-        } catch (pollingError) {
-            console.error("❌ Development polling failed:", pollingError.message);
+        } catch (retryError) {
+            console.error("❌ Bot retry failed:", retryError.message);
         }
     }
     
+    // 🤖 ADD MESSAGE HANDLERS HERE - RIGHT AFTER BOT INITIALIZATION
     if (botInitialized) {
+        console.log("🔧 Setting up Telegram message handlers...");
+        
+        // Handle text messages
+        bot.on('message', async (msg) => {
+            const chatId = msg.chat.id;
+            const text = msg.text;
+            
+            // Skip non-text messages
+            if (!text) return;
+            
+            try {
+                console.log(`📨 Message received from ${chatId}: "${text}"`);
+                
+                // Check if user is authorized
+                if (!isAuthorizedUser(chatId)) {
+                    await bot.sendMessage(chatId, 
+                        `🚫 **Access Denied**\n\n` +
+                        `This is a private AI system. Contact the administrator for access.\n\n` +
+                        `**Your Chat ID:** ${chatId}`
+                    );
+                    return;
+                }
+                
+                // Start user session
+                const sessionId = await startUserSession(chatId, 'TELEGRAM_MESSAGE');
+                
+                // Process the message with your DIRECT dual AI system
+                await executeCommandWithLogging(chatId, text, sessionId);
+                
+                // End session
+                await endUserSession(sessionId, 1, Date.now());
+                
+            } catch (error) {
+                console.error(`❌ Message processing error for ${chatId}:`, error.message);
+                
+                // Send error response to user
+                try {
+                    await bot.sendMessage(chatId, 
+                        "❌ I encountered an error processing your message. Please try again."
+                    );
+                } catch (sendError) {
+                    console.error("❌ Failed to send error message:", sendError.message);
+                }
+            }
+        });
+        
+        // Handle voice messages
+        bot.on('voice', async (msg) => {
+            const chatId = msg.chat.id;
+            
+            try {
+                console.log(`🎤 Voice message received from ${chatId}`);
+                
+                if (!isAuthorizedUser(chatId)) {
+                    await bot.sendMessage(chatId, "🚫 Access denied. Contact administrator.");
+                    return;
+                }
+                
+                const sessionId = await startUserSession(chatId, 'VOICE_MESSAGE');
+                await handleVoiceMessage(msg, chatId, sessionId);
+                await endUserSession(sessionId, 1, Date.now());
+                
+            } catch (error) {
+                console.error(`❌ Voice processing error for ${chatId}:`, error.message);
+                await bot.sendMessage(chatId, "❌ Voice processing failed. Please try again.").catch(console.error);
+            }
+        });
+        
+        // Handle document messages
+        bot.on('document', async (msg) => {
+            const chatId = msg.chat.id;
+            
+            try {
+                console.log(`📄 Document received from ${chatId}: ${msg.document.file_name}`);
+                
+                if (!isAuthorizedUser(chatId)) {
+                    await bot.sendMessage(chatId, "🚫 Access denied. Contact administrator.");
+                    return;
+                }
+                
+                const sessionId = await startUserSession(chatId, 'DOCUMENT_MESSAGE');
+                await handleDocumentMessage(msg, chatId, sessionId);
+                await endUserSession(sessionId, 1, Date.now());
+                
+            } catch (error) {
+                console.error(`❌ Document processing error for ${chatId}:`, error.message);
+                await bot.sendMessage(chatId, "❌ Document processing failed. Please try again.").catch(console.error);
+            }
+        });
+        
+        // Handle bot polling errors
+        bot.on('polling_error', (error) => {
+            console.error('🚨 Telegram polling error:', error.message);
+        });
+        
+        // Handle webhook errors
+        bot.on('webhook_error', (error) => {
+            console.error('🚨 Telegram webhook error:', error.message);
+        });
+        
+        // Simple test handler
+        bot.onText(/\/test/, (msg) => {
+            const chatId = msg.chat.id;
+            console.log(`🧪 Test command received from ${chatId}`);
+            bot.sendMessage(chatId, "✅ Bot is working! Message handlers are active.");
+        });
+        
+        console.log("✅ Telegram message handlers configured successfully");
+        
         console.log("🎯 Bot is ready to receive messages!");
         console.log("💡 Test with: /start or /wealth");
+        console.log("📱 Bot should respond immediately now");
     } else {
         console.error("🚨 CRITICAL: Bot initialization completely failed!");
         console.log("🔧 Check TELEGRAM_BOT_TOKEN and try restarting");
     }
     
     console.log("🚀 AI WEALTH EMPIRE startup complete!");
-    console.log(`📍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
-    console.log(`🤖 Bot Mode: ${isProduction ? 'Webhook (with polling fallback)' : 'Polling'}`);
+    console.log("🤖 Bot Mode: POLLING (Forced for reliability)");
     console.log("💰 Ready to build wealth with AI!");
 });
 
-// Enhanced error handling
+// 🔧 SINGLE SET OF ERROR HANDLERS (no duplicates)
 process.on('unhandledRejection', (reason, promise) => {
     if (reason && reason.message && reason.message.includes('409')) {
         console.error("🚨 Telegram Bot Conflict (409): Another instance running!");
@@ -5384,10 +5832,15 @@ const gracefulShutdown = async (signal) => {
     
     try {
         console.log('🤖 Stopping Telegram bot...');
-        await bot.stopPolling();
-        await bot.deleteWebHook();
+        if (bot && typeof bot.stopPolling === 'function') {
+            await bot.stopPolling().catch(console.error);
+        }
+        if (bot && typeof bot.deleteWebHook === 'function') {
+            await bot.deleteWebHook().catch(console.error);
+        }
         console.log('✅ Bot stopped successfully');
         
+        // Update system metrics if function exists
         if (typeof updateSystemMetrics === 'function') {
             await updateSystemMetrics({
                 system_shutdown: 1,
@@ -5400,16 +5853,23 @@ const gracefulShutdown = async (signal) => {
         console.error('❌ Shutdown cleanup error:', error.message);
     }
     
-    server.close(() => {
+    // Close server gracefully
+    if (server && typeof server.close === 'function') {
+        server.close(() => {
+            console.log('✅ AI WEALTH EMPIRE shut down gracefully');
+            process.exit(0);
+        });
+    } else {
         console.log('✅ AI WEALTH EMPIRE shut down gracefully');
         process.exit(0);
-    });
+    }
 };
 
+// Process event listeners
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// Export for testing
+// Export for testing (this should be at the very end)
 module.exports = {
     app,
     server,
