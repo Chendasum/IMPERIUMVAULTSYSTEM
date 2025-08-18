@@ -55,7 +55,7 @@ const GPT5_POWER_MODELS = {
     ULTIMATE: {
         model: "gpt-5",
         description: "Maximum GPT-5 intelligence for critical financial decisions",
-        maxTokens: 4000,
+        max_completion_tokens: 4000,
         temperature: 0.1,
         top_p: 0.95,
         presence_penalty: 0.1,
@@ -68,7 +68,7 @@ const GPT5_POWER_MODELS = {
     POWER: {
         model: "gpt-5-mini",
         description: "Balanced GPT-5 performance for general analysis",
-        maxTokens: 3000,
+        max_completion_tokens: 3000,
         temperature: 0.3,
         top_p: 0.9,
         presence_penalty: 0.05,
@@ -81,7 +81,7 @@ const GPT5_POWER_MODELS = {
     SPEED: {
         model: "gpt-5-nano",
         description: "High-speed GPT-5 for urgent market decisions",
-        maxTokens: 2000,
+        max_completion_tokens: 2000,
         temperature: 0.4,
         top_p: 0.85,
         presence_penalty: 0.0,
@@ -94,7 +94,7 @@ const GPT5_POWER_MODELS = {
     CHAT: {
         model: "gpt-5-chat",
         description: "Conversational GPT-5 for interactive analysis",
-        maxTokens: 2500,
+        max_completion_tokens: 2500,
         temperature: 0.5,
         top_p: 0.9,
         presence_penalty: 0.1,
@@ -109,7 +109,7 @@ const CLAUDE_POWER_MODES = {
     STRATEGIC_MASTERY: {
         model: "claude-opus-4-1-20250805", // ✅ CORRECT: Official API name
         description: "Maximum strategic analysis and risk assessment",
-        maxTokens: 4000,  // ✅ FIXED: Using correct parameter name for consistency
+        max_completion_tokens: 4000,  // ✅ FIXED: Using correct parameter name for consistency
         temperature: 0.2,
         // ❌ REMOVED: reasoning_depth: "maximum", - Not a real Anthropic API parameter
         // ❌ REMOVED: analysis_mode: "comprehensive" - Not a real Anthropic API parameter
@@ -117,14 +117,14 @@ const CLAUDE_POWER_MODES = {
         // ✅ ADDED: Real Claude 4 thinking parameter
         thinking: {
             type: "enabled",
-            budget_tokens: 3000  // Must be ≥1024 and less than maxTokens
+            budget_tokens: 3000  // Must be ≥1024 and less than max_completion_tokens
         }
     },
     
     STRATEGIC_STANDARD: {
         model: "claude-opus-4-1-20250805", // ✅ CORRECT: Official API name
         description: "Standard strategic analysis",
-        maxTokens: 3000,  // ✅ FIXED: Using correct parameter name for consistency
+        max_completion_tokens: 3000,  // ✅ FIXED: Using correct parameter name for consistency
         temperature: 0.4,
         // ❌ REMOVED: reasoning_depth: "standard", - Not a real Anthropic API parameter
         // ❌ REMOVED: analysis_mode: "balanced" - Not a real Anthropic API parameter
@@ -132,14 +132,14 @@ const CLAUDE_POWER_MODES = {
         // ✅ ADDED: Real Claude 4 thinking parameter
         thinking: {
             type: "enabled",
-            budget_tokens: 2000  // Must be ≥1024 and less than maxTokens
+            budget_tokens: 2000  // Must be ≥1024 and less than max_completion_tokens
         }
     },
     
     STRATEGIC_EFFICIENT: {
         model: "claude-opus-4-1-20250805", // ✅ CORRECT: Official API name
         description: "Efficient strategic insights",
-        maxTokens: 2000,  // ✅ FIXED: Using correct parameter name for consistency
+        max_completion_tokens: 2000,  // ✅ FIXED: Using correct parameter name for consistency
         temperature: 0.5,
         // ❌ REMOVED: reasoning_depth: "focused", - Not a real Anthropic API parameter
         // ❌ REMOVED: analysis_mode: "efficient" - Not a real Anthropic API parameter
@@ -798,7 +798,7 @@ class UltimatePowerExecutor {
         }
         
         const apiOptions = {
-            max_completion_tokens: modelConfig.maxTokens,
+            max_completion_tokens: modelConfig.max_completion_tokens,
             model: modelConfig.model,
             temperature: modelConfig.temperature,
             top_p: modelConfig.top_p || 0.9,
@@ -845,7 +845,7 @@ class UltimatePowerExecutor {
         }
         
         const claudeOptions = {
-            maxTokens: modeConfig.maxTokens,
+            max_completion_tokens: modeConfig.max_completion_tokens,
             temperature: modeConfig.temperature,
             model: modeConfig.model
         };
@@ -866,7 +866,7 @@ class UltimatePowerExecutor {
                 console.log('Attempting fallback to Claude efficient mode...');
                 const fallbackOptions = {
                     ...claudeOptions,
-                    maxTokens: CLAUDE_POWER_MODES.STRATEGIC_EFFICIENT.maxTokens,
+                    max_completion_tokens: CLAUDE_POWER_MODES.STRATEGIC_EFFICIENT.max_completion_tokens,
                     temperature: CLAUDE_POWER_MODES.STRATEGIC_EFFICIENT.temperature
                 };
                 return await claudeClient.getClaudeAnalysis(prompt, fallbackOptions);
@@ -1397,7 +1397,7 @@ class UltimateSystemHealthMonitor {
             const testPrompt = "Health check: Provide a brief strategic assessment of system operational status with reasoning depth indicator";
             
             const testResponse = await claudeClient.getClaudeAnalysis(testPrompt, {
-                maxTokens: 100,
+                max_completion_tokens: 100,
                 temperature: 0.2
             });
             
