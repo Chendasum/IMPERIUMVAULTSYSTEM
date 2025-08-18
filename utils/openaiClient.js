@@ -51,7 +51,7 @@ async function testGPT5Capabilities() {
                     content: "Confirm you are GPT-5 and describe your enhanced capabilities compared to GPT-4."
                 }
             ],
-            max_tokens: 500,  // 🔧 FIXED: Correct parameter name
+            max_completion_tokens: 500,  // 🔧 FIXED: Correct parameter name
             temperature: 0.3,
             reasoning_effort: "medium",   // 🔧 ADDED: GPT-5 parameter
             verbosity: "balanced"         // 🔧 ADDED: GPT-5 parameter
@@ -73,7 +73,7 @@ async function testGPT5Capabilities() {
                     content: "Calculate the optimal portfolio allocation using Modern Portfolio Theory for 3 assets with expected returns [8%, 12%, 15%], standard deviations [10%, 15%, 20%], and correlation matrix [[1, 0.3, 0.1], [0.3, 1, 0.4], [0.1, 0.4, 1]]. Show detailed mathematical reasoning."
                 }
             ],
-            max_tokens: 2000,  // 🔧 FIXED: Correct parameter name
+            max_completion_tokens: 2000,  // 🔧 FIXED: Correct parameter name
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP,
             reasoning_effort: "high",      // 🔧 ADDED: GPT-5 parameter
             verbosity: "detailed"          // 🔧 ADDED: GPT-5 parameter
@@ -276,7 +276,7 @@ async function getGPT5Analysis(prompt, options = {}) {
                 }
             ],
             temperature: options.temperature || queryConfig.temperature,
-            max_tokens: options.maxTokens || queryConfig.maxTokens,  // 🔧 FIXED: Correct parameter
+            max_completion_tokens: options.maxTokens || queryConfig.maxTokens,  // 🔧 FIXED: Correct parameter
             top_p: options.top_p || 0.95,
             frequency_penalty: options.frequency_penalty || 0,
             presence_penalty: options.presence_penalty || 0
@@ -446,7 +446,7 @@ async function getEnhancedVisionAnalysis(base64Image, prompt, options = {}) {
                     ]
                 }
             ],
-            max_tokens: options.maxTokens || 3000,  // 🔧 FIXED: Correct parameter
+            max_completion_tokens: options.maxTokens || 3000,  // 🔧 FIXED: Correct parameter
             temperature: options.temperature || GPT5_CONFIG.MULTIMODAL_TEMP
         };
         
@@ -496,7 +496,7 @@ async function checkGPT5SystemHealth() {
                 await openai.chat.completions.create({
                     model: GPT5_CONFIG.FALLBACK_MODEL,
                     messages: [{ role: "user", content: "Test" }],
-                    max_tokens: 10  // 🔧 FIXED: Correct parameter
+                    max_completion_tokens: 10  // 🔧 FIXED: Correct parameter
                 });
                 health.fallbackWorking = true;
             } catch (fallbackError) {
@@ -596,7 +596,7 @@ module.exports = {
             const response = await openai.chat.completions.create({
                 model: GPT5_CONFIG.FALLBACK_MODEL,
                 messages: [{ role: "user", content: "Test connection" }],
-                max_tokens: 10
+                max_completion_tokens: 10
             });
             return { success: true, result: response.choices[0]?.message?.content };
         } catch (error) {
