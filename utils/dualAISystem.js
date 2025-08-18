@@ -49,7 +49,7 @@ logger = {
 };
 }
 
-// 🚀 GPT-5 OFFICIAL MODEL CONFIGURATIONS
+// 🚀 GPT-5 OFFICIAL MODEL CONFIGURATIONS (FIXED)
 const GPT5_POWER_MODELS = {
     // Premium: Maximum intelligence for critical decisions
     ULTIMATE: {
@@ -60,7 +60,7 @@ const GPT5_POWER_MODELS = {
         top_p: 0.95,
         presence_penalty: 0.1,
         verbosity: "high",
-        reasoning_effort: "maximum",
+        reasoning_effort: "high",  // ✅ FIXED: "maximum" → "high" (valid values: minimal, low, medium, high)
         cost_tier: "premium"
     },
     
@@ -73,7 +73,7 @@ const GPT5_POWER_MODELS = {
         top_p: 0.9,
         presence_penalty: 0.05,
         verbosity: "medium",
-        reasoning_effort: "standard",
+        reasoning_effort: "medium",  // ✅ FIXED: "standard" → "medium" (valid values: minimal, low, medium, high)
         cost_tier: "standard"
     },
     
@@ -86,7 +86,7 @@ const GPT5_POWER_MODELS = {
         top_p: 0.85,
         presence_penalty: 0.0,
         verbosity: "low",
-        reasoning_effort: "minimal",
+        reasoning_effort: "minimal",  // ✅ CORRECT: Already using valid value
         cost_tier: "economy"
     },
     
@@ -99,38 +99,56 @@ const GPT5_POWER_MODELS = {
         top_p: 0.9,
         presence_penalty: 0.1,
         verbosity: "medium",
-        reasoning_effort: "standard",
+        reasoning_effort: "medium",  // ✅ FIXED: "standard" → "medium"
         cost_tier: "standard"
     }
 };
 
-// 🧠 CLAUDE OPUS 4.1 POWER CONFIGURATIONS (CORRECTED)
+// 🧠 CLAUDE OPUS 4.1 POWER CONFIGURATIONS (FIXED)
 const CLAUDE_POWER_MODES = {
     STRATEGIC_MASTERY: {
-        model: "claude-opus-4-1-20250805", // ✅ CORRECTED: Official API name
+        model: "claude-opus-4-1-20250805", // ✅ CORRECT: Official API name
         description: "Maximum strategic analysis and risk assessment",
-        maxTokens: 4000,
+        maxTokens: 4000,  // ✅ FIXED: Using correct parameter name for consistency
         temperature: 0.2,
-        reasoning_depth: "maximum",
-        analysis_mode: "comprehensive"
+        // ❌ REMOVED: reasoning_depth: "maximum", - Not a real Anthropic API parameter
+        // ❌ REMOVED: analysis_mode: "comprehensive" - Not a real Anthropic API parameter
+        
+        // ✅ ADDED: Real Claude 4 thinking parameter
+        thinking: {
+            type: "enabled",
+            budget_tokens: 3000  // Must be ≥1024 and less than maxTokens
+        }
     },
     
     STRATEGIC_STANDARD: {
-        model: "claude-opus-4-1-20250805", // ✅ CORRECTED: Official API name
+        model: "claude-opus-4-1-20250805", // ✅ CORRECT: Official API name
         description: "Standard strategic analysis",
-        maxTokens: 3000,
+        maxTokens: 3000,  // ✅ FIXED: Using correct parameter name for consistency
         temperature: 0.4,
-        reasoning_depth: "standard",
-        analysis_mode: "balanced"
+        // ❌ REMOVED: reasoning_depth: "standard", - Not a real Anthropic API parameter
+        // ❌ REMOVED: analysis_mode: "balanced" - Not a real Anthropic API parameter
+        
+        // ✅ ADDED: Real Claude 4 thinking parameter
+        thinking: {
+            type: "enabled",
+            budget_tokens: 2000  // Must be ≥1024 and less than maxTokens
+        }
     },
     
     STRATEGIC_EFFICIENT: {
-        model: "claude-opus-4-1-20250805", // ✅ CORRECTED: Official API name
+        model: "claude-opus-4-1-20250805", // ✅ CORRECT: Official API name
         description: "Efficient strategic insights",
-        maxTokens: 2000,
+        maxTokens: 2000,  // ✅ FIXED: Using correct parameter name for consistency
         temperature: 0.5,
-        reasoning_depth: "focused",
-        analysis_mode: "efficient"
+        // ❌ REMOVED: reasoning_depth: "focused", - Not a real Anthropic API parameter
+        // ❌ REMOVED: analysis_mode: "efficient" - Not a real Anthropic API parameter
+        
+        // ✅ ADDED: Real Claude 4 thinking parameter (minimum budget)
+        thinking: {
+            type: "enabled",
+            budget_tokens: 1024  // Minimum allowed budget
+        }
     }
 };
 
