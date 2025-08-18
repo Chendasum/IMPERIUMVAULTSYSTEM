@@ -946,6 +946,7 @@ async function logCommandUsage(chatId, command, executionTime, successful = true
     }
 }
 
+// ✅ KEEP THIS VERSION (the simpler one):
 async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
     try {
         console.log(`🔌 API: ${apiProvider}/${endpoint} | ${successful ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | Cost: $${costEstimate}`);
