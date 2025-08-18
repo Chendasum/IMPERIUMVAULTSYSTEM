@@ -644,7 +644,7 @@ async function handleDualAIConversation(chatId, text, sessionId) {
     }
 }
 
-// 🧠 SIMPLIFIED: Build Conversation Context with Memory
+// 🧠 ENHANCED: Build Conversation Context with Memory - WITH DEBUG LOGGING
 async function buildConversationContextWithMemory(chatId, currentText) {
     const context = {
         conversationHistory: [],
@@ -665,6 +665,16 @@ async function buildConversationContextWithMemory(chatId, currentText) {
         // Get persistent memories
         context.persistentMemory = await getPersistentMemoryDB(chatId);
         console.log(`🧠 Retrieved ${context.persistentMemory.length} memories`);
+        
+        // 🔧 DEBUG: Log what memories we actually have
+        if (context.persistentMemory.length > 0) {
+            console.log('🔍 CURRENT MEMORIES FOR USER:');
+            context.persistentMemory.slice(0, 5).forEach((mem, i) => {
+                console.log(`  ${i + 1}. ${mem.fact}`);
+            });
+        } else {
+            console.log('📝 NO MEMORIES FOUND FOR THIS USER');
+        }
     } catch (error) {
         console.log('⚠️ Could not retrieve persistent memory:', error.message);
     }
@@ -674,6 +684,12 @@ async function buildConversationContextWithMemory(chatId, currentText) {
         context.memoryContext = buildMemoryContextString(context.conversationHistory, context.persistentMemory);
         context.memoryAvailable = true;
         console.log(`✅ Memory context built (${context.memoryContext.length} chars)`);
+        
+        // 🔧 DEBUG: Show what context is being sent to AI
+        console.log('🧠 MEMORY CONTEXT BEING SENT TO AI:');
+        console.log(context.memoryContext.substring(0, 300) + '...');
+    } else {
+        console.log('📝 No memory context available - will not send any memory to AI');
     }
     
     return context;
