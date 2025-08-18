@@ -261,7 +261,7 @@ async function processImageMessage(bot, fileId, chatId, caption = null) {
                         ]
                     }
                 ],
-                max_completion_tokens: 2000,
+                max_tokens: 2000,
                 temperature: 0.7,
                 top_p: 0.95
             });
@@ -297,7 +297,7 @@ async function processImageMessage(bot, fileId, chatId, caption = null) {
                         ]
                     }
                 ],
-                max_completion_tokens: 2000,
+                max_tokens: 2000,
                 temperature: 0.7
             });
             
@@ -618,7 +618,7 @@ Provide content description to enable optimal strategic intelligence extraction 
         
         const startTime = Date.now();
         const analysis = await getGptAnalysis(strategicPrompt, {
-            max_completion_tokens: 1200,
+            max_tokens: 1200,
             temperature: 0.7,
             model: "gpt-5"
         });
@@ -960,7 +960,7 @@ ${content}
 **Apply GPT-5's enhanced reasoning capabilities for maximum intelligence extraction.**`;
         
         const analysis = await getGptAnalysis(prompt, { 
-            max_completion_tokens: 2000,
+            max_tokens: 2000,
             temperature: 0.6,
             model: "gpt-5"
         });
@@ -1011,7 +1011,7 @@ ${content}
         // Execute dual analysis in parallel
         const [gptResult, claudeResult] = await Promise.allSettled([
             getGptAnalysis(basePrompt, { 
-                max_completion_tokens: 1200,
+                max_tokens: 1200,
                 temperature: 0.6,
                 model: "gpt-5"
             }),
@@ -1055,7 +1055,7 @@ ${content}
 Provide concise but comprehensive strategic synthesis.`;
                 
                 const synthesis = await getGptAnalysis(synthesisPrompt, {
-                    max_completion_tokens: 600,
+                    max_tokens: 600,
                     model: "gpt-5",
                     temperature: 0.5
                 });
@@ -1120,7 +1120,7 @@ ${content}
 **Apply GPT-5's enhanced analytical capabilities for thorough document intelligence extraction.**`;
         
         const analysis = await getGptAnalysis(prompt, { 
-            max_completion_tokens: 1500,
+            max_tokens: 1500,
             temperature: 0.6,
             model: "gpt-5"
         });
