@@ -51,7 +51,7 @@ async function testGPT5Capabilities() {
                     content: "Confirm you are GPT-5 and describe your enhanced capabilities compared to GPT-4."
                 }
             ],
-            max_completion_tokens: 500,  // 🔧 FIXED: Correct parameter name
+            max_tokens: 500,  // 🔧 FIXED: Correct parameter name
             temperature: 0.3,
             reasoning_effort: "medium",   // 🔧 ADDED: GPT-5 parameter
             verbosity: "balanced"         // 🔧 ADDED: GPT-5 parameter
@@ -73,7 +73,7 @@ async function testGPT5Capabilities() {
                     content: "Calculate the optimal portfolio allocation using Modern Portfolio Theory for 3 assets with expected returns [8%, 12%, 15%], standard deviations [10%, 15%, 20%], and correlation matrix [[1, 0.3, 0.1], [0.3, 1, 0.4], [0.1, 0.4, 1]]. Show detailed mathematical reasoning."
                 }
             ],
-            max_completion_tokens: 2000,  // 🔧 FIXED: Correct parameter name
+            max_tokens: 2000,  // 🔧 FIXED: Correct parameter name
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP,
             reasoning_effort: "high",      // 🔧 ADDED: GPT-5 parameter
             verbosity: "detailed"          // 🔧 ADDED: GPT-5 parameter
@@ -89,7 +89,7 @@ async function testGPT5Capabilities() {
             multimodal: true,
             codeGeneration: true,
             contextWindow: GPT5_CONFIG.ENHANCED_CONTEXT_WINDOW,
-            max_completion_tokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
+            max_tokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
             testResponse: basicTest.choices[0].message.content,
             reasoningQuality: reasoningTest.choices[0].message.content.length > 1000
         };
@@ -152,7 +152,7 @@ function analyzeQueryForGPT5(prompt) {
     // Determine optimal configuration
     let config = {
         type: 'general',
-        max_completion_tokens: 1500,
+        max_tokens: 1500,
         temperature: GPT5_CONFIG.ENHANCED_REASONING_TEMP,
         useEnhancedReasoning: false,
         useLargeContext: false,
@@ -164,7 +164,7 @@ function analyzeQueryForGPT5(prompt) {
     if (complexReasoningPatterns.some(pattern => pattern.test(message))) {
         config = {
             type: 'complex_reasoning',
-            max_completion_tokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
+            max_tokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
             temperature: GPT5_CONFIG.ENHANCED_REASONING_TEMP,
             useEnhancedReasoning: true,
             useLargeContext: false,
@@ -175,7 +175,7 @@ function analyzeQueryForGPT5(prompt) {
     } else if (largeContextPatterns.some(pattern => pattern.test(message))) {
         config = {
             type: 'large_context',
-            max_completion_tokens: 4000,
+            max_tokens: 4000,
             temperature: 0.6,
             useEnhancedReasoning: true,
             useLargeContext: true,
@@ -186,7 +186,7 @@ function analyzeQueryForGPT5(prompt) {
     } else if (financialPatterns.some(pattern => pattern.test(message))) {
         config = {
             type: 'financial_analysis',
-            max_completion_tokens: 3000,
+            max_tokens: 3000,
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP,
             useEnhancedReasoning: true,
             useLargeContext: false,
@@ -276,7 +276,7 @@ async function getGPT5Analysis(prompt, options = {}) {
                 }
             ],
             temperature: options.temperature || queryConfig.temperature,
-            max_completion_tokens: options.max_completion_tokens || queryConfig.max_completion_tokens,  // 🔧 FIXED: Correct parameter
+            max_tokens: options.max_tokens || queryConfig.max_tokens,  // 🔧 FIXED: Correct parameter
             top_p: options.top_p || 0.95,
             frequency_penalty: options.frequency_penalty || 0,
             presence_penalty: options.presence_penalty || 0
@@ -360,7 +360,7 @@ async function getEnhancedMarketAnalysis(query, marketData = null, options = {})
         return await getGPT5Analysis(enhancedQuery, {
             ...options,
             context: "Advanced financial market analysis using institutional-grade methodologies",
-            max_completion_tokens: 4000,
+            max_tokens: 4000,
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP
         });
         
@@ -404,7 +404,7 @@ async function getEnhancedCambodiaAnalysis(dealQuery, dealData = null, options =
         return await getGPT5Analysis(enhancedQuery, {
             ...options,
             context: "Specialized Cambodia real estate and lending market expertise with institutional risk management",
-            max_completion_tokens: 3500,
+            max_tokens: 3500,
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP
         });
         
@@ -446,7 +446,7 @@ async function getEnhancedVisionAnalysis(base64Image, prompt, options = {}) {
                     ]
                 }
             ],
-            max_completion_tokens: options.max_completion_tokens || 3000,  // 🔧 FIXED: Correct parameter
+            max_tokens: options.max_tokens || 3000,  // 🔧 FIXED: Correct parameter
             temperature: options.temperature || GPT5_CONFIG.MULTIMODAL_TEMP
         };
         
@@ -496,7 +496,7 @@ async function checkGPT5SystemHealth() {
                 await openai.chat.completions.create({
                     model: GPT5_CONFIG.FALLBACK_MODEL,
                     messages: [{ role: "user", content: "Test" }],
-                    max_completion_tokens: 10  // 🔧 FIXED: Correct parameter
+                    max_tokens: 10  // 🔧 FIXED: Correct parameter
                 });
                 health.fallbackWorking = true;
             } catch (fallbackError) {
@@ -569,7 +569,7 @@ module.exports = {
     },
     
     getQuickGptResponse: async (query, options = {}) => {
-        return await getGPT5Analysis(query, { ...options, max_completion_tokens: 800 });
+        return await getGPT5Analysis(query, { ...options, max_tokens: 800 });
     },
     
     getStrategicAnalysis: async (query, options = {}) => {
@@ -596,7 +596,7 @@ module.exports = {
             const response = await openai.chat.completions.create({
                 model: GPT5_CONFIG.FALLBACK_MODEL,
                 messages: [{ role: "user", content: "Test connection" }],
-                max_completion_tokens: 10
+                max_tokens: 10
             });
             return { success: true, result: response.choices[0]?.message?.content };
         } catch (error) {
