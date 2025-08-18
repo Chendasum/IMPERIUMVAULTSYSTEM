@@ -5474,7 +5474,7 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
         console.log("⚠️ Running with limited database functionality");
     }
     
-    // 🔧 SIMPLIFIED: Force polling mode for better reliability
+// 🔧 SIMPLIFIED: Force polling mode for better reliability
     console.log("🤖 Initializing Telegram bot in POLLING MODE...");
     
     let botInitialized = false;
@@ -5507,7 +5507,117 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
         }
     }
     
+    // 🤖 ADD MESSAGE HANDLERS HERE - RIGHT AFTER BOT INITIALIZATION
     if (botInitialized) {
+        console.log("🔧 Setting up Telegram message handlers...");
+        
+        // Handle text messages
+        bot.on('message', async (msg) => {
+            const chatId = msg.chat.id;
+            const text = msg.text;
+            
+            // Skip non-text messages
+            if (!text) return;
+            
+            try {
+                console.log(`📨 Message received from ${chatId}: "${text}"`);
+                
+                // Check if user is authorized
+                if (!isAuthorizedUser(chatId)) {
+                    await bot.sendMessage(chatId, 
+                        `🚫 **Access Denied**\n\n` +
+                        `This is a private AI system. Contact the administrator for access.\n\n` +
+                        `**Your Chat ID:** ${chatId}`
+                    );
+                    return;
+                }
+                
+                // Start user session
+                const sessionId = await startUserSession(chatId, 'TELEGRAM_MESSAGE');
+                
+                // Process the message with your DIRECT dual AI system
+                await executeCommandWithLogging(chatId, text, sessionId);
+                
+                // End session
+                await endUserSession(sessionId, 1, Date.now());
+                
+            } catch (error) {
+                console.error(`❌ Message processing error for ${chatId}:`, error.message);
+                
+                // Send error response to user
+                try {
+                    await bot.sendMessage(chatId, 
+                        "❌ I encountered an error processing your message. Please try again."
+                    );
+                } catch (sendError) {
+                    console.error("❌ Failed to send error message:", sendError.message);
+                }
+            }
+        });
+        
+        // Handle voice messages
+        bot.on('voice', async (msg) => {
+            const chatId = msg.chat.id;
+            
+            try {
+                console.log(`🎤 Voice message received from ${chatId}`);
+                
+                if (!isAuthorizedUser(chatId)) {
+                    await bot.sendMessage(chatId, "🚫 Access denied. Contact administrator.");
+                    return;
+                }
+                
+                const sessionId = await startUserSession(chatId, 'VOICE_MESSAGE');
+                await handleVoiceMessage(msg, chatId, sessionId);
+                await endUserSession(sessionId, 1, Date.now());
+                
+            } catch (error) {
+                console.error(`❌ Voice processing error for ${chatId}:`, error.message);
+                await bot.sendMessage(chatId, "❌ Voice processing failed. Please try again.").catch(console.error);
+            }
+        });
+        
+        // Handle document messages
+        bot.on('document', async (msg) => {
+            const chatId = msg.chat.id;
+            
+            try {
+                console.log(`📄 Document received from ${chatId}: ${msg.document.file_name}`);
+                
+                if (!isAuthorizedUser(chatId)) {
+                    await bot.sendMessage(chatId, "🚫 Access denied. Contact administrator.");
+                    return;
+                }
+                
+                const sessionId = await startUserSession(chatId, 'DOCUMENT_MESSAGE');
+                await handleDocumentMessage(msg, chatId, sessionId);
+                await endUserSession(sessionId, 1, Date.now());
+                
+            } catch (error) {
+                console.error(`❌ Document processing error for ${chatId}:`, error.message);
+                await bot.sendMessage(chatId, "❌ Document processing failed. Please try again.").catch(console.error);
+            }
+        });
+        
+        // Handle bot polling errors
+        bot.on('polling_error', (error) => {
+            console.error('🚨 Telegram polling error:', error.message);
+        });
+        
+        // Handle webhook errors
+        bot.on('webhook_error', (error) => {
+            console.error('🚨 Telegram webhook error:', error.message);
+        });
+        
+        // Simple test handler
+        bot.onText(/\/test/, (msg) => {
+            const chatId = msg.chat.id;
+            console.log(`🧪 Test command received from ${chatId}`);
+            bot.sendMessage(chatId, "✅ Bot is working! Message handlers are active.");
+        });
+        
+        console.log("✅ Telegram message handlers configured successfully");
+        
         console.log("🎯 Bot is ready to receive messages!");
         console.log("💡 Test with: /start or /wealth");
         console.log("📱 Bot should respond immediately now");
