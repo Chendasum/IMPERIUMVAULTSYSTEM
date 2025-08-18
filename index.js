@@ -96,17 +96,17 @@ const {
     saveTrainingDocumentDB,
     getTrainingDocumentsDB,
     
-    // Ray Dalio enhanced functions
-    saveRegimeData,
-    savePortfolioAllocation,
-    saveRiskAssessment,
-    saveRegimePerformance,
-    savePositionSizing,
-    saveMarketSignal,
-    saveDailyObservation,
-    logCommandUsage,
-    getCurrentRegime,
-    getLatestRiskAssessment,
+// Ray Dalio enhanced functions
+saveRegimeData,
+savePortfolioAllocation,
+saveRiskAssessment,
+saveRegimePerformance,
+savePositionSizing,
+saveMarketSignal,
+saveDailyObservation,
+// logCommandUsage,       // ← COMMENTED OUT
+getCurrentRegime,
+getLatestRiskAssessment,
     
     // Cambodia fund functions
     saveCambodiaDeal,
