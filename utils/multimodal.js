@@ -898,7 +898,7 @@ ${contentEnd ? `\n**DOCUMENT CONTENT (ENDING):**\n${contentEnd}` : ''}
 **Execute institutional-grade document intelligence analysis with commander authority.**`;
         
         const analysis = await getClaudeAnalysis(prompt, { 
-            maxTokens: 2500,
+            max_tokens: 2500,
             temperature: 0.6 
         });
         
@@ -1016,7 +1016,7 @@ ${content}
                 model: "gpt-5"
             }),
             getClaudeAnalysis(basePrompt, { 
-                maxTokens: 1200,
+                max_tokens: 1200,
                 temperature: 0.6 
             })
         ]);
