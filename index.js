@@ -451,7 +451,7 @@ async function executeClaudeForLongQuestions(text, context) {
             
         // 🔧 FIXED: Use the correct Claude function
         const response = await getClaudeAnalysis(enhancedPrompt, {
-            max_completion_tokens: 2000,
+            max_tokens: 2000,
             temperature: 0.7
         });
         
@@ -474,7 +474,7 @@ async function executeClaudeAnalysis(text, context, intel) {
             `${context.memoryContext}\n\nUser: ${text}` : text;
             
         const response = await getClaudeAnalysis(enhancedPrompt, {
-            max_completion_tokens: 1500,
+            max_tokens: 1500,
             temperature: 0.7
         });
         
@@ -2148,7 +2148,7 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
                     const summary = content.substring(0, 8000);
                     const prompt = `Analyze this document (showing first part due to length):\n\n${summary}\n\n[Document truncated - ${content.length} total characters]\n\nProvide comprehensive analysis covering:\n1. Document type and purpose\n2. Key topics and main themes\n3. Important insights and findings\n4. Structure and organization\n5. Data/statistics if present\n6. Recommendations or conclusions\n7. Overall assessment and significance`;
                     
-                    analysis = await getClaudeAnalysis(prompt, { max_completion_tokens: 1500 });
+                    analysis = await getClaudeAnalysis(prompt, { max_tokens: 1500 });
                     analysis = `**Claude Opus 4.1 Analysis** (Large Document)\n\n${analysis}`;
                     
                 } else if (content.length > 6000) {
