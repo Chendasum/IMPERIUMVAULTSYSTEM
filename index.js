@@ -5457,7 +5457,7 @@ async function checkSystemHealth() {
     }
 }
 
-// 🚀 SINGLE SERVER STARTUP WITH PROPER BOT INITIALIZATION - FIXED
+// 🚀 FIXED SERVER STARTUP WITH PROPER BOT INITIALIZATION
 const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log("🚀 Enhanced AI Assistant v4.0 - WEALTH EMPIRE starting...");
     console.log(`✅ Server running on port ${PORT}`);
@@ -5474,74 +5474,54 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
         console.log("⚠️ Running with limited database functionality");
     }
     
-    // 🔧 FIXED: Single bot initialization with proper environment detection
-    console.log("🤖 Initializing Telegram bot...");
-    
-    const isProduction = process.env.NODE_ENV === 'production' || 
-                        process.env.RAILWAY_ENVIRONMENT === 'production' ||
-                        process.env.PORT;
+    // 🔧 SIMPLIFIED: Force polling mode for better reliability
+    console.log("🤖 Initializing Telegram bot in POLLING MODE...");
     
     let botInitialized = false;
     
-    if (isProduction) {
-        // Production: Try webhook first, fallback to polling
-        console.log("🚀 Production environment - setting up webhook...");
-        const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
+    try {
+        // Always delete webhook first
+        await bot.deleteWebHook();
+        console.log("🗑️ Webhook deleted");
         
+        // Wait a moment for cleanup
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Start polling (more reliable than webhook)
+        await bot.startPolling({ restart: true });
+        console.log("✅ Bot polling started successfully");
+        botInitialized = true;
+        
+    } catch (botError) {
+        console.error("❌ Bot initialization failed:", botError.message);
+        
+        // Try one more time
         try {
-            await bot.deleteWebHook();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await bot.setWebHook(webhookUrl);
-            console.log("✅ Production webhook configured:", webhookUrl);
-            botInitialized = true;
-            
-        } catch (webhookError) {
-            console.error("❌ Webhook setup failed:", webhookError.message);
-            console.log("🔄 FALLBACK: Switching to polling...");
-            
-            try {
-                await bot.deleteWebHook();
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                await bot.startPolling({ restart: true });
-                console.log("✅ Bot polling started (fallback mode)");
-                botInitialized = true;
-            } catch (pollingError) {
-                console.error("❌ Polling fallback failed:", pollingError.message);
-            }
-        }
-        
-    } else {
-        // Development: Use polling
-        console.log("🛠️ Development environment - using polling...");
-        
-        try {
-            await bot.deleteWebHook();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log("🔄 Retrying bot initialization...");
+            await new Promise(resolve => setTimeout(resolve, 3000));
             await bot.startPolling({ restart: true });
-            console.log("✅ Development polling started");
+            console.log("✅ Bot polling started on retry");
             botInitialized = true;
-            
-        } catch (pollingError) {
-            console.error("❌ Development polling failed:", pollingError.message);
+        } catch (retryError) {
+            console.error("❌ Bot retry failed:", retryError.message);
         }
     }
     
     if (botInitialized) {
         console.log("🎯 Bot is ready to receive messages!");
         console.log("💡 Test with: /start or /wealth");
+        console.log("📱 Bot should respond immediately now");
     } else {
         console.error("🚨 CRITICAL: Bot initialization completely failed!");
         console.log("🔧 Check TELEGRAM_BOT_TOKEN and try restarting");
     }
     
     console.log("🚀 AI WEALTH EMPIRE startup complete!");
-    console.log(`📍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
-    console.log(`🤖 Bot Mode: ${isProduction ? 'Webhook (with polling fallback)' : 'Polling'}`);
+    console.log("🤖 Bot Mode: POLLING (Forced for reliability)");
     console.log("💰 Ready to build wealth with AI!");
-    
-}); // ✅ CRITICAL FIX: This closing brace was missing proper placement
+});
 
-// Enhanced error handling
+// 🔧 SINGLE SET OF ERROR HANDLERS (no duplicates)
 process.on('unhandledRejection', (reason, promise) => {
     if (reason && reason.message && reason.message.includes('409')) {
         console.error("🚨 Telegram Bot Conflict (409): Another instance running!");
@@ -5603,26 +5583,6 @@ const gracefulShutdown = async (signal) => {
 // Process event listeners
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-// Enhanced error handling
-process.on('unhandledRejection', (reason, promise) => {
-    if (reason && reason.message && reason.message.includes('409')) {
-        console.error("🚨 Telegram Bot Conflict (409): Another instance running!");
-        console.log("🔧 Solution: Stop other instances or wait 60 seconds");
-    } else {
-        console.error('❌ Unhandled Promise Rejection:', reason);
-    }
-});
-
-process.on('uncaughtException', (error) => {
-    if (error.message && error.message.includes('ETELEGRAM')) {
-        console.error("🚨 Telegram API Error:", error.message);
-    } else if (error.message && error.message.includes('EADDRINUSE')) {
-        console.error("🚨 Port already in use! Another server instance running.");
-    } else {
-        console.error('❌ Uncaught Exception:', error);
-    }
-});
 
 // Export for testing (this should be at the very end)
 module.exports = {
