@@ -178,9 +178,13 @@ async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime
 // 🔧 COMPLETELY FIXED: Main message handler
 bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
-    const text = msg.text;
+    const text = msg.text; // This should be a string
     
-    console.log(`📨 Message from ${chatId}: ${text?.substring(0, 50) || 'Media message'}`);
+    console.log(`📨 Message from ${chatId}:`, {
+        textType: typeof text,
+        textLength: text?.length || 0,
+        textValue: text?.substring(0, 50) || 'No text'
+    });
     
     // Security check
     if (!isAuthorizedUser(chatId)) {
@@ -219,38 +223,30 @@ bot.on("message", async (msg) => {
             return;
         }
 
-        // Handle text messages
-        if (!text || text.trim().length === 0) {
-            await sendSmartMessage(bot, chatId, "Please send text, voice messages, images, or documents.");
+        // 🔧 FIXED: Better text validation
+        if (!text || typeof text !== 'string' || text.trim().length === 0) {
+            await sendSmartMessage(bot, chatId, "Please send a text message.");
             return;
         }
 
-        // 🔧 FIXED: Route to proper dual AI handler
+        // 🔧 ROUTE TO FIXED DUAL AI HANDLER
         await handleDualAIConversation(chatId, text, sessionId);
 
     } catch (error) {
         console.error('❌ Message handling error:', error.message);
+        console.error('❌ Message debug:', {
+            msgType: typeof msg,
+            textType: typeof text,
+            hasText: !!text,
+            chatId: chatId
+        });
         
         const executionTime = Date.now() - startTime;
         
-        // Log error
-        await logCommandUsage(chatId, text || 'MEDIA', executionTime, false, error.message).catch(console.error);
-        
-        // Send user-friendly error message
         try {
-            if (error.message.includes('timeout') || error.message.includes('long')) {
-                await sendSmartMessage(bot, chatId, 
-                    `⏱️ Your request was too complex and timed out. Please try:\n\n• Breaking it into smaller questions\n• Using simpler language\n• Asking one thing at a time`
-                );
-            } else if (error.message.includes('token') || error.message.includes('limit')) {
-                await sendSmartMessage(bot, chatId, 
-                    `📝 Your message was too long. Please try:\n\n• Shorter questions (under 1000 words)\n• Splitting into multiple messages\n• Being more specific`
-                );
-            } else {
-                await sendSmartMessage(bot, chatId, 
-                    `❌ I encountered an error: ${error.message}\n\n🔧 Try: /status to check system health`
-                );
-            }
+            await sendSmartMessage(bot, chatId, 
+                `❌ I encountered an error processing your message. Please try again.\n\nError: ${error.message}`
+            );
         } catch (sendError) {
             console.error('Failed to send error message:', sendError.message);
         }
