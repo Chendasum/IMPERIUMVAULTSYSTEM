@@ -109,7 +109,7 @@ const CLAUDE_POWER_MODES = {
     STRATEGIC_MASTERY: {
         model: "claude-opus-4-1-20250805", // ✅ CORRECT: Official API name
         description: "Maximum strategic analysis and risk assessment",
-        max_completion_tokens: 4000,  // ✅ FIXED: Using correct parameter name for consistency
+        max_tokens: 4000,  // ✅ FIXED: Using correct parameter name for consistency
         temperature: 0.2,
         // ❌ REMOVED: reasoning_depth: "maximum", - Not a real Anthropic API parameter
         // ❌ REMOVED: analysis_mode: "comprehensive" - Not a real Anthropic API parameter
@@ -124,7 +124,7 @@ const CLAUDE_POWER_MODES = {
     STRATEGIC_STANDARD: {
         model: "claude-opus-4-1-20250805", // ✅ CORRECT: Official API name
         description: "Standard strategic analysis",
-        max_completion_tokens: 3000,  // ✅ FIXED: Using correct parameter name for consistency
+        max_tokens: 3000,  // ✅ FIXED: Using correct parameter name for consistency
         temperature: 0.4,
         // ❌ REMOVED: reasoning_depth: "standard", - Not a real Anthropic API parameter
         // ❌ REMOVED: analysis_mode: "balanced" - Not a real Anthropic API parameter
@@ -139,7 +139,7 @@ const CLAUDE_POWER_MODES = {
     STRATEGIC_EFFICIENT: {
         model: "claude-opus-4-1-20250805", // ✅ CORRECT: Official API name
         description: "Efficient strategic insights",
-        max_completion_tokens: 2000,  // ✅ FIXED: Using correct parameter name for consistency
+        max_tokens: 2000,  // ✅ FIXED: Using correct parameter name for consistency
         temperature: 0.5,
         // ❌ REMOVED: reasoning_depth: "focused", - Not a real Anthropic API parameter
         // ❌ REMOVED: analysis_mode: "efficient" - Not a real Anthropic API parameter
@@ -845,7 +845,7 @@ class UltimatePowerExecutor {
         }
         
         const claudeOptions = {
-            max_completion_tokens: modeConfig.max_completion_tokens,
+            max_tokens: modeConfig.max_tokens,
             temperature: modeConfig.temperature,
             model: modeConfig.model
         };
@@ -866,7 +866,7 @@ class UltimatePowerExecutor {
                 console.log('Attempting fallback to Claude efficient mode...');
                 const fallbackOptions = {
                     ...claudeOptions,
-                    max_completion_tokens: CLAUDE_POWER_MODES.STRATEGIC_EFFICIENT.max_completion_tokens,
+                    max_tokens: CLAUDE_POWER_MODES.STRATEGIC_EFFICIENT.max_tokens,
                     temperature: CLAUDE_POWER_MODES.STRATEGIC_EFFICIENT.temperature
                 };
                 return await claudeClient.getClaudeAnalysis(prompt, fallbackOptions);
