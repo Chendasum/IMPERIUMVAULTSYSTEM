@@ -3476,6 +3476,8 @@ app.use((req, res, next) => {
     next();
 });
 
+});
+
 // Simple rate limiting for webhook
 const webhookLimiter = new Map();
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
@@ -3743,15 +3745,12 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
             console.error("❌ Webhook setup failed:", webhookError.message);
             console.error("❌ Full webhook error:", webhookError);
             
-            // 🚨 NO POLLING FALLBACK IN PRODUCTION - Fix webhook instead
             console.error("🚨 CRITICAL: Webhook failed in production environment!");
             console.log("🔧 SOLUTIONS:");
             console.log("   1. Check if Railway domain is accessible");
             console.log("   2. Verify TELEGRAM_BOT_TOKEN is correct");
             console.log("   3. Ensure webhook endpoint responds to POST requests");
             console.log("   4. Check Railway logs for webhook errors");
-            console.log("   5. Try manual webhook setup:");
-            console.log(`      https://api.telegram.org/bot[TOKEN]/setWebhook?url=${webhookUrl}`);
             
             botInitialized = false;
             initializationMethod = 'webhook-failed';
@@ -3837,16 +3836,6 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
         console.log(`   Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
         console.log(`   Method attempted: ${initializationMethod}`);
         console.log("   Check Railway logs for detailed error messages");
-        
-        if (isProduction) {
-            console.log("\n🔧 Manual webhook setup commands:");
-            console.log("   1. Delete webhook:");
-            console.log("      curl https://api.telegram.org/bot[TOKEN]/deleteWebhook");
-            console.log("   2. Set webhook:");
-            console.log("      curl https://api.telegram.org/bot[TOKEN]/setWebhook?url=https://imperiumvaultsystem-production.up.railway.app/webhook");
-            console.log("   3. Check webhook:");
-            console.log("      curl https://api.telegram.org/bot[TOKEN]/getWebhookInfo");
-        }
     }
     
     console.log("\n🚀 AI WEALTH EMPIRE STARTUP COMPLETE!");
