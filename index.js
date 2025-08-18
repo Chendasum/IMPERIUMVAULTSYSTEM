@@ -35,12 +35,23 @@ const {
     generateLPReport 
 } = require("./utils/cambodiaLending");
 
-// 🔧 FIXED: Main dual AI system - cleaned up imports
+// 🎯 MAIN DUAL AI SYSTEM - Smart routing between GPT-5 and Claude Opus 4.1
 const { 
-    getUltimateStrategicAnalysis,
-    getUniversalAnalysis,
-    analyzeImageWithAI,
-    initializeUltimateStrategicPowerSystem
+    getUltimateStrategicAnalysis,  // 🏆 MAIN FUNCTION
+    getUniversalAnalysis,          // ✅ Still works (points to Ultimate)
+    getDualAnalysis,               // ✅ Still works (points to Ultimate)
+    routeQuery, 
+    checkDualSystemHealth, 
+    testMemoryIntegration, 
+    analyzeImageWithAI, 
+    getGPT5Analysis, 
+    getClaudeAnalysis, 
+    getMarketAnalysis, 
+    getCambodiaAnalysis, 
+    dualAIRouter, 
+    getPerformanceStats,
+    quickSetup,                    // 🚀 NEW: Quick setup function
+    initializeUltimateStrategicPowerSystem  // 🏆 NEW: Full system
 } = require("./utils/dualAISystem");
 
 // 🔧 FIXED: Telegram utilities
