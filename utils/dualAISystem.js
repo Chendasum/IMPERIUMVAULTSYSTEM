@@ -55,7 +55,7 @@ const GPT5_POWER_MODELS = {
     ULTIMATE: {
         model: "gpt-5",
         description: "Maximum GPT-5 intelligence for critical financial decisions",
-        max_completion_tokens: 4000,
+        max_tokens: 4000,
         temperature: 0.1,
         top_p: 0.95,
         presence_penalty: 0.1,
@@ -68,7 +68,7 @@ const GPT5_POWER_MODELS = {
     POWER: {
         model: "gpt-5-mini",
         description: "Balanced GPT-5 performance for general analysis",
-        max_completion_tokens: 3000,
+        max_tokens: 3000,
         temperature: 0.3,
         top_p: 0.9,
         presence_penalty: 0.05,
@@ -81,7 +81,7 @@ const GPT5_POWER_MODELS = {
     SPEED: {
         model: "gpt-5-nano",
         description: "High-speed GPT-5 for urgent market decisions",
-        max_completion_tokens: 2000,
+        max_tokens: 2000,
         temperature: 0.4,
         top_p: 0.85,
         presence_penalty: 0.0,
@@ -94,7 +94,7 @@ const GPT5_POWER_MODELS = {
     CHAT: {
         model: "gpt-5-chat",
         description: "Conversational GPT-5 for interactive analysis",
-        max_completion_tokens: 2500,
+        max_tokens: 2500,
         temperature: 0.5,
         top_p: 0.9,
         presence_penalty: 0.1,
@@ -117,7 +117,7 @@ const CLAUDE_POWER_MODES = {
         // ✅ ADDED: Real Claude 4 thinking parameter
         thinking: {
             type: "enabled",
-            budget_tokens: 3000  // Must be ≥1024 and less than max_completion_tokens
+            budget_tokens: 3000  // Must be ≥1024 and less than max_tokens
         }
     },
     
@@ -132,7 +132,7 @@ const CLAUDE_POWER_MODES = {
         // ✅ ADDED: Real Claude 4 thinking parameter
         thinking: {
             type: "enabled",
-            budget_tokens: 2000  // Must be ≥1024 and less than max_completion_tokens
+            budget_tokens: 2000  // Must be ≥1024 and less than max_tokens
         }
     },
     
@@ -798,7 +798,7 @@ class UltimatePowerExecutor {
         }
         
         const apiOptions = {
-            max_completion_tokens: modelConfig.max_completion_tokens,
+            max_tokens: modelConfig.max_tokens,
             model: modelConfig.model,
             temperature: modelConfig.temperature,
             top_p: modelConfig.top_p || 0.9,
@@ -824,7 +824,7 @@ class UltimatePowerExecutor {
                 const fallbackOptions = {
                     ...apiOptions,
                     model: 'gpt-5-nano',
-                    max_completion_tokens: Math.min(apiOptions.max_completion_tokens, 2000)
+                    max_tokens: Math.min(apiOptions.max_tokens, 2000)
                 };
                 return await openaiClient.getGptAnalysis(prompt, fallbackOptions);
             }
@@ -1028,7 +1028,7 @@ Provide a concise but comprehensive synthesis that maximizes the unique strength
         
         try {
             return await openaiClient.getGptAnalysis(synthesisPrompt, {
-                max_completion_tokens: 1000,
+                max_tokens: 1000,
                 model: "gpt-5-mini", // Use efficient model for synthesis
                 temperature: 0.4,
                 verbosity: "medium"
@@ -1338,7 +1338,7 @@ class UltimateSystemHealthMonitor {
                 const testPrompt = "Health check: respond with 'OPERATIONAL' and current capabilities";
                 
                 const testResponse = await openaiClient.getGptAnalysis(testPrompt, {
-                    max_completion_tokens: 50,
+                    max_tokens: 50,
                     model: model,
                     temperature: 0.1
                 });
@@ -1397,7 +1397,7 @@ class UltimateSystemHealthMonitor {
             const testPrompt = "Health check: Provide a brief strategic assessment of system operational status with reasoning depth indicator";
             
             const testResponse = await claudeClient.getClaudeAnalysis(testPrompt, {
-                max_completion_tokens: 100,
+                max_tokens: 100,
                 temperature: 0.2
             });
             
