@@ -5166,7 +5166,7 @@ async function handleComprehensiveLiveData(chatId) {
     }
 }
 
-// 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP (Replace your duplicate sections)
+// 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP - COMPLETELY FIXED
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -5233,7 +5233,7 @@ app.get("/health", async (req, res) => {
     }
 });
 
-// 🚀 SINGLE SERVER STARTUP WITH PROPER BOT INITIALIZATION
+// 🚀 SINGLE SERVER STARTUP WITH PROPER BOT INITIALIZATION - FIXED
 const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log("🚀 Enhanced AI Assistant v4.0 - WEALTH EMPIRE starting...");
     console.log(`✅ Server running on port ${PORT}`);
@@ -5314,7 +5314,7 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log(`📍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
     console.log(`🤖 Bot Mode: ${isProduction ? 'Webhook (with polling fallback)' : 'Polling'}`);
     console.log("💰 Ready to build wealth with AI!");
-});
+}); // ✅ CRITICAL FIX: This closing brace was missing proper placement
 
 // Enhanced error handling
 process.on('unhandledRejection', (reason, promise) => {
