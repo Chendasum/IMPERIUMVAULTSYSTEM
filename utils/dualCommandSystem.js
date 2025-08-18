@@ -180,7 +180,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'gpt',
             reason: 'gpt-5 has superior vision capabilities',
             complexity: 'medium',
-            max_completion_tokens: 2000,
+            max_tokens: 2000,
             needsLiveData: false,
             memoryImportant: false
         };
@@ -192,7 +192,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'gpt',
             reason: 'Simple datetime query, quick GPT response',
             complexity: 'low',
-            max_completion_tokens: 200,
+            max_tokens: 200,
             needsLiveData: false,
             memoryImportant: false
         };
@@ -204,7 +204,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'gpt',
             reason: 'Casual conversation with memory context',
             complexity: 'low',
-            max_completion_tokens: 400,
+            max_tokens: 400,
             needsLiveData: false,
             memoryImportant: hasMemoryReference || hasMemoryContext
         };
@@ -216,7 +216,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'claude',
             reason: 'Economic regime analysis, Claude expertise',
             complexity: 'high',
-            max_completion_tokens: 2500,
+            max_tokens: 2500,
             needsLiveData: true,
             specialFunction: 'regime',
             memoryImportant: true
@@ -229,7 +229,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'claude',
             reason: 'Market anomaly detection, Claude analytical strength',
             complexity: 'high',
-            max_completion_tokens: 2000,
+            max_tokens: 2000,
             needsLiveData: true,
             specialFunction: 'anomaly',
             memoryImportant: true
@@ -242,7 +242,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'claude',
             reason: 'Portfolio optimization with memory context',
             complexity: 'high',
-            max_completion_tokens: 2500,
+            max_tokens: 2500,
             needsLiveData: true,
             specialFunction: 'portfolio',
             memoryImportant: true
@@ -255,7 +255,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'claude',
             reason: 'Cambodia expertise with persistent memory',
             complexity: 'medium',
-            max_completion_tokens: 2000,
+            max_tokens: 2000,
             needsLiveData: true,
             specialFunction: 'cambodia',
             memoryImportant: true
@@ -268,7 +268,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'gpt',
             reason: 'Market analysis with live data and memory',
             complexity: 'medium',
-            max_completion_tokens: 1500,
+            max_tokens: 1500,
             needsLiveData: true,
             memoryImportant: hasMemoryReference
         };
@@ -280,7 +280,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'both',
             reason: 'Complex analysis benefits from dual AI with memory',
             complexity: 'high',
-            max_completion_tokens: 3000,
+            max_tokens: 3000,
             needsLiveData: true,
             memoryImportant: true
         };
@@ -292,7 +292,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         bestAI: 'gpt',
         reason: 'General conversation with memory awareness',
         complexity: 'medium',
-        max_completion_tokens: 1200,
+        max_tokens: 1200,
         needsLiveData: false,
         memoryImportant: hasMemoryReference || hasMemoryContext
     };
@@ -336,7 +336,7 @@ async function executeGptAnalysis(userMessage, queryAnalysis, context = null, me
         
         // Configure model options
         const modelOptions = {
-            max_completion_tokens: queryAnalysis.max_completion_tokens,
+            max_tokens: queryAnalysis.max_tokens,
             context: context,
             model: "gpt-5", // Use stable gpt-5 instead of gpt-5
             temperature: queryAnalysis.type === 'casual' ? 0.8 : 0.7
@@ -391,7 +391,7 @@ async function executeClaudeAnalysis(userMessage, queryAnalysis, context = null,
         }
         
         const options = {
-            max_completion_tokens: queryAnalysis.max_completion_tokens,
+            max_tokens: queryAnalysis.max_tokens,
             context: context,
             temperature: 0.7
         };
@@ -648,7 +648,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
             }
             
             const fallbackResponse = await getGptAnalysis(userMessage + fallbackContext, {
-                max_completion_tokens: 1200,
+                max_tokens: 1200,
                 temperature: 0.7,
                 model: "gpt-5"
             });
@@ -703,7 +703,7 @@ async function checkSystemHealth() {
         // Test gpt-5
         await executeGptAnalysis('Test', { 
             type: 'casual', 
-            max_completion_tokens: 50, 
+            max_tokens: 50, 
             memoryImportant: false 
         });
         health.gptAnalysis = true;
@@ -717,7 +717,7 @@ async function checkSystemHealth() {
         // Test Claude
         await executeClaudeAnalysis('Test', { 
             type: 'general', 
-            max_completion_tokens: 50, 
+            max_tokens: 50, 
             memoryImportant: false 
         });
         health.claudeAnalysis = true;
@@ -771,7 +771,7 @@ async function getMarketIntelligence(chatId = null) {
     try {
         return await executeClaudeAnalysis(query, {
             type: 'market',
-            max_completion_tokens: 1000,
+            max_tokens: 1000,
             needsLiveData: true,
             specialFunction: 'regime',
             memoryImportant: false
