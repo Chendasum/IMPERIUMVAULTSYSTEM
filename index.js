@@ -499,7 +499,7 @@ async function executeGPTAnalysis(text, context, intel) {
             
         // 🔧 FIXED: Use correct GPT-5 parameters
         const response = await getUniversalAnalysis(enhancedPrompt, {
-            max_tokens: 1500,  // 🔧 FIXED: Correct parameter name
+            max_completion_tokens: 1500,  // 🔧 FIXED: Correct parameter name
             temperature: 0.7,
             model: "gpt-5"
         });
@@ -566,7 +566,7 @@ async function handleFallbackResponseSafe(chatId, text) {
         
         // 🔧 FIXED: Use correct GPT-5 parameters
         return await getUniversalAnalysis(text + basicContext, {
-            max_tokens: 1000,  // 🔧 FIXED: Correct parameter name
+            max_completion_tokens: 1000,  // 🔧 FIXED: Correct parameter name
             temperature: 0.7,
             model: "gpt-5"
         });
@@ -1290,7 +1290,7 @@ async function performManualMemoryTest(chatId) {
         
         // Fallback: Test if we can at least call the basic functions
         try {
-            const basicTest = await getUniversalAnalysis('test', { max_tokens: 10, model: 'gpt-5' });
+            const basicTest = await getUniversalAnalysis('test', { max_completion_tokens: 10, model: 'gpt-5' });
             tests.dualAISystem = !!basicTest;
             console.log(`✅ Basic AI test: ${tests.dualAISystem ? 'PASS' : 'FAIL'} (fallback)`);
         } catch (basicError) {
@@ -1789,7 +1789,7 @@ async function handleVoiceMessage(msg, chatId, sessionId) {
                 const fallbackAnalysis = await getUniversalAnalysis(
                     `Voice message transcription: "${transcribedText}"\n\nPlease respond naturally to this voice message.`, 
                     {
-                        max_tokens: 1200,
+                        max_completion_tokens: 1200,
                         temperature: 0.7,
                         model: "gpt-5"
                     }
@@ -2182,7 +2182,7 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
                     const prompt = `Analyze this document in detail:\n\n${content}\n\nProvide comprehensive analysis covering:\n1. Document summary and purpose\n2. Key points and main themes\n3. Important insights and findings\n4. Structure and organization\n5. Data, statistics, or evidence presented\n6. Conclusions and recommendations\n7. Strategic implications or actionable items`;
                     
                     analysis = await getUniversalAnalysis(prompt, { 
-                        max_tokens: 1200,  // 🔧 FIXED: Correct parameter name
+                        max_completion_tokens: 1200,  // 🔧 FIXED: Correct parameter name
                         temperature: 0.7,
                         model: "gpt-5"
                     });
@@ -2195,7 +2195,7 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
                     // 🔧 FIXED: Get both analyses with proper error handling
                     const [gptAnalysis, claudeAnalysis] = await Promise.allSettled([
                         getUniversalAnalysis(prompt, { 
-                            max_tokens: 800,  // 🔧 FIXED: Correct parameter name
+                            max_completion_tokens: 800,  // 🔧 FIXED: Correct parameter name
                             temperature: 0.7,
                             model: "gpt-5"
                         }),
@@ -2223,7 +2223,7 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
                         
                         try {
                             const synthesis = await getUniversalAnalysis(synthesisPrompt, {
-                                max_tokens: 400,  // 🔧 FIXED: Correct parameter name
+                                max_completion_tokens: 400,  // 🔧 FIXED: Correct parameter name
                                 temperature: 0.6,
                                 model: "gpt-5"
                             });
@@ -2237,7 +2237,7 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
                     // 🔧 FALLBACK: If both AI analyses failed, use single AI
                     if (gptAnalysis.status === 'rejected' && claudeAnalysis.status === 'rejected') {
                         analysis = await getUniversalAnalysis(prompt, { 
-                            max_tokens: 1000,
+                            max_completion_tokens: 1000,
                             temperature: 0.7,
                             model: "gpt-5"
                         });
@@ -2551,7 +2551,7 @@ async function analyzeImageWithGPT5Vision(base64Image, prompt) {
                     ]
                 }
             ],
-            max_tokens: 1200,  // 🔧 FIXED: Correct parameter
+            max_completion_tokens: 1200,  // 🔧 FIXED: Correct parameter
             temperature: 0.7
         });
         
@@ -2583,7 +2583,7 @@ async function analyzeImageWithGPT5Vision(base64Image, prompt) {
                             ]
                         }
                     ],
-                    max_tokens: 1200,
+                    max_completion_tokens: 1200,
                     temperature: 0.7
                 });
                 
