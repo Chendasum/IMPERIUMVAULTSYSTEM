@@ -1023,7 +1023,7 @@ class UltimatePowerExecutor {
         }
         
         const apiOptions = {
-            max_tokens: modelConfig.maxTokens,
+            max_completion_tokens: modelConfig.maxTokens,
             model: modelConfig.model,
             temperature: modelConfig.temperature,
             top_p: modelConfig.top_p || 0.9,
@@ -1049,7 +1049,7 @@ class UltimatePowerExecutor {
                 const fallbackOptions = {
                     ...apiOptions,
                     model: 'gpt-5-nano',
-                    max_tokens: Math.min(apiOptions.max_tokens, 2000)
+                    max_completion_tokens: Math.min(apiOptions.max_completion_tokens, 2000)
                 };
                 return await openaiClient.getGptAnalysis(prompt, fallbackOptions);
             }
@@ -1253,7 +1253,7 @@ Provide a concise but comprehensive synthesis that maximizes the unique strength
         
         try {
             return await openaiClient.getGptAnalysis(synthesisPrompt, {
-                max_tokens: 1000,
+                max_completion_tokens: 1000,
                 model: "gpt-5-mini", // Use efficient model for synthesis
                 temperature: 0.4,
                 verbosity: "medium"
@@ -1563,7 +1563,7 @@ class UltimateSystemHealthMonitor {
                 const testPrompt = "Health check: respond with 'OPERATIONAL' and current capabilities";
                 
                 const testResponse = await openaiClient.getGptAnalysis(testPrompt, {
-                    max_tokens: 50,
+                    max_completion_tokens: 50,
                     model: model,
                     temperature: 0.1
                 });
