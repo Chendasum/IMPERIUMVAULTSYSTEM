@@ -2656,7 +2656,7 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
                     const prompt = `Analyze this document in detail:\n\n${content}\n\nProvide comprehensive analysis covering:\n1. Document summary and purpose\n2. Key points and main themes\n3. Important insights and findings\n4. Structure and organization\n5. Data, statistics, or evidence presented\n6. Conclusions and recommendations\n7. Strategic implications or actionable items`;
                     
                     analysis = await getUniversalAnalysis(prompt, { 
-                        max_completion_tokens: 1200,
+                        max_tokens: 1200,
                         temperature: 0.7,
                         model: "gpt-5"
                     });
@@ -2669,7 +2669,7 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
                     // Get both analyses
                     const [gptAnalysis, claudeAnalysis] = await Promise.allSettled([
                         getUniversalAnalysis(prompt, { 
-                            max_completion_tokens: 800,
+                            max_tokens: 800,
                             temperature: 0.7,
                             model: "gpt-5"
                         }),
@@ -2692,7 +2692,7 @@ async function handleDocumentMessage(msg, chatId, sessionId) {
                         const synthesisPrompt = `Based on these two AI analyses of the same document, provide a brief synthesis highlighting:\n1. Key agreements between analyses\n2. Any unique insights from each AI\n3. Overall consensus and conclusions\n\nGPT-5: ${gptAnalysis.value.substring(0, 400)}\n\nClaude: ${claudeAnalysis.value.substring(0, 400)}`;
                         
                         const synthesis = await getUniversalAnalysis(synthesisPrompt, {
-                            max_completion_tokens: 400,
+                            max_tokens: 400,
                             temperature: 0.6,
                             model: "gpt-5"
                         });
@@ -2815,7 +2815,7 @@ async function analyzeImageWithGPT5(base64Image, prompt) {
                     ]
                 }
             ],
-            max_completion_tokens: 1200,  // 🔧 FIXED: Correct parameter
+            max_tokens: 1200,  // 🔧 FIXED: Correct parameter
             temperature: 0.7
         });
         
@@ -2847,7 +2847,7 @@ async function analyzeImageWithGPT5(base64Image, prompt) {
                             ]
                         }
                     ],
-                    max_completion_tokens: 1200,
+                    max_tokens: 1200,
                     temperature: 0.7
                 });
                 
