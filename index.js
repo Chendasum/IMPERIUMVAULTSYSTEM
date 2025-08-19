@@ -247,7 +247,9 @@ async function testDatabaseFunctions() {
 // Initialize daily metrics
 async function initializeDailyMetrics() {
     try {
-        await updateSystemMetrics({ total_users: 0 });
+        await updateSystemMetrics({
+            total_users: 0    // ✅ Use a column that actually exists
+        });
         console.log("📊 Daily metrics initialized");
     } catch (error) {
         console.error("⚠️ Daily metrics initialization failed:", error.message);
