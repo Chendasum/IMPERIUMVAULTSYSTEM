@@ -5210,7 +5210,6 @@ async function handleComprehensiveLiveData(chatId) {
 
 // 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP - COMPLETELY FIXED
 const express = require("express");
-const TelegramBot = require('node-telegram-bot-api'); // Add this import if missing
 const app = express();
 const PORT = process.env.PORT || 8080;
 
