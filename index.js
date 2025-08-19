@@ -141,7 +141,7 @@ const { getTradingSummary, getAccountInfo } = require("./utils/metaTrader");
 // Import specialized AI clients (non-duplicate functions only)
 const { 
     getClaudeAnalysis: getClaudeAnalysisRaw,  // Rename to avoid conflict
-    getStrategicAnalysis: getClaudeStrategicAnalysis,
+    getClaudeStrategicAnalysis: getClaudeStrategicAnalysis,
     getRegimeAnalysis,
     getPortfolioAnalysis,
     getAnomalyAnalysis
@@ -149,7 +149,7 @@ const {
 
 const { 
     getGptAnalysis,  // Raw GPT function if needed
-    getStrategicAnalysis: getGptStrategicAnalysis
+    getGptStrategicAnalysis: getGptStrategicAnalysis
 } = require('./utils/openaiClient');
 
 const { 
