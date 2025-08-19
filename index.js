@@ -951,31 +951,15 @@ app.get('/health', async (req, res) => {
 console.log('✅ Piece 2/5 loaded: Webhook handler + Message processing + Authentication');
 console.log('🔧 Next: Copy Piece 3/5 for Dual AI system (GPT-5 + Claude Opus 4.1)');
 
-
-
-// 🔧 INDEX.JS - PIECE 4/5: MEMORY SYSTEM + POSTGRESQL OPERATIONS + CONTEXT
-// Memory extraction, conversation history, context building, PostgreSQL operations
-
-// ===================================================================
-// MEMORY EXTRACTION SYSTEM
-// ===================================================================
-
-/**
- * Advanced memory fact extraction with complete safety checks
- * @param {string} userMessage - User's message
- * @param {string} aiResponse - AI's response
- * @returns {string|null} - Extracted memory fact or null
- */
-function extractMemoryFactAdvanced(userMess// 🔧 INDEX.JS - PIECE 3/5: DUAL AI SYSTEM + GPT-5 + CLAUDE OPUS 4.1
+// 🔧 INDEX.JS - PIECE 3/5: DUAL AI SYSTEM + GPT-5 + CLAUDE OPUS 4.1
 // AI routing, OpenAI integration, Anthropic integration, conversation intelligence
-// FIXED: Enhanced error handling and debugging for Railway deployment
 
 // ===================================================================
-// AI API CLIENTS SETUP - ENHANCED WITH DEBUGGING
+// AI API CLIENTS SETUP
 // ===================================================================
 
 /**
- * OpenAI GPT-5 API client with enhanced debugging
+ * OpenAI GPT-5 API client
  * @param {string} prompt - User prompt
  * @param {object} options - API options
  * @returns {Promise<string>} - AI response
@@ -986,13 +970,6 @@ async function callOpenAIGPT5(prompt, options = {}) {
         if (!apiKey) {
             throw new Error('OPENAI_API_KEY not configured');
         }
-        
-        console.log('🔍 OpenAI Debug:', {
-            apiKeyPresent: !!apiKey,
-            apiKeyLength: apiKey ? apiKey.length : 0,
-            promptLength: prompt ? prompt.length : 0,
-            model: options.model || 'gpt-5'
-        });
         
         const safePrompt = safeTrim(prompt, 'openai_prompt');
         if (!safePrompt) {
@@ -1032,29 +1009,18 @@ async function callOpenAIGPT5(prompt, options = {}) {
             }
         );
         
-        console.log('✅ OpenAI Response Status:', response.status);
-        console.log('🔍 OpenAI Response Data Keys:', Object.keys(response.data || {}));
-        
         if (response.data && response.data.choices && response.data.choices[0]) {
             const aiResponse = safeString(response.data.choices[0].message.content);
             console.log(`✅ OpenAI GPT-5 response: ${aiResponse.length} characters`);
             return aiResponse;
         } else {
-            console.error('❌ Invalid OpenAI response structure:', response.data);
             throw new Error('Invalid response format from OpenAI');
         }
         
     } catch (error) {
-        console.error('❌ OpenAI GPT-5 Detailed Error:', {
-            message: error.message,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data,
-            headers: error.response?.headers,
-            url: error.config?.url
-        });
+        console.error('❌ OpenAI GPT-5 error:', error.message);
         
-        // Handle specific error types with detailed logging
+        // Handle specific error types
         if (error.response) {
             const status = error.response.status;
             const errorData = error.response.data;
@@ -1062,19 +1028,10 @@ async function callOpenAIGPT5(prompt, options = {}) {
             if (status === 429) {
                 throw new Error('OpenAI rate limit exceeded. Please try again in a moment.');
             } else if (status === 401) {
-                throw new Error('OpenAI API key invalid or expired. Check OPENAI_API_KEY in Railway Variables.');
+                throw new Error('OpenAI API key invalid or expired.');
             } else if (status === 400) {
                 throw new Error(`OpenAI request error: ${errorData.error?.message || 'Invalid request'}`);
-            } else if (status === 404) {
-                console.error('❌ OpenAI Model not found - GPT-5 may not be available yet');
-                throw new Error('GPT-5 model not found. The model may not be available yet.');
-            } else {
-                throw new Error(`OpenAI API error (${status}): ${errorData.error?.message || 'Unknown error'}`);
             }
-        }
-        
-        if (error.code === 'ECONNABORTED') {
-            throw new Error('OpenAI API timeout. Please try again.');
         }
         
         throw new Error(`OpenAI API failed: ${error.message}`);
@@ -1082,7 +1039,7 @@ async function callOpenAIGPT5(prompt, options = {}) {
 }
 
 /**
- * Anthropic Claude Opus 4.1 API client with enhanced debugging
+ * Anthropic Claude Opus 4.1 API client
  * @param {string} prompt - User prompt
  * @param {object} options - API options
  * @returns {Promise<string>} - AI response
@@ -1093,13 +1050,6 @@ async function callClaudeOpus41(prompt, options = {}) {
         if (!apiKey) {
             throw new Error('ANTHROPIC_API_KEY not configured');
         }
-        
-        console.log('🔍 Claude Debug:', {
-            apiKeyPresent: !!apiKey,
-            apiKeyLength: apiKey ? apiKey.length : 0,
-            promptLength: prompt ? prompt.length : 0,
-            model: options.model || 'claude-opus-4-1@20250805'
-        });
         
         const safePrompt = safeTrim(prompt, 'claude_prompt');
         if (!safePrompt) {
@@ -1134,29 +1084,18 @@ async function callClaudeOpus41(prompt, options = {}) {
             }
         );
         
-        console.log('✅ Claude Response Status:', response.status);
-        console.log('🔍 Claude Response Data Keys:', Object.keys(response.data || {}));
-        
         if (response.data && response.data.content && response.data.content[0]) {
             const aiResponse = safeString(response.data.content[0].text);
             console.log(`✅ Claude Opus 4.1 response: ${aiResponse.length} characters`);
             return aiResponse;
         } else {
-            console.error('❌ Invalid Claude response structure:', response.data);
             throw new Error('Invalid response format from Claude');
         }
         
     } catch (error) {
-        console.error('❌ Claude Opus 4.1 Detailed Error:', {
-            message: error.message,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data,
-            headers: error.response?.headers,
-            url: error.config?.url
-        });
+        console.error('❌ Claude Opus 4.1 error:', error.message);
         
-        // Handle specific error types with detailed logging
+        // Handle specific error types
         if (error.response) {
             const status = error.response.status;
             const errorData = error.response.data;
@@ -1164,19 +1103,10 @@ async function callClaudeOpus41(prompt, options = {}) {
             if (status === 429) {
                 throw new Error('Claude rate limit exceeded. Please try again in a moment.');
             } else if (status === 401) {
-                throw new Error('Claude API key invalid or expired. Check ANTHROPIC_API_KEY in Railway Variables.');
+                throw new Error('Claude API key invalid or expired.');
             } else if (status === 400) {
                 throw new Error(`Claude request error: ${errorData.error?.message || 'Invalid request'}`);
-            } else if (status === 404) {
-                console.error('❌ Claude Model not found - Opus 4.1 may not be available yet');
-                throw new Error('Claude Opus 4.1 model not found. The model may not be available yet.');
-            } else {
-                throw new Error(`Claude API error (${status}): ${errorData.error?.message || 'Unknown error'}`);
             }
-        }
-        
-        if (error.code === 'ECONNABORTED') {
-            throw new Error('Claude API timeout. Please try again.');
         }
         
         throw new Error(`Claude API failed: ${error.message}`);
@@ -1383,7 +1313,7 @@ function buildEnhancedPrompt(userMessage, context = {}, analysis = {}) {
 }
 
 // ===================================================================
-// MAIN DUAL AI CONVERSATION HANDLER - ENHANCED DEBUGGING
+// MAIN DUAL AI CONVERSATION HANDLER
 // ===================================================================
 
 /**
@@ -1397,15 +1327,6 @@ async function handleTextMessage(chatId, text, sessionId) {
     
     try {
         console.log(`🤖 Processing text message from ${chatId}: ${safeSubstring(text, 0, 50, 'text_handler')}...`);
-        
-        // Enhanced debugging for API keys
-        console.log('🔍 Debug - Environment Check:', {
-            openaiKeyPresent: !!process.env.OPENAI_API_KEY,
-            claudeKeyPresent: !!process.env.ANTHROPIC_API_KEY,
-            textLength: text ? text.length : 0,
-            chatId: chatId,
-            sessionId: sessionId
-        });
         
         // Get conversation context (will be implemented in Piece 4)
         const context = await buildConversationContext(chatId, text);
@@ -1450,7 +1371,6 @@ async function handleTextMessage(chatId, text, sessionId) {
         const responseTime = Date.now() - startTime;
         const modelEmoji = modelUsed === 'claude-opus-4.1' ? '🧠' : '🤖';
         
-        console.log(`📤 Sending ${aiResponse.length} character response to user...`);
         await sendTelegramMessage(chatId, aiResponse);
         
         // Log successful conversation (will be implemented in Piece 4)
@@ -1469,20 +1389,19 @@ async function handleTextMessage(chatId, text, sessionId) {
         // Extract and save memories (will be implemented in Piece 4)
         await extractAndSaveMemories(chatId, text, aiResponse);
         
-        console.log(`✅ ${modelEmoji} ${modelUsed} completed successfully (${responseTime}ms)`);
+        console.log(`✅ ${modelEmoji} ${modelUsed} completed (${responseTime}ms)`);
         
     } catch (error) {
         console.error('❌ Text message handling failed:', error.message);
-        console.error('❌ Error stack:', error.stack);
         
-        // Try enhanced fallback response
+        // Try fallback response
         try {
-            const fallbackResponse = await handleEnhancedFallbackResponse(chatId, text, error);
+            const fallbackResponse = await handleFallbackResponse(chatId, text);
             await sendTelegramMessage(chatId, fallbackResponse);
         } catch (fallbackError) {
-            console.error('❌ Enhanced fallback also failed:', fallbackError.message);
+            console.error('❌ Fallback also failed:', fallbackError.message);
             await sendTelegramMessage(chatId, 
-                '🚨 **System Error**\n\nI\'m experiencing technical difficulties. Please try again in a moment.\n\n**Error:** API connectivity issues\n\n**Commands that work:**\n• `/status` - Check system health\n• `/help` - Get help information'
+                '🚨 **System Error**\n\nI\'m experiencing technical difficulties. Please try again in a moment.\n\nIf the problem persists, contact support.'
             );
         }
         
@@ -1492,121 +1411,43 @@ async function handleTextMessage(chatId, text, sessionId) {
 }
 
 /**
- * Enhanced fallback response with multiple model attempts
+ * Handle fallback response when primary AI fails
  * @param {number} chatId - Chat ID
  * @param {string} text - Original message text
- * @param {Error} originalError - The original error that occurred
  * @returns {Promise<string>} - Fallback response
  */
-async function handleEnhancedFallbackResponse(chatId, text, originalError) {
-    console.log('🔄 Attempting enhanced fallback response...');
-    console.log('🔍 Original error:', originalError.message);
-    
-    const fallbackPrompt = safeTrim(text, 'fallback_prompt');
-    
-    // Try GPT-5 first with simple prompt
+async function handleFallbackResponse(chatId, text) {
     try {
-        console.log('🔄 Fallback: Trying GPT-5 with simple prompt...');
+        console.log('🔄 Attempting fallback response...');
+        
+        // Try GPT-5 with minimal context as fallback
+        const fallbackPrompt = safeTrim(text, 'fallback_prompt');
         const options = {
-            systemPrompt: 'You are a helpful AI assistant. Respond naturally and helpfully.',
+            systemPrompt: 'You are a helpful AI assistant. The user had a technical issue, so provide a helpful response and suggest they try again.',
             maxTokens: 800,
             temperature: 0.5,
             timeout: 15000
         };
         
         const response = await callOpenAIGPT5(fallbackPrompt, options);
-        return `🔄 **Fallback Response (GPT-5)**\n\n${response}\n\n_Note: Primary system had a temporary issue but recovered._`;
+        return `🔄 **Fallback Response**\n\n${response}\n\n_Note: There was a temporary issue with the primary system. Everything should work normally now._`;
         
-    } catch (gptError) {
-        console.log('⚠️ GPT-5 fallback failed:', gptError.message);
-    }
-    
-    // Try Claude with simple prompt
-    try {
-        console.log('🔄 Fallback: Trying Claude Opus 4.1 with simple prompt...');
-        const options = {
-            systemPrompt: 'You are Claude, a helpful AI assistant. Respond naturally and helpfully.',
-            maxTokens: 800,
-            temperature: 0.5,
-            timeout: 15000
-        };
+    } catch (error) {
+        console.error('❌ Fallback response failed:', error.message);
         
-        const response = await callClaudeOpus41(fallbackPrompt, options);
-        return `🔄 **Fallback Response (Claude Opus 4.1)**\n\n${response}\n\n_Note: Primary system had a temporary issue but recovered._`;
-        
-    } catch (claudeError) {
-        console.log('⚠️ Claude fallback failed:', claudeError.message);
-    }
-    
-    // Final static fallback with error details
-    console.log('⚠️ All AI models failed - using detailed static response');
-    const textPreview = safeSubstring(text, 0, 100, 'final_fallback');
-    
-    let errorHint = '';
-    if (originalError.message.includes('API key')) {
-        errorHint = '\n\n**Likely Issue:** API keys need verification in Railway Variables tab';
-    } else if (originalError.message.includes('model not found')) {
-        errorHint = '\n\n**Likely Issue:** AI models may not be available yet or model names changed';
-    } else if (originalError.message.includes('timeout')) {
-        errorHint = '\n\n**Likely Issue:** Network timeout - try again in a moment';
-    }
-    
-    return `🤖 I apologize, but I'm experiencing technical difficulties with both AI models.
+        // Final fallback - static response
+        const textPreview = safeSubstring(text, 0, 100, 'final_fallback');
+        return `🤖 I apologize, but I'm experiencing technical difficulties processing your request.
 
 **Your message:** "${textPreview}${text.length > 100 ? '...' : ''}"
 
-**Error details:** ${originalError.message}${errorHint}
+**Please try:**
+• Asking a simpler question
+• Trying again in a moment
+• Contacting support if this persists
 
-**What you can try:**
-• Send a simpler message to test connectivity
-• Use \`/status\` to check system health
-• Try again in a few moments
-
-**System Info:**
-• OpenAI API: ${process.env.OPENAI_API_KEY ? 'Key configured' : 'Key missing'}
-• Claude API: ${process.env.ANTHROPIC_API_KEY ? 'Key configured' : 'Key missing'}
-
-The system will automatically recover once the APIs are accessible.`;
-}
-
-// ===================================================================
-// AI CONNECTIVITY TEST FUNCTION
-// ===================================================================
-
-/**
- * Test AI connectivity for debugging
- * @returns {Promise<object>} - Connectivity status
- */
-async function checkAIConnectivity() {
-    const status = { gpt5: false, claude: false, errors: {} };
-    
-    try {
-        console.log('🧪 Testing GPT-5 connectivity...');
-        const gptTest = await callOpenAIGPT5('Test', { 
-            maxTokens: 10, 
-            timeout: 10000 
-        });
-        status.gpt5 = true;
-        console.log('✅ GPT-5 connectivity: WORKING');
-    } catch (error) {
-        status.errors.gpt5 = error.message;
-        console.log('❌ GPT-5 connectivity: FAILED -', error.message);
+The system will automatically recover shortly.`;
     }
-    
-    try {
-        console.log('🧪 Testing Claude Opus 4.1 connectivity...');
-        const claudeTest = await callClaudeOpus41('Test', { 
-            maxTokens: 10, 
-            timeout: 10000 
-        });
-        status.claude = true;
-        console.log('✅ Claude Opus 4.1 connectivity: WORKING');
-    } catch (error) {
-        status.errors.claude = error.message;
-        console.log('❌ Claude Opus 4.1 connectivity: FAILED -', error.message);
-    }
-    
-    return status;
 }
 
 // ===================================================================
@@ -1653,9 +1494,23 @@ async function extractAndSaveMemories(chatId, userMessage, aiResponse) {
     return true;
 }
 
-console.log('✅ Piece 3/5 loaded: Enhanced Dual AI system + GPT-5 + Claude Opus 4.1');
-console.log('🔧 Enhanced debugging and error handling active');
-console.log('🔧 Next: Copy Piece 4/5 for Memory system + PostgreSQL operations');age, aiResponse) {
+console.log('✅ Piece 3/5 loaded: Dual AI system + GPT-5 + Claude Opus 4.1');
+console.log('🔧 Next: Copy Piece 4/5 for Memory system + PostgreSQL operations');
+
+// 🔧 INDEX.JS - PIECE 4/5: MEMORY SYSTEM + POSTGRESQL OPERATIONS + CONTEXT
+// Memory extraction, conversation history, context building, PostgreSQL operations
+
+// ===================================================================
+// MEMORY EXTRACTION SYSTEM
+// ===================================================================
+
+/**
+ * Advanced memory fact extraction with complete safety checks
+ * @param {string} userMessage - User's message
+ * @param {string} aiResponse - AI's response
+ * @returns {string|null} - Extracted memory fact or null
+ */
+function extractMemoryFactAdvanced(userMessage, aiResponse) {
     // Complete input validation
     if (!userMessage || typeof userMessage !== 'string' || 
         !aiResponse || typeof aiResponse !== 'string') {
