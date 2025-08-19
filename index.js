@@ -166,6 +166,9 @@ if (!telegramToken || !openaiKey) {
     process.exit(1);
 }
 
+// Initialize Telegram Bot
+const bot = new TelegramBot(telegramToken, { polling: false });
+
 // Initialize OpenAI
 const openai = new OpenAI({ 
     apiKey: openaiKey,
@@ -5215,12 +5218,6 @@ const PRODUCTION_URL = 'https://imperiumvaultsystem-production.up.railway.app';
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const BASE_URL = isDevelopment ? `http://localhost:${PORT}` : PRODUCTION_URL;
 
-// ✅ FIXED: Initialize bot WITHOUT polling (webhook only)
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { 
-    polling: false,  // ✅ NO polling for Railway
-    webHook: false   // ✅ Manual webhook setup
-});
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -5630,7 +5627,6 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 module.exports = {
     app,
     server,
-    setupTelegramWebhook, // ✅ Added webhook function export
     initializeEnhancedDatabase,
     connectionStats
 };
