@@ -5208,10 +5208,22 @@ async function handleComprehensiveLiveData(chatId) {
     }
 }
 
-// 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP (Replace your duplicate sections)
+// 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP - COMPLETELY FIXED
 const express = require("express");
+const TelegramBot = require('node-telegram-bot-api'); // Add this import if missing
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+// Production URL configuration for Railway
+const PRODUCTION_URL = 'https://imperiumvaultsystem-production.up.railway.app';
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const BASE_URL = isDevelopment ? `http://localhost:${PORT}` : PRODUCTION_URL;
+
+// ✅ FIXED: Initialize bot WITHOUT polling (webhook only)
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { 
+    polling: false,  // ✅ NO polling for Railway
+    webHook: false   // ✅ Manual webhook setup
+});
 
 // Middleware
 app.use(express.json());
@@ -5263,7 +5275,8 @@ app.get("/health", async (req, res) => {
             wealthSystem: {
                 modules: 10,
                 status: "active"
-            }
+            },
+            mode: "webhook-only" // ✅ Added to show webhook mode
         });
     } catch (error) {
         res.status(500).json({
@@ -5275,10 +5288,132 @@ app.get("/health", async (req, res) => {
     }
 });
 
-// 🚀 SINGLE SERVER STARTUP WITH PROPER BOT INITIALIZATION
+// 🔧 FIXED: Complete the checkSystemHealth function
+async function checkSystemHealth() {
+    try {
+        console.log("🔍 Checking system health...");
+        
+        const health = {
+            gptAnalysis: false,
+            claudeAnalysis: false,
+            contextBuilding: false,
+            memorySystem: false,
+            dateTimeSupport: false,
+            dualMode: false,
+            overallHealth: false
+        };
+        
+        // Test GPT-5 availability
+        try {
+            await getUniversalAnalysis('test', { maxTokens: 10 });
+            health.gptAnalysis = true;
+        } catch (error) {
+            console.log('GPT health check failed:', error.message);
+        }
+        
+        // Test Claude availability
+        try {
+            await getClaudeAnalysis('test', { maxTokens: 10 });
+            health.claudeAnalysis = true;
+        } catch (error) {
+            console.log('Claude health check failed:', error.message);
+        }
+        
+        // Test context building
+        try {
+            const context = await buildConversationContextWithMemory('test_user', 'test message');
+            health.contextBuilding = !!context;
+        } catch (error) {
+            console.log('Context building health check failed:', error.message);
+        }
+        
+        // Test memory system
+        try {
+            await getPersistentMemoryDB('test_user');
+            health.memorySystem = true;
+        } catch (error) {
+            console.log('Memory system health check failed:', error.message);
+        }
+        
+        // Test date/time support
+        try {
+            const cambodiaTime = getCurrentCambodiaDateTime();
+            health.dateTimeSupport = !!cambodiaTime;
+        } catch (error) {
+            console.log('DateTime health check failed:', error.message);
+        }
+        
+        // Test dual mode
+        health.dualMode = health.gptAnalysis && health.claudeAnalysis;
+        
+        // Overall health
+        const healthyComponents = Object.values(health).filter(Boolean).length;
+        health.overallHealth = healthyComponents >= 4; // At least 4 out of 6 components working
+        
+        console.log(`✅ System health check completed: ${healthyComponents}/6 components healthy`);
+        return health;
+        
+    } catch (error) {
+        console.error('❌ System health check failed:', error.message);
+        return {
+            gptAnalysis: false,
+            claudeAnalysis: false,
+            contextBuilding: false,
+            memorySystem: false,
+            dateTimeSupport: false,
+            dualMode: false,
+            overallHealth: false
+        };
+    }
+}
+
+// ✅ WEBHOOK SETUP FUNCTION
+async function setupTelegramWebhook() {
+    try {
+        const botToken = process.env.TELEGRAM_BOT_TOKEN;
+        if (!botToken) {
+            console.log('⚠️ TELEGRAM_BOT_TOKEN not set - webhook setup skipped');
+            return false;
+        }
+
+        const webhookUrl = `${BASE_URL}/webhook`;
+        
+        console.log(`🔗 Setting up Telegram webhook: ${webhookUrl}`);
+        
+        // Delete any existing webhook first
+        await bot.deleteWebHook();
+        console.log('🗑️ Existing webhook deleted');
+        
+        // Wait a moment for cleanup
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Set new webhook
+        const result = await bot.setWebHook(webhookUrl, {
+            allowed_updates: ['message', 'callback_query'],
+            drop_pending_updates: true,
+            secret_token: process.env.TELEGRAM_WEBHOOK_SECRET || undefined
+        });
+
+        if (result) {
+            console.log('✅ Telegram webhook set successfully');
+            console.log(`📡 Webhook URL: ${webhookUrl}`);
+            return true;
+        } else {
+            console.error('❌ Webhook setup failed');
+            return false;
+        }
+
+    } catch (error) {
+        console.error('❌ Webhook setup error:', error.message);
+        return false;
+    }
+}
+
+// 🚀 FIXED SERVER STARTUP WITH WEBHOOK-ONLY BOT INITIALIZATION
 const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log("🚀 Enhanced AI Assistant v4.0 - WEALTH EMPIRE starting...");
     console.log(`✅ Server running on port ${PORT}`);
+    console.log(`🌐 Public URL: ${BASE_URL}`);
     console.log("🤖 Models: gpt-5 + Claude Opus 4.1");
     console.log("💰 AI Wealth-Building System: 10 modules loaded");
     
@@ -5292,73 +5427,148 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
         console.log("⚠️ Running with limited database functionality");
     }
     
-    // 🔧 FIXED: Single bot initialization with proper environment detection
-    console.log("🤖 Initializing Telegram bot...");
-    
-    const isProduction = process.env.NODE_ENV === 'production' || 
-                        process.env.RAILWAY_ENVIRONMENT === 'production' ||
-                        process.env.PORT;
+    // ✅ FIXED: WEBHOOK-ONLY MODE (NO POLLING)
+    console.log("🤖 Initializing Telegram bot in WEBHOOK MODE...");
     
     let botInitialized = false;
     
-    if (isProduction) {
-        // Production: Try webhook first, fallback to polling
-        console.log("🚀 Production environment - setting up webhook...");
-        const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
+    try {
+        // Setup webhook for Railway
+        const webhookSet = await setupTelegramWebhook();
         
-        try {
-            await bot.deleteWebHook();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await bot.setWebHook(webhookUrl);
-            console.log("✅ Production webhook configured:", webhookUrl);
+        if (webhookSet) {
+            console.log("✅ Bot webhook configured successfully");
             botInitialized = true;
-            
-        } catch (webhookError) {
-            console.error("❌ Webhook setup failed:", webhookError.message);
-            console.log("🔄 FALLBACK: Switching to polling...");
-            
-            try {
-                await bot.deleteWebHook();
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                await bot.startPolling({ restart: true });
-                console.log("✅ Bot polling started (fallback mode)");
-                botInitialized = true;
-            } catch (pollingError) {
-                console.error("❌ Polling fallback failed:", pollingError.message);
-            }
+        } else {
+            console.error("❌ Webhook setup failed");
         }
         
-    } else {
-        // Development: Use polling
-        console.log("🛠️ Development environment - using polling...");
-        
-        try {
-            await bot.deleteWebHook();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await bot.startPolling({ restart: true });
-            console.log("✅ Development polling started");
-            botInitialized = true;
-            
-        } catch (pollingError) {
-            console.error("❌ Development polling failed:", pollingError.message);
-        }
+    } catch (botError) {
+        console.error("❌ Bot initialization failed:", botError.message);
     }
     
+    // 🤖 ADD MESSAGE HANDLERS HERE - SAME AS BEFORE
     if (botInitialized) {
+        console.log("🔧 Setting up Telegram message handlers...");
+        
+        // Handle text messages
+        bot.on('message', async (msg) => {
+            const chatId = msg.chat.id;
+            const text = msg.text;
+            
+            // Skip non-text messages
+            if (!text) return;
+            
+            try {
+                console.log(`📨 Message received from ${chatId}: "${text}"`);
+                
+                // Check if user is authorized
+                if (!isAuthorizedUser(chatId)) {
+                    await bot.sendMessage(chatId, 
+                        `🚫 **Access Denied**\n\n` +
+                        `This is a private AI system. Contact the administrator for access.\n\n` +
+                        `**Your Chat ID:** ${chatId}`
+                    );
+                    return;
+                }
+                
+                // Start user session
+                const sessionId = await startUserSession(chatId, 'TELEGRAM_MESSAGE');
+                
+                // Process the message with your DIRECT dual AI system
+                await executeCommandWithLogging(chatId, text, sessionId);
+                
+                // End session
+                await endUserSession(sessionId, 1, Date.now());
+                
+            } catch (error) {
+                console.error(`❌ Message processing error for ${chatId}:`, error.message);
+                
+                // Send error response to user
+                try {
+                    await bot.sendMessage(chatId, 
+                        "❌ I encountered an error processing your message. Please try again."
+                    );
+                } catch (sendError) {
+                    console.error("❌ Failed to send error message:", sendError.message);
+                }
+            }
+        });
+        
+        // Handle voice messages
+        bot.on('voice', async (msg) => {
+            const chatId = msg.chat.id;
+            
+            try {
+                console.log(`🎤 Voice message received from ${chatId}`);
+                
+                if (!isAuthorizedUser(chatId)) {
+                    await bot.sendMessage(chatId, "🚫 Access denied. Contact administrator.");
+                    return;
+                }
+                
+                const sessionId = await startUserSession(chatId, 'VOICE_MESSAGE');
+                await handleVoiceMessage(msg, chatId, sessionId);
+                await endUserSession(sessionId, 1, Date.now());
+                
+            } catch (error) {
+                console.error(`❌ Voice processing error for ${chatId}:`, error.message);
+                await bot.sendMessage(chatId, "❌ Voice processing failed. Please try again.").catch(console.error);
+            }
+        });
+        
+        // Handle document messages
+        bot.on('document', async (msg) => {
+            const chatId = msg.chat.id;
+            
+            try {
+                console.log(`📄 Document received from ${chatId}: ${msg.document.file_name}`);
+                
+                if (!isAuthorizedUser(chatId)) {
+                    await bot.sendMessage(chatId, "🚫 Access denied. Contact administrator.");
+                    return;
+                }
+                
+                const sessionId = await startUserSession(chatId, 'DOCUMENT_MESSAGE');
+                await handleDocumentMessage(msg, chatId, sessionId);
+                await endUserSession(sessionId, 1, Date.now());
+                
+            } catch (error) {
+                console.error(`❌ Document processing error for ${chatId}:`, error.message);
+                await bot.sendMessage(chatId, "❌ Document processing failed. Please try again.").catch(console.error);
+            }
+        });
+        
+        // ✅ REMOVED: bot.on('polling_error') - No polling in webhook mode
+        
+        // Handle webhook errors
+        bot.on('webhook_error', (error) => {
+            console.error('🚨 Telegram webhook error:', error.message);
+        });
+        
+        // Simple test handler
+        bot.onText(/\/test/, (msg) => {
+            const chatId = msg.chat.id;
+            console.log(`🧪 Test command received from ${chatId}`);
+            bot.sendMessage(chatId, "✅ Bot is working! Webhook mode active.");
+        });
+        
+        console.log("✅ Telegram message handlers configured successfully");
+        
         console.log("🎯 Bot is ready to receive messages!");
         console.log("💡 Test with: /start or /wealth");
+        console.log("📱 Bot should respond via webhook now");
     } else {
-        console.error("🚨 CRITICAL: Bot initialization completely failed!");
-        console.log("🔧 Check TELEGRAM_BOT_TOKEN and try restarting");
+        console.error("🚨 CRITICAL: Bot webhook setup completely failed!");
+        console.log("🔧 Check TELEGRAM_BOT_TOKEN and Railway deployment");
     }
     
     console.log("🚀 AI WEALTH EMPIRE startup complete!");
-    console.log(`📍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
-    console.log(`🤖 Bot Mode: ${isProduction ? 'Webhook (with polling fallback)' : 'Polling'}`);
+    console.log("🤖 Bot Mode: WEBHOOK-ONLY (Railway optimized)"); // ✅ Updated
     console.log("💰 Ready to build wealth with AI!");
 });
 
-// Enhanced error handling
+// 🔧 SINGLE SET OF ERROR HANDLERS (no duplicates)
 process.on('unhandledRejection', (reason, promise) => {
     if (reason && reason.message && reason.message.includes('409')) {
         console.error("🚨 Telegram Bot Conflict (409): Another instance running!");
@@ -5378,16 +5588,20 @@ process.on('uncaughtException', (error) => {
     }
 });
 
-// Graceful shutdown
+// ✅ FIXED: Graceful shutdown for webhook mode
 const gracefulShutdown = async (signal) => {
     console.log(`🛑 ${signal} received, performing graceful shutdown...`);
     
     try {
-        console.log('🤖 Stopping Telegram bot...');
-        await bot.stopPolling();
-        await bot.deleteWebHook();
-        console.log('✅ Bot stopped successfully');
+        console.log('🤖 Cleaning up Telegram webhook...');
         
+        // Delete webhook instead of stopping polling
+        if (bot && typeof bot.deleteWebHook === 'function') {
+            await bot.deleteWebHook().catch(console.error);
+            console.log('✅ Webhook cleaned up');
+        }
+        
+        // Update system metrics if function exists
         if (typeof updateSystemMetrics === 'function') {
             await updateSystemMetrics({
                 system_shutdown: 1,
@@ -5400,19 +5614,27 @@ const gracefulShutdown = async (signal) => {
         console.error('❌ Shutdown cleanup error:', error.message);
     }
     
-    server.close(() => {
+    // Close server gracefully
+    if (server && typeof server.close === 'function') {
+        server.close(() => {
+            console.log('✅ AI WEALTH EMPIRE shut down gracefully');
+            process.exit(0);
+        });
+    } else {
         console.log('✅ AI WEALTH EMPIRE shut down gracefully');
         process.exit(0);
-    });
+    }
 };
 
+// Process event listeners
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// Export for testing
+// Export for testing (this should be at the very end)
 module.exports = {
     app,
     server,
+    setupTelegramWebhook, // ✅ Added webhook function export
     initializeEnhancedDatabase,
     connectionStats
 };
