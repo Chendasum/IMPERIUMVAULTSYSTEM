@@ -166,9 +166,6 @@ if (!telegramToken || !openaiKey) {
     process.exit(1);
 }
 
-// Initialize Telegram Bot
-const bot = new TelegramBot(telegramToken, { polling: false });
-
 // Initialize OpenAI
 const openai = new OpenAI({ 
     apiKey: openaiKey,
