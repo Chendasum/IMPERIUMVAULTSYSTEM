@@ -5208,7 +5208,7 @@ async function handleComprehensiveLiveData(chatId) {
     }
 }
 
-// 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP (Replace your duplicate sections)
+// 🔧 SINGLE, CLEAN EXPRESS SERVER SETUP - WEBHOOK ONLY
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -5217,11 +5217,18 @@ const PORT = process.env.PORT || 8080;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Enhanced webhook endpoint
-app.post("/webhook", (req, res) => {
-    console.log("📨 Enhanced webhook received from Telegram");
+// Enhanced webhook endpoint with better validation
+app.post("/webhook", async (req, res) => {
+    console.log("📨 Webhook received from Telegram");
+    
+    // Validate request payload
+    if (!req.body || !req.body.update_id) {
+        console.error("❌ Invalid webhook payload");
+        return res.sendStatus(400);
+    }
+    
     try {
-        bot.processUpdate(req.body);
+        await bot.processUpdate(req.body);
         res.sendStatus(200);
     } catch (error) {
         console.error("❌ Webhook processing error:", error.message);
@@ -5263,24 +5270,53 @@ app.get("/health", async (req, res) => {
             wealthSystem: {
                 modules: 10,
                 status: "active"
-            }
+            },
+            botMode: "WEBHOOK ONLY"
         });
     } catch (error) {
         res.status(500).json({
             status: "error",
             version: "4.0 - WEALTH EMPIRE",
             error: error.message,
+            timestamp: new Date().toISOString(),
+            botMode: "WEBHOOK ONLY"
+        });
+    }
+});
+
+// Webhook status endpoint
+app.get("/webhook-status", async (req, res) => {
+    try {
+        const webhookInfo = await bot.getWebHookInfo();
+        res.status(200).json({
+            webhook: {
+                url: webhookInfo.url,
+                hasCustomCertificate: webhookInfo.has_custom_certificate,
+                pendingUpdateCount: webhookInfo.pending_update_count,
+                lastErrorDate: webhookInfo.last_error_date,
+                lastErrorMessage: webhookInfo.last_error_message,
+                maxConnections: webhookInfo.max_connections,
+                allowedUpdates: webhookInfo.allowed_updates
+            },
+            status: webhookInfo.url ? "active" : "inactive",
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: "Failed to get webhook info",
+            message: error.message,
             timestamp: new Date().toISOString()
         });
     }
 });
 
-// 🚀 SINGLE SERVER STARTUP WITH PROPER BOT INITIALIZATION
+// 🚀 WEBHOOK-ONLY SERVER STARTUP
 const server = app.listen(PORT, "0.0.0.0", async () => {
     console.log("🚀 Enhanced AI Assistant v4.0 - WEALTH EMPIRE starting...");
     console.log(`✅ Server running on port ${PORT}`);
     console.log("🤖 Models: gpt-5 + Claude Opus 4.1");
     console.log("💰 AI Wealth-Building System: 10 modules loaded");
+    console.log("🌐 Mode: WEBHOOK ONLY (No Polling Fallback)");
     
     // Initialize enhanced database
     try {
@@ -5292,122 +5328,170 @@ const server = app.listen(PORT, "0.0.0.0", async () => {
         console.log("⚠️ Running with limited database functionality");
     }
     
-    // 🔧 FIXED: Single bot initialization with proper environment detection
-    console.log("🤖 Initializing Telegram bot...");
+    // 🎯 WEBHOOK-ONLY BOT INITIALIZATION
+    console.log("🤖 Initializing Telegram bot with WEBHOOK ONLY...");
     
-    const isProduction = process.env.NODE_ENV === 'production' || 
-                        process.env.RAILWAY_ENVIRONMENT === 'production' ||
-                        process.env.PORT;
-    
+    const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
     let botInitialized = false;
     
-    if (isProduction) {
-        // Production: Try webhook first, fallback to polling
-        console.log("🚀 Production environment - setting up webhook...");
-        const webhookUrl = `https://imperiumvaultsystem-production.up.railway.app/webhook`;
+    try {
+        // Step 1: Clear any existing webhook/polling
+        console.log("🧹 Clearing existing webhook and stopping any polling...");
+        await bot.deleteWebHook();
         
-        try {
-            await bot.deleteWebHook();
+        // Wait to ensure cleanup is complete
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Step 2: Set up new webhook with configuration
+        console.log("🔗 Setting up webhook:", webhookUrl);
+        const webhookResult = await bot.setWebHook(webhookUrl, {
+            drop_pending_updates: true,        // Clear pending updates
+            max_connections: 40,               // Max simultaneous connections
+            allowed_updates: [                 // Specify update types
+                "message", 
+                "callback_query", 
+                "inline_query",
+                "edited_message"
+            ]
+        });
+        
+        if (webhookResult) {
+            console.log("✅ Webhook setup successful!");
+            
+            // Step 3: Verify webhook configuration
             await new Promise(resolve => setTimeout(resolve, 1000));
-            await bot.setWebHook(webhookUrl);
-            console.log("✅ Production webhook configured:", webhookUrl);
-            botInitialized = true;
+            const webhookInfo = await bot.getWebHookInfo();
             
-        } catch (webhookError) {
-            console.error("❌ Webhook setup failed:", webhookError.message);
-            console.log("🔄 FALLBACK: Switching to polling...");
+            console.log("📊 Webhook Information:");
+            console.log(`   📍 URL: ${webhookInfo.url}`);
+            console.log(`   🔗 Pending updates: ${webhookInfo.pending_update_count}`);
+            console.log(`   🌐 Max connections: ${webhookInfo.max_connections}`);
+            console.log(`   📋 Allowed updates: ${webhookInfo.allowed_updates?.join(', ') || 'all'}`);
             
-            try {
-                await bot.deleteWebHook();
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                await bot.startPolling({ restart: true });
-                console.log("✅ Bot polling started (fallback mode)");
-                botInitialized = true;
-            } catch (pollingError) {
-                console.error("❌ Polling fallback failed:", pollingError.message);
+            if (webhookInfo.last_error_date) {
+                console.log(`   ⚠️ Last error: ${webhookInfo.last_error_message} (${new Date(webhookInfo.last_error_date * 1000)})`);
+            } else {
+                console.log("   ✅ No webhook errors");
             }
-        }
-        
-    } else {
-        // Development: Use polling
-        console.log("🛠️ Development environment - using polling...");
-        
-        try {
-            await bot.deleteWebHook();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await bot.startPolling({ restart: true });
-            console.log("✅ Development polling started");
+            
             botInitialized = true;
             
-        } catch (pollingError) {
-            console.error("❌ Development polling failed:", pollingError.message);
+        } else {
+            throw new Error("Webhook setup returned false");
         }
+        
+    } catch (webhookError) {
+        console.error("❌ WEBHOOK SETUP FAILED:", webhookError.message);
+        console.error("🚨 CRITICAL: Bot will NOT work without webhook!");
+        console.log("\n🔧 Troubleshooting Steps:");
+        console.log("   1. Verify Railway deployment is accessible");
+        console.log("   2. Check TELEGRAM_BOT_TOKEN is correct");
+        console.log("   3. Ensure webhook URL is publicly accessible");
+        console.log("   4. Check Railway service logs for errors");
+        console.log("   5. Verify bot token has webhook permissions");
+        console.log(`   6. Test webhook URL: ${webhookUrl}`);
+        console.log("\n💡 Test your webhook:");
+        console.log(`   curl -X POST ${webhookUrl} -H "Content-Type: application/json" -d '{"test": true}'`);
+        
+        // Exit immediately if webhook fails (strict webhook-only mode)
+        console.error("\n🚨 Exiting due to webhook failure - WEBHOOK ONLY mode");
+        process.exit(1);
     }
     
     if (botInitialized) {
-        console.log("🎯 Bot is ready to receive messages!");
-        console.log("💡 Test with: /start or /wealth");
-    } else {
-        console.error("🚨 CRITICAL: Bot initialization completely failed!");
-        console.log("🔧 Check TELEGRAM_BOT_TOKEN and try restarting");
+        console.log("\n🎯 Bot is ready to receive messages via WEBHOOK!");
+        console.log("💡 Test commands: /start, /wealth, /help");
+        console.log("🌐 Mode: WEBHOOK ONLY");
+        console.log("📱 Webhook endpoint: /webhook");
+        console.log("📊 Status endpoint: /webhook-status");
     }
     
-    console.log("🚀 AI WEALTH EMPIRE startup complete!");
-    console.log(`📍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
-    console.log(`🤖 Bot Mode: ${isProduction ? 'Webhook (with polling fallback)' : 'Polling'}`);
+    console.log("\n🚀 AI WEALTH EMPIRE startup complete!");
+    console.log("📍 Environment: PRODUCTION (Webhook Only)");
     console.log("💰 Ready to build wealth with AI!");
+    console.log(`🌍 Server accessible at: https://imperiumvaultsystem-production.up.railway.app`);
 });
 
-// Enhanced error handling
+// Enhanced error handling for webhook-only mode
 process.on('unhandledRejection', (reason, promise) => {
-    if (reason && reason.message && reason.message.includes('409')) {
-        console.error("🚨 Telegram Bot Conflict (409): Another instance running!");
-        console.log("🔧 Solution: Stop other instances or wait 60 seconds");
+    if (reason && reason.message) {
+        if (reason.message.includes('409')) {
+            console.error("🚨 Telegram Bot Conflict (409): Another instance running!");
+            console.log("🔧 Solution: Stop other instances and wait 60 seconds");
+            console.log("💡 Check: ps aux | grep node | grep bot");
+        } else if (reason.message.includes('webhook')) {
+            console.error("🚨 Webhook Error:", reason.message);
+            console.log("🔧 Check webhook URL and bot token");
+        } else {
+            console.error('❌ Unhandled Promise Rejection:', reason);
+        }
     } else {
         console.error('❌ Unhandled Promise Rejection:', reason);
     }
 });
 
 process.on('uncaughtException', (error) => {
-    if (error.message && error.message.includes('ETELEGRAM')) {
-        console.error("🚨 Telegram API Error:", error.message);
-    } else if (error.message && error.message.includes('EADDRINUSE')) {
-        console.error("🚨 Port already in use! Another server instance running.");
+    if (error.message) {
+        if (error.message.includes('ETELEGRAM')) {
+            console.error("🚨 Telegram API Error:", error.message);
+            console.log("🔧 Check bot token and API connectivity");
+        } else if (error.message.includes('EADDRINUSE')) {
+            console.error("🚨 Port already in use! Another server instance running.");
+            console.log(`🔧 Kill process using port ${PORT}: lsof -ti:${PORT} | xargs kill -9`);
+        } else if (error.message.includes('webhook')) {
+            console.error("🚨 Webhook Error:", error.message);
+        } else {
+            console.error('❌ Uncaught Exception:', error);
+        }
     } else {
         console.error('❌ Uncaught Exception:', error);
     }
 });
 
-// Graceful shutdown
+// Graceful shutdown for webhook-only mode
 const gracefulShutdown = async (signal) => {
-    console.log(`🛑 ${signal} received, performing graceful shutdown...`);
+    console.log(`\n🛑 ${signal} received, performing graceful shutdown...`);
     
     try {
-        console.log('🤖 Stopping Telegram bot...');
-        await bot.stopPolling();
+        console.log('🤖 Removing Telegram webhook...');
         await bot.deleteWebHook();
-        console.log('✅ Bot stopped successfully');
+        console.log('✅ Webhook removed successfully');
         
+        // Update system metrics if available
         if (typeof updateSystemMetrics === 'function') {
             await updateSystemMetrics({
                 system_shutdown: 1,
-                wealth_system_shutdown: 1
+                wealth_system_shutdown: 1,
+                webhook_removed: 1
             }).catch(console.error);
         }
         
         console.log('💾 Cleanup completed');
+        
     } catch (error) {
         console.error('❌ Shutdown cleanup error:', error.message);
     }
     
+    // Close server
     server.close(() => {
         console.log('✅ AI WEALTH EMPIRE shut down gracefully');
+        console.log('🌐 Webhook removed, server stopped');
         process.exit(0);
     });
+    
+    // Force exit after 10 seconds if graceful shutdown fails
+    setTimeout(() => {
+        console.error('⏰ Forced shutdown after timeout');
+        process.exit(1);
+    }, 10000);
 };
 
+// Signal handlers
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Additional cleanup for Railway
+process.on('SIGQUIT', () => gracefulShutdown('SIGQUIT'));
 
 // Export for testing
 module.exports = {
@@ -5416,4 +5500,3 @@ module.exports = {
     initializeEnhancedDatabase,
     connectionStats
 };
-
