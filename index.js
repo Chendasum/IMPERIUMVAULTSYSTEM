@@ -1290,6 +1290,81 @@ async function performManualMemoryTest(chatId) {
     };
 }
 
+// 🔧 PART 1: FIXED FILE/IMAGE PROCESSING FUNCTIONS FOR YOUR INDEX.JS
+// Replace the broken functions in your index.js with these working versions
+
+// 🔧 COMPLETELY FIXED: Voice message handler for your dual AI system
+async function handleVoiceMessage(msg, chatId, sessionId) {
+    const startTime = Date.now();
+    try {
+        console.log("🎤 Processing voice message...");
+        await bot.sendMessage(chatId, "🎤 Transcribing voice message with GPT-5 + Claude Opus 4.1 enhanced AI...");
+        
+        // 🔧 FIXED: Use working Whisper transcription
+        const transcribedText = await processVoiceMessageFixed(bot, msg.voice.file_id, chatId);
+        const responseTime = Date.now() - startTime;
+        
+        if (transcribedText && transcribedText.length > 0) {
+            await sendSmartMessage(bot, chatId, `🎤 **Voice transcribed:** "${transcribedText}"`);
+            
+            // Enhanced voice transcription save with better metadata
+            await saveConversationDB(chatId, "[VOICE]", transcribedText, "voice", {
+                voiceDuration: msg.voice.duration,
+                fileSize: msg.voice.file_size,
+                transcriptionLength: transcribedText.length,
+                processingTime: responseTime,
+                sessionId: sessionId,
+                timestamp: new Date().toISOString(),
+                aiModel: 'OpenAI-Whisper'
+            }).catch(err => console.error('Voice save error:', err.message));
+            
+// Process transcribed text with REAL dual AI system
+const { processConversation } = require('./utils/dualAISystem');
+const result = await processConversation(chatId, transcribedText);
+await sendSmartMessage(bot, chatId, result.response);
+            
+            // Log successful API usage
+            await logApiUsage('WHISPER', 'transcription', 1, true, responseTime, msg.voice.file_size || 0)
+                .catch(err => console.error('API log error:', err.message));
+            
+            console.log("✅ Voice message processed successfully with dual AI");
+        } else {
+            await sendSmartMessage(bot, chatId, "❌ Voice transcription failed. Please try again or speak more clearly.");
+            
+            // Save failed transcription attempt with diagnostic info
+            await saveConversationDB(chatId, "[VOICE_FAILED]", "Transcription failed", "voice", {
+                error: "Transcription returned empty",
+                voiceDuration: msg.voice.duration,
+                fileSize: msg.voice.file_size,
+                processingTime: responseTime,
+                sessionId: sessionId
+            }).catch(err => console.error('Voice error save failed:', err.message));
+            
+            // Log failed API usage
+            await logApiUsage('WHISPER', 'transcription', 1, false, responseTime, msg.voice.file_size || 0)
+                .catch(err => console.error('API log error:', err.message));
+        }
+    } catch (error) {
+        const responseTime = Date.now() - startTime;
+        console.error("❌ Voice processing error:", error.message);
+        await sendSmartMessage(bot, chatId, `❌ Voice processing error: ${error.message}`);
+        
+        // Save comprehensive error details
+        await saveConversationDB(chatId, "[VOICE_ERROR]", `Error: ${error.message}`, "voice", {
+            error: error.message,
+            stackTrace: error.stack?.substring(0, 500),
+            voiceDuration: msg.voice?.duration,
+            fileSize: msg.voice?.file_size,
+            processingTime: responseTime,
+            sessionId: sessionId
+        }).catch(err => console.error('Voice error save failed:', err.message));
+        
+        // Log error for monitoring
+        await logApiUsage('WHISPER', 'transcription', 1, false, responseTime, 0, 0)
+            .catch(err => console.error('API log error:', err.message));
+    }
+}
+
 // 🎯 COMPLETE REWRITE: Multimodal Processing Integration with Dual AI System
 // Fixed voice, image, and document processing with proper dual AI integration
 
