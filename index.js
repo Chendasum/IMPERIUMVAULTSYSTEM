@@ -253,12 +253,24 @@ async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime
     }
 }
 
-// 🔧 COMPLETELY FIXED: Main message handler
+// 🔧 FIXED: Main message handler with proper text validation
 bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
-    const text = msg.text;
     
-    console.log(`📨 Message from ${chatId}: ${text?.substring(0, 50) || 'Media message'}`);
+    // 🔧 CRITICAL FIX: Ensure text is always a string
+    let text = null;
+    if (msg.text && typeof msg.text === 'string') {
+        text = msg.text;
+    } else if (msg.caption && typeof msg.caption === 'string') {
+        text = msg.caption; // For media with captions
+    }
+    
+    console.log(`📨 Message from ${chatId}:`, {
+        hasText: !!text,
+        textType: typeof text,
+        textValue: text ? text.substring(0, 50) : 'No text',
+        messageType: msg.voice ? 'voice' : msg.photo ? 'photo' : msg.document ? 'document' : 'text'
+    });
     
     // Security check
     if (!isAuthorizedUser(chatId)) {
@@ -278,7 +290,7 @@ bot.on("message", async (msg) => {
     const startTime = Date.now();
 
     try {
-        // Handle media messages
+        // Handle media messages first
         if (msg.voice) {
             console.log("🎤 Voice message received");
             await handleVoiceMessage(msg, chatId, sessionId);
@@ -297,36 +309,63 @@ bot.on("message", async (msg) => {
             return;
         }
 
-        // Handle text messages
-        if (!text || text.trim().length === 0) {
-            await sendSmartMessage(bot, chatId, "Please send text, voice messages, images, or documents.");
+        // Handle video messages
+        if (msg.video) {
+            console.log("🎥 Video received");
+            await sendSmartMessage(bot, chatId, "🎥 Video processing is not yet implemented. Please use voice, images, or documents.");
             return;
         }
 
-        // 🔧 FIXED: Route to proper dual AI handler
-        await handleDualAIConversation(chatId, text, sessionId);
+        // Handle stickers
+        if (msg.sticker) {
+            console.log("😊 Sticker received");
+            await sendSmartMessage(bot, chatId, "😊 Thanks for the sticker! Please send text, voice, images, or documents for AI analysis.");
+            return;
+        }
+
+        // 🔧 FIXED: Handle text messages with proper validation
+        if (!text || text.trim().length === 0) {
+            await sendSmartMessage(bot, chatId, "Please send a text message, voice note, image, or document for analysis.");
+            return;
+        }
+
+        // 🔧 FIXED: Check for commands first
+        const cleanText = text.trim();
+        if (cleanText.startsWith('/')) {
+            await executeCommandWithLoggingFixed(chatId, cleanText, sessionId);
+            return;
+        }
+
+        // 🔧 FIXED: Route to dual AI handler with validated text
+        await handleDualAIConversation(chatId, cleanText, sessionId);
 
     } catch (error) {
         console.error('❌ Message handling error:', error.message);
+        console.error('❌ Error stack:', error.stack);
         
         const executionTime = Date.now() - startTime;
         
-        // Log error
-        await logCommandUsage(chatId, text || 'MEDIA', executionTime, false, error.message).catch(console.error);
+        // Log error with safe text handling
+        const safeText = typeof text === 'string' ? text : 'MEDIA_MESSAGE';
+        await logCommandUsage(chatId, safeText, executionTime, false, error.message).catch(console.error);
         
         // Send user-friendly error message
         try {
-            if (error.message.includes('timeout') || error.message.includes('long')) {
+            if (error.message.includes('trim')) {
                 await sendSmartMessage(bot, chatId, 
-                    `⏱️ Your request was too complex and timed out. Please try:\n\n• Breaking it into smaller questions\n• Using simpler language\n• Asking one thing at a time`
+                    `❌ Message processing error. Please try:\n\n• Sending plain text instead of special characters\n• Using voice messages for complex input\n• Checking message format`
+                );
+            } else if (error.message.includes('timeout') || error.message.includes('long')) {
+                await sendSmartMessage(bot, chatId, 
+                    `⏱️ Your request timed out. Please try:\n\n• Breaking it into smaller questions\n• Using simpler language\n• Asking one thing at a time`
                 );
             } else if (error.message.includes('token') || error.message.includes('limit')) {
                 await sendSmartMessage(bot, chatId, 
-                    `📝 Your message was too long. Please try:\n\n• Shorter questions (under 1000 words)\n• Splitting into multiple messages\n• Being more specific`
+                    `📝 Message too long. Please try:\n\n• Shorter questions (under 1000 words)\n• Splitting into multiple messages\n• Being more specific`
                 );
             } else {
                 await sendSmartMessage(bot, chatId, 
-                    `❌ I encountered an error: ${error.message}\n\n🔧 Try: /status to check system health`
+                    `❌ Processing error: ${error.message}\n\n🔧 Try: /status to check system health`
                 );
             }
         } catch (sendError) {
@@ -341,64 +380,52 @@ bot.on("message", async (msg) => {
     }
 });
 
-// 🔧 PLACEHOLDER: These functions will be implemented in the next sections
-async function handleVoiceMessage(msg, chatId, sessionId) {
-    await sendSmartMessage(bot, chatId, "🎤 Voice processing will be implemented in the next section.");
-}
-
-async function handleImageMessage(msg, chatId, sessionId) {
-    await sendSmartMessage(bot, chatId, "🖼️ Image processing will be implemented in the next section.");
-}
-
-async function handleDocumentMessage(msg, chatId, sessionId) {
-    await sendSmartMessage(bot, chatId, "📄 Document processing will be implemented in the next section.");
-}
-
-async function handleDualAIConversation(chatId, text, sessionId) {
-    await sendSmartMessage(bot, chatId, "🤖 Dual AI conversation handler will be implemented in the next section.");
-}
-
-console.log('✅ Index.js Section 1 (Lines 1-347) - CLEANED AND FIXED');
-console.log('🔧 Removed duplicate imports and simplified functions');
-console.log('💪 Enhanced error handling for long messages');
-console.log('🎯 Ready for next section...');
-
-// 🔧 FIXED: Dual AI Conversation Handler - No More Errors!
+// 🔧 FIXED: Dual AI conversation handler with proper string validation
 async function handleDualAIConversation(chatId, text, sessionId) {
     const startTime = Date.now();
     
     try {
-        console.log("🤖 Starting dual AI conversation:", text.substring(0, 50));
+        // 🔧 CRITICAL: Validate text parameter
+        if (!text || typeof text !== 'string') {
+            throw new Error(`Invalid text parameter: received ${typeof text}`);
+        }
         
-        // 🔧 FIXED: Use correct function name and better error handling
-        const context = await buildConversationContextSafe(chatId, text);
+        const cleanText = text.trim();
+        if (cleanText.length === 0) {
+            throw new Error('Empty message content');
+        }
+        
+        console.log(`🤖 Starting dual AI conversation: ${cleanText.substring(0, 50)}...`);
+        
+        // Build conversation context safely
+        const context = await buildConversationContextSafe(chatId, cleanText);
         
         // Enhanced conversation intelligence
         const conversationIntel = {
-            type: determineConversationType(text),
-            complexity: determineComplexity(text),
-            requiresLiveData: requiresLiveData(text),
+            type: determineConversationType(cleanText),
+            complexity: determineComplexity(cleanText),
+            requiresLiveData: requiresLiveData(cleanText),
             hasMemory: context.memoryAvailable,
             conversationCount: context.conversationHistory?.length || 0,
-            textLength: text.length,
-            isLongQuestion: text.length > 500  // 🔧 NEW: Handle long questions
+            textLength: cleanText.length,
+            isLongQuestion: cleanText.length > 500
         };
         
         console.log("🎯 Conversation Intel:", conversationIntel);
         
-        // 🔧 FIXED: Better dual AI execution with fallback
-        const result = await executeDualAICommandSafe(text, chatId, context, conversationIntel);
+        // Execute dual AI command safely
+        const result = await executeDualAICommandSafe(cleanText, chatId, context, conversationIntel);
         
         // Send response to user
         await sendSmartMessage(bot, chatId, result.response);
         
         // Save conversation (non-blocking)
-        saveConversationToDatabase(chatId, text, result, context).catch(err => 
+        saveConversationToDatabase(chatId, cleanText, result, context).catch(err => 
             console.log('⚠️ Conversation save failed:', err.message)
         );
         
         // Extract and save memories (non-blocking)
-        extractAndSaveMemoriesSafe(chatId, text, result.response).catch(err => 
+        extractAndSaveMemoriesSafe(chatId, cleanText, result.response).catch(err => 
             console.log('⚠️ Memory extraction failed:', err.message)
         );
         
@@ -407,21 +434,88 @@ async function handleDualAIConversation(chatId, text, sessionId) {
         
     } catch (error) {
         console.error('❌ Dual AI conversation error:', error.message);
+        console.error('❌ Error details:', {
+            textType: typeof text,
+            textValue: text ? text.toString().substring(0, 50) : 'null/undefined',
+            errorMessage: error.message
+        });
         
-        // 🔧 IMPROVED: Better fallback handling
+        // Better fallback handling
         try {
             const fallbackResponse = await handleFallbackResponseSafe(chatId, text);
             await sendSmartMessage(bot, chatId, fallbackResponse);
         } catch (fallbackError) {
             console.error('❌ Even fallback failed:', fallbackError.message);
-            await sendSmartMessage(bot, chatId, "🚨 System temporarily unavailable. Please try again.");
+            await sendSmartMessage(bot, chatId, "🚨 System temporarily unavailable. Please try again with a simple message.");
         }
         
         return Date.now() - startTime;
     }
 }
 
-// 🔧 FIXED: Safe conversation context building
+// 🔧 FIXED: Safe fallback response with string validation
+async function handleFallbackResponseSafe(chatId, text) {
+    try {
+        // 🔧 CRITICAL: Ensure text is a string
+        let safeText = '';
+        if (typeof text === 'string') {
+            safeText = text.trim();
+        } else if (text !== null && text !== undefined) {
+            safeText = String(text).trim();
+        } else {
+            safeText = 'User sent a message';
+        }
+        
+        // Limit text length for fallback
+        if (safeText.length > 500) {
+            safeText = safeText.substring(0, 500) + '...';
+        }
+        
+        // Try to get minimal context with timeout
+        let basicContext = '';
+        
+        try {
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Context timeout')), 2000)
+            );
+            
+            const contextPromise = getConversationHistoryDB(chatId, 1);
+            const recent = await Promise.race([contextPromise, timeoutPromise]);
+            
+            if (recent?.[0]) {
+                basicContext = `\n\nContext: Previous topic "${recent[0].user_message?.substring(0, 50)}..."`;
+            }
+        } catch (contextError) {
+            console.log('⚠️ Context retrieval skipped for fallback');
+        }
+        
+        // Use corrected GPT-5 parameters
+        return await getUniversalAnalysis(safeText + basicContext, {
+            max_tokens: 1000,
+            temperature: 0.7,
+            model: "gpt-5"
+        });
+        
+    } catch (error) {
+        console.error('❌ All fallback methods failed:', error.message);
+        
+        // Final emergency response
+        const messagePreview = typeof text === 'string' ? text.substring(0, 100) : 'your message';
+        return `🤖 I apologize, but I'm experiencing technical difficulties processing your request.
+
+**Your message:** "${messagePreview}${typeof text === 'string' && text.length > 100 ? '...' : ''}"
+
+**Try:**
+• Sending a shorter, simpler message
+• Using basic text without special characters
+• Asking one question at a time
+• Using /help for available commands
+
+The system will automatically recover.`;
+    }
+}
+
+// 🔧 FIXED: Build conversation context with string validation
 async function buildConversationContextSafe(chatId, currentText) {
     const context = {
         conversationHistory: [],
@@ -431,7 +525,14 @@ async function buildConversationContextSafe(chatId, currentText) {
         errors: []
     };
     
-    // 🔧 FIXED: Non-blocking parallel fetching with timeouts
+    // 🔧 CRITICAL: Validate currentText parameter
+    if (!currentText || typeof currentText !== 'string') {
+        console.warn('⚠️ Invalid currentText in buildConversationContextSafe:', typeof currentText);
+        context.errors.push('Invalid currentText parameter');
+        return context;
+    }
+    
+    // Timeout helper function
     const timeoutPromise = (promise, timeout = 3000) => {
         return Promise.race([
             promise,
@@ -467,152 +568,69 @@ async function buildConversationContextSafe(chatId, currentText) {
     
     // Build memory context if we have data
     if (context.conversationHistory.length > 0 || context.persistentMemory.length > 0) {
-        context.memoryContext = buildMemoryContextString(context.conversationHistory, context.persistentMemory);
-        context.memoryAvailable = true;
-        console.log(`✅ Memory context built (${context.memoryContext.length} chars)`);
+        try {
+            context.memoryContext = buildMemoryContextString(context.conversationHistory, context.persistentMemory);
+            context.memoryAvailable = true;
+            console.log(`✅ Memory context built (${context.memoryContext.length} chars)`);
+        } catch (memoryError) {
+            console.log('⚠️ Memory context building failed:', memoryError.message);
+            context.errors.push(`Memory context: ${memoryError.message}`);
+        }
     }
     
     return context;
 }
 
-// 🔧 COMPLETELY FIXED: Clean dual AI execution without external dependencies
-async function executeDualAICommandSafe(text, chatId, context, intel) {
+// 🔧 FIXED: Save conversation to database with string validation
+async function saveConversationToDatabase(chatId, userMessage, aiResult, context) {
     try {
-        console.log("🚀 Executing intelligent dual AI routing...");
+        // 🔧 CRITICAL: Validate parameters
+        const safeUserMessage = typeof userMessage === 'string' ? userMessage : String(userMessage || 'Unknown message');
+        const safeAiResponse = typeof aiResult === 'string' ? aiResult : 
+                             (aiResult?.response || String(aiResult || 'Unknown response'));
         
-        // 🔧 SMART ROUTING: Choose best AI based on content analysis
-        if (intel.isLongQuestion || intel.complexity === 'maximum') {
-            console.log("📝 Long/complex question detected → Using Claude Opus 4.1");
-            return await executeClaudeForLongQuestions(text, context);
-        }
-        
-        if (intel.type === 'strategic_analysis' || intel.type === 'cambodia_fund' || intel.type === 'economic_regime') {
-            console.log("🎯 Strategic analysis detected → Using Claude Opus 4.1");
-            return await executeClaudeAnalysis(text, context, intel);
-        }
-        
-        if (intel.type === 'portfolio_analysis' || intel.type === 'financial_analysis') {
-            console.log("💰 Financial analysis detected → Using Claude Opus 4.1");
-            return await executeClaudeAnalysis(text, context, intel);
-        }
-        
-        if (intel.requiresLiveData || intel.type === 'casual' || intel.complexity === 'simple') {
-            console.log("⚡ Simple/live data query → Using GPT-5");
-            return await executeGPTAnalysis(text, context, intel);
-        }
-        
-        // 🔧 DEFAULT: Use GPT-5 for general queries
-        console.log("🤖 General query → Using GPT-5");
-        return await executeGPTAnalysis(text, context, intel);
-        
-    } catch (error) {
-        console.log("⚠️ Primary AI failed, using fallback:", error.message);
-        
-        // 🔧 FALLBACK: Always try GPT-5 as last resort
-        try {
-            return await executeGPTAnalysis(text, context, intel);
-        } catch (fallbackError) {
-            console.error("❌ All AI systems failed:", fallbackError.message);
-            
-            // 🔧 FINAL FALLBACK: Basic response
-            return {
-                response: "I'm experiencing technical difficulties. Please try again in a moment. Your message has been received.",
-                aiUsed: 'FALLBACK',
-                success: false,
-                memoryUsed: false,
-                queryType: intel.type || 'unknown'
-            };
-        }
-    }
-}
-
-// 🔧 NEW: Claude for long questions
-async function executeClaudeForLongQuestions(text, context) {
-    try {
-        const enhancedPrompt = context.memoryContext ? 
-            `${context.memoryContext}\n\nUser: ${text}` : text;
-            
-        // 🔧 FIXED: Use the correct Claude function
-        const response = await getClaudeAnalysis(enhancedPrompt, {
-            max_tokens: 2000,
-            temperature: 0.7
+        // Save to database
+        await saveConversationDB(chatId, safeUserMessage, safeAiResponse, "text", {
+            aiUsed: aiResult?.aiUsed || 'UNKNOWN',
+            memoryUsed: context?.memoryAvailable || false,
+            processingTime: aiResult?.processingTime || 0,
+            queryType: aiResult?.queryType || 'general',
+            success: aiResult?.success !== false,
+            timestamp: new Date().toISOString()
         });
         
-        return {
-            response: response,
-            aiUsed: 'CLAUDE_OPUS_4.1',
-            success: true,
-            memoryUsed: !!context.memoryContext,
-            queryType: 'long_question'
-        };
-    } catch (error) {
-        throw new Error(`Claude analysis failed: ${error.message}`);
-    }
-}
-
-// 🔧 NEW: Strategic Claude analysis
-async function executeClaudeAnalysis(text, context, intel) {
-    try {
-        const enhancedPrompt = context.memoryContext ? 
-            `${context.memoryContext}\n\nUser: ${text}` : text;
-            
-        const response = await getClaudeAnalysis(enhancedPrompt, {
-            max_tokens: 1500,
-            temperature: 0.7
-        });
+        console.log('✅ Conversation saved to database');
         
-        return {
-            response: response,
-            aiUsed: 'CLAUDE_STRATEGIC',
-            success: true,
-            memoryUsed: !!context.memoryContext,
-            queryType: intel.type
-        };
     } catch (error) {
-        throw new Error(`Claude strategic analysis failed: ${error.message}`);
+        console.error('❌ Save conversation error:', error.message);
+        // Don't throw - this is non-critical
     }
 }
 
-// 🔧 NEW: GPT analysis fallback
-async function executeGPTAnalysis(text, context, intel) {
-    try {
-        const enhancedPrompt = context.memoryContext ? 
-            `${context.memoryContext}\n\nUser: ${text}` : text;
-            
-        // 🔧 FIXED: Use correct GPT-5 parameters
-        const response = await getUniversalAnalysis(enhancedPrompt, {
-            max_tokens: 1500,  // 🔧 FIXED: Correct parameter name
-            temperature: 0.7,
-            model: "gpt-5"
-        });
-        
-        return {
-            response: response,
-            aiUsed: 'GPT_5',
-            success: true,
-            memoryUsed: !!context.memoryContext,
-            queryType: intel.type
-        };
-    } catch (error) {
-        throw new Error(`GPT analysis failed: ${error.message}`);
-    }
-}
-
-// 🔧 FIXED: Safe memory extraction
+// 🔧 FIXED: Memory extraction with string validation
 async function extractAndSaveMemoriesSafe(chatId, userMessage, aiResponse) {
     try {
+        // 🔧 CRITICAL: Validate string parameters
+        const safeUserMessage = typeof userMessage === 'string' ? userMessage : String(userMessage || '');
+        const safeAiResponse = typeof aiResponse === 'string' ? aiResponse : String(aiResponse || '');
+        
+        if (safeUserMessage.length === 0 && safeAiResponse.length === 0) {
+            console.log('⚠️ No valid content for memory extraction');
+            return;
+        }
+        
         // Check if memory module exists
         const memoryModule = require('./utils/memory');
         if (memoryModule && typeof memoryModule.extractAndSaveFacts === 'function') {
-            const result = await memoryModule.extractAndSaveFacts(chatId, userMessage, aiResponse);
+            const result = await memoryModule.extractAndSaveFacts(chatId, safeUserMessage, safeAiResponse);
             
             if (result?.extractedFacts > 0) {
                 console.log(`✅ Extracted ${result.extractedFacts} new memories`);
             }
         } else {
-            // 🔧 FALLBACK: Manual memory extraction
-            if (shouldSaveToPersistentMemory(userMessage, aiResponse)) {
-                const memoryFact = extractMemoryFact(userMessage, aiResponse);
+            // Fallback: Manual memory extraction
+            if (shouldSaveToPersistentMemory(safeUserMessage, safeAiResponse)) {
+                const memoryFact = extractMemoryFact(safeUserMessage, safeAiResponse);
                 if (memoryFact) {
                     await addPersistentMemoryDB(chatId, memoryFact, 'medium');
                     console.log('✅ Manual memory extraction successful');
@@ -625,132 +643,29 @@ async function extractAndSaveMemoriesSafe(chatId, userMessage, aiResponse) {
     }
 }
 
-// 🔧 FIXED: Safe fallback response
-async function handleFallbackResponseSafe(chatId, text) {
+// 🔧 UTILITY: Enhanced error logging for message processing
+async function logMessageProcessingError(chatId, originalMessage, error, sessionId) {
     try {
-        // Try to get minimal context with timeout
-        let basicContext = '';
+        const errorInfo = {
+            chatId: chatId,
+            error: error.message,
+            stack: error.stack?.substring(0, 500),
+            messageType: typeof originalMessage,
+            messageLength: originalMessage?.length || 0,
+            messagePreview: typeof originalMessage === 'string' ? 
+                originalMessage.substring(0, 100) : String(originalMessage || '').substring(0, 100),
+            sessionId: sessionId,
+            timestamp: new Date().toISOString()
+        };
         
-        try {
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Context timeout')), 2000)
-            );
-            
-            const contextPromise = getConversationHistoryDB(chatId, 1);
-            const recent = await Promise.race([contextPromise, timeoutPromise]);
-            
-            if (recent?.[0]) {
-                basicContext = `\n\nContext: Previous topic "${recent[0].user_message?.substring(0, 50)}..."`;
-            }
-        } catch (contextError) {
-            console.log('⚠️ Context retrieval skipped');
-        }
+        console.error('❌ Message Processing Error Details:', errorInfo);
         
-        // 🔧 FIXED: Use correct GPT-5 parameters
-        return await getUniversalAnalysis(text + basicContext, {
-            max_tokens: 1000,  // 🔧 FIXED: Correct parameter name
-            temperature: 0.7,
-            model: "gpt-5"
-        });
+        // Save to database if possible
+        await saveConversationDB(chatId, '[ERROR]', `Processing error: ${error.message}`, 'error', errorInfo)
+            .catch(saveError => console.error('Failed to save error to DB:', saveError.message));
         
-    } catch (error) {
-        console.error('❌ All fallback methods failed:', error.message);
-        return `🤖 I apologize, but I'm experiencing technical difficulties processing your request. Here's what I can suggest:
-
-• Try asking a shorter, more specific question
-• Check if the issue persists with a simple question
-• The system will automatically recover
-
-Your message: "${text.substring(0, 100)}${text.length > 100 ? '...' : ''}"`;
-    }
-}
-
-// 🔧 IMPROVED: Helper functions with better logic
-function determineConversationType(text) {
-    if (!text) return 'unknown';
-    
-    const lower = text.toLowerCase();
-    
-    // Financial analysis
-    if (lower.includes('financial') || lower.includes('investment') || 
-        lower.includes('fund') || lower.includes('portfolio') || 
-        lower.includes('cambodia') || lower.includes('lending')) {
-        return 'financial_analysis';
-    }
-    
-    // Strategic analysis
-    if (lower.includes('analysis') || lower.includes('strategy') || 
-        lower.includes('strategic') || lower.includes('plan')) {
-        return 'strategic_analysis';
-    }
-    
-    // Market related
-    if (lower.includes('market') || lower.includes('trading') || 
-        lower.includes('economic') || lower.includes('regime')) {
-        return 'market_analysis';
-    }
-    
-    // Memory queries
-    if (lower.includes('remember') || lower.includes('recall') || 
-        lower.includes('you mentioned') || lower.includes('we discussed')) {
-        return 'memory_query';
-    }
-    
-    // Complex discussion (long text)
-    if (text.length > 200) {
-        return 'complex_discussion';
-    }
-    
-    return 'general_conversation';
-}
-
-function determineComplexity(text) {
-    if (!text) return 'simple';
-    
-    const wordCount = text.split(/\s+/).length;
-    const questionCount = (text.match(/\?/g) || []).length;
-    const hasMultipleTopics = text.includes(' and ') || text.includes(', ');
-    const hasSpecialKeywords = /analysis|strategy|comprehensive|detailed|complex/i.test(text);
-    
-    if (text.length > 500 || wordCount > 100 || questionCount > 2) return 'maximum';
-    if (text.length > 200 || wordCount > 50 || hasSpecialKeywords || hasMultipleTopics) return 'complex';
-    if (text.length > 50 || wordCount > 15) return 'medium';
-    return 'simple';
-}
-
-function requiresLiveData(text) {
-    if (!text) return false;
-    
-    const liveDataKeywords = [
-        'current', 'latest', 'today', 'now', 'recent', 'update',
-        'price', 'market', 'live', 'real-time', 'status', 'news'
-    ];
-    
-    return liveDataKeywords.some(keyword => text.toLowerCase().includes(keyword));
-}
-
-// 🔧 REMOVED DUPLICATES: Keep only one version of each function
-// ✅ Removed duplicate logApiUsage, executeCommandWithLogging, etc.
-
-// 🔧 SESSION MANAGEMENT - Simplified and working
-async function startUserSession(chatId, sessionType = 'GENERAL') {
-    try {
-        const sessionId = `session_${chatId}_${Date.now()}`;
-        console.log(`📊 Session started: ${sessionId} (${sessionType})`);
-        return sessionId;
-    } catch (error) {
-        console.error('❌ Session start error:', error.message);
-        return `fallback_${chatId}_${Date.now()}`;
-    }
-}
-
-async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
-    try {
-        console.log(`📊 Session ended: ${sessionId} (${commandsExecuted} commands, ${totalResponseTime}ms)`);
-        return true;
-    } catch (error) {
-        console.error('❌ Session end error:', error.message);
-        return false;
+    } catch (logError) {
+        console.error('❌ Failed to log message processing error:', logError.message);
     }
 }
 
