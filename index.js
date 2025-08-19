@@ -171,7 +171,7 @@ const openai = new OpenAI({
     maxRetries: 3
 });
 
-// 🔧 SIMPLIFIED: Database initialization
+// Enhanced Database Initialization with Full Integration
 async function initializeEnhancedDatabase() {
     try {
         console.log("🚀 Initializing Enhanced Strategic Database...");
@@ -180,31 +180,57 @@ async function initializeEnhancedDatabase() {
         
         if (initialized) {
             console.log("✅ Enhanced Strategic Database initialized successfully");
+            
+            // Test database functions
             await testDatabaseFunctions();
+            
+            // Initialize daily metrics if needed
             await initializeDailyMetrics();
+            
             return true;
         } else {
             throw new Error("Database initialization failed");
         }
     } catch (error) {
         console.error("❌ Enhanced database initialization failed:", error.message);
-        // Don't throw - continue with limited functionality
-        return false;
+        console.error("Connection stats:", connectionStats);
+        throw error;
     }
 }
 
-// 🔧 SIMPLIFIED: Test database functions
+// 🔧 FIXED: Test database functions with better error handling
 async function testDatabaseFunctions() {
     try {
         console.log("🧪 Testing database functions...");
         
+        // Test basic connection first
         const stats = await getDatabaseStats();
         console.log("📊 Database stats test:", {
-            connectionHealth: connectionStats?.connectionHealth || 'UNKNOWN',
+            connectionHealth: connectionStats.connectionHealth,
             totalUsers: stats?.totalUsers || 0,
             totalConversations: stats?.totalConversations || 0,
+            totalDocuments: stats?.totalDocuments || 0,
             error: stats?.error || null
         });
+        
+        // Test health check
+        const health = await performHealthCheck();
+        console.log("🏥 Database health test:", health?.status || 'Unknown', health?.error ? `(${health.error})` : "");
+        
+        // 🔧 ADDED: Test memory functions specifically
+        try {
+            const testHistory = await getConversationHistoryDB('test_user', 1);
+            console.log("📚 Conversation history test: ✅ Working");
+        } catch (historyError) {
+            console.log("📚 Conversation history test: ❌", historyError.message);
+        }
+        
+        try {
+            const testMemory = await getPersistentMemoryDB('test_user');
+            console.log("🧠 Persistent memory test: ✅ Working");
+        } catch (memoryError) {
+            console.log("🧠 Persistent memory test: ❌", memoryError.message);
+        }
         
         return true;
     } catch (error) {
@@ -213,16 +239,17 @@ async function testDatabaseFunctions() {
     }
 }
 
-// 🔧 SIMPLIFIED: Initialize daily metrics
+// Initialize daily metrics
 async function initializeDailyMetrics() {
     try {
-        await updateSystemMetrics({ total_users: 0 });
+        await updateSystemMetrics({
+            total_users: 0    // ✅ Use a column that actually exists
+        });
         console.log("📊 Daily metrics initialized");
     } catch (error) {
         console.error("⚠️ Daily metrics initialization failed:", error.message);
     }
 }
-
 // User Authentication
 function isAuthorizedUser(chatId) {
     const authorizedUsers = process.env.ADMIN_CHAT_ID
@@ -231,24 +258,12 @@ function isAuthorizedUser(chatId) {
     return authorizedUsers.includes(parseInt(chatId));
 }
 
-// 🔧 FIXED: Session management - simplified
-async function startUserSession(chatId, sessionType = 'TELEGRAM_BOT') {
+async function logApiUsage(service, endpoint, calls = 1, success = true, responseTime = 0, inputTokens = 0, cost = 0) {
     try {
-        const sessionId = `session_${chatId}_${Date.now()}`;
-        console.log(`📊 Starting session: ${sessionId}`);
-        return sessionId;
-    } catch (error) {
-        console.error('❌ Start session error:', error.message);
-        return null;
-    }
-}
-
-async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
-    try {
-        console.log(`📊 Ending session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
+        console.log(`🔌 API: ${service}/${endpoint} | ${success ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | $${cost}`);
         return true;
     } catch (error) {
-        console.error('❌ End session error:', error.message);
+        console.error('❌ API logging error:', error.message);
         return false;
     }
 }
