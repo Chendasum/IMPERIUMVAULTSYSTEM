@@ -1450,7 +1450,7 @@ async function processVoiceWithDualAI(transcribedText, chatId, sessionId) {
 }
 
 // 🔧 COMPLETELY REWRITTEN: Image processing with proper GPT-5 vision integration
-async function processImageMessage(msg, chatId, sessionId) {
+async function processImageMessageFixed(msg, chatId, sessionId) {
     const startTime = Date.now();
     
     try {
@@ -2328,7 +2328,7 @@ async function handleMultimodalMessage(msg, chatId, sessionId) {
             validateImageMessage(msg);
             
             await bot.sendMessage(chatId, "🖼️ Analyzing image with GPT-5 Vision + Dual AI...");
-            await processImageMessage(msg, chatId, sessionId);
+            await processImageMessageFixed(msg, chatId, sessionId);
             
         } else if (msg.document) {
             console.log("📄 Document message detected");
