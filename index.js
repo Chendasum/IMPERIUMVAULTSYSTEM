@@ -346,14 +346,26 @@ bot.on("message", async (msg) => {
     }
 });
 
-// 🤖 Dual AI Conversation Handler - Clean and Focused
+
+
+
+// 🔧 FIXED: Enhanced system status with better database checking
+async function handleEnhancedSystemStatus(chatId) {
+    try {
+        await bot.sendMessage(chatId, "🔄 Checking enhanced system status...");
+
+        const [health, stats, dualAIStats] = await Promise.all([
+            checkSystemHealth(),
+            getDatabaseStats(),
+            getDualAIPerformanceDashboard(7).catch(() => ({ error: 'Not available' }))
+        ]);// 🤖 Main Dual AI Conversation Handler
 async function handleDualAIConversation(chatId, text, sessionId) {
     const startTime = Date.now();
     
     try {
         console.log("🤖 Starting dual AI conversation processing:", text.substring(0, 50));
         
-        // Get conversation context with memory
+        // 🔧 FIXED: Use correct function name
         const context = await buildConversationContext(chatId, text);
         
         // Determine conversation intelligence
@@ -393,8 +405,8 @@ async function handleDualAIConversation(chatId, text, sessionId) {
     }
 }
 
-// 🧠 Build Conversation Context with Memory
-async function buildConversationContextWithMemory(chatId, currentText) {
+// 🧠 FIXED: Build Conversation Context with Memory (renamed to match usage)
+async function buildConversationContext(chatId, currentText) {
     const context = {
         conversationHistory: [],
         persistentMemory: [],
@@ -431,7 +443,7 @@ async function buildConversationContextWithMemory(chatId, currentText) {
     return context;
 }
 
-// 🤖 Execute Dual AI Command
+// 🤖 FIXED: Execute Dual AI Command
 async function executeDualAICommand(text, chatId, context, intel) {
     try {
         // Try dual AI system first
@@ -442,32 +454,59 @@ async function executeDualAICommand(text, chatId, context, intel) {
             persistentMemory: context.persistentMemory,
             memoryContext: context.memoryContext,
             conversationIntel: intel,
-            messageType: 'text'
+            messageType: 'text',
+            sessionId: `session_${chatId}_${Date.now()}`
         });
         
         console.log("✅ Dual AI command successful:", dualResult.aiUsed);
         return dualResult;
         
-    } catch (error) {
-        console.log("⚠️ Dual AI failed, using GPT fallback:", error.message);
+    } catch (dualError) {
+        console.log("⚠️ Dual AI failed, trying ultimate strategic analysis:", dualError.message);
         
-        // Fallback to single GPT with memory
-        const enhancedPrompt = context.memoryContext ? 
-            `${context.memoryContext}\n\nUser: ${text}` : text;
+        try {
+            // Try your ultimate strategic analysis system
+            const enhancedPrompt = context.memoryContext ? 
+                `${context.memoryContext}\n\nUser: ${text}` : text;
+                
+            const response = await getUltimateStrategicAnalysis(enhancedPrompt, {
+                sessionId: chatId,
+                memoryContext: context.memoryContext,
+                queryType: intel.type,
+                complexity: intel.complexity
+            });
             
-        const response = await getUniversalAnalysis(enhancedPrompt, {
-            maxTokens: 1500,
-            temperature: 0.7,
-            model: "gpt-5"
-        });
-        
-        return {
-            response: response,
-            aiUsed: 'GPT_FALLBACK',
-            success: true,
-            memoryUsed: !!context.memoryContext,
-            queryType: intel.type
-        };
+            return {
+                response: response.response || response,
+                aiUsed: 'ULTIMATE_STRATEGIC_ANALYSIS',
+                success: true,
+                memoryUsed: !!context.memoryContext,
+                queryType: intel.type
+            };
+            
+        } catch (ultimateError) {
+            console.log("⚠️ Ultimate analysis failed, using basic GPT fallback:", ultimateError.message);
+            
+            // Final fallback to basic GPT
+            const { getGptAnalysis } = require('./utils/openaiClient');
+            
+            const enhancedPrompt = context.memoryContext ? 
+                `${context.memoryContext}\n\nUser: ${text}` : text;
+                
+            const response = await getGptAnalysis(enhancedPrompt, {
+                max_tokens: 1500,
+                temperature: 0.7,
+                model: "gpt-5"
+            });
+            
+            return {
+                response: response,
+                aiUsed: 'GPT_FALLBACK',
+                success: true,
+                memoryUsed: !!context.memoryContext,
+                queryType: intel.type
+            };
+        }
     }
 }
 
@@ -479,7 +518,9 @@ async function saveConversationToDatabase(chatId, userMessage, result, context) 
             queryType: result.queryType,
             memoryUsed: context.memoryAvailable,
             success: result.success,
-            enhanced: true
+            enhanced: true,
+            responseTime: result.responseTime || 0,
+            timestamp: new Date().toISOString()
         });
         console.log("✅ Conversation saved to database");
     } catch (error) {
@@ -490,20 +531,38 @@ async function saveConversationToDatabase(chatId, userMessage, result, context) 
 // 🧠 Extract and Save Memories
 async function extractAndSaveMemories(chatId, userMessage, aiResponse) {
     try {
-        const { extractAndSaveFacts } = require('./utils/memory');
-        const result = await extractAndSaveFacts(chatId, userMessage, aiResponse);
-        
-        if (result?.extractedFacts > 0) {
-            console.log(`✅ Extracted ${result.extractedFacts} new memories`);
+        // Check if we should save to persistent memory
+        if (shouldSaveToPersistentMemory(userMessage, aiResponse)) {
+            const memoryFact = extractMemoryFact(userMessage, aiResponse);
+            
+            if (memoryFact) {
+                await addPersistentMemoryDB(chatId, memoryFact, 'medium');
+                console.log(`✅ Saved memory: ${memoryFact.substring(0, 50)}...`);
+            }
         }
+        
+        // Try enhanced memory extraction if available
+        try {
+            const { extractAndSaveFacts } = require('./utils/memory');
+            const result = await extractAndSaveFacts(chatId, userMessage, aiResponse);
+            
+            if (result?.extractedFacts > 0) {
+                console.log(`✅ Extracted ${result.extractedFacts} additional memories`);
+            }
+        } catch (enhancedError) {
+            console.log('⚠️ Enhanced memory extraction not available:', enhancedError.message);
+        }
+        
     } catch (error) {
         console.log('⚠️ Memory extraction failed:', error.message);
     }
 }
 
-// 🚨 Fallback Response Handler
+// 🚨 ENHANCED: Fallback Response Handler
 async function handleFallbackResponse(chatId, text) {
     try {
+        console.log('🆘 Using emergency fallback response...');
+        
         // Try to get minimal context
         let basicContext = '';
         try {
@@ -515,26 +574,50 @@ async function handleFallbackResponse(chatId, text) {
             console.log('⚠️ Even basic context failed');
         }
         
-        return await getUniversalAnalysis(text + basicContext, {
-            maxTokens: 1000,
-            temperature: 0.7,
-            model: "gpt-5"
-        });
+        // Try basic GPT analysis
+        try {
+            const { getGptAnalysis } = require('./utils/openaiClient');
+            
+            return await getGptAnalysis(text + basicContext, {
+                max_tokens: 1000,
+                temperature: 0.7,
+                model: "gpt-5"
+            });
+            
+        } catch (gptError) {
+            console.log('⚠️ GPT fallback failed:', gptError.message);
+            
+            // Final emergency response
+            return `🚨 I'm experiencing technical difficulties right now. 
+
+**What I can tell you:**
+- Your message was received: "${text.substring(0, 100)}${text.length > 100 ? '...' : ''}"
+- Chat ID: ${chatId}
+- Timestamp: ${new Date().toISOString()}
+
+**Please try:**
+- Asking your question again in a moment
+- Using simpler language
+- Checking the /status command
+
+I'll be back to full capacity shortly! 🔧`;
+        }
         
     } catch (error) {
-        console.error('❌ Fallback also failed:', error.message);
-        return "🚨 I'm experiencing technical difficulties. Please try again in a moment.";
+        console.error('❌ Complete fallback failure:', error.message);
+        return "🚨 Complete system error. Please contact administrator.";
     }
 }
 
-// 🔧 Helper Functions
+// 🔧 Helper Functions (keeping your original ones)
 function buildMemoryContextString(history, memories) {
     let context = '\n\n🧠 MEMORY CONTEXT:\n';
     
     if (memories.length > 0) {
         context += '\nIMPORTANT FACTS:\n';
         memories.slice(0, 3).forEach((mem, i) => {
-            context += `${i + 1}. ${mem.fact}\n`;
+            const fact = mem.fact || mem.memory || mem;
+            context += `${i + 1}. ${fact}\n`;
         });
     }
     
@@ -542,8 +625,9 @@ function buildMemoryContextString(history, memories) {
         context += '\nRECENT CONVERSATION:\n';
         const recent = history[0];
         context += `User: "${recent.user_message?.substring(0, 80)}..."\n`;
-        if (recent.gpt_response) {
-            context += `AI: "${recent.gpt_response.substring(0, 80)}..."\n`;
+        if (recent.gpt_response || recent.ai_response) {
+            const response = recent.gpt_response || recent.ai_response;
+            context += `AI: "${response.substring(0, 80)}..."\n`;
         }
     }
     
@@ -555,11 +639,17 @@ function determineConversationType(text) {
     
     const lower = text.toLowerCase();
     
-    if (lower.includes('financial') || lower.includes('investment') || lower.includes('fund')) {
+    if (lower.includes('financial') || lower.includes('investment') || lower.includes('fund') || lower.includes('money')) {
         return 'financial_analysis';
     }
-    if (lower.includes('analysis') || lower.includes('strategy')) {
+    if (lower.includes('analysis') || lower.includes('strategy') || lower.includes('strategic')) {
         return 'strategic_analysis';
+    }
+    if (lower.includes('cambodia') || lower.includes('khmer')) {
+        return 'cambodia_analysis';
+    }
+    if (lower.includes('portfolio') || lower.includes('allocation')) {
+        return 'portfolio_management';
     }
     if (lower.length > 100) {
         return 'complex_discussion';
@@ -571,19 +661,26 @@ function determineConversationType(text) {
 function determineComplexity(text) {
     if (!text) return 'simple';
     
-    if (text.length > 200) return 'complex';
-    if (text.length > 50) return 'medium';
+    const words = text.split(/\s+/).length;
+    const questions = (text.match(/\?/g) || []).length;
+    const hasNumbers = /\d/.test(text);
+    const hasFinancialTerms = /\b(investment|portfolio|fund|analysis|strategy|market|trading)\b/i.test(text);
+    
+    if (words > 50 || questions > 2 || (hasNumbers && hasFinancialTerms)) return 'complex';
+    if (words > 15 || questions > 0 || hasFinancialTerms) return 'medium';
     return 'simple';
 }
 
 function requiresLiveData(text) {
     if (!text) return false;
     
-    const liveDataKeywords = ['current', 'latest', 'today', 'now', 'recent', 'update'];
+    const liveDataKeywords = [
+        'current', 'latest', 'today', 'now', 'recent', 'update', 'real-time',
+        'price', 'rate', 'market', 'trading', 'live', 'fresh', 'new'
+    ];
     return liveDataKeywords.some(keyword => text.toLowerCase().includes(keyword));
 }
 
-// 🔧 ADDITIONAL HELPER FUNCTIONS
 function shouldSaveToPersistentMemory(userMessage, aiResponse) {
     const lowerMessage = userMessage.toLowerCase();
     const lowerResponse = aiResponse.toLowerCase();
@@ -591,7 +688,9 @@ function shouldSaveToPersistentMemory(userMessage, aiResponse) {
     return lowerMessage.includes('remember') || 
            lowerMessage.includes('my preference') ||
            lowerMessage.includes('my name') ||
+           lowerMessage.includes('important') ||
            lowerResponse.includes('important to note') ||
+           lowerResponse.includes('key insight') ||
            aiResponse.length > 500;
 }
 
@@ -612,145 +711,28 @@ function extractMemoryFact(userMessage, aiResponse) {
         return insight ? `Strategic insight: ${insight.trim()}` : null;
     }
     
+    if (aiResponse.includes('Important:')) {
+        const important = aiResponse.split('Important:')[1]?.split('\n')[0];
+        return important ? `Important fact: ${important.trim()}` : null;
+    }
+    
     return `Context: ${userMessage.substring(0, 100)}`;
 }
 
-// 🔧 SESSION MANAGEMENT FUNCTIONS
-async function startUserSession(chatId, sessionType = 'GENERAL') {
-    try {
-        console.log(`📊 Starting session for ${chatId}: ${sessionType}`);
-        const sessionId = `session_${chatId}_${Date.now()}`;
-        
-        // You can expand this to save to database if needed
-        // await saveSessionToDB(sessionId, chatId, sessionType);
-        
-        return sessionId;
-    } catch (error) {
-        console.error('❌ Start session error:', error.message);
-        return null;
-    }
-}
+// Export the main function
+module.exports = {
+    handleDualAIConversation,
+    buildConversationContext,
+    executeDualAICommand,
+    saveConversationToDatabase,
+    extractAndSaveMemories,
+    handleFallbackResponse
+};
 
-async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
-    try {
-        console.log(`📊 Ending session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
-        
-        // You can expand this to update database if needed
-        // await updateSessionInDB(sessionId, commandsExecuted, totalResponseTime);
-        
-        return true;
-    } catch (error) {
-        console.error('❌ End session error:', error.message);
-        return false;
-    }
-}
-
-// 🔧 COMMAND EXECUTION WITH LOGGING
-async function executeCommandWithLogging(chatId, text, sessionId) {
-    const startTime = Date.now();
-    
-    try {
-        // Route to dual AI conversation handler
-        await handleDualAIConversation(chatId, text, sessionId);
-        
-        const executionTime = Date.now() - startTime;
-        
-        // Log successful command
-        await logCommandUsage(chatId, text, executionTime, true);
-        
-        return executionTime;
-        
-    } catch (error) {
-        const executionTime = Date.now() - startTime;
-        
-        // Log failed command
-        await logCommandUsage(chatId, text, executionTime, false, error.message);
-        
-        throw error;
-    }
-}
-
-// 🔧 COMMAND USAGE LOGGING
-async function logCommandUsageDetailed(chatId, command, executionTime, successful = true, errorMessage = null) {
-    try {
-        console.log(`📊 Command Log: ${chatId} | ${command.substring(0, 30)} | ${executionTime}ms | ${successful ? 'SUCCESS' : 'FAILED'}`);
-        
-        if (!successful && errorMessage) {
-            console.log(`❌ Error: ${errorMessage}`);
-        }
-        
-        // You can expand this to save to database if needed
-        // await saveCommandLogToDB(chatId, command, executionTime, successful, errorMessage);
-        
-        return true;
-    } catch (error) {
-        console.error('❌ Log command usage error:', error.message);
-        return false;
-    }
-}
-
-// 🔧 API USAGE LOGGING
-async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
-    try {
-        console.log(`🔌 API Usage: ${apiProvider}/${endpoint} | Calls: ${callsCount} | ${successful ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | Cost: ${costEstimate}`);
-        
-        // You can expand this to save to database for cost tracking
-        // await saveApiUsageToDB(apiProvider, endpoint, callsCount, successful, responseTime, dataVolume, costEstimate);
-        
-        return true;
-    } catch (error) {
-        console.error('❌ Log API usage error:', error.message);
-        return false;
-    }
-}
-
-// 🔧 UPDATED: Enhanced command handlers with wealth system integration
-async function handleStartCommand(chatId) {
-    const welcome = `🤖 **Enhanced AI Assistant System v4.0 - WEALTH EMPIRE**
-
-**🎯 Core Features:**
-- Dual AI: gpt-5 + Claude Opus 4.1
-- Complete AI Wealth-Building System (10 modules)
-- Enhanced PostgreSQL Database Integration
-- Live market data & Ray Dalio framework
-- Cambodia fund analysis
-- Advanced document processing
-- Voice and image analysis
-- Persistent memory system
-
-**🔧 System Management:**
-/analytics - Master system analytics
-/db_stats - Database statistics
-/status - Enhanced system status
-/maintenance - Database maintenance
-
-**🧪 Memory & Database Testing:**
-/test_db - Test database connection
-/test_memory - Test memory system
-/test_memory_fix - Memory recovery test
-/memory_stats - Memory statistics
-
-**Chat ID:** ${chatId}
-**🏆 AI Wealth Empire Status:** ACTIVE
-**Database Status:** ${connectionStats.connectionHealth}`;
-
-    await sendSmartMessage(bot, chatId, welcome);
-    
-    // Save welcome interaction
-    await saveConversationDB(chatId, "/start", welcome, "command").catch(console.error);
-}
-
-
-// 🔧 FIXED: Enhanced system status with better database checking
-async function handleEnhancedSystemStatus(chatId) {
-    try {
-        await bot.sendMessage(chatId, "🔄 Checking enhanced system status...");
-
-        const [health, stats, dualAIStats] = await Promise.all([
-            checkSystemHealth(),
-            getDatabaseStats(),
-            getDualAIPerformanceDashboard(7).catch(() => ({ error: 'Not available' }))
-        ]);
+console.log('✅ Fixed Dual AI Conversation Handler loaded');
+console.log('🤖 Multi-tier fallback: Dual AI → Ultimate Strategic → GPT → Emergency');
+console.log('🧠 Enhanced memory integration with persistent storage');
+console.log('📊 Comprehensive conversation intelligence and analytics');
 
         // Check database connection status
         const dbConnected = !!(stats && stats.connected === true);
