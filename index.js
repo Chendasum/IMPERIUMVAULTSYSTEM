@@ -76,8 +76,8 @@ const {
     processVoiceMessage,
     processImageMessage,
     processDocumentMessage,
-    processVideoMessage,
-} = require("./utils/multimodal");
+    processVideoMessage
+} = require('./utils/multimodal');
 
 // Import COMPLETE enhanced database system
 const {
@@ -1928,7 +1928,7 @@ async function handleVoiceMessage(msg, chatId, sessionId) {
         await bot.sendMessage(chatId, "🎤 Transcribing voice message with GPT-5 + Claude Opus 4.1 enhanced AI...");
         
         // 🔧 FIXED: Use working Whisper transcription
-        const transcribedText = await processVoiceMessageFixed(bot, msg.voice.file_id, chatId);
+        const transcribedText = await processVoiceMessage(bot, msg.voice.file_id, chatId);
         const responseTime = Date.now() - startTime;
         
         if (transcribedText && transcribedText.length > 0) {
@@ -1996,7 +1996,7 @@ await sendSmartMessage(bot, chatId, result.response);
 // Fixed voice, image, and document processing with proper dual AI integration
 
 // 🔧 FIXED: Voice message processing with proper Whisper integration
-async function processVoiceMessageFixed(bot, fileId, chatId) {
+async function processVoiceMessage(bot, fileId, chatId) {
     try {
         console.log("🔄 Starting enhanced Whisper voice transcription...");
         
@@ -3007,7 +3007,7 @@ async function handleMultimodalMessage(msg, chatId, sessionId) {
             await bot.sendMessage(chatId, "🎤 Processing voice message with Whisper + Dual AI...");
             
             // Process voice message
-            const transcription = await processVoiceMessageFixed(bot, msg.voice.file_id, chatId);
+            const transcription = await processVoiceMessage(bot, msg.voice.file_id, chatId);
             
             if (transcription && transcription.length > 0) {
                 // Send transcription first
@@ -3030,7 +3030,7 @@ async function handleMultimodalMessage(msg, chatId, sessionId) {
             validateImageMessage(msg);
             
             await bot.sendMessage(chatId, "🖼️ Analyzing image with GPT-5 Vision + Dual AI...");
-            await processImageMessageFixed(msg, chatId, sessionId);
+            await processImageMessage(msg, chatId, sessionId);
             
         } else if (msg.document) {
             console.log("📄 Document message detected");
@@ -3140,29 +3140,7 @@ function checkRequiredDependencies() {
 // 🔧 Export all functions
 module.exports = {
     // Main processing functions
-    processVoiceMessageFixed,
-    processVoiceWithDualAI,
-    processImageMessage,
-    handleDocumentMessage,
-    handleMultimodalMessage,
-    
-    // Analysis functions
-    analyzeImageWithGPT5,
-    
-    // Extraction functions
-    extractTextFromPDF,
-    extractTextFromWord,
-    extractTextFromExcel,
-    
-    // Validation functions
-    validateVoiceMessage,
-    validateImageMessage,
-    validateDocumentMessage,
-    
-    // Utility functions
-    debugMultimodalProcessing,
-    getMessageType,
-    checkRequiredDependencies
+    processVoiceMessage
 };
 
 console.log('✅ Enhanced Multimodal Processing System loaded');
