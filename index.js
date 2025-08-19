@@ -484,7 +484,7 @@ async function executeDualAICommand(text, chatId, context, intel) {
                 `${context.memoryContext}\n\nUser: ${text}` : text;
                 
             const response = await getGptAnalysis(enhancedPrompt, {
-                max_tokens: 1500,
+                max_tokens: 3000,
                 temperature: 0.7,
                 model: "gpt-5"
             });
@@ -569,7 +569,7 @@ async function handleFallbackResponse(chatId, text) {
             const { getGptAnalysis } = require('./utils/openaiClient');
             
             return await getGptAnalysis(text + basicContext, {
-                max_tokens: 1000,
+                max_tokens: 3000,
                 temperature: 0.7,
                 model: "gpt-5"
             });
@@ -1708,7 +1708,7 @@ Execute comprehensive institutional-level visual intelligence analysis.`;
                         ]
                     }
                 ],
-                max_tokens: 2000,
+                max_tokens: 3000,
                 temperature: 0.7
             });
             
@@ -1747,7 +1747,7 @@ Execute comprehensive institutional-level visual intelligence analysis.`;
                         ]
                     }
                 ],
-                max_tokens: 2000,
+                max_tokens: 3000,
                 temperature: 0.7
             });
             
