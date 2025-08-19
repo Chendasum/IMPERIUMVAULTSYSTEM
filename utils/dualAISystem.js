@@ -7,10 +7,6 @@ const { OpenAI } = require("openai");
 const { Anthropic } = require("@anthropic-ai/sdk");
 require("dotenv").config({ path: ".env" });
 
-const { UltimateStrategicPowerRouter } = require('./piece_2_router_class');
-const { UltimatePowerExecutor } = require('./piece_3_executor_class');
-const { UltimateSystemHealthMonitor } = require('./piece_4_health_monitor');
-
 // 🔧 ENHANCED SAFE IMPORTS WITH INTELLIGENT FALLBACKS
 let claudeClient, openaiClient, logger;
 
