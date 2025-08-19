@@ -718,22 +718,6 @@ async function handleStartCommand(chatId) {
 - Voice and image analysis
 - Persistent memory system
 
-**🏦 Cambodia Fund Commands:**
-/deal_analyze [amount] [type] [location] [rate] [term]
-/portfolio - Fund status & analytics
-/cambodia_market - Market conditions
-/risk_assessment - Risk analysis
-
-**📊 Market Analysis:**
-/briefing - Daily market briefing
-/regime - Economic regime analysis
-/opportunities - Trading opportunities
-/macro - Macro outlook
-
-**💹 Trading:**
-/trading - Account status
-/positions - Open positions
-
 **🔧 System Management:**
 /analytics - Master system analytics
 /db_stats - Database statistics
