@@ -12,39 +12,6 @@ console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "N
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
 
-// Import enhanced utility modules
-const { 
-    getRealLiveData, 
-    getEnhancedLiveData, 
-    getEconomicIndicators,
-    getStockMarketData,
-    getRayDalioMarketData,
-    getFredData,
-    getAlphaVantageData,
-    detectEconomicRegime,
-    getYieldCurveAnalysis,
-    detectMarketAnomalies,
-    generateMarketInsights,
-    getCurrentCambodiaDateTime,
-    getCurrentGlobalDateTime,
-    getCreditSpreadAnalysis,
-    getInflationExpectations,
-    getSectorRotationSignals,
-    calculateAssetCorrelations,
-    getEnhancedCryptoData,
-    getMajorForexPairs,
-    getCommodityPrices,
-    getBusinessHeadlines
-} = require("./utils/liveData");
-
-const { 
-    analyzeLendingDeal, 
-    getPortfolioStatus, 
-    getCambodiaMarketConditions, 
-    performRiskAssessment, 
-    generateLPReport 
-} = require("./utils/cambodiaLending");
-
 // 🎯 MAIN DUAL AI SYSTEM - Smart routing between GPT-5 and Claude Opus 4.1
 const { 
     getUltimateStrategicAnalysis,  // 🏆 MAIN FUNCTION
