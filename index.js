@@ -346,19 +346,13 @@ bot.on("message", async (msg) => {
     }
 });
 
+// 🤖 FIXED: Dual AI Conversation Handler - Clean and Focused
 
+// 🔧 Required imports at the top
+const { executeDualCommand } = require('./utils/dualCommandSystem');
+const { getUltimateStrategicAnalysis } = require('./utils/dualAISystem');
 
-
-// 🔧 FIXED: Enhanced system status with better database checking
-async function handleEnhancedSystemStatus(chatId) {
-    try {
-        await bot.sendMessage(chatId, "🔄 Checking enhanced system status...");
-
-        const [health, stats, dualAIStats] = await Promise.all([
-            checkSystemHealth(),
-            getDatabaseStats(),
-            getDualAIPerformanceDashboard(7).catch(() => ({ error: 'Not available' }))
-        ]);// 🤖 Main Dual AI Conversation Handler
+// 🤖 Main Dual AI Conversation Handler
 async function handleDualAIConversation(chatId, text, sessionId) {
     const startTime = Date.now();
     
@@ -733,6 +727,143 @@ console.log('✅ Fixed Dual AI Conversation Handler loaded');
 console.log('🤖 Multi-tier fallback: Dual AI → Ultimate Strategic → GPT → Emergency');
 console.log('🧠 Enhanced memory integration with persistent storage');
 console.log('📊 Comprehensive conversation intelligence and analytics');
+
+// 🔧 SESSION MANAGEMENT FUNCTIONS
+async function startUserSession(chatId, sessionType = 'GENERAL') {
+    try {
+        console.log(`📊 Starting session for ${chatId}: ${sessionType}`);
+        const sessionId = `session_${chatId}_${Date.now()}`;
+        
+        // You can expand this to save to database if needed
+        // await saveSessionToDB(sessionId, chatId, sessionType);
+        
+        return sessionId;
+    } catch (error) {
+        console.error('❌ Start session error:', error.message);
+        return null;
+    }
+}
+
+async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
+    try {
+        console.log(`📊 Ending session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
+        
+        // You can expand this to update database if needed
+        // await updateSessionInDB(sessionId, commandsExecuted, totalResponseTime);
+        
+        return true;
+    } catch (error) {
+        console.error('❌ End session error:', error.message);
+        return false;
+    }
+}
+
+// 🔧 COMMAND EXECUTION WITH LOGGING
+async function executeCommandWithLogging(chatId, text, sessionId) {
+    const startTime = Date.now();
+    
+    try {
+        // Route to dual AI conversation handler
+        await handleDualAIConversation(chatId, text, sessionId);
+        
+        const executionTime = Date.now() - startTime;
+        
+        // Log successful command
+        await logCommandUsage(chatId, text, executionTime, true);
+        
+        return executionTime;
+        
+    } catch (error) {
+        const executionTime = Date.now() - startTime;
+        
+        // Log failed command
+        await logCommandUsage(chatId, text, executionTime, false, error.message);
+        
+        throw error;
+    }
+}
+
+// 🔧 COMMAND USAGE LOGGING
+async function logCommandUsageDetailed(chatId, command, executionTime, successful = true, errorMessage = null) {
+    try {
+        console.log(`📊 Command Log: ${chatId} | ${command.substring(0, 30)} | ${executionTime}ms | ${successful ? 'SUCCESS' : 'FAILED'}`);
+        
+        if (!successful && errorMessage) {
+            console.log(`❌ Error: ${errorMessage}`);
+        }
+        
+        // You can expand this to save to database if needed
+        // await saveCommandLogToDB(chatId, command, executionTime, successful, errorMessage);
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Log command usage error:', error.message);
+        return false;
+    }
+}
+
+// 🔧 API USAGE LOGGING
+async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
+    try {
+        console.log(`🔌 API Usage: ${apiProvider}/${endpoint} | Calls: ${callsCount} | ${successful ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | Cost: ${costEstimate}`);
+        
+        // You can expand this to save to database for cost tracking
+        // await saveApiUsageToDB(apiProvider, endpoint, callsCount, successful, responseTime, dataVolume, costEstimate);
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Log API usage error:', error.message);
+        return false;
+    }
+}
+
+// 🔧 UPDATED: Enhanced command handlers with wealth system integration
+async function handleStartCommand(chatId) {
+    const welcome = `🤖 **Enhanced AI Assistant System v4.0 - WEALTH EMPIRE**
+
+**🎯 Core Features:**
+- Dual AI: gpt-5 + Claude Opus 4.1
+- Complete AI Wealth-Building System (10 modules)
+- Enhanced PostgreSQL Database Integration
+- Live market data & Ray Dalio framework
+- Cambodia fund analysis
+- Advanced document processing
+- Voice and image analysis
+- Persistent memory system
+
+**🔧 System Management:**
+/analytics - Master system analytics
+/db_stats - Database statistics
+/status - Enhanced system status
+/maintenance - Database maintenance
+
+**🧪 Memory & Database Testing:**
+/test_db - Test database connection
+/test_memory - Test memory system
+/test_memory_fix - Memory recovery test
+/memory_stats - Memory statistics
+
+**Chat ID:** ${chatId}
+**🏆 AI Wealth Empire Status:** ACTIVE
+**Database Status:** ${connectionStats.connectionHealth}`;
+
+    await sendSmartMessage(bot, chatId, welcome);
+    
+    // Save welcome interaction
+    await saveConversationDB(chatId, "/start", welcome, "command").catch(console.error);
+}
+
+
+// 🔧 FIXED: Enhanced system status with better database checking
+async function handleEnhancedSystemStatus(chatId) {
+    try {
+        await bot.sendMessage(chatId, "🔄 Checking enhanced system status...");
+
+        const [health, stats, dualAIStats] = await Promise.all([
+            checkSystemHealth(),
+            getDatabaseStats(),
+            getDualAIPerformanceDashboard(7).catch(() => ({ error: 'Not available' }))
+        ]);
 
         // Check database connection status
         const dbConnected = !!(stats && stats.connected === true);
