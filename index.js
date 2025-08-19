@@ -12,19 +12,29 @@ console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "N
 const TelegramBot = require("node-telegram-bot-api");
 const { OpenAI } = require("openai");
 
-// 🔧 FIXED: Clean imports - removed duplicates and organized by functionality
+// Import enhanced utility modules
 const { 
     getRealLiveData, 
     getEnhancedLiveData, 
     getEconomicIndicators,
     getStockMarketData,
     getRayDalioMarketData,
+    getFredData,
+    getAlphaVantageData,
     detectEconomicRegime,
     getYieldCurveAnalysis,
     detectMarketAnomalies,
     generateMarketInsights,
     getCurrentCambodiaDateTime,
-    getCurrentGlobalDateTime
+    getCurrentGlobalDateTime,
+    getCreditSpreadAnalysis,
+    getInflationExpectations,
+    getSectorRotationSignals,
+    calculateAssetCorrelations,
+    getEnhancedCryptoData,
+    getMajorForexPairs,
+    getCommodityPrices,
+    getBusinessHeadlines
 } = require("./utils/liveData");
 
 const { 
@@ -54,25 +64,93 @@ const {
     initializeUltimateStrategicPowerSystem  // 🏆 NEW: Full system
 } = require("./utils/dualAISystem");
 
-// 🔧 FIXED: Telegram utilities
 const {
     sendSmartMessage,
-    sendAnalysis
+    sendAnalysis,
+    sendCambodiaAnalysis,
+    sendMarketAnalysis,
+    sendAlert
 } = require("./utils/telegramSplitter");
 
-// 🔧 FIXED: Database functions - only what we actually use
 const {
+    processVoiceMessage,
+    processImageMessage,
+    processDocumentMessage,
+    processVideoMessage,
+} = require("./utils/multimodal");
+
+// Import COMPLETE enhanced database system
+const {
+    // Core database functions
     initializeDatabase,
     saveConversationDB,
     getConversationHistoryDB,
-    getPersistentMemoryDB,
-    addPersistentMemoryDB,
+    getUserProfileDB,
     getDatabaseStats,
+    
+    // Enhanced persistent memory
+    addPersistentMemoryDB,
+    getPersistentMemoryDB,
+    
+    // Training documents
+    saveTrainingDocumentDB,
+    getTrainingDocumentsDB,
+    
+// Ray Dalio enhanced functions
+saveRegimeData,
+savePortfolioAllocation,
+saveRiskAssessment,
+saveRegimePerformance,
+savePositionSizing,
+saveMarketSignal,
+saveDailyObservation,
+// logCommandUsage,       // ← COMMENTED OUT
+getCurrentRegime,
+getLatestRiskAssessment,
+    
+    // Cambodia fund functions
+    saveCambodiaDeal,
+    saveCambodiaPortfolio,
+    getCambodiaFundAnalytics,
+    getLatestCambodiaMarketData,
+    getCambodiaDealsBy,
+    
+    // Enhanced dual AI system
+    saveDualAIConversation,
+    saveAIHeadToHead,
+    saveEnhancedFunctionPerformance,
+    getDualAIPerformanceDashboard,
+    getConversationIntelligenceAnalytics,
+    getMasterEnhancedDualSystemAnalytics,
+    saveEnhancedDualConversation,
+    
+    // Analytics and monitoring
+    getSystemAnalytics,
+    getRayDalioStats,
     performHealthCheck,
     updateSystemMetrics,
-    logCommandUsage,
+    performDatabaseMaintenance,
+    
+    // Connection monitoring
     connectionStats
 } = require("./utils/database");
+
+const { buildConversationContext } = require("./utils/memory");
+const { getTradingSummary, getAccountInfo } = require("./utils/metaTrader");
+
+// Import specialized AI clients (non-duplicate functions only)
+const { 
+    getClaudeAnalysis: getClaudeAnalysisRaw,  // Rename to avoid conflict
+    getStrategicAnalysis: getClaudeStrategicAnalysis,
+    getRegimeAnalysis,
+    getPortfolioAnalysis,
+    getAnomalyAnalysis
+} = require('./utils/claudeClient');
+
+const { 
+    getGptAnalysis,  // Raw GPT function if needed
+    getStrategicAnalysis: getGptStrategicAnalysis
+} = require('./utils/openaiClient');
 
 // Load credentials
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
