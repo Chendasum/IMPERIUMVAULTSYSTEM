@@ -2152,7 +2152,7 @@ async function processVoiceWithDualAI(transcribedText, chatId, sessionId) {
 }
 
 // 🔧 COMPLETELY REWRITTEN: Image processing with proper GPT-5 vision integration
-async function processImageMessageFixed(msg, chatId, sessionId) {
+async function processImageMessage(msg, chatId, sessionId) {
     const startTime = Date.now();
     
     try {
