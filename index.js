@@ -247,9 +247,7 @@ async function testDatabaseFunctions() {
 // Initialize daily metrics
 async function initializeDailyMetrics() {
     try {
-        await updateSystemMetrics({
-            system_startup: 1
-        });
+        await updateSystemMetrics({ total_users: 0 });
         console.log("📊 Daily metrics initialized");
     } catch (error) {
         console.error("⚠️ Daily metrics initialization failed:", error.message);
