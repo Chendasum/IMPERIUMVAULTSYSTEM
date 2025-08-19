@@ -1646,9 +1646,13 @@ function shouldSaveToPersistentMemoryAdvanced(userMessage, aiResponse) {
     return false;
 }
 
-// 🔧 ENHANCED: Memory fact extraction with better patterns
+// 🔧 ENHANCED: Memory fact extraction with better patterns - FIXED
 function extractMemoryFactAdvanced(userMessage, aiResponse) {
-    if (!userMessage || !aiResponse) return null;
+    // Add safety checks at the beginning
+    if (!userMessage || typeof userMessage !== 'string' || !aiResponse || typeof aiResponse !== 'string') {
+        console.log('Invalid input - userMessage:', typeof userMessage, 'aiResponse:', typeof aiResponse);
+        return null;
+    }
     
     const lowerMessage = userMessage.toLowerCase();
     
@@ -1666,7 +1670,7 @@ function extractMemoryFactAdvanced(userMessage, aiResponse) {
     
     for (const { pattern, template } of personalPatterns) {
         const match = userMessage.match(pattern);
-        if (match) {
+        if (match && match[1]) {
             return template.replace('{1}', match[1].trim());
         }
     }
@@ -1681,7 +1685,7 @@ function extractMemoryFactAdvanced(userMessage, aiResponse) {
     
     for (const { pattern, template } of preferencePatterns) {
         const match = userMessage.match(pattern);
-        if (match) {
+        if (match && match[1]) {
             return template.replace('{1}', match[1].trim());
         }
     }
@@ -1696,7 +1700,7 @@ function extractMemoryFactAdvanced(userMessage, aiResponse) {
     
     for (const { pattern, template } of goalPatterns) {
         const match = userMessage.match(pattern);
-        if (match) {
+        if (match && match[1]) {
             return template.replace('{1}', match[1].trim());
         }
     }
@@ -1704,9 +1708,10 @@ function extractMemoryFactAdvanced(userMessage, aiResponse) {
     // Remember directive
     if (lowerMessage.includes('remember')) {
         const rememberMatch = userMessage.match(/remember (?:that )?([^.,\n!?]+)/i);
-        if (rememberMatch) {
+        if (rememberMatch && rememberMatch[1]) {
             return `Important fact: ${rememberMatch[1].trim()}`;
         }
+        // FIXED: Added safety check here
         return `User request: ${userMessage.trim()}`;
     }
     
@@ -1719,7 +1724,7 @@ function extractMemoryFactAdvanced(userMessage, aiResponse) {
     for (const pattern of responsePatterns) {
         if (aiResponse.includes(pattern)) {
             const insight = aiResponse.split(pattern)[1]?.split('\n')[0];
-            if (insight && insight.trim().length > 10) {
+            if (insight && typeof insight === 'string' && insight.trim().length > 10) {
                 return `AI insight: ${insight.trim()}`;
             }
         }
@@ -1727,13 +1732,14 @@ function extractMemoryFactAdvanced(userMessage, aiResponse) {
     
     // Recommendations
     const recommendationMatch = aiResponse.match(/I recommend ([^.,\n!?]+)/i);
-    if (recommendationMatch) {
+    if (recommendationMatch && recommendationMatch[1]) {
         return `AI recommendation: ${recommendationMatch[1].trim()}`;
     }
     
     // Extract important sentences
     const sentences = aiResponse.split('. ');
     const importantSentence = sentences.find(s => {
+        if (!s || typeof s !== 'string') return false;
         const lower = s.toLowerCase();
         return (lower.includes('important') || lower.includes('key') || 
                 lower.includes('strategic') || lower.includes('critical') ||
@@ -1748,11 +1754,12 @@ function extractMemoryFactAdvanced(userMessage, aiResponse) {
     // Financial context preservation
     if (lowerMessage.includes('cambodia') || lowerMessage.includes('fund') ||
         lowerMessage.includes('investment') || lowerMessage.includes('lending')) {
-        return `Financial context: ${userMessage.substring(0, 100)}`;
+        // FIXED: Added safety check for substring
+        return `Financial context: ${userMessage.length > 100 ? userMessage.substring(0, 100) : userMessage}`;
     }
     
-    // Fallback for general context
-    if (userMessage.length > 20 && userMessage.length < 150) {
+    // Fallback for general context - FIXED: Added safety checks
+    if (userMessage && userMessage.length > 20 && userMessage.length < 150) {
         return `Conversation context: ${userMessage.trim()}`;
     }
     
