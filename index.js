@@ -47,21 +47,21 @@ const {
 
 // 🎯 MAIN DUAL AI SYSTEM - Smart routing between GPT-5 and Claude Opus 4.1
 const { 
-    getUltimateStrategicAnalysis,  // 🏆 MAIN FUNCTION
-    getUniversalAnalysis,          // ✅ Still works (points to Ultimate)
-    getDualAnalysis,               // ✅ Still works (points to Ultimate)
-    routeQuery, 
-    checkDualSystemHealth, 
-    testMemoryIntegration, 
-    analyzeImageWithAI, 
-    getGPT5Analysis, 
-    getClaudeAnalysis, 
-    getMarketAnalysis, 
-    getCambodiaAnalysis, 
-    dualAIRouter, 
-    getPerformanceStats,
-    quickSetup,                    // 🚀 NEW: Quick setup function
-    initializeUltimateStrategicPowerSystem  // 🏆 NEW: Full system
+    getUltimateStrategicAnalysis,  // 🏆 MAIN FUNCTION ✅ EXISTS
+    getUniversalAnalysis,          // ✅ EXISTS (points to Ultimate)
+    getDualAnalysis,               // ✅ EXISTS (points to Ultimate)
+    routeQuery,                    // ✅ EXISTS 
+    checkDualSystemHealth,         // ✅ EXISTS
+    testMemoryIntegration,         // ✅ EXISTS
+    analyzeImageWithAI,            // ✅ EXISTS
+    getGPT5Analysis,               // ✅ EXISTS
+    getClaudeAnalysis,             // ✅ EXISTS
+    getMarketAnalysis,             // ✅ EXISTS
+    getCambodiaAnalysis,           // ✅ EXISTS
+    dualAIRouter,                  // ✅ EXISTS
+    getPerformanceStats,           // ✅ EXISTS
+    quickSetup,                    // ✅ EXISTS
+    initializeUltimateStrategicPowerSystem  // ✅ EXISTS
 } = require("./utils/dualAISystem");
 
 const {
