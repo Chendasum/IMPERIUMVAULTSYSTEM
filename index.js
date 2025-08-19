@@ -267,29 +267,25 @@ async function logApiUsage(service, endpoint, calls = 1, success = true, respons
         return false;
     }
 }
-
-// 🔧 COMPLETELY FIXED: Main message handler
+// Enhanced main message handler with dual AI integration
 bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
+    const messageId = `${chatId}_${Date.now()}`;
     
     console.log(`📨 Message from ${chatId}: ${text?.substring(0, 50) || 'Media message'}`);
     
     // Security check
     if (!isAuthorizedUser(chatId)) {
         console.log(`🚫 Unauthorized access from ${chatId}`);
-        try {
-            await bot.sendMessage(chatId, 
-                `🚫 Access denied. This is a private AI system.\n\nYour Chat ID: ${chatId}\n\nContact admin if this is your account.`
-            );
-        } catch (sendError) {
-            console.error('Failed to send unauthorized message:', sendError.message);
-        }
+        await sendSmartMessage(bot, chatId, 
+            `🚫 Access denied. This is a private AI system.\n\nYour Chat ID: ${chatId}\n\nContact admin if this is your account.`
+        );
         return;
     }
 
     // Start session tracking
-    const sessionId = await startUserSession(chatId, 'TELEGRAM_BOT');
+    const sessionId = await startUserSession(chatId, 'TELEGRAM_BOT').catch(() => null);
     const startTime = Date.now();
 
     try {
@@ -307,52 +303,39 @@ bot.on("message", async (msg) => {
         }
 
         if (msg.document) {
-            console.log("📄 Document received:", msg.document?.file_name || 'unknown');
+            console.log("📄 Document received:", msg.document.file_name);
             await handleDocumentMessage(msg, chatId, sessionId);
             return;
         }
 
         // Handle text messages
-        if (!text || text.trim().length === 0) {
+        if (!text) {
             await sendSmartMessage(bot, chatId, "Please send text, voice messages, images, or documents.");
             return;
         }
 
-        // 🔧 FIXED: Route to proper dual AI handler
-        await handleDualAIConversation(chatId, text, sessionId);
+        // Route to dual AI conversation handler
+        const executionTime = await handleDualAIConversation(chatId, text, sessionId);
+        
+        // End session tracking
+        if (sessionId) {
+            await endUserSession(sessionId, 1, executionTime).catch(console.error);
+        }
 
     } catch (error) {
         console.error('❌ Message handling error:', error.message);
         
-        const executionTime = Date.now() - startTime;
-        
         // Log error
-        await logCommandUsage(chatId, text || 'MEDIA', executionTime, false, error.message).catch(console.error);
+        await logCommandUsage(chatId, text || 'MEDIA', Date.now() - startTime, false, error.message).catch(console.error);
         
-        // Send user-friendly error message
-        try {
-            if (error.message.includes('timeout') || error.message.includes('long')) {
-                await sendSmartMessage(bot, chatId, 
-                    `⏱️ Your request was too complex and timed out. Please try:\n\n• Breaking it into smaller questions\n• Using simpler language\n• Asking one thing at a time`
-                );
-            } else if (error.message.includes('token') || error.message.includes('limit')) {
-                await sendSmartMessage(bot, chatId, 
-                    `📝 Your message was too long. Please try:\n\n• Shorter questions (under 1000 words)\n• Splitting into multiple messages\n• Being more specific`
-                );
-            } else {
-                await sendSmartMessage(bot, chatId, 
-                    `❌ I encountered an error: ${error.message}\n\n🔧 Try: /status to check system health`
-                );
-            }
-        } catch (sendError) {
-            console.error('Failed to send error message:', sendError.message);
-        }
-    } finally {
-        // Always end session
+        // End session with error
         if (sessionId) {
-            const executionTime = Date.now() - startTime;
-            await endUserSession(sessionId, 1, executionTime).catch(console.error);
+            await endUserSession(sessionId, 0, Date.now() - startTime).catch(console.error);
         }
+        
+        await sendSmartMessage(bot, chatId, 
+            `Sorry, I encountered an error processing your request. Please try again. 🔧`
+        );
     }
 });
 
