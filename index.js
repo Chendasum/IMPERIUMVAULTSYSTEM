@@ -171,7 +171,7 @@ const openai = new OpenAI({
     maxRetries: 3
 });
 
-// 🔧 SIMPLIFIED: Database initialization
+// Enhanced Database Initialization with Full Integration
 async function initializeEnhancedDatabase() {
     try {
         console.log("🚀 Initializing Enhanced Strategic Database...");
@@ -180,31 +180,57 @@ async function initializeEnhancedDatabase() {
         
         if (initialized) {
             console.log("✅ Enhanced Strategic Database initialized successfully");
+            
+            // Test database functions
             await testDatabaseFunctions();
+            
+            // Initialize daily metrics if needed
             await initializeDailyMetrics();
+            
             return true;
         } else {
             throw new Error("Database initialization failed");
         }
     } catch (error) {
         console.error("❌ Enhanced database initialization failed:", error.message);
-        // Don't throw - continue with limited functionality
-        return false;
+        console.error("Connection stats:", connectionStats);
+        throw error;
     }
 }
 
-// 🔧 SIMPLIFIED: Test database functions
+// 🔧 FIXED: Test database functions with better error handling
 async function testDatabaseFunctions() {
     try {
         console.log("🧪 Testing database functions...");
         
+        // Test basic connection first
         const stats = await getDatabaseStats();
         console.log("📊 Database stats test:", {
-            connectionHealth: connectionStats?.connectionHealth || 'UNKNOWN',
+            connectionHealth: connectionStats.connectionHealth,
             totalUsers: stats?.totalUsers || 0,
             totalConversations: stats?.totalConversations || 0,
+            totalDocuments: stats?.totalDocuments || 0,
             error: stats?.error || null
         });
+        
+        // Test health check
+        const health = await performHealthCheck();
+        console.log("🏥 Database health test:", health?.status || 'Unknown', health?.error ? `(${health.error})` : "");
+        
+        // 🔧 ADDED: Test memory functions specifically
+        try {
+            const testHistory = await getConversationHistoryDB('test_user', 1);
+            console.log("📚 Conversation history test: ✅ Working");
+        } catch (historyError) {
+            console.log("📚 Conversation history test: ❌", historyError.message);
+        }
+        
+        try {
+            const testMemory = await getPersistentMemoryDB('test_user');
+            console.log("🧠 Persistent memory test: ✅ Working");
+        } catch (memoryError) {
+            console.log("🧠 Persistent memory test: ❌", memoryError.message);
+        }
         
         return true;
     } catch (error) {
@@ -213,16 +239,17 @@ async function testDatabaseFunctions() {
     }
 }
 
-// 🔧 SIMPLIFIED: Initialize daily metrics
+// Initialize daily metrics
 async function initializeDailyMetrics() {
     try {
-        await updateSystemMetrics({ total_users: 0 });
+        await updateSystemMetrics({
+            total_users: 0    // ✅ Use a column that actually exists
+        });
         console.log("📊 Daily metrics initialized");
     } catch (error) {
         console.error("⚠️ Daily metrics initialization failed:", error.message);
     }
 }
-
 // User Authentication
 function isAuthorizedUser(chatId) {
     const authorizedUsers = process.env.ADMIN_CHAT_ID
@@ -231,15 +258,391 @@ function isAuthorizedUser(chatId) {
     return authorizedUsers.includes(parseInt(chatId));
 }
 
-// 🔧 FIXED: Session management - simplified
-async function startUserSession(chatId, sessionType = 'TELEGRAM_BOT') {
+async function logApiUsage(service, endpoint, calls = 1, success = true, responseTime = 0, inputTokens = 0, cost = 0) {
+    try {
+        console.log(`🔌 API: ${service}/${endpoint} | ${success ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | $${cost}`);
+        return true;
+    } catch (error) {
+        console.error('❌ API logging error:', error.message);
+        return false;
+    }
+}
+// 🎯 DIRECT DUAL AI CONVERSATION HANDLER - Simplified and Clean
+async function handleDualAIConversation(chatId, text, sessionId) {
+    const startTime = Date.now();
+    
+    try {
+        console.log("🤖 Starting DIRECT dual AI processing:", text.substring(0, 50));
+        
+        // Get conversation context with memory
+        const context = await buildConversationContextWithMemory(chatId, text);
+        
+        // 🎯 DIRECT CALL to dualAISystem.js - NO intermediate layer
+        const result = await getUltimateStrategicAnalysis(text, {
+            chatId: chatId,
+            sessionId: sessionId || `session_${chatId}_${Date.now()}`,
+            conversationHistory: context.conversationHistory,
+            persistentMemory: context.persistentMemory,
+            memoryContext: context.memoryContext,
+            messageType: 'text',
+            userContext: {
+                platform: 'telegram',
+                timestamp: new Date().toISOString(),
+                hasMemory: context.memoryAvailable,
+                conversationCount: context.conversationHistory?.length || 0
+            }
+        });
+        
+        // Handle response directly
+        let finalResponse;
+        if (typeof result === 'string') {
+            finalResponse = result;
+        } else if (result && result.response) {
+            finalResponse = result.response;
+        } else {
+            // Immediate fallback to Universal Analysis
+            finalResponse = await getUniversalAnalysis(text, {
+                chatId: chatId,
+                maxTokens: 1200,
+                temperature: 0.7
+            });
+        }
+        
+        // Send response to user
+        await sendSmartMessage(bot, chatId, finalResponse);
+        
+        // Save conversation directly
+        await saveConversationDB(chatId, text, finalResponse, "text", {
+            aiUsed: result?.aiUsed || 'DUAL_AI_DIRECT',
+            executionTime: Date.now() - startTime,
+            success: true,
+            memoryUsed: context.memoryAvailable
+        }).catch(console.error);
+        
+        // Extract and save memories directly
+        await extractAndSaveMemoriesDirect(chatId, text, finalResponse);
+        
+        console.log("✅ DIRECT dual AI conversation completed successfully");
+        return Date.now() - startTime;
+        
+    } catch (error) {
+        console.error('❌ DIRECT dual AI conversation error:', error.message);
+        
+        // Simple fallback - no complex handling
+        try {
+            const fallbackResponse = await getUniversalAnalysis(text, {
+                maxTokens: 800,
+                temperature: 0.7
+            });
+            await sendSmartMessage(bot, chatId, fallbackResponse);
+        } catch (fallbackError) {
+            await sendSmartMessage(bot, chatId, "I'm experiencing technical difficulties. Please try again.");
+        }
+        
+        return Date.now() - startTime;
+    }
+}
+
+// 🧠 ENHANCED: Build Conversation Context with Memory - WITH DEBUG LOGGING
+async function buildConversationContextWithMemory(chatId, currentText) {
+    const context = {
+        conversationHistory: [],
+        persistentMemory: [],
+        memoryContext: '',
+        memoryAvailable: false
+    };
+    
+    try {
+        // Get recent conversation history
+        context.conversationHistory = await getConversationHistoryDB(chatId, 5);
+        console.log(`📚 Retrieved ${context.conversationHistory.length} conversations`);
+    } catch (error) {
+        console.log('⚠️ Could not retrieve conversation history:', error.message);
+    }
+    
+    try {
+        // Get persistent memories
+        context.persistentMemory = await getPersistentMemoryDB(chatId);
+        console.log(`🧠 Retrieved ${context.persistentMemory.length} memories`);
+        
+        // 🔧 DEBUG: Log what memories we actually have
+        if (context.persistentMemory.length > 0) {
+            console.log('🔍 CURRENT MEMORIES FOR USER:');
+            context.persistentMemory.slice(0, 5).forEach((mem, i) => {
+                console.log(`  ${i + 1}. ${mem.fact}`);
+            });
+        } else {
+            console.log('📝 NO MEMORIES FOUND FOR THIS USER');
+        }
+    } catch (error) {
+        console.log('⚠️ Could not retrieve persistent memory:', error.message);
+    }
+    
+    // Build memory context string if we have data
+    if (context.conversationHistory.length > 0 || context.persistentMemory.length > 0) {
+        context.memoryContext = buildMemoryContextString(context.conversationHistory, context.persistentMemory);
+        context.memoryAvailable = true;
+        console.log(`✅ Memory context built (${context.memoryContext.length} chars)`);
+        
+        // 🔧 DEBUG: Show what context is being sent to AI
+        console.log('🧠 MEMORY CONTEXT BEING SENT TO AI:');
+        console.log(context.memoryContext.substring(0, 300) + '...');
+    } else {
+        console.log('📝 No memory context available - will not send any memory to AI');
+    }
+    
+    return context;
+}
+
+// 🧠 ENHANCED: Extract and Save Memories Directly - REPLACE YOUR CURRENT VERSION
+async function extractAndSaveMemoriesDirect(chatId, userMessage, aiResponse) {
+    try {
+        console.log(`🧠 Processing memory extraction for: "${userMessage}"`);
+        
+        // 🎯 ENHANCED: Name detection (highest priority)
+        if (userMessage.toLowerCase().includes('my name is') || userMessage.toLowerCase().includes('name is')) {
+            const nameMatch = userMessage.match(/(?:my )?name is ([^.,\n!?]+)/i);
+            if (nameMatch) {
+                const name = nameMatch[1].trim();
+                await addPersistentMemoryDB(chatId, `User's name: ${name}`, 'high');
+                console.log(`💾 SAVED NAME: ${name}`);
+                return; // Exit early after saving name
+            }
+        }
+        
+        // 🎯 ENHANCED: "I am" statements
+        if (userMessage.toLowerCase().includes('i am ') && !userMessage.toLowerCase().includes('i am asking')) {
+            const iAmMatch = userMessage.match(/i am ([^.,\n!?]+)/i);
+            if (iAmMatch) {
+                const identity = iAmMatch[1].trim();
+                await addPersistentMemoryDB(chatId, `User identity: ${identity}`, 'high');
+                console.log(`💾 SAVED IDENTITY: ${identity}`);
+            }
+        }
+        
+        // 🎯 ENHANCED: Preferences
+        if (userMessage.toLowerCase().includes('i prefer') || userMessage.toLowerCase().includes('i like')) {
+            await addPersistentMemoryDB(chatId, `User preference: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED PREFERENCE: ${userMessage}`);
+        }
+        
+        // 🎯 ENHANCED: Location
+        if (userMessage.toLowerCase().includes('i live in') || userMessage.toLowerCase().includes('i am from')) {
+            await addPersistentMemoryDB(chatId, `User location: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED LOCATION: ${userMessage}`);
+        }
+        
+        // 🎯 ENHANCED: Work/Job
+        if (userMessage.toLowerCase().includes('i work') || userMessage.toLowerCase().includes('my job')) {
+            await addPersistentMemoryDB(chatId, `User work: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED WORK INFO: ${userMessage}`);
+        }
+        
+        // 🎯 ENHANCED: Goals
+        if (userMessage.toLowerCase().includes('my goal') || userMessage.toLowerCase().includes('i want to')) {
+            await addPersistentMemoryDB(chatId, `User goal: ${userMessage}`, 'medium');
+            console.log(`💾 SAVED GOAL: ${userMessage}`);
+        }
+        
+        // Original logic - check if we should save this conversation as memory
+        if (shouldSaveToPersistentMemory(userMessage, aiResponse)) {
+            const memoryFact = extractMemoryFact(userMessage, aiResponse);
+            if (memoryFact && memoryFact.length > 10) {
+                await addPersistentMemoryDB(chatId, memoryFact, 'medium');
+                console.log(`💾 Saved memory: ${memoryFact.substring(0, 50)}...`);
+            }
+        }
+        
+    } catch (error) {
+        console.log('⚠️ Memory extraction failed:', error.message);
+    }
+}
+// 🔧 ENHANCED: Helper Functions with Better Memory Support
+
+// 🧠 ENHANCED: Memory Context Builder - Makes memories more prominent
+function buildMemoryContextString(history, memories) {
+    let context = '\n\n🧠 IMPORTANT MEMORY CONTEXT FOR THIS USER:\n';
+    
+    if (memories.length > 0) {
+        context += '\nKEY FACTS YOU MUST REMEMBER:\n';
+        memories.slice(0, 5).forEach((mem, i) => {
+            context += `• ${mem.fact}\n`;
+        });
+        context += '\n';
+    }
+    
+    if (history.length > 0) {
+        context += 'RECENT CONVERSATION HISTORY:\n';
+        history.slice(0, 3).forEach((conv, i) => {
+            context += `${i + 1}. User: "${conv.user_message?.substring(0, 80)}..."\n`;
+            if (conv.gpt_response) {
+                context += `   AI: "${conv.gpt_response.substring(0, 80)}..."\n`;
+            }
+        });
+        context += '\n';
+    }
+    
+    context += 'USE THIS INFORMATION TO PROVIDE PERSONALIZED RESPONSES THAT ACKNOWLEDGE WHAT YOU KNOW ABOUT THIS USER.\n';
+    
+    return context;
+}
+
+// 🎯 ENHANCED: Conversation Type Detection - Added memory queries
+function determineConversationType(text) {
+    if (!text) return 'unknown';
+    
+    const lower = text.toLowerCase();
+    
+    // Memory-related queries (high priority)
+    if (lower.includes('remember') || lower.includes('my name') || lower.includes('what is my') || lower.includes('do you know')) {
+        return 'memory_query';
+    }
+    
+    // Financial and investment
+    if (lower.includes('financial') || lower.includes('investment') || lower.includes('fund')) {
+        return 'financial_analysis';
+    }
+    
+    // Analysis and strategy
+    if (lower.includes('analysis') || lower.includes('strategy')) {
+        return 'strategic_analysis';
+    }
+    
+    // Personal information sharing
+    if (lower.includes('my name is') || lower.includes('i am') || lower.includes('i live') || lower.includes('i work')) {
+        return 'personal_info';
+    }
+    
+    // Complex discussions
+    if (lower.length > 100) {
+        return 'complex_discussion';
+    }
+    
+    return 'general_conversation';
+}
+
+function determineComplexity(text) {
+    if (!text) return 'simple';
+    
+    if (text.length > 200) return 'complex';
+    if (text.length > 50) return 'medium';
+    return 'simple';
+}
+
+function requiresLiveData(text) {
+    if (!text) return false;
+    
+    const liveDataKeywords = ['current', 'latest', 'today', 'now', 'recent', 'update', 'price', 'market'];
+    return liveDataKeywords.some(keyword => text.toLowerCase().includes(keyword));
+}
+
+// 🧠 ENHANCED: Memory Detection - More comprehensive
+function shouldSaveToPersistentMemory(userMessage, aiResponse) {
+    const lowerMessage = userMessage.toLowerCase();
+    const lowerResponse = aiResponse.toLowerCase();
+    
+    // High priority memory triggers
+    if (lowerMessage.includes('my name is') || lowerMessage.includes('i am ')) return true;
+    if (lowerMessage.includes('remember') || lowerMessage.includes('don\'t forget')) return true;
+    if (lowerMessage.includes('my preference') || lowerMessage.includes('i prefer')) return true;
+    if (lowerMessage.includes('i like') || lowerMessage.includes('i love')) return true;
+    if (lowerMessage.includes('i live') || lowerMessage.includes('i work')) return true;
+    if (lowerMessage.includes('my goal') || lowerMessage.includes('i want to')) return true;
+    
+    // Response indicators
+    if (lowerResponse.includes('important to note') || lowerResponse.includes('key insight')) return true;
+    if (lowerResponse.includes('strategic') || lowerResponse.includes('critical')) return true;
+    
+    // Length-based (detailed responses likely contain important info)
+    if (aiResponse.length > 500) return true;
+    
+    return false;
+}
+
+// 🧠 ENHANCED: Memory Fact Extraction - Better patterns
+function extractMemoryFact(userMessage, aiResponse) {
+    const lowerMessage = userMessage.toLowerCase();
+    
+    // Name extraction (highest priority)
+    if (lowerMessage.includes('my name is')) {
+        const nameMatch = userMessage.match(/my name is ([^.,\n!?]+)/i);
+        if (nameMatch) {
+            return `User's name: ${nameMatch[1].trim()}`;
+        }
+    }
+    
+    // Identity extraction
+    if (lowerMessage.includes('i am ') && !lowerMessage.includes('i am asking') && !lowerMessage.includes('i am wondering')) {
+        const identityMatch = userMessage.match(/i am ([^.,\n!?]+)/i);
+        if (identityMatch) {
+            return `User identity: ${identityMatch[1].trim()}`;
+        }
+    }
+    
+    // Preference extraction
+    if (lowerMessage.includes('i prefer')) {
+        const prefMatch = userMessage.match(/i prefer ([^.,\n!?]+)/i);
+        if (prefMatch) {
+            return `User preference: ${prefMatch[1].trim()}`;
+        }
+    }
+    
+    // Goal extraction
+    if (lowerMessage.includes('my goal') || lowerMessage.includes('i want to')) {
+        const goalMatch = userMessage.match(/(?:my goal is|i want to) ([^.,\n!?]+)/i);
+        if (goalMatch) {
+            return `User goal: ${goalMatch[1].trim()}`;
+        }
+    }
+    
+    // Location extraction
+    if (lowerMessage.includes('i live in') || lowerMessage.includes('i am from')) {
+        const locationMatch = userMessage.match(/i (?:live in|am from) ([^.,\n!?]+)/i);
+        if (locationMatch) {
+            return `User location: ${locationMatch[1].trim()}`;
+        }
+    }
+    
+    // Work extraction
+    if (lowerMessage.includes('i work')) {
+        const workMatch = userMessage.match(/i work (?:at|for|as) ([^.,\n!?]+)/i);
+        if (workMatch) {
+            return `User work: ${workMatch[1].trim()}`;
+        }
+    }
+    
+    // Remember directive
+    if (lowerMessage.includes('remember')) {
+        const rememberMatch = userMessage.match(/remember (?:that )?([^.,\n!?]+)/i);
+        if (rememberMatch) {
+            return `Important fact: ${rememberMatch[1].trim()}`;
+        }
+        return `User request: ${userMessage.trim()}`;
+    }
+    
+    // Key insights from AI response
+    if (aiResponse.includes('Key insight:')) {
+        const insight = aiResponse.split('Key insight:')[1]?.split('\n')[0];
+        return insight ? `Strategic insight: ${insight.trim()}` : null;
+    }
+    
+    // Fallback for general context
+    if (userMessage.length > 10 && userMessage.length < 150) {
+        return `Conversation context: ${userMessage.trim()}`;
+    }
+    
+    return null;
+}
+
+// 🔧 SIMPLIFIED: Session Management (unchanged - these work fine)
+async function startUserSession(chatId, sessionType = 'GENERAL') {
     try {
         const sessionId = `session_${chatId}_${Date.now()}`;
-        console.log(`📊 Starting session: ${sessionId}`);
+        console.log(`📊 Starting session for ${chatId}: ${sessionType}`);
         return sessionId;
     } catch (error) {
         console.error('❌ Start session error:', error.message);
-        return null;
+        return `fallback_session_${chatId}_${Date.now()}`;
     }
 }
 
@@ -253,430 +656,12 @@ async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime
     }
 }
 
-// 🔧 FIXED: Main message handler with proper text validation
-bot.on("message", async (msg) => {
-    const chatId = msg.chat.id;
-    
-    // 🔧 CRITICAL FIX: Ensure text is always a string
-    let text = null;
-    if (msg.text && typeof msg.text === 'string') {
-        text = msg.text;
-    } else if (msg.caption && typeof msg.caption === 'string') {
-        text = msg.caption; // For media with captions
-    }
-    
-    console.log(`📨 Message from ${chatId}:`, {
-        hasText: !!text,
-        textType: typeof text,
-        textValue: text ? text.substring(0, 50) : 'No text',
-        messageType: msg.voice ? 'voice' : msg.photo ? 'photo' : msg.document ? 'document' : 'text'
-    });
-    
-    // Security check
-    if (!isAuthorizedUser(chatId)) {
-        console.log(`🚫 Unauthorized access from ${chatId}`);
-        try {
-            await bot.sendMessage(chatId, 
-                `🚫 Access denied. This is a private AI system.\n\nYour Chat ID: ${chatId}\n\nContact admin if this is your account.`
-            );
-        } catch (sendError) {
-            console.error('Failed to send unauthorized message:', sendError.message);
-        }
-        return;
-    }
-
-    // Start session tracking
-    const sessionId = await startUserSession(chatId, 'TELEGRAM_BOT');
-    const startTime = Date.now();
-
-    try {
-        // Handle media messages first
-        if (msg.voice) {
-            console.log("🎤 Voice message received");
-            await handleVoiceMessage(msg, chatId, sessionId);
-            return;
-        }
-
-        if (msg.photo) {
-            console.log("🖼️ Image received");
-            await handleImageMessage(msg, chatId, sessionId);
-            return;
-        }
-
-        if (msg.document) {
-            console.log("📄 Document received:", msg.document?.file_name || 'unknown');
-            await handleDocumentMessage(msg, chatId, sessionId);
-            return;
-        }
-
-        // Handle video messages
-        if (msg.video) {
-            console.log("🎥 Video received");
-            await sendSmartMessage(bot, chatId, "🎥 Video processing is not yet implemented. Please use voice, images, or documents.");
-            return;
-        }
-
-        // Handle stickers
-        if (msg.sticker) {
-            console.log("😊 Sticker received");
-            await sendSmartMessage(bot, chatId, "😊 Thanks for the sticker! Please send text, voice, images, or documents for AI analysis.");
-            return;
-        }
-
-        // 🔧 FIXED: Handle text messages with proper validation
-        if (!text || text.trim().length === 0) {
-            await sendSmartMessage(bot, chatId, "Please send a text message, voice note, image, or document for analysis.");
-            return;
-        }
-
-        // 🔧 FIXED: Check for commands first
-        const cleanText = text.trim();
-        if (cleanText.startsWith('/')) {
-            await executeCommandWithLoggingFixed(chatId, cleanText, sessionId);
-            return;
-        }
-
-        // 🔧 FIXED: Route to dual AI handler with validated text
-        await handleDualAIConversation(chatId, cleanText, sessionId);
-
-    } catch (error) {
-        console.error('❌ Message handling error:', error.message);
-        console.error('❌ Error stack:', error.stack);
-        
-        const executionTime = Date.now() - startTime;
-        
-        // Log error with safe text handling
-        const safeText = typeof text === 'string' ? text : 'MEDIA_MESSAGE';
-        await logCommandUsage(chatId, safeText, executionTime, false, error.message).catch(console.error);
-        
-        // Send user-friendly error message
-        try {
-            if (error.message.includes('trim')) {
-                await sendSmartMessage(bot, chatId, 
-                    `❌ Message processing error. Please try:\n\n• Sending plain text instead of special characters\n• Using voice messages for complex input\n• Checking message format`
-                );
-            } else if (error.message.includes('timeout') || error.message.includes('long')) {
-                await sendSmartMessage(bot, chatId, 
-                    `⏱️ Your request timed out. Please try:\n\n• Breaking it into smaller questions\n• Using simpler language\n• Asking one thing at a time`
-                );
-            } else if (error.message.includes('token') || error.message.includes('limit')) {
-                await sendSmartMessage(bot, chatId, 
-                    `📝 Message too long. Please try:\n\n• Shorter questions (under 1000 words)\n• Splitting into multiple messages\n• Being more specific`
-                );
-            } else {
-                await sendSmartMessage(bot, chatId, 
-                    `❌ Processing error: ${error.message}\n\n🔧 Try: /status to check system health`
-                );
-            }
-        } catch (sendError) {
-            console.error('Failed to send error message:', sendError.message);
-        }
-    } finally {
-        // Always end session
-        if (sessionId) {
-            const executionTime = Date.now() - startTime;
-            await endUserSession(sessionId, 1, executionTime).catch(console.error);
-        }
-    }
-});
-
-// 🔧 FIXED: Dual AI conversation handler with proper string validation
-async function handleDualAIConversation(chatId, text, sessionId) {
+// 🎯 MAIN EXECUTION FUNCTION - DIRECT to dualAISystem.js
+async function executeCommandWithLogging(chatId, text, sessionId) {
     const startTime = Date.now();
     
     try {
-        // 🔧 CRITICAL: Validate text parameter
-        if (!text || typeof text !== 'string') {
-            throw new Error(`Invalid text parameter: received ${typeof text}`);
-        }
-        
-        const cleanText = text.trim();
-        if (cleanText.length === 0) {
-            throw new Error('Empty message content');
-        }
-        
-        console.log(`🤖 Starting dual AI conversation: ${cleanText.substring(0, 50)}...`);
-        
-        // Build conversation context safely
-        const context = await buildConversationContextSafe(chatId, cleanText);
-        
-        // Enhanced conversation intelligence
-        const conversationIntel = {
-            type: determineConversationType(cleanText),
-            complexity: determineComplexity(cleanText),
-            requiresLiveData: requiresLiveData(cleanText),
-            hasMemory: context.memoryAvailable,
-            conversationCount: context.conversationHistory?.length || 0,
-            textLength: cleanText.length,
-            isLongQuestion: cleanText.length > 500
-        };
-        
-        console.log("🎯 Conversation Intel:", conversationIntel);
-        
-        // Execute dual AI command safely
-        const result = await executeDualAICommandSafe(cleanText, chatId, context, conversationIntel);
-        
-        // Send response to user
-        await sendSmartMessage(bot, chatId, result.response);
-        
-        // Save conversation (non-blocking)
-        saveConversationToDatabase(chatId, cleanText, result, context).catch(err => 
-            console.log('⚠️ Conversation save failed:', err.message)
-        );
-        
-        // Extract and save memories (non-blocking)
-        extractAndSaveMemoriesSafe(chatId, cleanText, result.response).catch(err => 
-            console.log('⚠️ Memory extraction failed:', err.message)
-        );
-        
-        console.log("✅ Dual AI conversation completed successfully");
-        return Date.now() - startTime;
-        
-    } catch (error) {
-        console.error('❌ Dual AI conversation error:', error.message);
-        console.error('❌ Error details:', {
-            textType: typeof text,
-            textValue: text ? text.toString().substring(0, 50) : 'null/undefined',
-            errorMessage: error.message
-        });
-        
-        // Better fallback handling
-        try {
-            const fallbackResponse = await handleFallbackResponseSafe(chatId, text);
-            await sendSmartMessage(bot, chatId, fallbackResponse);
-        } catch (fallbackError) {
-            console.error('❌ Even fallback failed:', fallbackError.message);
-            await sendSmartMessage(bot, chatId, "🚨 System temporarily unavailable. Please try again with a simple message.");
-        }
-        
-        return Date.now() - startTime;
-    }
-}
-
-// 🔧 FIXED: Safe fallback response with string validation
-async function handleFallbackResponseSafe(chatId, text) {
-    try {
-        // 🔧 CRITICAL: Ensure text is a string
-        let safeText = '';
-        if (typeof text === 'string') {
-            safeText = text.trim();
-        } else if (text !== null && text !== undefined) {
-            safeText = String(text).trim();
-        } else {
-            safeText = 'User sent a message';
-        }
-        
-        // Limit text length for fallback
-        if (safeText.length > 500) {
-            safeText = safeText.substring(0, 500) + '...';
-        }
-        
-        // Try to get minimal context with timeout
-        let basicContext = '';
-        
-        try {
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Context timeout')), 2000)
-            );
-            
-            const contextPromise = getConversationHistoryDB(chatId, 1);
-            const recent = await Promise.race([contextPromise, timeoutPromise]);
-            
-            if (recent?.[0]) {
-                basicContext = `\n\nContext: Previous topic "${recent[0].user_message?.substring(0, 50)}..."`;
-            }
-        } catch (contextError) {
-            console.log('⚠️ Context retrieval skipped for fallback');
-        }
-        
-        // Use corrected GPT-5 parameters
-        return await getUniversalAnalysis(safeText + basicContext, {
-            max_tokens: 1000,
-            temperature: 0.7,
-            model: "gpt-5"
-        });
-        
-    } catch (error) {
-        console.error('❌ All fallback methods failed:', error.message);
-        
-        // Final emergency response
-        const messagePreview = typeof text === 'string' ? text.substring(0, 100) : 'your message';
-        return `🤖 I apologize, but I'm experiencing technical difficulties processing your request.
-
-**Your message:** "${messagePreview}${typeof text === 'string' && text.length > 100 ? '...' : ''}"
-
-**Try:**
-• Sending a shorter, simpler message
-• Using basic text without special characters
-• Asking one question at a time
-• Using /help for available commands
-
-The system will automatically recover.`;
-    }
-}
-
-// 🔧 FIXED: Build conversation context with string validation
-async function buildConversationContextSafe(chatId, currentText) {
-    const context = {
-        conversationHistory: [],
-        persistentMemory: [],
-        memoryContext: '',
-        memoryAvailable: false,
-        errors: []
-    };
-    
-    // 🔧 CRITICAL: Validate currentText parameter
-    if (!currentText || typeof currentText !== 'string') {
-        console.warn('⚠️ Invalid currentText in buildConversationContextSafe:', typeof currentText);
-        context.errors.push('Invalid currentText parameter');
-        return context;
-    }
-    
-    // Timeout helper function
-    const timeoutPromise = (promise, timeout = 3000) => {
-        return Promise.race([
-            promise,
-            new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), timeout)
-            )
-        ]);
-    };
-    
-    try {
-        // Get conversation history with timeout
-        context.conversationHistory = await timeoutPromise(
-            getConversationHistoryDB(chatId, 5)
-        );
-        console.log(`📚 Retrieved ${context.conversationHistory.length} conversations`);
-    } catch (error) {
-        console.log('⚠️ History retrieval failed:', error.message);
-        context.errors.push(`History: ${error.message}`);
-        context.conversationHistory = [];
-    }
-    
-    try {
-        // Get persistent memory with timeout
-        context.persistentMemory = await timeoutPromise(
-            getPersistentMemoryDB(chatId)
-        );
-        console.log(`🧠 Retrieved ${context.persistentMemory.length} memories`);
-    } catch (error) {
-        console.log('⚠️ Memory retrieval failed:', error.message);
-        context.errors.push(`Memory: ${error.message}`);
-        context.persistentMemory = [];
-    }
-    
-    // Build memory context if we have data
-    if (context.conversationHistory.length > 0 || context.persistentMemory.length > 0) {
-        try {
-            context.memoryContext = buildMemoryContextString(context.conversationHistory, context.persistentMemory);
-            context.memoryAvailable = true;
-            console.log(`✅ Memory context built (${context.memoryContext.length} chars)`);
-        } catch (memoryError) {
-            console.log('⚠️ Memory context building failed:', memoryError.message);
-            context.errors.push(`Memory context: ${memoryError.message}`);
-        }
-    }
-    
-    return context;
-}
-
-// 🔧 FIXED: Save conversation to database with string validation
-async function saveConversationToDatabase(chatId, userMessage, aiResult, context) {
-    try {
-        // 🔧 CRITICAL: Validate parameters
-        const safeUserMessage = typeof userMessage === 'string' ? userMessage : String(userMessage || 'Unknown message');
-        const safeAiResponse = typeof aiResult === 'string' ? aiResult : 
-                             (aiResult?.response || String(aiResult || 'Unknown response'));
-        
-        // Save to database
-        await saveConversationDB(chatId, safeUserMessage, safeAiResponse, "text", {
-            aiUsed: aiResult?.aiUsed || 'UNKNOWN',
-            memoryUsed: context?.memoryAvailable || false,
-            processingTime: aiResult?.processingTime || 0,
-            queryType: aiResult?.queryType || 'general',
-            success: aiResult?.success !== false,
-            timestamp: new Date().toISOString()
-        });
-        
-        console.log('✅ Conversation saved to database');
-        
-    } catch (error) {
-        console.error('❌ Save conversation error:', error.message);
-        // Don't throw - this is non-critical
-    }
-}
-
-// 🔧 FIXED: Memory extraction with string validation
-async function extractAndSaveMemoriesSafe(chatId, userMessage, aiResponse) {
-    try {
-        // 🔧 CRITICAL: Validate string parameters
-        const safeUserMessage = typeof userMessage === 'string' ? userMessage : String(userMessage || '');
-        const safeAiResponse = typeof aiResponse === 'string' ? aiResponse : String(aiResponse || '');
-        
-        if (safeUserMessage.length === 0 && safeAiResponse.length === 0) {
-            console.log('⚠️ No valid content for memory extraction');
-            return;
-        }
-        
-        // Check if memory module exists
-        const memoryModule = require('./utils/memory');
-        if (memoryModule && typeof memoryModule.extractAndSaveFacts === 'function') {
-            const result = await memoryModule.extractAndSaveFacts(chatId, safeUserMessage, safeAiResponse);
-            
-            if (result?.extractedFacts > 0) {
-                console.log(`✅ Extracted ${result.extractedFacts} new memories`);
-            }
-        } else {
-            // Fallback: Manual memory extraction
-            if (shouldSaveToPersistentMemory(safeUserMessage, safeAiResponse)) {
-                const memoryFact = extractMemoryFact(safeUserMessage, safeAiResponse);
-                if (memoryFact) {
-                    await addPersistentMemoryDB(chatId, memoryFact, 'medium');
-                    console.log('✅ Manual memory extraction successful');
-                }
-            }
-        }
-    } catch (error) {
-        console.log('⚠️ Memory extraction failed, but continuing:', error.message);
-        // Don't throw - memory is nice to have but not critical
-    }
-}
-
-// 🔧 UTILITY: Enhanced error logging for message processing
-async function logMessageProcessingError(chatId, originalMessage, error, sessionId) {
-    try {
-        const errorInfo = {
-            chatId: chatId,
-            error: error.message,
-            stack: error.stack?.substring(0, 500),
-            messageType: typeof originalMessage,
-            messageLength: originalMessage?.length || 0,
-            messagePreview: typeof originalMessage === 'string' ? 
-                originalMessage.substring(0, 100) : String(originalMessage || '').substring(0, 100),
-            sessionId: sessionId,
-            timestamp: new Date().toISOString()
-        };
-        
-        console.error('❌ Message Processing Error Details:', errorInfo);
-        
-        // Save to database if possible
-        await saveConversationDB(chatId, '[ERROR]', `Processing error: ${error.message}`, 'error', errorInfo)
-            .catch(saveError => console.error('Failed to save error to DB:', saveError.message));
-        
-    } catch (logError) {
-        console.error('❌ Failed to log message processing error:', logError.message);
-    }
-}
-
-// 🔧 FIXED: Enhanced command execution with proper dual AI integration
-async function executeCommandWithLoggingFixed(chatId, text, sessionId) {
-    const startTime = Date.now();
-    
-    try {
-        console.log(`🔧 Executing command: ${text.substring(0, 30)}`);
-        
-        // 🔧 FIXED: Route commands properly with error handling
+        // Command handlers (keep all your existing ones)
         if (text === "/start") {
             await handleStartCommand(chatId);
         } else if (text === "/help") {
@@ -684,37 +669,35 @@ async function executeCommandWithLoggingFixed(chatId, text, sessionId) {
         } else if (text === "/myid") {
             await sendSmartMessage(bot, chatId, `Your Chat ID: ${chatId}`);
         } else if (text.startsWith('/deal_analyze')) {
-            await handleDealAnalysisFixed(chatId, text);
+            await handleDealAnalysis(chatId, text);
         } else if (text === '/portfolio') {
-            await handlePortfolioStatusFixed(chatId);
+            await handlePortfolioStatus(chatId);
         } else if (text === '/cambodia_market') {
-            await handleCambodiaMarketFixed(chatId);
+            await handleCambodiaMarket(chatId);
         } else if (text === '/risk_assessment') {
-            await handleRiskAssessmentFixed(chatId);
+            await handleRiskAssessment(chatId);
         } else if (text === '/briefing') {
-            await handleMarketBriefingFixed(chatId);
+            await handleMarketBriefing(chatId);
         } else if (text === '/regime') {
-            await handleRegimeAnalysisFixed(chatId);
+            await handleRegimeAnalysis(chatId);
         } else if (text === '/opportunities') {
-            await handleOpportunitiesFixed(chatId);
+            await handleOpportunities(chatId);
         } else if (text === '/macro') {
-            await handleMacroAnalysisFixed(chatId);
+            await handleMacroAnalysis(chatId);
         } else if (text === '/trading' || text === '/account') {
-            await handleTradingStatusFixed(chatId);
+            await handleTradingStatus(chatId);
         } else if (text === '/positions') {
-            await handlePositionsFixed(chatId);
+            await handlePositions(chatId);
         } else if (text === '/status') {
             await handleEnhancedSystemStatus(chatId);
         } else if (text === '/documents') {
-            await handleDocumentsListFixed(chatId);
+            await handleDocumentsList(chatId);
         } else if (text === '/analytics') {
             await handleMasterAnalytics(chatId);
         } else if (text === '/db_stats') {
             await handleDatabaseStats(chatId);
         } else if (text === '/maintenance') {
             await handleDatabaseMaintenance(chatId);
-        
-        // Database & Memory Testing Commands
         } else if (text === '/test_db') {
             await handleDatabaseConnectionTest(chatId);
         } else if (text === '/test_memory') {
@@ -723,49 +706,128 @@ async function executeCommandWithLoggingFixed(chatId, text, sessionId) {
             await handleMemoryRecoveryTest(chatId);
         } else if (text === '/memory_stats') {
             await handleMemoryStatistics(chatId);
-
-        // Live Data Commands
+        } else if ((text.toLowerCase().includes('bitcoin') || text.toLowerCase().includes('btc')) && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('much') || text.toLowerCase().includes('cost'))) {
+            await handleLiveBitcoinPrice(chatId);
+        } else if (text.toLowerCase().includes('crypto') && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('market'))) {
+            await handleLiveCryptoMarket(chatId);
+        } else if ((text.toLowerCase().includes('stock') || text.toLowerCase().includes('market') || text.toLowerCase().includes('sp500') || text.toLowerCase().includes('dow')) && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('today') || text.toLowerCase().includes('current'))) {
+            await handleLiveStockMarket(chatId);
+        } else if ((text.toLowerCase().includes('inflation') || text.toLowerCase().includes('fed') || text.toLowerCase().includes('interest rate') || text.toLowerCase().includes('gdp')) && 
+                   (text.toLowerCase().includes('current') || text.toLowerCase().includes('today') || text.toLowerCase().includes('latest'))) {
+            await handleLiveEconomicData(chatId);
+        } else if (isAnyCryptoRequest(text)) {
+            await handleSmartCryptoPrice(chatId, text);
+        } else if ((text.toLowerCase().includes('dollar') || text.toLowerCase().includes('forex') || text.toLowerCase().includes('currency') || text.toLowerCase().includes('exchange rate')) && 
+                   (text.toLowerCase().includes('price') || text.toLowerCase().includes('rate') || text.toLowerCase().includes('today'))) {
+            await handleLiveForexData(chatId);
         } else if (text === '/live_data' || text === '/market_data' || text === '/live_market') {
-            await handleComprehensiveLiveDataFixed(chatId);
+            await handleComprehensiveLiveData(chatId);
         } else if (text === '/live_crypto' || text === '/crypto_live') {
-            await handleLiveCryptoMarketFixed(chatId);
+            await handleLiveCryptoMarket(chatId);
         } else if (text === '/live_stocks' || text === '/stocks_live') {
-            await handleLiveStockMarketFixed(chatId);
+            await handleLiveStockMarket(chatId);
         } else if (text === '/live_forex' || text === '/forex_live') {
-            await handleLiveForexDataFixed(chatId);
-        } else if (text === '/live_economic' || text === '/economic_live') {
-            await handleLiveEconomicDataFixed(chatId);
-        
+            await handleLiveForexData(chatId);
+} else if (text === '/live_economic' || text === '/economic_live') {
+            await handleLiveEconomicData(chatId);
         } else {
-            // 🔧 FIXED: Use the corrected dual AI conversation handler
-            await handleDualAIConversation(chatId, text, sessionId);
+            // 🎯 ENHANCED DIRECT DUAL AI PROCESSING - With Date Context
+            console.log(`🤖 Processing with DIRECT dual AI: "${text}"`);
+            
+            // Get current Cambodia date and time
+            const cambodiaTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Phnom_Penh"});
+            const currentDate = new Date(cambodiaTime).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            // Add date context for time-related questions
+            let contextualText = text;
+            if (text.toLowerCase().includes('today') || 
+                text.toLowerCase().includes('date') || 
+                text.toLowerCase().includes('time') ||
+                text.toLowerCase().includes('when') ||
+                text.toLowerCase().includes('what day')) {
+                contextualText = `IMPORTANT: Today's date is ${currentDate} (Cambodia time). User question: ${text}`;
+                console.log(`📅 Added date context: ${currentDate}`);
+            }
+            
+            const result = await Promise.race([
+                getUltimateStrategicAnalysis(contextualText, {
+                    chatId: chatId,
+                    sessionId: sessionId || `session_${chatId}_${Date.now()}`,
+                    messageType: 'general_conversation',
+                    currentDate: currentDate,
+                    timeZone: 'Asia/Phnom_Penh'
+                }),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout after 30 seconds')), 30000)
+                )
+            ]);
+            
+            // Extract response
+            const response = (typeof result === 'string') ? result : 
+                           (result?.response) ? result.response : 
+                           "I've processed your request with our dual AI system.";
+                           
+            await sendSmartMessage(bot, chatId, response);
+            
+            console.log(`✅ DIRECT dual AI processing completed`);
         }
         
         const executionTime = Date.now() - startTime;
-        
-        // Log successful command execution
-        await logCommandUsage(chatId, text, executionTime, true).catch(console.error);
-        
+        await logCommandUsage(chatId, text, executionTime, true);
         return executionTime;
         
     } catch (error) {
         const executionTime = Date.now() - startTime;
+        console.error('❌ DIRECT execution error:', error.message);
         
-        console.error(`❌ Command execution failed: ${error.message}`);
+        // Simple fallback
+        try {
+            const emergencyResponse = await getUniversalAnalysis(text, {
+                maxTokens: 600,
+                temperature: 0.7
+            });
+            await sendSmartMessage(bot, chatId, emergencyResponse);
+        } catch (emergencyError) {
+            await sendSmartMessage(bot, chatId, "I apologize, but I'm experiencing technical difficulties. Please try again.");
+        }
         
-        // Log failed command execution
-        await logCommandUsage(chatId, text, executionTime, false, error.message).catch(console.error);
-        
-        // 🔧 FIXED: Better error handling with user feedback
-        await sendSmartMessage(bot, chatId, 
-            `❌ Command failed: ${error.message}\n\n` +
-            `**Try:**\n` +
-            `• /help - View all commands\n` +
-            `• /status - Check system status\n` +
-            `• /test_db - Test database connection`
-        );
-        
+        await logCommandUsage(chatId, text, executionTime, false, error.message);
         throw error;
+    }
+}
+
+// 🔧 SIMPLIFIED: Logging Functions
+async function logCommandUsage(chatId, command, executionTime, successful = true, errorMessage = null) {
+    try {
+        console.log(`📊 Command: ${chatId} | ${command.substring(0, 30)} | ${executionTime}ms | ${successful ? 'SUCCESS' : 'FAILED'}`);
+        
+        if (!successful && errorMessage) {
+            console.log(`❌ Error: ${errorMessage}`);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Log command usage error:', error.message);
+        return false;
+    }
+}
+
+// ✅ KEEP THIS VERSION (the simpler one):
+async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
+    try {
+        console.log(`🔌 API: ${apiProvider}/${endpoint} | ${successful ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | Cost: $${costEstimate}`);
+        return true;
+    } catch (error) {
+        console.error('❌ Log API usage error:', error.message);
+        return false;
     }
 }
 
