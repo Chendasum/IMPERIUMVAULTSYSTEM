@@ -348,10 +348,6 @@ bot.on("message", async (msg) => {
 
 // 🤖 FIXED: Dual AI Conversation Handler - Clean and Focused
 
-// 🔧 Required imports at the top
-const { executeDualCommand } = require('./utils/dualCommandSystem');
-const { getUltimateStrategicAnalysis } = require('./utils/dualAISystem');
-
 // 🤖 Main Dual AI Conversation Handler
 async function handleDualAIConversation(chatId, text, sessionId) {
     const startTime = Date.now();
