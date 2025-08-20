@@ -346,57 +346,17 @@ bot.on("message", async (msg) => {
     }
 });
 
-// 🤖 ENHANCED DUAL AI CONVERSATION HANDLER - GPT-5 + CLAUDE OPUS 4.1
-// Direct replacement for your existing dual AI code
-
-// 🎯 AI ROUTING INTELLIGENCE
-function smartAIRouter(text, context, intel) {
-    const lower = text.toLowerCase();
-    const complexity = intel.complexity;
-    
-    // 🚀 GPT-5 is best for these patterns
-    const gptPatterns = [
-        /\b(calculate|compute|math|formula|code|technical|urgent|quick|fast)\b/i,
-        /\b(bitcoin|crypto|trading|price|data|statistics)\b/i
-    ];
-    
-    // 🧠 Claude Opus 4.1 is best for these patterns
-    const claudePatterns = [
-        /\b(strategy|strategic|analysis|risk|portfolio|investment)\b/i,
-        /\b(cambodia|fund|lending|complex|comprehensive|decision)\b/i
-    ];
-    
-    // 🤝 Use both AIs for important decisions
-    const dualPatterns = [
-        /\b(compare|versus|vs|important|major|critical|second opinion)\b/i,
-        complexity === 'complex' && text.length > 150,
-        lower.includes('dual') || lower.includes('both')
-    ];
-    
-    // Route decision
-    if (dualPatterns.some(p => typeof p === 'boolean' ? p : p.test(text))) {
-        return { ai: 'DUAL', confidence: 0.9, reason: 'Complex query needs dual perspective' };
-    } else if (gptPatterns.some(p => p.test(text))) {
-        return { ai: 'GPT5', confidence: 0.8, reason: 'GPT-5 optimal for technical/mathematical' };
-    } else if (claudePatterns.some(p => p.test(text))) {
-        return { ai: 'CLAUDE', confidence: 0.8, reason: 'Claude optimal for strategic analysis' };
-    } else {
-        // Default based on complexity
-        return complexity === 'complex' ? 
-            { ai: 'CLAUDE', confidence: 0.7, reason: 'Complex query defaulted to Claude' } :
-            { ai: 'GPT5', confidence: 0.6, reason: 'Simple query defaulted to GPT-5' };
-    }
-}
+// 🤖 FIXED: Dual AI Conversation Handler - Clean and Focused
 
 // 🤖 Main Dual AI Conversation Handler
 async function handleDualAIConversation(chatId, text, sessionId) {
     const startTime = Date.now();
     
     try {
-        console.log("🤖 Starting enhanced dual AI processing:", text.substring(0, 50));
+        console.log("🤖 Starting dual AI conversation processing:", text.substring(0, 50));
         
-        // Build conversation context with memory
-        const context = await buildConversationContextWithMemory(chatId, text);
+        // 🔧 FIXED: Use correct function name
+        const context = await buildConversationContext(chatId, text);
         
         // Determine conversation intelligence
         const conversationIntel = {
@@ -404,43 +364,38 @@ async function handleDualAIConversation(chatId, text, sessionId) {
             complexity: determineComplexity(text),
             requiresLiveData: requiresLiveData(text),
             hasMemory: context.memoryAvailable,
-            conversationCount: context.conversationHistory?.length || 0,
-            urgency: determineUrgency(text)
+            conversationCount: context.conversationHistory?.length || 0
         };
         
         console.log("🎯 Conversation Intel:", conversationIntel);
         
-        // Smart AI routing
-        const routing = smartAIRouter(text, context, conversationIntel);
-        console.log("🧭 AI Route:", routing);
-        
-        // Execute with chosen AI strategy
-        const result = await executeDualAICommand(text, chatId, context, conversationIntel, routing);
+        // Execute dual AI command
+        const result = await executeDualAICommand(text, chatId, context, conversationIntel);
         
         // Send response to user
         await sendSmartMessage(bot, chatId, result.response);
         
-        // Save conversation with routing info
-        await saveConversationToDatabase(chatId, text, result, context, routing);
+        // Save conversation
+        await saveConversationToDatabase(chatId, text, result, context);
         
         // Extract and save new memories
         await extractAndSaveMemories(chatId, text, result.response);
         
-        console.log("✅ Enhanced dual AI conversation completed successfully");
+        console.log("✅ Dual AI conversation completed successfully");
         return Date.now() - startTime;
         
     } catch (error) {
         console.error('❌ Dual AI conversation error:', error.message);
         
-        // Enhanced fallback system
-        const fallbackResponse = await handleEnhancedFallback(chatId, text);
+        // Fallback to single AI
+        const fallbackResponse = await handleFallbackResponse(chatId, text);
         await sendSmartMessage(bot, chatId, fallbackResponse);
         
         return Date.now() - startTime;
     }
 }
 
-// 🧠 Build Conversation Context with Memory
+// 🧠 FIXED: Build Conversation Context with Memory (renamed to match usage)
 async function buildConversationContextWithMemory(chatId, currentText) {
     const context = {
         conversationHistory: [],
@@ -478,28 +433,32 @@ async function buildConversationContextWithMemory(chatId, currentText) {
     return context;
 }
 
-// 🤖 Execute Dual AI Command with Enhanced Routing
-async function executeDualAICommand(text, chatId, context, intel, routing) {
-    const enhancedPrompt = context.memoryContext ? 
-        `${context.memoryContext}\n\nUser Query: ${text}` : text;
-    
+// 🤖 FIXED: Execute Dual AI Command
+async function executeDualAICommand(text, chatId, context, intel) {
     try {
-        // Execute based on routing decision
-        if (routing.ai === 'DUAL') {
-            return await executeDualConsensus(enhancedPrompt, chatId, context, intel);
-        } else if (routing.ai === 'GPT5') {
-            return await executeGPT5Analysis(enhancedPrompt, chatId, context, intel);
-        } else if (routing.ai === 'CLAUDE') {
-            return await executeClaudeAnalysis(enhancedPrompt, chatId, context, intel);
-        }
+        // Try dual AI system first
+        console.log("🚀 Executing dual AI command...");
         
-    } catch (primaryError) {
-        console.log(`⚠️ Primary AI (${routing.ai}) failed:`, primaryError.message);
+        const dualResult = await executeDualCommand(text, chatId, {
+            conversationHistory: context.conversationHistory,
+            persistentMemory: context.persistentMemory,
+            memoryContext: context.memoryContext,
+            conversationIntel: intel,
+            messageType: 'text',
+            sessionId: `session_${chatId}_${Date.now()}`
+        });
         
-        // Try ultimate strategic analysis as backup
+        console.log("✅ Dual AI command successful:", dualResult.aiUsed);
+        return dualResult;
+        
+    } catch (dualError) {
+        console.log("⚠️ Dual AI failed, trying ultimate strategic analysis:", dualError.message);
+        
         try {
-            console.log("🔄 Trying ultimate strategic analysis...");
-            
+            // Try your ultimate strategic analysis system
+            const enhancedPrompt = context.memoryContext ? 
+                `${context.memoryContext}\n\nUser: ${text}` : text;
+                
             const response = await getUltimateStrategicAnalysis(enhancedPrompt, {
                 sessionId: chatId,
                 memoryContext: context.memoryContext,
@@ -512,196 +471,37 @@ async function executeDualAICommand(text, chatId, context, intel, routing) {
                 aiUsed: 'ULTIMATE_STRATEGIC_ANALYSIS',
                 success: true,
                 memoryUsed: !!context.memoryContext,
-                queryType: intel.type,
-                fallbackUsed: true
+                queryType: intel.type
             };
             
         } catch (ultimateError) {
-            console.log("⚠️ Ultimate analysis failed, using emergency fallback:", ultimateError.message);
-            throw ultimateError; // This will trigger enhanced fallback
-        }
-    }
-}
-
-// 🤝 Execute Dual Consensus (Both GPT-5 + Claude)
-async function executeDualConsensus(prompt, chatId, context, intel) {
-    console.log("🤝 Executing dual AI consensus...");
-    
-    // Run both AIs in parallel
-    const [gptResult, claudeResult] = await Promise.allSettled([
-        getGptAnalysis(prompt, {
-            model: "gpt-5",
-            max_tokens: 3000,
-            temperature: 0.3,
-            reasoning_effort: "medium",
-            verbosity: "balanced"
-        }),
-        getClaudeAnalysis(prompt, {
-            model: "claude-opus-4-1-20250805",
-            max_tokens: 3000,
-            temperature: 0.4,
-            thinking: { type: "enabled", budget_tokens: 2000 }
-        })
-    ]);
-    
-    // Build consensus response
-    let response = `**🤖 DUAL AI CONSENSUS ANALYSIS**\n\n`;
-    
-    if (gptResult.status === 'fulfilled') {
-        response += `**🚀 GPT-5 Analysis:**\n${gptResult.value}\n\n`;
-    } else {
-        response += `**🚀 GPT-5:** ❌ ${gptResult.reason?.message}\n\n`;
-    }
-    
-    if (claudeResult.status === 'fulfilled') {
-        response += `**🧠 Claude Opus 4.1 Analysis:**\n${claudeResult.value}\n\n`;
-    } else {
-        response += `**🧠 Claude Opus 4.1:** ❌ ${claudeResult.reason?.message}\n\n`;
-    }
-    
-    // Add synthesis
-    const successCount = (gptResult.status === 'fulfilled' ? 1 : 0) + (claudeResult.status === 'fulfilled' ? 1 : 0);
-    
-    if (successCount === 2) {
-        response += `**⚡ CONSENSUS SYNTHESIS:**\nBoth AIs provide complementary perspectives - GPT-5 offers technical precision while Claude provides strategic depth for comprehensive analysis.`;
-    } else if (successCount === 1) {
-        response += `**📝 Note:** One AI analysis available above provides solid insights for your decision.`;
-    }
-    
-    return {
-        response: response,
-        aiUsed: `DUAL_CONSENSUS_${successCount}/2`,
-        success: successCount > 0,
-        memoryUsed: !!context.memoryContext,
-        queryType: intel.type,
-        dualExecution: true
-    };
-}
-
-// 🚀 Execute GPT-5 Analysis
-async function executeGPT5Analysis(prompt, chatId, context, intel) {
-    console.log("🚀 Executing GPT-5 analysis...");
-    
-    const response = await getGptAnalysis(prompt, {
-        model: intel.urgency === 'high' ? "gpt-5-nano" : "gpt-5",
-        max_tokens: intel.complexity === 'complex' ? 4000 : 3000,
-        temperature: 0.3,
-        reasoning_effort: intel.complexity === 'complex' ? "high" : "medium",
-        verbosity: "balanced"
-    });
-    
-    return {
-        response: `**🚀 GPT-5 Analysis:**\n\n${response}`,
-        aiUsed: 'GPT5_ENHANCED',
-        success: true,
-        memoryUsed: !!context.memoryContext,
-        queryType: intel.type
-    };
-}
-
-// 🧠 Execute Claude Opus 4.1 Analysis
-async function executeClaudeAnalysis(prompt, chatId, context, intel) {
-    console.log("🧠 Executing Claude Opus 4.1 analysis...");
-    
-    const response = await getClaudeAnalysis(prompt, {
-        model: "claude-opus-4-1-20250805",
-        max_tokens: intel.complexity === 'complex' ? 4000 : 3000,
-        temperature: 0.4,
-        thinking: { 
-            type: "enabled", 
-            budget_tokens: intel.complexity === 'complex' ? 3000 : 2000 
-        }
-    });
-    
-    return {
-        response: `**🧠 Claude Opus 4.1 Strategic Analysis:**\n\n${response}`,
-        aiUsed: 'CLAUDE_OPUS_4_1_STRATEGIC',
-        success: true,
-        memoryUsed: !!context.memoryContext,
-        queryType: intel.type
-    };
-}
-
-// 🚨 Enhanced Fallback System
-async function handleEnhancedFallback(chatId, text) {
-    console.log('🆘 Using enhanced fallback system...');
-    
-    // Try to get minimal context
-    let basicContext = '';
-    try {
-        const recent = await getConversationHistoryDB(chatId, 1);
-        if (recent?.[0]) {
-            basicContext = `\n\nContext: You previously discussed "${recent[0].user_message?.substring(0, 50)}..." with this user.`;
-        }
-    } catch (contextError) {
-        console.log('⚠️ Even basic context failed');
-    }
-    
-    // Multi-tier fallback strategy
-    const fallbackStrategies = [
-        // Tier 1: Claude without thinking (save tokens)
-        {
-            name: 'Claude Simple',
-            execute: async () => await getClaudeAnalysis(text + basicContext, {
-                model: "claude-opus-4-1-20250805",
-                max_tokens: 1500,
-                temperature: 0.7
-                // No thinking to save tokens
-            })
-        },
-        // Tier 2: GPT-5 mini
-        {
-            name: 'GPT-5 Mini',
-            execute: async () => await getGptAnalysis(text + basicContext, {
-                model: "gpt-5-mini",
+            console.log("⚠️ Ultimate analysis failed, using basic GPT fallback:", ultimateError.message);
+            
+            // Final fallback to basic GPT
+            const { getGptAnalysis } = require('./utils/openaiClient');
+            
+            const enhancedPrompt = context.memoryContext ? 
+                `${context.memoryContext}\n\nUser: ${text}` : text;
+                
+            const response = await getGptAnalysis(enhancedPrompt, {
                 max_tokens: 1500,
                 temperature: 0.7,
-                reasoning_effort: "minimal"
-            })
-        },
-        // Tier 3: GPT-5 standard
-        {
-            name: 'GPT-5 Standard',
-            execute: async () => await getGptAnalysis(text + basicContext, {
-                model: "gpt-5",
-                max_tokens: 1000,
-                temperature: 0.7,
-                reasoning_effort: "low"
-            })
-        }
-    ];
-    
-    // Try each strategy
-    for (const strategy of fallbackStrategies) {
-        try {
-            console.log(`🔄 Trying fallback: ${strategy.name}`);
-            const response = await strategy.execute();
-            console.log(`✅ Fallback successful: ${strategy.name}`);
-            return `**🔄 ${strategy.name} Response:**\n\n${response}`;
-        } catch (strategyError) {
-            console.log(`❌ ${strategy.name} failed:`, strategyError.message);
+                model: "gpt-5"
+            });
+            
+            return {
+                response: response,
+                aiUsed: 'GPT_FALLBACK',
+                success: true,
+                memoryUsed: !!context.memoryContext,
+                queryType: intel.type
+            };
         }
     }
-    
-    // Final emergency response
-    return `🚨 I'm experiencing technical difficulties right now.
-
-**What I can tell you:**
-- Your message was received: "${text.substring(0, 100)}${text.length > 100 ? '...' : ''}"
-- Chat ID: ${chatId}
-- Timestamp: ${new Date().toISOString()}
-
-**Please try:**
-- Asking your question again in a moment
-- Using simpler language
-- Breaking complex questions into smaller parts
-- Checking the /status command
-
-All AI systems will be back online shortly! 🔧`;
 }
 
 // 💾 Save Conversation to Database
-async function saveConversationToDatabase(chatId, userMessage, result, context, routing = null) {
+async function saveConversationToDatabase(chatId, userMessage, result, context) {
     try {
         await saveConversationDB(chatId, userMessage, result.response, "text", {
             aiUsed: result.aiUsed,
@@ -710,16 +510,9 @@ async function saveConversationToDatabase(chatId, userMessage, result, context, 
             success: result.success,
             enhanced: true,
             responseTime: result.responseTime || 0,
-            routing: routing ? {
-                ai: routing.ai,
-                confidence: routing.confidence,
-                reason: routing.reason
-            } : null,
-            dualExecution: result.dualExecution || false,
-            fallbackUsed: result.fallbackUsed || false,
             timestamp: new Date().toISOString()
         });
-        console.log("✅ Enhanced conversation saved to database");
+        console.log("✅ Conversation saved to database");
     } catch (error) {
         console.log('⚠️ Could not save conversation:', error.message);
     }
@@ -735,14 +528,6 @@ async function extractAndSaveMemories(chatId, userMessage, aiResponse) {
             if (memoryFact) {
                 await addPersistentMemoryDB(chatId, memoryFact, 'medium');
                 console.log(`✅ Saved memory: ${memoryFact.substring(0, 50)}...`);
-            }
-        }
-        
-        // Extract strategic insights from dual AI responses
-        if (aiResponse.includes('CONSENSUS') || aiResponse.includes('DUAL AI')) {
-            const insights = extractStrategicInsights(aiResponse);
-            for (const insight of insights) {
-                await addPersistentMemoryDB(chatId, `Strategic insight: ${insight}`, 'high');
             }
         }
         
@@ -763,12 +548,63 @@ async function extractAndSaveMemories(chatId, userMessage, aiResponse) {
     }
 }
 
-// 🔧 Helper Functions
+// 🚨 ENHANCED: Fallback Response Handler
+async function handleFallbackResponse(chatId, text) {
+    try {
+        console.log('🆘 Using emergency fallback response...');
+        
+        // Try to get minimal context
+        let basicContext = '';
+        try {
+            const recent = await getConversationHistoryDB(chatId, 1);
+            if (recent?.[0]) {
+                basicContext = `\n\nContext: You previously discussed "${recent[0].user_message?.substring(0, 50)}..." with this user.`;
+            }
+        } catch (contextError) {
+            console.log('⚠️ Even basic context failed');
+        }
+        
+        // Try basic GPT analysis
+        try {
+            const { getGptAnalysis } = require('./utils/openaiClient');
+            
+            return await getGptAnalysis(text + basicContext, {
+                max_tokens: 1000,
+                temperature: 0.7,
+                model: "gpt-5"
+            });
+            
+        } catch (gptError) {
+            console.log('⚠️ GPT fallback failed:', gptError.message);
+            
+            // Final emergency response
+            return `🚨 I'm experiencing technical difficulties right now. 
+
+**What I can tell you:**
+- Your message was received: "${text.substring(0, 100)}${text.length > 100 ? '...' : ''}"
+- Chat ID: ${chatId}
+- Timestamp: ${new Date().toISOString()}
+
+**Please try:**
+- Asking your question again in a moment
+- Using simpler language
+- Checking the /status command
+
+I'll be back to full capacity shortly! 🔧`;
+        }
+        
+    } catch (error) {
+        console.error('❌ Complete fallback failure:', error.message);
+        return "🚨 Complete system error. Please contact administrator.";
+    }
+}
+
+// 🔧 Helper Functions (keeping your original ones)
 function buildMemoryContextString(history, memories) {
-    let context = '\n\n🧠 ENHANCED MEMORY CONTEXT:\n';
+    let context = '\n\n🧠 MEMORY CONTEXT:\n';
     
     if (memories.length > 0) {
-        context += '\n💎 IMPORTANT FACTS:\n';
+        context += '\nIMPORTANT FACTS:\n';
         memories.slice(0, 3).forEach((mem, i) => {
             const fact = mem.fact || mem.memory || mem;
             context += `${i + 1}. ${fact}\n`;
@@ -776,7 +612,7 @@ function buildMemoryContextString(history, memories) {
     }
     
     if (history.length > 0) {
-        context += '\n💬 RECENT CONVERSATION:\n';
+        context += '\nRECENT CONVERSATION:\n';
         const recent = history[0];
         context += `User: "${recent.user_message?.substring(0, 80)}..."\n`;
         if (recent.gpt_response || recent.ai_response) {
@@ -825,11 +661,6 @@ function determineComplexity(text) {
     return 'simple';
 }
 
-function determineUrgency(text) {
-    const urgentKeywords = ['urgent', 'immediate', 'asap', 'emergency', 'critical', 'now', 'quickly'];
-    return urgentKeywords.some(keyword => text.toLowerCase().includes(keyword)) ? 'high' : 'normal';
-}
-
 function requiresLiveData(text) {
     if (!text) return false;
     
@@ -850,7 +681,6 @@ function shouldSaveToPersistentMemory(userMessage, aiResponse) {
            lowerMessage.includes('important') ||
            lowerResponse.includes('important to note') ||
            lowerResponse.includes('key insight') ||
-           lowerResponse.includes('consensus') ||
            aiResponse.length > 500;
 }
 
@@ -879,160 +709,20 @@ function extractMemoryFact(userMessage, aiResponse) {
     return `Context: ${userMessage.substring(0, 100)}`;
 }
 
-function extractStrategicInsights(response) {
-    const insights = [];
-    const lines = response.split('\n');
-    
-    for (const line of lines) {
-        if (line.includes('Key insight:') || line.includes('Important:') || line.includes('Strategy:')) {
-            const insight = line.replace(/^.*?(?:Key insight:|Important:|Strategy:)\s*/i, '').trim();
-            if (insight.length > 10 && insight.length < 200) {
-                insights.push(insight);
-            }
-        }
-    }
-    
-    return insights.slice(0, 3); // Max 3 insights
-}
-
-// 🔧 Session Management Functions
-async function startUserSession(chatId, sessionType = 'ENHANCED_DUAL_AI') {
-    try {
-        console.log(`📊 Starting enhanced session for ${chatId}: ${sessionType}`);
-        const sessionId = `enhanced_session_${chatId}_${Date.now()}`;
-        return sessionId;
-    } catch (error) {
-        console.error('❌ Start session error:', error.message);
-        return null;
-    }
-}
-
-async function endUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
-    try {
-        console.log(`📊 Ending enhanced session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
-        return true;
-    } catch (error) {
-        console.error('❌ End session error:', error.message);
-        return false;
-    }
-}
-
-// 🔧 Command Execution with Logging
-async function executeCommandWithLogging(chatId, text, sessionId) {
-    const startTime = Date.now();
-    
-    try {
-        // Route to enhanced dual AI conversation handler
-        await handleDualAIConversation(chatId, text, sessionId);
-        
-        const executionTime = Date.now() - startTime;
-        
-        // Log successful command
-        await logCommandUsage(chatId, text, executionTime, true);
-        
-        return executionTime;
-        
-    } catch (error) {
-        const executionTime = Date.now() - startTime;
-        
-        // Log failed command
-        await logCommandUsage(chatId, text, executionTime, false, error.message);
-        
-        throw error;
-    }
-}
-
-// 🔧 Command Usage Logging
-async function logCommandUsageDetailed(chatId, command, executionTime, successful = true, errorMessage = null) {
-    try {
-        console.log(`📊 Enhanced Command Log: ${chatId} | ${command.substring(0, 30)} | ${executionTime}ms | ${successful ? 'SUCCESS' : 'FAILED'}`);
-        
-        if (!successful && errorMessage) {
-            console.log(`❌ Error: ${errorMessage}`);
-        }
-        
-        return true;
-    } catch (error) {
-        console.error('❌ Log command usage error:', error.message);
-        return false;
-    }
-}
-
-// 🔧 API Usage Logging
-async function logApiUsage(apiProvider, endpoint, callsCount = 1, successful = true, responseTime = 0, dataVolume = 0, costEstimate = 0) {
-    try {
-        console.log(`🔌 Enhanced API Usage: ${apiProvider}/${endpoint} | Calls: ${callsCount} | ${successful ? 'SUCCESS' : 'FAILED'} | ${responseTime}ms | Cost: ${costEstimate}`);
-        return true;
-    } catch (error) {
-        console.error('❌ Log API usage error:', error.message);
-        return false;
-    }
-}
-
-// 🔧 Enhanced Start Command Handler
-async function handleStartCommand(chatId) {
-    const welcome = `🤖 **Enhanced AI Assistant System v4.0 - DUAL AI POWER**
-
-**🎯 Core Features:**
-- 🚀 **GPT-5 Ultimate**: Mathematical, technical, coding excellence
-- 🧠 **Claude Opus 4.1**: Strategic analysis, risk assessment  
-- 🤝 **Dual Consensus**: Both AIs for critical decisions
-- 🧠 **Smart Memory**: Persistent conversation memory
-- 📊 **Live Data**: Real-time market & financial data
-- 🇰🇭 **Cambodia Fund**: Specialized lending analysis
-
-**🤖 AI Routing:**
-- **GPT-5** for: Math, code, crypto, urgent queries
-- **Claude** for: Strategy, risk, complex analysis
-- **Dual AI** for: Important decisions, comparisons
-
-**🔧 System Commands:**
-/status - Enhanced system status
-/analytics - Dual AI performance analytics  
-/test_memory - Memory system test
-/help - Full command list
-
-**Chat ID:** ${chatId}
-**🏆 Dual AI Status:** ✅ ACTIVE
-**Memory System:** ✅ ENHANCED`;
-
-    await sendSmartMessage(bot, chatId, welcome);
-    
-    // Save welcome interaction
-    await saveConversationDB(chatId, "/start", welcome, "command").catch(console.error);
-}
-
-// Export all functions
+// Export the main function
 module.exports = {
     handleDualAIConversation,
-    buildConversationContextWithMemory,
+    buildConversationContext,
     executeDualAICommand,
-    executeDualConsensus,
-    executeGPT5Analysis,
-    executeClaudeAnalysis,
-    handleEnhancedFallback,
     saveConversationToDatabase,
     extractAndSaveMemories,
-    startUserSession,
-    endUserSession,
-    executeCommandWithLogging,
-    logCommandUsageDetailed,
-    logApiUsage,
-    handleStartCommand,
-    smartAIRouter,
-    
-    // Keep compatibility with existing names
-    buildConversationContext: buildConversationContextWithMemory,
-    handleFallbackResponse: handleEnhancedFallback
+    handleFallbackResponse
 };
 
-console.log('✅ Enhanced Dual AI Handler loaded');
-console.log('🚀 GPT-5 Models: gpt-5, gpt-5-mini, gpt-5-nano');
-console.log('🧠 Claude Opus 4.1: claude-opus-4-1-20250805');
-console.log('🤝 Smart Routing: Automatic AI selection');
-console.log('🔄 Enhanced Fallbacks: 3-tier fallback system');
-console.log('💾 Advanced Memory: Strategic insights extraction');
-console.log('🎯 Ready for intelligent dual AI conversations!');
+console.log('✅ Fixed Dual AI Conversation Handler loaded');
+console.log('🤖 Multi-tier fallback: Dual AI → Ultimate Strategic → GPT → Emergency');
+console.log('🧠 Enhanced memory integration with persistent storage');
+console.log('📊 Comprehensive conversation intelligence and analytics');
 
 // 🔧 SESSION MANAGEMENT FUNCTIONS
 async function startUserSession(chatId, sessionType = 'GENERAL') {
