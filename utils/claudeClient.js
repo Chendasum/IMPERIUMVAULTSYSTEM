@@ -24,7 +24,7 @@ const anthropic = new Anthropic({
 // Debug configuration
 console.log("🔧 Claude Client Configuration:");
 console.log(`   API Key: ${process.env.ANTHROPIC_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
-console.log(`   Model: ${process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805'}`);
+console.log(`   Model: ${process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514'}`);
 
 /**
  * Analyze conversation type for appropriate response complexity
@@ -285,7 +285,7 @@ async function getClaudeAnalysis(prompt, options = {}) {
         
         // Prepare final options
         const finalOptions = {
-            model: options.model || process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805',
+            model: options.model || process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
             max_tokens: options.maxTokens || conversationType.maxTokens,
             temperature: options.temperature || conversationType.temperature,
             system: systemPrompt,
@@ -472,7 +472,7 @@ async function testNaturalClaude() {
         console.log('🔍 Testing natural Claude response...');
         
         const message = await anthropic.messages.create({
-            model: process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805',
+            model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
             max_tokens: 200,
             messages: [
                 {
@@ -546,7 +546,7 @@ async function checkSystemHealth() {
 // Get client metrics
 function getMetrics() {
     return {
-        model: process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805',
+        model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
         apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY,
         maxTokens: 3000,
         timeout: 120000,
