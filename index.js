@@ -412,7 +412,7 @@ async function executeEnhancedDualAICommand(text, chatId, context, intel) {
             result = await getDualConsensusAnalysis(enhancedPrompt, context, intel);
         } else if (aiChoice === 'GPT5_PREFERRED') {
             // Use GPT-5 for this type of query
-            result = await getGPT5Analysis(enhancedPrompt, context, intel);
+            result = await getGPT5EnhancedAnalysis(enhancedPrompt, context, intel);
         } else if (aiChoice === 'CLAUDE_PREFERRED') {
             // Use Claude Opus 4.1 for this type of query
             result = await getClaudeOpus41Analysis(enhancedPrompt, context, intel);
@@ -463,8 +463,8 @@ function routeToOptimalAI(text, intel) {
     return 'CLAUDE_PREFERRED';
 }
 
-// 🔧 FIXED: GPT-5 Analysis with correct model string
-async function getGPT5Analysis(prompt, context, intel) {
+// 🔧 FIXED: GPT-5 Enhanced Analysis with correct model string
+async function getGPT5EnhancedAnalysis(prompt, context, intel) {
     try {
         console.log("🤖 Calling GPT-5...");
         
@@ -549,7 +549,7 @@ async function getDualConsensusAnalysis(prompt, context, intel) {
         
         // Run both AIs in parallel
         const [gptResult, claudeResult] = await Promise.allSettled([
-            getGPT5Analysis(prompt, context, intel),
+            getGPT5EnhancedAnalysis(prompt, context, intel),
             getClaudeOpus41Analysis(prompt, context, intel)
         ]);
         
