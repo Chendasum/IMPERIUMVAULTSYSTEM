@@ -112,7 +112,7 @@ const REAL_GPT5_POWER_MODELS = {
 // 🧠 REAL CLAUDE OPUS 4.1 POWER CONFIGURATIONS (VERIFIED FROM ANTHROPIC DOCS)
 const REAL_CLAUDE_OPUS_4_1_MODES = {
     STRATEGIC_MASTERY: {
-        model: "claude-opus-4-1-20250805", // ✅ REAL: Official model name with snapshot date
+        model: "claude-sonnet-4-20250514", // ✅ REAL: Official model name with snapshot date
         description: "Maximum strategic analysis and risk assessment with Claude Opus 4.1",
         max_tokens: 4000,
         temperature: 0.2,
@@ -126,7 +126,7 @@ const REAL_CLAUDE_OPUS_4_1_MODES = {
     },
     
     STRATEGIC_STANDARD: {
-        model: "claude-opus-4-1-20250805", // ✅ REAL: Official model name
+        model: "claude-sonnet-4-20250514", // ✅ REAL: Official model name
         description: "Standard strategic analysis with Claude Opus 4.1",
         max_tokens: 3000,
         temperature: 0.4,
@@ -140,7 +140,7 @@ const REAL_CLAUDE_OPUS_4_1_MODES = {
     },
     
     STRATEGIC_EFFICIENT: {
-        model: "claude-opus-4-1-20250805", // ✅ REAL: Official model name
+        model: "claude-sonnet-4-20250514", // ✅ REAL: Official model name
         description: "Efficient strategic insights with Claude Opus 4.1",
         max_tokens: 2000,
         temperature: 0.5,
@@ -1299,7 +1299,7 @@ class UltimatePowerExecutor {
         
         // ✅ REAL Claude Opus 4.1 API parameters only - verified from Anthropic docs
         const realClaudeOptions = {
-            model: modeConfig.model, // ✅ REAL: claude-opus-4-1-20250805
+            model: modeConfig.model, // ✅ REAL: claude-sonnet-4-20250514
             max_tokens: modeConfig.max_tokens,
             temperature: modeConfig.temperature,
             thinking: modeConfig.thinking // ✅ REAL: thinking parameter with budget_tokens
@@ -1926,7 +1926,7 @@ class UltimateSystemHealthMonitor {
             const testPrompt = "Health check: Provide a brief strategic assessment of system operational status with reasoning depth indicator";
             
             const testResponse = await claudeClient.getClaudeAnalysis(testPrompt, {
-                model: "claude-opus-4-1-20250805",
+                model: "claude-sonnet-4-20250514",
                 max_tokens: 100,
                 temperature: 0.2,
                 thinking: {
@@ -2619,7 +2619,7 @@ function initializeUltimateStrategicPowerSystem() {
                     'gpt-5-chat-latest': 'Optimized for conversational analysis ($1.25/$10 per 1M tokens)'
                 },
                 real_claude_opus4_1: {
-                    'claude-opus-4-1-20250805': 'Strategic mastery with thinking capability ($15/$75 per 1M tokens)'
+                    'claude-sonnet-4-20250514': 'Strategic mastery with thinking capability ($15/$75 per 1M tokens)'
                 }
             },
             verified_parameters: {
@@ -3118,7 +3118,7 @@ console.log(`
 🏆 ULTIMATE DUAL AI SYSTEM v2.1 - REAL API INTEGRATION COMPLETE
 📊 Total Lines: 2,247 (Complete system with REAL API parameters)
 🚀 GPT-5 Models: gpt-5, gpt-5-mini, gpt-5-nano, gpt-5-chat-latest
-🧠 Claude Model: claude-opus-4-1-20250805
+🧠 Claude Model: claude-sonnet-4-20250514
 ✅ Real Parameters: verbosity, reasoning_effort, thinking
 💰 Cost Management: Budget controls, efficiency optimization
 🔍 Health Monitoring: Comprehensive REAL API validation
