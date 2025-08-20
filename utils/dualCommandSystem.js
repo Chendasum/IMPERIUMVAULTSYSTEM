@@ -195,7 +195,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'gpt',
             reason: 'GPT-5 has superior vision capabilities',
             complexity: 'medium',
-            max_tokens: 3000,
+            max_tokens: 2000,
             needsLiveData: false,
             memoryImportant: false,
             powerSystemPreference: 'GPT5_ULTIMATE'
@@ -208,7 +208,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'gpt',
             reason: 'Simple datetime query, quick GPT response',
             complexity: 'low',
-            max_tokens: 3000,
+            max_tokens: 200,
             needsLiveData: false,
             memoryImportant: false,
             powerSystemPreference: 'GPT5_SPEED'
@@ -221,7 +221,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'gpt',
             reason: 'Casual conversation with memory context',
             complexity: 'low',
-            max_tokens: 3000,
+            max_tokens: 400,
             needsLiveData: false,
             memoryImportant: hasMemoryReference || hasMemoryContext,
             powerSystemPreference: 'GPT5_CHAT'
@@ -234,7 +234,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'claude',
             reason: 'Economic regime analysis, Claude strategic expertise',
             complexity: 'high',
-            max_tokens: 3000,
+            max_tokens: 2500,
             needsLiveData: true,
             specialFunction: 'regime',
             memoryImportant: true,
@@ -248,7 +248,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'claude',
             reason: 'Market anomaly detection, Claude analytical strength',
             complexity: 'high',
-            max_tokens: 3000,
+            max_tokens: 2000,
             needsLiveData: true,
             specialFunction: 'anomaly',
             memoryImportant: true,
@@ -262,7 +262,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'claude',
             reason: 'Portfolio optimization with memory context',
             complexity: 'high',
-            max_tokens: 3000,
+            max_tokens: 2500,
             needsLiveData: true,
             specialFunction: 'portfolio',
             memoryImportant: true,
@@ -276,7 +276,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'claude',
             reason: 'Cambodia expertise with persistent memory',
             complexity: 'medium',
-            max_tokens: 3000,
+            max_tokens: 2000,
             needsLiveData: true,
             specialFunction: 'cambodia',
             memoryImportant: true,
@@ -290,7 +290,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             bestAI: 'gpt',
             reason: 'Market analysis with live data and memory',
             complexity: 'medium',
-            max_tokens: 3000,
+            max_tokens: 1500,
             needsLiveData: true,
             memoryImportant: hasMemoryReference,
             powerSystemPreference: 'GPT5_POWER'
@@ -316,7 +316,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         bestAI: 'gpt',
         reason: 'General conversation with memory awareness',
         complexity: 'medium',
-        max_tokens: 3000,
+        max_tokens: 1200,
         needsLiveData: false,
         memoryImportant: hasMemoryReference || hasMemoryContext,
         powerSystemPreference: 'GPT5_POWER'
@@ -456,7 +456,7 @@ async function executeFallbackAnalysis(userMessage, queryAnalysis, context = nul
         }
         
         const options = {
-            max_tokens: Math.min(queryAnalysis.max_tokens, 3000),
+            max_tokens: Math.min(queryAnalysis.max_tokens, 1200),
             temperature: 0.7
         };
         
@@ -891,7 +891,7 @@ async function getMarketIntelligence(chatId = null) {
         // Fallback to direct Claude call
         try {
             return await claudeClient.getClaudeAnalysis(query, {
-                max_tokens: 3000,
+                max_tokens: 1000,
                 temperature: 0.7
             });
         } catch (fallbackError) {
