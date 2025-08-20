@@ -473,7 +473,7 @@ async function testNaturalClaude() {
         
         const message = await anthropic.messages.create({
             model: process.env.CLAUDE_MODEL || 'claude-opus-4-1-20250805',
-            max_tokens: 3000,
+            max_tokens: 200,
             messages: [
                 {
                     role: 'user',
