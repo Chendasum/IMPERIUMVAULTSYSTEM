@@ -481,6 +481,141 @@ async function sendUltraFastResponse(bot, chatId, response, title = null, option
         speedOptimized: true,
         isUltraFast: true,
         includeMetadata: true,
+        ...options
+    });
+}
+
+/**
+ * 🚀 Fast GPT-5 response sender
+ */
+async function sendFastResponse(bot, chatId, response, title = null, options = {}) {
+    return await sendSmartMessage(bot, chatId, response, {
+        title: title || '🚀 Fast GPT-5 Response',
+        type: 'speed_fast',
+        aiModel: 'gpt-5-mini',
+        speedOptimized: true,
+        isFast: true,
+        includeMetadata: true,
+        ...options
+    });
+}
+
+/**
+ * ⚖️ Balanced GPT-5 response sender
+ */
+async function sendBalancedResponse(bot, chatId, response, title = null, options = {}) {
+    return await sendSmartMessage(bot, chatId, response, {
+        title: title || '⚖️ Balanced GPT-5 Response',
+        type: 'speed_balanced',
+        aiModel: 'gpt-5',
+        speedOptimized: true,
+        isBalanced: true,
+        includeMetadata: true,
+        ...options
+    });
+}
+
+/**
+ * 🧠 Memory-enhanced response sender
+ */
+async function sendMemoryResponse(bot, chatId, response, title = null, options = {}) {
+    return await sendSmartMessage(bot, chatId, response, {
+        title: title || '🧠 Memory-Enhanced Response',
+        type: 'memory_response',
+        aiModel: 'gpt-5',
+        memoryUsed: true,
+        includeMetadata: true,
+        ...options
+    });
+}
+
+/**
+ * 🚀 GPT-5 response sender
+ */
+async function sendGPTResponse(bot, chatId, response, title = null, options = {}) {
+    return await sendSmartMessage(bot, chatId, response, {
+        title: title || '🚀 GPT-5 Response',
+        type: 'gpt5_response',
+        aiModel: 'gpt-5',
+        includeMetadata: true,
+        ...options
+    });
+}
+
+/**
+ * ⚡ Claude response sender
+ */
+async function sendClaudeResponse(bot, chatId, response, title = null, options = {}) {
+    return await sendSmartMessage(bot, chatId, response, {
+        title: title || '⚡ Claude Response',
+        type: 'general',
+        aiModel: 'claude',
+        includeMetadata: true,
+        ...options
+    });
+}
+
+/**
+ * 🔄 Dual AI response sender
+ */
+async function sendDualAIResponse(bot, chatId, response, title = null, options = {}) {
+    return await sendSmartMessage(bot, chatId, response, {
+        title: title || '🔄 Dual AI Response',
+        type: 'dual_ai',
+        aiModel: 'dual',
+        includeMetadata: true,
+        ...options
+    });
+}
+
+/**
+ * 📊 Enhanced analysis sender
+ */
+async function sendAnalysis(bot, chatId, analysis, title = 'Analysis', options = {}) {
+    return await sendSmartMessage(bot, chatId, analysis, {
+        title: title,
+        type: 'analysis',
+        includeMetadata: true,
+        ...options
+    });
+}
+
+/**
+ * 🇰🇭 Enhanced Cambodia analysis sender
+ */
+async function sendCambodiaAnalysis(bot, chatId, analysis, title = 'Cambodia Analysis', options = {}) {
+    return await sendSmartMessage(bot, chatId, analysis, {
+        title: title,
+        type: 'cambodia',
+        includeMetadata: true,
+        ...options
+    });
+}
+
+/**
+ * 📈 Enhanced market analysis sender
+ */
+async function sendMarketAnalysis(bot, chatId, analysis, title = 'Market Analysis', options = {}) {
+    return await sendSmartMessage(bot, chatId, analysis, {
+        title: title,
+        type: 'market',
+        includeMetadata: true,
+        ...options
+    });
+}
+
+/**
+ * 💼 Enhanced portfolio analysis sender
+ */
+async function sendPortfolioAnalysis(bot, chatId, analysis, title = 'Portfolio Analysis', options = {}) {
+    return await sendSmartMessage(bot, chatId, analysis, {
+        title: title,
+        type: 'portfolio',
+        includeMetadata: true,
+        ...options
+    });
+}
+
 /**
  * 🚨 Enhanced alert sender
  */
