@@ -1,4 +1,4 @@
-// utils/openaiClient.js - CORRECTED for Real GPT-5 API
+// utils/openaiClient.js - FIXED GPT-5 Client (Correct Parameter Names)
 require("dotenv").config();
 const { OpenAI } = require("openai");
 
@@ -12,7 +12,7 @@ const openai = new OpenAI({
     }
 });
 
-// ✅ CORRECTED: Real GPT-5 Model Configuration
+// ✅ FIXED: Real GPT-5 Model Configuration with correct parameters
 const GPT5_CONFIG = {
     PRIMARY_MODEL: "gpt-5",           // ✅ Real GPT-5 model
     MINI_MODEL: "gpt-5-mini",         // ✅ Real GPT-5 Mini
@@ -40,26 +40,25 @@ let currentModel = GPT5_CONFIG.PRIMARY_MODEL;
 let gpt5Available = false;
 let modelCapabilities = {};
 
-console.log("🚀 Real GPT-5 Enhanced Client Configuration:");
+console.log("🚀 FIXED GPT-5 Enhanced Client Configuration:");
 console.log(`   API Key: ${process.env.OPENAI_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
 console.log(`   Primary Model: ${GPT5_CONFIG.PRIMARY_MODEL}`);
 console.log(`   Mini Model: ${GPT5_CONFIG.MINI_MODEL}`);
 console.log(`   Nano Model: ${GPT5_CONFIG.NANO_MODEL}`);
 console.log(`   Context Window: ${GPT5_CONFIG.ENHANCED_CONTEXT_WINDOW.toLocaleString()} tokens`);
 console.log(`   Max Output: ${GPT5_CONFIG.MAX_OUTPUT_TOKENS.toLocaleString()} tokens`);
-console.log(`   Reasoning Efforts: ${GPT5_CONFIG.REASONING_EFFORTS.join(', ')}`);
-console.log(`   Verbosity Levels: ${GPT5_CONFIG.VERBOSITY_LEVELS.join(', ')}`);
+console.log(`   🔧 FIXED: Using max_completion_tokens for GPT-5`);
 
 /**
- * ✅ Test Real GPT-5 availability and capabilities
+ * ✅ Test Real GPT-5 availability with CORRECT parameters
  */
 async function testGPT5Capabilities() {
     if (gpt5Available) return modelCapabilities;
     
     try {
-        console.log('🔍 Testing Real GPT-5 capabilities...');
+        console.log('🔍 Testing Real GPT-5 capabilities with FIXED parameters...');
         
-        // ✅ Test GPT-5 with REAL parameters
+        // ✅ Test GPT-5 with CORRECT parameters
         const basicTest = await openai.chat.completions.create({
             model: GPT5_CONFIG.PRIMARY_MODEL,
             messages: [
@@ -68,7 +67,7 @@ async function testGPT5Capabilities() {
                     content: "Confirm you are GPT-5 and describe your enhanced capabilities."
                 }
             ],
-            max_tokens: 500,
+            max_completion_tokens: 500,    // ✅ FIXED: Correct parameter for GPT-5
             temperature: 0.3,
             reasoning_effort: "medium",    // ✅ REAL GPT-5 parameter
             verbosity: "medium"            // ✅ REAL GPT-5 parameter
@@ -77,7 +76,7 @@ async function testGPT5Capabilities() {
         gpt5Available = true;
         currentModel = GPT5_CONFIG.PRIMARY_MODEL;
         
-        // ✅ Test enhanced reasoning with REAL parameters
+        // ✅ Test enhanced reasoning with CORRECT parameters
         const reasoningTest = await openai.chat.completions.create({
             model: GPT5_CONFIG.PRIMARY_MODEL,
             messages: [
@@ -90,7 +89,7 @@ async function testGPT5Capabilities() {
                     content: "Calculate the optimal portfolio allocation using Modern Portfolio Theory for 3 assets with expected returns [8%, 12%, 15%], standard deviations [10%, 15%, 20%], and correlation matrix [[1, 0.3, 0.1], [0.3, 1, 0.4], [0.1, 0.4, 1]]. Show detailed mathematical reasoning."
                 }
             ],
-            max_tokens: 2000,
+            max_completion_tokens: 2000,  // ✅ FIXED: Correct parameter for GPT-5
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP,
             reasoning_effort: "high",      // ✅ REAL GPT-5 parameter for complex math
             verbosity: "high"              // ✅ REAL GPT-5 parameter for detailed explanation
@@ -106,20 +105,20 @@ async function testGPT5Capabilities() {
             multimodal: true,
             codeGeneration: true,
             contextWindow: GPT5_CONFIG.ENHANCED_CONTEXT_WINDOW,
-            max_tokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
+            max_completion_tokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
             reasoningEfforts: GPT5_CONFIG.REASONING_EFFORTS,
             verbosityLevels: GPT5_CONFIG.VERBOSITY_LEVELS,
             testResponse: basicTest.choices[0].message.content,
-            reasoningQuality: reasoningTest.choices[0].message.content.length > 1000
+            reasoningQuality: reasoningTest.choices[0].message.content.length > 1000,
+            parameterFixed: true
         };
         
-        console.log('✅ Real GPT-5 capabilities confirmed:');
+        console.log('✅ Real GPT-5 capabilities confirmed with FIXED parameters:');
         console.log(`   Enhanced Reasoning: ${modelCapabilities.enhancedReasoning}`);
         console.log(`   Large Context: ${modelCapabilities.largeContext}`);
         console.log(`   Improved Math: ${modelCapabilities.improvedMath}`);
         console.log(`   Financial Analysis: ${modelCapabilities.betterFinancial}`);
-        console.log(`   Reasoning Efforts: ${modelCapabilities.reasoningEfforts.join(', ')}`);
-        console.log(`   Verbosity Levels: ${modelCapabilities.verbosityLevels.join(', ')}`);
+        console.log(`   Parameter Fix: ✅ max_completion_tokens working`);
         
         return modelCapabilities;
         
@@ -133,7 +132,8 @@ async function testGPT5Capabilities() {
         modelCapabilities = {
             available: false,
             fallbackModel: GPT5_CONFIG.FALLBACK_MODEL,
-            error: error.message
+            error: error.message,
+            parameterFixed: false
         };
         
         return modelCapabilities;
@@ -186,11 +186,11 @@ function analyzeQueryForGPT5(prompt) {
         /(frontend|backend|database|web.*app|mobile.*app)/i
     ];
     
-    // ✅ Determine optimal GPT-5 configuration
+    // ✅ Determine optimal GPT-5 configuration with FIXED parameters
     let config = {
         type: 'general',
         model: GPT5_CONFIG.PRIMARY_MODEL,
-        max_tokens: 1500,
+        max_completion_tokens: 1500,  // ✅ FIXED: Use correct parameter
         temperature: GPT5_CONFIG.ENHANCED_REASONING_TEMP,
         reasoning_effort: GPT5_CONFIG.DEFAULT_REASONING,    // ✅ REAL parameter
         verbosity: GPT5_CONFIG.DEFAULT_VERBOSITY,           // ✅ REAL parameter
@@ -204,7 +204,7 @@ function analyzeQueryForGPT5(prompt) {
         config = {
             type: 'speed',
             model: GPT5_CONFIG.NANO_MODEL,        // ✅ Use GPT-5 Nano for speed
-            max_tokens: 800,
+            max_completion_tokens: 800,           // ✅ FIXED: Use correct parameter
             temperature: GPT5_CONFIG.SPEED_TEMP,
             reasoning_effort: "minimal",          // ✅ REAL GPT-5 parameter
             verbosity: "low",                     // ✅ REAL GPT-5 parameter
@@ -218,7 +218,7 @@ function analyzeQueryForGPT5(prompt) {
         config = {
             type: 'complex_reasoning',
             model: GPT5_CONFIG.PRIMARY_MODEL,     // ✅ Use full GPT-5
-            max_tokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,
+            max_completion_tokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,  // ✅ FIXED
             temperature: GPT5_CONFIG.ENHANCED_REASONING_TEMP,
             reasoning_effort: "high",             // ✅ REAL GPT-5 parameter
             verbosity: "high",                    // ✅ REAL GPT-5 parameter
@@ -232,7 +232,7 @@ function analyzeQueryForGPT5(prompt) {
         config = {
             type: 'financial_analysis',
             model: GPT5_CONFIG.PRIMARY_MODEL,     // ✅ Use full GPT-5
-            max_tokens: 3000,
+            max_completion_tokens: 3000,          // ✅ FIXED
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP,
             reasoning_effort: "high",             // ✅ REAL GPT-5 parameter
             verbosity: "high",                    // ✅ REAL GPT-5 parameter
@@ -246,7 +246,7 @@ function analyzeQueryForGPT5(prompt) {
         config = {
             type: 'large_context',
             model: GPT5_CONFIG.PRIMARY_MODEL,     // ✅ Use full GPT-5
-            max_tokens: 4000,
+            max_completion_tokens: 4000,          // ✅ FIXED
             temperature: 0.6,
             reasoning_effort: "medium",           // ✅ REAL GPT-5 parameter
             verbosity: "high",                    // ✅ REAL GPT-5 parameter
@@ -260,7 +260,7 @@ function analyzeQueryForGPT5(prompt) {
         config = {
             type: 'coding',
             model: GPT5_CONFIG.MINI_MODEL,        // ✅ Use GPT-5 Mini for coding
-            max_tokens: 2500,
+            max_completion_tokens: 2500,          // ✅ FIXED
             temperature: 0.6,
             reasoning_effort: "medium",           // ✅ REAL GPT-5 parameter
             verbosity: "medium",                  // ✅ REAL GPT-5 parameter
@@ -328,7 +328,7 @@ function createGPT5SystemPrompt(queryConfig, options = {}) {
 }
 
 /**
- * ✅ Main GPT-5 analysis function with Real API parameters
+ * ✅ FIXED: Main GPT-5 analysis function with CORRECT API parameters
  */
 async function getGPT5Analysis(prompt, options = {}) {
     try {
@@ -350,7 +350,7 @@ async function getGPT5Analysis(prompt, options = {}) {
         // Create enhanced system prompt
         const systemPrompt = createGPT5SystemPrompt(queryConfig, options);
         
-        // ✅ CORRECTED: Use Real GPT-5 API parameters
+        // ✅ FIXED: Use CORRECT GPT-5 API parameters
         const requestOptions = {
             model: selectedModel,
             messages: [
@@ -364,7 +364,7 @@ async function getGPT5Analysis(prompt, options = {}) {
                 }
             ],
             temperature: options.temperature || queryConfig.temperature,
-            max_tokens: options.max_tokens || queryConfig.max_tokens,
+            max_completion_tokens: options.max_completion_tokens || queryConfig.max_completion_tokens,  // ✅ FIXED
             top_p: options.top_p || 0.95,
             frequency_penalty: options.frequency_penalty || 0,
             presence_penalty: options.presence_penalty || 0
@@ -461,7 +461,7 @@ async function getEnhancedMarketAnalysis(query, marketData = null, options = {})
             reasoning_effort: options.reasoning_effort || "high",
             verbosity: options.verbosity || "high",
             context: "Advanced financial market analysis using institutional-grade methodologies",
-            max_tokens: 4000,
+            max_completion_tokens: 4000,  // ✅ FIXED
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP
         });
         
@@ -508,7 +508,7 @@ async function getEnhancedCambodiaAnalysis(dealQuery, dealData = null, options =
             reasoning_effort: options.reasoning_effort || "high",
             verbosity: options.verbosity || "high",
             context: "Specialized Cambodia real estate and lending market expertise with institutional risk management",
-            max_tokens: 3500,
+            max_completion_tokens: 3500,  // ✅ FIXED
             temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP
         });
         
@@ -550,7 +550,7 @@ async function getEnhancedVisionAnalysis(base64Image, prompt, options = {}) {
                     ]
                 }
             ],
-            max_tokens: options.max_tokens || 3000,
+            max_completion_tokens: options.max_completion_tokens || 3000,  // ✅ FIXED
             temperature: options.temperature || GPT5_CONFIG.MULTIMODAL_TEMP
         };
         
@@ -587,10 +587,11 @@ async function checkGPT5SystemHealth() {
         largeContext: false,
         currentModel: currentModel,
         capabilities: modelCapabilities,
+        parameterFixed: false,
         errors: []
     };
     
-    // Test all GPT-5 models
+    // Test all GPT-5 models with FIXED parameters
     const modelsToTest = [
         { name: 'gpt5Available', model: GPT5_CONFIG.PRIMARY_MODEL },
         { name: 'gpt5MiniAvailable', model: GPT5_CONFIG.MINI_MODEL },
@@ -603,12 +604,13 @@ async function checkGPT5SystemHealth() {
             await openai.chat.completions.create({
                 model: model,
                 messages: [{ role: "user", content: "Test" }],
-                max_tokens: 10,
+                max_completion_tokens: 10,    // ✅ FIXED: Use correct parameter
                 reasoning_effort: "minimal",  // ✅ Use minimal for health check
                 verbosity: "low"              // ✅ Use low for health check
             });
             health[name] = true;
-            console.log(`✅ ${model} operational`);
+            health.parameterFixed = true;
+            console.log(`✅ ${model} operational with FIXED parameters`);
         } catch (error) {
             health.errors.push(`${model}: ${error.message}`);
             console.log(`❌ ${model} unavailable: ${error.message}`);
@@ -620,6 +622,7 @@ async function checkGPT5SystemHealth() {
         health.enhancedReasoning = capabilities.enhancedReasoning;
         health.visionCapabilities = capabilities.multimodal;
         health.largeContext = capabilities.largeContext;
+        health.parameterFixed = capabilities.parameterFixed;
         
         if (!health.gpt5Available) {
             // Test fallback model
@@ -627,7 +630,7 @@ async function checkGPT5SystemHealth() {
                 await openai.chat.completions.create({
                     model: GPT5_CONFIG.FALLBACK_MODEL,
                     messages: [{ role: "user", content: "Test" }],
-                    max_tokens: 10
+                    max_tokens: 10  // GPT-4o still uses max_tokens
                 });
                 health.fallbackWorking = true;
             } catch (fallbackError) {
@@ -666,6 +669,7 @@ function getGPT5Metrics() {
         apiParameters: {
             reasoning_effort: GPT5_CONFIG.REASONING_EFFORTS,
             verbosity: GPT5_CONFIG.VERBOSITY_LEVELS,
+            max_completion_tokens: "FIXED - Using correct parameter",
             defaults: {
                 reasoning_effort: GPT5_CONFIG.DEFAULT_REASONING,
                 verbosity: GPT5_CONFIG.DEFAULT_VERBOSITY
@@ -687,7 +691,8 @@ function getGPT5Metrics() {
             'Complex problem solving with step-by-step reasoning',
             'Institutional-grade analysis for financial markets',
             'Cost-optimized model selection (Nano/Mini/Full)',
-            'Minimal reasoning for speed-critical tasks'
+            'Minimal reasoning for speed-critical tasks',
+            'FIXED: Correct max_completion_tokens parameter'
         ],
         
         queryTypes: [
@@ -706,12 +711,14 @@ function getGPT5Metrics() {
             chat: '$1.25/$10.00 per 1M tokens (conversational tasks)'
         },
         
+        parameterStatus: 'FIXED - Using max_completion_tokens for GPT-5',
+        
         optimizedFor: 'Financial analysis, strategic planning, institutional decision-making, and cost-efficient AI deployment'
     };
 }
 
 /**
- * ✅ Quick access functions for different GPT-5 models
+ * ✅ Quick access functions for different GPT-5 models with FIXED parameters
  */
 async function getQuickNanoResponse(prompt, options = {}) {
     return await getGPT5Analysis(prompt, {
@@ -719,7 +726,7 @@ async function getQuickNanoResponse(prompt, options = {}) {
         model: GPT5_CONFIG.NANO_MODEL,
         reasoning_effort: "minimal",
         verbosity: "low",
-        max_tokens: 800
+        max_completion_tokens: 800
     });
 }
 
@@ -729,7 +736,7 @@ async function getQuickMiniResponse(prompt, options = {}) {
         model: GPT5_CONFIG.MINI_MODEL,
         reasoning_effort: "medium",
         verbosity: "medium",
-        max_tokens: 1500
+        max_completion_tokens: 1500
     });
 }
 
@@ -739,7 +746,7 @@ async function getDeepAnalysis(prompt, options = {}) {
         model: GPT5_CONFIG.PRIMARY_MODEL,
         reasoning_effort: "high",
         verbosity: "high",
-        max_tokens: 4000
+        max_completion_tokens: 4000
     });
 }
 
@@ -749,12 +756,12 @@ async function getChatResponse(prompt, options = {}) {
         model: GPT5_CONFIG.CHAT_MODEL,
         reasoning_effort: "medium",
         verbosity: "medium",
-        max_tokens: 2000
+        max_completion_tokens: 2000
     });
 }
 
 module.exports = {
-    // ✅ Main Real GPT-5 functions
+    // ✅ Main Real GPT-5 functions with FIXED parameters
     getGPT5Analysis,
     getEnhancedMarketAnalysis,
     getEnhancedCambodiaAnalysis,
@@ -827,13 +834,13 @@ module.exports = {
         }
     },
     
-    // ✅ Connection test
+    // ✅ Connection test with FIXED parameters
     testOpenAIConnection: async () => {
         try {
             const response = await openai.chat.completions.create({
                 model: GPT5_CONFIG.NANO_MODEL,  // Use fastest model for connection test
                 messages: [{ role: "user", content: "Test connection" }],
-                max_tokens: 10,
+                max_completion_tokens: 10,     // ✅ FIXED parameter
                 reasoning_effort: "minimal",
                 verbosity: "low"
             });
@@ -841,7 +848,8 @@ module.exports = {
                 success: true, 
                 result: response.choices[0]?.message?.content,
                 model: GPT5_CONFIG.NANO_MODEL,
-                gpt5Available: true
+                gpt5Available: true,
+                parameterFixed: true
             };
         } catch (error) {
             // Fallback test
@@ -849,21 +857,23 @@ module.exports = {
                 const fallbackResponse = await openai.chat.completions.create({
                     model: GPT5_CONFIG.FALLBACK_MODEL,
                     messages: [{ role: "user", content: "Test connection" }],
-                    max_tokens: 10
+                    max_tokens: 10  // GPT-4o still uses max_tokens
                 });
                 return { 
                     success: true, 
                     result: fallbackResponse.choices[0]?.message?.content,
                     model: GPT5_CONFIG.FALLBACK_MODEL,
                     gpt5Available: false,
-                    fallback: true
+                    fallback: true,
+                    parameterFixed: true
                 };
             } catch (fallbackError) {
                 return { 
                     success: false, 
                     error: error.message,
                     fallbackError: fallbackError.message,
-                    gpt5Available: false
+                    gpt5Available: false,
+                    parameterFixed: false
                 };
             }
         }
