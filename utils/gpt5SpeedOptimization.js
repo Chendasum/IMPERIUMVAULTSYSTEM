@@ -13,20 +13,21 @@ const {
 // 🚀 SPEED-OPTIMIZED GPT-5 DEFAULTS
 const SPEED_OPTIMIZED_CONFIG = {
     // Default to fastest model unless complexity detected
-    DEFAULT_MODEL: "gpt-5-nano",        // Fastest, cheapest
-    DEFAULT_REASONING: "minimal",       // Fastest reasoning
-    DEFAULT_VERBOSITY: "low",           // Concise responses
-    DEFAULT_TOKENS: 800,                // Smaller responses = faster
+    DEFAULT_MODEL: "gpt-5-nano",
+    DEFAULT_REASONING: "minimal",
+    DEFAULT_VERBOSITY: "low",
+    DEFAULT_TOKENS: 800,
     
     // Speed thresholds for model selection
-    NANO_MAX_WORDS: 20,                 // Use Nano for short queries
-    MINI_MAX_WORDS: 100,                // Use Mini for medium queries
-    FULL_MIN_COMPLEXITY_SCORE: 3,       // Only use Full for complex queries
+    NANO_MAX_WORDS: 20,
+    MINI_MAX_WORDS: 100,
+    FULL_MIN_COMPLEXITY_SCORE: 3,
     
-    // Timeout settings
-    NANO_TIMEOUT: 5000,                 // 5 seconds for Nano
-    MINI_TIMEOUT: 15000,                // 15 seconds for Mini  
-    FULL_TIMEOUT: 45000,                // 45 seconds for Full
+    // ✅ UPDATED: Longer timeout settings for complex tasks
+    NANO_TIMEOUT: 10000,                // 10 seconds for Nano
+    MINI_TIMEOUT: 30000,                // 30 seconds for Mini  
+    FULL_TIMEOUT: 120000,               // 2 minutes for Full
+    COMPLEX_TIMEOUT: 180000,            // 3 minutes for very complex tasks
     
     // Speed keywords - always use Nano with minimal reasoning
     SPEED_KEYWORDS: [
