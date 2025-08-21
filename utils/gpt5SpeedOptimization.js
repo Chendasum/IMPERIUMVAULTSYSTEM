@@ -1,4 +1,14 @@
-// utils/gpt5SpeedOptimization.js - Speed-First GPT-5 Configuration
+// utils/gpt5SpeedOptimization.js - FIXED: Proper imports for GPT-5 functions
+
+// ✅ FIXED: Import GPT-5 functions from openaiClient
+const {
+    getGPT5Analysis,
+    getQuickNanoResponse,
+    getQuickMiniResponse,
+    getDeepAnalysis,
+    getChatResponse,
+    analyzeQueryForGPT5
+} = require('./openaiClient');
 
 // 🚀 SPEED-OPTIMIZED GPT-5 DEFAULTS
 const SPEED_OPTIMIZED_CONFIG = {
@@ -109,7 +119,7 @@ function analyzeQueryForSpeed(prompt) {
     };
 }
 
-// 🔥 Speed-Optimized GPT-5 Execution
+// 🔥 Speed-Optimized GPT-5 Execution (FIXED with proper imports)
 async function executeSpeedOptimizedGPT5(prompt, options = {}) {
     const startTime = Date.now();
     
@@ -126,7 +136,7 @@ async function executeSpeedOptimizedGPT5(prompt, options = {}) {
             max_completion_tokens: options.max_completion_tokens || config.max_completion_tokens,
         };
         
-        // Add timeout to the request
+        // ✅ FIXED: Use the properly imported getGPT5Analysis function
         const requestPromise = getGPT5Analysis(prompt, finalConfig);
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => reject(new Error('Request timeout')), config.timeout);
@@ -149,12 +159,12 @@ async function executeSpeedOptimizedGPT5(prompt, options = {}) {
         const responseTime = Date.now() - startTime;
         console.error(`❌ Speed execution failed (${responseTime}ms):`, error.message);
         
-        // Ultra-fast fallback - Nano with absolute minimal settings
+        // Ultra-fast fallback - try the quick functions instead
         if (!options.isFailover) {
             console.log('🔄 Trying ultra-fast fallback...');
             try {
-                const fallbackResult = await getGPT5Analysis(prompt, {
-                    model: 'gpt-5-nano',
+                // ✅ FIXED: Use properly imported quick functions
+                const fallbackResult = await getQuickNanoResponse(prompt, {
                     reasoning_effort: 'minimal',
                     verbosity: 'low',
                     max_completion_tokens: 300
@@ -176,35 +186,74 @@ async function executeSpeedOptimizedGPT5(prompt, options = {}) {
     }
 }
 
-// 🎯 Quick Command Shortcuts for Different Speed Levels
+// 🎯 Quick Command Shortcuts for Different Speed Levels (FIXED)
 async function ultraFastResponse(prompt) {
-    return await executeSpeedOptimizedGPT5(prompt, {
-        forceModel: 'gpt-5-nano',
-        reasoning_effort: 'minimal',
-        verbosity: 'low',
-        max_completion_tokens: 300
-    });
+    try {
+        console.log('⚡ Ultra-fast response using GPT-5 Nano...');
+        // ✅ FIXED: Use the properly imported function
+        const result = await getQuickNanoResponse(prompt, {
+            reasoning_effort: 'minimal',
+            verbosity: 'low',
+            max_completion_tokens: 300
+        });
+        
+        return {
+            response: result,
+            responseTime: 0, // Will be set by caller
+            config: { model: 'gpt-5-nano', reasoning_effort: 'minimal' },
+            optimizedForSpeed: true
+        };
+    } catch (error) {
+        console.error('❌ Ultra-fast response failed:', error.message);
+        throw error;
+    }
 }
 
 async function fastResponse(prompt) {
-    return await executeSpeedOptimizedGPT5(prompt, {
-        forceModel: 'gpt-5-nano',
-        reasoning_effort: 'minimal',
-        verbosity: 'medium',
-        max_completion_tokens: 600
-    });
+    try {
+        console.log('🚀 Fast response using GPT-5 Nano+...');
+        // ✅ FIXED: Use the properly imported function
+        const result = await getQuickNanoResponse(prompt, {
+            reasoning_effort: 'minimal',
+            verbosity: 'medium',
+            max_completion_tokens: 600
+        });
+        
+        return {
+            response: result,
+            responseTime: 0, // Will be set by caller
+            config: { model: 'gpt-5-nano', reasoning_effort: 'minimal' },
+            optimizedForSpeed: true
+        };
+    } catch (error) {
+        console.error('❌ Fast response failed:', error.message);
+        throw error;
+    }
 }
 
 async function balancedResponse(prompt) {
-    return await executeSpeedOptimizedGPT5(prompt, {
-        forceModel: 'gpt-5-mini',
-        reasoning_effort: 'low',
-        verbosity: 'medium',
-        max_completion_tokens: 1000
-    });
+    try {
+        console.log('⚖️ Balanced response using GPT-5 Mini...');
+        // ✅ FIXED: Use the properly imported function
+        const result = await getQuickMiniResponse(prompt, {
+            reasoning_effort: 'low',
+            verbosity: 'medium',
+            max_completion_tokens: 1000
+        });
+        
+        return {
+            response: result,
+            responseTime: 0, // Will be set by caller
+            config: { model: 'gpt-5-mini', reasoning_effort: 'low' },
+            optimizedForSpeed: true
+        };
+    } catch (error) {
+        console.error('❌ Balanced response failed:', error.message);
+        throw error;
+    }
 }
 
-// 🔧 Speed Testing Function
+// 🔧 Speed Testing Function (FIXED)
 async function testGPT5Speed() {
     const testQueries = [
         "Hello",
@@ -218,9 +267,12 @@ async function testGPT5Speed() {
     
     for (const query of testQueries) {
         try {
+            const startTime = Date.now();
             const result = await executeSpeedOptimizedGPT5(query);
+            const actualTime = Date.now() - startTime;
+            
             console.log(`Query: "${query}"`);
-            console.log(`Model: ${result.config.model} | Time: ${result.responseTime}ms | Reasoning: ${result.config.reasoning_effort}`);
+            console.log(`Model: ${result.config.model} | Time: ${actualTime}ms | Reasoning: ${result.config.reasoning_effort}`);
             console.log(`Response Length: ${result.response.length} chars`);
             console.log('---');
         } catch (error) {
@@ -230,6 +282,7 @@ async function testGPT5Speed() {
     }
 }
 
+// ✅ FIXED: Export all functions
 module.exports = {
     SPEED_OPTIMIZED_CONFIG,
     analyzeQueryForSpeed,
