@@ -10,6 +10,10 @@ console.log(`DATABASE_PUBLIC_URL: ${process.env.DATABASE_PUBLIC_URL ? "SET" : "N
 
 const TelegramBot = require("node-telegram-bot-api");
 
+// Add these 2 lines to your existing index.js
+const cambodiaHandler = require('./handlers/cambodiaDeals');
+cambodiaHandler.registerCambodiaCommands(bot);
+
 // 🚀 MAIN GPT-5 SYSTEM + SPEED OPTIMIZATION
 const { 
     getGPT5Analysis,
