@@ -58,7 +58,7 @@ async function testGPT5Capabilities() {
     try {
         console.log('🔍 Testing Real GPT-5 capabilities with FIXED parameters...');
         
-        // ✅ Test GPT-5 with CORRECT parameters
+        // ✅ Test GPT-5 with CORRECT parameters (no custom temperature)
         const basicTest = await openai.chat.completions.create({
             model: GPT5_CONFIG.PRIMARY_MODEL,
             messages: [
@@ -68,7 +68,7 @@ async function testGPT5Capabilities() {
                 }
             ],
             max_completion_tokens: 500,    // ✅ FIXED: Correct parameter for GPT-5
-            temperature: 0.3,
+            // ✅ REMOVED: temperature (GPT-5 only supports default temperature: 1)
             reasoning_effort: "medium",    // ✅ REAL GPT-5 parameter
             verbosity: "medium"            // ✅ REAL GPT-5 parameter
         });
@@ -76,7 +76,7 @@ async function testGPT5Capabilities() {
         gpt5Available = true;
         currentModel = GPT5_CONFIG.PRIMARY_MODEL;
         
-        // ✅ Test enhanced reasoning with CORRECT parameters
+        // ✅ Test enhanced reasoning with CORRECT parameters (no custom temperature)
         const reasoningTest = await openai.chat.completions.create({
             model: GPT5_CONFIG.PRIMARY_MODEL,
             messages: [
@@ -90,7 +90,7 @@ async function testGPT5Capabilities() {
                 }
             ],
             max_completion_tokens: 2000,  // ✅ FIXED: Correct parameter for GPT-5
-            temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP,
+            // ✅ REMOVED: temperature (GPT-5 uses default temperature: 1)
             reasoning_effort: "high",      // ✅ REAL GPT-5 parameter for complex math
             verbosity: "high"              // ✅ REAL GPT-5 parameter for detailed explanation
         });
@@ -110,15 +110,17 @@ async function testGPT5Capabilities() {
             verbosityLevels: GPT5_CONFIG.VERBOSITY_LEVELS,
             testResponse: basicTest.choices[0].message.content,
             reasoningQuality: reasoningTest.choices[0].message.content.length > 1000,
-            parameterFixed: true
+            parameterFixed: true,
+            temperatureFixed: true
         };
         
-        console.log('✅ Real GPT-5 capabilities confirmed with FIXED parameters:');
+        console.log('✅ Real GPT-5 capabilities confirmed with ALL FIXED parameters:');
         console.log(`   Enhanced Reasoning: ${modelCapabilities.enhancedReasoning}`);
         console.log(`   Large Context: ${modelCapabilities.largeContext}`);
         console.log(`   Improved Math: ${modelCapabilities.improvedMath}`);
         console.log(`   Financial Analysis: ${modelCapabilities.betterFinancial}`);
         console.log(`   Parameter Fix: ✅ max_completion_tokens working`);
+        console.log(`   Temperature Fix: ✅ using default temperature (1)`);
         
         return modelCapabilities;
         
@@ -133,7 +135,8 @@ async function testGPT5Capabilities() {
             available: false,
             fallbackModel: GPT5_CONFIG.FALLBACK_MODEL,
             error: error.message,
-            parameterFixed: false
+            parameterFixed: false,
+            temperatureFixed: false
         };
         
         return modelCapabilities;
@@ -191,7 +194,7 @@ function analyzeQueryForGPT5(prompt) {
         type: 'general',
         model: GPT5_CONFIG.PRIMARY_MODEL,
         max_completion_tokens: 1500,  // ✅ FIXED: Use correct parameter
-        temperature: GPT5_CONFIG.ENHANCED_REASONING_TEMP,
+        // ✅ REMOVED: temperature (GPT-5 only supports default temperature: 1)
         reasoning_effort: GPT5_CONFIG.DEFAULT_REASONING,    // ✅ REAL parameter
         verbosity: GPT5_CONFIG.DEFAULT_VERBOSITY,           // ✅ REAL parameter
         useEnhancedReasoning: false,
@@ -205,7 +208,7 @@ function analyzeQueryForGPT5(prompt) {
             type: 'speed',
             model: GPT5_CONFIG.NANO_MODEL,        // ✅ Use GPT-5 Nano for speed
             max_completion_tokens: 800,           // ✅ FIXED: Use correct parameter
-            temperature: GPT5_CONFIG.SPEED_TEMP,
+            // ✅ REMOVED: temperature (GPT-5 uses default temperature: 1)
             reasoning_effort: "minimal",          // ✅ REAL GPT-5 parameter
             verbosity: "low",                     // ✅ REAL GPT-5 parameter
             useEnhancedReasoning: false,
@@ -219,7 +222,7 @@ function analyzeQueryForGPT5(prompt) {
             type: 'complex_reasoning',
             model: GPT5_CONFIG.PRIMARY_MODEL,     // ✅ Use full GPT-5
             max_completion_tokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS,  // ✅ FIXED
-            temperature: GPT5_CONFIG.ENHANCED_REASONING_TEMP,
+            // ✅ REMOVED: temperature (GPT-5 uses default temperature: 1)
             reasoning_effort: "high",             // ✅ REAL GPT-5 parameter
             verbosity: "high",                    // ✅ REAL GPT-5 parameter
             useEnhancedReasoning: true,
@@ -233,7 +236,7 @@ function analyzeQueryForGPT5(prompt) {
             type: 'financial_analysis',
             model: GPT5_CONFIG.PRIMARY_MODEL,     // ✅ Use full GPT-5
             max_completion_tokens: 3000,          // ✅ FIXED
-            temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP,
+            // ✅ REMOVED: temperature (GPT-5 uses default temperature: 1)
             reasoning_effort: "high",             // ✅ REAL GPT-5 parameter
             verbosity: "high",                    // ✅ REAL GPT-5 parameter
             useEnhancedReasoning: true,
@@ -247,7 +250,7 @@ function analyzeQueryForGPT5(prompt) {
             type: 'large_context',
             model: GPT5_CONFIG.PRIMARY_MODEL,     // ✅ Use full GPT-5
             max_completion_tokens: 4000,          // ✅ FIXED
-            temperature: 0.6,
+            // ✅ REMOVED: temperature (GPT-5 uses default temperature: 1)
             reasoning_effort: "medium",           // ✅ REAL GPT-5 parameter
             verbosity: "high",                    // ✅ REAL GPT-5 parameter
             useEnhancedReasoning: true,
@@ -261,7 +264,7 @@ function analyzeQueryForGPT5(prompt) {
             type: 'coding',
             model: GPT5_CONFIG.MINI_MODEL,        // ✅ Use GPT-5 Mini for coding
             max_completion_tokens: 2500,          // ✅ FIXED
-            temperature: 0.6,
+            // ✅ REMOVED: temperature (GPT-5 uses default temperature: 1)
             reasoning_effort: "medium",           // ✅ REAL GPT-5 parameter
             verbosity: "medium",                  // ✅ REAL GPT-5 parameter
             useEnhancedReasoning: true,
@@ -350,7 +353,7 @@ async function getGPT5Analysis(prompt, options = {}) {
         // Create enhanced system prompt
         const systemPrompt = createGPT5SystemPrompt(queryConfig, options);
         
-        // ✅ FIXED: Use CORRECT GPT-5 API parameters
+        // ✅ FULLY FIXED: Use CORRECT GPT-5 API parameters
         const requestOptions = {
             model: selectedModel,
             messages: [
@@ -363,7 +366,7 @@ async function getGPT5Analysis(prompt, options = {}) {
                     content: prompt
                 }
             ],
-            temperature: options.temperature || queryConfig.temperature,
+            // ✅ REMOVED: temperature (GPT-5 only supports default temperature: 1)
             max_completion_tokens: options.max_completion_tokens || queryConfig.max_completion_tokens,  // ✅ FIXED
             top_p: options.top_p || 0.95,
             frequency_penalty: options.frequency_penalty || 0,
@@ -375,7 +378,11 @@ async function getGPT5Analysis(prompt, options = {}) {
             requestOptions.reasoning_effort = reasoningEffort;  // ✅ REAL GPT-5 parameter
             requestOptions.verbosity = verbosity;               // ✅ REAL GPT-5 parameter
             
-            console.log(`🧠 GPT-5 Parameters: reasoning_effort=${reasoningEffort}, verbosity=${verbosity}`);
+            console.log(`🧠 GPT-5 Parameters: reasoning_effort=${reasoningEffort}, verbosity=${verbosity}, temperature=default(1)`);
+        } else {
+            // Add temperature for non-GPT-5 models (GPT-4o supports custom temperature)
+            requestOptions.temperature = options.temperature || 0.7;
+            console.log(`🔄 Using ${selectedModel} with custom temperature`);
         }
         
         // Execute GPT-5 request
@@ -461,8 +468,8 @@ async function getEnhancedMarketAnalysis(query, marketData = null, options = {})
             reasoning_effort: options.reasoning_effort || "high",
             verbosity: options.verbosity || "high",
             context: "Advanced financial market analysis using institutional-grade methodologies",
-            max_completion_tokens: 4000,  // ✅ FIXED
-            temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP
+            max_completion_tokens: 4000  // ✅ FIXED
+            // ✅ REMOVED: temperature (GPT-5 uses default temperature: 1)
         });
         
     } catch (error) {
@@ -508,8 +515,8 @@ async function getEnhancedCambodiaAnalysis(dealQuery, dealData = null, options =
             reasoning_effort: options.reasoning_effort || "high",
             verbosity: options.verbosity || "high",
             context: "Specialized Cambodia real estate and lending market expertise with institutional risk management",
-            max_completion_tokens: 3500,  // ✅ FIXED
-            temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP
+            max_completion_tokens: 3500  // ✅ FIXED
+            // ✅ REMOVED: temperature (GPT-5 uses default temperature: 1)
         });
         
     } catch (error) {
@@ -551,7 +558,9 @@ async function getEnhancedVisionAnalysis(base64Image, prompt, options = {}) {
                 }
             ],
             max_completion_tokens: options.max_completion_tokens || 3000,  // ✅ FIXED
-            temperature: options.temperature || GPT5_CONFIG.MULTIMODAL_TEMP
+            // ✅ REMOVED: temperature for GPT-5 (uses default: 1)
+            // Add temperature only for non-GPT-5 models
+            ...(requestConfig.model.startsWith('gpt-5') ? {} : { temperature: options.temperature || GPT5_CONFIG.MULTIMODAL_TEMP })
         };
         
         // ✅ Add GPT-5 parameters for vision analysis
@@ -813,8 +822,8 @@ module.exports = {
             ...options,
             model: GPT5_CONFIG.PRIMARY_MODEL,
             reasoning_effort: "high",
-            verbosity: "high",
-            temperature: GPT5_CONFIG.FINANCIAL_ANALYSIS_TEMP
+            verbosity: "high"
+            // ✅ REMOVED: temperature (GPT-5 uses default temperature: 1)
         });
     },
     
