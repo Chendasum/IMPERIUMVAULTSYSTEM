@@ -451,7 +451,7 @@ async function handleGPT5Fallback(chatId, text) {
         // Try GPT-5 Nano (fastest, most reliable)
         try {
             return await getQuickNanoResponse(text + basicContext, {
-                max_tokens: 1000,
+                max_completion_tokens: 1000,
                 reasoning_effort: "minimal",
                 verbosity: "low"
             });
@@ -1483,7 +1483,7 @@ Execute comprehensive institutional-level visual intelligence analysis.`;
         return await getEnhancedVisionAnalysis(base64Image, analysisPrompt, {
             reasoning_effort: "medium",
             verbosity: "high",
-            max_tokens: 3000
+            max_completion_tokens: 3000
         });
         
     } catch (error) {
