@@ -133,7 +133,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             configuration: {
                 reasoning_effort: analysis.reasoning_effort,
                 verbosity: analysis.verbosity,
-                max_tokens: analysis.max_tokens,
+                max_completion_tokens: analysis.max_completion_tokens,
                 temperature: analysis.temperature
             },
             estimatedCost: analysis.gpt5Model === 'gpt-5-nano' ? 'Very Low' :
@@ -281,7 +281,7 @@ setTimeout(() => {
         model: 'gpt-5-mini',
         reasoning_effort: 'medium',
         verbosity: 'medium',
-        max_tokens: 3000,
+        max_completion_tokens: 3000,
         temperature: 0.7,
         priority: 'standard',
         reason: 'GPT-5 Mini - Balanced performance'
@@ -293,7 +293,7 @@ setTimeout(() => {
             model: 'gpt-5-nano',
             reasoning_effort: 'minimal',
             verbosity: 'low',
-            max_tokens: 1200,
+            max_completion_tokens: 1200,
             temperature: 0.7,
             priority: 'speed',
             reason: 'Speed critical - GPT-5 Nano for fast response'
@@ -306,7 +306,7 @@ setTimeout(() => {
             model: 'gpt-5',
             reasoning_effort: 'high',
             verbosity: 'high',
-            max_tokens: 4000,
+            max_completion_tokens: 4000,
             temperature: 0.6,
             priority: 'complex',
             reason: 'Complex strategic analysis - Full GPT-5 with high reasoning'
@@ -319,7 +319,7 @@ setTimeout(() => {
             model: 'gpt-5',
             reasoning_effort: 'high',
             verbosity: 'medium',
-            max_tokens: 4000,
+            max_completion_tokens: 4000,
             temperature: 0.3,  // Lower temperature for precision
             priority: 'mathematical',
             reason: 'Mathematical/coding precision - Full GPT-5 with high reasoning'
@@ -332,7 +332,7 @@ setTimeout(() => {
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'high',
-            max_tokens: 3000,
+            max_completion_tokens: 3000,
             temperature: 0.6,
             priority: 'regional',
             reason: 'Cambodia/regional analysis - GPT-5 Mini with detailed output'
@@ -345,7 +345,7 @@ setTimeout(() => {
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_tokens: 2500,
+            max_completion_tokens: 2500,
             temperature: 0.6,
             priority: 'market',
             reason: 'Market analysis - GPT-5 Mini for balanced performance'
@@ -358,7 +358,7 @@ setTimeout(() => {
             model: 'gpt-5',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_tokens: 3000,
+            max_completion_tokens: 3000,
             temperature: 0.7,
             priority: 'multimodal',
             reason: 'Multimodal content - Full GPT-5 for vision analysis'
@@ -373,7 +373,7 @@ setTimeout(() => {
         gpt5Model: gpt5Config.model,
         reasoning_effort: gpt5Config.reasoning_effort,
         verbosity: gpt5Config.verbosity,
-        max_tokens: gpt5Config.max_tokens,
+        max_completion_tokens: gpt5Config.max_completion_tokens,
         temperature: gpt5Config.temperature,
         priority: gpt5Config.priority,
         
@@ -443,7 +443,7 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
             model: queryAnalysis.gpt5Model,
             reasoning: queryAnalysis.reasoning_effort,
             verbosity: queryAnalysis.verbosity,
-            tokens: queryAnalysis.max_tokens,
+            tokens: queryAnalysis.max_completion_tokens,
             hasMemory: !!context,
             priority: queryAnalysis.priority
         });
@@ -452,7 +452,7 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
             model: queryAnalysis.gpt5Model,
             reasoning_effort: queryAnalysis.reasoning_effort,
             verbosity: queryAnalysis.verbosity,
-            max_tokens: queryAnalysis.max_tokens,
+            max_completion_tokens: queryAnalysis.max_completion_tokens,
             temperature: queryAnalysis.temperature
         });
         
@@ -503,7 +503,7 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context = null) {
             model: 'gpt-5-nano',
             reasoning_effort: 'minimal',
             verbosity: 'low',
-            max_tokens: 1500,
+            max_completion_tokens: 1500,
             temperature: 0.7
         });
         
@@ -816,7 +816,7 @@ async function checkGPT5OnlySystemHealth() {
         try {
             await openaiClient.getGPT5Analysis('Health check test', {
                 model: model,
-                max_tokens: 10,
+                max_completion_tokens: 10,
                 reasoning_effort: 'minimal',
                 verbosity: 'low'
             });
@@ -902,7 +902,7 @@ async function getMarketIntelligence(chatId = null) {
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_tokens: 2000,
+            max_completion_tokens: 2000,
             temperature: 0.6
         });
         
@@ -915,7 +915,7 @@ async function getMarketIntelligence(chatId = null) {
                 model: 'gpt-5-nano',
                 reasoning_effort: 'minimal',
                 verbosity: 'low',
-                max_tokens: 1000,
+                max_completion_tokens: 1000,
                 temperature: 0.7
             });
         } catch (fallbackError) {
