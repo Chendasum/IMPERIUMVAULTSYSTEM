@@ -2420,9 +2420,9 @@ return userMsg.includes('plan') ||
                     lp: 0
                 };
                 
-                businessConversations.forEach(conv => {
+businessConversations.forEach(conv => {
                     const msg = conv.user_message?.toLowerCase() || '';
-                    if (msg.includes(') || msg.includes('cash') || msg.includes('flow')) patterns.financial++;
+                    if (msg.includes('$') || msg.includes('cash') || msg.includes('flow')) patterns.financial++;
                     if (msg.includes('deploy') || msg.includes('plan')) patterns.deployment++;
                     if (msg.includes('strategy') || msg.includes('approach')) patterns.strategy++;
                     if (msg.includes('cambodia') || msg.includes('fund')) patterns.cambodia++;
