@@ -3814,8 +3814,7 @@ async function extractDocumentMemories(chatId, fileName, content, analysis, capt
                 category: 'cambodia_fund'
             },
             {
-                condition: () => content.includes('
-                ) && (content.includes('million') || content.includes('thousand')),
+condition: () => content.includes('$') && (content.includes('million') || content.includes('thousand')),
                 extract: () => `Financial document with monetary figures: ${fileName}`,
                 importance: 'high',
                 category: 'financial_document'
