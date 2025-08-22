@@ -2385,9 +2385,9 @@ async function handleBusinessSummary(chatId) {
                 const metadata = conv.metadata ? 
                     (typeof conv.metadata === 'string' ? JSON.parse(conv.metadata) : conv.metadata) : {};
                 
-                return userMsg.includes('plan') ||
+return userMsg.includes('plan') ||
                        userMsg.includes('deploy') ||
-                       userMsg.includes(') ||
+                       userMsg.includes('$') ||
                        userMsg.includes('fund') ||
                        userMsg.includes('cambodia') ||
                        userMsg.includes('lp') ||
