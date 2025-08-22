@@ -1227,7 +1227,7 @@ async function extractAndSaveEnhancedMemories(chatId, userMessage, aiResponse, c
                 category: 'business'
             },
             {
-                condition: () => lowerUserMessage.includes(') && (lowerUserMessage.includes('month') || lowerUserMessage.includes('year')),
+condition: () => lowerUserMessage.includes('$') && (lowerUserMessage.includes('month') || lowerUserMessage.includes('year')),
                 extract: () => {
                     const financialMatch = userMessage.match(/\$[\d,]+[kK]?\s*(?:for\s*)?\d*\s*(?:month|year|week)s?/i);
                     return financialMatch ? `Financial request: ${financialMatch[0]}` : null;
