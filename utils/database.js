@@ -650,14 +650,77 @@ async function updateSystemMetrics(metricUpdates) {
 
 // 🔄 PRESERVE ALL EXISTING FUNCTIONS WITH ENHANCEMENTS (NO DUPLICATES)
 
+// ✅ Helper function to safely truncate data for database columns
+function truncateForDatabase(value, maxLength = 255) {
+    if (value === null || value === undefined) return null;
+    const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+    return stringValue.length > maxLength ? stringValue.substring(0, maxLength - 3) + '...' : stringValue;
+}
+
+// ✅ Helper function to safely process metadata
+function processMetadata(contextData) {
+    if (!contextData) return null;
+    
+    try {
+        // If it's already a string, try to parse it
+        const metadata = typeof contextData === 'string' ? JSON.parse(contextData) : contextData;
+        
+        // Create a safe metadata object with length limits
+        const safeMetadata = {
+            // Core fields with length limits
+            aiUsed: truncateForDatabase(metadata.aiUsed || metadata.ai_used, 50),
+            modelUsed: truncateForDatabase(metadata.modelUsed || metadata.model_used, 50),
+            requestType: truncateForDatabase(metadata.requestType || metadata.request_type, 30),
+            messageType: truncateForDatabase(metadata.messageType || metadata.message_type, 20),
+            sessionId: truncateForDatabase(metadata.sessionId || metadata.session_id, 50),
+            
+            // Numeric fields (safe)
+            responseTime: metadata.responseTime || metadata.response_time || 0,
+            processingTime: metadata.processingTime || metadata.processing_time || 0,
+            memoryContextLength: metadata.memoryContextLength || 0,
+            
+            // Boolean fields (safe)
+            memoryUsed: metadata.memoryUsed || false,
+            enhancedSystem: metadata.enhancedSystem || metadata.enhanced_system || true,
+            businessRequest: metadata.businessRequest || metadata.business_request || false,
+            speedOptimized: metadata.speedOptimized || metadata.speed_optimized || false,
+            
+            // Enhanced fields with length limits
+            classification: truncateForDatabase(metadata.classification, 30),
+            complexity: truncateForDatabase(metadata.complexity || metadata.complexityEstimate, 20),
+            reasoning: truncateForDatabase(metadata.reasoning_effort, 20),
+            verbosity: truncateForDatabase(metadata.verbosity, 20),
+            
+            // Timestamp
+            timestamp: metadata.timestamp || new Date().toISOString()
+        };
+        
+        return JSON.stringify(safeMetadata);
+    } catch (error) {
+        console.log('⚠️ Metadata processing error:', error.message);
+        return JSON.stringify({
+            error: 'Metadata processing failed',
+            originalType: typeof contextData,
+            timestamp: new Date().toISOString()
+        });
+    }
+}
+
 async function saveConversationDB(chatId, userMessage, gptResponse, messageType = 'text', contextData = null) {
     try {
         const startTime = Date.now();
         
+        // ✅ FIXED: Process and truncate data to fit database constraints
+        const safeUserMessage = truncateForDatabase(userMessage, 10000); // Assuming TEXT field
+        const safeGptResponse = truncateForDatabase(gptResponse, 50000); // Assuming TEXT field
+        const safeMessageType = truncateForDatabase(messageType, 20);
+        const safeContextData = processMetadata(contextData);
+        const responseTime = Date.now() - startTime;
+        
         await pool.query(
             `INSERT INTO conversations (chat_id, user_message, gpt_response, message_type, context_data, response_time_ms) 
              VALUES ($1, $2, $3, $4, $5, $6)`,
-            [chatId, userMessage, gptResponse, messageType, contextData, Date.now() - startTime]
+            [chatId, safeUserMessage, safeGptResponse, safeMessageType, safeContextData, responseTime]
         );
         
         await pool.query(`
@@ -683,10 +746,18 @@ async function saveConversationDB(chatId, userMessage, gptResponse, messageType 
         connectionStats.successfulQueries++;
         await updateSystemMetrics({ total_queries: 1 });
         
+        console.log(`✅ Conversation saved safely for ${chatId}`);
         return true;
     } catch (error) {
         console.error('Save conversation error:', error);
         connectionStats.failedQueries++;
+        
+        // ✅ Enhanced error logging
+        if (error.code === '22001') {
+            console.error('❌ Data too long for database column - check column sizes');
+            console.error('💡 Recommendation: Increase VARCHAR column sizes or truncate data');
+        }
+        
         return false;
     }
 }
@@ -694,12 +765,20 @@ async function saveConversationDB(chatId, userMessage, gptResponse, messageType 
 async function getConversationHistoryDB(chatId, limit = 10) {
     try {
         const result = await pool.query(
-            'SELECT user_message, gpt_response, message_type, timestamp FROM conversations WHERE chat_id = $1 ORDER BY timestamp DESC LIMIT $2',
+            'SELECT user_message, gpt_response, message_type, context_data, timestamp FROM conversations WHERE chat_id = $1 ORDER BY timestamp DESC LIMIT $2',
             [chatId, limit]
         );
         
+        // ✅ Process the results to include metadata
+        const processedRows = result.rows.map(row => ({
+            ...row,
+            metadata: row.context_data ? 
+                (typeof row.context_data === 'string' ? 
+                    JSON.parse(row.context_data) : row.context_data) : null
+        }));
+        
         connectionStats.successfulQueries++;
-        return result.rows.reverse();
+        return processedRows.reverse();
     } catch (error) {
         console.error('Get history error:', error);
         connectionStats.failedQueries++;
@@ -709,9 +788,13 @@ async function getConversationHistoryDB(chatId, limit = 10) {
 
 async function addPersistentMemoryDB(chatId, fact, importance = 'medium') {
     try {
+        // ✅ FIXED: Truncate fact to safe length
+        const safeFact = truncateForDatabase(fact, 2000);
+        const safeImportance = truncateForDatabase(importance, 20);
+        
         // Generate hash for deduplication
         const crypto = require('crypto');
-        const factHash = crypto.createHash('sha256').update(fact.toLowerCase().trim()).digest('hex');
+        const factHash = crypto.createHash('sha256').update(safeFact.toLowerCase().trim()).digest('hex');
         
         // Check for duplicates
         const existing = await pool.query(
@@ -730,7 +813,7 @@ async function addPersistentMemoryDB(chatId, fact, importance = 'medium') {
         
         await pool.query(
             'INSERT INTO persistent_memories (chat_id, fact, importance, fact_hash) VALUES ($1, $2, $3, $4)',
-            [chatId, fact, importance, factHash]
+            [chatId, safeFact, safeImportance, factHash]
         );
         
         // Cleanup - keep only most important memories (limit 100 per user)
@@ -752,7 +835,7 @@ async function addPersistentMemoryDB(chatId, fact, importance = 'medium') {
             )
         `, [chatId]);
         
-        console.log(`💾 Persistent memory saved to database for ${chatId}: ${fact}`);
+        console.log(`💾 Persistent memory saved to database for ${chatId}: ${safeFact.substring(0, 50)}...`);
         connectionStats.successfulQueries++;
         return true;
     } catch (error) {
@@ -796,9 +879,12 @@ async function getUserProfileDB(chatId) {
 
 async function updateUserPreferencesDB(chatId, preferences) {
     try {
+        // ✅ FIXED: Safely serialize preferences
+        const safePreferences = JSON.stringify(preferences).substring(0, 5000);
+        
         await pool.query(
             'UPDATE user_profiles SET preferences = $2, last_seen = CURRENT_TIMESTAMP WHERE chat_id = $1',
-            [chatId, JSON.stringify(preferences)]
+            [chatId, safePreferences]
         );
         connectionStats.successfulQueries++;
         return true;
@@ -811,12 +897,18 @@ async function updateUserPreferencesDB(chatId, preferences) {
 
 async function saveTrainingDocumentDB(chatId, fileName, content, documentType, wordCount, summary) {
     try {
+        // ✅ FIXED: Truncate all fields to safe lengths
+        const safeFileName = truncateForDatabase(fileName, 255);
+        const safeDocumentType = truncateForDatabase(documentType, 50);
+        const safeSummary = truncateForDatabase(summary, 1000);
+        const safeContent = content.substring(0, 100000); // Limit content to 100KB
+        
         const crypto = require('crypto');
-        const fileHash = crypto.createHash('sha256').update(content).digest('hex');
+        const fileHash = crypto.createHash('sha256').update(safeContent).digest('hex');
         
         await pool.query(
             'INSERT INTO training_documents (chat_id, file_name, content, document_type, word_count, summary, file_size, file_hash) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-            [chatId, fileName, content, documentType, wordCount, summary, content.length, fileHash]
+            [chatId, safeFileName, safeContent, safeDocumentType, wordCount, safeSummary, safeContent.length, fileHash]
         );
         
         // Cleanup - keep only last 50 documents per user
@@ -831,6 +923,7 @@ async function saveTrainingDocumentDB(chatId, fileName, content, documentType, w
         `, [chatId]);
         
         connectionStats.successfulQueries++;
+        console.log(`📄 Training document saved: ${safeFileName}`);
         return true;
     } catch (error) {
         console.error('Save training document error:', error);
@@ -894,13 +987,14 @@ async function getDatabaseStats() {
             totalMemories: 0,
             totalDocuments: 0,
             storage: 'Database Error',
+            connected: false,
             error: error.message
         };
     }
 }
 
 /**
- * 🏛️ SAVE ECONOMIC REGIME DATA (Enhanced)
+ * 🏛️ SAVE ECONOMIC REGIME DATA (Enhanced with safe data handling)
  */
 async function saveRegimeData(regimeData) {
     try {
@@ -925,6 +1019,14 @@ async function saveRegimeData(regimeData) {
             regimeDuration = daysDiff;
         }
 
+        // ✅ FIXED: Truncate regime name and other string fields
+        const safeRegimeName = truncateForDatabase(regime.name, 50);
+        const safeGrowthDirection = truncateForDatabase(regime.growth, 20);
+        const safeInflationDirection = truncateForDatabase(regime.inflation, 20);
+        const safePolicyStance = truncateForDatabase(regime.policy, 20);
+        const safeMarketSentiment = truncateForDatabase(regime.market, 20);
+        const safeRegimeStability = regimeDuration > 30 ? 'STABLE' : regimeDuration > 7 ? 'MODERATE' : 'VOLATILE';
+
         await pool.query(`
             INSERT INTO regime_records (
                 regime_name, confidence, growth_direction, inflation_direction,
@@ -933,20 +1035,20 @@ async function saveRegimeData(regimeData) {
                 regime_duration, regime_stability
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         `, [
-            regime.name,
+            safeRegimeName,
             regimeData.confidence,
-            regime.growth,
-            regime.inflation,
-            regime.policy,
-            regime.market,
-            JSON.stringify(regimeData),
+            safeGrowthDirection,
+            safeInflationDirection,
+            safePolicyStance,
+            safeMarketSentiment,
+            JSON.stringify(regimeData).substring(0, 5000), // Limit JSON size
             signals.policy?.realRate || null,
             signals.inflation?.indicators?.headline || null,
             signals.policy?.yieldCurve || null,
             signals.market?.vix || null,
             signals.market?.creditSpread || null,
             regimeDuration,
-            regimeDuration > 30 ? 'STABLE' : regimeDuration > 7 ? 'MODERATE' : 'VOLATILE'
+            safeRegimeStability
         ]);
 
         // Cleanup old data
@@ -959,7 +1061,7 @@ async function saveRegimeData(regimeData) {
             )
         `);
 
-        console.log(`🏛️ Regime data saved: ${regime.name} (${regimeData.confidence}% confidence)`);
+        console.log(`🏛️ Regime data saved: ${safeRegimeName} (${regimeData.confidence}% confidence)`);
         connectionStats.successfulQueries++;
         
         // Update system metrics
@@ -972,6 +1074,43 @@ async function saveRegimeData(regimeData) {
         return false;
     }
 }
+
+// ✅ ADDED: Enhanced error handling function
+async function handleDatabaseError(error, operation, chatId = null) {
+    console.error(`❌ Database error in ${operation}:`, error.message);
+    
+    if (error.code === '22001') {
+        console.error('💡 Data length error - check column constraints');
+    } else if (error.code === '23505') {
+        console.error('💡 Duplicate key error - record already exists');
+    } else if (error.code === '23503') {
+        console.error('💡 Foreign key violation - referenced record missing');
+    } else if (error.code === '42P01') {
+        console.error('💡 Table does not exist - check database schema');
+    }
+    
+    connectionStats.failedQueries++;
+    
+    // Log to system metrics if available
+    try {
+        await updateSystemMetrics({ 
+            database_errors: 1,
+            last_error: error.message.substring(0, 100)
+        });
+    } catch (metricsError) {
+        // Ignore metrics errors
+    }
+    
+    return false;
+}
+
+// ✅ Export the helper functions for use in other modules
+module.exports = {
+    // ... existing exports
+    truncateForDatabase,
+    processMetadata,
+    handleDatabaseError
+};
 
 /**
  * 🇰🇭 SAVE CAMBODIA DEAL ANALYSIS
