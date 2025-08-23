@@ -4039,229 +4039,354 @@ console.log('✅ All enhanced multimodal features ready for production use');
 bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
-    const messageId = `${chatId}_${Date.now()}`;
     
-    console.log(`📨 Enhanced message from ${chatId}: ${text?.substring(0, 50) || 'Media message'}`);
+    console.log(`📨 Message from ${chatId}: ${text?.substring(0, 50) || 'Media'}`);
     
-    // Enhanced security check with detailed logging
+    // Security check
     if (!isAuthorizedUser(chatId)) {
-        console.log(`🚫 Unauthorized access attempt from ${chatId}`);
-        await sendSmartMessage(bot, chatId, 
-            `🚫 **Access Denied - Enhanced GPT-5 System**\n\n` +
-            `This is a private Enhanced GPT-5 AI assistant with memory integration.\n\n` +
-            `**Your Chat ID:** ${chatId}\n` +
-            `**System Version:** Enhanced v6.0 - Memory Loss Fixed\n` +
-            `**Features:** Advanced memory, business context, speed optimization\n\n` +
-            `Contact the administrator if this is your authorized account.`
+        console.log(`🚫 Unauthorized access from ${chatId}`);
+        await bot.sendMessage(chatId, 
+            `🚫 **Access Denied**\n\nThis is Sum Chenda's private Enhanced GPT-5 system.\n\nChat ID: ${chatId}`
         );
-        
-        // Log unauthorized access attempt
-        await logCommandUsage(chatId, 'UNAUTHORIZED_ACCESS', 0, false, 'Access denied').catch(console.error);
         return;
     }
-
-    // Enhanced session tracking with memory awareness
-    const sessionId = await startEnhancedUserSession(chatId, 'ENHANCED_TELEGRAM_BOT').catch(() => null);
+    
+    // 🔥 FIXED: Emergency response system specifically for Sum Chenda
     const startTime = Date.now();
-
+    let responseAttempted = false;
+    
     try {
-        // ✅ ENHANCED COMMAND HANDLING WITH MEMORY INTEGRATION
-        if (text) {
-            // Check if it's an enhanced system command
-            const commandHandled = await handleEnhancedSystemCommands(msg, chatId, text);
-            if (commandHandled) {
-                // End session for commands
-                if (sessionId) {
-                    await endEnhancedUserSession(sessionId, 1, Date.now() - startTime).catch(console.error);
+        // 🔥 FIXED: Set 12-second emergency timeout (faster response for Sum Chenda)
+        const emergencyTimeout = setTimeout(async () => {
+            if (!responseAttempted) {
+                responseAttempted = true;
+                console.log("🚨 Emergency response activated for Sum Chenda");
+                
+                const emergencyResponse = `🚨 **Emergency Response - Sum Chenda** 🇰🇭\n\n` +
+                    `I received your message but need to respond quickly to prevent timeout.\n\n` +
+                    `**Your request:** "${text?.substring(0, 80) || 'Message received'}"\n\n` +
+                    `**Cambodia Fund Operations Ready:**\n` +
+                    `💰 Cash flow projections\n` +
+                    `📊 LP relationship strategies\n` +
+                    `🎯 Deployment planning\n` +
+                    `📈 Performance analysis\n\n` +
+                    `**Quick Commands (faster response):**\n` +
+                    `• \`/quick Build 12 month cash flow\`\n` +
+                    `• \`/balanced Cambodia fund strategy\`\n` +
+                    `• \`/status\` - System health check\n\n` +
+                    `Processing with enhanced Cambodia fund context...`;
+                
+                await bot.sendMessage(chatId, emergencyResponse);
+                
+                // 🔥 FIXED: Quick Cambodia fund response for Sum Chenda
+                if (text) {
+                    try {
+                        let cambodiaPrompt;
+                        
+                        // Special handling for cash flow requests
+                        if (text.toLowerCase().includes('cash flow') || text.toLowerCase().includes('projection')) {
+                            cambodiaPrompt = `Sum Chenda from Cambodia private lending fund requests: "${text}"\n\n` +
+                                `Provide professional 12-month cash flow projection framework for Cambodia fund operations including:\n` +
+                                `- Monthly deployment targets\n- Expected returns and distributions\n- LP management requirements\n` +
+                                `- Risk assessments\n- Operational costs\n- Growth projections\n\n` +
+                                `Focus on actionable Cambodia fund management insights.`;
+                        } else if (text.toLowerCase().includes('plan') || text.toLowerCase().includes('deploy')) {
+                            cambodiaPrompt = `Sum Chenda from Cambodia private lending fund requests: "${text}"\n\n` +
+                                `Provide comprehensive deployment planning for Cambodia fund operations including:\n` +
+                                `- Capital allocation strategies\n- Market entry approaches\n- LP relationship building\n` +
+                                `- Risk management frameworks\n- Timeline and milestones\n- Performance metrics\n\n` +
+                                `Focus on practical Cambodia market implementation.`;
+                        } else {
+                            cambodiaPrompt = `Sum Chenda from Cambodia private lending fund asks: "${text}"\n\n` +
+                                `Provide professional response for Cambodia fund operations with focus on:\n` +
+                                `- Financial analysis and projections\n- LP relationship strategies\n- Market opportunities\n` +
+                                `- Risk assessment\n- Operational efficiency\n- Growth planning\n\n` +
+                                `Respond as specialized Cambodia fund operations advisor.`;
+                        }
+                        
+                        const quickResponse = await getQuickMiniResponse(cambodiaPrompt, {
+                            reasoning_effort: 'medium',
+                            verbosity: 'high',
+                            max_completion_tokens: 2000
+                        });
+                        
+                        await bot.sendMessage(chatId, `💰 **Cambodia Fund Response:**\n\n${quickResponse}`);
+                        
+                    } catch (quickError) {
+                        console.error("Emergency Cambodia response failed:", quickError.message);
+                        
+                        // Fallback for Sum Chenda
+                        let fallbackResponse;
+                        
+                        if (text.toLowerCase().includes('cash flow') || text.toLowerCase().includes('projection')) {
+                            fallbackResponse = `💰 **12-Month Cash Flow Projection Framework**\n\n` +
+                                `**Request:** "${text}"\n\n` +
+                                `**Cambodia Fund Cash Flow Components:**\n\n` +
+                                `📊 **Monthly Parameters Needed:**\n` +
+                                `• Fund size: $______\n` +
+                                `• Monthly deployment: $______\n` +
+                                `• Average loan amount: $______\n` +
+                                `• Interest rate: _____%\n` +
+                                `• Loan term: ____ months\n\n` +
+                                `👥 **LP Structure:**\n` +
+                                `• Number of LPs: ____\n` +
+                                `• Distribution schedule: Monthly/Quarterly\n` +
+                                `• Management fee: ____%\n\n` +
+                                `💼 **Operational Costs:**\n` +
+                                `• Monthly overhead: $____\n` +
+                                `• Staff costs: $____\n` +
+                                `• Legal/compliance: $____\n\n` +
+                                `**Provide these details for detailed 12-month projection!**`;
+                        } else {
+                            fallbackResponse = `🇰🇭 **Cambodia Fund Operations Available**\n\n` +
+                                `Hi Sum Chenda! For: "${text}"\n\n` +
+                                `**I specialize in:**\n` +
+                                `💰 12-month cash flow projections\n` +
+                                `📊 LP relationship strategies\n` +
+                                `🎯 Deployment planning\n` +
+                                `📈 Risk assessment\n` +
+                                `💼 Fund operations\n\n` +
+                                `**For better results:**\n` +
+                                `• Specify amounts and timeframes\n` +
+                                `• Try: \`/quick [your question]\`\n` +
+                                `• Use: \`/balanced\` for detailed analysis\n\n` +
+                                `Ready for your Cambodia fund operations! 🚀`;
+                        }
+                        
+                        await bot.sendMessage(chatId, fallbackResponse);
+                    }
                 }
+            }
+        }, 12000); // 12 second emergency timeout for Sum Chenda
+        
+        // Handle commands first (fastest path)
+        if (text && text.startsWith('/')) {
+            clearTimeout(emergencyTimeout);
+            responseAttempted = true;
+            
+            try {
+                const commandHandled = await handleEnhancedSystemCommands(msg, chatId, text);
+                if (commandHandled) {
+                    console.log(`✅ Command processed: ${Date.now() - startTime}ms`);
+                    return;
+                }
+            } catch (cmdError) {
+                console.error("Command error:", cmdError.message);
+                await bot.sendMessage(chatId, `❌ Command error: ${cmdError.message}\n\nTry: /status or /quick [question]`);
                 return;
             }
         }
-
-        // 🎤 ENHANCED MULTIMODAL PROCESSING WITH MEMORY
+        
+        // Handle media with timeout protection
         if (msg.voice) {
-            console.log("🎤 Enhanced voice message received");
-            const voiceResult = await handleEnhancedVoiceMessage(msg, chatId, sessionId);
+            clearTimeout(emergencyTimeout);
+            responseAttempted = true;
             
-            if (sessionId) {
-                await endEnhancedUserSession(sessionId, 1, voiceResult.processingTime).catch(console.error);
-            }
-            
-            // Log voice processing performance
-            await logApiUsage('enhanced-voice', 'transcription-analysis', 1, voiceResult.success, voiceResult.processingTime, 0, 0, voiceResult.memoryUsed);
-            return;
-        }
-
-        if (msg.photo) {
-            console.log("🖼️ Enhanced image received");
-            const imageResult = await handleEnhancedImageMessage(msg, chatId, sessionId);
-            
-            if (sessionId) {
-                await endEnhancedUserSession(sessionId, 1, imageResult.processingTime).catch(console.error);
-            }
-            
-            // Log image processing performance
-            await logApiUsage('enhanced-vision', 'image-analysis', 1, imageResult.success, imageResult.processingTime, 0, 0, true);
-            return;
-        }
-
-        if (msg.document) {
-            console.log("📄 Enhanced document received:", msg.document.file_name);
-            const documentResult = await handleEnhancedDocumentMessage(msg, chatId, sessionId);
-            
-            if (sessionId) {
-                await endEnhancedUserSession(sessionId, 1, documentResult.processingTime).catch(console.error);
-            }
-            
-            // Log document processing performance
-            await logApiUsage('enhanced-document', 'document-analysis', 1, documentResult.success, documentResult.processingTime, 0, 0, true);
-            return;
-        }
-
-        if (msg.video) {
-            console.log("🎬 Enhanced video received");
-            await sendSmartMessage(bot, chatId, 
-                "🎬 **Enhanced Video Processing**\n\n" +
-                "Video analysis is available with enhanced memory integration!\n\n" +
-                "**Current Status:** Video processing will be added in the next update.\n" +
-                "**Alternative:** Please describe the video content, and I'll provide analysis with full memory context!"
+            const voicePromise = handleEnhancedVoiceMessage(msg, chatId, null);
+            const voiceTimeout = new Promise(resolve => 
+                setTimeout(() => resolve({ success: false, timeout: true }), 25000)
             );
+            
+            const voiceResult = await Promise.race([voicePromise, voiceTimeout]);
+            if (voiceResult.timeout) {
+                await bot.sendMessage(chatId, "⚠️ Voice processing timeout. Try shorter message or text instead.");
+            }
             return;
         }
-
+        
+        if (msg.photo) {
+            clearTimeout(emergencyTimeout);
+            responseAttempted = true;
+            
+            const imagePromise = handleEnhancedImageMessage(msg, chatId, null);
+            const imageTimeout = new Promise(resolve => 
+                setTimeout(() => resolve({ success: false, timeout: true }), 25000)
+            );
+            
+            const imageResult = await Promise.race([imagePromise, imageTimeout]);
+            if (imageResult.timeout) {
+                await bot.sendMessage(chatId, "⚠️ Image processing timeout. Try again with smaller image.");
+            }
+            return;
+        }
+        
+        if (msg.document) {
+            clearTimeout(emergencyTimeout);
+            responseAttempted = true;
+            
+            const docPromise = handleEnhancedDocumentMessage(msg, chatId, null);
+            const docTimeout = new Promise(resolve => 
+                setTimeout(() => resolve({ success: false, timeout: true }), 30000)
+            );
+            
+            const docResult = await Promise.race([docPromise, docTimeout]);
+            if (docResult.timeout) {
+                await bot.sendMessage(chatId, "⚠️ Document processing timeout. Try smaller file.");
+            }
+            return;
+        }
+        
         // Handle non-text messages
         if (!text) {
-            await sendSmartMessage(bot, chatId, 
-                "**Enhanced GPT-5 Assistant Ready!**\n\n" +
-                "I can process:\n" +
-                "✅ Text messages with memory integration\n" +
-                "✅ Voice messages with transcription + analysis\n" +
-                "✅ Images with GPT-5 Vision + context\n" +
-                "✅ Documents with enhanced extraction + memory\n\n" +
-                "Please send text, voice, images, or documents for enhanced analysis!"
+            clearTimeout(emergencyTimeout);
+            responseAttempted = true;
+            await bot.sendMessage(chatId, 
+                `**Cambodia Fund Operations Ready!** 🇰🇭\n\n` +
+                `Hi Sum Chenda! Enhanced system ready for:\n` +
+                `💰 Cash flow projections\n` +
+                `📊 LP strategies\n` +
+                `🎯 Deployment planning\n` +
+                `📈 Performance analysis\n` +
+                `🎤 Voice messages\n` +
+                `🖼️ Image analysis\n` +
+                `📄 Document processing\n\n` +
+                `Send your business requests!`
             );
             return;
         }
-
-        // 🎯 ENHANCED MAIN CONVERSATION HANDLER WITH COMPLETE MEMORY INTEGRATION
-        console.log("🚀 Processing with Enhanced GPT-5 + Complete Memory Integration...");
-        const conversationResult = await handleEnhancedGPT5ConversationWithMemory(chatId, text, sessionId);
         
-        // Enhanced session completion
-        if (sessionId) {
-            await endEnhancedUserSession(sessionId, 1, conversationResult.totalTime).catch(console.error);
+        // 🔥 FIXED: Main conversation with 18-second timeout (optimized for Sum Chenda)
+        console.log("🚀 Processing conversation with Cambodia fund context...");
+        
+        const conversationPromise = handleEnhancedGPT5ConversationWithMemory(chatId, text, null);
+        const conversationTimeout = new Promise((resolve) => {
+            setTimeout(() => resolve({ 
+                success: false, 
+                error: "Processing timeout",
+                fallbackNeeded: true 
+            }), 18000); // 18 second timeout optimized for Sum Chenda
+        });
+        
+        const result = await Promise.race([conversationPromise, conversationTimeout]);
+        
+        clearTimeout(emergencyTimeout);
+        responseAttempted = true;
+        
+        if (!result.success && result.fallbackNeeded) {
+            console.log("⚠️ Main timeout, using Cambodia fund specialized fallback");
+            
+            // 🔥 FIXED: Specialized Cambodia fund fallback for Sum Chenda
+            let specializedResponse;
+            
+            const lowerText = text.toLowerCase();
+            
+            if (lowerText.includes('cash flow') || lowerText.includes('projection') || lowerText.includes('12 month')) {
+                specializedResponse = `💰 **Cambodia Fund - 12-Month Cash Flow Analysis**\n\n` +
+                    `**Your Request:** "${text}"\n\n` +
+                    `**Professional Cash Flow Projection Framework:**\n\n` +
+                    `📊 **Phase 1: Fund Parameters**\n` +
+                    `• Total fund size: $______\n` +
+                    `• Initial deployment: $______\n` +
+                    `• Monthly deployment target: $______\n` +
+                    `• Reserve requirement: ____%\n\n` +
+                    `💼 **Phase 2: Loan Structure**\n` +
+                    `• Average loan size: $______\n` +
+                    `• Interest rate range: ____% - ____%\n` +
+                    `• Loan terms: ____ months\n` +
+                    `• Default rate estimate: ____%\n\n` +
+                    `👥 **Phase 3: LP Management**\n` +
+                    `• Number of LPs: ____\n` +
+                    `• Preferred return: ____%\n` +
+                    `• Management fee: ____%\n` +
+                    `• Distribution frequency: Monthly/Quarterly\n\n` +
+                    `🎯 **Phase 4: Operational Costs**\n` +
+                    `• Monthly overhead: $____\n` +
+                    `• Staff salaries: $____\n` +
+                    `• Legal/compliance: $____\n` +
+                    `• Marketing/BD: $____\n\n` +
+                    `**📈 Next Steps:**\n` +
+                    `1. Provide the above parameters\n` +
+                    `2. I'll create detailed monthly projections\n` +
+                    `3. Include sensitivity analysis\n` +
+                    `4. LP distribution schedules\n` +
+                    `5. Break-even analysis\n\n` +
+                    `**Try:** \`/quick cash flow with $500K fund, $50K monthly deployment\``;
+                    
+            } else if (lowerText.includes('deploy') || lowerText.includes('plan') || lowerText.includes('strategy')) {
+                specializedResponse = `🎯 **Cambodia Fund - Deployment Strategy**\n\n` +
+                    `**Your Request:** "${text}"\n\n` +
+                    `**Strategic Deployment Framework:**\n\n` +
+                    `🎪 **Market Entry Strategy**\n` +
+                    `• Target market segments\n` +
+                    `• Competitive positioning\n` +
+                    `• Partnership opportunities\n` +
+                    `• Regulatory compliance\n\n` +
+                    `💰 **Capital Deployment Plan**\n` +
+                    `• Month 1-3: Initial deployment ($____)\n` +
+                    `• Month 4-6: Scale-up phase ($____)\n` +
+                    `• Month 7-12: Full operations ($____)\n` +
+                    `• Reserve allocation: $____\n\n` +
+                    `🎯 **Risk Management**\n` +
+                    `• Credit assessment criteria\n` +
+                    `• Portfolio diversification\n` +
+                    `• Collection procedures\n` +
+                    `• Default mitigation\n\n` +
+                    `📊 **Performance Metrics**\n` +
+                    `• Target IRR: ____%\n` +
+                    `• Portfolio yield: ____%\n` +
+                    `• Default rate: < ____%\n` +
+                    `• LP satisfaction score\n\n` +
+                    `**Try:** \`/balanced deployment plan for $1M Cambodia fund\``;
+                    
+            } else {
+                specializedResponse = `🇰🇭 **Cambodia Fund Operations - Enhanced Ready**\n\n` +
+                    `Hi Sum Chenda! Your request: "${text}"\n\n` +
+                    `**Specialized Services:**\n\n` +
+                    `💰 **Financial Analysis**\n` +
+                    `• 12-month cash flow projections\n` +
+                    `• IRR and performance modeling\n` +
+                    `• Sensitivity analysis\n` +
+                    `• Break-even calculations\n\n` +
+                    `📊 **Strategic Planning**\n` +
+                    `• Market entry strategies\n` +
+                    `• Deployment planning\n` +
+                    `• Risk assessment frameworks\n` +
+                    `• Growth roadmaps\n\n` +
+                    `👥 **LP Management**\n` +
+                    `• Investor relations\n` +
+                    `• Distribution planning\n` +
+                    `• Reporting systems\n` +
+                    `• Communication strategies\n\n` +
+                    `**For Immediate Response:**\n` +
+                    `• \`/quick [specific question]\`\n` +
+                    `• \`/balanced [detailed analysis]\`\n` +
+                    `• Be specific with amounts/timeframes\n\n` +
+                    `**System Status:** ✅ Operational with Cambodia focus\n` +
+                    `Ready for your fund operations! 🚀`;
+            }
+            
+            await bot.sendMessage(chatId, specializedResponse);
         }
         
-        // Enhanced performance logging
-        await logApiUsage(
-            'enhanced-gpt5', 
-            conversationResult.modelUsed || 'unknown', 
-            1, 
-            conversationResult.success, 
-            conversationResult.totalTime, 
-            0, 
-            0, 
-            conversationResult.memoryUsed
-        );
+        const totalTime = Date.now() - startTime;
+        console.log(`✅ Sum Chenda message completed: ${totalTime}ms`);
         
-        // Log successful conversation metrics
-        console.log(`✅ Enhanced conversation completed: ${conversationResult.totalTime}ms, Memory: ${conversationResult.memoryUsed ? 'YES' : 'NO'}, Model: ${conversationResult.modelUsed}`);
-
     } catch (error) {
-        console.error('❌ Enhanced message handling error:', error.message);
+        clearTimeout(emergencyTimeout);
+        const processingTime = Date.now() - startTime;
+        console.error("❌ Message error:", error.message);
         
-        // Enhanced error logging with detailed context
-        await logCommandUsage(chatId, text || 'MEDIA', Date.now() - startTime, false, `Enhanced Error: ${error.message}`).catch(console.error);
-        
-        // End session with error status
-        if (sessionId) {
-            await endEnhancedUserSession(sessionId, 0, Date.now() - startTime).catch(console.error);
+        if (!responseAttempted) {
+            await bot.sendMessage(chatId, 
+                `🚨 **System Recovery - Sum Chenda** 🇰🇭\n\n` +
+                `Error processing: "${text?.substring(0, 80) || 'Message'}"\n\n` +
+                `**Cambodia Fund Operations Still Available:**\n` +
+                `• Try: \`/status\` - Check system health\n` +
+                `• Try: \`/quick cash flow projection\`\n` +
+                `• Break complex requests into parts\n` +
+                `• Rephrase your question\n\n` +
+                `**Error:** ${error.message}\n` +
+                `**Processing Time:** ${processingTime}ms\n\n` +
+                `Ready to help with fund operations! 💼`
+            );
         }
-        
-        // Enhanced error response with helpful guidance
-        const errorResponse = `🚨 **Enhanced System Error**\n\n` +
-            `I encountered an error processing your request, but don't worry - my enhanced error recovery is active!\n\n` +
-            `**What happened:** ${error.message}\n\n` +
-            `**What you can do:**\n` +
-            `• Try your request again (often resolves temporary issues)\n` +
-            `• Use /status to check enhanced system health\n` +
-            `• Simplify your request if it was complex\n` +
-            `• Try /quick for faster responses\n\n` +
-            `**Enhanced Features Still Available:**\n` +
-            `✅ Memory system active\n` +
-            `✅ Business context preserved\n` +
-            `✅ Speed optimization working\n` +
-            `✅ All models available\n\n` +
-            `I'm ready to help as soon as you send another message! 🔧`;
-        
-        await sendSmartMessage(bot, chatId, errorResponse);
     }
 });
 
-// 🔧 ENHANCED SESSION MANAGEMENT WITH MEMORY TRACKING
-async function startEnhancedUserSession(chatId, sessionType = 'ENHANCED_GENERAL') {
-    try {
-        console.log(`📊 Starting enhanced session for ${chatId}: ${sessionType}`);
-        
-        const sessionId = `enhanced_session_${chatId}_${Date.now()}`;
-        
-        // Enhanced session metadata
-        const sessionMetadata = {
-            chatId: chatId,
-            sessionType: sessionType,
-            startTime: new Date().toISOString(),
-            enhancedSystem: true,
-            memoryEnabled: true,
-            speedOptimized: true,
-            businessContextAvailable: true,
-            systemVersion: '6.0-memory-fixed'
-        };
-        
-        // Log session start for analytics
-        await updateSystemMetrics({
-            enhanced_sessions_started: 1,
-            memory_enabled_sessions: 1
-        }).catch(console.error);
-        
-        console.log(`✅ Enhanced session started: ${sessionId}`);
-        return sessionId;
-        
-    } catch (error) {
-        console.error('❌ Enhanced session start error:', error.message);
-        return null;
-    }
-}
-
-async function endEnhancedUserSession(sessionId, commandsExecuted = 0, totalResponseTime = 0) {
-    try {
-        console.log(`📊 Ending enhanced session ${sessionId}: ${commandsExecuted} commands, ${totalResponseTime}ms`);
-        
-        // Enhanced session analytics
-        const sessionAnalytics = {
-            sessionId: sessionId,
-            commandsExecuted: commandsExecuted,
-            totalResponseTime: totalResponseTime,
-            averageResponseTime: commandsExecuted > 0 ? (totalResponseTime / commandsExecuted) : 0,
-            endTime: new Date().toISOString(),
-            enhancedFeatures: true,
-            memoryIntegration: true
-        };
-        
-        // Update system metrics
-        await updateSystemMetrics({
-            enhanced_sessions_completed: 1,
-            total_response_time: totalResponseTime,
-            commands_executed: commandsExecuted
-        }).catch(console.error);
-        
-        console.log(`✅ Enhanced session completed: ${sessionAnalytics.averageResponseTime.toFixed(0)}ms avg`);
-        return sessionAnalytics;
-        
-    } catch (error) {
-        console.error('❌ Enhanced session end error:', error.message);
-        return false;
-    }
-}
+console.log("🔥 FIXED: Sum Chenda message handler with Cambodia fund specialization");
+console.log("🔥 FIXED: 12-second emergency timeout for cash flow requests");
+console.log("🔥 FIXED: Specialized fallbacks for deployment and LP strategies");
+console.log("✅ All Sum Chenda timeout and response issues should be resolved");
 
 // 🔧 ENHANCED EXPRESS SERVER SETUP WITH COMPLETE INTEGRATION
 const express = require("express");
@@ -4281,58 +4406,75 @@ app.use((req, res, next) => {
     next();
 });
 
-// Enhanced webhook endpoint with comprehensive processing
+// Enhanced webhook endpoint with FIXED timeout protection for Sum Chenda
 app.post("/webhook", async (req, res) => {
     const startTime = Date.now();
-    console.log("📨 Enhanced webhook received from Telegram");
+    console.log("📨 Webhook received from Telegram");
     
+    // 🔥 CRITICAL FIX: Respond to Telegram IMMEDIATELY to prevent timeout
+    res.status(200).json({
+        status: "received",
+        timestamp: new Date().toISOString(),
+        enhancedSystem: true
+    });
+    
+    // Basic payload validation
     if (!req.body || !req.body.update_id) {
-        console.error("❌ Invalid webhook payload received");
-        return res.status(400).json({
-            error: "Invalid webhook payload",
-            expectedFormat: "Telegram update object",
-            enhancedSystem: true
-        });
+        console.error("❌ Invalid webhook payload");
+        return; // Already sent response above
     }
     
-    try {
-        // Process update with enhanced error handling
-        await bot.processUpdate(req.body);
-        
-        const processingTime = Date.now() - startTime;
-        console.log(`✅ Enhanced webhook processed successfully: ${processingTime}ms`);
-        
-        // Log webhook performance
-        await updateSystemMetrics({
-            webhook_requests_processed: 1,
-            webhook_processing_time: processingTime
-        }).catch(console.error);
-        
-        res.status(200).json({
-            status: "success",
-            processingTime: `${processingTime}ms`,
-            enhancedSystem: true,
-            memoryEnabled: true,
-            timestamp: new Date().toISOString()
-        });
-        
-    } catch (error) {
-        const processingTime = Date.now() - startTime;
-        console.error("❌ Enhanced webhook processing error:", error.message);
-        
-        // Log webhook errors
-        await updateSystemMetrics({
-            webhook_errors: 1
-        }).catch(console.error);
-        
-        res.status(500).json({
-            error: "Enhanced webhook processing failed",
-            message: error.message,
-            processingTime: `${processingTime}ms`,
-            enhancedErrorHandling: true,
-            timestamp: new Date().toISOString()
-        });
-    }
+    // 🔥 FIXED: Process in background with timeout protection
+    setImmediate(async () => {
+        try {
+            console.log(`Processing update ${req.body.update_id}...`);
+            
+            // Create timeout promise (25 seconds max)
+            const timeoutPromise = new Promise((resolve) => {
+                setTimeout(() => {
+                    console.log("⚠️ Webhook processing timeout (25s)");
+                    resolve({ timeout: true });
+                }, 25000);
+            });
+            
+            // Create processing promise
+            const processPromise = bot.processUpdate(req.body);
+            
+            // Race between processing and timeout
+            const result = await Promise.race([processPromise, timeoutPromise]);
+            
+            const processingTime = Date.now() - startTime;
+            
+            if (result?.timeout) {
+                console.log(`⚠️ Webhook timed out: ${processingTime}ms`);
+                
+                // Log timeout for Sum Chenda's monitoring
+                await updateSystemMetrics({
+                    webhook_timeouts: 1,
+                    timeout_processing_time: processingTime
+                }).catch(console.error);
+                
+            } else {
+                console.log(`✅ Webhook processed successfully: ${processingTime}ms`);
+                
+                // Log successful processing
+                await updateSystemMetrics({
+                    webhook_requests_processed: 1,
+                    webhook_processing_time: processingTime
+                }).catch(console.error);
+            }
+            
+        } catch (error) {
+            const processingTime = Date.now() - startTime;
+            console.error("❌ Webhook processing error:", error.message);
+            
+            // Log error for Sum Chenda's debugging
+            await updateSystemMetrics({
+                webhook_errors: 1,
+                error_processing_time: processingTime
+            }).catch(console.error);
+        }
+    });
 });
 
 // Enhanced health check endpoint with comprehensive system status
