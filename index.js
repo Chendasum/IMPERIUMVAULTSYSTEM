@@ -4033,7 +4033,7 @@ console.log('✅ Memory extraction for all multimodal content types enhanced');
 console.log('✅ All enhanced multimodal features ready for production use');
 
 // 🚀 ENHANCED GPT-5 AI ASSISTANT SYSTEM v6.0 - MEMORY LOSS FIXED
-// Piece 5 FINAL: Complete Server Integration & Production Optimization (Lines 1601-2000+)
+// Piece 5 FINAL: Complete Server Integration & Production Optimization - SESSIONS REMOVED
 
 // 🎯 COMPLETE FIXED MESSAGE HANDLER - NO SESSION ISSUES
 bot.on("message", async (msg) => {
@@ -4202,14 +4202,19 @@ bot.on("message", async (msg) => {
             clearTimeout(emergencyTimeout);
             responseAttempted = true;
             
-            const voicePromise = handleEnhancedVoiceMessage(msg, chatId, null);
-            const voiceTimeout = new Promise(resolve => 
-                setTimeout(() => resolve({ success: false, timeout: true }), 25000)
-            );
-            
-            const voiceResult = await Promise.race([voicePromise, voiceTimeout]);
-            if (voiceResult.timeout) {
-                await bot.sendMessage(chatId, "⚠️ Voice processing timeout. Try shorter message or text instead.");
+            try {
+                const voicePromise = handleEnhancedVoiceMessage(msg, chatId, null);
+                const voiceTimeout = new Promise(resolve => 
+                    setTimeout(() => resolve({ success: false, timeout: true }), 25000)
+                );
+                
+                const voiceResult = await Promise.race([voicePromise, voiceTimeout]);
+                if (voiceResult?.timeout) {
+                    await bot.sendMessage(chatId, "⚠️ Voice processing timeout. Try shorter message or text instead.");
+                }
+            } catch (voiceError) {
+                console.error("Voice processing error:", voiceError.message);
+                await bot.sendMessage(chatId, "❌ Voice processing failed. Try text instead.");
             }
             return;
         }
@@ -4218,14 +4223,19 @@ bot.on("message", async (msg) => {
             clearTimeout(emergencyTimeout);
             responseAttempted = true;
             
-            const imagePromise = handleEnhancedImageMessage(msg, chatId, null);
-            const imageTimeout = new Promise(resolve => 
-                setTimeout(() => resolve({ success: false, timeout: true }), 25000)
-            );
-            
-            const imageResult = await Promise.race([imagePromise, imageTimeout]);
-            if (imageResult.timeout) {
-                await bot.sendMessage(chatId, "⚠️ Image processing timeout. Try again with smaller image.");
+            try {
+                const imagePromise = handleEnhancedImageMessage(msg, chatId, null);
+                const imageTimeout = new Promise(resolve => 
+                    setTimeout(() => resolve({ success: false, timeout: true }), 25000)
+                );
+                
+                const imageResult = await Promise.race([imagePromise, imageTimeout]);
+                if (imageResult?.timeout) {
+                    await bot.sendMessage(chatId, "⚠️ Image processing timeout. Try again with smaller image.");
+                }
+            } catch (imageError) {
+                console.error("Image processing error:", imageError.message);
+                await bot.sendMessage(chatId, "❌ Image processing failed. Try again.");
             }
             return;
         }
@@ -4234,14 +4244,19 @@ bot.on("message", async (msg) => {
             clearTimeout(emergencyTimeout);
             responseAttempted = true;
             
-            const docPromise = handleEnhancedDocumentMessage(msg, chatId, null);
-            const docTimeout = new Promise(resolve => 
-                setTimeout(() => resolve({ success: false, timeout: true }), 30000)
-            );
-            
-            const docResult = await Promise.race([docPromise, docTimeout]);
-            if (docResult.timeout) {
-                await bot.sendMessage(chatId, "⚠️ Document processing timeout. Try smaller file.");
+            try {
+                const docPromise = handleEnhancedDocumentMessage(msg, chatId, null);
+                const docTimeout = new Promise(resolve => 
+                    setTimeout(() => resolve({ success: false, timeout: true }), 30000)
+                );
+                
+                const docResult = await Promise.race([docPromise, docTimeout]);
+                if (docResult?.timeout) {
+                    await bot.sendMessage(chatId, "⚠️ Document processing timeout. Try smaller file.");
+                }
+            } catch (docError) {
+                console.error("Document processing error:", docError.message);
+                await bot.sendMessage(chatId, "❌ Document processing failed. Try again.");
             }
             return;
         }
@@ -4268,139 +4283,157 @@ bot.on("message", async (msg) => {
         // 🔥 FIXED: Main conversation with 18-second timeout (optimized for Sum Chenda)
         console.log("🚀 Processing conversation with Cambodia fund context...");
         
-        const conversationPromise = handleEnhancedGPT5ConversationWithMemory(chatId, text, null);
-        const conversationTimeout = new Promise((resolve) => {
-            setTimeout(() => resolve({ 
-                success: false, 
-                error: "Processing timeout",
-                fallbackNeeded: true 
-            }), 18000); // 18 second timeout optimized for Sum Chenda
-        });
-        
-        const result = await Promise.race([conversationPromise, conversationTimeout]);
-        
-        clearTimeout(emergencyTimeout);
-        responseAttempted = true;
-        
-        if (!result.success && result.fallbackNeeded) {
-            console.log("⚠️ Main timeout, using Cambodia fund specialized fallback");
+        try {
+            const conversationPromise = handleEnhancedGPT5ConversationWithMemory(chatId, text, null);
+            const conversationTimeout = new Promise((resolve) => {
+                setTimeout(() => resolve({ 
+                    success: false, 
+                    error: "Processing timeout",
+                    fallbackNeeded: true 
+                }), 18000); // 18 second timeout optimized for Sum Chenda
+            });
             
-            // 🔥 FIXED: Specialized Cambodia fund fallback for Sum Chenda
-            let specializedResponse;
+            const result = await Promise.race([conversationPromise, conversationTimeout]);
             
-            const lowerText = text.toLowerCase();
+            clearTimeout(emergencyTimeout);
+            responseAttempted = true;
             
-            if (lowerText.includes('cash flow') || lowerText.includes('projection') || lowerText.includes('12 month')) {
-                specializedResponse = `💰 **Cambodia Fund - 12-Month Cash Flow Analysis**\n\n` +
-                    `**Your Request:** "${text}"\n\n` +
-                    `**Professional Cash Flow Projection Framework:**\n\n` +
-                    `📊 **Phase 1: Fund Parameters**\n` +
-                    `• Total fund size: $______\n` +
-                    `• Initial deployment: $______\n` +
-                    `• Monthly deployment target: $______\n` +
-                    `• Reserve requirement: ____%\n\n` +
-                    `💼 **Phase 2: Loan Structure**\n` +
-                    `• Average loan size: $______\n` +
-                    `• Interest rate range: ____% - ____%\n` +
-                    `• Loan terms: ____ months\n` +
-                    `• Default rate estimate: ____%\n\n` +
-                    `👥 **Phase 3: LP Management**\n` +
-                    `• Number of LPs: ____\n` +
-                    `• Preferred return: ____%\n` +
-                    `• Management fee: ____%\n` +
-                    `• Distribution frequency: Monthly/Quarterly\n\n` +
-                    `🎯 **Phase 4: Operational Costs**\n` +
-                    `• Monthly overhead: $____\n` +
-                    `• Staff salaries: $____\n` +
-                    `• Legal/compliance: $____\n` +
-                    `• Marketing/BD: $____\n\n` +
-                    `**📈 Next Steps:**\n` +
-                    `1. Provide the above parameters\n` +
-                    `2. I'll create detailed monthly projections\n` +
-                    `3. Include sensitivity analysis\n` +
-                    `4. LP distribution schedules\n` +
-                    `5. Break-even analysis\n\n` +
-                    `**Try:** \`/quick cash flow with $500K fund, $50K monthly deployment\``;
-                    
-            } else if (lowerText.includes('deploy') || lowerText.includes('plan') || lowerText.includes('strategy')) {
-                specializedResponse = `🎯 **Cambodia Fund - Deployment Strategy**\n\n` +
-                    `**Your Request:** "${text}"\n\n` +
-                    `**Strategic Deployment Framework:**\n\n` +
-                    `🎪 **Market Entry Strategy**\n` +
-                    `• Target market segments\n` +
-                    `• Competitive positioning\n` +
-                    `• Partnership opportunities\n` +
-                    `• Regulatory compliance\n\n` +
-                    `💰 **Capital Deployment Plan**\n` +
-                    `• Month 1-3: Initial deployment ($____)\n` +
-                    `• Month 4-6: Scale-up phase ($____)\n` +
-                    `• Month 7-12: Full operations ($____)\n` +
-                    `• Reserve allocation: $____\n\n` +
-                    `🎯 **Risk Management**\n` +
-                    `• Credit assessment criteria\n` +
-                    `• Portfolio diversification\n` +
-                    `• Collection procedures\n` +
-                    `• Default mitigation\n\n` +
-                    `📊 **Performance Metrics**\n` +
-                    `• Target IRR: ____%\n` +
-                    `• Portfolio yield: ____%\n` +
-                    `• Default rate: < ____%\n` +
-                    `• LP satisfaction score\n\n` +
-                    `**Try:** \`/balanced deployment plan for $1M Cambodia fund\``;
-                    
-            } else if (lowerText.includes('hello') || lowerText.includes('hi')) {
-                specializedResponse = `👋 **Hello Sum Chenda!** 🇰🇭\n\n` +
-                    `Welcome back to your Cambodia Fund Operations AI Assistant!\n\n` +
-                    `**Your specialized system is ready for:**\n\n` +
-                    `💰 **Financial Planning**\n` +
-                    `• 12-month cash flow projections\n` +
-                    `• IRR and performance modeling\n` +
-                    `• Sensitivity analysis\n` +
-                    `• Break-even calculations\n\n` +
-                    `📊 **Strategic Operations**\n` +
-                    `• Market entry strategies\n` +
-                    `• Deployment planning\n` +
-                    `• Risk assessment frameworks\n` +
-                    `• Growth roadmaps\n\n` +
-                    `👥 **LP Management**\n` +
-                    `• Investor relations\n` +
-                    `• Distribution planning\n` +
-                    `• Reporting systems\n` +
-                    `• Communication strategies\n\n` +
-                    `**Quick Start Examples:**\n` +
-                    `• "Build 12 months cash flow projection"\n` +
-                    `• "Create deployment plan for $500K fund"\n` +
-                    `• "LP relationship strategy for 10 investors"\n\n` +
-                    `What would you like to work on today? 🚀`;
-                    
-            } else {
-                specializedResponse = `🇰🇭 **Cambodia Fund Operations - Enhanced Ready**\n\n` +
-                    `Hi Sum Chenda! Your request: "${text}"\n\n` +
-                    `**Specialized Services:**\n\n` +
-                    `💰 **Financial Analysis**\n` +
-                    `• 12-month cash flow projections\n` +
-                    `• IRR and performance modeling\n` +
-                    `• Sensitivity analysis\n` +
-                    `• Break-even calculations\n\n` +
-                    `📊 **Strategic Planning**\n` +
-                    `• Market entry strategies\n` +
-                    `• Deployment planning\n` +
-                    `• Risk assessment frameworks\n` +
-                    `• Growth roadmaps\n\n` +
-                    `👥 **LP Management**\n` +
-                    `• Investor relations\n` +
-                    `• Distribution planning\n` +
-                    `• Reporting systems\n` +
-                    `• Communication strategies\n\n` +
-                    `**For Immediate Response:**\n` +
-                    `• \`/quick [specific question]\`\n` +
-                    `• \`/balanced [detailed analysis]\`\n` +
-                    `• Be specific with amounts/timeframes\n\n` +
-                    `**System Status:** ✅ Operational with Cambodia focus\n` +
-                    `Ready for your fund operations! 🚀`;
+            if (!result || (!result.success && result.fallbackNeeded)) {
+                console.log("⚠️ Main timeout, using Cambodia fund specialized fallback");
+                
+                // 🔥 FIXED: Specialized Cambodia fund fallback for Sum Chenda
+                let specializedResponse;
+                
+                const lowerText = text.toLowerCase();
+                
+                if (lowerText.includes('cash flow') || lowerText.includes('projection') || lowerText.includes('12 month')) {
+                    specializedResponse = `💰 **Cambodia Fund - 12-Month Cash Flow Analysis**\n\n` +
+                        `**Your Request:** "${text}"\n\n` +
+                        `**Professional Cash Flow Projection Framework:**\n\n` +
+                        `📊 **Phase 1: Fund Parameters**\n` +
+                        `• Total fund size: $______\n` +
+                        `• Initial deployment: $______\n` +
+                        `• Monthly deployment target: $______\n` +
+                        `• Reserve requirement: ____%\n\n` +
+                        `💼 **Phase 2: Loan Structure**\n` +
+                        `• Average loan size: $______\n` +
+                        `• Interest rate range: ____% - ____%\n` +
+                        `• Loan terms: ____ months\n` +
+                        `• Default rate estimate: ____%\n\n` +
+                        `👥 **Phase 3: LP Management**\n` +
+                        `• Number of LPs: ____\n` +
+                        `• Preferred return: ____%\n` +
+                        `• Management fee: ____%\n` +
+                        `• Distribution frequency: Monthly/Quarterly\n\n` +
+                        `🎯 **Phase 4: Operational Costs**\n` +
+                        `• Monthly overhead: $____\n` +
+                        `• Staff salaries: $____\n` +
+                        `• Legal/compliance: $____\n` +
+                        `• Marketing/BD: $____\n\n` +
+                        `**📈 Next Steps:**\n` +
+                        `1. Provide the above parameters\n` +
+                        `2. I'll create detailed monthly projections\n` +
+                        `3. Include sensitivity analysis\n` +
+                        `4. LP distribution schedules\n` +
+                        `5. Break-even analysis\n\n` +
+                        `**Try:** \`/quick cash flow with $500K fund, $50K monthly deployment\``;
+                        
+                } else if (lowerText.includes('deploy') || lowerText.includes('plan') || lowerText.includes('strategy')) {
+                    specializedResponse = `🎯 **Cambodia Fund - Deployment Strategy**\n\n` +
+                        `**Your Request:** "${text}"\n\n` +
+                        `**Strategic Deployment Framework:**\n\n` +
+                        `🎪 **Market Entry Strategy**\n` +
+                        `• Target market segments\n` +
+                        `• Competitive positioning\n` +
+                        `• Partnership opportunities\n` +
+                        `• Regulatory compliance\n\n` +
+                        `💰 **Capital Deployment Plan**\n` +
+                        `• Month 1-3: Initial deployment ($____)\n` +
+                        `• Month 4-6: Scale-up phase ($____)\n` +
+                        `• Month 7-12: Full operations ($____)\n` +
+                        `• Reserve allocation: $____\n\n` +
+                        `🎯 **Risk Management**\n` +
+                        `• Credit assessment criteria\n` +
+                        `• Portfolio diversification\n` +
+                        `• Collection procedures\n` +
+                        `• Default mitigation\n\n` +
+                        `📊 **Performance Metrics**\n` +
+                        `• Target IRR: ____%\n` +
+                        `• Portfolio yield: ____%\n` +
+                        `• Default rate: < ____%\n` +
+                        `• LP satisfaction score\n\n` +
+                        `**Try:** \`/balanced deployment plan for $1M Cambodia fund\``;
+                        
+                } else if (lowerText.includes('hello') || lowerText.includes('hi')) {
+                    specializedResponse = `👋 **Hello Sum Chenda!** 🇰🇭\n\n` +
+                        `Welcome back to your Cambodia Fund Operations AI Assistant!\n\n` +
+                        `**Your specialized system is ready for:**\n\n` +
+                        `💰 **Financial Planning**\n` +
+                        `• 12-month cash flow projections\n` +
+                        `• IRR and performance modeling\n` +
+                        `• Sensitivity analysis\n` +
+                        `• Break-even calculations\n\n` +
+                        `📊 **Strategic Operations**\n` +
+                        `• Market entry strategies\n` +
+                        `• Deployment planning\n` +
+                        `• Risk assessment frameworks\n` +
+                        `• Growth roadmaps\n\n` +
+                        `👥 **LP Management**\n` +
+                        `• Investor relations\n` +
+                        `• Distribution planning\n` +
+                        `• Reporting systems\n` +
+                        `• Communication strategies\n\n` +
+                        `**Quick Start Examples:**\n` +
+                        `• "Build 12 months cash flow projection"\n` +
+                        `• "Create deployment plan for $500K fund"\n` +
+                        `• "LP relationship strategy for 10 investors"\n\n` +
+                        `What would you like to work on today? 🚀`;
+                        
+                } else {
+                    specializedResponse = `🇰🇭 **Cambodia Fund Operations - Enhanced Ready**\n\n` +
+                        `Hi Sum Chenda! Your request: "${text}"\n\n` +
+                        `**Specialized Services:**\n\n` +
+                        `💰 **Financial Analysis**\n` +
+                        `• 12-month cash flow projections\n` +
+                        `• IRR and performance modeling\n` +
+                        `• Sensitivity analysis\n` +
+                        `• Break-even calculations\n\n` +
+                        `📊 **Strategic Planning**\n` +
+                        `• Market entry strategies\n` +
+                        `• Deployment planning\n` +
+                        `• Risk assessment frameworks\n` +
+                        `• Growth roadmaps\n\n` +
+                        `👥 **LP Management**\n` +
+                        `• Investor relations\n` +
+                        `• Distribution planning\n` +
+                        `• Reporting systems\n` +
+                        `• Communication strategies\n\n` +
+                        `**For Immediate Response:**\n` +
+                        `• \`/quick [specific question]\`\n` +
+                        `• \`/balanced [detailed analysis]\`\n` +
+                        `• Be specific with amounts/timeframes\n\n` +
+                        `**System Status:** ✅ Operational with Cambodia focus\n` +
+                        `Ready for your fund operations! 🚀`;
+                }
+                
+                await bot.sendMessage(chatId, specializedResponse);
             }
+        } catch (conversationError) {
+            clearTimeout(emergencyTimeout);
+            responseAttempted = true;
+            console.error("Main conversation error:", conversationError.message);
             
-            await bot.sendMessage(chatId, specializedResponse);
+            await bot.sendMessage(chatId, 
+                `🚨 **System Recovery - Sum Chenda** 🇰🇭\n\n` +
+                `Error processing: "${text?.substring(0, 80) || 'Message'}"\n\n` +
+                `**Cambodia Fund Operations Still Available:**\n` +
+                `• Try: \`/status\` - Check system health\n` +
+                `• Try: \`/quick cash flow projection\`\n` +
+                `• Break complex requests into parts\n` +
+                `• Rephrase your question\n\n` +
+                `**Error:** ${conversationError.message}\n\n` +
+                `Ready to help with fund operations! 💼`
+            );
         }
         
         const totalTime = Date.now() - startTime;
@@ -4434,6 +4467,7 @@ console.log("🔥 COMPLETE FIXED: Specialized fallbacks for deployment and LP st
 console.log("🔥 COMPLETE FIXED: Enhanced 'Hello' responses with Cambodia fund context");
 console.log("✅ All Sum Chenda timeout and response issues should be resolved");
 console.log("✅ No session management dependencies - system should start cleanly");
+console.log("✅ Enhanced error handling for all media types and conversation flows");
 
 // 🔧 ENHANCED EXPRESS SERVER SETUP WITH COMPLETE INTEGRATION
 const express = require("express");
@@ -4496,19 +4530,27 @@ app.post("/webhook", async (req, res) => {
                 console.log(`⚠️ Webhook timed out: ${processingTime}ms`);
                 
                 // Log timeout for Sum Chenda's monitoring
-                await updateSystemMetrics({
-                    webhook_timeouts: 1,
-                    timeout_processing_time: processingTime
-                }).catch(console.error);
+                try {
+                    await updateSystemMetrics({
+                        webhook_timeouts: 1,
+                        timeout_processing_time: processingTime
+                    });
+                } catch (metricsError) {
+                    console.log("⚠️ Metrics logging failed:", metricsError.message);
+                }
                 
             } else {
                 console.log(`✅ Webhook processed successfully: ${processingTime}ms`);
                 
                 // Log successful processing
-                await updateSystemMetrics({
-                    webhook_requests_processed: 1,
-                    webhook_processing_time: processingTime
-                }).catch(console.error);
+                try {
+                    await updateSystemMetrics({
+                        webhook_requests_processed: 1,
+                        webhook_processing_time: processingTime
+                    });
+                } catch (metricsError) {
+                    console.log("⚠️ Metrics logging failed:", metricsError.message);
+                }
             }
             
         } catch (error) {
@@ -4516,13 +4558,21 @@ app.post("/webhook", async (req, res) => {
             console.error("❌ Webhook processing error:", error.message);
             
             // Log error for Sum Chenda's debugging
-            await updateSystemMetrics({
-                webhook_errors: 1,
-                error_processing_time: processingTime
-            }).catch(console.error);
+            try {
+                await updateSystemMetrics({
+                    webhook_errors: 1,
+                    error_processing_time: processingTime
+                });
+            } catch (metricsError) {
+                console.log("⚠️ Error metrics logging failed:", metricsError.message);
+            }
         }
     });
 });
+
+console.log("🔥 WEBHOOK FIXED: Immediate response + background processing");
+console.log("🔥 WEBHOOK FIXED: Enhanced error handling and timeout protection");
+console.log("✅ All webhook timeout issues should be resolved");
 
 // Enhanced health check endpoint with comprehensive system status
 app.get("/", (req, res) => {
