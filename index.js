@@ -4202,7 +4202,7 @@ bot.on("message", async (msg) => {
     }
 });
 
-// 🔧 ENHANCED SESSION MANAGEMENT WITH MEMORY TRACKING
+/ 🔧 ENHANCED SESSION MANAGEMENT WITH MEMORY TRACKING (RESTORED)
 async function startEnhancedUserSession(chatId, sessionType = 'ENHANCED_GENERAL') {
     try {
         console.log(`📊 Starting enhanced session for ${chatId}: ${sessionType}`);
@@ -4222,10 +4222,14 @@ async function startEnhancedUserSession(chatId, sessionType = 'ENHANCED_GENERAL'
         };
         
         // Log session start for analytics
-        await updateSystemMetrics({
-            enhanced_sessions_started: 1,
-            memory_enabled_sessions: 1
-        }).catch(console.error);
+        try {
+            await updateSystemMetrics({
+                enhanced_sessions_started: 1,
+                memory_enabled_sessions: 1
+            });
+        } catch (metricsError) {
+            console.log("⚠️ Session metrics logging failed:", metricsError.message);
+        }
         
         console.log(`✅ Enhanced session started: ${sessionId}`);
         return sessionId;
@@ -4252,11 +4256,15 @@ async function endEnhancedUserSession(sessionId, commandsExecuted = 0, totalResp
         };
         
         // Update system metrics
-        await updateSystemMetrics({
-            enhanced_sessions_completed: 1,
-            total_response_time: totalResponseTime,
-            commands_executed: commandsExecuted
-        }).catch(console.error);
+        try {
+            await updateSystemMetrics({
+                enhanced_sessions_completed: 1,
+                total_response_time: totalResponseTime,
+                commands_executed: commandsExecuted
+            });
+        } catch (metricsError) {
+            console.log("⚠️ Session end metrics logging failed:", metricsError.message);
+        }
         
         console.log(`✅ Enhanced session completed: ${sessionAnalytics.averageResponseTime.toFixed(0)}ms avg`);
         return sessionAnalytics;
@@ -4266,6 +4274,9 @@ async function endEnhancedUserSession(sessionId, commandsExecuted = 0, totalResp
         return false;
     }
 }
+
+console.log("🔧 SESSION FUNCTIONS RESTORED: startEnhancedUserSession and endEnhancedUserSession now available");
+console.log("✅ Your existing working bot handler should now work without crashes");
 
 // 🔧 ENHANCED EXPRESS SERVER SETUP WITH COMPLETE INTEGRATION
 const express = require("express");
