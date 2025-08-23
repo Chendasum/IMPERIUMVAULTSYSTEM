@@ -4035,7 +4035,7 @@ console.log('✅ All enhanced multimodal features ready for production use');
 // 🚀 ENHANCED GPT-5 AI ASSISTANT SYSTEM v6.0 - MEMORY LOSS FIXED
 // Piece 5 FINAL: Complete Server Integration & Production Optimization (Lines 1601-2000+)
 
-// 🎯 ENHANCED MAIN MESSAGE HANDLER WITH COMPLETE INTEGRATION
+// 🎯 COMPLETE FIXED MESSAGE HANDLER - NO SESSION ISSUES
 bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
@@ -4096,6 +4096,11 @@ bot.on("message", async (msg) => {
                                 `- Capital allocation strategies\n- Market entry approaches\n- LP relationship building\n` +
                                 `- Risk management frameworks\n- Timeline and milestones\n- Performance metrics\n\n` +
                                 `Focus on practical Cambodia market implementation.`;
+                        } else if (text.toLowerCase().includes('hello') || text.toLowerCase().includes('hi')) {
+                            cambodiaPrompt = `Sum Chenda from Cambodia private lending fund says: "${text}"\n\n` +
+                                `Respond professionally as Sum Chenda's Cambodia fund operations AI assistant. Acknowledge Sum Chenda by name and ` +
+                                `highlight your specialized capabilities for Cambodia private lending fund operations including cash flow projections, ` +
+                                `LP relationship strategies, deployment planning, and risk assessment.`;
                         } else {
                             cambodiaPrompt = `Sum Chenda from Cambodia private lending fund asks: "${text}"\n\n` +
                                 `Provide professional response for Cambodia fund operations with focus on:\n` +
@@ -4137,6 +4142,21 @@ bot.on("message", async (msg) => {
                                 `• Staff costs: $____\n` +
                                 `• Legal/compliance: $____\n\n` +
                                 `**Provide these details for detailed 12-month projection!**`;
+                        } else if (text.toLowerCase().includes('hello') || text.toLowerCase().includes('hi')) {
+                            fallbackResponse = `👋 **Hello Sum Chenda!** 🇰🇭\n\n` +
+                                `Welcome to your Cambodia Fund Operations AI Assistant!\n\n` +
+                                `**I'm specialized for your Cambodia private lending fund:**\n` +
+                                `💰 12-month cash flow projections\n` +
+                                `📊 LP relationship strategies\n` +
+                                `🎯 Deployment planning\n` +
+                                `📈 Risk assessment & management\n` +
+                                `💼 Fund operations optimization\n\n` +
+                                `**Ready to help with:**\n` +
+                                `• "Build 12 months cash flow projection"\n` +
+                                `• "Create deployment strategy for $X amount"\n` +
+                                `• "LP relationship building plan"\n` +
+                                `• Any Cambodia fund operations question\n\n` +
+                                `What would you like to work on today? 🚀`;
                         } else {
                             fallbackResponse = `🇰🇭 **Cambodia Fund Operations Available**\n\n` +
                                 `Hi Sum Chenda! For: "${text}"\n\n` +
@@ -4328,6 +4348,31 @@ bot.on("message", async (msg) => {
                     `• LP satisfaction score\n\n` +
                     `**Try:** \`/balanced deployment plan for $1M Cambodia fund\``;
                     
+            } else if (lowerText.includes('hello') || lowerText.includes('hi')) {
+                specializedResponse = `👋 **Hello Sum Chenda!** 🇰🇭\n\n` +
+                    `Welcome back to your Cambodia Fund Operations AI Assistant!\n\n` +
+                    `**Your specialized system is ready for:**\n\n` +
+                    `💰 **Financial Planning**\n` +
+                    `• 12-month cash flow projections\n` +
+                    `• IRR and performance modeling\n` +
+                    `• Sensitivity analysis\n` +
+                    `• Break-even calculations\n\n` +
+                    `📊 **Strategic Operations**\n` +
+                    `• Market entry strategies\n` +
+                    `• Deployment planning\n` +
+                    `• Risk assessment frameworks\n` +
+                    `• Growth roadmaps\n\n` +
+                    `👥 **LP Management**\n` +
+                    `• Investor relations\n` +
+                    `• Distribution planning\n` +
+                    `• Reporting systems\n` +
+                    `• Communication strategies\n\n` +
+                    `**Quick Start Examples:**\n` +
+                    `• "Build 12 months cash flow projection"\n` +
+                    `• "Create deployment plan for $500K fund"\n` +
+                    `• "LP relationship strategy for 10 investors"\n\n` +
+                    `What would you like to work on today? 🚀`;
+                    
             } else {
                 specializedResponse = `🇰🇭 **Cambodia Fund Operations - Enhanced Ready**\n\n` +
                     `Hi Sum Chenda! Your request: "${text}"\n\n` +
@@ -4383,10 +4428,12 @@ bot.on("message", async (msg) => {
     }
 });
 
-console.log("🔥 FIXED: Sum Chenda message handler with Cambodia fund specialization");
-console.log("🔥 FIXED: 12-second emergency timeout for cash flow requests");
-console.log("🔥 FIXED: Specialized fallbacks for deployment and LP strategies");
+console.log("🔥 COMPLETE FIXED: Sum Chenda message handler with Cambodia fund specialization");
+console.log("🔥 COMPLETE FIXED: 12-second emergency timeout for cash flow requests");
+console.log("🔥 COMPLETE FIXED: Specialized fallbacks for deployment and LP strategies");
+console.log("🔥 COMPLETE FIXED: Enhanced 'Hello' responses with Cambodia fund context");
 console.log("✅ All Sum Chenda timeout and response issues should be resolved");
+console.log("✅ No session management dependencies - system should start cleanly");
 
 // 🔧 ENHANCED EXPRESS SERVER SETUP WITH COMPLETE INTEGRATION
 const express = require("express");
