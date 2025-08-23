@@ -4202,7 +4202,7 @@ bot.on("message", async (msg) => {
     }
 });
 
-/ 🔧 ENHANCED SESSION MANAGEMENT WITH MEMORY TRACKING (RESTORED)
+// 🔧 ENHANCED SESSION MANAGEMENT WITH MEMORY TRACKING (RESTORED)
 async function startEnhancedUserSession(chatId, sessionType = 'ENHANCED_GENERAL') {
     try {
         console.log(`📊 Starting enhanced session for ${chatId}: ${sessionType}`);
