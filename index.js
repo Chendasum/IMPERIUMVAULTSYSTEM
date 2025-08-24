@@ -25,31 +25,28 @@ const cambodiaHandler = require('./handlers/cambodiaDeals');
 const lpManagement = require('./cambodia/lpManagement');
 const portfolioManager = require('./cambodia/portfolioManager');
 
-// 🚀 ENHANCED GPT-5 SYSTEM + SPEED OPTIMIZATION (Fixed Memory Integration)
+// 🚀 MAIN GPT-5 SYSTEM - Import from dualCommandSystem (your main router)
 const { 
-    getGPT5Analysis,
-    getEnhancedMarketAnalysis,
-    getEnhancedCambodiaAnalysis,
-    getEnhancedVisionAnalysis,
-    getQuickNanoResponse,
-    getQuickMiniResponse,
-    getDeepAnalysis,
-    getChatResponse,
-    testGPT5Capabilities,
-    checkGPT5SystemHealth,
-    getGPT5Metrics,
-    analyzeQueryForGPT5,
-    openai
-} = require("./utils/openaiClient");
+    executeDualCommand,              // Main function - routes to optimal GPT-5 model
+    analyzeQuery,                    // Query analysis for model selection
+    executeEnhancedGPT5Command,      // Enhanced command with auto-Telegram
+    quickNanoCommand,                // Quick GPT-5 Nano responses
+    quickMiniCommand,                // Quick GPT-5 Mini responses  
+    quickUltimateCommand,            // Quick GPT-5 Full responses
+    checkGPT5OnlySystemHealth,       // Health monitoring
+    testMemoryIntegration,           // Memory system testing
+    getCurrentCambodiaDateTime,      // Cambodia time utilities
+    getMarketIntelligence,           // Market analysis
+    getSystemAnalytics,              // System performance metrics
+    getGPT5ModelRecommendation,      // Model selection recommendations
+    getGPT5CostEstimate             // Cost estimation
+} = require("./utils/dualCommandSystem");
 
-// 🚀 ENHANCED: Speed Optimization System with Memory Integration
+// 🔧 OPTIONAL: Direct GPT-5 client access (only if you need low-level control)
 const { 
-    executeSpeedOptimizedGPT5,
-    ultraFastResponse,
-    fastResponse,
-    balancedResponse,
-    analyzeQueryForSpeed
-} = require("./utils/gpt5SpeedOptimization");
+    openai,                         // Direct OpenAI client (rarely needed)
+    testGPT5Capabilities           // GPT-5 capability testing
+} = require("./utils/openaiClient");
 
 // Enhanced utility modules (preserved and optimized)
 const { 
