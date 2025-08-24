@@ -749,7 +749,7 @@ async function checkGPT5OnlySystemHealth() {
         try {
             const options = {
                 model: model,
-                max_output_tokens: 10  // ✅ FIXED: Use max_output_tokens for Responses API
+                max_output_tokens: 20  // ✅ FIXED: Minimum is 16, using 20
             };
             
             // Add model-specific parameters
@@ -758,7 +758,7 @@ async function checkGPT5OnlySystemHealth() {
                 options.verbosity = 'low';
             } else {
                 options.temperature = 0.7;
-                options.max_tokens = 10;
+                options.max_tokens = 20;  // ✅ FIXED: Also increase for chat model
                 delete options.max_output_tokens;  // Chat API uses max_tokens
             }
             
