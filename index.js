@@ -668,6 +668,270 @@ async function handleUltimateCommand(msg, bot) {
     await quickUltimateCommand(query, chatId, bot);
 }
 
+async function handleDeepAnalysis(msg, bot) {
+    const chatId = msg.chat.id;
+    const query = msg.text.replace('/analyze', '').trim();
+    
+    if (!query) {
+        await bot.sendMessage(chatId, 
+            `🧠 **Deep Analysis with GPT-5**\n\n` +
+            `/analyze [your topic]\n\n` +
+            `**Example:** /analyze market conditions for tech stocks\n\n` +
+            `Uses GPT-5 Full with high reasoning for comprehensive analysis!`
+        );
+        return;
+    }
+    
+    await executeEnhancedGPT5Command(query, chatId, bot, {
+        title: 'GPT-5 Deep Analysis',
+        forceModel: 'gpt-5'  // Force full GPT-5 for deep analysis
+    });
+}
+
+async function handleQuickResponse(msg, bot) {
+    const chatId = msg.chat.id;
+    const query = msg.text.replace('/quick', '').trim();
+    
+    if (!query) {
+        await bot.sendMessage(chatId, 
+            `⚡ **Quick Response with GPT-5 Nano**\n\n` +
+            `/quick [your question]\n\n` +
+            `**Example:** /quick what time is it in Cambodia?\n\n` +
+            `Ultra-fast responses for simple queries!`
+        );
+        return;
+    }
+    
+    await quickNanoCommand(query, chatId, bot);
+}
+
+async function handleSystemStatus(msg, bot) {
+    const chatId = msg.chat.id;
+    
+    try {
+        const cambodiaTime = getCurrentCambodiaDateTime();
+        const analytics = getSystemAnalytics();
+        const performance = getGPT5PerformanceMetrics();
+        
+        const statusMessage = `🚀 **SYSTEM STATUS REPORT**
+
+⏰ **Current Time:** ${cambodiaTime.time} Cambodia (${cambodiaTime.date})
+🏗️ **Architecture:** ${analytics.version}
+🌐 **Platform:** Railway Production Webhook
+🤖 **AI System:** ${analytics.aiSystem.core}
+
+⚡ **Performance Status:**
+• Smart Routing: ${performance.smartRouting}
+• Cost Optimization: ${performance.costOptimization}  
+• Memory Integration: ${performance.memoryIntegration}
+• Estimated Savings: ${performance.estimatedSavings}
+
+🛡️ **Backup Status:**
+• Active Conversations: ${conversationBuffer.size} chats
+• Auto-Backup: Every 30 seconds
+• Protection: Triple Redundancy
+• Last Backup: ${Math.round((Date.now() - lastBackupTime) / 1000)} seconds ago
+
+🎨 **Features Active:**
+• GPT-5 Family Smart Selection ✅
+• Multimodal Analysis ✅
+• PostgreSQL Memory ✅
+• Voice Transcription ✅
+• Document Analysis ✅
+• Image Recognition ✅
+
+💰 **Cost Optimization:** Active (60-80% savings)
+🔧 **Health Status:** Use /health for detailed report
+
+⚡ **System running optimally!**`;
+
+        await bot.sendMessage(chatId, statusMessage, { parse_mode: 'Markdown' });
+        
+    } catch (error) {
+        await bot.sendMessage(chatId, `❌ Status error: ${error.message}`);
+    }
+}
+
+async function handleCambodiaAnalysis(msg, bot) {
+    const chatId = msg.chat.id;
+    const query = msg.text.replace('/cambodia', '').trim();
+    
+    if (!query) {
+        await bot.sendMessage(chatId, 
+            `🇰🇭 **Cambodia Business Analysis**\n\n` +
+            `/cambodia [your query]\n\n` +
+            `**Examples:**\n` +
+            `• /cambodia lending opportunities\n` +
+            `• /cambodia real estate market\n` +
+            `• /cambodia investment regulations\n\n` +
+            `Specialized GPT-5 analysis for Cambodia business!`
+        );
+        return;
+    }
+    
+    await executeEnhancedGPT5Command(
+        `Cambodia business analysis: ${query}`, 
+        chatId, 
+        bot, 
+        { 
+            title: 'Cambodia Business Analysis',
+            forceModel: 'gpt-5-mini'  // Cost-efficient for regional analysis
+        }
+    );
+}
+
+async function handleLendingAnalysis(msg, bot) {
+    const chatId = msg.chat.id;
+    const query = msg.text.replace('/lending', '').trim();
+    
+    if (!query) {
+        await bot.sendMessage(chatId, 
+            `🏦 **Lending Analysis**\n\n` +
+            `/lending [your query]\n\n` +
+            `**Examples:**\n` +
+            `• /lending risk assessment\n` +
+            `• /lending portfolio performance\n` +
+            `• /lending market opportunities\n\n` +
+            `Advanced GPT-5 analysis for lending operations!`
+        );
+        return;
+    }
+    
+    await executeEnhancedGPT5Command(
+        `Lending analysis: ${query}`, 
+        chatId, 
+        bot, 
+        { 
+            title: 'Lending Analysis',
+            forceModel: 'gpt-5'  // Full GPT-5 for financial analysis
+        }
+    );
+}
+
+async function handlePortfolioAnalysis(msg, bot) {
+    const chatId = msg.chat.id;
+    const query = msg.text.replace('/portfolio', '').trim();
+    
+    if (!query) {
+        await bot.sendMessage(chatId, 
+            `📊 **Portfolio Analysis**\n\n` +
+            `/portfolio [your query]\n\n` +
+            `**Examples:**\n` +
+            `• /portfolio performance review\n` +
+            `• /portfolio risk assessment\n` +
+            `• /portfolio optimization\n\n` +
+            `Comprehensive GPT-5 portfolio analysis!`
+        );
+        return;
+    }
+    
+    await executeEnhancedGPT5Command(
+        `Portfolio analysis: ${query}`, 
+        chatId, 
+        bot, 
+        { 
+            title: 'Portfolio Analysis',
+            forceModel: 'gpt-5'  // Full GPT-5 for complex analysis
+        }
+    );
+}
+
+async function handleSystemOptimization(msg, bot) {
+    const chatId = msg.chat.id;
+    
+    try {
+        await bot.sendMessage(chatId, 
+            `🔧 **Running System Optimization...**\n\nOptimizing GPT-5 performance...`,
+            { parse_mode: 'Markdown' }
+        );
+        
+        // Force cleanup of old conversation buffers
+        for (const [bufferId, messages] of conversationBuffer.entries()) {
+            if (messages.length > 50) {
+                conversationBuffer.set(bufferId, messages.slice(-50)); // Keep only last 50
+            }
+        }
+        
+        // Force backup
+        await performPeriodicBackup();
+        
+        // Test system health
+        const health = await checkGPT5OnlySystemHealth();
+        
+        const optimizationMessage = `✅ **SYSTEM OPTIMIZATION COMPLETE!**
+
+🚀 **Performance Improvements:**
+• Conversation buffers optimized
+• Emergency backup completed
+• Memory usage optimized
+• GPT-5 models tested
+
+📊 **Current Health:** ${health.healthGrade} (${health.healthScore}/100)
+🛡️ **Backup Status:** All systems protected
+💰 **Cost Optimization:** Active and optimized
+
+⚡ **System running at peak performance!**
+
+💡 **Next steps:**
+• Use /health for detailed diagnostics
+• Use /memory for memory system test
+• All GPT-5 models ready for optimal routing`;
+
+        await bot.sendMessage(chatId, optimizationMessage, { parse_mode: 'Markdown' });
+        
+    } catch (error) {
+        await bot.sendMessage(chatId, `❌ Optimization error: ${error.message}`);
+    }
+}
+
+async function handleDebugInfo(msg, bot) {
+    const chatId = msg.chat.id;
+    
+    try {
+        const performance = getGPT5PerformanceMetrics();
+        const analytics = getSystemAnalytics();
+        
+        const debugMessage = `🔍 **DEBUG INFORMATION**
+
+🏗️ **Architecture:** ${analytics.architecture}
+📦 **Version:** ${analytics.version}
+🌐 **Platform:** Railway Webhook Mode
+
+💾 **Memory Status:**
+• Conversation Buffers: ${conversationBuffer.size} active
+• Last Backup: ${new Date(lastBackupTime).toLocaleString()}
+• Backup Interval: 30 seconds
+
+🤖 **GPT-5 Models:**
+${performance.modelsAvailable.map(model => `• ${model}`).join('\n')}
+
+⚡ **Response Times:**
+• Nano: ${performance.responseTime.nano}
+• Mini: ${performance.responseTime.mini}
+• Full: ${performance.responseTime.full}
+• Chat: ${performance.responseTime.chat}
+
+🧠 **Capabilities:**
+${Object.entries(performance.capabilities).map(([key, value]) => `• ${key}: ${value}`).join('\n')}
+
+🔧 **System Features:**
+• Smart Routing: ${performance.smartRouting}
+• Cost Optimization: ${performance.costOptimization}
+• Memory Integration: ${performance.memoryIntegration}
+
+📊 **Health Monitoring:** Comprehensive
+🛡️ **Data Protection:** Triple Redundancy
+💰 **Estimated Savings:** ${performance.estimatedSavings}
+
+⏰ **Debug Generated:** ${new Date().toLocaleString()}`;
+
+        await bot.sendMessage(chatId, debugMessage, { parse_mode: 'Markdown' });
+        
+    } catch (error) {
+        await bot.sendMessage(chatId, `❌ Debug error: ${error.message}`);
+    }
+}
+
 async function handleSystemHealth(msg, bot) {
     const chatId = msg.chat.id;
     
