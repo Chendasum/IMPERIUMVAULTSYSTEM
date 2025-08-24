@@ -377,7 +377,8 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
         if (queryAnalysis.gpt5Model !== 'gpt-5-chat-latest') {
             if (queryAnalysis.reasoning_effort) options.reasoning_effort = queryAnalysis.reasoning_effort;
             if (queryAnalysis.verbosity) options.verbosity = queryAnalysis.verbosity;
-            if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+            // ✅ FIXED: Use max_output_tokens for Responses API
+            if (queryAnalysis.max_completion_tokens) options.max_output_tokens = queryAnalysis.max_completion_tokens;
         } else {
             // For chat model
             if (queryAnalysis.temperature) options.temperature = queryAnalysis.temperature;
@@ -436,7 +437,7 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context = null) {
             model: 'gpt-5-nano',
             reasoning_effort: 'minimal',
             verbosity: 'low',
-            max_completion_tokens: 1500
+            max_output_tokens: 1500  // ✅ FIXED: Use max_output_tokens
         });
         
     } catch (fallbackError) {
@@ -748,7 +749,7 @@ async function checkGPT5OnlySystemHealth() {
         try {
             const options = {
                 model: model,
-                max_completion_tokens: 10
+                max_output_tokens: 10  // ✅ FIXED: Use max_output_tokens for Responses API
             };
             
             // Add model-specific parameters
@@ -758,7 +759,7 @@ async function checkGPT5OnlySystemHealth() {
             } else {
                 options.temperature = 0.7;
                 options.max_tokens = 10;
-                delete options.max_completion_tokens;
+                delete options.max_output_tokens;  // Chat API uses max_tokens
             }
             
             await openaiClient.getGPT5Analysis('Health check test', options);
@@ -917,7 +918,7 @@ async function getMarketIntelligence(chatId = null) {
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_completion_tokens: 2000
+            max_output_tokens: 2000  // ✅ FIXED: Use max_output_tokens
         });
         
     } catch (error) {
@@ -929,7 +930,7 @@ async function getMarketIntelligence(chatId = null) {
                 model: 'gpt-5-nano',
                 reasoning_effort: 'minimal',
                 verbosity: 'low',
-                max_completion_tokens: 1000
+                max_output_tokens: 1000  // ✅ FIXED: Use max_output_tokens
             });
         } catch (fallbackError) {
             return 'Market intelligence temporarily unavailable - GPT-5 system experiencing issues';
