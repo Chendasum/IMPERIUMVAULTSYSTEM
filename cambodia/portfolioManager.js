@@ -1,7 +1,7 @@
 // cambodia/portfolioManager.js - COMPLETE Portfolio Management System for Cambodia Fund
 // Professional fund portfolio tracking, performance monitoring, and risk management
 
-const { executeSpeedOptimizedGPT5 } = require('../utils/gpt5SpeedOptimization');
+const { executeDualCommand } = require('../utils/dualCommandSystem');
 const { sendSmartMessage } = require('../utils/telegramSplitter');
 
 // 📊 PORTFOLIO CONFIGURATION
