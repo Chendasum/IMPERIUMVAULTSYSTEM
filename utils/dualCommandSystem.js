@@ -246,7 +246,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         model: 'gpt-5-mini',
         reasoning_effort: 'medium',
         verbosity: 'medium',
-        max_completion_tokens: 4000,        // ✅ INCREASED from 3000
+        max_completion_tokens: 8000,        // ✅ INCREASED from 4000
         temperature: 0.7,
         priority: 'standard',
         reason: 'GPT-5 Mini - Balanced performance'
@@ -258,7 +258,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5-nano',
             reasoning_effort: 'minimal',
             verbosity: 'low',
-            max_completion_tokens: 2000,    // ✅ INCREASED from 1200
+            max_completion_tokens: 6000,    // ✅ INCREASED from 2000
             priority: 'speed',
             reason: 'Speed critical - GPT-5 Nano for fast response'
         };
@@ -269,7 +269,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         gpt5Config = {
             model: 'gpt-5-chat-latest',
             temperature: 0.7,
-            max_tokens: 3000,               // ✅ INCREASED from 1000
+            max_tokens: 8000,               // ✅ INCREASED from 3000
             priority: 'chat',
             reason: 'Chat pattern - GPT-5 Chat model'
         };
@@ -281,7 +281,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5',
             reasoning_effort: 'high',
             verbosity: 'high',
-            max_completion_tokens: 6000,    // ✅ INCREASED from 4000
+            max_completion_tokens: 16000,    // ✅ INCREASED from 6000
             temperature: 0.6,
             priority: 'complex',
             reason: 'Complex strategic analysis - Full GPT-5 with high reasoning'
@@ -294,7 +294,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5',
             reasoning_effort: 'high',
             verbosity: 'medium',
-            max_completion_tokens: 5000,    // ✅ INCREASED from 4000
+            max_completion_tokens: 12000,    // ✅ INCREASED from 5000
             temperature: 0.3,
             priority: 'mathematical',
             reason: 'Mathematical/coding precision - Full GPT-5 with high reasoning'
@@ -307,7 +307,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'high',
-            max_completion_tokens: 4500,    // ✅ INCREASED from 3000
+            max_completion_tokens: 10000,    // ✅ INCREASED from 4500
             temperature: 0.6,
             priority: 'regional',
             reason: 'Cambodia/regional analysis - GPT-5 Mini with detailed output'
@@ -320,7 +320,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_completion_tokens: 4000,    // ✅ INCREASED from 2500
+            max_completion_tokens: 8000,    // ✅ INCREASED from 4000
             temperature: 0.6,
             priority: 'market',
             reason: 'Market analysis - GPT-5 Mini for balanced performance'
@@ -333,7 +333,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_completion_tokens: 4500,    // ✅ INCREASED from 3000
+            max_completion_tokens: 10000,    // ✅ INCREASED from 4500
             temperature: 0.7,
             priority: 'multimodal',
             reason: 'Multimodal content - Full GPT-5 for vision analysis'
@@ -346,13 +346,13 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     
     // Scale tokens based on input length
     if (queryLength > 1000) {
-        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.5, 8000);
+        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.5, 16000);  // ✅ INCREASED max from 8000
         gpt5Config.reason += ' (Scaled for long input)';
     }
     
     // Scale tokens based on complexity indicators
     if (queryComplexity.isVeryComplex) {
-        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.3, 8000);
+        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.3, 16000);  // ✅ INCREASED max from 8000
         gpt5Config.reason += ' (Scaled for complexity)';
     }
     
@@ -365,8 +365,8 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     ];
     
     if (longResponsePatterns.some(pattern => pattern.test(message))) {
-        gpt5Config.max_completion_tokens = 8000;  // Maximum allowed
-        if (gpt5Config.max_tokens) gpt5Config.max_tokens = 8000;
+        gpt5Config.max_completion_tokens = 16000;  // ✅ INCREASED maximum allowed from 8000
+        if (gpt5Config.max_tokens) gpt5Config.max_tokens = 16000;  // ✅ INCREASED from 8000
         gpt5Config.reason += ' (Long response requested)';
     }
     
@@ -521,7 +521,7 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context = null) {
             model: 'gpt-5-nano',
             reasoning_effort: 'minimal',
             verbosity: 'low',
-            max_output_tokens: 3000  // ✅ INCREASED from 1500 for better fallback responses
+            max_output_tokens: 8000  // ✅ INCREASED from 3000 for better fallback responses
         });
         
     } catch (fallbackError) {
@@ -1002,7 +1002,7 @@ async function getMarketIntelligence(chatId = null) {
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_output_tokens: 2000  // ✅ FIXED: Use max_output_tokens
+            max_output_tokens: 8000  // ✅ INCREASED from 2000
         });
         
     } catch (error) {
@@ -1014,7 +1014,7 @@ async function getMarketIntelligence(chatId = null) {
                 model: 'gpt-5-nano',
                 reasoning_effort: 'minimal',
                 verbosity: 'low',
-                max_output_tokens: 1000  // ✅ FIXED: Use max_output_tokens
+                max_output_tokens: 6000  // ✅ INCREASED from 1000
             });
         } catch (fallbackError) {
             return 'Market intelligence temporarily unavailable - GPT-5 system experiencing issues';
