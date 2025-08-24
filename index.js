@@ -132,7 +132,6 @@ const {
     getCambodiaDealsBy,
     
     // Analytics and monitoring
-    getSystemAnalytics,
     getRayDalioStats,
     performHealthCheck,
     updateSystemMetrics,
