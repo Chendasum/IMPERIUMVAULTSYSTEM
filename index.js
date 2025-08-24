@@ -284,44 +284,6 @@ async function testDatabaseFunctions() {
     }
 }
 
-// NEW: Test memory integration specifically for business requests
-async function testMemoryIntegration() {
-    try {
-        console.log("🧠 Testing memory integration for business requests...");
-        
-        // Test business request detection
-        const testBusinessRequests = [
-            "Draft short term deployment plan for me $30K for 3 months",
-            "Create cash flow plan",
-            "Scale my business",
-            "LP relationship strategy"
-        ];
-        
-        let businessDetectionWorking = 0;
-        testBusinessRequests.forEach(request => {
-            if (isBusinessRequest(request)) {
-                businessDetectionWorking++;
-                console.log(`✅ Business detection: "${request.substring(0, 30)}..." - DETECTED`);
-            } else {
-                console.log(`❌ Business detection: "${request.substring(0, 30)}..." - MISSED`);
-            }
-        });
-        
-        console.log(`🎯 Business detection score: ${businessDetectionWorking}/${testBusinessRequests.length}`);
-        
-        if (businessDetectionWorking >= testBusinessRequests.length * 0.8) {
-            console.log("✅ Memory integration for business requests: WORKING");
-        } else {
-            console.log("⚠️ Memory integration for business requests: NEEDS ATTENTION");
-        }
-        
-        return true;
-    } catch (error) {
-        console.error("❌ Memory integration test failed:", error.message);
-        return false;
-    }
-}
-
 // Initialize daily metrics (preserved)
 async function initializeDailyMetrics() {
     try {
