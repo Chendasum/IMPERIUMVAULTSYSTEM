@@ -44,7 +44,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 
-// Health check endpoint
+// Health check endpoint (Railway expects this)
 app.get('/', (req, res) => {
     res.json({
         status: 'IMPERIUM VAULT GPT-5 System Online',
@@ -57,6 +57,44 @@ app.get('/', (req, res) => {
         ai_system: 'GPT-5 Only (Optimized)',
         memory_integration: 'PostgreSQL Active',
         cost_optimization: '60-80% savings vs dual AI system'
+    });
+});
+
+// Railway health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'healthy',
+        service: 'IMPERIUM VAULT GPT-5 System',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        memory: {
+            used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
+            total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB'
+        },
+        platform: 'Railway',
+        mode: 'production',
+        ai_system: 'GPT-5 Family',
+        backup_system: 'Triple Redundancy Active',
+        conversation_buffers: conversationBuffer.size,
+        last_backup: new Date(lastBackupTime).toISOString()
+    });
+});
+
+// Additional health endpoints for monitoring
+app.get('/status', (req, res) => {
+    res.json({
+        healthy: true,
+        service: 'GPT-5 System',
+        version: '5.0',
+        environment: 'production'
+    });
+});
+
+app.get('/ping', (req, res) => {
+    res.json({ 
+        pong: true, 
+        timestamp: new Date().toISOString(),
+        service: 'IMPERIUM VAULT'
     });
 });
 
