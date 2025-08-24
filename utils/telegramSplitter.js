@@ -1,461 +1,281 @@
-// utils/telegramSplitter.js - UPDATED for GPT-5 + Speed + Memory System
-// Professional message handling with GPT-5 optimization and memory integration
+// utils/telegramSplitter.js - REWRITTEN: GPT-5 Optimized Professional Message Handler
+// Enterprise-grade Telegram message handling with GPT-5 intelligence and memory integration
 
-const TELEGRAM_LIMITS = {
-    MAX_MESSAGE_LENGTH: 4096,          // Telegram's hard limit
-    SAFE_MESSAGE_LENGTH: 4000,         // Safe limit with buffer
-    MAX_CAPTION_LENGTH: 1024,          // For media captions
-    OPTIMAL_CHUNK_SIZE: 3800,          // Optimal chunk size
-    MAX_CHUNKS_PER_MESSAGE: 15,        // Prevent spam
-    MESSAGE_DELAY_MS: 800,             // Reduced for speed (was 1000)
-    PRIORITY_DELAY_MS: 400,            // Faster for urgent messages (was 500)
-    SPEED_DELAY_MS: 200                // NEW: Ultra-fast for speed responses
+const TELEGRAM_CONFIG = {
+    // Message limits
+    MAX_MESSAGE_LENGTH: 4096,
+    SAFE_MESSAGE_LENGTH: 4000,
+    OPTIMAL_CHUNK_SIZE: 3800,
+    MAX_CAPTION_LENGTH: 1024,
+    MAX_CHUNKS_LIMIT: 10,
+    
+    // Performance optimized delays
+    ULTRA_FAST_DELAY: 150,     // GPT-5 Nano responses
+    FAST_DELAY: 300,           // GPT-5 Mini responses  
+    STANDARD_DELAY: 600,       // GPT-5 Full responses
+    ERROR_DELAY: 100           // Error messages
 };
 
-// 🚀 ENHANCED MESSAGE TYPES with GPT-5 + Speed + Memory Support
-const MESSAGE_TYPES = {
-    // Original types
-    'general': { emoji: '💬', priority: 'normal', delay: 'normal' },
-    'analysis': { emoji: '📊', priority: 'high', delay: 'normal' },
-    'cambodia': { emoji: '🇰🇭', priority: 'high', delay: 'normal' },
-    'market': { emoji: '📈', priority: 'high', delay: 'normal' },
-    'portfolio': { emoji: '💼', priority: 'high', delay: 'normal' },
-    'alert': { emoji: '🚨', priority: 'urgent', delay: 'priority' },
-    'regime': { emoji: '🏛️', priority: 'high', delay: 'normal' },
-    'anomaly': { emoji: '⚠️', priority: 'urgent', delay: 'priority' },
-    
-    // 🚀 GPT-5 SPECIFIC TYPES
-    'gpt5_response': { emoji: '🚀', priority: 'high', delay: 'normal' },
-    'gpt5_nano': { emoji: '⚡', priority: 'urgent', delay: 'speed' },
-    'gpt5_mini': { emoji: '🔥', priority: 'high', delay: 'priority' },
-    'gpt5_full': { emoji: '🧠', priority: 'high', delay: 'normal' },
-    'gpt5_chat': { emoji: '💬', priority: 'high', delay: 'normal' },
-    
-    // ⚡ SPEED OPTIMIZATION TYPES
-    'speed_ultra': { emoji: '⚡', priority: 'urgent', delay: 'speed' },
-    'speed_fast': { emoji: '🚀', priority: 'urgent', delay: 'speed' },
-    'speed_balanced': { emoji: '⚖️', priority: 'high', delay: 'priority' },
-    
-    // 🧠 MEMORY INTEGRATION TYPES
-    'memory_response': { emoji: '🧠', priority: 'high', delay: 'normal' },
-    'memory_recall': { emoji: '💭', priority: 'high', delay: 'priority' },
-    'memory_analysis': { emoji: '🔍', priority: 'high', delay: 'normal' },
-    
-    // 🎯 STRATEGIC TYPES
-    'strategic': { emoji: '🎯', priority: 'high', delay: 'normal' },
-    'dual_ai': { emoji: '🔄', priority: 'urgent', delay: 'priority' },
-    'fallback': { emoji: '🔄', priority: 'normal', delay: 'normal' },
-    'error': { emoji: '❌', priority: 'urgent', delay: 'speed' }
+// 🚀 GPT-5 MESSAGE TYPES with Smart Routing
+const GPT5_MESSAGE_TYPES = {
+    'nano': { 
+        emoji: '⚡', 
+        delay: TELEGRAM_CONFIG.ULTRA_FAST_DELAY,
+        priority: 'ultra_fast',
+        description: 'Speed Critical'
+    },
+    'mini': { 
+        emoji: '🔥', 
+        delay: TELEGRAM_CONFIG.FAST_DELAY,
+        priority: 'fast',
+        description: 'Balanced Performance'
+    },
+    'full': { 
+        emoji: '🧠', 
+        delay: TELEGRAM_CONFIG.STANDARD_DELAY,
+        priority: 'intelligent',
+        description: 'Maximum Intelligence'
+    },
+    'chat': { 
+        emoji: '💬', 
+        delay: TELEGRAM_CONFIG.FAST_DELAY,
+        priority: 'conversational',
+        description: 'Natural Chat'
+    },
+    'analysis': { 
+        emoji: '📊', 
+        delay: TELEGRAM_CONFIG.STANDARD_DELAY,
+        priority: 'analytical',
+        description: 'Deep Analysis'
+    },
+    'memory': { 
+        emoji: '🧠', 
+        delay: TELEGRAM_CONFIG.STANDARD_DELAY,
+        priority: 'contextual',
+        description: 'Memory Enhanced'
+    },
+    'multimodal': { 
+        emoji: '🎨', 
+        delay: TELEGRAM_CONFIG.STANDARD_DELAY,
+        priority: 'creative',
+        description: 'Vision & Audio'
+    },
+    'error': { 
+        emoji: '❌', 
+        delay: TELEGRAM_CONFIG.ERROR_DELAY,
+        priority: 'urgent',
+        description: 'System Error'
+    }
 };
 
 /**
- * 🎯 Enhanced smart emoji selection with GPT-5 awareness
+ * 🎯 Smart GPT-5 Model Detection
  */
-function getSmartEmoji(message, aiModel = null, options = {}) {
-    const text = message.toLowerCase();
+function detectGPT5Model(aiUsed, modelUsed) {
+    if (!aiUsed && !modelUsed) return 'general';
     
-    // GPT-5 Model-specific emojis
-    if (aiModel) {
-        if (aiModel.includes('gpt-5-nano') || options.speedOptimized) return '⚡';
-        if (aiModel.includes('gpt-5-mini')) return '🔥';
-        if (aiModel.includes('gpt-5') && !aiModel.includes('mini')) return '🧠';
-        if (aiModel.includes('gpt-5-chat')) return '💬';
-        if (aiModel.includes('claude')) return '⚡';
-        if (aiModel.includes('dual')) return '🔄';
-    }
+    const model = (modelUsed || aiUsed || '').toLowerCase();
     
-    // Speed indicators
-    if (text.includes('ultra-fast') || text.includes('speed') || options.isUltraFast) return '⚡';
-    if (text.includes('quick') || text.includes('fast') || options.isFast) return '🚀';
-    if (text.includes('balanced') || options.isBalanced) return '⚖️';
+    if (model.includes('nano')) return 'nano';
+    if (model.includes('mini')) return 'mini'; 
+    if (model.includes('chat')) return 'chat';
+    if (model.includes('gpt-5') || model.includes('gpt5')) return 'full';
+    if (model.includes('multimodal') || model.includes('vision')) return 'multimodal';
+    if (model.includes('error') || model.includes('fallback')) return 'error';
     
-    // Memory indicators
-    if (text.includes('remember') || text.includes('memory') || text.includes('recall')) return '🧠';
-    if (text.includes('my name') || text.includes('what is my')) return '💭';
-    if (text.includes('context') || text.includes('conversation history')) return '🔍';
-    
-    // Content-based emoji selection (existing logic)
-    if (text.includes('cambodia') || text.includes('phnom penh')) return '🇰🇭';
-    if (text.includes('market') || text.includes('trading') || text.includes('stocks')) return '📈';
-    if (text.includes('portfolio') || text.includes('fund') || text.includes('investment')) return '💼';
-    if (text.includes('risk') || text.includes('alert') || text.includes('warning')) return '🚨';
-    if (text.includes('analysis') || text.includes('strategic') || text.includes('framework')) return '📊';
-    if (text.includes('regime') || text.includes('economic') || text.includes('monetary')) return '🏛️';
-    if (text.includes('anomaly') || text.includes('unusual') || text.includes('detected')) return '⚠️';
-    if (text.includes('error') || text.includes('failed') || text.includes('problem')) return '❌';
-    
-    return '💬'; // Default
+    return 'analysis';
 }
 
 /**
- * 🧹 Enhanced response cleaning with GPT-5 optimization
+ * 🧹 Enhanced Message Cleaning with GPT-5 Optimization
  */
-function cleanResponse(text) {
-    if (!text || typeof text !== 'string') {
-        return '';
-    }
+function cleanGPT5Response(text) {
+    if (!text || typeof text !== 'string') return '';
     
     return text
-        // Clean up markdown formatting for Telegram
-        .replace(/\*\*(.*?)\*\*/g, '*$1*')      // Convert **bold** to *bold* for Telegram
-        .replace(/^\s*[-*+]\s+/gm, '• ')        // Clean bullet points
-        .replace(/^#{1,6}\s+(.*)$/gm, '*$1*')   // Convert headers to bold
+        // Clean GPT-5 system artifacts
+        .replace(/\[reasoning_effort:\s*\w+\]/gi, '')
+        .replace(/\[verbosity:\s*\w+\]/gi, '')
+        .replace(/\[model:\s*gpt-5[^\]]*\]/gi, '')
+        .replace(/\(confidence:\s*\d+%\)/gi, '')
+        .replace(/\(GPT-5[^)]*processing[^)]*\)/gi, '')
         
-        // GPT-5 specific optimizations
-        .replace(/```(\w+)?\n([\s\S]*?)\n```/g, '`$2`')  // Simplify code blocks
-        .replace(/\[reasoning\]|\[analysis\]|\[context\]/gi, '') // Remove GPT-5 markers
-        .replace(/\(confidence:\s*\d+%\)/gi, '') // Remove confidence indicators
-        .replace(/\(GPT-5[^)]*\)/gi, '')        // Remove GPT-5 system messages
-        .replace(/\(reasoning_effort[^)]*\)/gi, '') // Remove reasoning effort indicators
-        .replace(/\(verbosity[^)]*\)/gi, '')    // Remove verbosity indicators
+        // Optimize markdown for Telegram
+        .replace(/\*\*(.*?)\*\*/g, '*$1*')
+        .replace(/^#{1,6}\s+(.*)$/gm, '*$1*')
+        .replace(/```[\w]*\n?([\s\S]*?)\n?```/g, '`$1`')
         
-        // Memory system optimizations
-        .replace(/\[MEMORY CONTEXT:\]/gi, '🧠 *Memory Context:*') // Format memory headers
-        .replace(/\[USER PROFILE:\]/gi, '👤 *User Profile:*')     // Format profile headers
-        .replace(/\[PERSISTENT MEMORIES:\]/gi, '💭 *Remembered:*') // Format memory sections
+        // Format memory context markers
+        .replace(/\[MEMORY CONTEXT\]/gi, '🧠 *Memory Context*')
+        .replace(/\[USER PROFILE\]/gi, '👤 *User Profile*')
+        .replace(/\[PERSISTENT FACTS\]/gi, '💭 *Key Facts*')
         
-        // Speed optimization indicators
-        .replace(/\(Ultra-Fast GPT-5[^)]*\)/gi, '⚡') // Convert speed indicators to emojis
-        .replace(/\(Fast GPT-5[^)]*\)/gi, '🚀')      // Convert speed indicators to emojis
-        .replace(/\(Balanced GPT-5[^)]*\)/gi, '⚖️')   // Convert speed indicators to emojis
-        
-        // Clean up excessive spacing
-        .replace(/\n{3,}/g, '\n\n')             // Max 2 line breaks
-        .replace(/^\s+|\s+$/g, '')              // Trim whitespace
+        // Clean excessive spacing
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/^\s+|\s+$/g, '')
         .trim();
 }
 
 /**
- * 🏷️ Enhanced metadata builder with GPT-5 + Speed + Memory support
+ * 💎 Premium Metadata Builder for GPT-5 Responses
  */
-function buildMessageMetadata(options) {
+function buildGPT5Metadata(options = {}) {
     const metadata = [];
     
-    // GPT-5 Model information
-    if (options.aiModel) {
-        let aiName = options.aiModel;
+    // AI Model Information
+    if (options.aiUsed || options.modelUsed) {
+        let modelDisplay = options.modelUsed || options.aiUsed;
         
-        // Standardize GPT-5 model names
-        if (aiName.includes('gpt-5-nano')) aiName = 'GPT-5 Nano';
-        else if (aiName.includes('gpt-5-mini')) aiName = 'GPT-5 Mini';
-        else if (aiName.includes('gpt-5-chat')) aiName = 'GPT-5 Chat';
-        else if (aiName.includes('gpt-5')) aiName = 'GPT-5';
-        else if (aiName.includes('claude')) aiName = 'Claude';
-        else if (aiName.includes('dual')) aiName = 'Dual AI';
+        // Beautify model names
+        if (modelDisplay.includes('gpt-5-nano')) modelDisplay = 'GPT-5 Nano';
+        else if (modelDisplay.includes('gpt-5-mini')) modelDisplay = 'GPT-5 Mini';
+        else if (modelDisplay.includes('gpt-5-chat')) modelDisplay = 'GPT-5 Chat';
+        else if (modelDisplay.includes('gpt-5')) modelDisplay = 'GPT-5';
+        else if (modelDisplay.includes('claude')) modelDisplay = 'Claude';
         
-        metadata.push(`*AI:* ${aiName}`);
+        metadata.push(`AI: *${modelDisplay}*`);
     }
     
-    // Speed optimization information
-    if (options.speedOptimized) {
-        if (options.isUltraFast) metadata.push(`*Mode:* ⚡ Ultra-Fast`);
-        else if (options.isFast) metadata.push(`*Mode:* 🚀 Fast`);
-        else if (options.isBalanced) metadata.push(`*Mode:* ⚖️ Balanced`);
-        else metadata.push(`*Mode:* 🚀 Optimized`);
-    }
-    
-    // Memory information
-    if (options.memoryUsed) {
-        metadata.push(`*Memory:* 🧠 Active`);
-    }
-    
-    // Response time (only show if significant)
+    // Response Time with Smart Icons
     if (options.responseTime && options.responseTime > 1000) {
         const seconds = Math.round(options.responseTime / 1000);
-        if (seconds <= 3) {
-            metadata.push(`*Time:* ⚡ ${seconds}s`);
-        } else if (seconds <= 10) {
-            metadata.push(`*Time:* 🚀 ${seconds}s`);
-        } else {
-            metadata.push(`*Time:* ${seconds}s`);
-        }
+        let timeIcon = '⏱️';
+        
+        if (seconds <= 3) timeIcon = '⚡';
+        else if (seconds <= 10) timeIcon = '🚀';
+        else if (seconds <= 30) timeIcon = '⏳';
+        else timeIcon = '🐢';
+        
+        metadata.push(`Time: *${timeIcon} ${seconds}s*`);
     }
     
-    // Context information
-    if (options.contextUsed) {
-        metadata.push(`*Context:* ✅ Enhanced`);
+    // Memory Context Status
+    if (options.contextUsed || options.memoryUsed) {
+        metadata.push(`Context: *🧠 Enhanced*`);
     }
     
-    // Reasoning effort (GPT-5 specific)
-    if (options.reasoning_effort) {
-        const effort = options.reasoning_effort;
-        if (effort === 'minimal') metadata.push(`*Reasoning:* ⚡ Minimal`);
-        else if (effort === 'low') metadata.push(`*Reasoning:* 🚀 Low`);
-        else if (effort === 'medium') metadata.push(`*Reasoning:* ⚖️ Medium`);
-        else if (effort === 'high') metadata.push(`*Reasoning:* 🧠 High`);
+    // Cost Tier with Premium Styling
+    if (options.costTier || options.cost_tier) {
+        const tier = options.costTier || options.cost_tier;
+        
+        if (tier === 'economy') metadata.push(`Cost: *💚 Economy*`);
+        else if (tier === 'standard') metadata.push(`Cost: *💙 Standard*`);
+        else if (tier === 'premium') metadata.push(`Cost: *💎 Premium*`);
     }
     
-    // Complexity score (Speed system specific)
-    if (options.complexityScore !== undefined) {
-        if (options.complexityScore === 0) metadata.push(`*Complexity:* ⚡ Simple`);
-        else if (options.complexityScore <= 2) metadata.push(`*Complexity:* 🚀 Medium`);
-        else metadata.push(`*Complexity:* 🧠 Complex`);
-    }
-    
-    // Cost tier information
-    if (options.costTier) {
-        if (options.costTier === 'economy') metadata.push(`*Cost:* 💰 Economy`);
-        else if (options.costTier === 'standard') metadata.push(`*Cost:* 💰💰 Standard`);
-        else if (options.costTier === 'premium') metadata.push(`*Cost:* 💰💰💰 Premium`);
-    }
-    
-    // Token count (only show if significant)
-    if (options.tokens && options.tokens > 1000) {
-        metadata.push(`*Tokens:* ${Math.round(options.tokens / 1000)}k`);
+    // Power Mode Information
+    if (options.powerMode) {
+        const mode = options.powerMode.replace('GPT5_', '').toLowerCase();
+        const modeEmojis = {
+            'speed': '⚡',
+            'complex': '🧠',
+            'multimodal': '🎨',
+            'mathematical': '🔢',
+            'chat': '💬'
+        };
+        
+        const emoji = modeEmojis[mode] || '🎯';
+        metadata.push(`Mode: *${emoji} ${mode.charAt(0).toUpperCase() + mode.slice(1)}*`);
     }
     
     return metadata.length > 0 ? metadata.join(' • ') : null;
 }
 
 /**
- * 📱 MAIN Enhanced smart message sender with GPT-5 + Speed + Memory optimization
+ * 🎨 Smart Header Generator
  */
-async function sendSmartMessage(bot, chatId, message, options = {}) {
-    try {
-        console.log(`📱 Sending GPT-5 message to ${chatId} (${message?.length || 0} chars)`);
-        
-        if (!message || message.trim().length === 0) {
-            console.log('⚠️ Empty message - skipping send');
-            return false;
-        }
-        
-        // Clean the message with GPT-5 optimization
-        let cleanedMessage = cleanResponse(message);
-        
-        // Determine message type with enhanced GPT-5 awareness
-        const messageType = MESSAGE_TYPES[options.type] || { 
-            emoji: getSmartEmoji(cleanedMessage, options.aiModel, options), 
-            priority: 'normal',
-            delay: 'normal'
-        };
-        
-        // Add optional title with GPT-5 formatting
-        if (options.title) {
-            let titleEmoji = messageType.emoji;
-            
-            // Override emoji for specific GPT-5 titles
-            if (options.title.includes('Ultra-Fast')) titleEmoji = '⚡';
-            else if (options.title.includes('Fast')) titleEmoji = '🚀';
-            else if (options.title.includes('Balanced')) titleEmoji = '⚖️';
-            else if (options.title.includes('Memory')) titleEmoji = '🧠';
-            else if (options.title.includes('GPT-5 Nano')) titleEmoji = '⚡';
-            else if (options.title.includes('GPT-5 Mini')) titleEmoji = '🔥';
-            else if (options.title.includes('GPT-5')) titleEmoji = '🧠';
-            
-            cleanedMessage = `${titleEmoji} *${options.title}*\n\n${cleanedMessage}`;
-        }
-        
-        // Add enhanced metadata footer for GPT-5 responses
-        if (options.includeMetadata || options.aiModel || options.speedOptimized) {
-            const metadata = buildMessageMetadata(options);
-            if (metadata) {
-                cleanedMessage += `\n\n${metadata}`;
-            }
-        }
-        
-        // Check if message needs splitting
-        if (cleanedMessage.length <= TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
-            // Single message - send directly with GPT-5 optimization
-            try {
-                await bot.sendMessage(chatId, cleanedMessage, {
-                    parse_mode: 'Markdown',
-                    disable_web_page_preview: options.disablePreview !== false
-                });
-                
-                console.log(`✅ GPT-5 message sent (${cleanedMessage.length} chars)`);
-                return true;
-                
-            } catch (sendError) {
-                console.log('⚠️ Markdown failed, trying plain text');
-                
-                // Fallback to plain text with emoji preservation
-                const plainMessage = cleanedMessage.replace(/[*_`~]/g, '');
-                await bot.sendMessage(chatId, plainMessage, {
-                    disable_web_page_preview: options.disablePreview !== false
-                });
-                
-                console.log(`✅ GPT-5 message sent as plain text (${plainMessage.length} chars)`);
-                return true;
-            }
-        }
-        
-        // Message needs splitting with GPT-5 optimization
-        const chunks = splitMessage(cleanedMessage, { ...options, messageType });
-        
-        if (chunks.length > TELEGRAM_LIMITS.MAX_CHUNKS_PER_MESSAGE) {
-            console.log(`⚠️ GPT-5 message too long (${chunks.length} chunks), truncating`);
-            chunks.splice(TELEGRAM_LIMITS.MAX_CHUNKS_PER_MESSAGE);
-            chunks[chunks.length - 1] += '\n\n*⚡ (Message truncated for speed)*';
-        }
-        
-        // Send chunks with GPT-5 optimized delays
-        let delay = TELEGRAM_LIMITS.MESSAGE_DELAY_MS;
-        
-        switch (messageType.delay) {
-            case 'speed':
-                delay = TELEGRAM_LIMITS.SPEED_DELAY_MS;
-                break;
-            case 'priority':
-                delay = TELEGRAM_LIMITS.PRIORITY_DELAY_MS;
-                break;
-            default:
-                delay = TELEGRAM_LIMITS.MESSAGE_DELAY_MS;
-        }
-        
-        // Override delay for speed-optimized responses
-        if (options.speedOptimized || options.isUltraFast) {
-            delay = TELEGRAM_LIMITS.SPEED_DELAY_MS;
-        }
-        
-        for (let i = 0; i < chunks.length; i++) {
-            const chunk = chunks[i];
-            const isLast = i === chunks.length - 1;
-            
-            try {
-                await bot.sendMessage(chatId, chunk, {
-                    parse_mode: 'Markdown',
-                    disable_web_page_preview: options.disablePreview !== false
-                });
-                
-                console.log(`✅ GPT-5 chunk ${i + 1}/${chunks.length} sent (${chunk.length} chars)`);
-                
-                // Add optimized delay between chunks (except last)
-                if (!isLast) {
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                }
-                
-            } catch (chunkError) {
-                console.error(`❌ GPT-5 chunk ${i + 1} failed:`, chunkError.message);
-                
-                // Try plain text fallback
-                try {
-                    const plainChunk = chunk.replace(/[*_`~]/g, '');
-                    await bot.sendMessage(chatId, plainChunk);
-                    console.log(`✅ GPT-5 chunk ${i + 1} sent as plain text`);
-                } catch (fallbackError) {
-                    console.error(`❌ GPT-5 chunk ${i + 1} completely failed`);
-                }
-            }
-        }
-        
-        console.log(`✅ GPT-5 message complete: ${chunks.length} chunks sent`);
-        return true;
-        
-    } catch (error) {
-        console.error('❌ GPT-5 smart message error:', error.message);
-        
-        // Emergency fallback
-        try {
-            const emergency = `⚠️ GPT-5 message delivery error: ${error.message}`;
-            await bot.sendMessage(chatId, emergency.substring(0, TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH));
-        } catch (emergencyError) {
-            console.error('❌ Emergency fallback failed:', emergencyError.message);
-        }
-        
-        return false;
+function generateGPT5Header(title, messageType, options = {}) {
+    if (!title) return null;
+    
+    const typeConfig = GPT5_MESSAGE_TYPES[messageType] || GPT5_MESSAGE_TYPES['analysis'];
+    let headerEmoji = typeConfig.emoji;
+    
+    // Override emoji based on content
+    if (title.includes('Ultra-Fast') || title.includes('Nano')) headerEmoji = '⚡';
+    else if (title.includes('Fast') || title.includes('Mini')) headerEmoji = '🔥';
+    else if (title.includes('Ultimate') || title.includes('Full')) headerEmoji = '🧠';
+    else if (title.includes('Memory') || title.includes('Context')) headerEmoji = '🧠';
+    else if (title.includes('Vision') || title.includes('Image')) headerEmoji = '🎨';
+    else if (title.includes('Error') || title.includes('Failed')) headerEmoji = '❌';
+    
+    // Add GPT-5 indicator if not already present
+    let enhancedTitle = title;
+    if (options.gpt5OnlyMode && !title.includes('GPT-5')) {
+        enhancedTitle += ' (🚀 GPT-5 Optimized)';
     }
+    
+    return `${headerEmoji} *${enhancedTitle}*`;
 }
 
 /**
- * ✂️ Enhanced message splitting with GPT-5 content awareness
+ * 📏 Smart Message Splitter with GPT-5 Content Awareness
  */
-function splitMessage(message, options = {}) {
+function splitGPT5Message(message, options = {}) {
+    if (message.length <= TELEGRAM_CONFIG.SAFE_MESSAGE_LENGTH) {
+        return [message];
+    }
+    
     const chunks = [];
     let remaining = message;
     let partNumber = 1;
     
-    const maxChunkSize = TELEGRAM_LIMITS.OPTIMAL_CHUNK_SIZE;
-    const messageType = options.messageType || MESSAGE_TYPES.general;
-    
-    while (remaining.length > maxChunkSize) {
-        // Find good split point with GPT-5 awareness
-        let splitPoint = findBestSplitPoint(remaining, maxChunkSize);
+    while (remaining.length > TELEGRAM_CONFIG.OPTIMAL_CHUNK_SIZE && partNumber <= TELEGRAM_CONFIG.MAX_CHUNKS_LIMIT) {
+        let splitPoint = findOptimalSplitPoint(remaining);
         
         if (splitPoint === -1) {
-            // Force split if no good point found
-            splitPoint = maxChunkSize - 100;
+            splitPoint = TELEGRAM_CONFIG.OPTIMAL_CHUNK_SIZE - 100;
         }
         
-        // Extract chunk
         let chunk = remaining.substring(0, splitPoint).trim();
         
-        // Add part header for multi-part messages with GPT-5 styling
-        if (options.title || chunks.length > 0) {
-            const partEmoji = options.speedOptimized ? '⚡' : messageType.emoji;
-            const partHeader = `${partEmoji} *(Part ${partNumber})*\n\n`;
-            
-            // Ensure chunk fits with header
-            if (chunk.length + partHeader.length > maxChunkSize) {
-                const availableSpace = maxChunkSize - partHeader.length - 50;
-                chunk = chunk.substring(0, availableSpace).trim();
-                
-                // Try to end at sentence or line break
-                const lastSentence = chunk.lastIndexOf('.');
-                const lastLine = chunk.lastIndexOf('\n');
-                const cutPoint = Math.max(lastSentence, lastLine);
-                
-                if (cutPoint > availableSpace * 0.7) {
-                    chunk = chunk.substring(0, cutPoint + 1).trim();
-                }
-            }
-            
-            chunk = partHeader + chunk;
+        // Add part indicator for multi-part messages
+        if (partNumber > 1 || remaining.length - splitPoint > TELEGRAM_CONFIG.OPTIMAL_CHUNK_SIZE) {
+            const partEmoji = GPT5_MESSAGE_TYPES[options.messageType]?.emoji || '📄';
+            chunk = `${partEmoji} *Part ${partNumber}*\n\n${chunk}`;
         }
         
         chunks.push(chunk);
         remaining = remaining.substring(splitPoint).trim();
         partNumber++;
-        
-        // Safety check
-        if (partNumber > TELEGRAM_LIMITS.MAX_CHUNKS_PER_MESSAGE) {
-            console.log('⚠️ Reached maximum chunks limit');
-            break;
-        }
     }
     
-    // Add remaining content as final chunk
+    // Add final chunk
     if (remaining.length > 0) {
-        let finalChunk = remaining;
-        
         if (partNumber > 1) {
-            const finalEmoji = options.speedOptimized ? '⚡' : messageType.emoji;
-            const finalHeader = `${finalEmoji} *(Part ${partNumber} - Final)*\n\n`;
-            finalChunk = finalHeader + remaining;
+            const finalEmoji = GPT5_MESSAGE_TYPES[options.messageType]?.emoji || '📄';
+            remaining = `${finalEmoji} *Part ${partNumber} - Final*\n\n${remaining}`;
         }
-        
-        chunks.push(finalChunk);
+        chunks.push(remaining);
     }
     
     return chunks;
 }
 
 /**
- * 🔍 Enhanced split point detection with GPT-5 content awareness
+ * 🔍 Find Optimal Split Points for GPT-5 Content
  */
-function findBestSplitPoint(text, maxLength) {
-    // Enhanced split patterns for GPT-5 content (in order of preference)
-    const splitPatterns = [
-        /\n\n\*\*.*?\*\*:/g,          // AI section headers
-        /\n\n🧠\s+\*.*?\*:/g,         // Memory section headers
-        /\n\n⚡\s+\*.*?\*:/g,          // Speed section headers
-        /\n\n📊\s+\*.*?\*:/g,         // Analysis section headers
-        /\n\n#{1,3}\s+/g,             // Markdown headers
-        /\n\n\d+\.\s+/g,              // Numbered lists
-        /\n\n•\s+/g,                  // Bullet points
-        /\n\n/g,                      // Double line breaks (paragraphs)
-        /\.\s+\n/g,                   // End of sentences with newline
-        /\.\s+/g,                     // End of sentences
-        /\n/g,                        // Single line breaks
-        /;\s+/g,                      // Semicolons
-        /,\s+/g                       // Commas (last resort)
-    ];
+function findOptimalSplitPoint(text) {
+    const maxLength = TELEGRAM_CONFIG.OPTIMAL_CHUNK_SIZE;
+    const minSplitPoint = maxLength * 0.7;
     
-    const minSplitPoint = maxLength * 0.7; // Don't split too early
+    // Split patterns optimized for GPT-5 content
+    const splitPatterns = [
+        /\n\n\*\*[^*]+\*\*:/g,           // Section headers
+        /\n\n🧠\s+\*[^*]+\*:/g,          // Memory sections  
+        /\n\n⚡\s+\*[^*]+\*:/g,           // Speed sections
+        /\n\n📊\s+\*[^*]+\*:/g,          // Analysis sections
+        /\n\n\d+\.\s+/g,                 // Numbered lists
+        /\n\n•\s+/g,                     // Bullet points
+        /\n\n/g,                         // Paragraph breaks
+        /\.\s*\n/g,                      // Sentence endings
+        /\.\s+/g,                        // Sentence endings with space
+        /;\s+/g,                         // Semicolons
+        /,\s+/g                          // Commas (last resort)
+    ];
     
     for (const pattern of splitPatterns) {
         const matches = [...text.matchAll(pattern)];
         
-        // Find last good match within range
         for (let i = matches.length - 1; i >= 0; i--) {
             const matchEnd = matches[i].index + matches[i][0].length;
             
@@ -465,466 +285,374 @@ function findBestSplitPoint(text, maxLength) {
         }
     }
     
-    return -1; // No good split point found
-}
-
-// 🚀 GPT-5 SPECIFIC SENDER FUNCTIONS
-
-/**
- * ⚡ Ultra-fast GPT-5 response sender
- */
-async function sendUltraFastResponse(bot, chatId, response, title = null, options = {}) {
-    return await sendSmartMessage(bot, chatId, response, {
-        title: title || '⚡ Ultra-Fast GPT-5 Response',
-        type: 'speed_ultra',
-        aiModel: 'gpt-5-nano',
-        speedOptimized: true,
-        isUltraFast: true,
-        includeMetadata: true,
-        ...options
-    });
+    return -1;
 }
 
 /**
- * 🚀 Fast GPT-5 response sender
+ * 🚀 Main GPT-5 Message Sender
  */
-async function sendFastResponse(bot, chatId, response, title = null, options = {}) {
-    return await sendSmartMessage(bot, chatId, response, {
-        title: title || '🚀 Fast GPT-5 Response',
-        type: 'speed_fast',
-        aiModel: 'gpt-5-mini',
-        speedOptimized: true,
-        isFast: true,
-        includeMetadata: true,
-        ...options
-    });
+async function sendGPT5Message(bot, chatId, message, title = null, metadata = {}) {
+    try {
+        if (!message || message.trim().length === 0) {
+            console.warn('⚠️ Empty message - skipping send');
+            return false;
+        }
+        
+        // Detect GPT-5 model and message type
+        const messageType = detectGPT5Model(metadata.aiUsed, metadata.modelUsed);
+        const typeConfig = GPT5_MESSAGE_TYPES[messageType];
+        
+        console.log(`📱 Sending GPT-5 ${typeConfig.description} message (${message.length} chars)`);
+        
+        // Clean the message
+        let cleanMessage = cleanGPT5Response(message);
+        
+        // Add header if title provided
+        if (title) {
+            const header = generateGPT5Header(title, messageType, metadata);
+            if (header) {
+                cleanMessage = `${header}\n\n${cleanMessage}`;
+            }
+        }
+        
+        // Add metadata footer
+        const metadataFooter = buildGPT5Metadata(metadata);
+        if (metadataFooter) {
+            cleanMessage += `\n\n${metadataFooter}`;
+        }
+        
+        // Send message (single or chunked)
+        if (cleanMessage.length <= TELEGRAM_CONFIG.SAFE_MESSAGE_LENGTH) {
+            return await sendSingleMessage(bot, chatId, cleanMessage, typeConfig);
+        } else {
+            return await sendChunkedMessage(bot, chatId, cleanMessage, typeConfig, messageType);
+        }
+        
+    } catch (error) {
+        console.error('❌ GPT-5 message sending error:', error.message);
+        return await sendEmergencyFallback(bot, chatId, error.message);
+    }
 }
 
 /**
- * ⚖️ Balanced GPT-5 response sender
+ * 📤 Send Single Message with Error Handling
  */
-async function sendBalancedResponse(bot, chatId, response, title = null, options = {}) {
-    return await sendSmartMessage(bot, chatId, response, {
-        title: title || '⚖️ Balanced GPT-5 Response',
-        type: 'speed_balanced',
-        aiModel: 'gpt-5',
-        speedOptimized: true,
-        isBalanced: true,
-        includeMetadata: true,
-        ...options
-    });
+async function sendSingleMessage(bot, chatId, message, typeConfig) {
+    try {
+        await bot.sendMessage(chatId, message, {
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
+        });
+        
+        console.log(`✅ GPT-5 ${typeConfig.description} message sent (${message.length} chars)`);
+        return true;
+        
+    } catch (markdownError) {
+        console.warn('⚠️ Markdown failed, trying plain text');
+        
+        try {
+            const plainMessage = message.replace(/[*_`~\[\]]/g, '');
+            await bot.sendMessage(chatId, plainMessage, {
+                disable_web_page_preview: true
+            });
+            
+            console.log(`✅ GPT-5 message sent as plain text (${plainMessage.length} chars)`);
+            return true;
+            
+        } catch (plainError) {
+            console.error('❌ Both markdown and plain text failed:', plainError.message);
+            return false;
+        }
+    }
 }
 
 /**
- * 🧠 Memory-enhanced response sender
+ * 📦 Send Chunked Message with Optimized Delays
  */
-async function sendMemoryResponse(bot, chatId, response, title = null, options = {}) {
-    return await sendSmartMessage(bot, chatId, response, {
-        title: title || '🧠 Memory-Enhanced Response',
-        type: 'memory_response',
-        aiModel: 'gpt-5',
-        memoryUsed: true,
-        includeMetadata: true,
-        ...options
-    });
-}
-
-/**
- * 🚀 GPT-5 response sender
- */
-async function sendGPTResponse(bot, chatId, response, title = null, options = {}) {
-    return await sendSmartMessage(bot, chatId, response, {
-        title: title || '🚀 GPT-5 Response',
-        type: 'gpt5_response',
-        aiModel: 'gpt-5',
-        includeMetadata: true,
-        ...options
-    });
-}
-
-/**
- * ⚡ Claude response sender
- */
-async function sendClaudeResponse(bot, chatId, response, title = null, options = {}) {
-    return await sendSmartMessage(bot, chatId, response, {
-        title: title || '⚡ Claude Response',
-        type: 'general',
-        aiModel: 'claude',
-        includeMetadata: true,
-        ...options
-    });
-}
-
-/**
- * 🔄 Dual AI response sender
- */
-async function sendDualAIResponse(bot, chatId, response, title = null, options = {}) {
-    return await sendSmartMessage(bot, chatId, response, {
-        title: title || '🔄 Dual AI Response',
-        type: 'dual_ai',
-        aiModel: 'dual',
-        includeMetadata: true,
-        ...options
-    });
-}
-
-/**
- * 📊 Enhanced analysis sender
- */
-async function sendAnalysis(bot, chatId, analysis, title = 'Analysis', options = {}) {
-    return await sendSmartMessage(bot, chatId, analysis, {
-        title: title,
-        type: 'analysis',
-        includeMetadata: true,
-        ...options
-    });
-}
-
-/**
- * 🇰🇭 Enhanced Cambodia analysis sender
- */
-async function sendCambodiaAnalysis(bot, chatId, analysis, title = 'Cambodia Analysis', options = {}) {
-    return await sendSmartMessage(bot, chatId, analysis, {
-        title: title,
-        type: 'cambodia',
-        includeMetadata: true,
-        ...options
-    });
-}
-
-/**
- * 📈 Enhanced market analysis sender
- */
-async function sendMarketAnalysis(bot, chatId, analysis, title = 'Market Analysis', options = {}) {
-    return await sendSmartMessage(bot, chatId, analysis, {
-        title: title,
-        type: 'market',
-        includeMetadata: true,
-        ...options
-    });
-}
-
-/**
- * 💼 Enhanced portfolio analysis sender
- */
-async function sendPortfolioAnalysis(bot, chatId, analysis, title = 'Portfolio Analysis', options = {}) {
-    return await sendSmartMessage(bot, chatId, analysis, {
-        title: title,
-        type: 'portfolio',
-        includeMetadata: true,
-        ...options
-    });
-}
-
-/**
- * 🚨 Enhanced alert sender
- */
-async function sendAlert(bot, chatId, alertMessage, title = 'Alert', options = {}) {
-    const alertContent = formatWithTimestamp(alertMessage, true, options.responseTime);
+async function sendChunkedMessage(bot, chatId, message, typeConfig, messageType) {
+    const chunks = splitGPT5Message(message, { messageType });
     
-    return await sendSmartMessage(bot, chatId, alertContent, {
-        title: title,
-        type: 'alert',
-        disablePreview: true,
-        includeMetadata: true,
-        ...options
-    });
+    console.log(`📦 Sending ${chunks.length} chunks with ${typeConfig.description} priority`);
+    
+    let successCount = 0;
+    
+    for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const isLast = i === chunks.length - 1;
+        
+        try {
+            await bot.sendMessage(chatId, chunk, {
+                parse_mode: 'Markdown',
+                disable_web_page_preview: true
+            });
+            
+            successCount++;
+            console.log(`✅ Chunk ${i + 1}/${chunks.length} sent (${chunk.length} chars)`);
+            
+            // Add optimized delay between chunks
+            if (!isLast) {
+                await new Promise(resolve => setTimeout(resolve, typeConfig.delay));
+            }
+            
+        } catch (chunkError) {
+            console.error(`❌ Chunk ${i + 1} failed:`, chunkError.message);
+            
+            // Try plain text fallback for failed chunk
+            try {
+                const plainChunk = chunk.replace(/[*_`~\[\]]/g, '');
+                await bot.sendMessage(chatId, plainChunk, {
+                    disable_web_page_preview: true
+                });
+                
+                successCount++;
+                console.log(`✅ Chunk ${i + 1} sent as plain text`);
+                
+            } catch (fallbackError) {
+                console.error(`❌ Chunk ${i + 1} completely failed`);
+            }
+        }
+    }
+    
+    const success = successCount > 0;
+    console.log(`${success ? '✅' : '❌'} GPT-5 chunked message: ${successCount}/${chunks.length} chunks sent`);
+    
+    return success;
 }
 
 /**
- * 🏛️ Enhanced regime analysis sender
+ * 🆘 Emergency Fallback Message Sender
  */
-async function sendRegimeAnalysis(bot, chatId, analysis, title = 'Economic Regime Analysis', options = {}) {
-    return await sendSmartMessage(bot, chatId, analysis, {
-        title: title,
-        type: 'regime',
-        disablePreview: true,
-        includeMetadata: true,
-        ...options
-    });
+async function sendEmergencyFallback(bot, chatId, errorMessage) {
+    try {
+        const fallbackMessage = `🚨 *System Error*\n\nMessage delivery failed: ${errorMessage.substring(0, 100)}...\n\n🔧 Please try again or contact support.`;
+        
+        await bot.sendMessage(chatId, fallbackMessage, {
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
+        });
+        
+        console.log('🆘 Emergency fallback message sent');
+        return true;
+        
+    } catch (emergencyError) {
+        console.error('❌ Emergency fallback also failed:', emergencyError.message);
+        return false;
+    }
 }
 
 /**
- * ⚠️ Enhanced anomaly alert sender
+ * 📊 Get Message Statistics
  */
-async function sendAnomalyAlert(bot, chatId, analysis, title = 'Market Anomaly Detected', options = {}) {
-    return await sendSmartMessage(bot, chatId, analysis, {
-        title: title,
-        type: 'anomaly',
-        disablePreview: true,
-        includeMetadata: true,
-        ...options
-    });
-}
-
-/**
- * 🎯 Enhanced strategic analysis sender
- */
-async function sendStrategicAnalysis(bot, chatId, analysis, title = 'Strategic Analysis', options = {}) {
-    return await sendSmartMessage(bot, chatId, analysis, {
-        title: title,
-        type: 'strategic',
-        includeMetadata: true,
-        disablePreview: true,
-        ...options
-    });
-}
-
-/**
- * 📊 Enhanced message statistics with GPT-5 + Speed + Memory metrics
- */
-function getMessageStats(message, aiModel = null, options = {}) {
+function getGPT5MessageStats(message, metadata = {}) {
     if (!message || typeof message !== 'string') {
         return {
             length: 0,
             chunks: 0,
             estimatedSendTime: 0,
-            type: 'invalid'
+            messageType: 'invalid'
         };
     }
     
     const length = message.length;
-    const chunks = Math.ceil(length / TELEGRAM_LIMITS.OPTIMAL_CHUNK_SIZE);
-    
-    // Calculate send time based on speed optimization
-    let baseDelay = TELEGRAM_LIMITS.MESSAGE_DELAY_MS;
-    if (options.speedOptimized || options.isUltraFast) {
-        baseDelay = TELEGRAM_LIMITS.SPEED_DELAY_MS;
-    } else if (options.isFast || options.isBalanced) {
-        baseDelay = TELEGRAM_LIMITS.PRIORITY_DELAY_MS;
-    }
+    const messageType = detectGPT5Model(metadata.aiUsed, metadata.modelUsed);
+    const typeConfig = GPT5_MESSAGE_TYPES[messageType];
+    const chunks = Math.ceil(length / TELEGRAM_CONFIG.OPTIMAL_CHUNK_SIZE);
     
     const estimatedSendTime = chunks > 1 ? 
-        (chunks - 1) * baseDelay + 1000 : 1000;
-    
-    let type = 'short';
-    if (length > TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
-        type = chunks <= 3 ? 'medium' : 'long';
-    }
+        (chunks - 1) * typeConfig.delay + 1000 : 1000;
     
     return {
         length,
         chunks,
+        messageType,
+        description: typeConfig.description,
         estimatedSendTime,
-        type,
-        withinLimits: length <= TELEGRAM_LIMITS.MAX_MESSAGE_LENGTH,
-        
-        // GPT-5 specific metrics
-        aiModel: aiModel,
-        estimatedTokens: aiModel ? Math.ceil(length / 4) : null,
-        complexity: length > 2000 ? 'high' : length > 800 ? 'medium' : 'low',
-        
-        // Speed optimization metrics
-        speedOptimized: options.speedOptimized || false,
-        memoryUsed: options.memoryUsed || false,
-        reasoningEffort: options.reasoning_effort || 'unknown',
+        priority: typeConfig.priority,
+        emoji: typeConfig.emoji,
+        withinLimits: length <= TELEGRAM_CONFIG.MAX_MESSAGE_LENGTH,
         
         // Performance metrics
-        expectedDelay: baseDelay,
-        gpt5Optimized: aiModel && aiModel.includes('gpt'),
-        costTier: options.costTier || 'unknown'
+        delay: typeConfig.delay,
+        tokensEstimate: Math.ceil(length / 4),
+        complexity: length > 2000 ? 'high' : length > 800 ? 'medium' : 'low'
     };
 }
 
-/**
- * 🔧 Enhanced timestamp formatting with GPT-5 response time
- */
-function formatWithTimestamp(message, includeTimestamp = false, responseTime = null, options = {}) {
-    if (!includeTimestamp) {
-        return message;
-    }
-    
-    const timestamp = new Date().toLocaleTimeString('en-US', { 
-        timeZone: 'Asia/Phnom_Penh',
-        hour12: false 
-    });
-    
-    let timeInfo = `*⏰ Time:* ${timestamp} Cambodia`;
-    
-    // Enhanced response time formatting
-    if (responseTime && responseTime > 1000) {
-        const seconds = Math.round(responseTime / 1000);
-        let responseIcon = '⏱️';
-        
-        if (seconds <= 3) responseIcon = '⚡';
-        else if (seconds <= 10) responseIcon = '🚀';
-        else if (seconds <= 30) responseIcon = '⏳';
-        
-        timeInfo += ` | *${responseIcon} Response:* ${seconds}s`;
-    }
-    
-    // Add GPT-5 model information if available
-    if (options.aiModel) {
-        let modelIcon = '🤖';
-        if (options.aiModel.includes('gpt-5-nano')) modelIcon = '⚡';
-        else if (options.aiModel.includes('gpt-5-mini')) modelIcon = '🔥';
-        else if (options.aiModel.includes('gpt-5')) modelIcon = '🧠';
-        
-        timeInfo += ` | *${modelIcon} Model:* ${options.aiModel}`;
-    }
-    
-    return `${timeInfo}\n\n${message}`;
-}
-
-// 📝 ENHANCED LEGACY COMPATIBILITY FUNCTIONS
+// 🎯 SPECIALIZED GPT-5 SENDERS
 
 /**
- * Legacy function for backward compatibility
+ * ⚡ GPT-5 Nano Response Sender
  */
-async function sendSmartResponse(bot, chatId, message, title = null, messageType = 'general', options = {}) {
-    return await sendSmartMessage(bot, chatId, message, {
-        title: title,
-        type: messageType,
-        ...options
+async function sendNanoResponse(bot, chatId, response, title = 'Ultra-Fast Response', metadata = {}) {
+    return await sendGPT5Message(bot, chatId, response, title, {
+        ...metadata,
+        aiUsed: 'GPT-5-nano',
+        modelUsed: 'gpt-5-nano',
+        costTier: 'economy'
     });
 }
 
 /**
- * Legacy response cleaner (enhanced)
+ * 🔥 GPT-5 Mini Response Sender
  */
-function cleanStrategicResponse(text) {
-    return cleanResponse(text);
-}
-
-/**
- * Legacy long message sender (enhanced)
- */
-async function sendLongMessage(bot, chatId, message, delay = TELEGRAM_LIMITS.MESSAGE_DELAY_MS) {
-    return await sendSmartMessage(bot, chatId, message, {
-        type: 'general'
+async function sendMiniResponse(bot, chatId, response, title = 'Balanced Response', metadata = {}) {
+    return await sendGPT5Message(bot, chatId, response, title, {
+        ...metadata,
+        aiUsed: 'GPT-5-mini',
+        modelUsed: 'gpt-5-mini',
+        costTier: 'standard'
     });
 }
 
 /**
- * Legacy message splitter (enhanced)
+ * 🧠 GPT-5 Full Response Sender  
  */
-function splitLongMessage(message, maxLength = TELEGRAM_LIMITS.SAFE_MESSAGE_LENGTH) {
-    if (message.length <= maxLength) {
-        return [message];
-    }
+async function sendFullResponse(bot, chatId, response, title = 'Ultimate Analysis', metadata = {}) {
+    return await sendGPT5Message(bot, chatId, response, title, {
+        ...metadata,
+        aiUsed: 'GPT-5-full',
+        modelUsed: 'gpt-5',
+        costTier: 'premium'
+    });
+}
+
+/**
+ * 💬 GPT-5 Chat Response Sender
+ */
+async function sendChatResponse(bot, chatId, response, title = 'Natural Chat', metadata = {}) {
+    return await sendGPT5Message(bot, chatId, response, title, {
+        ...metadata,
+        aiUsed: 'GPT-5-chat',
+        modelUsed: 'gpt-5-chat-latest',
+        costTier: 'premium'
+    });
+}
+
+/**
+ * 🎨 Multimodal Response Sender
+ */
+async function sendMultimodalResponse(bot, chatId, response, title = 'Vision Analysis', metadata = {}) {
+    return await sendGPT5Message(bot, chatId, response, title, {
+        ...metadata,
+        aiUsed: 'GPT-5-multimodal',
+        modelUsed: 'gpt-5',
+        costTier: 'premium',
+        powerMode: 'GPT5_MULTIMODAL'
+    });
+}
+
+// 🔄 LEGACY COMPATIBILITY FUNCTIONS
+
+/**
+ * Legacy GPT Response Sender (redirects to GPT-5)
+ */
+async function sendGPTResponse(bot, chatId, response, title = 'GPT-5 Analysis', metadata = {}) {
+    return await sendGPT5Message(bot, chatId, response, title, {
+        ...metadata,
+        gpt5OnlyMode: true
+    });
+}
+
+/**
+ * Legacy Claude Response Sender (redirects to GPT-5 Fast)
+ */
+async function sendClaudeResponse(bot, chatId, response, title = 'AI Response', metadata = {}) {
+    return await sendMiniResponse(bot, chatId, response, title, metadata);
+}
+
+/**
+ * Legacy Dual AI Response Sender (redirects to GPT-5)
+ */
+async function sendDualAIResponse(bot, chatId, response, title = 'AI Analysis', metadata = {}) {
+    return await sendGPT5Message(bot, chatId, response, title, {
+        ...metadata,
+        aiUsed: 'GPT-5-unified',
+        gpt5OnlyMode: true
+    });
+}
+
+/**
+ * Legacy Analysis Sender
+ */
+async function sendAnalysis(bot, chatId, analysis, title = 'Analysis', metadata = {}) {
+    return await sendGPT5Message(bot, chatId, analysis, title, metadata);
+}
+
+/**
+ * Legacy Alert Sender
+ */
+async function sendAlert(bot, chatId, alertMessage, title = 'Alert', metadata = {}) {
+    const alertContent = `🚨 *${title}*\n\n${alertMessage}\n\n⏰ *Time:* ${new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Phnom_Penh' })} Cambodia`;
     
-    return splitMessage(message, { type: 'general' });
-}
-
-/**
- * Legacy Ray Dalio formatter (enhanced)
- */
-function formatRayDalioResponse(analysis, title = "Ray Dalio Analysis") {
-    return formatWithTimestamp(analysis, true);
-}
-
-/**
- * Legacy Cambodia fund formatter (enhanced)
- */
-function formatCambodiaFundResponse(analysis, title = "Cambodia Fund Analysis") {
-    return formatWithTimestamp(analysis, true);
+    return await sendGPT5Message(bot, chatId, alertContent, null, {
+        ...metadata,
+        urgentMessage: true
+    });
 }
 
 // 🔧 UTILITY FUNCTIONS
 
 /**
- * Get optimal delay based on message type and options
+ * Clean response text (legacy compatibility)
  */
-function getOptimalDelay(messageType, options = {}) {
-    if (options.speedOptimized || options.isUltraFast) {
-        return TELEGRAM_LIMITS.SPEED_DELAY_MS;
-    }
-    
-    if (options.isFast || messageType.delay === 'priority') {
-        return TELEGRAM_LIMITS.PRIORITY_DELAY_MS;
-    }
-    
-    if (messageType.delay === 'speed') {
-        return TELEGRAM_LIMITS.SPEED_DELAY_MS;
-    }
-    
-    return TELEGRAM_LIMITS.MESSAGE_DELAY_MS;
+function cleanResponse(text) {
+    return cleanGPT5Response(text);
 }
 
 /**
- * Check if message content indicates GPT-5 usage
+ * Split message (legacy compatibility)
  */
-function detectGPT5Content(message) {
-    const gpt5Indicators = [
-        'gpt-5', 'gpt5', 'reasoning_effort', 'verbosity',
-        'enhanced reasoning', 'improved math', 'financial analysis',
-        'speed optimization', 'memory integration'
-    ];
-    
-    const lowerMessage = message.toLowerCase();
-    return gpt5Indicators.some(indicator => lowerMessage.includes(indicator));
+function splitMessage(message, options = {}) {
+    return splitGPT5Message(message, options);
 }
 
 /**
- * Format message for different GPT-5 models
+ * Get message stats (legacy compatibility)
  */
-function formatForGPT5Model(message, modelType) {
-    switch (modelType) {
-        case 'nano':
-            return `⚡ *GPT-5 Nano*\n\n${message}`;
-        case 'mini':
-            return `🔥 *GPT-5 Mini*\n\n${message}`;
-        case 'full':
-            return `🧠 *GPT-5*\n\n${message}`;
-        case 'chat':
-            return `💬 *GPT-5 Chat*\n\n${message}`;
-        default:
-            return message;
-    }
+function getMessageStats(message, aiModel, options = {}) {
+    return getGPT5MessageStats(message, { 
+        aiUsed: aiModel, 
+        ...options 
+    });
 }
 
-// 📤 MAIN EXPORT MODULE
+// 📤 EXPORTS
 module.exports = {
-    // 🚀 Main enhanced functions
-    sendSmartMessage,
-    sendAnalysis,
-    sendCambodiaAnalysis,
-    sendMarketAnalysis,
-    sendPortfolioAnalysis,
-    sendAlert,
-    sendRegimeAnalysis,
-    sendAnomalyAlert,
-    sendStrategicAnalysis,
+    // 🚀 Main GPT-5 Functions
+    sendGPT5Message,
+    sendNanoResponse,
+    sendMiniResponse,
+    sendFullResponse,
+    sendChatResponse,
+    sendMultimodalResponse,
     
-    // 🚀 GPT-5 SPECIFIC FUNCTIONS (NEW)
+    // 🔄 Legacy Compatibility (Redirected to GPT-5)
     sendGPTResponse,
     sendClaudeResponse,
     sendDualAIResponse,
-    sendUltraFastResponse,
-    sendFastResponse,
-    sendBalancedResponse,
-    sendMemoryResponse,
+    sendAnalysis,
+    sendAlert,
     
-    // 🔧 Enhanced utility functions
+    // 🔧 Utility Functions
     cleanResponse,
+    cleanGPT5Response,
     splitMessage,
-    findBestSplitPoint,
+    splitGPT5Message,
     getMessageStats,
-    formatWithTimestamp,
-    getSmartEmoji,
-    buildMessageMetadata,
-    
-    // 🔧 NEW utility functions
-    getOptimalDelay,
-    detectGPT5Content,
-    formatForGPT5Model,
-    
-    // 📝 Legacy compatibility (enhanced)
-    sendSmartResponse,
-    cleanStrategicResponse,
-    sendLongMessage,
-    splitLongMessage,
-    formatRayDalioResponse,
-    formatCambodiaFundResponse,
+    getGPT5MessageStats,
+    detectGPT5Model,
+    buildGPT5Metadata,
+    generateGPT5Header,
     
     // 📊 Constants
-    TELEGRAM_LIMITS,
-    MESSAGE_TYPES
+    TELEGRAM_CONFIG,
+    GPT5_MESSAGE_TYPES
 };
 
-console.log('✅ Enhanced Telegram Splitter loaded with GPT-5 + Speed + Memory support');
-console.log('🚀 GPT-5 optimized message handling active');
-console.log('⚡ Speed optimization support enabled');
-console.log('🧠 Memory integration support enabled');
-console.log('🎯 Smart emoji and metadata generation active');
-console.log('📊 Enhanced analytics and performance tracking enabled');
+console.log('🚀 GPT-5 Optimized Telegram Splitter Loaded');
+console.log('⚡ Ultra-fast message delivery for GPT-5 Nano');
+console.log('🔥 Balanced performance for GPT-5 Mini');
+console.log('🧠 Premium experience for GPT-5 Full');
+console.log('🎨 Multimodal support for vision & audio');
+console.log('📊 Smart metadata and performance tracking');
+console.log('🔄 Full backward compatibility maintained');
