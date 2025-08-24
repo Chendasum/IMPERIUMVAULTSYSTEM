@@ -7,6 +7,7 @@ let openaiClient;
 try {
     openaiClient = require('./openaiClient');
     console.log('✅ GPT-5 client loaded successfully');
+    };
 }
 
 // 🧠 QUERY COMPLEXITY ANALYZER for Dynamic Token Scaling
