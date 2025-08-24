@@ -121,38 +121,81 @@ const cambodiaHandler = require('./handlers/cambodiaDeals');
 const lpManagement = require('./cambodia/lpManagement');
 const portfolioManager = require('./cambodia/portfolioManager');
 
-// 📊 DATABASE & MEMORY SYSTEM  
-const database = require('./utils/database');
-const memory = require('./utils/memory');
-const logger = require('./utils/logger');
+// 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
+let database, memory, logger;
+
+try {
+    database = require('./utils/database');
+    console.log('✅ Database module loaded');
+} catch (error) {
+    console.warn('⚠️ Database module failed to load:', error.message);
+    database = { 
+        getConversationHistoryDB: async () => [],
+        getPersistentMemoryDB: async () => []
+    };
+}
+
+try {
+    memory = require('./utils/memory');
+    console.log('✅ Memory module loaded');
+} catch (error) {
+    console.warn('⚠️ Memory module failed to load:', error.message);
+    memory = { buildConversationContext: async () => '' };
+}
+
+try {
+    logger = require('./utils/logger');
+    console.log('✅ Logger module loaded');
+} catch (error) {
+    console.warn('⚠️ Logger module failed to load - using console fallback:', error.message);
+    logger = {
+        logUserInteraction: async (data) => {
+            console.log(`📝 User: ${data.chatId} - ${data.userMessage?.substring(0, 50)}...`);
+        },
+        logGPTResponse: async (data) => {
+            console.log(`🤖 GPT: ${data.chatId} - ${data.aiUsed} (${data.responseTime}ms)`);
+        },
+        logError: async (data) => {
+            console.error(`❌ Error: ${data.chatId} - ${data.error}`);
+        }
+    };
+}
 
 // 💾 CONVERSATION BACKUP & RECOVERY SYSTEM
 let conversationBuffer = new Map(); // In-memory buffer for emergency backup
 let lastBackupTime = Date.now();
 const BACKUP_INTERVAL = 30000; // Backup every 30 seconds
 
-// 🛡️ EMERGENCY CONVERSATION SAVER
+// 🛡️ EMERGENCY CONVERSATION SAVER with Fallback Logging
 async function saveConversationEmergency(chatId, userMessage, gptResponse, metadata = {}) {
     try {
-        // 1. Save to PostgreSQL (Primary)
-        await logger.logUserInteraction({
-            chatId,
-            userMessage,
-            timestamp: new Date().toISOString(),
-            messageType: 'telegram_webhook_backup',
-            ...metadata
-        });
+        // 1. Save to PostgreSQL (Primary) - with fallback
+        try {
+            if (logger && typeof logger.logUserInteraction === 'function') {
+                await logger.logUserInteraction({
+                    chatId,
+                    userMessage,
+                    timestamp: new Date().toISOString(),
+                    messageType: 'telegram_webhook_backup',
+                    ...metadata
+                });
+                
+                await logger.logGPTResponse({
+                    chatId,
+                    userMessage,
+                    gptResponse,
+                    timestamp: new Date().toISOString(),
+                    backupSaved: true,
+                    ...metadata
+                });
+            } else {
+                console.log(`💾 Backup save (no logger): ${chatId} - Message saved to memory buffer only`);
+            }
+        } catch (loggerError) {
+            console.warn('⚠️ Logger failed, using memory buffer only:', loggerError.message);
+        }
         
-        await logger.logGPTResponse({
-            chatId,
-            userMessage,
-            gptResponse,
-            timestamp: new Date().toISOString(),
-            backupSaved: true,
-            ...metadata
-        });
-        
-        // 2. Save to Memory Buffer (Secondary)
+        // 2. Save to Memory Buffer (Secondary) - Always works
         if (!conversationBuffer.has(chatId)) {
             conversationBuffer.set(chatId, []);
         }
@@ -169,13 +212,13 @@ async function saveConversationEmergency(chatId, userMessage, gptResponse, metad
             conversationBuffer.get(chatId).shift();
         }
         
-        console.log(`💾 Conversation saved with triple redundancy for chat ${chatId}`);
+        console.log(`💾 Conversation saved with fallback protection for chat ${chatId}`);
         return true;
         
     } catch (error) {
         console.error(`❌ Emergency save failed for chat ${chatId}:`, error.message);
         
-        // 3. Emergency File Backup (Tertiary)
+        // 3. Emergency File Backup (Tertiary) - Absolute fallback
         try {
             const fs = require('fs').promises;
             const backupData = {
@@ -394,24 +437,33 @@ async function handleMessage(msg) {
     }
     
     try {
-        // Log user interaction with media info
-        await logger.logUserInteraction({
-            chatId,
-            messageId,
-            userMessage,
-            timestamp: new Date().toISOString(),
-            messageType: 'telegram_webhook',
-            hasMedia: isMultimodal,
-            mediaTypes: {
-                photo: hasPhoto,
-                document: hasDocument,
-                video: hasVideo,
-                voice: hasVoice,
-                audio: hasAudio,
-                video_note: hasVideoNote,
-                sticker: hasSticker
+        // Log user interaction with fallback
+        try {
+            if (logger && typeof logger.logUserInteraction === 'function') {
+                await logger.logUserInteraction({
+                    chatId,
+                    messageId,
+                    userMessage,
+                    timestamp: new Date().toISOString(),
+                    messageType: 'telegram_webhook',
+                    hasMedia: isMultimodal,
+                    mediaTypes: {
+                        photo: hasPhoto,
+                        document: hasDocument,
+                        video: hasVideo,
+                        voice: hasVoice,
+                        audio: hasAudio,
+                        video_note: hasVideoNote,
+                        sticker: hasSticker
+                    }
+                });
+            } else {
+                // Fallback logging
+                console.log(`📝 User interaction: ${chatId} - "${userMessage.substring(0, 50)}..." (Media: ${isMultimodal})`);
             }
-        });
+        } catch (logError) {
+            console.warn('⚠️ Logging failed, continuing without logging:', logError.message);
+        }
         
         // 🎨 HANDLE MULTIMODAL CONTENT FIRST
         if (isMultimodal) {
