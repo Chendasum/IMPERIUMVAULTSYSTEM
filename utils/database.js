@@ -670,6 +670,18 @@ CREATE TABLE IF NOT EXISTS realtime_system_metrics (
         return false;
     }
 
+        // Initialize system metrics
+        await initializeSystemMetrics();
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Database initialization error:', error);
+        connectionStats.lastError = error.message;
+        connectionStats.connectionHealth = 'INIT_ERROR';
+        return false;
+    }
+}
+
 /**
  * 📊 INITIALIZE SYSTEM METRICS
  */
