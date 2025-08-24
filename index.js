@@ -120,6 +120,9 @@ const {
 const cambodiaHandler = require('./handlers/cambodiaDeals');
 const lpManagement = require('./cambodia/lpManagement');
 const portfolioManager = require('./cambodia/portfolioManager');
+const realEstateWealth = require('./cambodia/realEstateWealth'); 
+const businessWealth = require('./cambodia/businessWealth'); // ✅ ADD THIS LINE
+const InvestmentWealth = require('./cambodia/investmentWealth');
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
