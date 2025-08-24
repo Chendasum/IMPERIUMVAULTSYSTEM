@@ -7,6 +7,10 @@ let openaiClient;
 try {
     openaiClient = require('./openaiClient');
     console.log('✅ GPT-5 client loaded successfully');
+} catch (error) {
+    console.error('❌ GPT-5 client import failed:', error.message);
+    openaiClient = { 
+        getGPT5Analysis: async (prompt) => `GPT-5 client unavailable: ${error.message}` 
     };
 }
 
@@ -61,11 +65,6 @@ function analyzeQueryComplexity(message) {
         complexity: isVeryComplex ? 'very_high' : 
                    isComplex ? 'high' : 
                    needsLongResponse ? 'medium' : 'low'
-    };
-} catch (error) {
-    console.error('❌ GPT-5 client import failed:', error.message);
-    openaiClient = { 
-        getGPT5Analysis: async (prompt) => `GPT-5 client unavailable: ${error.message}` 
     };
 }
 
