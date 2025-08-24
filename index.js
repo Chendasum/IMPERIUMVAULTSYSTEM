@@ -48,6 +48,15 @@ const {
     testGPT5Capabilities           // GPT-5 capability testing
 } = require("./utils/openaiClient");
 
+// 🚀 ENHANCED: Speed Optimization System with Memory Integration
+const { 
+    executeSpeedOptimizedGPT5,
+    ultraFastResponse,
+    fastResponse,
+    balancedResponse,
+    analyzeQueryForSpeed
+} = require("./utils/gpt5SpeedOptimization");
+
 // Enhanced utility modules (preserved and optimized)
 const { 
     getRealLiveData, 
