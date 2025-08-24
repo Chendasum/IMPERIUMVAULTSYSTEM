@@ -179,7 +179,7 @@ async function testGPT5Capabilities() {
                 content: "Hello, are you GPT-5 Chat?"
             }
         ], {
-            max_tokens: 100,
+            max_tokens: 50,  // ✅ FIXED: Increased from 100
             temperature: 0.7
         });
         
@@ -592,7 +592,7 @@ async function testOpenAIConnection() {
             input: "Test connection",
             reasoning: { effort: "minimal" },
             text: { verbosity: "low" },
-            max_output_tokens: 10  // ✅ FIXED: Use max_output_tokens
+            max_output_tokens: 20  // ✅ FIXED: Minimum is 16, using 20 for safety
         });
         
         let responseText = "";
