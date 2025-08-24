@@ -589,7 +589,10 @@ async function handleMessage(msg) {
             {
                 messageType: 'telegram_webhook',
                 hasMedia: isMultimodal,
-                title: `GPT-5 Smart Analysis`
+                title: `GPT-5 Smart Analysis`,
+                max_output_tokens: 6000,  // ✅ ADDED: Higher default token limit
+                reasoning_effort: 'medium',
+                verbosity: 'medium'
             }
         );
         
@@ -706,7 +709,10 @@ async function handleGPT5Command(msg, bot) {
     }
     
     await executeEnhancedGPT5Command(query, chatId, bot, {
-        title: 'GPT-5 Direct Command'
+        title: 'GPT-5 Direct Command',
+        max_output_tokens: 6000,  // ✅ ADDED: High token limit for flexible responses
+        reasoning_effort: 'medium',
+        verbosity: 'medium'
     });
 }
 
@@ -774,7 +780,10 @@ async function handleDeepAnalysis(msg, bot) {
     
     await executeEnhancedGPT5Command(query, chatId, bot, {
         title: 'GPT-5 Deep Analysis',
-        forceModel: 'gpt-5'  // Force full GPT-5 for deep analysis
+        forceModel: 'gpt-5',  // Force full GPT-5 for deep analysis
+        max_output_tokens: 8000,  // ✅ ADDED: Maximum tokens for long analysis
+        reasoning_effort: 'high',
+        verbosity: 'high'
     });
 }
 
@@ -865,7 +874,10 @@ async function handleCambodiaAnalysis(msg, bot) {
         bot, 
         { 
             title: 'Cambodia Business Analysis',
-            forceModel: 'gpt-5-mini'  // Cost-efficient for regional analysis
+            forceModel: 'gpt-5-mini',  // Cost-efficient for regional analysis
+            max_output_tokens: 5000,  // ✅ INCREASED: More tokens for detailed analysis
+            reasoning_effort: 'medium',
+            verbosity: 'high'
         }
     );
 }
@@ -893,7 +905,10 @@ async function handleLendingAnalysis(msg, bot) {
         bot, 
         { 
             title: 'Lending Analysis',
-            forceModel: 'gpt-5'  // Full GPT-5 for financial analysis
+            forceModel: 'gpt-5',  // Full GPT-5 for financial analysis
+            max_output_tokens: 6000,  // ✅ INCREASED: More tokens for detailed financial analysis
+            reasoning_effort: 'high',
+            verbosity: 'high'
         }
     );
 }
@@ -921,7 +936,10 @@ async function handlePortfolioAnalysis(msg, bot) {
         bot, 
         { 
             title: 'Portfolio Analysis',
-            forceModel: 'gpt-5'  // Full GPT-5 for complex analysis
+            forceModel: 'gpt-5',  // Full GPT-5 for complex analysis
+            max_output_tokens: 6000,  // ✅ INCREASED: More tokens for comprehensive analysis
+            reasoning_effort: 'high',
+            verbosity: 'high'
         }
     );
 }
