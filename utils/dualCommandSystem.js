@@ -7,6 +7,60 @@ let openaiClient;
 try {
     openaiClient = require('./openaiClient');
     console.log('✅ GPT-5 client loaded successfully');
+}
+
+// 🧠 QUERY COMPLEXITY ANALYZER for Dynamic Token Scaling
+function analyzeQueryComplexity(message) {
+    const text = message.toLowerCase();
+    
+    // Very complex indicators
+    const veryComplexPatterns = [
+        /(write.*comprehensive|create.*detailed.*report)/i,
+        /(step.*by.*step.*guide|complete.*tutorial)/i,
+        /(analyze.*thoroughly|provide.*full.*analysis)/i,
+        /(research.*paper|academic.*analysis)/i,
+        /(business.*plan|strategic.*framework)/i,
+        /(financial.*model|investment.*analysis)/i,
+        /(legal.*document|contract.*analysis)/i
+    ];
+    
+    // Complex indicators
+    const complexPatterns = [
+        /(explain.*detail|provide.*example)/i,
+        /(compare.*contrast|pros.*cons)/i,
+        /(advantages.*disadvantages)/i,
+        /(multiple.*options|various.*approaches)/i,
+        /(bullet.*points|numbered.*list)/i
+    ];
+    
+    // Long response indicators
+    const longResponseIndicators = [
+        /(tell.*me.*everything|explain.*fully)/i,
+        /(all.*information|complete.*overview)/i,
+        /(elaborate|expand.*on|more.*detail)/i,
+        /(comprehensive|thorough|detailed)/i
+    ];
+    
+    const isVeryComplex = veryComplexPatterns.some(pattern => pattern.test(text));
+    const isComplex = complexPatterns.some(pattern => pattern.test(text));
+    const needsLongResponse = longResponseIndicators.some(pattern => pattern.test(text));
+    
+    // Count complexity indicators
+    const questionWords = (text.match(/\b(what|how|why|when|where|which|who)\b/g) || []).length;
+    const sentences = text.split(/[.!?]+/).length;
+    const words = text.split(/\s+/).length;
+    
+    return {
+        isVeryComplex: isVeryComplex || (sentences > 5 && words > 100),
+        isComplex: isComplex || questionWords > 2,
+        needsLongResponse: needsLongResponse || words > 50,
+        sentences: sentences,
+        words: words,
+        questionWords: questionWords,
+        complexity: isVeryComplex ? 'very_high' : 
+                   isComplex ? 'high' : 
+                   needsLongResponse ? 'medium' : 'low'
+    };
 } catch (error) {
     console.error('❌ GPT-5 client import failed:', error.message);
     openaiClient = { 
@@ -187,12 +241,12 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     const hasMemoryReference = memoryPatterns.some(pattern => pattern.test(message));
     const hasMemoryContext = memoryContext && memoryContext.length > 100;
     
-    // 🚀 GPT-5 MODEL SELECTION LOGIC
+    // 🚀 GPT-5 MODEL SELECTION LOGIC with Dynamic Token Scaling
     let gpt5Config = {
         model: 'gpt-5-mini',
         reasoning_effort: 'medium',
         verbosity: 'medium',
-        max_completion_tokens: 3000,
+        max_completion_tokens: 4000,        // ✅ INCREASED from 3000
         temperature: 0.7,
         priority: 'standard',
         reason: 'GPT-5 Mini - Balanced performance'
@@ -204,7 +258,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5-nano',
             reasoning_effort: 'minimal',
             verbosity: 'low',
-            max_completion_tokens: 1200,
+            max_completion_tokens: 2000,    // ✅ INCREASED from 1200
             priority: 'speed',
             reason: 'Speed critical - GPT-5 Nano for fast response'
         };
@@ -215,7 +269,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         gpt5Config = {
             model: 'gpt-5-chat-latest',
             temperature: 0.7,
-            max_tokens: 1000,
+            max_tokens: 3000,               // ✅ INCREASED from 1000
             priority: 'chat',
             reason: 'Chat pattern - GPT-5 Chat model'
         };
@@ -227,7 +281,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5',
             reasoning_effort: 'high',
             verbosity: 'high',
-            max_completion_tokens: 4000,
+            max_completion_tokens: 6000,    // ✅ INCREASED from 4000
             temperature: 0.6,
             priority: 'complex',
             reason: 'Complex strategic analysis - Full GPT-5 with high reasoning'
@@ -240,8 +294,8 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5',
             reasoning_effort: 'high',
             verbosity: 'medium',
-            max_completion_tokens: 4000,
-            temperature: 0.3,  // Lower temperature for precision
+            max_completion_tokens: 5000,    // ✅ INCREASED from 4000
+            temperature: 0.3,
             priority: 'mathematical',
             reason: 'Mathematical/coding precision - Full GPT-5 with high reasoning'
         };
@@ -253,7 +307,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'high',
-            max_completion_tokens: 3000,
+            max_completion_tokens: 4500,    // ✅ INCREASED from 3000
             temperature: 0.6,
             priority: 'regional',
             reason: 'Cambodia/regional analysis - GPT-5 Mini with detailed output'
@@ -266,7 +320,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_completion_tokens: 2500,
+            max_completion_tokens: 4000,    // ✅ INCREASED from 2500
             temperature: 0.6,
             priority: 'market',
             reason: 'Market analysis - GPT-5 Mini for balanced performance'
@@ -279,11 +333,41 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: 'gpt-5',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_completion_tokens: 3000,
+            max_completion_tokens: 4500,    // ✅ INCREASED from 3000
             temperature: 0.7,
             priority: 'multimodal',
             reason: 'Multimodal content - Full GPT-5 for vision analysis'
         };
+    }
+    
+    // 🔧 DYNAMIC TOKEN SCALING based on query length and complexity
+    const queryLength = message.length;
+    const queryComplexity = analyzeQueryComplexity(message);
+    
+    // Scale tokens based on input length
+    if (queryLength > 1000) {
+        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.5, 8000);
+        gpt5Config.reason += ' (Scaled for long input)';
+    }
+    
+    // Scale tokens based on complexity indicators
+    if (queryComplexity.isVeryComplex) {
+        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.3, 8000);
+        gpt5Config.reason += ' (Scaled for complexity)';
+    }
+    
+    // Handle explicit requests for long responses
+    const longResponsePatterns = [
+        /(write.*long|detailed.*report|comprehensive.*analysis)/i,
+        /(full.*explanation|complete.*guide|step.*by.*step)/i,
+        /(generate.*content|create.*document|write.*article)/i,
+        /(elaborate|expand|provide.*more|tell.*me.*everything)/i
+    ];
+    
+    if (longResponsePatterns.some(pattern => pattern.test(message))) {
+        gpt5Config.max_completion_tokens = 8000;  // Maximum allowed
+        if (gpt5Config.max_tokens) gpt5Config.max_tokens = 8000;
+        gpt5Config.reason += ' (Long response requested)';
     }
     
     return {
@@ -437,7 +521,7 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context = null) {
             model: 'gpt-5-nano',
             reasoning_effort: 'minimal',
             verbosity: 'low',
-            max_output_tokens: 1500  // ✅ FIXED: Use max_output_tokens
+            max_output_tokens: 3000  // ✅ INCREASED from 1500 for better fallback responses
         });
         
     } catch (fallbackError) {
