@@ -513,81 +513,162 @@ CREATE TABLE IF NOT EXISTS realtime_system_metrics (
 );
         `);
     
-        // Create indexes in a separate query to avoid conflicts
-        await pool.query(`
-            -- 📊 CREATE COMPREHENSIVE INDEXES FOR PERFORMANCE
-            
-            -- Core table indexes
-            CREATE INDEX IF NOT EXISTS idx_conversations_chat_id_time ON conversations(chat_id, timestamp DESC);
-            CREATE INDEX IF NOT EXISTS idx_conversations_importance ON conversations(strategic_importance);
-            CREATE INDEX IF NOT EXISTS idx_memories_chat_id_category ON persistent_memories(chat_id, category);
-            CREATE INDEX IF NOT EXISTS idx_memories_importance ON persistent_memories(importance);
-            CREATE INDEX IF NOT EXISTS idx_memories_hash ON persistent_memories(fact_hash);
-            CREATE INDEX IF NOT EXISTS idx_training_chat_id ON training_documents(chat_id);
-            CREATE INDEX IF NOT EXISTS idx_training_type ON training_documents(document_type);
-            
-            -- Ray Dalio indexes
-            CREATE INDEX IF NOT EXISTS idx_regime_records_date_name ON regime_records(date_detected, regime_name);
-            CREATE INDEX IF NOT EXISTS idx_regime_records_confidence ON regime_records(confidence DESC);
-            CREATE INDEX IF NOT EXISTS idx_portfolio_allocations_chat_regime ON portfolio_allocations(chat_id, regime_name);
-            CREATE INDEX IF NOT EXISTS idx_regime_performance_chat_regime ON regime_performance(chat_id, regime_name);
-            CREATE INDEX IF NOT EXISTS idx_regime_performance_pnl ON regime_performance(profit_loss DESC);
-            CREATE INDEX IF NOT EXISTS idx_risk_assessments_chat_date ON risk_assessments(chat_id, timestamp DESC);
-            CREATE INDEX IF NOT EXISTS idx_market_signals_type_time ON market_signals(signal_type, triggered_at DESC);
-            CREATE INDEX IF NOT EXISTS idx_position_sizing_chat_symbol ON position_sizing_history(chat_id, symbol);
-            CREATE INDEX IF NOT EXISTS idx_daily_observations_date ON daily_observations(observation_date DESC);
-            CREATE INDEX IF NOT EXISTS idx_command_analytics_chat_command ON command_analytics(chat_id, command);
-            CREATE INDEX IF NOT EXISTS idx_command_analytics_success ON command_analytics(success, timestamp DESC);
-            
-            -- Cambodia indexes
-            CREATE INDEX IF NOT EXISTS idx_cambodia_deals_chat_id ON cambodia_deals(chat_id);
-            CREATE INDEX IF NOT EXISTS idx_cambodia_deals_status ON cambodia_deals(deal_status);
-            CREATE INDEX IF NOT EXISTS idx_cambodia_deals_risk ON cambodia_deals(risk_score);
-            CREATE INDEX IF NOT EXISTS idx_cambodia_portfolio_date ON cambodia_portfolio(portfolio_date DESC);
-            CREATE INDEX IF NOT EXISTS idx_cambodia_market_date ON cambodia_market_data(data_date DESC);
+// Create indexes in a separate query to avoid conflicts with enhanced error handling
+        try {
+            await pool.query(`
+                -- 📊 CREATE COMPREHENSIVE INDEXES FOR PERFORMANCE
+                
+                -- Core table indexes
+                CREATE INDEX IF NOT EXISTS idx_conversations_chat_id_time ON conversations(chat_id, timestamp DESC);
+                CREATE INDEX IF NOT EXISTS idx_conversations_importance ON conversations(strategic_importance);
+                CREATE INDEX IF NOT EXISTS idx_memories_chat_id_category ON persistent_memories(chat_id, category);
+                CREATE INDEX IF NOT EXISTS idx_memories_importance ON persistent_memories(importance);
+                CREATE INDEX IF NOT EXISTS idx_memories_hash ON persistent_memories(fact_hash);
+                CREATE INDEX IF NOT EXISTS idx_training_chat_id ON training_documents(chat_id);
+                CREATE INDEX IF NOT EXISTS idx_training_type ON training_documents(document_type);
+                
+                -- Ray Dalio indexes
+                CREATE INDEX IF NOT EXISTS idx_regime_records_date_name ON regime_records(date_detected, regime_name);
+                CREATE INDEX IF NOT EXISTS idx_regime_records_confidence ON regime_records(confidence DESC);
+                CREATE INDEX IF NOT EXISTS idx_portfolio_allocations_chat_regime ON portfolio_allocations(chat_id, regime_name);
+                CREATE INDEX IF NOT EXISTS idx_regime_performance_chat_regime ON regime_performance(chat_id, regime_name);
+                CREATE INDEX IF NOT EXISTS idx_regime_performance_pnl ON regime_performance(profit_loss DESC);
+                CREATE INDEX IF NOT EXISTS idx_risk_assessments_chat_date ON risk_assessments(chat_id, timestamp DESC);
+                CREATE INDEX IF NOT EXISTS idx_market_signals_type_time ON market_signals(signal_type, triggered_at DESC);
+                CREATE INDEX IF NOT EXISTS idx_position_sizing_chat_symbol ON position_sizing_history(chat_id, symbol);
+                CREATE INDEX IF NOT EXISTS idx_daily_observations_date ON daily_observations(observation_date DESC);
+                CREATE INDEX IF NOT EXISTS idx_command_analytics_chat_command ON command_analytics(chat_id, command);
+                CREATE INDEX IF NOT EXISTS idx_command_analytics_success ON command_analytics(success, timestamp DESC);
+                
+                -- Cambodia indexes
+                CREATE INDEX IF NOT EXISTS idx_cambodia_deals_chat_id ON cambodia_deals(chat_id);
+                CREATE INDEX IF NOT EXISTS idx_cambodia_deals_status ON cambodia_deals(deal_status);
+                CREATE INDEX IF NOT EXISTS idx_cambodia_deals_risk ON cambodia_deals(risk_score);
+                CREATE INDEX IF NOT EXISTS idx_cambodia_portfolio_date ON cambodia_portfolio(portfolio_date DESC);
+                CREATE INDEX IF NOT EXISTS idx_cambodia_market_date ON cambodia_market_data(data_date DESC);
 
-            -- Dual AI conversation indexes
-            CREATE INDEX IF NOT EXISTS idx_dual_ai_chat_type_time ON dual_ai_conversations(chat_id, conversation_type, timestamp DESC);
-            CREATE INDEX IF NOT EXISTS idx_dual_ai_primary_secondary ON dual_ai_conversations(primary_ai, secondary_ai);
-            CREATE INDEX IF NOT EXISTS idx_dual_ai_complexity_success ON dual_ai_conversations(complexity, success, response_time_ms);
-            CREATE INDEX IF NOT EXISTS idx_dual_ai_specialized_function ON dual_ai_conversations(specialized_function, timestamp DESC);
-            CREATE INDEX IF NOT EXISTS idx_dual_ai_datetime_queries ON dual_ai_conversations(datetime_query, timestamp DESC);
+                -- Dual AI conversation indexes
+                CREATE INDEX IF NOT EXISTS idx_dual_ai_chat_type_time ON dual_ai_conversations(chat_id, conversation_type, timestamp DESC);
+                CREATE INDEX IF NOT EXISTS idx_dual_ai_primary_secondary ON dual_ai_conversations(primary_ai, secondary_ai);
+                CREATE INDEX IF NOT EXISTS idx_dual_ai_complexity_success ON dual_ai_conversations(complexity, success, response_time_ms);
+                CREATE INDEX IF NOT EXISTS idx_dual_ai_specialized_function ON dual_ai_conversations(specialized_function, timestamp DESC);
+                CREATE INDEX IF NOT EXISTS idx_dual_ai_datetime_queries ON dual_ai_conversations(datetime_query, timestamp DESC);
 
-            -- Head-to-head performance indexes
-            CREATE INDEX IF NOT EXISTS idx_head_to_head_chat_time ON ai_head_to_head(chat_id, timestamp DESC);
-            CREATE INDEX IF NOT EXISTS idx_head_to_head_preferred_ai ON ai_head_to_head(user_preferred_ai, query_complexity);
-            CREATE INDEX IF NOT EXISTS idx_head_to_head_performance ON ai_head_to_head(gpt_response_time_ms, claude_response_time_ms);
+                -- Head-to-head performance indexes
+                CREATE INDEX IF NOT EXISTS idx_head_to_head_chat_time ON ai_head_to_head(chat_id, timestamp DESC);
+                CREATE INDEX IF NOT EXISTS idx_head_to_head_preferred_ai ON ai_head_to_head(user_preferred_ai, query_complexity);
+                CREATE INDEX IF NOT EXISTS idx_head_to_head_performance ON ai_head_to_head(gpt_response_time_ms, claude_response_time_ms);
 
-            -- Enhanced function performance indexes
-            CREATE INDEX IF NOT EXISTS idx_enhanced_function_name_time ON enhanced_function_performance(function_name, timestamp DESC);
-            CREATE INDEX IF NOT EXISTS idx_enhanced_function_category ON enhanced_function_performance(function_category, success);
-            CREATE INDEX IF NOT EXISTS idx_enhanced_function_performance ON enhanced_function_performance(execution_time_ms, result_accuracy);
+                -- Enhanced function performance indexes
+                CREATE INDEX IF NOT EXISTS idx_enhanced_function_name_time ON enhanced_function_performance(function_name, timestamp DESC);
+                CREATE INDEX IF NOT EXISTS idx_enhanced_function_category ON enhanced_function_performance(function_category, success);
+                CREATE INDEX IF NOT EXISTS idx_enhanced_function_performance ON enhanced_function_performance(execution_time_ms, result_accuracy);
 
-            -- Real-time metrics indexes
-            CREATE INDEX IF NOT EXISTS idx_realtime_metrics_timestamp ON realtime_system_metrics(metric_timestamp DESC);
-            CREATE INDEX IF NOT EXISTS idx_realtime_metrics_health ON realtime_system_metrics(system_health_score DESC);
+                -- Real-time metrics indexes
+                CREATE INDEX IF NOT EXISTS idx_realtime_metrics_timestamp ON realtime_system_metrics(metric_timestamp DESC);
+                CREATE INDEX IF NOT EXISTS idx_realtime_metrics_health ON realtime_system_metrics(system_health_score DESC);
+                
+                -- Analytics indexes
+                CREATE INDEX IF NOT EXISTS idx_user_sessions_chat_date ON user_sessions(chat_id, session_start DESC);
+                CREATE INDEX IF NOT EXISTS idx_trading_patterns_chat_type ON trading_patterns(chat_id, pattern_type);
+                CREATE INDEX IF NOT EXISTS idx_strategic_insights_type_confidence ON strategic_insights(insight_type, confidence_score DESC);
+                CREATE INDEX IF NOT EXISTS idx_system_metrics_date ON system_metrics(metric_date DESC);
+                CREATE INDEX IF NOT EXISTS idx_api_usage_provider_date ON api_usage(api_provider, usage_date DESC);
+            `);
             
-            -- Analytics indexes
-            CREATE INDEX IF NOT EXISTS idx_user_sessions_chat_date ON user_sessions(chat_id, session_start DESC);
-            CREATE INDEX IF NOT EXISTS idx_trading_patterns_chat_type ON trading_patterns(chat_id, pattern_type);
-            CREATE INDEX IF NOT EXISTS idx_strategic_insights_type_confidence ON strategic_insights(insight_type, confidence_score DESC);
-            CREATE INDEX IF NOT EXISTS idx_system_metrics_date ON system_metrics(metric_date DESC);
-            CREATE INDEX IF NOT EXISTS idx_api_usage_provider_date ON api_usage(api_provider, usage_date DESC);
-        `);
+            console.log('✅ Database indexes created successfully');
+            
+        } catch (indexError) {
+            console.log('⚠️ Some database indexes failed to create:', indexError.message);
+            // Don't fail initialization just for indexes
+        }
+        
+        // 🔧 ADD MISSING COLUMNS TO SYSTEM_METRICS TABLE
+        try {
+            console.log('🔧 Adding missing system_metrics columns...');
+            
+            // Add missing enhanced system columns
+            const missingColumns = [
+                'webhook_requests_processed INTEGER DEFAULT 0',
+                'enhanced_sessions_started INTEGER DEFAULT 0', 
+                'memory_enabled_sessions INTEGER DEFAULT 0',
+                'enhanced_sessions_completed INTEGER DEFAULT 0',
+                'total_response_time BIGINT DEFAULT 0',
+                'commands_executed INTEGER DEFAULT 0',
+                'webhook_timeouts INTEGER DEFAULT 0',
+                'timeout_processing_time BIGINT DEFAULT 0',
+                'webhook_processing_time BIGINT DEFAULT 0',
+                'webhook_errors INTEGER DEFAULT 0',
+                'error_processing_time BIGINT DEFAULT 0',
+                'memory_fixes_applied INTEGER DEFAULT 0',
+                'business_request_detection INTEGER DEFAULT 0',
+                'enhanced_system_startups INTEGER DEFAULT 0',
+                'memory_loss_fix_applied INTEGER DEFAULT 0',
+                'system_version TEXT DEFAULT \'6.0-enhanced\'',
+                'startup_timestamp TIMESTAMPTZ DEFAULT NOW()',
+                'enhanced_system_shutdown INTEGER DEFAULT 0',
+                'gpt5_system_shutdown INTEGER DEFAULT 0',
+                'speed_optimization_shutdown INTEGER DEFAULT 0',
+                'memory_system_shutdown INTEGER DEFAULT 0',
+                'webhook_removed INTEGER DEFAULT 0',
+                'graceful_shutdown INTEGER DEFAULT 0',
+                'shutdown_timestamp TIMESTAMPTZ'
+            ];
+            
+            for (const column of missingColumns) {
+                try {
+                    const [columnName] = column.split(' ');
+                    await pool.query(`
+                        ALTER TABLE system_metrics 
+                        ADD COLUMN IF NOT EXISTS ${column}
+                    `);
+                    console.log(`✅ Added column: ${columnName}`);
+                } catch (columnError) {
+                    // Column might already exist, check specific error
+                    if (columnError.message.includes('already exists')) {
+                        console.log(`ℹ️ Column already exists: ${column.split(' ')[0]}`);
+                    } else {
+                        console.log(`⚠️ Failed to add column: ${column.split(' ')[0]} - ${columnError.message}`);
+                    }
+                }
+            }
+            
+            console.log('✅ System metrics columns updated successfully');
+            
+        } catch (columnsError) {
+            console.log('⚠️ System metrics column update error:', columnsError.message);
+            // Don't fail initialization for column additions
+        }
         
         console.log('✅ Strategic Command Database schema initialized successfully');
         
-        // Initialize system metrics
-        await initializeSystemMetrics();
+        // Initialize system metrics with enhanced error handling
+        try {
+            await initializeSystemMetrics();
+            console.log('✅ System metrics initialized');
+        } catch (metricsError) {
+            console.log('⚠️ System metrics initialization failed:', metricsError.message);
+            // Don't fail database initialization for metrics
+        }
         
         return true;
+        
     } catch (error) {
         console.error('❌ Database initialization error:', error);
         connectionStats.lastError = error.message;
         connectionStats.connectionHealth = 'INIT_ERROR';
+        
+        // Enhanced error reporting
+        if (error.message.includes('relation') && error.message.includes('does not exist')) {
+            console.log('💡 Suggestion: Run database migrations to create missing tables');
+        } else if (error.message.includes('permission denied')) {
+            console.log('💡 Suggestion: Check database user permissions');
+        } else if (error.message.includes('connection')) {
+            console.log('💡 Suggestion: Verify DATABASE_URL and network connectivity');
+        }
+        
         return false;
     }
-}
 
 /**
  * 📊 INITIALIZE SYSTEM METRICS
