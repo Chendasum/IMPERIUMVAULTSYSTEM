@@ -118,9 +118,9 @@ function buildResponsesRequest(model, input, options = {}) {
         };
     }
     
-    // Add max_completion_tokens
-    if (options.max_completion_tokens) {
-        request.max_completion_tokens = options.max_completion_tokens;
+    // ✅ FIXED: Use max_output_tokens instead of max_completion_tokens for Responses API
+    if (options.max_completion_tokens || options.max_output_tokens) {
+        request.max_output_tokens = options.max_output_tokens || options.max_completion_tokens;
     }
     
     return request;
@@ -369,7 +369,8 @@ async function getGPT5Analysis(prompt, options = {}) {
             const requestOptions = {
                 reasoning_effort: options.reasoning_effort || queryConfig.reasoning_effort,
                 verbosity: options.verbosity || queryConfig.verbosity,
-                max_completion_tokens: options.max_completion_tokens || queryConfig.max_completion_tokens
+                // ✅ FIXED: Use max_output_tokens for Responses API
+                max_output_tokens: options.max_output_tokens || options.max_completion_tokens || queryConfig.max_completion_tokens
             };
             
             const responsesRequest = buildResponsesRequest(selectedModel, prompt, requestOptions);
@@ -458,7 +459,7 @@ async function getQuickNanoResponse(prompt, options = {}) {
         model: GPT5_CONFIG.NANO_MODEL,
         reasoning_effort: "minimal",
         verbosity: "low",
-        max_completion_tokens: 600
+        max_output_tokens: 600  // ✅ FIXED: Use max_output_tokens
     });
 }
 
@@ -468,7 +469,7 @@ async function getQuickMiniResponse(prompt, options = {}) {
         model: GPT5_CONFIG.MINI_MODEL,
         reasoning_effort: "minimal",
         verbosity: "medium",
-        max_completion_tokens: 1200
+        max_output_tokens: 1200  // ✅ FIXED: Use max_output_tokens
     });
 }
 
@@ -478,7 +479,7 @@ async function getDeepAnalysis(prompt, options = {}) {
         model: GPT5_CONFIG.PRIMARY_MODEL,
         reasoning_effort: "medium",
         verbosity: "medium",
-        max_completion_tokens: 2500
+        max_output_tokens: 2500  // ✅ FIXED: Use max_output_tokens
     });
 }
 
@@ -518,7 +519,7 @@ async function getEnhancedMarketAnalysis(query, marketData = null, options = {})
             model: options.model || GPT5_CONFIG.PRIMARY_MODEL,
             reasoning_effort: options.reasoning_effort || "medium",
             verbosity: options.verbosity || "medium",
-            max_completion_tokens: 3000
+            max_output_tokens: 3000  // ✅ FIXED: Use max_output_tokens
         });
         
     } catch (error) {
@@ -590,7 +591,8 @@ async function testOpenAIConnection() {
             model: GPT5_CONFIG.NANO_MODEL,
             input: "Test connection",
             reasoning: { effort: "minimal" },
-            text: { verbosity: "low" }
+            text: { verbosity: "low" },
+            max_output_tokens: 10  // ✅ FIXED: Use max_output_tokens
         });
         
         let responseText = "";
