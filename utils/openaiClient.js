@@ -459,7 +459,7 @@ async function getQuickNanoResponse(prompt, options = {}) {
         model: GPT5_CONFIG.NANO_MODEL,
         reasoning_effort: "minimal",
         verbosity: "low",
-        max_output_tokens: 600  // ✅ FIXED: Use max_output_tokens
+        max_output_tokens: 2000  // ✅ INCREASED from 600 for better responses
     });
 }
 
@@ -469,7 +469,7 @@ async function getQuickMiniResponse(prompt, options = {}) {
         model: GPT5_CONFIG.MINI_MODEL,
         reasoning_effort: "minimal",
         verbosity: "medium",
-        max_output_tokens: 1200  // ✅ FIXED: Use max_output_tokens
+        max_output_tokens: 3000  // ✅ INCREASED from 1200 for detailed responses
     });
 }
 
@@ -479,7 +479,7 @@ async function getDeepAnalysis(prompt, options = {}) {
         model: GPT5_CONFIG.PRIMARY_MODEL,
         reasoning_effort: "medium",
         verbosity: "medium",
-        max_output_tokens: 2500  // ✅ FIXED: Use max_output_tokens
+        max_output_tokens: 6000  // ✅ INCREASED from 2500 for comprehensive analysis
     });
 }
 
