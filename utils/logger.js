@@ -1,4 +1,4 @@
-// utils/logger.js - FIXED VERSION
+// utils/logger.js - FIXED VERSION with User Interaction & GPT Response Logging
 const fs = require('fs');
 const path = require('path');
 
@@ -90,6 +90,96 @@ class Logger {
         this.writeToFile('DEBUG', message, data);
     }
 
+    // 📝 USER INTERACTION LOGGING (Missing function - ADDED)
+    async logUserInteraction(data) {
+        try {
+            const logMessage = `User Interaction - Chat: ${data.chatId} | Message: "${data.userMessage?.substring(0, 100)}..." | Type: ${data.messageType} | Media: ${data.hasMedia || false}`;
+            
+            console.log(`👤 ${logMessage}`);
+            this.writeToFile('USER_INTERACTION', logMessage, {
+                chatId: data.chatId,
+                messageId: data.messageId,
+                messageType: data.messageType,
+                hasMedia: data.hasMedia,
+                mediaTypes: data.mediaTypes,
+                timestamp: data.timestamp
+            });
+
+            // Write to specific user interactions log
+            const today = new Date().toISOString().split('T')[0];
+            const userLogFile = path.join(this.logsDir, `user-interactions-${today}.log`);
+            const userLogEntry = `${data.timestamp} | ${data.chatId} | ${data.userMessage?.substring(0, 200) || 'No text'} | Media: ${JSON.stringify(data.mediaTypes || {})}\n`;
+            fs.appendFileSync(userLogFile, userLogEntry);
+
+        } catch (error) {
+            console.error('❌ Failed to log user interaction:', error);
+        }
+    }
+
+    // 🤖 GPT RESPONSE LOGGING (Missing function - ADDED)
+    async logGPTResponse(data) {
+        try {
+            const logMessage = `GPT Response - Chat: ${data.chatId} | AI: ${data.aiUsed} | Model: ${data.modelUsed} | Time: ${data.responseTime}ms | Memory: ${data.memoryUsed}`;
+            
+            console.log(`🤖 ${logMessage}`);
+            this.writeToFile('GPT_RESPONSE', logMessage, {
+                chatId: data.chatId,
+                aiUsed: data.aiUsed,
+                modelUsed: data.modelUsed,
+                responseTime: data.responseTime,
+                memoryUsed: data.memoryUsed,
+                powerMode: data.powerMode,
+                telegramDelivered: data.telegramDelivered,
+                gpt5OnlyMode: data.gpt5OnlyMode,
+                webhookMode: data.webhookMode,
+                multimodalType: data.multimodalType,
+                hasTranscription: data.hasTranscription
+            });
+
+            // Write to specific GPT responses log
+            const today = new Date().toISOString().split('T')[0];
+            const gptLogFile = path.join(this.logsDir, `gpt-responses-${today}.log`);
+            const gptLogEntry = `${new Date().toISOString()} | ${data.chatId} | ${data.aiUsed} | ${data.modelUsed} | ${data.responseTime}ms | ${data.gptResponse?.substring(0, 100)}...\n`;
+            fs.appendFileSync(gptLogFile, gptLogEntry);
+
+        } catch (error) {
+            console.error('❌ Failed to log GPT response:', error);
+        }
+    }
+
+    // 🚨 ERROR LOGGING (Enhanced)
+    async logError(data) {
+        try {
+            const logMessage = `System Error - Chat: ${data.chatId} | Component: ${data.component} | Error: ${data.error}`;
+            
+            console.error(`🚨 ${logMessage}`);
+            this.writeToFile('SYSTEM_ERROR', logMessage, {
+                chatId: data.chatId,
+                userMessage: data.userMessage,
+                error: data.error,
+                processingTime: data.processingTime,
+                component: data.component,
+                gpt5OnlyMode: data.gpt5OnlyMode,
+                webhookMode: data.webhookMode,
+                hasMedia: data.hasMedia
+            });
+
+            // Write to specific error log
+            const today = new Date().toISOString().split('T')[0];
+            const errorLogFile = path.join(this.logsDir, `system-errors-${today}.log`);
+            const errorLogEntry = `${new Date().toISOString()} | ${data.chatId} | ${data.component} | ${data.error}\n`;
+            fs.appendFileSync(errorLogFile, errorLogEntry);
+
+            // Send critical errors to admin
+            if (data.error.includes('CRITICAL') || data.error.includes('FATAL') || data.component === 'webhook_handler') {
+                await this.sendToAdmin(`🚨 SYSTEM ERROR: ${data.error} (Component: ${data.component})`);
+            }
+
+        } catch (error) {
+            console.error('❌ Failed to log system error:', error);
+        }
+    }
+
     // Get logs for API endpoint
     getLogs(type = 'info', date = null) {
         try {
@@ -111,7 +201,7 @@ class Logger {
     getLogSummary(date = null) {
         try {
             const targetDate = date || new Date().toISOString().split('T')[0];
-            const logTypes = ['info', 'success', 'warn', 'error', 'debug'];
+            const logTypes = ['info', 'success', 'warn', 'error', 'debug', 'user_interaction', 'gpt_response', 'system_error'];
             const summary = {};
             
             logTypes.forEach(type => {
@@ -130,6 +220,56 @@ class Logger {
             return {};
         }
     }
+
+    // 📊 Get conversation statistics
+    getConversationStats(date = null) {
+        try {
+            const targetDate = date || new Date().toISOString().split('T')[0];
+            const userLogFile = path.join(this.logsDir, `user-interactions-${targetDate}.log`);
+            const gptLogFile = path.join(this.logsDir, `gpt-responses-${targetDate}.log`);
+            
+            let userInteractions = 0;
+            let gptResponses = 0;
+            let uniqueUsers = new Set();
+
+            if (fs.existsSync(userLogFile)) {
+                const userLogs = fs.readFileSync(userLogFile, 'utf-8');
+                const userLines = userLogs.split('\n').filter(line => line.trim());
+                userInteractions = userLines.length;
+                
+                // Count unique users
+                userLines.forEach(line => {
+                    const parts = line.split(' | ');
+                    if (parts.length > 1) {
+                        uniqueUsers.add(parts[1]); // chatId is second part
+                    }
+                });
+            }
+
+            if (fs.existsSync(gptLogFile)) {
+                const gptLogs = fs.readFileSync(gptLogFile, 'utf-8');
+                gptResponses = gptLogs.split('\n').filter(line => line.trim()).length;
+            }
+
+            return {
+                date: targetDate,
+                userInteractions,
+                gptResponses,
+                uniqueUsers: uniqueUsers.size,
+                avgResponsesPerUser: uniqueUsers.size > 0 ? Math.round(gptResponses / uniqueUsers.size * 10) / 10 : 0
+            };
+            
+        } catch (error) {
+            this.error('Failed to get conversation stats', error);
+            return {
+                date: date || new Date().toISOString().split('T')[0],
+                userInteractions: 0,
+                gptResponses: 0,
+                uniqueUsers: 0,
+                avgResponsesPerUser: 0
+            };
+        }
+    }
 }
 
 // Create singleton instance
@@ -137,11 +277,15 @@ const logger = new Logger();
 
 // Export both the logger instance and individual methods
 module.exports = {
+    // 📝 MAIN LOGGING FUNCTIONS (Required by index.js)
+    logUserInteraction: (data) => logger.logUserInteraction(data),
+    logGPTResponse: (data) => logger.logGPTResponse(data),
+    logError: (data) => logger.logError(data),
+    
     // Individual methods for easy use
     logInfo: (message, data) => logger.info(message, data),
     logSuccess: (message, data) => logger.success(message, data),
     logWarning: (message, data) => logger.warn(message, data),
-    logError: (message, error) => logger.error(message, error),
     logDebug: (message, data) => logger.debug(message, data),
     
     // Shorter aliases
@@ -155,6 +299,7 @@ module.exports = {
     setBot: (botInstance) => logger.setBot(botInstance),
     getLogs: (type, date) => logger.getLogs(type, date),
     getLogSummary: (date) => logger.getLogSummary(date),
+    getConversationStats: (date) => logger.getConversationStats(date),
     
     // Export logger instance for advanced use
     logger
