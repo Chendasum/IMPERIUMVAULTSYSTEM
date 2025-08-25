@@ -129,6 +129,7 @@ const agriculturalWealth = require('./cambodia/agriculturalWealth'); // 🌾 NEW
 const resourcesWealth = require('./cambodia/resourcesWealth'); // ⛏️ NEW MODULE
 const cambodiaLending = require('./utils/cambodiaLending');
 const creditAssessment = require('./cambodia/creditAssessment');
+const loanOrigination = require('./cambodia/loanOrigination');
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
