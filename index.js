@@ -131,6 +131,7 @@ const cambodiaLending = require('./utils/cambodiaLending');
 const creditAssessment = require('./cambodia/creditAssessment');
 const loanOrigination = require('./cambodia/loanOrigination');
 const loanServicing = require('./cambodia/loanServicing'); // 📋 NEW: Loan servicing & collections
+const riskManagement = require('./cambodia/riskManagement'); // 🚨 NEW: Risk assessment & monitoring
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
