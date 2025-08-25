@@ -4,6 +4,7 @@
 const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
 
 // 🔧 SPECIALIZED HANDLERS (Preserved for business logic)
+const cambodiaHandler = require('./handlers/cambodiaDeals');
 const lpManagement = require('./cambodia/lpManagement');
 const portfolioManager = require('./cambodia/portfolioManager');
 const realEstateWealth = require('./cambodia/realEstateWealth'); 
@@ -11,7 +12,6 @@ const businessWealth = require('./cambodia/businessWealth');
 const investmentWealth = require('./cambodia/investmentWealth');
 const economicIntelligence = require('./cambodia/economicIntelligence');
 const legalRegulatory = require('./cambodia/legalRegulatory'); // ✅ Legal & compliance
-const agriculturalWealth = require('./cambodia/agriculturalWealth'); // 🌾 Agriculture sector
 const resourcesWealth = require('./cambodia/resourcesWealth'); // ⛏️ Natural resources
 const cambodiaLending = require('./utils/cambodiaLending');
 const creditAssessment = require('./cambodia/creditAssessment');
@@ -25,6 +25,7 @@ const performanceAnalytics = require('./cambodia/performanceAnalytics');
 const fundAccounting = require('./cambodia/fundAccounting'); // 🧮 NEW: NAV & accounting system
 const investorReporting = require('./cambodia/investorReporting'); // 📊 NEW: LP reporting & communications
 const complianceMonitoring = require('./cambodia/complianceMonitoring'); // 📋 NEW: Compliance monitoring & tracking
+
  
 // 🌾 CAMBODIA AGRICULTURAL DATA & INTELLIGENCE
 const CAMBODIA_AGRICULTURAL_DATA = {
