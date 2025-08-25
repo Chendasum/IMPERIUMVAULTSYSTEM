@@ -2,7 +2,7 @@
 // Connect your Telegram bot to the Cambodia Deal Intelligence System
 
 const cambodiaDeals = require('../cambodia/dealIntelligence');
-const { sendSmartMessage } = require('../utils/telegramSplitter');
+const { executeDualCommand } = require('../utils/dualCommandSystem');
 
 // 🇰🇭 CAMBODIA DEAL COMMANDS for Telegram Bot
 
