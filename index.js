@@ -125,6 +125,9 @@ const businessWealth = require('./cambodia/businessWealth');
 const investmentWealth = require('./cambodia/investmentWealth');
 const economicIntelligence = require('./cambodia/economicIntelligence');
 const legalRegulatory = require('./cambodia/legalRegulatory'); // ✅ ADD THIS LINE
+const agriculturalWealth = require('./cambodia/agriculturalWealth'); // 🌾 NEW MODULE
+const resourcesWealth = require('./cambodia/resourcesWealth'); // ⛏️ NEW MODULE
+const cambodiaLending = require('./utils/cambodiaLending');
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
