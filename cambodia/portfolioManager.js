@@ -2,7 +2,6 @@
 // Professional fund portfolio tracking, performance monitoring, and risk management
 
 const { executeDualCommand } = require('../utils/dualCommandSystem');
-const { sendSmartMessage } = require('../utils/telegramSplitter');
 
 // 📊 PORTFOLIO CONFIGURATION
 const PORTFOLIO_CONFIG = {
