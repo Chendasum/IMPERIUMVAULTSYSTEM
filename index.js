@@ -136,6 +136,7 @@ const loanRecovery = require('./cambodia/loanRecovery'); // 💰 NEW: Collection
 const cashFlowManagement = require('./cambodia/cashFlowManagement'); // 💵 NEW: Cash flow & liquidity management
 const borrowerDueDiligence = require('./cambodia/borrowerDueDiligence'); // 🔍 NEW: KYC & due diligence screening
 const performanceAnalytics = require('./cambodia/performanceAnalytics');
+const fundAccounting = require('./cambodia/fundAccounting'); // 🧮 NEW: NAV & accounting system
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
