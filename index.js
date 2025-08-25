@@ -121,8 +121,10 @@ const cambodiaHandler = require('./handlers/cambodiaDeals');
 const lpManagement = require('./cambodia/lpManagement');
 const portfolioManager = require('./cambodia/portfolioManager');
 const realEstateWealth = require('./cambodia/realEstateWealth'); 
-const businessWealth = require('./cambodia/businessWealth'); // ✅ ADD THIS LINE
-const InvestmentWealth = require('./cambodia/investmentWealth');
+const businessWealth = require('./cambodia/businessWealth');
+const investmentWealth = require('./cambodia/investmentWealth');
+const economicIntelligence = require('./cambodia/economicIntelligence');
+const legalRegulatory = require('./cambodia/legalRegulatory'); // ✅ ADD THIS LINE
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
