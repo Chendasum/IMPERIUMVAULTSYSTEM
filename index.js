@@ -138,6 +138,7 @@ const borrowerDueDiligence = require('./cambodia/borrowerDueDiligence'); // 🔍
 const performanceAnalytics = require('./cambodia/performanceAnalytics');
 const fundAccounting = require('./cambodia/fundAccounting'); // 🧮 NEW: NAV & accounting system
 const investorReporting = require('./cambodia/investorReporting'); // 📊 NEW: LP reporting & communications
+const complianceMonitoring = require('./cambodia/complianceMonitoring'); // 📋 NEW: Compliance monitoring & tracking
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
