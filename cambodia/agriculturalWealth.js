@@ -2,25 +2,7 @@
 // Enterprise-grade agricultural analysis with GPT-5 integration
 
 const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🌾 CAMBODIA AGRICULTURAL DATA & INTELLIGENCE
-const CAMBODIA_AGRICULTURAL_DATA = {
-    // Major agricultural sectors by GDP contribution
-    sectors: {
-        rice: {
-            name: "Rice Production & Export",
-            gdpContribution: "15.2%",
-            exportValue: "450M USD annually",
-            majorProvinces: ["Battambang", "Banteay Meanchey", "Prey Veng"],
-            seasonality: {
-                wetSeason: "May-October",
-                drySeason: "November-April",
-                harvestPeak: "December-February"
-            },
-            qualityGrades: ["Fragrant", "White Rice", "Parboiled", "Broken Rice"],
-            exportMarkets: ["EU", "China", "Singapore", "Malaysia"]
-        },
-        
+ 
 // 🌾 CAMBODIA AGRICULTURAL DATA & INTELLIGENCE
 const CAMBODIA_AGRICULTURAL_DATA = {
     // Major agricultural sectors by GDP contribution
