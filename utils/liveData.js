@@ -2,6 +2,7 @@
 const axios = require('axios');
 const marketDataCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const { executeDualCommand } = require('../utils/dualCommandSystem');
 
 function getCachedData(key) {
     const cached = marketDataCache.get(key);
