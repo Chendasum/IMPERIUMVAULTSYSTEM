@@ -128,6 +128,7 @@ const legalRegulatory = require('./cambodia/legalRegulatory'); // ✅ ADD THIS L
 const agriculturalWealth = require('./cambodia/agriculturalWealth'); // 🌾 NEW MODULE
 const resourcesWealth = require('./cambodia/resourcesWealth'); // ⛏️ NEW MODULE
 const cambodiaLending = require('./utils/cambodiaLending');
+const creditAssessment = require('./cambodia/creditAssessment');
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
