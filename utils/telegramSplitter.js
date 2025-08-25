@@ -1,6 +1,8 @@
 // utils/telegramSplitter.js - COMPLETE REWRITE: GPT-5 Optimized with Full Duplicate Prevention
 // Enterprise-grade Telegram message handling with comprehensive safety systems
 
+const crypto = require('crypto');
+
 // 🎯 TELEGRAM CONFIGURATION
 const TELEGRAM_CONFIG = {
     // Message limits
