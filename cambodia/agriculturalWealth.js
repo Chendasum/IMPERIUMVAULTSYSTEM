@@ -4,7 +4,6 @@
 const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
 
 // 🔧 SPECIALIZED HANDLERS (Preserved for business logic)
-const cambodiaHandler = require('./handlers/cambodiaDeals');
 const lpManagement = require('./cambodia/lpManagement');
 const portfolioManager = require('./cambodia/portfolioManager');
 const realEstateWealth = require('./cambodia/realEstateWealth'); 
