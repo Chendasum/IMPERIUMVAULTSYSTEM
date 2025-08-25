@@ -2,7 +2,6 @@
 // Professional Limited Partner relationship and investment management
 
 const { executeDualCommand } = require('../utils/dualCommandSystem');
-const { sendSmartMessage } = require('../utils/telegramSplitter');
 
 // 🏦 LP MANAGEMENT CONFIGURATION
 const LP_CONFIG = {
