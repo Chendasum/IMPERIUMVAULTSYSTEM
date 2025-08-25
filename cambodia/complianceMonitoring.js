@@ -4,6 +4,7 @@
 const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
 
 // 🔧 SPECIALIZED HANDLERS (Preserved for business logic)
+const cambodiaHandler = require('./handlers/cambodiaDeals');
 const lpManagement = require('./cambodia/lpManagement');
 const portfolioManager = require('./cambodia/portfolioManager');
 const realEstateWealth = require('./cambodia/realEstateWealth'); 
@@ -24,7 +25,7 @@ const borrowerDueDiligence = require('./cambodia/borrowerDueDiligence'); // 🔍
 const performanceAnalytics = require('./cambodia/performanceAnalytics');
 const fundAccounting = require('./cambodia/fundAccounting'); // 🧮 NEW: NAV & accounting system
 const investorReporting = require('./cambodia/investorReporting'); // 📊 NEW: LP reporting & communications
-const complianceMonitoring = require('./cambodia/complianceMonitoring'); // 📋 NEW: Compliance monitoring & tracking
+
 
 // 📋 CAMBODIA COMPLIANCE MONITORING FRAMEWORK
 const COMPLIANCE_MONITORING_FRAMEWORK = {
