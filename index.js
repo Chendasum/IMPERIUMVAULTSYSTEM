@@ -124,12 +124,13 @@ const realEstateWealth = require('./cambodia/realEstateWealth');
 const businessWealth = require('./cambodia/businessWealth');
 const investmentWealth = require('./cambodia/investmentWealth');
 const economicIntelligence = require('./cambodia/economicIntelligence');
-const legalRegulatory = require('./cambodia/legalRegulatory'); // ✅ ADD THIS LINE
-const agriculturalWealth = require('./cambodia/agriculturalWealth'); // 🌾 NEW MODULE
-const resourcesWealth = require('./cambodia/resourcesWealth'); // ⛏️ NEW MODULE
+const legalRegulatory = require('./cambodia/legalRegulatory'); // ✅ Legal & compliance
+const agriculturalWealth = require('./cambodia/agriculturalWealth'); // 🌾 Agriculture sector
+const resourcesWealth = require('./cambodia/resourcesWealth'); // ⛏️ Natural resources
 const cambodiaLending = require('./utils/cambodiaLending');
 const creditAssessment = require('./cambodia/creditAssessment');
 const loanOrigination = require('./cambodia/loanOrigination');
+const loanServicing = require('./cambodia/loanServicing'); // 📋 NEW: Loan servicing & collections
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
