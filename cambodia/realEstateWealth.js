@@ -1,8 +1,6 @@
 // cambodia/realEstateWealth.js - Cambodia Real Estate Wealth Building Intelligence
 // Powered by IMPERIUM VAULT GPT-5 System
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
 class CambodiaRealEstateWealth {
     constructor() {
         this.propertyHotspots = {
