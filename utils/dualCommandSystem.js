@@ -60,7 +60,6 @@ function detectCompletionStatus(message, memoryContext = '') {
     };
 }
 
-// COMPLETION RESPONSE GENERATOR - NEW
 function generateCompletionResponse(completionStatus, originalMessage) {
     const responses = {
         direct: [
@@ -266,7 +265,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     // Memory patterns (preserved)
     const memoryPatterns = [
         /remember|recall|you mentioned|we discussed|before|previously|last time/i,
-        /my name|my preference|i told you|you know/i
+        /my name|my preference|i told you|i said|you know/i
     ];
     
     // Speed critical patterns - Use GPT-5 Nano
@@ -658,17 +657,439 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
                 
                 // Fallback to direct database queries
                 try {
-                    const [history, memories] = await Promise.allSettled([
+                                    const [history, memories] = await Promise.allSettled([
                         database.getConversationHistoryDB(chatId, 5),
                         database.getPersistentMemoryDB(chatId)
                     ]);
                     
                     if (history.status === 'fulfilled') {
                         memoryData.conversationHistory = history.value;
-                            return health;
+                        console.log(`Retrieved ${history.value.length} conversation records from PostgreSQL`);
+                    }
+                    
+                    if (memories.status === 'fulfilled') {
+                        memoryData.persistentMemory = memories.value;
+                        console.log(`Retrieved ${memories.value.length} persistent memories from PostgreSQL`);
+                    }
+                    
+                    // Build basic memory context manually
+                    if (memoryData.persistentMemory.length > 0) {
+                        memoryContext = `\n\nIMPORTANT FACTS TO REMEMBER:\n`;
+                        memoryData.persistentMemory.slice(0, 3).forEach((memory, index) => {
+                            const fact = memory.fact || memory;
+                            memoryContext += `${index + 1}. ${fact}\n`;
+                        });
+                    }
+                    
+                    if (memoryData.conversationHistory.length > 0) {
+                        memoryContext += `\n\nRECENT CONVERSATION:\n`;
+                        const recent = memoryData.conversationHistory[0];
+                        memoryContext += `User previously asked: "${recent.user_message?.substring(0, 100) || ''}"\n`;
+                    }
+                    
+                    console.log(`PostgreSQL memory context built: ${memoryContext.length} chars`);
+                    
+                } catch (fallbackError) {
+                    console.log('PostgreSQL memory also failed:', fallbackError.message);
+                    memoryContext = '';
+                }
+            }
+        }
+        
+        // Analyze query for optimal GPT-5 model selection
+        const queryAnalysis = analyzeQuery(
+            userMessage, 
+            options.messageType || 'text', 
+            options.hasMedia || false,
+            memoryContext
+        );
+        
+        // NEW FIX: Handle completion detection BEFORE GPT-5 processing
+        if (queryAnalysis.shouldSkipGPT5) {
+            console.log(`Completion detected: ${queryAnalysis.completionStatus.completionType}`);
+            
+            const responseTime = Date.now() - startTime;
+            
+            return {
+                response: queryAnalysis.quickResponse,
+                aiUsed: 'completion-detection',
+                queryType: 'completion',
+                complexity: 'low',
+                reasoning: `Completion detected - ${queryAnalysis.completionStatus.completionType}`,
+                priority: 'completion',
+                completionDetected: true,
+                completionType: queryAnalysis.completionStatus.completionType,
+                skippedGPT5: true,
+                contextUsed: memoryContext.length > 0,
+                responseTime: responseTime,
+                tokenCount: 0,
+                functionExecutionTime: responseTime,
+                
+                // GPT-5 system analytics
+                gpt5OnlyMode: true,
+                gpt5System: false,
+                powerMode: 'COMPLETION_DETECTION',
+                confidence: 0.95,
+                modelUsed: 'none',
+                cost_tier: 'free',
+                
+                // Memory analytics
+                memoryData: {
+                    contextLength: memoryContext.length,
+                    conversationRecords: memoryData.conversationHistory.length,
+                    persistentMemories: memoryData.persistentMemory.length,
+                    memoryImportant: false,
+                    memoryUsed: memoryContext.length > 0,
+                    postgresqlConnected: memoryData.conversationHistory.length > 0 || memoryData.persistentMemory.length > 0
+                },
+                
+                success: true,
+                timestamp: new Date().toISOString(),
+                
+                // Telegram integration for completion responses
+                sendToTelegram: async (bot, title = null) => {
+                    try {
+                        const finalTitle = title || 'Task Completion Acknowledged';
+                        
+                        const metadata = {
+                            responseTime: responseTime,
+                            completionDetected: true,
+                            completionType: queryAnalysis.completionStatus.completionType,
+                            contextUsed: memoryContext.length > 0,
+                            skippedGPT5: true,
+                            costSaved: true
+                        };
+                        
+                        return await telegramSplitter.sendGPTResponse(
+                            bot, chatId, queryAnalysis.quickResponse, finalTitle, metadata
+                        );
+                        
+                    } catch (telegramError) {
+                        console.error('Completion response Telegram error:', telegramError.message);
+                        return false;
+                    }
+                }
+            };
+        }
+        
+        // Override model if forced (for testing purposes)
+        if (options.forceModel && options.forceModel.includes('gpt-5')) {
+            queryAnalysis.gpt5Model = options.forceModel;
+            queryAnalysis.reason = `Forced to use ${options.forceModel}`;
+        }
+        
+        console.log('GPT-5 query analysis:', {
+            type: queryAnalysis.type,
+            priority: queryAnalysis.priority,
+            model: queryAnalysis.gpt5Model,
+            reasoning: queryAnalysis.reasoning_effort,
+            verbosity: queryAnalysis.verbosity,
+            memoryImportant: queryAnalysis.memoryImportant,
+            reason: queryAnalysis.reason
+        });
+        
+        let response;
+        let aiUsed;
+        let gpt5Result = null;
+        
+        try {
+            // MAIN EXECUTION: Route through GPT-5 system
+            gpt5Result = await executeThroughGPT5System(
+                userMessage, 
+                queryAnalysis, 
+                memoryContext, 
+                memoryData, 
+                chatId
+            );
+            
+            response = gpt5Result.response;
+            aiUsed = gpt5Result.aiUsed || queryAnalysis.gpt5Model;
+            
+            console.log('GPT-5 execution successful:', {
+                aiUsed: aiUsed,
+                powerMode: gpt5Result.powerMode,
+                confidence: gpt5Result.confidence,
+                costTier: gpt5Result.cost_tier
+            });
+            
+        } catch (gpt5Error) {
+            console.error('GPT-5 system failed, trying fallback:', gpt5Error.message);
+            
+            // FALLBACK: Use GPT-5 Nano with circuit breaker
+            try {
+                response = await executeGPT5Fallback(userMessage, queryAnalysis, memoryContext);
+                aiUsed = 'GPT-5-nano-fallback';
+                
+                console.log('GPT-5 Nano fallback successful');
+                
+            } catch (fallbackError) {
+                console.error('All GPT-5 models failed:', fallbackError.message);
+                throw new Error(`Complete GPT-5 system failure: ${fallbackError.message}`);
+            }
+        }
+        
+        const responseTime = Date.now() - startTime;
+        
+        console.log('GPT-5 only command completed:', {
+            aiUsed: aiUsed,
+            responseTime: responseTime,
+            gpt5System: !!gpt5Result,
+            memoryUsed: memoryContext.length > 0,
+            conversationRecords: memoryData.conversationHistory.length,
+            persistentMemories: memoryData.persistentMemory.length
+        });
+        
+        // Build comprehensive result (preserved structure for compatibility)
+        const result = {
+            response: response,
+            aiUsed: aiUsed,
+            queryType: queryAnalysis.type,
+            complexity: queryAnalysis.complexity,
+            reasoning: queryAnalysis.reason,
+            priority: queryAnalysis.priority,
+            liveDataUsed: queryAnalysis.needsLiveData,
+            contextUsed: memoryContext.length > 0,
+            responseTime: responseTime,
+            tokenCount: response.length,
+            functionExecutionTime: responseTime,
+            
+            // GPT-5 system analytics
+            gpt5OnlyMode: true,
+            gpt5System: !!gpt5Result,
+            powerMode: gpt5Result?.powerMode || 'fallback',
+            confidence: gpt5Result?.confidence || 0.7,
+            modelUsed: gpt5Result?.modelUsed || 'gpt-5-nano',
+            reasoning_effort: queryAnalysis.reasoning_effort,
+            verbosity: queryAnalysis.verbosity,
+            cost_tier: gpt5Result?.cost_tier || 'economy',
+            completionDetected: false,
+            
+            // Memory analytics (preserved)
+            memoryData: {
+                contextLength: memoryContext.length,
+                conversationRecords: memoryData.conversationHistory.length,
+                persistentMemories: memoryData.persistentMemory.length,
+                memoryImportant: queryAnalysis.memoryImportant,
+                memoryUsed: memoryContext.length > 0,
+                postgresqlConnected: memoryData.conversationHistory.length > 0 || memoryData.persistentMemory.length > 0
+            },
+            
+            // Analytics (enhanced for GPT-5)
+            analytics: gpt5Result?.analytics || {
+                queryComplexity: queryAnalysis.complexity,
+                domainClassification: queryAnalysis.type,
+                priorityLevel: queryAnalysis.priority,
+                modelOptimization: 'GPT-5 smart selection',
+                costOptimized: true
+            },
+            
+            success: true,
+            timestamp: new Date().toISOString(),
+            
+            // ENHANCED TELEGRAM INTEGRATION (Preserved)
+            sendToTelegram: async (bot, title = null) => {
+                try {
+                    const defaultTitle = `GPT-5 ${queryAnalysis.gpt5Model.includes('nano') ? 'Nano' : 
+                                                queryAnalysis.gpt5Model.includes('mini') ? 'Mini' : 'Ultimate'} Analysis`;
+                    const finalTitle = title || defaultTitle;
+                    
+                    // Add GPT-5 indicator
+                    const gpt5Indicator = gpt5Result ? 'GPT-5 Optimized' : 'GPT-5 Fallback';
+                    const fullTitle = `${finalTitle} (${gpt5Indicator})`;
+                    
+                    const metadata = {
+                        responseTime: responseTime,
+                        contextUsed: memoryContext.length > 0,
+                        complexity: queryAnalysis.complexity,
+                        gpt5System: !!gpt5Result,
+                        confidence: gpt5Result?.confidence || 0.7,
+                        model: queryAnalysis.gpt5Model,
+                        costTier: gpt5Result?.cost_tier || 'economy'
+                    };
+                    
+                    // Always use GPT response format since we're GPT-5 only
+                    return await telegramSplitter.sendGPTResponse(
+                        bot, chatId, response, fullTitle, metadata
+                    );
+                    
+                } catch (telegramError) {
+                    console.error('Telegram send error:', telegramError.message);
+                    return false;
+                }
+            }
+        };
+        
+        return result;
+        
+    } catch (error) {
+        console.error('GPT-5 only command execution error:', error.message);
+        
+        const responseTime = Date.now() - startTime;
+        
+        // Final emergency fallback
+        return {
+            response: `I apologize, but I'm experiencing technical difficulties with GPT-5. Please try again in a moment.\n\nError: ${error.message}\n\nYou can try:\n• A simpler question\n• Waiting a moment and trying again\n• Checking your internet connection`,
+            aiUsed: 'emergency-fallback',
+            queryType: 'error',
+            complexity: 'low',
+            reasoning: 'Complete GPT-5 system failure, emergency response',
+            contextUsed: false,
+            responseTime: responseTime,
+            memoryData: {
+                contextLength: 0,
+                conversationRecords: 0,
+                persistentMemories: 0,
+                memoryImportant: false,
+                postgresqlConnected: false
+            },
+            success: false,
+            error: error.message,
+            gpt5OnlyMode: true,
+            gpt5System: false,
+            
+            // Emergency Telegram fallback
+            sendToTelegram: async (bot) => {
+                try {
+                    return await telegramSplitter.sendAlert(bot, chatId, 
+                        `GPT-5 system error: ${error.message}`, 
+                        'Emergency Fallback'
+                    );
+                } catch (telegramError) {
+                    console.error('Emergency Telegram alert failed:', telegramError.message);
+                    return false;
+                }
+            }
+        };
+    }
 }
 
-// GPT-5 UTILITY FUNCTIONS
+// GPT-5 ONLY SYSTEM HEALTH CHECK (Fixed + Completion Detection)
+async function checkGPT5OnlySystemHealth() {
+    const health = {
+        gpt5_full: false,
+        gpt5_mini: false,
+        gpt5_nano: false,
+        gpt5_chat: false,
+        completionDetection: false,
+        memorySystem: false,
+        contextBuilding: false,
+        dateTimeSupport: false,
+        telegramIntegration: false,
+        databaseConnection: false,
+        overallHealth: false,
+        errors: [],
+        gpt5OnlyMode: true,
+        postgresqlStatus: 'unknown'
+    };
+    
+    // Test completion detection
+    try {
+        const testCompletion = detectCompletionStatus('done ready', 'system built');
+        health.completionDetection = testCompletion.shouldSkipGPT5;
+        console.log(`Completion detection: ${health.completionDetection ? 'Working' : 'Failed'}`);
+    } catch (error) {
+        health.errors.push(`Completion Detection: ${error.message}`);
+        console.log('Completion detection unavailable');
+    }
+    
+    // Test all GPT-5 models
+    const gpt5Models = [
+        { name: 'gpt5_full', model: 'gpt-5', description: 'Full GPT-5 (Premium)' },
+        { name: 'gpt5_mini', model: 'gpt-5-mini', description: 'GPT-5 Mini (Balanced)' },
+        { name: 'gpt5_nano', model: 'gpt-5-nano', description: 'GPT-5 Nano (Fast)' },
+        { name: 'gpt5_chat', model: 'gpt-5-chat-latest', description: 'GPT-5 Chat (Conversational)' }
+    ];
+    
+    for (const { name, model, description } of gpt5Models) {
+        try {
+            const options = {
+                model: model,
+                max_completion_tokens: 50
+            };
+            
+            // Add model-specific parameters
+            if (model !== 'gpt-5-chat-latest') {
+                options.reasoning_effort = 'minimal';
+                options.verbosity = 'low';
+            } else {
+                options.temperature = 0.7;
+            }
+            
+            await openaiClient.getGPT5Analysis('Health check test', options);
+            health[name] = true;
+            console.log(`${description} operational`);
+        } catch (error) {
+            health.errors.push(`${model}: ${error.message}`);
+            console.log(`${description} unavailable: ${error.message}`);
+        }
+    }
+    
+    // Test PostgreSQL database connection
+    try {
+        const testHistory = await database.getConversationHistoryDB('health_test', 1);
+        health.databaseConnection = Array.isArray(testHistory);
+        health.postgresqlStatus = 'connected';
+        console.log('PostgreSQL database operational');
+    } catch (error) {
+        health.errors.push(`PostgreSQL: ${error.message}`);
+        health.postgresqlStatus = 'disconnected';
+        console.log('PostgreSQL database unavailable');
+    }
+    
+    // Test memory system
+    try {
+        const testContext = await memory.buildConversationContext('health_test');
+        health.memorySystem = typeof testContext === 'string';
+        health.contextBuilding = true;
+        console.log('Memory system operational');
+    } catch (error) {
+        health.errors.push(`Memory: ${error.message}`);
+        console.log('Memory system unavailable');
+    }
+    
+    // Test datetime support
+    try {
+        const cambodiaTime = getCurrentCambodiaDateTime();
+        health.dateTimeSupport = cambodiaTime && cambodiaTime.date;
+        console.log('DateTime support operational');
+    } catch (error) {
+        health.errors.push(`DateTime: ${error.message}`);
+        console.log('DateTime support unavailable');
+    }
+    
+    // Test Telegram integration
+    try {
+        health.telegramIntegration = typeof telegramSplitter.sendGPTResponse === 'function';
+        console.log(`Telegram integration: ${health.telegramIntegration ? 'Available' : 'Limited'}`);
+    } catch (error) {
+        health.errors.push(`Telegram: ${error.message}`);
+        console.log('Telegram integration unavailable');
+    }
+    
+    // Calculate overall health
+    const healthyModels = [health.gpt5_full, health.gpt5_mini, health.gpt5_nano].filter(Boolean).length;
+    health.overallHealth = healthyModels >= 1 && health.memorySystem && health.databaseConnection && health.completionDetection;
+    
+    health.healthScore = (
+        (healthyModels * 15) +
+        (health.gpt5_chat ? 10 : 0) +
+        (health.completionDetection ? 15 : 0) +
+        (health.memorySystem ? 10 : 0) +
+        (health.databaseConnection ? 15 : 0) +
+        (health.telegramIntegration ? 5 : 0) +
+        (health.dateTimeSupport ? 5 : 0)
+    );
+    
+    health.healthGrade = health.healthScore >= 95 ? 'A+' :
+                        health.healthScore >= 85 ? 'A' :
+                        health.healthScore >= 75 ? 'B+' :
+                        health.healthScore >= 65 ? 'B' :
+                        health.healthScore >= 50 ? 'C' : 'F';
+    
+    return health;
+}
+
+// GPT-5 UTILITY FUNCTIONS (Enhanced)
 function getGPT5ModelRecommendation(query) {
     const analysis = analyzeQuery(query);
     return {
@@ -833,7 +1254,7 @@ function getGlobalMarketStatus() {
     }
 }
 
-// ENHANCED SYSTEM ANALYTICS (Fixed for GPT-5 Only)
+// ENHANCED SYSTEM ANALYTICS (Fixed for GPT-5 Only + Completion Detection)
 function getSystemAnalytics() {
     return {
         version: '5.1 - GPT-5 Only + Completion Detection',
@@ -923,7 +1344,7 @@ function getSystemAnalytics() {
     };
 }
 
-// MEMORY TESTING AND DIAGNOSTICS (Enhanced for GPT-5)
+// MEMORY TESTING AND DIAGNOSTICS (Enhanced for GPT-5 + Completion Detection)
 async function testMemoryIntegration(chatId) {
     console.log('Testing memory integration with GPT-5 + completion detection...');
     
