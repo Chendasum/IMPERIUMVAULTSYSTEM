@@ -1,19 +1,6 @@
 // cambodia/loanRecovery.js - COMPLETE: Cambodia Loan Recovery & Collections System
 // Enterprise-grade recovery operations with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
-const cambodiaHandler = require('../handlers/cambodiaDeals');
-const lpManagement = require('./lpManagement');
-const portfolioManager = require('./portfolioManager');
-const loanServicing = require('./loanServicing');
-const riskManagement = require('./riskManagement');
-const creditAssessment = require('./creditAssessment');
-const legalRegulatory = require('./legalRegulatory');
-const realEstateWealth = require('./realEstateWealth');
-const businessWealth = require('./businessWealth');
-
 // 💰 CAMBODIA LOAN RECOVERY FRAMEWORK
 const LOAN_RECOVERY_FRAMEWORK = {
     // Recovery stages and classifications
