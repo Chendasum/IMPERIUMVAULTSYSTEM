@@ -3,28 +3,14 @@
 
 const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
 
-// 🔧 SPECIALIZED HANDLERS (Preserved for business logic)
-const cambodiaHandler = require('./handlers/cambodiaDeals');
-const lpManagement = require('./cambodia/lpManagement');
-const portfolioManager = require('./cambodia/portfolioManager');
-const realEstateWealth = require('./cambodia/realEstateWealth'); 
-const businessWealth = require('./cambodia/businessWealth');
-const investmentWealth = require('./cambodia/investmentWealth');
-const economicIntelligence = require('./cambodia/economicIntelligence');
-const legalRegulatory = require('./cambodia/legalRegulatory'); // ✅ Legal & compliance
-const agriculturalWealth = require('./cambodia/agriculturalWealth'); // 🌾 Agriculture sector
-const resourcesWealth = require('./cambodia/resourcesWealth'); // ⛏️ Natural resources
-const cambodiaLending = require('./utils/cambodiaLending');
-const creditAssessment = require('./cambodia/creditAssessment');
-const loanOrigination = require('./cambodia/loanOrigination');
-const loanServicing = require('./cambodia/loanServicing'); // 📋 NEW: Loan servicing & collections
-const riskManagement = require('./cambodia/riskManagement'); // 🚨 NEW: Risk assessment & monitoring
-const loanRecovery = require('./cambodia/loanRecovery'); // 💰 NEW: Collections & asset recovery
-const cashFlowManagement = require('./cambodia/cashFlowManagement'); // 💵 NEW: Cash flow & liquidity management
-const borrowerDueDiligence = require('./cambodia/borrowerDueDiligence'); // 🔍 NEW: KYC & due diligence screening
-const performanceAnalytics = require('./cambodia/performanceAnalytics');
-const fundAccounting = require('./cambodia/fundAccounting'); // 🧮 NEW: NAV & accounting system
-const investorReporting = require('./cambodia/investorReporting'); // 📊 NEW: LP reporting & communications
+// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
+const cambodiaHandler = require('../handlers/cambodiaDeals');
+const lpManagement = require('./lpManagement');
+const portfolioManager = require('./portfolioManager');
+const performanceAnalytics = require('./performanceAnalytics');
+const fundAccounting = require('./fundAccounting');
+const investorReporting = require('./investorReporting');
+const borrowerDueDiligence = require('./borrowerDueDiligence');
 
 
 // 📋 CAMBODIA COMPLIANCE MONITORING FRAMEWORK
