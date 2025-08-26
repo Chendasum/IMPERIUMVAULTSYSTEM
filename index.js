@@ -116,7 +116,7 @@ const {
     getGPT5PerformanceMetrics        // ⚡ Real-time performance analytics
 } = require("./utils/dualCommandSystem");
 
-// Master coordination for ALL 23 modules: 11 Specialized Handlers + 12 Core Lending Modules
+// Master coordination for ALL 29 modules: 11 Specialized Handlers + 12 Core Lending Modules + 6 New Trading Modules
 // 🔧 SPECIALIZED HANDLERS (Preserved for business logic)
 const cambodiaHandler = require('./handlers/cambodiaDeals');
 const lpManagement = require('./cambodia/lpManagement');
@@ -144,8 +144,16 @@ const investorReporting = require('./cambodia/investorReporting');
 const complianceMonitoring = require('./cambodia/complianceMonitoring');
 const marketResearch = require('./cambodia/marketResearch');
 
+// 📈 NEW 6 TRADING & GLOBAL MODULES
+const tradingOperations = require('./cambodia/tradingOperations');
+const clientOnboarding = require('./cambodia/clientOnboarding');
+const forexTrading = require('./cambodia/forexTrading');
+const cryptoTrading = require('./cambodia/cryptoTrading');
+const stockTrading = require('./cambodia/stockTrading');
+const globalMarkets = require('./cambodia/globalMarkets');
+
 console.log('🏦 IMPERIUMVAULTSYSTEM - Cambodia Private Lending Fund');
-console.log('📊 All 23 modules loaded: 11 Specialized Handlers + 12 Core Lending');
+console.log('📊 All 29 modules loaded: 11 Specialized Handlers + 12 Core Lending + 6 Trading Modules');
 
 // ========================================================================
 // 🎯 SPECIALIZED HANDLER FUNCTIONS (11 MODULES)
@@ -697,12 +705,322 @@ async function analyzeCompetitors(competitorData, chatId = null, bot = null) {
 }
 
 // ========================================================================
+// 📈 NEW 6 TRADING & GLOBAL MODULE FUNCTIONS
+// ========================================================================
+
+// 🎯 NEW MODULE 1: TRADING OPERATIONS FUNCTIONS
+async function executeCambodiaTrade(orderDetails, chatId = null, bot = null) {
+    try {
+        console.log(`📈 Executing Cambodia trade: ${orderDetails.symbol}`);
+        return await tradingOperations.executeTrade(orderDetails);
+    } catch (error) {
+        console.error('Trade execution error:', error.message);
+        return { success: false, error: error.message, module: 'tradingOperations' };
+    }
+}
+
+async function constructCambodiaPortfolio(investmentAmount, riskProfile, timeHorizon, chatId = null, bot = null) {
+    try {
+        console.log(`💼 Constructing Cambodia portfolio: $${investmentAmount} (${riskProfile} risk)`);
+        return await tradingOperations.constructCambodiaPortfolio(investmentAmount, riskProfile, timeHorizon);
+    } catch (error) {
+        console.error('Portfolio construction error:', error.message);
+        return { success: false, error: error.message, module: 'tradingOperations' };
+    }
+}
+
+async function implementTradingRiskManagement(portfolio, chatId = null, bot = null) {
+    try {
+        console.log(`🛡️ Implementing trading risk management for portfolio`);
+        return await tradingOperations.implementRiskManagement(portfolio);
+    } catch (error) {
+        console.error('Trading risk management error:', error.message);
+        return { success: false, error: error.message, module: 'tradingOperations' };
+    }
+}
+
+async function assessMarketTiming(exchange = 'CSX', chatId = null, bot = null) {
+    try {
+        console.log(`⏰ Assessing market timing for ${exchange}`);
+        return await tradingOperations.assessMarketTiming(exchange);
+    } catch (error) {
+        console.error('Market timing assessment error:', error.message);
+        return { success: false, error: error.message, module: 'tradingOperations' };
+    }
+}
+
+async function generateTradingReport(period = 'monthly', chatId = null, bot = null) {
+    try {
+        console.log(`📊 Generating trading report for period: ${period}`);
+        return await tradingOperations.generateTradingReport(period);
+    } catch (error) {
+        console.error('Trading report generation error:', error.message);
+        return { success: false, error: error.message, module: 'tradingOperations' };
+    }
+}
+
+async function calculateTradingCosts(orderDetails, chatId = null, bot = null) {
+    try {
+        console.log(`💰 Calculating trading costs for ${orderDetails.symbol}`);
+        return await tradingOperations.calculateTradingCosts(orderDetails);
+    } catch (error) {
+        console.error('Trading cost calculation error:', error.message);
+        return { success: false, error: error.message, module: 'tradingOperations' };
+    }
+}
+
+async function validateCambodiaTradeRules(orderDetails, chatId = null, bot = null) {
+    try {
+        console.log(`✅ Validating Cambodia trade rules for ${orderDetails.symbol}`);
+        return await tradingOperations.validateCambodiaTradeRules(orderDetails);
+    } catch (error) {
+        console.error('Trade rule validation error:', error.message);
+        return { success: false, error: error.message, module: 'tradingOperations' };
+    }
+}
+
+// 🎯 NEW MODULE 2: CLIENT ONBOARDING FUNCTIONS
+async function initiateClientOnboarding(clientData, chatId = null, bot = null) {
+    try {
+        console.log(`🎯 Initiating client onboarding: ${clientData.personalDetails.name}`);
+        return await clientOnboarding.initiateClientOnboarding(clientData);
+    } catch (error) {
+        console.error('Client onboarding initiation error:', error.message);
+        return { success: false, error: error.message, module: 'clientOnboarding' };
+    }
+}
+
+async function qualifyClient(clientData, chatId = null, bot = null) {
+    try {
+        console.log(`📋 Qualifying client: ${clientData.personalDetails.name}`);
+        return await clientOnboarding.qualifyClient(clientData);
+    } catch (error) {
+        console.error('Client qualification error:', error.message);
+        return { success: false, error: error.message, module: 'clientOnboarding' };
+    }
+}
+
+async function generateClientDocumentChecklist(clientType, qualificationData, chatId = null, bot = null) {
+    try {
+        console.log(`📄 Generating document checklist for ${clientType} client`);
+        return await clientOnboarding.generateDocumentChecklist(clientType, qualificationData);
+    } catch (error) {
+        console.error('Document checklist generation error:', error.message);
+        return { success: false, error: error.message, module: 'clientOnboarding' };
+    }
+}
+
+async function performClientRiskProfiling(clientData, chatId = null, bot = null) {
+    try {
+        console.log(`⚖️ Performing risk profiling for client: ${clientData.personalDetails.name}`);
+        return await clientOnboarding.performRiskProfiling(clientData);
+    } catch (error) {
+        console.error('Risk profiling error:', error.message);
+        return { success: false, error: error.message, module: 'clientOnboarding' };
+    }
+}
+
+async function generateComplianceRequirements(qualificationData, chatId = null, bot = null) {
+    try {
+        console.log(`✅ Generating compliance requirements for client`);
+        return await clientOnboarding.generateComplianceRequirements(qualificationData);
+    } catch (error) {
+        console.error('Compliance requirements error:', error.message);
+        return { success: false, error: error.message, module: 'clientOnboarding' };
+    }
+}
+
+async function ensureCambodiaCompliance(clientData, onboardingStatus, chatId = null, bot = null) {
+    try {
+        console.log(`🇰🇭 Ensuring Cambodia regulatory compliance`);
+        return await clientOnboarding.ensureCambodiaCompliance(clientData, onboardingStatus);
+    } catch (error) {
+        console.error('Cambodia compliance check error:', error.message);
+        return { success: false, error: error.message, module: 'clientOnboarding' };
+    }
+}
+
+async function generateOnboardingReport(clientId, onboardingData, chatId = null, bot = null) {
+    try {
+        console.log(`📊 Generating onboarding report for client: ${clientId}`);
+        return await clientOnboarding.generateOnboardingReport(clientId, onboardingData);
+    } catch (error) {
+        console.error('Onboarding report generation error:', error.message);
+        return { success: false, error: error.message, module: 'clientOnboarding' };
+    }
+}
+
+// 🎯 NEW MODULE 3: FOREX TRADING FUNCTIONS
+async function analyzeForexOpportunity(currencyPair, analysisType, chatId = null, bot = null) {
+    try {
+        console.log(`💱 Analyzing forex opportunity: ${currencyPair}`);
+        return await forexTrading.analyzeForexOpportunity(currencyPair, analysisType);
+    } catch (error) {
+        console.error('Forex analysis error:', error.message);
+        return { success: false, error: error.message, module: 'forexTrading' };
+    }
+}
+
+async function executeForexTrade(tradeDetails, chatId = null, bot = null) {
+    try {
+        console.log(`💰 Executing forex trade: ${tradeDetails.currencyPair}`);
+        return await forexTrading.executeForexTrade(tradeDetails);
+    } catch (error) {
+        console.error('Forex trade execution error:', error.message);
+        return { success: false, error: error.message, module: 'forexTrading' };
+    }
+}
+
+async function generateForexStrategy(riskProfile, tradingStyle, timeCommitment, chatId = null, bot = null) {
+    try {
+        console.log(`📈 Generating forex strategy: ${tradingStyle} (${riskProfile} risk)`);
+        return await forexTrading.generateForexStrategy(riskProfile, tradingStyle, timeCommitment);
+    } catch (error) {
+        console.error('Forex strategy generation error:', error.message);
+        return { success: false, error: error.message, module: 'forexTrading' };
+    }
+}
+
+// 🎯 NEW MODULE 4: CRYPTO TRADING FUNCTIONS
+async function analyzeCryptoOpportunity(cryptocurrency, analysisType, chatId = null, bot = null) {
+    try {
+        console.log(`₿ Analyzing crypto opportunity: ${cryptocurrency}`);
+        return await cryptoTrading.analyzeCryptoOpportunity(cryptocurrency, analysisType);
+    } catch (error) {
+        console.error('Crypto analysis error:', error.message);
+        return { success: false, error: error.message, module: 'cryptoTrading' };
+    }
+}
+
+async function executeCryptoTrade(tradeDetails, chatId = null, bot = null) {
+    try {
+        console.log(`🔗 Executing crypto trade: ${tradeDetails.cryptocurrency}`);
+        return await cryptoTrading.executeCryptoTrade(tradeDetails);
+    } catch (error) {
+        console.error('Crypto trade execution error:', error.message);
+        return { success: false, error: error.message, module: 'cryptoTrading' };
+    }
+}
+
+async function constructCryptoPortfolio(investmentAmount, riskTolerance, investmentGoals, chatId = null, bot = null) {
+    try {
+        console.log(`🔗 Constructing crypto portfolio: ${investmentAmount} (${riskTolerance})`);
+        return await cryptoTrading.constructCryptoPortfolio(investmentAmount, riskTolerance, investmentGoals);
+    } catch (error) {
+        console.error('Crypto portfolio construction error:', error.message);
+        return { success: false, error: error.message, module: 'cryptoTrading' };
+    }
+}
+
+async function assessCryptoMarketConditions(chatId = null, bot = null) {
+    try {
+        console.log(`📊 Assessing crypto market conditions`);
+        return await cryptoTrading.assessCryptoMarketConditions();
+    } catch (error) {
+        console.error('Crypto market assessment error:', error.message);
+        return { success: false, error: error.message, module: 'cryptoTrading' };
+    }
+}
+
+// 🎯 NEW MODULE 5: STOCK TRADING FUNCTIONS
+async function analyzeStock(stockSymbol, analysisType, chatId = null, bot = null) {
+    try {
+        console.log(`📊 Analyzing stock: ${stockSymbol}`);
+        return await stockTrading.analyzeStock(stockSymbol, analysisType);
+    } catch (error) {
+        console.error('Stock analysis error:', error.message);
+        return { success: false, error: error.message, module: 'stockTrading' };
+    }
+}
+
+async function executeStockTrade(tradeDetails, chatId = null, bot = null) {
+    try {
+        console.log(`📈 Executing stock trade: ${tradeDetails.symbol}`);
+        return await stockTrading.executeStockTrade(tradeDetails);
+    } catch (error) {
+        console.error('Stock trade execution error:', error.message);
+        return { success: false, error: error.message, module: 'stockTrading' };
+    }
+}
+
+async function constructStockPortfolio(investmentAmount, riskProfile, investmentObjectives, chatId = null, bot = null) {
+    try {
+        console.log(`📈 Constructing stock portfolio: ${investmentAmount} (${riskProfile})`);
+        return await stockTrading.constructStockPortfolio(investmentAmount, riskProfile, investmentObjectives);
+    } catch (error) {
+        console.error('Stock portfolio construction error:', error.message);
+        return { success: false, error: error.message, module: 'stockTrading' };
+    }
+}
+
+async function assessStockMarketConditions(chatId = null, bot = null) {
+    try {
+        console.log(`📊 Assessing stock market conditions`);
+        return await stockTrading.assessStockMarketConditions();
+    } catch (error) {
+        console.error('Stock market assessment error:', error.message);
+        return { success: false, error: error.message, module: 'stockTrading' };
+    }
+}
+
+// 🎯 NEW MODULE 6: GLOBAL MARKETS FUNCTIONS
+async function analyzeGlobalMarketConditions(chatId = null, bot = null) {
+    try {
+        console.log(`🌍 Analyzing global market conditions and Cambodia implications`);
+        return await globalMarkets.analyzeGlobalMarketConditions();
+    } catch (error) {
+        console.error('Global market analysis error:', error.message);
+        return { success: false, error: error.message, module: 'globalMarkets' };
+    }
+}
+
+async function constructGlobalPortfolio(investmentAmount, riskProfile, timeHorizon, cambodiaFocus, chatId = null, bot = null) {
+    try {
+        console.log(`🌐 Constructing global portfolio: ${investmentAmount} (${riskProfile} risk, ${cambodiaFocus * 100}% Cambodia focus)`);
+        return await globalMarkets.constructGlobalPortfolio(investmentAmount, riskProfile, timeHorizon, cambodiaFocus);
+    } catch (error) {
+        console.error('Global portfolio construction error:', error.message);
+        return { success: false, error: error.message, module: 'globalMarkets' };
+    }
+}
+
+async function monitorGlobalMarketDevelopments(chatId = null, bot = null) {
+    try {
+        console.log(`📊 Monitoring global market developments for Cambodia impact`);
+        return await globalMarkets.monitorGlobalMarketDevelopments();
+    } catch (error) {
+        console.error('Global market monitoring error:', error.message);
+        return { success: false, error: error.message, module: 'globalMarkets' };
+    }
+}
+
+async function assessGlobalCrisisScenarios(chatId = null, bot = null) {
+    try {
+        console.log(`⚠️ Assessing global crisis scenarios and Cambodia vulnerabilities`);
+        return await globalMarkets.assessGlobalCrisisScenarios();
+    } catch (error) {
+        console.error('Crisis scenario assessment error:', error.message);
+        return { success: false, error: error.message, module: 'globalMarkets' };
+    }
+}
+
+async function identifyGlobalInvestmentThemes(chatId = null, bot = null) {
+    try {
+        console.log(`🎯 Identifying global investment themes and opportunities`);
+        return await globalMarkets.identifyGlobalInvestmentThemes();
+    } catch (error) {
+        console.error('Global investment themes error:', error.message);
+        return { success: false, error: error.message, module: 'globalMarkets' };
+    }
+}
+
+// ========================================================================
 // 🌟 COMPOSITE WORKFLOW FUNCTIONS
 // ========================================================================
 
 async function processCompleteLoanWorkflow(applicationData, chatId = null, bot = null) {
     try {
-        console.log('🔄 Starting complete loan workflow');
+        console.log(`🔄 Starting complete loan workflow`);
         
         // Step 1: Due Diligence
         const dueDiligence = await conductDueDiligence(
@@ -762,7 +1080,7 @@ async function processCompleteLoanWorkflow(applicationData, chatId = null, bot =
 
 async function generateCompleteFundReport(fundId, reportingPeriod = 'quarterly', chatId = null, bot = null) {
     try {
-        console.log('📋 Generating complete fund report');
+        console.log(`📋 Generating complete fund report`);
         
         const performance = await generatePerformanceDashboard(fundId, reportingPeriod, chatId, bot);
         const nav = await calculateNAV(fundId, new Date(), chatId, bot);
@@ -791,7 +1109,7 @@ async function generateCompleteFundReport(fundId, reportingPeriod = 'quarterly',
 
 async function processCompleteWealthAssessment(clientId, assessmentData, chatId = null, bot = null) {
     try {
-        console.log('🔄 Starting complete wealth assessment workflow');
+        console.log(`🔄 Starting complete wealth assessment workflow`);
         
         const realEstateValue = await valuateRealEstate(
             assessmentData.realEstateId, 
@@ -853,7 +1171,7 @@ async function processCompleteWealthAssessment(clientId, assessmentData, chatId 
 
 async function processCompleteMarketIntelligence(region = 'cambodia', intelligenceData, chatId = null, bot = null) {
     try {
-        console.log('🌐 Starting complete market intelligence workflow');
+        console.log(`🌐 Starting complete market intelligence workflow`);
         
         const economicAnalysis = await analyzeEconomicConditions(region, intelligenceData.economicData, chatId, bot);
         const marketResearchData = await analyzeMarket(region, intelligenceData.marketData, chatId, bot);
@@ -878,6 +1196,71 @@ async function processCompleteMarketIntelligence(region = 'cambodia', intelligen
     } catch (error) {
         console.error('Complete market intelligence error:', error.message);
         return { success: false, error: error.message, workflow: 'completeMarketIntelligence' };
+    }
+}
+
+// NEW TRADING WORKFLOWS
+async function processCompleteClientOnboarding(clientData, chatId = null, bot = null) {
+    try {
+        console.log(`🎯 Starting complete client onboarding workflow`);
+        
+        const qualification = await qualifyClient(clientData, chatId, bot);
+        if (!qualification.success) {
+            return { success: false, stage: 'qualification', error: qualification.error };
+        }
+        
+        const riskProfiling = await performClientRiskProfiling(clientData, chatId, bot);
+        const complianceCheck = await ensureCambodiaCompliance(clientData, {}, chatId, bot);
+        const documentList = await generateClientDocumentChecklist(clientData.clientType, qualification, chatId, bot);
+        const onboardingReport = await generateOnboardingReport(clientData.clientId, {
+            qualification, riskProfiling, complianceCheck, documentList
+        }, chatId, bot);
+        
+        return {
+            success: true,
+            workflow: 'completeClientOnboarding',
+            clientId: clientData.clientId,
+            results: {
+                qualification: qualification,
+                riskProfiling: riskProfiling,
+                compliance: complianceCheck,
+                documents: documentList,
+                report: onboardingReport
+            }
+        };
+        
+    } catch (error) {
+        console.error('Complete client onboarding error:', error.message);
+        return { success: false, error: error.message, workflow: 'completeClientOnboarding' };
+    }
+}
+
+async function processCompleteInvestmentAnalysis(investmentData, chatId = null, bot = null) {
+    try {
+        console.log(`📊 Starting complete investment analysis workflow`);
+        
+        const stockAnalysis = await analyzeStock(investmentData.stockSymbol, 'comprehensive', chatId, bot);
+        const forexAnalysis = await analyzeForexOpportunity(investmentData.currencyPair, 'comprehensive', chatId, bot);
+        const cryptoAnalysis = await analyzeCryptoOpportunity(investmentData.cryptocurrency, 'comprehensive', chatId, bot);
+        const globalAnalysis = await analyzeGlobalMarketConditions(chatId, bot);
+        const marketTiming = await assessMarketTiming(investmentData.exchange, chatId, bot);
+        
+        return {
+            success: true,
+            workflow: 'completeInvestmentAnalysis',
+            results: {
+                stocks: stockAnalysis,
+                forex: forexAnalysis,
+                crypto: cryptoAnalysis,
+                global: globalAnalysis,
+                timing: marketTiming
+            },
+            generatedDate: new Date().toISOString()
+        };
+        
+    } catch (error) {
+        console.error('Complete investment analysis error:', error.message);
+        return { success: false, error: error.message, workflow: 'completeInvestmentAnalysis' };
     }
 }
 
@@ -988,11 +1371,56 @@ module.exports = {
     analyzeMarket,
     analyzeCompetitors,
     
-    // COMPOSITE WORKFLOW FUNCTIONS
+    // NEW 6 TRADING & GLOBAL MODULE FUNCTIONS
+    // Trading Operations
+    executeCambodiaTrade,
+    constructCambodiaPortfolio,
+    implementTradingRiskManagement,
+    assessMarketTiming,
+    generateTradingReport,
+    calculateTradingCosts,
+    validateCambodiaTradeRules,
+    
+    // Client Onboarding
+    initiateClientOnboarding,
+    qualifyClient,
+    generateClientDocumentChecklist,
+    performClientRiskProfiling,
+    generateComplianceRequirements,
+    ensureCambodiaCompliance,
+    generateOnboardingReport,
+    
+    // Forex Trading
+    analyzeForexOpportunity,
+    executeForexTrade,
+    generateForexStrategy,
+    
+    // Crypto Trading
+    analyzeCryptoOpportunity,
+    executeCryptoTrade,
+    constructCryptoPortfolio,
+    assessCryptoMarketConditions,
+    
+    // Stock Trading
+    analyzeStock,
+    executeStockTrade,
+    constructStockPortfolio,
+    assessStockMarketConditions,
+    
+    // Global Markets
+    analyzeGlobalMarketConditions,
+    constructGlobalPortfolio,
+    monitorGlobalMarketDevelopments,
+    assessGlobalCrisisScenarios,
+    identifyGlobalInvestmentThemes,
+    
+    // COMPOSITE WORKFLOW FUNCTIONS (6 total)
     processCompleteLoanWorkflow,
     generateCompleteFundReport,
     processCompleteWealthAssessment,
     processCompleteMarketIntelligence,
+    processCompleteClientOnboarding,
+    processCompleteInvestmentAnalysis,
     
     // Direct module access (if needed)
     modules: {
@@ -1021,14 +1449,22 @@ module.exports = {
         legalRegulatory,
         agriculturalWealth,
         resourcesWealth,
-        cambodiaLending
+        cambodiaLending,
+        
+        // New Trading & Global Modules
+        tradingOperations,
+        clientOnboarding,
+        forexTrading,
+        cryptoTrading,
+        stockTrading,
+        globalMarkets
     }
 };
 
-console.log('✅ IMPERIUMVAULTSYSTEM index.js loaded - All 23 modules integrated and ready');
-console.log('🎯 Available functions:', Object.keys(module.exports).length - 1, 'functions exported');
-console.log('🌟 System ready for Cambodia private lending operations');
-console.log('📊 Module breakdown: 11 Specialized Handlers + 12 Core Lending + 4 Composite Workflows');
+console.log(`✅ IMPERIUMVAULTSYSTEM index.js loaded - All 29 modules integrated and ready`);
+console.log(`🎯 Available functions: ${Object.keys(module.exports).length - 1} functions exported`);
+console.log(`🌟 System ready for Cambodia private lending + trading operations`);
+console.log(`📊 Module breakdown: 11 Specialized Handlers + 12 Core Lending + 6 Trading Modules + 6 Composite Workflows`);
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
