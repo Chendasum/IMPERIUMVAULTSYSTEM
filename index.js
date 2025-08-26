@@ -1154,18 +1154,13 @@ async function assessGlobalCrisisScenarios(chatId = null, bot = null) {
     }
 }
 
-async function identifyGlobalInvestmentThemes(chatId = null, bot = null) {
+async function qualifyClient(clientData, chatId = null, bot = null) {
     try {
-        console.log(`🎯 Identifying global investment themes and opportunities`);
-        if (!globalMarkets) {
-            return createPlaceholderResponse('globalMarkets', 'identifyGlobalInvestmentThemes');
+        console.log(`📋 Qualifying client`);
+        if (!clientOnboarding) {
+            return createPlaceholderResponse('clientOnboarding', 'qualifyClient');
         }
-        return await globalMarkets.identifyGlobalInvestmentThemes();
-    } catch (error) {
-        console.error('Global investment themes error:', error.message);
-        return { success: false, error: error.message, module: 'globalMarkets' };
-    }
-}Onboarding.qualifyClient(clientData);
+        return await clientOnboarding.qualifyClient(clientData);
     } catch (error) {
         console.error('Client qualification error:', error.message);
         return { success: false, error: error.message, module: 'clientOnboarding' };
