@@ -1,4 +1,4 @@
-// utils/openaiClient.js - FIXED: Real GPT-5 with Better Error Handling
+// utils/openaiClient.js - FIXED: Real GPT-5 with Consistent Parameter Handling
 require("dotenv").config();
 const { OpenAI } = require("openai");
 
@@ -6,22 +6,22 @@ const { OpenAI } = require("openai");
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
     timeout: 180000, // 3 minutes for GPT-5's reasoning
-    maxRetries: 3,
+    maxRetries: 2, // FIXED: Reduced retries to prevent loops
     defaultHeaders: {
         'User-Agent': 'IMPERIUM-VAULT-GPT5/1.0.0'
     }
 });
 
-// ✅ REAL GPT-5 Configuration (Released August 7, 2025)
+// REAL GPT-5 Configuration (Released August 7, 2025)
 const GPT5_CONFIG = {
-    PRIMARY_MODEL: "gpt-5",               // ✅ Real GPT-5 (Released)
-    MINI_MODEL: "gpt-5-mini",             // ✅ Real GPT-5 Mini (Released)
-    NANO_MODEL: "gpt-5-nano",             // ✅ Real GPT-5 Nano (Released)
-    CHAT_MODEL: "gpt-5-chat-latest",      // ✅ Real GPT-5 Chat (Released)
-    FALLBACK_MODEL: "gpt-4o",             // Fallback if GPT-5 fails temporarily
+    PRIMARY_MODEL: "gpt-5",               
+    MINI_MODEL: "gpt-5-mini",             
+    NANO_MODEL: "gpt-5-nano",             
+    CHAT_MODEL: "gpt-5-chat-latest",      
+    FALLBACK_MODEL: "gpt-4o",             
     
-    ENHANCED_CONTEXT_WINDOW: 200000,      // GPT-5's large context
-    MAX_OUTPUT_TOKENS: 16384,             // ✅ INCREASED: GPT-5's maximum output capacity
+    ENHANCED_CONTEXT_WINDOW: 200000,      
+    MAX_COMPLETION_TOKENS: 16384, // FIXED: Standardized parameter name        
     
     // GPT-5 reasoning parameters
     REASONING_EFFORTS: ["minimal", "low", "medium", "high"],
@@ -31,24 +31,24 @@ const GPT5_CONFIG = {
 };
 
 let currentModel = GPT5_CONFIG.PRIMARY_MODEL;
-let gpt5Available = true; // GPT-5 is released and available
+let gpt5Available = true;
 
-console.log("🚀 Real GPT-5 Client (Released August 7, 2025):");
-console.log(`   API Key: ${process.env.OPENAI_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
+console.log("Real GPT-5 Client (Released August 7, 2025):");
+console.log(`   API Key: ${process.env.OPENAI_API_KEY ? "SET" : "NOT SET"}`);
 console.log(`   Primary Model: ${GPT5_CONFIG.PRIMARY_MODEL}`);
 console.log(`   Mini Model: ${GPT5_CONFIG.MINI_MODEL}`);
 console.log(`   Nano Model: ${GPT5_CONFIG.NANO_MODEL}`);
 console.log(`   Chat Model: ${GPT5_CONFIG.CHAT_MODEL}`);
 
 /**
- * ✅ FIXED: Safely extract response text with null checks
+ * FIXED: Safely extract response text with null checks
  */
 function safeExtractResponseText(completion, apiType = 'responses') {
     try {
         if (apiType === 'responses') {
             // For Responses API
             if (!completion || !completion.output || !Array.isArray(completion.output)) {
-                console.warn('⚠️ Invalid responses API structure:', completion);
+                console.warn('Invalid responses API structure:', completion);
                 return "Response structure invalid - no output array found";
             }
             
@@ -68,13 +68,13 @@ function safeExtractResponseText(completion, apiType = 'responses') {
         } else {
             // For Chat Completions API
             if (!completion || !completion.choices || !Array.isArray(completion.choices)) {
-                console.warn('⚠️ Invalid chat API structure:', completion);
+                console.warn('Invalid chat API structure:', completion);
                 return "Response structure invalid - no choices array found";
             }
             
             const choice = completion.choices[0];
             if (!choice || !choice.message || !choice.message.content) {
-                console.warn('⚠️ Invalid choice structure:', choice);
+                console.warn('Invalid choice structure:', choice);
                 return "No message content found in response";
             }
             
@@ -82,13 +82,13 @@ function safeExtractResponseText(completion, apiType = 'responses') {
         }
         
     } catch (error) {
-        console.error('❌ Error extracting response text:', error.message);
+        console.error('Error extracting response text:', error.message);
         return `Error extracting response: ${error.message}`;
     }
 }
 
 /**
- * ✅ FIXED: Build Responses API request with validation
+ * FIXED: Build Responses API request with consistent parameters
  */
 function buildResponsesRequest(model, input, options = {}) {
     try {
@@ -111,15 +111,28 @@ function buildResponsesRequest(model, input, options = {}) {
             };
         }
         
-        // Add output tokens with validation
-        if (options.max_output_tokens) {
-            // Ensure minimum 16 tokens as per OpenAI requirements
-            request.max_output_tokens = Math.max(16, Math.min(options.max_output_tokens, GPT5_CONFIG.MAX_OUTPUT_TOKENS));
-        } else if (options.max_completion_tokens) {
-            request.max_output_tokens = Math.max(16, Math.min(options.max_completion_tokens, GPT5_CONFIG.MAX_OUTPUT_TOKENS));
+        // FIXED: Handle max_completion_tokens consistently
+        let maxTokens = null;
+        
+        // Check for max_completion_tokens first (standard parameter)
+        if (options.max_completion_tokens) {
+            maxTokens = options.max_completion_tokens;
+        } 
+        // Fallback to max_output_tokens for backward compatibility
+        else if (options.max_output_tokens) {
+            maxTokens = options.max_output_tokens;
         }
         
-        console.log('🔧 Built Responses API request:', {
+        // Set the token limit with validation
+        if (maxTokens) {
+            // Ensure minimum 16 tokens and maximum limit
+            request.max_output_tokens = Math.max(16, Math.min(maxTokens, GPT5_CONFIG.MAX_COMPLETION_TOKENS));
+        } else {
+            // Default token limit
+            request.max_output_tokens = 8000;
+        }
+        
+        console.log('Built Responses API request:', {
             model: request.model,
             reasoning: request.reasoning?.effort,
             verbosity: request.text?.verbosity,
@@ -129,13 +142,13 @@ function buildResponsesRequest(model, input, options = {}) {
         return request;
         
     } catch (error) {
-        console.error('❌ Error building responses request:', error.message);
+        console.error('Error building responses request:', error.message);
         throw new Error(`Failed to build responses request: ${error.message}`);
     }
 }
 
 /**
- * ✅ FIXED: Build Chat request with validation
+ * FIXED: Build Chat request with consistent parameters
  */
 function buildChatRequest(model, messages, options = {}) {
     try {
@@ -149,15 +162,30 @@ function buildChatRequest(model, messages, options = {}) {
             request.temperature = Math.max(0, Math.min(2, options.temperature));
         }
         
-        if (options.max_tokens) {
-            request.max_tokens = Math.max(1, Math.min(options.max_tokens, 16384));  // ✅ INCREASED max limit
+        // FIXED: Handle max_completion_tokens for chat model too
+        let maxTokens = null;
+        
+        // Check for max_completion_tokens first (standard parameter)
+        if (options.max_completion_tokens) {
+            maxTokens = options.max_completion_tokens;
+        }
+        // Fallback to max_tokens for backward compatibility
+        else if (options.max_tokens) {
+            maxTokens = options.max_tokens;
+        }
+        
+        // Set the token limit with validation
+        if (maxTokens) {
+            request.max_tokens = Math.max(1, Math.min(maxTokens, 16384));
+        } else {
+            request.max_tokens = 8000;
         }
         
         if (options.top_p !== undefined) {
             request.top_p = Math.max(0, Math.min(1, options.top_p));
         }
         
-        console.log('🔧 Built Chat API request:', {
+        console.log('Built Chat API request:', {
             model: request.model,
             temperature: request.temperature,
             max_tokens: request.max_tokens
@@ -166,22 +194,34 @@ function buildChatRequest(model, messages, options = {}) {
         return request;
         
     } catch (error) {
-        console.error('❌ Error building chat request:', error.message);
+        console.error('Error building chat request:', error.message);
         throw new Error(`Failed to build chat request: ${error.message}`);
     }
 }
 
 /**
- * ✅ FIXED: Main GPT-5 analysis function with comprehensive error handling
+ * FIXED: Main GPT-5 analysis function with circuit breaker
  */
 async function getGPT5Analysis(prompt, options = {}) {
+    const startTime = Date.now();
+    
     try {
-        console.log(`🚀 GPT-5 Analysis Starting...`);
-        console.log(`📝 Prompt length: ${prompt.length} chars`);
-        console.log(`⚙️ Options:`, options);
+        console.log(`GPT-5 Analysis Starting...`);
+        console.log(`Prompt length: ${prompt.length} chars`);
+        console.log(`Options:`, options);
         
-        const selectedModel = options.model || GPT5_CONFIG.MINI_MODEL; // Default to Mini for balance
-        console.log(`🤖 Selected Model: ${selectedModel}`);
+        const selectedModel = options.model || GPT5_CONFIG.MINI_MODEL;
+        console.log(`Selected Model: ${selectedModel}`);
+        
+        // FIXED: Input validation to prevent API errors
+        if (!prompt || typeof prompt !== 'string') {
+            throw new Error('Invalid prompt: must be non-empty string');
+        }
+        
+        if (prompt.length > 180000) { // Leave room for other content
+            console.warn('Prompt too long, truncating...');
+            prompt = prompt.substring(0, 180000) + '\n... (truncated for length)';
+        }
         
         let response;
         let tokensUsed = 0;
@@ -191,38 +231,33 @@ async function getGPT5Analysis(prompt, options = {}) {
         const useResponsesApi = selectedModel.includes('gpt-5') && selectedModel !== GPT5_CONFIG.CHAT_MODEL;
         
         if (useResponsesApi) {
-            // ✅ Use Responses API for reasoning models (gpt-5, gpt-5-mini, gpt-5-nano)
-            console.log('📡 Using Responses API...');
+            // Use Responses API for reasoning models (gpt-5, gpt-5-mini, gpt-5-nano)
+            console.log('Using Responses API...');
             apiUsed = 'responses';
             
             const requestOptions = {
                 reasoning_effort: options.reasoning_effort || "medium",
                 verbosity: options.verbosity || "medium",
-                max_output_tokens: options.max_output_tokens || options.max_completion_tokens || 8000  // ✅ INCREASED default
+                max_completion_tokens: options.max_completion_tokens || 8000 // FIXED: Use standard parameter
             };
             
             const responsesRequest = buildResponsesRequest(selectedModel, prompt, requestOptions);
             
-            console.log('🔄 Making Responses API call...');
+            console.log('Making Responses API call...');
             const completion = await openai.responses.create(responsesRequest);
             
-            console.log('✅ Responses API call completed');
-            console.log('📊 Raw response structure:', {
-                hasOutput: !!completion.output,
-                outputLength: completion.output?.length,
-                hasUsage: !!completion.usage
-            });
+            console.log('Responses API call completed');
             
             response = safeExtractResponseText(completion, 'responses');
             tokensUsed = completion.usage?.total_tokens || 0;
             
             if (completion.usage?.reasoning_tokens) {
-                console.log(`🧠 Reasoning Tokens: ${completion.usage.reasoning_tokens}`);
+                console.log(`Reasoning Tokens: ${completion.usage.reasoning_tokens}`);
             }
             
         } else {
-            // ✅ Use Chat Completions API for chat model
-            console.log('💬 Using Chat Completions API...');
+            // Use Chat Completions API for chat model
+            console.log('Using Chat Completions API...');
             apiUsed = 'chat';
             
             const messages = [
@@ -234,20 +269,15 @@ async function getGPT5Analysis(prompt, options = {}) {
             
             const requestOptions = {
                 temperature: options.temperature || 0.7,
-                max_tokens: options.max_tokens || 8000  // ✅ INCREASED for long responses
+                max_completion_tokens: options.max_completion_tokens || 8000 // FIXED: Use standard parameter
             };
             
             const chatRequest = buildChatRequest(selectedModel, messages, requestOptions);
             
-            console.log('🔄 Making Chat Completions API call...');
+            console.log('Making Chat Completions API call...');
             const completion = await openai.chat.completions.create(chatRequest);
             
-            console.log('✅ Chat Completions API call completed');
-            console.log('📊 Raw response structure:', {
-                hasChoices: !!completion.choices,
-                choicesLength: completion.choices?.length,
-                hasUsage: !!completion.usage
-            });
+            console.log('Chat Completions API call completed');
             
             response = safeExtractResponseText(completion, 'chat');
             tokensUsed = completion.usage?.total_tokens || 0;
@@ -258,43 +288,46 @@ async function getGPT5Analysis(prompt, options = {}) {
             throw new Error('Empty response received from GPT-5');
         }
         
-        console.log(`✅ GPT-5 Analysis Complete!`);
-        console.log(`📊 Model: ${selectedModel}`);
-        console.log(`📡 API: ${apiUsed}`);
-        console.log(`📊 Tokens Used: ${tokensUsed}`);
-        console.log(`📏 Response Length: ${response.length} characters`);
+        const executionTime = Date.now() - startTime;
+        
+        console.log(`GPT-5 Analysis Complete!`);
+        console.log(`Model: ${selectedModel}`);
+        console.log(`API: ${apiUsed}`);
+        console.log(`Tokens Used: ${tokensUsed}`);
+        console.log(`Response Length: ${response.length} characters`);
+        console.log(`Execution Time: ${executionTime}ms`);
         
         return response;
         
     } catch (error) {
-        console.error(`❌ GPT-5 Analysis Error:`, error);
-        console.error('❌ Error details:', {
-            message: error.message,
-            type: error.constructor.name,
-            model: options.model,
-            promptLength: prompt.length
-        });
+        console.error(`GPT-5 Analysis Error:`, error);
         
-        // ✅ INTELLIGENT FALLBACK: Try GPT-4o if GPT-5 fails
-        console.log('🔄 Attempting GPT-4o fallback...');
+        // FIXED: Circuit breaker - don't retry infinitely
+        if (error.message.includes('rate_limit') || error.message.includes('quota')) {
+            console.log('Rate limit hit, no fallback attempt');
+            throw error;
+        }
+        
+        // INTELLIGENT FALLBACK: Try GPT-4o if GPT-5 fails
+        console.log('Attempting GPT-4o fallback...');
         
         try {
             const fallbackCompletion = await openai.chat.completions.create({
                 model: GPT5_CONFIG.FALLBACK_MODEL,
                 messages: [{ role: "user", content: prompt }],
-                max_tokens: Math.min(options.max_tokens || 8000, 16384),  // ✅ INCREASED fallback tokens
+                max_tokens: Math.min(options.max_completion_tokens || 8000, 16384),
                 temperature: options.temperature || 0.7
             });
             
             const fallbackResponse = safeExtractResponseText(fallbackCompletion, 'chat');
             
-            console.log('✅ GPT-4o fallback successful');
+            console.log('GPT-4o fallback successful');
             return `[GPT-4o Fallback] ${fallbackResponse}`;
             
         } catch (fallbackError) {
-            console.error('❌ Fallback also failed:', fallbackError.message);
+            console.error('Fallback also failed:', fallbackError.message);
             
-            // ✅ FINAL EMERGENCY RESPONSE
+            // FINAL EMERGENCY RESPONSE
             return `I apologize, but I'm experiencing technical difficulties. 
 
 Error details: ${error.message}
@@ -310,7 +343,7 @@ Your message was received but couldn't be processed at this time.`;
 }
 
 /**
- * ✅ Quick access functions with error handling
+ * Quick access functions with consistent parameters
  */
 async function getQuickNanoResponse(prompt, options = {}) {
     return await getGPT5Analysis(prompt, {
@@ -318,7 +351,7 @@ async function getQuickNanoResponse(prompt, options = {}) {
         model: GPT5_CONFIG.NANO_MODEL,
         reasoning_effort: "minimal",
         verbosity: "low",
-        max_output_tokens: 6000  // ✅ INCREASED for better responses
+        max_completion_tokens: 6000 // FIXED: Use standard parameter
     });
 }
 
@@ -328,7 +361,7 @@ async function getQuickMiniResponse(prompt, options = {}) {
         model: GPT5_CONFIG.MINI_MODEL,
         reasoning_effort: "medium",
         verbosity: "medium",
-        max_output_tokens: 10000  // ✅ INCREASED for detailed responses
+        max_completion_tokens: 10000 // FIXED: Use standard parameter
     });
 }
 
@@ -338,7 +371,7 @@ async function getDeepAnalysis(prompt, options = {}) {
         model: GPT5_CONFIG.PRIMARY_MODEL,
         reasoning_effort: "high",
         verbosity: "high",
-        max_output_tokens: 16000  // ✅ INCREASED for comprehensive analysis
+        max_completion_tokens: 16000 // FIXED: Use standard parameter
     });
 }
 
@@ -347,23 +380,23 @@ async function getChatResponse(prompt, options = {}) {
         ...options,
         model: GPT5_CONFIG.CHAT_MODEL,
         temperature: options.temperature || 0.7,
-        max_tokens: 12000  // ✅ INCREASED for long conversations
+        max_completion_tokens: 12000 // FIXED: Use standard parameter
     });
 }
 
 /**
- * ✅ FIXED: Connection test with proper error handling
+ * FIXED: Connection test with proper error handling
  */
 async function testOpenAIConnection() {
     try {
-        console.log('🔍 Testing GPT-5 connection...');
+        console.log('Testing GPT-5 connection...');
         
         // Test with GPT-5 Nano (fastest)
         const testResponse = await getQuickNanoResponse("Hello, confirm you are GPT-5 and working correctly.", {
-            max_output_tokens: 100
+            max_completion_tokens: 100 // FIXED: Use standard parameter
         });
         
-        console.log('✅ GPT-5 connection test successful');
+        console.log('GPT-5 connection test successful');
         
         return { 
             success: true, 
@@ -373,7 +406,7 @@ async function testOpenAIConnection() {
         };
         
     } catch (error) {
-        console.error('❌ GPT-5 connection test failed:', error.message);
+        console.error('GPT-5 connection test failed:', error.message);
         
         // Try fallback
         try {
@@ -403,7 +436,7 @@ async function testOpenAIConnection() {
 }
 
 /**
- * ✅ System health check
+ * FIXED: System health check with circuit breaker
  */
 async function checkGPT5SystemHealth() {
     const health = {
@@ -413,10 +446,11 @@ async function checkGPT5SystemHealth() {
         gpt5ChatAvailable: false,
         fallbackWorking: false,
         currentModel: currentModel,
-        errors: []
+        errors: [],
+        parameterConsistency: 'max_completion_tokens standardized'
     };
     
-    // Test each model with very short requests
+    // Test each model with very short requests to avoid quota issues
     const testModels = [
         { name: 'gpt5NanoAvailable', model: GPT5_CONFIG.NANO_MODEL, func: getQuickNanoResponse },
         { name: 'gpt5MiniAvailable', model: GPT5_CONFIG.MINI_MODEL, func: getQuickMiniResponse },
@@ -426,12 +460,12 @@ async function checkGPT5SystemHealth() {
     
     for (const test of testModels) {
         try {
-            await test.func("Hi", { max_output_tokens: 20, max_tokens: 20 });
+            await test.func("Hi", { max_completion_tokens: 20 }); // FIXED: Use standard parameter
             health[test.name] = true;
-            console.log(`✅ ${test.model} working`);
+            console.log(`${test.model} working`);
         } catch (error) {
             health.errors.push(`${test.model}: ${error.message}`);
-            console.log(`❌ ${test.model} failed: ${error.message}`);
+            console.log(`${test.model} failed: ${error.message}`);
         }
     }
     
@@ -453,10 +487,11 @@ async function checkGPT5SystemHealth() {
 }
 
 // System startup message
-console.log('✅ Real GPT-5 Client loaded (Released August 7, 2025)');
-console.log('🚀 Enhanced error handling and fallback systems active');
-console.log('🔧 Safe response extraction implemented');
-console.log('⚡ Ready for GPT-5 Nano → Mini → Full → Chat routing');
+console.log('Real GPT-5 Client loaded (Released August 7, 2025)');
+console.log('FIXED: Parameter consistency - max_completion_tokens standardized');
+console.log('Enhanced error handling and fallback systems active');
+console.log('Circuit breaker implemented to prevent infinite loops');
+console.log('Ready for GPT-5 Nano → Mini → Full → Chat routing');
 
 module.exports = {
     // Main GPT-5 functions
