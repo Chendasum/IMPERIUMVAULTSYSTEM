@@ -2,19 +2,19 @@
 // Clean routing: index.js → dualCommandSystem.js → openaiClient.js
 // Preserves PostgreSQL, memory integration, and Telegram features with GPT-5 optimization
 
-// 🚀 MAIN IMPORT: OpenAI Client for GPT-5 Only
+// MAIN IMPORT: OpenAI Client for GPT-5 Only
 let openaiClient;
 try {
     openaiClient = require('./openaiClient');
-    console.log('✅ GPT-5 client loaded successfully');
+    console.log('GPT-5 client loaded successfully');
 } catch (error) {
-    console.error('❌ GPT-5 client import failed:', error.message);
+    console.error('GPT-5 client import failed:', error.message);
     openaiClient = { 
         getGPT5Analysis: async (prompt) => `GPT-5 client unavailable: ${error.message}` 
     };
 }
 
-// 🧠 QUERY COMPLEXITY ANALYZER for Dynamic Token Scaling
+// QUERY COMPLEXITY ANALYZER for Dynamic Token Scaling
 function analyzeQueryComplexity(message) {
     const text = message.toLowerCase();
     
@@ -68,14 +68,14 @@ function analyzeQueryComplexity(message) {
     };
 }
 
-// 🧠 MEMORY INTEGRATION (Preserved)
+// MEMORY INTEGRATION (Preserved)
 let memory, database;
 try {
     memory = require('./memory');
     database = require('./database');
-    console.log('✅ Memory and database systems loaded');
+    console.log('Memory and database systems loaded');
 } catch (error) {
-    console.warn('⚠️ Memory system imports failed:', error.message);
+    console.warn('Memory system imports failed:', error.message);
     memory = { buildConversationContext: async () => '' };
     database = { 
         getConversationHistoryDB: async () => [],
@@ -83,13 +83,13 @@ try {
     };
 }
 
-// 📱 TELEGRAM INTEGRATION (Preserved)
+// TELEGRAM INTEGRATION (Preserved)
 let telegramSplitter = {};
 try {
     telegramSplitter = require('./telegramSplitter');
-    console.log('✅ Telegram integration loaded');
+    console.log('Telegram integration loaded');
 } catch (error) {
-    console.warn('⚠️ Telegram splitter import failed:', error.message);
+    console.warn('Telegram splitter import failed:', error.message);
     telegramSplitter = {
         sendGPTResponse: async () => false,
         sendClaudeResponse: async () => false,
@@ -99,7 +99,7 @@ try {
     };
 }
 
-// 🌍 ENHANCED DATETIME UTILITIES (Preserved)
+// ENHANCED DATETIME UTILITIES (Preserved)
 function getCurrentCambodiaDateTime() {
     try {
         const now = new Date();
@@ -128,7 +128,7 @@ function getCurrentCambodiaDateTime() {
             timestamp: cambodiaTime.toISOString()
         };
     } catch (error) {
-        console.error('❌ Cambodia DateTime error:', error.message);
+        console.error('Cambodia DateTime error:', error.message);
         return {
             date: new Date().toDateString(),
             time: new Date().toTimeString().slice(0, 5),
@@ -165,7 +165,7 @@ function getCurrentGlobalDateTime() {
             utc: now.toISOString()
         };
     } catch (error) {
-        console.error('❌ Global DateTime error:', error.message);
+        console.error('Global DateTime error:', error.message);
         return {
             cambodia: getCurrentCambodiaDateTime(),
             error: 'Global timezone calculation failed'
@@ -340,19 +340,19 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         };
     }
     
-    // 🔧 DYNAMIC TOKEN SCALING based on query length and complexity
+    // DYNAMIC TOKEN SCALING based on query length and complexity
     const queryLength = message.length;
     const queryComplexity = analyzeQueryComplexity(message);
     
     // Scale tokens based on input length
     if (queryLength > 1000) {
-        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.5, 16000);  // ✅ INCREASED max from 8000
+        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.5, 16000);
         gpt5Config.reason += ' (Scaled for long input)';
     }
     
     // Scale tokens based on complexity indicators
     if (queryComplexity.isVeryComplex) {
-        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.3, 16000);  // ✅ INCREASED max from 8000
+        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.3, 16000);
         gpt5Config.reason += ' (Scaled for complexity)';
     }
     
@@ -365,21 +365,19 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     ];
     
     if (longResponsePatterns.some(pattern => pattern.test(message))) {
-        gpt5Config.max_completion_tokens = 16000;  // ✅ INCREASED maximum allowed from 8000
-        if (gpt5Config.max_completion_tokens) gpt5Config.max_completion_tokens = 16000;  // ✅ INCREASED from 8000
+        gpt5Config.max_completion_tokens = 16000;
         gpt5Config.reason += ' (Long response requested)';
     }
     
     return {
         // GPT-5 configuration
         type: gpt5Config.priority,
-        bestAI: 'gpt',  // Always GPT for GPT-5 only mode
+        bestAI: 'gpt',
         reason: gpt5Config.reason,
         gpt5Model: gpt5Config.model,
         reasoning_effort: gpt5Config.reasoning_effort,
         verbosity: gpt5Config.verbosity,
         max_completion_tokens: gpt5Config.max_completion_tokens,
-        max_completion_tokens: gpt5Config.max_completion_tokens, // For chat model
         temperature: gpt5Config.temperature,
         priority: gpt5Config.priority,
         
@@ -394,18 +392,18 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     };
 }
 
-// 🚀 DIRECT GPT-5 EXECUTION (Fixed to use correct client)
+// DIRECT GPT-5 EXECUTION (Fixed to use correct client)
 async function executeThroughGPT5System(userMessage, queryAnalysis, context = null, memoryData = null, chatId = null) {
     try {
-        console.log(`🚀 GPT-5 Only: ${queryAnalysis.gpt5Model} (${queryAnalysis.reasoning_effort || 'none'} reasoning, ${queryAnalysis.verbosity || 'none'} verbosity)`);
+        console.log(`GPT-5 Only: ${queryAnalysis.gpt5Model} (${queryAnalysis.reasoning_effort || 'none'} reasoning, ${queryAnalysis.verbosity || 'none'} verbosity)`);
         
         // Handle datetime queries directly (performance optimization)
         if (queryAnalysis.priority === 'speed' && /^(what time|what's the time|current time|time now|what date|what's the date)/.test(userMessage.toLowerCase())) {
             const cambodiaTime = getCurrentCambodiaDateTime();
             if (userMessage.toLowerCase().includes('time')) {
-                return `⏰ Current time in Cambodia: ${cambodiaTime.time} (${cambodiaTime.timezone})\nToday is ${cambodiaTime.date}${cambodiaTime.isWeekend ? ' - Enjoy your weekend!' : ' - Have a productive day!'}`;
+                return `Current time in Cambodia: ${cambodiaTime.time} (${cambodiaTime.timezone})\nToday is ${cambodiaTime.date}${cambodiaTime.isWeekend ? ' - Enjoy your weekend!' : ' - Have a productive day!'}`;
             } else {
-                return `📅 Today's date: ${cambodiaTime.date}\nCurrent time: ${cambodiaTime.time} in Cambodia (${cambodiaTime.timezone})`;
+                return `Today's date: ${cambodiaTime.date}\nCurrent time: ${cambodiaTime.time} in Cambodia (${cambodiaTime.timezone})`;
             }
         }
         
@@ -418,62 +416,66 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
             enhancedMessage = `Current time: ${globalTime.cambodia.date}, ${globalTime.cambodia.time} Cambodia | NY: ${globalTime.newYork.time} | London: ${globalTime.london.time}\n\n${userMessage}`;
         }
         
-        // Add memory context if available and important (preserved logic)
+        // FIXED: Add memory context with size limits
         if (queryAnalysis.memoryImportant && context && context.length > 0) {
-            enhancedMessage += `\n\n📝 MEMORY CONTEXT:\n${context}`;
-            console.log('✅ Memory context integrated for GPT-5');
+            const maxContextLength = Math.min(context.length, 2000);
+            enhancedMessage += `\n\nMEMORY CONTEXT:\n${context.substring(0, maxContextLength)}`;
+            if (context.length > maxContextLength) {
+                enhancedMessage += `\n... (truncated for length)`;
+            }
+            console.log('Memory context integrated for GPT-5');
         }
         
-        // Add specific memory data (preserved logic)
+        // FIXED: Add specific memory data with size limits
         if (memoryData) {
             if (memoryData.persistentMemory && memoryData.persistentMemory.length > 0) {
-                enhancedMessage += `\n\n🧠 PERSISTENT FACTS:\n`;
-                memoryData.persistentMemory.slice(0, 5).forEach((memory, index) => {
-                    const fact = memory.fact || memory;
+                enhancedMessage += `\n\nPERSISTENT FACTS:\n`;
+                memoryData.persistentMemory.slice(0, 3).forEach((memory, index) => {
+                    const fact = (memory.fact || memory).substring(0, 150);
                     enhancedMessage += `${index + 1}. ${fact}\n`;
                 });
             }
             
             if (memoryData.conversationHistory && memoryData.conversationHistory.length > 0) {
-                enhancedMessage += `\n\n💬 RECENT CONTEXT:\n`;
-                memoryData.conversationHistory.slice(0, 3).forEach((conv, index) => {
+                enhancedMessage += `\n\nRECENT CONTEXT:\n`;
+                memoryData.conversationHistory.slice(0, 2).forEach((conv, index) => {
                     if (conv.user_message) {
-                        enhancedMessage += `${index + 1}. Previous: "${conv.user_message.substring(0, 100)}..."\n`;
+                        enhancedMessage += `${index + 1}. Previous: "${conv.user_message.substring(0, 80)}..."\n`;
                     }
                 });
             }
         }
         
-        // 🚀 DIRECT GPT-5 EXECUTION using the fixed client
-        console.log('🎯 GPT-5 execution config:', {
+        // DIRECT GPT-5 EXECUTION using the fixed client
+        console.log('GPT-5 execution config:', {
             model: queryAnalysis.gpt5Model,
             reasoning: queryAnalysis.reasoning_effort,
             verbosity: queryAnalysis.verbosity,
-            tokens: queryAnalysis.max_completion_tokens || queryAnalysis.max_completion_tokens,
+            tokens: queryAnalysis.max_completion_tokens,
             hasMemory: !!context,
             priority: queryAnalysis.priority
         });
         
-        // Build options object based on model type
-        const options = {};
+        // FIXED: Build consistent options object
+        const options = {
+            model: queryAnalysis.gpt5Model
+        };
         
-// For reasoning models (gpt-5, gpt-5-mini, gpt-5-nano)  
-if (queryAnalysis.gpt5Model !== 'gpt-5-chat-latest') {
-    if (queryAnalysis.reasoning_effort) options.reasoning_effort = queryAnalysis.reasoning_effort;
-    if (queryAnalysis.verbosity) options.verbosity = queryAnalysis.verbosity;
-    if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
-} else {
-    // For chat model
-    if (queryAnalysis.temperature) options.temperature = queryAnalysis.temperature;
-    if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
-}
+        // Add model-specific parameters
+        if (queryAnalysis.gpt5Model === 'gpt-5-chat-latest') {
+            // Chat model parameters
+            if (queryAnalysis.temperature) options.temperature = queryAnalysis.temperature;
+            if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+        } else {
+            // Reasoning models parameters
+            if (queryAnalysis.reasoning_effort) options.reasoning_effort = queryAnalysis.reasoning_effort;
+            if (queryAnalysis.verbosity) options.verbosity = queryAnalysis.verbosity;
+            if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+        }
         
-        const result = await openaiClient.getGPT5Analysis(enhancedMessage, {
-            model: queryAnalysis.gpt5Model,
-            ...options
-        });
+        const result = await openaiClient.getGPT5Analysis(enhancedMessage, options);
         
-        console.log(`✅ GPT-5 execution successful: ${queryAnalysis.gpt5Model} (${result.length} chars)`);
+        console.log(`GPT-5 execution successful: ${queryAnalysis.gpt5Model} (${result.length} chars)`);
         
         return {
             response: result,
@@ -500,15 +502,15 @@ if (queryAnalysis.gpt5Model !== 'gpt-5-chat-latest') {
         };
         
     } catch (error) {
-        console.error('❌ GPT-5 execution error:', error.message);
+        console.error('GPT-5 execution error:', error.message);
         throw error;
     }
 }
 
-// 🔄 GPT-5 FALLBACK EXECUTION (Fixed)
+// GPT-5 FALLBACK EXECUTION (Fixed)
 async function executeGPT5Fallback(userMessage, queryAnalysis, context = null) {
     try {
-        console.log('🆘 GPT-5 fallback: Using GPT-5 Nano for reliability...');
+        console.log('GPT-5 fallback: Using GPT-5 Nano for reliability...');
         
         let enhancedMessage = userMessage;
         if (context && queryAnalysis.memoryImportant) {
@@ -520,23 +522,23 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context = null) {
             model: 'gpt-5-nano',
             reasoning_effort: 'minimal',
             verbosity: 'low',
-            max_completion_tokens: 8000  // ✅ INCREASED from 3000 for better fallback responses
+            max_completion_tokens: 8000
         });
         
     } catch (fallbackError) {
-        console.error('❌ GPT-5 Nano fallback also failed:', fallbackError.message);
+        console.error('GPT-5 Nano fallback also failed:', fallbackError.message);
         throw new Error(`All GPT-5 models failed: ${fallbackError.message}`);
     }
 }
 
-// 🎯 MAIN ENHANCED COMMAND EXECUTION (Fixed for GPT-5 Only)
+// MAIN ENHANCED COMMAND EXECUTION (Fixed for GPT-5 Only)
 async function executeDualCommand(userMessage, chatId, options = {}) {
     const startTime = Date.now();
     
     try {
-        console.log('🎯 Executing GPT-5 only command with memory integration...');
-        console.log('🔍 Message:', userMessage.substring(0, 100));
-        console.log('🎯 Options:', {
+        console.log('Executing GPT-5 only command with memory integration...');
+        console.log('Message:', userMessage.substring(0, 100));
+        console.log('Options:', {
             messageType: options.messageType,
             hasMedia: options.hasMedia,
             hasConversationHistory: !!options.conversationHistory,
@@ -545,7 +547,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
             forceModel: options.forceModel
         });
         
-        // 🧠 ENHANCED MEMORY RETRIEVAL AND INTEGRATION (Preserved)
+        // ENHANCED MEMORY RETRIEVAL AND INTEGRATION (Preserved)
         let memoryContext = options.memoryContext || '';
         let memoryData = {
             conversationHistory: options.conversationHistory || [],
@@ -554,14 +556,14 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
         
         // If no memory provided in options, try to build it (preserved logic)
         if (!memoryContext && !options.conversationHistory && !options.persistentMemory) {
-            console.log('🔍 Building memory context from PostgreSQL...');
+            console.log('Building memory context from PostgreSQL...');
             
             try {
                 // Try enhanced memory building
                 memoryContext = await memory.buildConversationContext(chatId);
-                console.log(`✅ Built memory context: ${memoryContext.length} chars`);
+                console.log(`Built memory context: ${memoryContext.length} chars`);
             } catch (memoryError) {
-                console.log('⚠️ Enhanced memory building failed, trying database fallback:', memoryError.message);
+                console.log('Enhanced memory building failed, trying database fallback:', memoryError.message);
                 
                 // Fallback to direct database queries
                 try {
@@ -572,17 +574,17 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
                     
                     if (history.status === 'fulfilled') {
                         memoryData.conversationHistory = history.value;
-                        console.log(`✅ Retrieved ${history.value.length} conversation records from PostgreSQL`);
+                        console.log(`Retrieved ${history.value.length} conversation records from PostgreSQL`);
                     }
                     
                     if (memories.status === 'fulfilled') {
                         memoryData.persistentMemory = memories.value;
-                        console.log(`✅ Retrieved ${memories.value.length} persistent memories from PostgreSQL`);
+                        console.log(`Retrieved ${memories.value.length} persistent memories from PostgreSQL`);
                     }
                     
                     // Build basic memory context manually
                     if (memoryData.persistentMemory.length > 0) {
-                        memoryContext = `\n\n🧠 IMPORTANT FACTS TO REMEMBER:\n`;
+                        memoryContext = `\n\nIMPORTANT FACTS TO REMEMBER:\n`;
                         memoryData.persistentMemory.slice(0, 3).forEach((memory, index) => {
                             const fact = memory.fact || memory;
                             memoryContext += `${index + 1}. ${fact}\n`;
@@ -590,15 +592,15 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
                     }
                     
                     if (memoryData.conversationHistory.length > 0) {
-                        memoryContext += `\n\n📝 RECENT CONVERSATION:\n`;
+                        memoryContext += `\n\nRECENT CONVERSATION:\n`;
                         const recent = memoryData.conversationHistory[0];
                         memoryContext += `User previously asked: "${recent.user_message?.substring(0, 100) || ''}"\n`;
                     }
                     
-                    console.log(`✅ PostgreSQL memory context built: ${memoryContext.length} chars`);
+                    console.log(`PostgreSQL memory context built: ${memoryContext.length} chars`);
                     
                 } catch (fallbackError) {
-                    console.log('❌ PostgreSQL memory also failed:', fallbackError.message);
+                    console.log('PostgreSQL memory also failed:', fallbackError.message);
                     memoryContext = '';
                 }
             }
@@ -618,7 +620,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
             queryAnalysis.reason = `Forced to use ${options.forceModel}`;
         }
         
-        console.log('🧠 GPT-5 query analysis:', {
+        console.log('GPT-5 query analysis:', {
             type: queryAnalysis.type,
             priority: queryAnalysis.priority,
             model: queryAnalysis.gpt5Model,
@@ -633,7 +635,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
         let gpt5Result = null;
         
         try {
-            // 🚀 MAIN EXECUTION: Route through GPT-5 system
+            // MAIN EXECUTION: Route through GPT-5 system
             gpt5Result = await executeThroughGPT5System(
                 userMessage, 
                 queryAnalysis, 
@@ -645,7 +647,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
             response = gpt5Result.response;
             aiUsed = gpt5Result.aiUsed || queryAnalysis.gpt5Model;
             
-            console.log('✅ GPT-5 execution successful:', {
+            console.log('GPT-5 execution successful:', {
                 aiUsed: aiUsed,
                 powerMode: gpt5Result.powerMode,
                 confidence: gpt5Result.confidence,
@@ -653,24 +655,24 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
             });
             
         } catch (gpt5Error) {
-            console.error('❌ GPT-5 system failed, trying fallback:', gpt5Error.message);
+            console.error('GPT-5 system failed, trying fallback:', gpt5Error.message);
             
-            // 🆘 FALLBACK: Use GPT-5 Nano
+            // FALLBACK: Use GPT-5 Nano with circuit breaker
             try {
                 response = await executeGPT5Fallback(userMessage, queryAnalysis, memoryContext);
                 aiUsed = 'GPT-5-nano-fallback';
                 
-                console.log('✅ GPT-5 Nano fallback successful');
+                console.log('GPT-5 Nano fallback successful');
                 
             } catch (fallbackError) {
-                console.error('❌ All GPT-5 models failed:', fallbackError.message);
+                console.error('All GPT-5 models failed:', fallbackError.message);
                 throw new Error(`Complete GPT-5 system failure: ${fallbackError.message}`);
             }
         }
         
         const responseTime = Date.now() - startTime;
         
-        console.log('✅ GPT-5 only command completed:', {
+        console.log('GPT-5 only command completed:', {
             aiUsed: aiUsed,
             responseTime: responseTime,
             gpt5System: !!gpt5Result,
@@ -725,7 +727,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
             success: true,
             timestamp: new Date().toISOString(),
             
-            // 🎯 ENHANCED TELEGRAM INTEGRATION (Preserved)
+            // ENHANCED TELEGRAM INTEGRATION (Preserved)
             sendToTelegram: async (bot, title = null) => {
                 try {
                     const defaultTitle = `GPT-5 ${queryAnalysis.gpt5Model.includes('nano') ? 'Nano' : 
@@ -733,7 +735,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
                     const finalTitle = title || defaultTitle;
                     
                     // Add GPT-5 indicator
-                    const gpt5Indicator = gpt5Result ? '🚀 GPT-5 Optimized' : '🔄 GPT-5 Fallback';
+                    const gpt5Indicator = gpt5Result ? 'GPT-5 Optimized' : 'GPT-5 Fallback';
                     const fullTitle = `${finalTitle} (${gpt5Indicator})`;
                     
                     const metadata = {
@@ -752,7 +754,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
                     );
                     
                 } catch (telegramError) {
-                    console.error('❌ Telegram send error:', telegramError.message);
+                    console.error('Telegram send error:', telegramError.message);
                     return false;
                 }
             }
@@ -761,7 +763,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
         return result;
         
     } catch (error) {
-        console.error('❌ GPT-5 only command execution error:', error.message);
+        console.error('GPT-5 only command execution error:', error.message);
         
         const responseTime = Date.now() - startTime;
         
@@ -794,7 +796,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
                         'Emergency Fallback'
                     );
                 } catch (telegramError) {
-                    console.error('❌ Emergency Telegram alert failed:', telegramError.message);
+                    console.error('Emergency Telegram alert failed:', telegramError.message);
                     return false;
                 }
             }
@@ -802,7 +804,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
     }
 }
 
-// 📊 GPT-5 ONLY SYSTEM HEALTH CHECK (Fixed)
+// GPT-5 ONLY SYSTEM HEALTH CHECK (Fixed)
 async function checkGPT5OnlySystemHealth() {
     const health = {
         gpt5_full: false,
@@ -832,7 +834,7 @@ async function checkGPT5OnlySystemHealth() {
         try {
             const options = {
                 model: model,
-                max_completion_tokens: 20  // ✅ FIXED: Minimum is 16, using 20
+                max_completion_tokens: 50
             };
             
             // Add model-specific parameters
@@ -841,16 +843,14 @@ async function checkGPT5OnlySystemHealth() {
                 options.verbosity = 'low';
             } else {
                 options.temperature = 0.7;
-                options.max_completion_tokens = 20;  // ✅ FIXED: Also increase for chat model
-                delete options.max_completion_tokens;  // Chat API uses max_completion_tokens
             }
             
             await openaiClient.getGPT5Analysis('Health check test', options);
             health[name] = true;
-            console.log(`✅ ${description} operational`);
+            console.log(`${description} operational`);
         } catch (error) {
             health.errors.push(`${model}: ${error.message}`);
-            console.log(`❌ ${description} unavailable: ${error.message}`);
+            console.log(`${description} unavailable: ${error.message}`);
         }
     }
     
@@ -859,11 +859,11 @@ async function checkGPT5OnlySystemHealth() {
         const testHistory = await database.getConversationHistoryDB('health_test', 1);
         health.databaseConnection = Array.isArray(testHistory);
         health.postgresqlStatus = 'connected';
-        console.log('✅ PostgreSQL database operational');
+        console.log('PostgreSQL database operational');
     } catch (error) {
         health.errors.push(`PostgreSQL: ${error.message}`);
         health.postgresqlStatus = 'disconnected';
-        console.log('❌ PostgreSQL database unavailable');
+        console.log('PostgreSQL database unavailable');
     }
     
     // Test memory system
@@ -871,29 +871,29 @@ async function checkGPT5OnlySystemHealth() {
         const testContext = await memory.buildConversationContext('health_test');
         health.memorySystem = typeof testContext === 'string';
         health.contextBuilding = true;
-        console.log('✅ Memory system operational');
+        console.log('Memory system operational');
     } catch (error) {
         health.errors.push(`Memory: ${error.message}`);
-        console.log('❌ Memory system unavailable');
+        console.log('Memory system unavailable');
     }
     
     // Test datetime support
     try {
         const cambodiaTime = getCurrentCambodiaDateTime();
         health.dateTimeSupport = cambodiaTime && cambodiaTime.date;
-        console.log('✅ DateTime support operational');
+        console.log('DateTime support operational');
     } catch (error) {
         health.errors.push(`DateTime: ${error.message}`);
-        console.log('❌ DateTime support unavailable');
+        console.log('DateTime support unavailable');
     }
     
     // Test Telegram integration
     try {
         health.telegramIntegration = typeof telegramSplitter.sendGPTResponse === 'function';
-        console.log(`✅ Telegram integration: ${health.telegramIntegration ? 'Available' : 'Limited'}`);
+        console.log(`Telegram integration: ${health.telegramIntegration ? 'Available' : 'Limited'}`);
     } catch (error) {
         health.errors.push(`Telegram: ${error.message}`);
-        console.log('❌ Telegram integration unavailable');
+        console.log('Telegram integration unavailable');
     }
     
     // Calculate overall health
@@ -901,11 +901,11 @@ async function checkGPT5OnlySystemHealth() {
     health.overallHealth = healthyModels >= 1 && health.memorySystem && health.databaseConnection;
     
     health.healthScore = (
-        (healthyModels * 20) +  // 60 points for GPT-5 models (20 each for 3 main models)
-        (health.gpt5_chat ? 15 : 0) +  // 15 points for chat model
-        (health.memorySystem ? 10 : 0) +  // 10 points for memory
-        (health.databaseConnection ? 10 : 0) +  // 10 points for PostgreSQL
-        (health.telegramIntegration ? 5 : 0)  // 5 points for Telegram
+        (healthyModels * 20) +
+        (health.gpt5_chat ? 15 : 0) +
+        (health.memorySystem ? 10 : 0) +
+        (health.databaseConnection ? 10 : 0) +
+        (health.telegramIntegration ? 5 : 0)
     );
     
     health.healthGrade = health.healthScore >= 95 ? 'A+' :
@@ -917,7 +917,7 @@ async function checkGPT5OnlySystemHealth() {
     return health;
 }
 
-// 🚀 GPT-5 UTILITY FUNCTIONS
+// GPT-5 UTILITY FUNCTIONS
 function getGPT5ModelRecommendation(query) {
     const analysis = analyzeQuery(query);
     return {
@@ -990,7 +990,7 @@ function getGPT5PerformanceMetrics() {
     };
 }
 
-// 🚀 ENHANCED QUICK ACCESS FUNCTIONS (Fixed for GPT-5)
+// ENHANCED QUICK ACCESS FUNCTIONS (Fixed for GPT-5)
 async function getMarketIntelligence(chatId = null) {
     const globalTime = getCurrentGlobalDateTime();
     const query = `Current market intelligence summary - Time: ${globalTime.cambodia.date}, ${globalTime.cambodia.time} Cambodia. Provide concise overview of market conditions, key risks, and opportunities.`;
@@ -1001,11 +1001,11 @@ async function getMarketIntelligence(chatId = null) {
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_completion_tokens: 8000  // ✅ INCREASED from 2000
+            max_completion_tokens: 8000
         });
         
     } catch (error) {
-        console.error('❌ Market intelligence error:', error.message);
+        console.error('Market intelligence error:', error.message);
         
         // Fallback to GPT-5 Nano
         try {
@@ -1013,7 +1013,7 @@ async function getMarketIntelligence(chatId = null) {
                 model: 'gpt-5-nano',
                 reasoning_effort: 'minimal',
                 verbosity: 'low',
-                max_completion_tokens: 6000  // ✅ INCREASED from 1000
+                max_completion_tokens: 6000
             });
         } catch (fallbackError) {
             return 'Market intelligence temporarily unavailable - GPT-5 system experiencing issues';
@@ -1052,12 +1052,12 @@ function getGlobalMarketStatus() {
             poweredBy: 'GPT-5 Only System'
         };
     } catch (error) {
-        console.error('❌ Global market status error:', error.message);
+        console.error('Global market status error:', error.message);
         return { error: 'Global market status unavailable' };
     }
 }
 
-// 📈 ENHANCED SYSTEM ANALYTICS (Fixed for GPT-5 Only)
+// ENHANCED SYSTEM ANALYTICS (Fixed for GPT-5 Only)
 function getSystemAnalytics() {
     return {
         version: '5.0 - GPT-5 Only Optimization',
@@ -1129,9 +1129,9 @@ function getSystemAnalytics() {
     };
 }
 
-// 🧠 MEMORY TESTING AND DIAGNOSTICS (Enhanced for GPT-5)
+// MEMORY TESTING AND DIAGNOSTICS (Enhanced for GPT-5)
 async function testMemoryIntegration(chatId) {
-    console.log('🧪 Testing memory integration with GPT-5 only system...');
+    console.log('Testing memory integration with GPT-5 only system...');
     
     const tests = {
         postgresqlConnection: false,
@@ -1149,45 +1149,45 @@ async function testMemoryIntegration(chatId) {
         // Test 1: PostgreSQL Connection
         const testConnection = await database.getConversationHistoryDB('test', 1);
         tests.postgresqlConnection = Array.isArray(testConnection);
-        console.log(`✅ PostgreSQL Connection: ${tests.postgresqlConnection}`);
+        console.log(`PostgreSQL Connection: ${tests.postgresqlConnection}`);
     } catch (error) {
-        console.log(`❌ PostgreSQL Connection: Failed - ${error.message}`);
+        console.log(`PostgreSQL Connection: Failed - ${error.message}`);
     }
     
     try {
         // Test 2: Conversation History
         const history = await database.getConversationHistoryDB(chatId, 3);
         tests.conversationHistory = Array.isArray(history);
-        console.log(`✅ Conversation History: ${tests.conversationHistory} (${history?.length || 0} records)`);
+        console.log(`Conversation History: ${tests.conversationHistory} (${history?.length || 0} records)`);
     } catch (error) {
-        console.log(`❌ Conversation History: Failed - ${error.message}`);
+        console.log(`Conversation History: Failed - ${error.message}`);
     }
     
     try {
         // Test 3: Persistent Memory
         const memories = await database.getPersistentMemoryDB(chatId);
         tests.persistentMemory = Array.isArray(memories);
-        console.log(`✅ Persistent Memory: ${tests.persistentMemory} (${memories?.length || 0} records)`);
+        console.log(`Persistent Memory: ${tests.persistentMemory} (${memories?.length || 0} records)`);
     } catch (error) {
-        console.log(`❌ Persistent Memory: Failed - ${error.message}`);
+        console.log(`Persistent Memory: Failed - ${error.message}`);
     }
     
     try {
         // Test 4: Memory Building
         const context = await memory.buildConversationContext(chatId);
         tests.memoryBuilding = typeof context === 'string';
-        console.log(`✅ Memory Building: ${tests.memoryBuilding} (${context?.length || 0} chars)`);
+        console.log(`Memory Building: ${tests.memoryBuilding} (${context?.length || 0} chars)`);
     } catch (error) {
-        console.log(`❌ Memory Building: Failed - ${error.message}`);
+        console.log(`Memory Building: Failed - ${error.message}`);
     }
     
     try {
         // Test 5: GPT-5 with Memory
         const result = await executeDualCommand('Hello, do you remember our previous conversations?', chatId);
         tests.gpt5WithMemory = result.success && result.gpt5OnlyMode && result.contextUsed;
-        console.log(`✅ GPT-5 with Memory: ${tests.gpt5WithMemory}`);
+        console.log(`GPT-5 with Memory: ${tests.gpt5WithMemory}`);
     } catch (error) {
-        console.log(`❌ GPT-5 with Memory: Failed - ${error.message}`);
+        console.log(`GPT-5 with Memory: Failed - ${error.message}`);
     }
     
     try {
@@ -1199,9 +1199,9 @@ async function testMemoryIntegration(chatId) {
         };
         const result = await executeDualCommand('Test memory context with GPT-5', chatId, testOptions);
         tests.memoryContextPassing = result.success && result.memoryData.contextLength > 0;
-        console.log(`✅ Memory Context Passing: ${tests.memoryContextPassing}`);
+        console.log(`Memory Context Passing: ${tests.memoryContextPassing}`);
     } catch (error) {
-        console.log(`❌ Memory Context Passing: Failed - ${error.message}`);
+        console.log(`Memory Context Passing: Failed - ${error.message}`);
     }
     
     try {
@@ -1210,34 +1210,34 @@ async function testMemoryIntegration(chatId) {
         const complexResult = await executeDualCommand('comprehensive strategic analysis of portfolio optimization', chatId);
         tests.gpt5ModelSelection = speedResult.success && complexResult.success && 
                                   speedResult.modelUsed !== complexResult.modelUsed;
-        console.log(`✅ GPT-5 Model Selection: ${tests.gpt5ModelSelection}`);
+        console.log(`GPT-5 Model Selection: ${tests.gpt5ModelSelection}`);
     } catch (error) {
-        console.log(`❌ GPT-5 Model Selection: Failed - ${error.message}`);
+        console.log(`GPT-5 Model Selection: Failed - ${error.message}`);
     }
     
     try {
         // Test 8: Telegram Integration
         const result = await executeDualCommand('Test telegram integration with GPT-5', chatId);
         tests.telegramIntegration = result.success && typeof result.sendToTelegram === 'function';
-        console.log(`✅ Telegram Integration: ${tests.telegramIntegration}`);
+        console.log(`Telegram Integration: ${tests.telegramIntegration}`);
     } catch (error) {
-        console.log(`❌ Telegram Integration: Failed - ${error.message}`);
+        console.log(`Telegram Integration: Failed - ${error.message}`);
     }
     
     try {
         // Test 9: GPT-5 System Health
         const health = await checkGPT5OnlySystemHealth();
         tests.gpt5SystemHealth = health && health.overallHealth;
-        console.log(`✅ GPT-5 System Health: ${tests.gpt5SystemHealth}`);
+        console.log(`GPT-5 System Health: ${tests.gpt5SystemHealth}`);
     } catch (error) {
-        console.log(`❌ GPT-5 System Health: Failed - ${error.message}`);
+        console.log(`GPT-5 System Health: Failed - ${error.message}`);
     }
     
     const overallSuccess = Object.values(tests).filter(test => test).length;
     const totalTests = Object.keys(tests).length;
     
-    console.log(`\n📊 GPT-5 + Memory + PostgreSQL Test: ${overallSuccess}/${totalTests} passed`);
-    console.log(`${overallSuccess === totalTests ? '🎉 FULL SUCCESS' : overallSuccess >= totalTests * 0.7 ? '✅ MOSTLY WORKING' : '⚠️ NEEDS ATTENTION'}`);
+    console.log(`\nGPT-5 + Memory + PostgreSQL Test: ${overallSuccess}/${totalTests} passed`);
+    console.log(`${overallSuccess === totalTests ? 'FULL SUCCESS' : overallSuccess >= totalTests * 0.7 ? 'MOSTLY WORKING' : 'NEEDS ATTENTION'}`);
     
     return {
         tests: tests,
@@ -1251,10 +1251,10 @@ async function testMemoryIntegration(chatId) {
     };
 }
 
-// 🎯 ENHANCED FUNCTIONS FOR GPT-5 INTEGRATION
+// ENHANCED FUNCTIONS FOR GPT-5 INTEGRATION
 async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
     try {
-        console.log('🚀 Executing enhanced GPT-5 command with auto-Telegram...');
+        console.log('Executing enhanced GPT-5 command with auto-Telegram...');
         
         const result = await executeDualCommand(userMessage, chatId, options);
         
@@ -1271,7 +1271,7 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
         return result;
         
     } catch (error) {
-        console.error('❌ Enhanced GPT-5 command error:', error.message);
+        console.error('Enhanced GPT-5 command error:', error.message);
         
         // If bot provided, send error alert
         if (bot) {
@@ -1281,7 +1281,7 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
                     'GPT-5 System Error'
                 );
             } catch (telegramError) {
-                console.error('❌ Error alert delivery failed:', telegramError.message);
+                console.error('Error alert delivery failed:', telegramError.message);
             }
         }
         
@@ -1289,7 +1289,7 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
     }
 }
 
-// 💡 Quick command shortcuts optimized for GPT-5
+// Quick command shortcuts optimized for GPT-5
 async function quickGPT5Command(message, chatId, bot = null, model = 'auto') {
     const options = { title: `Quick GPT-5 ${model.toUpperCase()} Response` };
     
@@ -1313,37 +1313,37 @@ async function quickUltimateCommand(message, chatId, bot = null) {
 }
 
 // System startup message
-console.log('✅ GPT-5 Only System loaded (v5.0 - Complete Optimization)');
-console.log('🚀 Clean flow: index.js → dualCommandSystem.js → openaiClient.js');
-console.log('⚡ GPT-5 Family Smart Selection: Nano → Mini → Full → Chat');
-console.log('🧠 PostgreSQL + Memory integration preserved and optimized');
-console.log('📱 Telegram smart routing enhanced for GPT-5');
-console.log('💰 Cost optimization: 60-80% savings vs dual AI system');
-console.log('🔧 Comprehensive health monitoring for all GPT-5 models');
-console.log('🎯 All queries intelligently routed to optimal GPT-5 model');
+console.log('GPT-5 Only System loaded (v5.0 - Complete Optimization)');
+console.log('Clean flow: index.js → dualCommandSystem.js → openaiClient.js');
+console.log('GPT-5 Family Smart Selection: Nano → Mini → Full → Chat');
+console.log('PostgreSQL + Memory integration preserved and optimized');
+console.log('Telegram smart routing enhanced for GPT-5');
+console.log('Cost optimization: 60-80% savings vs dual AI system');
+console.log('Comprehensive health monitoring for all GPT-5 models');
+console.log('All queries intelligently routed to optimal GPT-5 model');
 
-// 📋 COMPREHENSIVE EXPORT FUNCTIONS (GPT-5 Only)
+// COMPREHENSIVE EXPORT FUNCTIONS (GPT-5 Only)
 module.exports = {
-    // 🎯 Main functions (Fixed for GPT-5 Only)
+    // Main functions (Fixed for GPT-5 Only)
     executeDualCommand,
     analyzeQuery,
     executeThroughGPT5System,
     executeGPT5Fallback,
     
-    // 🧠 Memory functions (Enhanced for GPT-5)
+    // Memory functions (Enhanced for GPT-5)
     testMemoryIntegration,
     
-    // 🌍 Utility functions (Preserved)
+    // Utility functions (Preserved)
     getCurrentCambodiaDateTime,
     getCurrentGlobalDateTime,
     getMarketIntelligence,
     getGlobalMarketStatus,
     
-    // 📊 System management (GPT-5 Optimized)
+    // System management (GPT-5 Optimized)
     checkSystemHealth: checkGPT5OnlySystemHealth,
     getSystemAnalytics,
     
-    // 🎯 GPT-5 FUNCTIONS
+    // GPT-5 FUNCTIONS
     executeEnhancedGPT5Command,
     quickGPT5Command,
     quickNanoCommand,
@@ -1354,7 +1354,7 @@ module.exports = {
     getGPT5CostEstimate,
     getGPT5PerformanceMetrics,
     
-    // 🔄 Legacy compatibility functions (redirected to GPT-5)
+    // Legacy compatibility functions (redirected to GPT-5)
     executeGptAnalysis: (msg, analysis, ctx, mem) => executeThroughGPT5System(msg, {...analysis, bestAI: 'gpt'}, ctx, mem),
     executeClaudeAnalysis: (msg, analysis, ctx, mem) => executeThroughGPT5System(msg, {...analysis, bestAI: 'gpt'}, ctx, mem),
     routeConversationIntelligently: analyzeQuery
