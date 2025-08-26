@@ -1,20 +1,6 @@
 // cambodia/borrowerDueDiligence.js - COMPLETE: Cambodia Borrower Due Diligence & KYC System
 // Enterprise-grade borrower screening with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
-const cambodiaHandler = require('../handlers/cambodiaDeals');
-const lpManagement = require('./lpManagement');
-const portfolioManager = require('./portfolioManager');
-const creditAssessment = require('./creditAssessment');
-const loanOrigination = require('./loanOrigination');
-const riskManagement = require('./riskManagement');
-const legalRegulatory = require('./legalRegulatory');
-const businessWealth = require('./businessWealth');
-const realEstateWealth = require('./realEstateWealth');
-const economicIntelligence = require('./economicIntelligence');
-
 // 🔍 CAMBODIA BORROWER DUE DILIGENCE FRAMEWORK
 const DUE_DILIGENCE_FRAMEWORK = {
     // Due diligence categories and classifications
