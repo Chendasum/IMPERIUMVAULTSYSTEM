@@ -1,17 +1,6 @@
 // cambodia/marketResearch.js - COMPLETE: Cambodia Market Intelligence & Research System
 // Enterprise-grade market research with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
-const cambodiaHandler = require('../handlers/cambodiaDeals');
-const lpManagement = require('./lpManagement');
-const portfolioManager = require('./portfolioManager');
-const performanceAnalytics = require('./performanceAnalytics');
-const fundAccounting = require('./fundAccounting');
-const investorReporting = require('./investorReporting');
-const complianceMonitoring = require('./complianceMonitoring');
-
 // 🔍 CAMBODIA MARKET RESEARCH FRAMEWORK
 const MARKET_RESEARCH_FRAMEWORK = {
     // Market research categories and focus areas
