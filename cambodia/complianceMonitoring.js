@@ -962,6 +962,71 @@ function calculateNextReviewDate() {
     return nextReview.toISOString().split('T')[0];
 }
 
+/**
+ * 🚨 Real-Time Compliance Alert System
+ */
+async function monitorComplianceAlerts(fundId, alertData, chatId = null, bot = null) {
+    const prompt = `
+CAMBODIA LENDING FUND - REAL-TIME COMPLIANCE ALERT MONITORING
+
+FUND IDENTIFICATION:
+- Fund ID: ${fundId}
+- Monitoring Date: ${new Date().toISOString().split('T')[0]}
+- Alert Level: ${alertData.alertLevel || 'Not specified'}
+
+ACTIVE ALERTS SUMMARY:
+- Critical Alerts: ${alertData.criticalAlerts || 0}
+- Warning Alerts: ${alertData.warningAlerts || 0}
+- Total Active Alerts: ${alertData.totalActiveAlerts || 0}
+
+ALERT ANALYSIS AND RESPONSE:
+1. **CRITICAL ALERT ASSESSMENT** - Immediate attention required
+2. **THRESHOLD MONITORING** - Regulatory limit proximity  
+3. **RESPONSE COORDINATION** - Alert escalation workflow
+
+Provide real-time compliance alert analysis.
+    `;
+
+    try {
+        const result = await executeEnhancedGPT5Command(prompt, chatId, bot, {
+            title: "🚨 Compliance Alert Monitoring",
+            forceModel: "gpt-4"
+        });
+
+        const alertPrioritization = prioritizeAlerts(alertData);
+        const responseActions = generateAlertResponses(alertData);
+        const escalationPlan = determineEscalationNeeds(alertPrioritization);
+
+        return {
+            analysis: result.response,
+            fundId: fundId,
+            alertSummary: {
+                alertLevel: alertData.alertLevel,
+                totalAlerts: alertData.totalActiveAlerts || 0,
+                criticalCount: alertPrioritization.criticalCount,
+                immediateActionRequired: escalationPlan.immediateActionRequired,
+                nextReviewDate: calculateNextReviewDate()
+            },
+            alertPrioritization: alertPrioritization,
+            responseActions: responseActions,
+            escalationPlan: escalationPlan,
+            monitoringDate: new Date().toISOString(),
+            success: result.success,
+            aiUsed: result.aiUsed
+        };
+
+    } catch (error) {
+        console.error('❌ Compliance alert monitoring error:', error.message);
+        return {
+            analysis: `Alert monitoring unavailable: ${error.message}`,
+            fundId: fundId,
+            alertSummary: { status: "error" },
+            success: false,
+            error: error.message
+        };
+    }
+}
+
 // 📊 EXPORT FUNCTIONS
 module.exports = {
     // Core compliance monitoring functions
