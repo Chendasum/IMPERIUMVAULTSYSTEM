@@ -1,16 +1,6 @@
 // cambodia/performanceAnalytics.js - COMPLETE: Cambodia Fund Performance Analytics System
 // Enterprise-grade performance tracking with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
-const cambodiaHandler = require('../handlers/cambodiaDeals');
-const lpManagement = require('./lpManagement');
-const portfolioManager = require('./portfolioManager');
-const creditAssessment = require('./creditAssessment');
-const loanOrigination = require('./loanOrigination');
-const riskManagement = require('./riskManagement');
-
 // 📈 CAMBODIA FUND PERFORMANCE ANALYTICS FRAMEWORK
 const PERFORMANCE_ANALYTICS_FRAMEWORK = {
     // Performance measurement categories
