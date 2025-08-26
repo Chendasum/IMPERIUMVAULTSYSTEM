@@ -1,134 +1,158 @@
-// utils/telegramSplitter.js - IMPROVED VERSION WITH SMART DUPLICATE PREVENTION
-// Handles multiple AI model responses while preventing actual duplicates
+// utils/telegramSplitter.js - FIXED VERSION TO PREVENT INFINITE LOOPS
+// Critical fixes to stop excessive API usage and credit drain
 
 const crypto = require('crypto');
 
-// 🎯 TELEGRAM CONFIGURATION  
+// 🛑 STRICT TELEGRAM CONFIGURATION TO PREVENT LOOPS
 const TELEGRAM_CONFIG = {
     MAX_MESSAGE_LENGTH: 4096,
     SAFE_MESSAGE_LENGTH: 4000,
     OPTIMAL_CHUNK_SIZE: 3800,
     FAST_DELAY: 250,
     STANDARD_DELAY: 450,
-    // Different timeouts for different scenarios
-    DUPLICATE_WINDOW: 3000,        // 3 seconds for exact duplicates
-    MULTI_MODEL_WINDOW: 30000,     // 30 seconds for multi-model responses
-    MAX_RESPONSES_PER_QUERY: 5     // Allow up to 5 model responses per query
+    
+    // CRITICAL: Much longer duplicate prevention
+    DUPLICATE_WINDOW: 30000,        // 30 seconds for exact duplicates
+    MULTI_MODEL_WINDOW: 60000,      // 1 minute for multi-model responses
+    MAX_RESPONSES_PER_QUERY: 1,     // FIXED: Only 1 response per query (was 5)
+    MAX_RETRIES: 1,                 // FIXED: Max 1 retry (was 2)
+    
+    // NEW: Global rate limiting
+    GLOBAL_COOLDOWN: 5000,          // 5 seconds between any messages
+    MAX_MESSAGES_PER_MINUTE: 10     // Max 10 messages per minute per chat
 };
 
-// 🚀 MESSAGE TYPES WITH BETTER IDENTIFICATION
+// Rate limiting tracking
+const globalLastMessage = { timestamp: 0 };
+const chatMessageCount = new Map(); // Track messages per chat per minute
+
+// 🚀 MESSAGE TYPES - REDUCED PRIORITIES
 const MESSAGE_TYPES = {
-    'nano': { emoji: '⚡', delay: 150, description: 'GPT-5 Nano', priority: 1 },
-    'mini': { emoji: '🔥', delay: 250, description: 'GPT-5 Mini', priority: 2 },
-    'full': { emoji: '🧠', delay: 450, description: 'GPT-5 Full', priority: 3 },
-    'gpt-5': { emoji: '🤖', delay: 450, description: 'GPT-5', priority: 3 },
-    'chat': { emoji: '💬', delay: 250, description: 'Chat', priority: 1 },
-    'analysis': { emoji: '📊', delay: 450, description: 'Analysis', priority: 3 },
-    'error': { emoji: '❌', delay: 100, description: 'Error', priority: 0 },
-    'credit': { emoji: '🏦', delay: 350, description: 'Credit Analysis', priority: 2 },
-    'risk': { emoji: '⚠️', delay: 350, description: 'Risk Assessment', priority: 2 },
-    'recovery': { emoji: '💰', delay: 350, description: 'Loan Recovery', priority: 2 },
-    'compliance': { emoji: '🔍', delay: 350, description: 'Due Diligence', priority: 2 }
+    'nano': { emoji: '⚡', delay: 300, description: 'GPT-5 Nano', priority: 1 },
+    'mini': { emoji: '🔥', delay: 500, description: 'GPT-5 Mini', priority: 2 },
+    'full': { emoji: '🧠', delay: 750, description: 'GPT-5 Full', priority: 3 },
+    'gpt-5': { emoji: '🤖', delay: 750, description: 'GPT-5', priority: 3 },
+    'chat': { emoji: '💬', delay: 300, description: 'Chat', priority: 1 },
+    'analysis': { emoji: '📊', delay: 500, description: 'Analysis', priority: 3 },
+    'error': { emoji: '❌', delay: 200, description: 'Error', priority: 0 }
 };
 
-// 🛡️ SMART DUPLICATE PREVENTION
+// 🛡️ ENHANCED DUPLICATE PREVENTION
 const activeRequests = new Map();
 const requestHistory = new Map();
-const responseCounter = new Map(); // Track multiple responses per query
+const responseCounter = new Map();
+
+// NEW: Global request tracking to prevent any loops
+const globalRequestTracker = new Map();
 
 function generateRequestId(chatId, message, title, modelType) {
-    // Create base ID from user query (first 150 chars to capture intent)
-    const baseContent = `${chatId}_${message.substring(0, 150)}`;
-    const baseId = crypto.createHash('md5').update(baseContent).digest('hex').substring(0, 8);
-    
-    // Add model-specific suffix for multi-model scenarios
+    // Use longer message sample for better uniqueness
+    const baseContent = `${chatId}_${message.substring(0, 300)}`;
+    const baseId = crypto.createHash('sha256').update(baseContent).digest('hex').substring(0, 12);
     const modelSuffix = modelType ? `_${modelType}` : '';
     return `${baseId}${modelSuffix}`;
 }
 
 function generateQueryId(chatId, message) {
-    // Generate ID for the original user query (ignores model type)
-    const queryContent = `${chatId}_${message.substring(0, 150)}`;
-    return crypto.createHash('md5').update(queryContent).digest('hex').substring(0, 8);
+    const queryContent = `${chatId}_${message.substring(0, 300)}`;
+    return crypto.createHash('sha256').update(queryContent).digest('hex').substring(0, 12);
+}
+
+// NEW: Enhanced rate limiting
+function checkRateLimit(chatId) {
+    const now = Date.now();
+    
+    // Global cooldown check
+    if (now - globalLastMessage.timestamp < TELEGRAM_CONFIG.GLOBAL_COOLDOWN) {
+        console.log(`🛑 GLOBAL COOLDOWN: ${TELEGRAM_CONFIG.GLOBAL_COOLDOWN - (now - globalLastMessage.timestamp)}ms remaining`);
+        return false;
+    }
+    
+    // Per-chat rate limiting
+    const chatKey = `chat_${chatId}`;
+    const chatData = chatMessageCount.get(chatKey) || { count: 0, resetTime: now + 60000 };
+    
+    if (now > chatData.resetTime) {
+        // Reset counter every minute
+        chatData.count = 0;
+        chatData.resetTime = now + 60000;
+    }
+    
+    if (chatData.count >= TELEGRAM_CONFIG.MAX_MESSAGES_PER_MINUTE) {
+        console.log(`🛑 CHAT RATE LIMIT: ${chatId} has sent ${chatData.count} messages this minute`);
+        return false;
+    }
+    
+    // Update counters
+    chatData.count++;
+    chatMessageCount.set(chatKey, chatData);
+    globalLastMessage.timestamp = now;
+    
+    return true;
 }
 
 function isActualDuplicate(requestId, queryId, modelType, message) {
     const now = Date.now();
     
-    // Check for exact duplicate (same model, same message)
-    const lastRequest = requestHistory.get(requestId);
-    if (lastRequest && (now - lastRequest.timestamp) < TELEGRAM_CONFIG.DUPLICATE_WINDOW) {
-        console.log(`🚫 Exact duplicate blocked: ${requestId}`);
+    // CRITICAL: Check global request tracker first
+    const globalKey = `${queryId}_${modelType}`;
+    if (globalRequestTracker.has(globalKey)) {
+        console.log(`🚫 GLOBAL DUPLICATE BLOCKED: ${globalKey}`);
         return true;
     }
     
-    // Check response counter for this query
-    const responseCount = responseCounter.get(queryId) || 0;
-    
-    // Allow multiple different model responses for same query
-    if (responseCount < TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY) {
-        // Check if we already have this specific model response
-        const existingResponses = Array.from(requestHistory.entries())
-            .filter(([id, data]) => id.startsWith(queryId) && (now - data.timestamp) < TELEGRAM_CONFIG.MULTI_MODEL_WINDOW)
-            .map(([id]) => id);
-        
-        if (existingResponses.includes(requestId)) {
-            console.log(`🔄 Same model response already sent: ${requestId}`);
-            return true;
-        }
-        
-        // This is a different model response for the same query - allow it
-        console.log(`✅ Multi-model response allowed: ${modelType} for query ${queryId} (${responseCount + 1}/${TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY})`);
-        return false;
+    // Check for exact duplicate with longer window
+    const lastRequest = requestHistory.get(requestId);
+    if (lastRequest && (now - lastRequest.timestamp) < TELEGRAM_CONFIG.DUPLICATE_WINDOW) {
+        console.log(`🚫 Recent duplicate blocked: ${requestId}`);
+        return true;
     }
     
-    // Too many responses for this query
-    console.log(`🛑 Max responses reached for query: ${queryId}`);
-    return true;
+    // FIXED: Strict response limit per query
+    const responseCount = responseCounter.get(queryId) || 0;
+    if (responseCount >= TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY) {
+        console.log(`🛑 Max responses reached for query: ${queryId} (${responseCount}/${TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY})`);
+        return true;
+    }
+    
+    return false;
 }
 
 function recordRequest(requestId, queryId, modelType) {
     const now = Date.now();
     
-    // Record this specific request
+    // Record in all tracking systems
     requestHistory.set(requestId, {
         timestamp: now,
         modelType: modelType,
         queryId: queryId
     });
     
-    // Update response counter
     const currentCount = responseCounter.get(queryId) || 0;
     responseCounter.set(queryId, currentCount + 1);
     
-    console.log(`📝 Request recorded: ${requestId} (Query: ${queryId}, Model: ${modelType}, Count: ${currentCount + 1})`);
+    // CRITICAL: Record in global tracker to prevent loops
+    const globalKey = `${queryId}_${modelType}`;
+    globalRequestTracker.set(globalKey, now);
+    
+    console.log(`📝 Request recorded: ${requestId} (Count: ${currentCount + 1}/${TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY})`);
 }
 
-// 🧹 ENHANCED MESSAGE CLEANING
+// 🧹 SIMPLIFIED MESSAGE CLEANING
 function cleanMessage(text) {
     if (!text || typeof text !== 'string') return '';
     
     return text
-        // Remove GPT-5 specific tags
         .replace(/\[reasoning_effort:\s*\w+\]/gi, '')
         .replace(/\[verbosity:\s*\w+\]/gi, '')
         .replace(/\[model:\s*gpt-5[^\]]*\]/gi, '')
-        .replace(/\[gpt-5[^\]]*\]/gi, '')
-        .replace(/\(confidence:\s*\d+%\)/gi, '')
-        .replace(/\(model:\s*gpt-5[^\)]*\)/gi, '')
-        
-        // Clean markdown formatting for Telegram
         .replace(/\*\*(.*?)\*\*/g, '*$1*')
-        .replace(/```[\w]*\n?([\s\S]*?)\n?```/g, '`$1`')
-        .replace(/#{1,6}\s*(.*)/g, '*$1*')
-        
-        // Remove excessive newlines
         .replace(/\n{4,}/g, '\n\n\n')
         .replace(/^\n+|\n+$/g, '')
         .trim();
 }
 
-// 📦 SMART MESSAGE SPLITTING
+// 📦 SIMPLIFIED MESSAGE SPLITTING
 function splitMessage(message, modelType = 'analysis') {
     if (!message || message.length <= TELEGRAM_CONFIG.SAFE_MESSAGE_LENGTH) {
         return [message];
@@ -141,39 +165,14 @@ function splitMessage(message, modelType = 'analysis') {
     while (remaining.length > TELEGRAM_CONFIG.OPTIMAL_CHUNK_SIZE) {
         let splitPoint = TELEGRAM_CONFIG.OPTIMAL_CHUNK_SIZE - 100;
         
-        // Try to find good split points (prioritize by importance)
-        const splitPatterns = [
-            { pattern: /\n\n#{1,6}\s/g, priority: 1 },  // Headers
-            { pattern: /\n\n\d+\.\s/g, priority: 2 },   // Numbered lists  
-            { pattern: /\n\n•\s/g, priority: 3 },       // Bullet points
-            { pattern: /\n\n/g, priority: 4 },          // Paragraphs
-            { pattern: /\.\s+/g, priority: 5 },         // Sentences
-            { pattern: /;\s+/g, priority: 6 },          // Semicolons
-            { pattern: /,\s+/g, priority: 7 }           // Commas
-        ];
-        
-        let bestSplitPoint = null;
-        let bestPriority = 999;
-        
-        for (const { pattern, priority } of splitPatterns) {
-            const matches = [...remaining.matchAll(pattern)];
-            for (let i = matches.length - 1; i >= 0; i--) {
-                const matchEnd = matches[i].index + matches[i][0].length;
-                if (matchEnd >= splitPoint * 0.6 && matchEnd <= splitPoint && priority < bestPriority) {
-                    bestSplitPoint = matchEnd;
-                    bestPriority = priority;
-                    break;
-                }
-            }
+        // Simple split on paragraph breaks
+        const paragraphMatch = remaining.lastIndexOf('\n\n', splitPoint);
+        if (paragraphMatch > splitPoint * 0.5) {
+            splitPoint = paragraphMatch + 2;
         }
         
-        splitPoint = bestSplitPoint || splitPoint;
-        
         let chunk = remaining.substring(0, splitPoint).trim();
-        
-        // Add part header with model type context
-        const typeConfig = MESSAGE_TYPES[modelType] || MESSAGE_TYPES.analysis;
-        chunk = `📄 *Part ${partNumber}* ${typeConfig.emoji}\n\n${chunk}`;
+        chunk = `📄 Part ${partNumber}\n\n${chunk}`;
         
         chunks.push(chunk);
         remaining = remaining.substring(splitPoint).trim();
@@ -182,8 +181,7 @@ function splitMessage(message, modelType = 'analysis') {
     
     if (remaining.length > 0) {
         if (partNumber > 1) {
-            const typeConfig = MESSAGE_TYPES[modelType] || MESSAGE_TYPES.analysis;
-            remaining = `📄 *Part ${partNumber} - Final* ${typeConfig.emoji}\n\n${remaining}`;
+            remaining = `📄 Part ${partNumber} - Final\n\n${remaining}`;
         }
         chunks.push(remaining);
     }
@@ -191,7 +189,7 @@ function splitMessage(message, modelType = 'analysis') {
     return chunks;
 }
 
-// 📤 ENHANCED SEND SINGLE MESSAGE
+// 📤 FIXED SEND SINGLE MESSAGE - NO INFINITE RETRIES
 async function sendSingleMessage(bot, chatId, message, retryCount = 0) {
     try {
         await bot.sendMessage(chatId, message, {
@@ -203,12 +201,10 @@ async function sendSingleMessage(bot, chatId, message, retryCount = 0) {
         console.log(`⚠️ Markdown failed, trying plain text: ${markdownError.message}`);
         
         try {
-            // More aggressive plain text conversion
             const plainMessage = message
                 .replace(/\*([^*]+)\*/g, '$1')
                 .replace(/`([^`]+)`/g, '$1')
                 .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')
-                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
                 .replace(/[*_`~\[\]]/g, '');
                 
             await bot.sendMessage(chatId, plainMessage, {
@@ -218,10 +214,11 @@ async function sendSingleMessage(bot, chatId, message, retryCount = 0) {
         } catch (plainError) {
             console.error(`❌ Send failed (attempt ${retryCount + 1}):`, plainError.message);
             
-            // Retry logic for network issues
-            if (retryCount < 2 && (plainError.message.includes('network') || plainError.message.includes('timeout'))) {
-                console.log(`🔄 Retrying in ${(retryCount + 1) * 1000}ms...`);
-                await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+            // CRITICAL FIX: Strict retry limit
+            if (retryCount < TELEGRAM_CONFIG.MAX_RETRIES && 
+                (plainError.message.includes('network') || plainError.message.includes('timeout'))) {
+                console.log(`🔄 Final retry in 2000ms...`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 return sendSingleMessage(bot, chatId, message, retryCount + 1);
             }
             
@@ -230,8 +227,8 @@ async function sendSingleMessage(bot, chatId, message, retryCount = 0) {
     }
 }
 
-// 📦 ENHANCED CHUNKED MESSAGE SENDING
-async function sendChunkedMessage(bot, chatId, message, delay = 250, modelType = 'analysis') {
+// 📦 SAFE CHUNKED MESSAGE SENDING
+async function sendChunkedMessage(bot, chatId, message, delay = 500, modelType = 'analysis') {
     const chunks = splitMessage(message, modelType);
     let successCount = 0;
     
@@ -239,79 +236,81 @@ async function sendChunkedMessage(bot, chatId, message, delay = 250, modelType =
     
     for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
-        const isLast = i === chunks.length - 1;
         
         console.log(`📤 Sending chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
         
-        const sent = await sendSingleMessage(bot, chatId, chunk);
+        const sent = await sendSingleMessage(bot, chatId, chunk, 0);
         if (sent) {
             successCount++;
             console.log(`✅ Chunk ${i + 1}/${chunks.length} delivered`);
         } else {
-            console.log(`❌ Chunk ${i + 1}/${chunks.length} failed`);
+            console.log(`❌ Chunk ${i + 1}/${chunks.length} failed - STOPPING`);
+            break; // CRITICAL: Stop on first failure to prevent loops
         }
         
-        // Adaptive delay based on success rate
-        if (!isLast && sent) {
-            const adaptiveDelay = successCount === i + 1 ? delay : delay * 1.5;
-            await new Promise(resolve => setTimeout(resolve, adaptiveDelay));
+        // CRITICAL: Always delay between chunks
+        if (i < chunks.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, Math.max(delay, 500)));
         }
     }
     
-    console.log(`📊 Delivery summary: ${successCount}/${chunks.length} chunks sent (${((successCount/chunks.length)*100).toFixed(1)}%)`);
+    console.log(`📊 Delivery summary: ${successCount}/${chunks.length} chunks sent`);
     return successCount > 0;
 }
 
-// 🚀 MAIN ENHANCED SEND FUNCTION
+// 🚀 MAIN FIXED SEND FUNCTION
 async function sendGPT5Message(bot, chatId, message, title = null, metadata = {}) {
-    const modelType = metadata.modelUsed || metadata.aiUsed || 'analysis';
-    const queryId = generateQueryId(chatId, message);
-    const requestId = generateRequestId(chatId, message, title, modelType);
-    
     try {
-        console.log(`📱 Processing message for ${chatId}`);
-        console.log(`🔍 Query ID: ${queryId}, Request ID: ${requestId}, Model: ${modelType}`);
+        const modelType = metadata.modelUsed || metadata.aiUsed || 'analysis';
+        const queryId = generateQueryId(chatId, message);
+        const requestId = generateRequestId(chatId, message, title, modelType);
         
-        // Smart duplicate check
+        console.log(`📱 Processing message for ${chatId} (Model: ${modelType})`);
+        console.log(`🔍 Query ID: ${queryId}, Request ID: ${requestId}`);
+        
+        // CRITICAL: Rate limiting check first
+        if (!checkRateLimit(chatId)) {
+            console.log(`🛑 RATE LIMITED: Dropping message for ${chatId}`);
+            return false;
+        }
+        
+        // CRITICAL: Enhanced duplicate check
         if (isActualDuplicate(requestId, queryId, modelType, message)) {
+            console.log(`🚫 DUPLICATE DETECTED: Dropping message ${requestId}`);
             return false;
         }
         
-        // Check if already processing this exact request
+        // CRITICAL: Check if already processing
         if (activeRequests.has(requestId)) {
-            console.log(`⏳ Already processing request: ${requestId}`);
+            console.log(`⏳ ALREADY PROCESSING: ${requestId}`);
             return false;
         }
         
-        // Mark as active
+        // Mark as active with timeout
         activeRequests.set(requestId, Date.now());
         
-        // Clean message
+        // Auto-remove after 30 seconds
+        setTimeout(() => {
+            activeRequests.delete(requestId);
+        }, 30000);
+        
+        // Clean and validate message
         let cleanedMessage = cleanMessage(message);
         
-        if (!cleanedMessage || cleanedMessage.length < 10) {
-            console.log(`⚠️ Message too short or empty after cleaning`);
+        if (!cleanedMessage || cleanedMessage.length < 5) {
+            console.log(`⚠️ Message too short after cleaning`);
             activeRequests.delete(requestId);
             return false;
         }
         
-        // Add enhanced title with model info
+        // Add title if provided
         if (title) {
             const typeConfig = MESSAGE_TYPES[modelType] || MESSAGE_TYPES.analysis;
-            const enhancedTitle = `${typeConfig.emoji} *${title}*`;
-            
-            // Add model indicator for multi-model responses
-            const responseCount = responseCounter.get(queryId) || 0;
-            if (responseCount > 0) {
-                const modelIndicator = ` (${typeConfig.description})`;
-                cleanedMessage = `${enhancedTitle}${modelIndicator}\n\n${cleanedMessage}`;
-            } else {
-                cleanedMessage = `${enhancedTitle}\n\n${cleanedMessage}`;
-            }
+            cleanedMessage = `${typeConfig.emoji} *${title}*\n\n${cleanedMessage}`;
         }
         
-        // Send message with appropriate method
-        let result;
+        // Send message
+        let result = false;
         if (cleanedMessage.length <= TELEGRAM_CONFIG.SAFE_MESSAGE_LENGTH) {
             result = await sendSingleMessage(bot, chatId, cleanedMessage);
         } else {
@@ -327,28 +326,21 @@ async function sendGPT5Message(bot, chatId, message, title = null, metadata = {}
         // Clean up
         activeRequests.delete(requestId);
         
-        const status = result ? '✅ SUCCESS' : '❌ FAILED';
-        console.log(`${status} Message delivery for ${modelType}: ${requestId}`);
-        
+        console.log(`${result ? '✅ SUCCESS' : '❌ FAILED'} Message delivery: ${requestId}`);
         return result;
         
     } catch (error) {
-        console.error('❌ Send error:', error.message);
+        console.error('❌ Critical error in sendGPT5Message:', error.message);
+        
+        // Clean up on error
+        const requestId = generateRequestId(chatId, message, title, metadata.modelUsed);
         activeRequests.delete(requestId);
         
-        // Emergency fallback
-        try {
-            const fallbackMsg = `🚨 *Delivery Error*\n\nModel: ${modelType}\nError: ${error.message.substring(0, 100)}...\n\n⏰ ${new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Phnom_Penh', hour12: false })} Cambodia`;
-            await bot.sendMessage(chatId, fallbackMsg);
-            return true;
-        } catch (fallbackError) {
-            console.error('❌ Fallback failed:', fallbackError.message);
-            return false;
-        }
+        return false; // CRITICAL: Never try fallback messages that could loop
     }
 }
 
-// 🔄 ENHANCED LEGACY COMPATIBILITY FUNCTIONS
+// 🔄 LEGACY COMPATIBILITY FUNCTIONS
 async function sendGPTResponse(bot, chatId, response, title, metadata = {}) {
     return await sendGPT5Message(bot, chatId, response, title, {
         ...metadata,
@@ -377,6 +369,7 @@ async function sendAnalysis(bot, chatId, analysis, title, metadata = {}) {
     });
 }
 
+// FIXED: Simple alert function without loops
 async function sendAlert(bot, chatId, alertMessage, title = 'Alert', metadata = {}) {
     const cambodiaTime = new Date().toLocaleTimeString('en-US', { 
         timeZone: 'Asia/Phnom_Penh',
@@ -391,105 +384,110 @@ async function sendAlert(bot, chatId, alertMessage, title = 'Alert', metadata = 
     });
 }
 
-// 📊 ENHANCED STATS AND MONITORING
+// 📊 STATS AND MONITORING
 function getStats() {
     const now = Date.now();
-    let activeCount = 0;
-    let historyCount = 0;
-    let queryCount = 0;
-    
-    // Count active requests
-    for (const [requestId, timestamp] of activeRequests.entries()) {
-        if (now - timestamp < 300000) { // 5 minutes
-            activeCount++;
-        }
-    }
-    
-    // Count recent history
-    for (const [requestId, data] of requestHistory.entries()) {
-        if (now - data.timestamp < 300000) { // 5 minutes
-            historyCount++;
-        }
-    }
-    
-    // Count unique queries
-    for (const [queryId, count] of responseCounter.entries()) {
-        queryCount++;
-    }
+    let activeCount = activeRequests.size;
+    let historyCount = requestHistory.size;
+    let globalTrackerCount = globalRequestTracker.size;
+    let queryCount = responseCounter.size;
     
     return {
         activeRequests: activeCount,
         requestHistory: historyCount,
+        globalTracker: globalTrackerCount,
         uniqueQueries: queryCount,
-        status: 'SMART MULTI-MODEL MODE',
-        duplicateWindow: TELEGRAM_CONFIG.DUPLICATE_WINDOW,
-        multiModelWindow: TELEGRAM_CONFIG.MULTI_MODEL_WINDOW,
-        maxResponsesPerQuery: TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY
+        status: 'LOOP PREVENTION MODE',
+        maxResponsesPerQuery: TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY,
+        globalCooldown: TELEGRAM_CONFIG.GLOBAL_COOLDOWN,
+        maxMessagesPerMinute: TELEGRAM_CONFIG.MAX_MESSAGES_PER_MINUTE
     };
 }
 
-// 🧹 AUTOMATIC CLEANUP WITH BETTER LOGIC
-function autoCleanup() {
+// 🧹 AGGRESSIVE CLEANUP TO PREVENT MEMORY LEAKS
+function aggressiveCleanup() {
     const now = Date.now();
     let cleaned = {
-        requests: 0,
+        active: 0,
         history: 0,
-        queries: 0
+        global: 0,
+        queries: 0,
+        chatLimits: 0
     };
     
-    // Clean old active requests (shouldn't be active for > 5 minutes)
+    // Clean old active requests (over 1 minute)
     for (const [requestId, timestamp] of activeRequests.entries()) {
-        if (now - timestamp > 300000) { // 5 minutes
+        if (now - timestamp > 60000) {
             activeRequests.delete(requestId);
-            cleaned.requests++;
+            cleaned.active++;
         }
     }
     
-    // Clean old request history (keep 1 hour)
+    // Clean old request history (over 10 minutes)
     for (const [requestId, data] of requestHistory.entries()) {
-        if (now - data.timestamp > 3600000) { // 1 hour
+        if (now - data.timestamp > 600000) {
             requestHistory.delete(requestId);
             cleaned.history++;
         }
     }
     
-    // Clean old query counters (keep 30 minutes for multi-model responses)
-    const queriesForRemoval = [];
+    // Clean global tracker (over 5 minutes)
+    for (const [globalKey, timestamp] of globalRequestTracker.entries()) {
+        if (now - timestamp > 300000) {
+            globalRequestTracker.delete(globalKey);
+            cleaned.global++;
+        }
+    }
+    
+    // Clean query counters (over 5 minutes)
     for (const [queryId] of responseCounter.entries()) {
         const hasRecentRequests = Array.from(requestHistory.entries())
             .some(([requestId, data]) => 
                 requestId.startsWith(queryId) && 
-                now - data.timestamp < 1800000 // 30 minutes
+                now - data.timestamp < 300000
             );
         
         if (!hasRecentRequests) {
-            queriesForRemoval.push(queryId);
+            responseCounter.delete(queryId);
+            cleaned.queries++;
         }
     }
     
-    queriesForRemoval.forEach(queryId => {
-        responseCounter.delete(queryId);
-        cleaned.queries++;
-    });
+    // Clean chat message counts (reset old entries)
+    for (const [chatKey, chatData] of chatMessageCount.entries()) {
+        if (now > chatData.resetTime + 300000) { // 5 minutes past reset
+            chatMessageCount.delete(chatKey);
+            cleaned.chatLimits++;
+        }
+    }
     
-    if (cleaned.requests > 0 || cleaned.history > 0 || cleaned.queries > 0) {
-        console.log(`🧹 Auto cleanup: ${cleaned.requests} active, ${cleaned.history} history, ${cleaned.queries} queries`);
+    if (Object.values(cleaned).some(count => count > 0)) {
+        console.log(`🧹 Aggressive cleanup:`, cleaned);
     }
 }
 
-// Auto cleanup every 10 minutes
-setInterval(autoCleanup, 600000);
+// CRITICAL: More frequent cleanup to prevent loops
+setInterval(aggressiveCleanup, 60000); // Every 1 minute instead of 10
 
-// 🧹 MANUAL CLEANUP FUNCTION
 function manualCleanup() {
-    console.log('🧹 Starting manual cleanup...');
-    autoCleanup();
-    
-    const stats = getStats();
-    console.log('📊 Post-cleanup stats:', stats);
+    console.log('🧹 Manual cleanup starting...');
+    aggressiveCleanup();
+    console.log('📊 Stats after cleanup:', getStats());
 }
 
-// 📤 EXPORTS - ENHANCED MULTI-MODEL VERSION
+// CRITICAL: Emergency reset function
+function emergencyReset() {
+    console.log('🚨 EMERGENCY RESET: Clearing all tracking data');
+    activeRequests.clear();
+    requestHistory.clear();
+    responseCounter.clear();
+    globalRequestTracker.clear();
+    chatMessageCount.clear();
+    globalLastMessage.timestamp = 0;
+    console.log('✅ All tracking data cleared');
+}
+
+// 📤 EXPORTS
 module.exports = {
     // Main functions
     sendGPT5Message,
@@ -504,19 +502,21 @@ module.exports = {
     splitMessage,
     getStats,
     manualCleanup,
-    autoCleanup,
+    aggressiveCleanup,
+    emergencyReset, // NEW: Emergency function
     
-    // New functions for debugging
+    // Debugging functions
     generateRequestId,
     generateQueryId,
     isActualDuplicate,
+    checkRateLimit,
     
     // Config
     TELEGRAM_CONFIG,
     MESSAGE_TYPES
 };
 
-console.log('🚀 SMART MULTI-MODEL MODE: Telegram splitter loaded');
-console.log('✅ Multi-model responses enabled with smart duplicate prevention');
-console.log('🛡️ Auto-cleanup active every 10 minutes');
-console.log(`📊 Max ${TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY} responses per query within ${TELEGRAM_CONFIG.MULTI_MODEL_WINDOW/1000}s window`);
+console.log('🛡️ LOOP PREVENTION MODE: Telegram splitter loaded with strict controls');
+console.log('⚙️ Settings: 1 response per query, 5s global cooldown, 10 msgs/min per chat');
+console.log('🧹 Aggressive cleanup every 60 seconds');
+console.log('🚨 Use emergencyReset() if loops persist');
