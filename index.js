@@ -3544,15 +3544,18 @@ async function handleSystemHealth(msg, bot) {
         const healthEmoji = health.healthGrade === 'A+' ? '🟢' : 
                            health.healthGrade === 'A' ? '🟡' : '🔴';
         
-        // Test multimodal system
+// Test multimodal system
         let multimodalStatus = false;
         try {
-            multimodalStatus = typeof multimodal.analyzeImage === 'function' &&
-                              typeof multimodal.analyzeDocument === 'function' &&
-                              typeof multimodal.analyzeVoice === 'function';
+            multimodalStatus = multimodal && 
+                              typeof multimodal.processImageMessage === 'function' &&
+                              typeof multimodal.processDocumentMessage === 'function' &&
+                              typeof multimodal.processVoiceMessage === 'function' &&
+                              typeof multimodal.processVideoMessage === 'function';
             console.log(`✅ Multimodal system: ${multimodalStatus ? 'Available' : 'Limited'}`);
         } catch (error) {
             console.log('❌ Multimodal system unavailable');
+            multimodalStatus = false;
         }
         
         const healthMessage = `🏥 **GPT-5 SYSTEM HEALTH REPORT**
