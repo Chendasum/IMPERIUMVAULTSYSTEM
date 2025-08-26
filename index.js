@@ -1833,11 +1833,469 @@ module.exports = {
     }
 };
 
-// Update the final console log and module exports
+// ========================================================================
+// 🌟 COMPOSITE WORKFLOW FUNCTIONS
+// ========================================================================
+
+async function processCompleteLoanWorkflow(applicationData, chatId = null, bot = null) {
+    try {
+        console.log('Starting complete loan workflow');
+        
+        // Step 1: Due Diligence
+        const dueDiligence = await conductDueDiligence(
+            applicationData.borrowerId, 
+            applicationData.dueDiligenceData, 
+            chatId, 
+            bot
+        );
+        
+        if (!dueDiligence.success) {
+            return { success: false, stage: 'dueDiligence', error: dueDiligence.error };
+        }
+        
+        // Step 2: Credit Assessment
+        const creditResult = await runCreditAssessment(
+            applicationData.borrowerId,
+            applicationData.creditData,
+            chatId,
+            bot
+        );
+        
+        if (!creditResult.success) {
+            return { success: false, stage: 'creditAssessment', error: creditResult.error };
+        }
+        
+        // Step 3: Risk Assessment
+        const riskResult = await assessBorrowerRisk(
+            applicationData.borrowerId,
+            applicationData.riskData,
+            chatId,
+            bot
+        );
+        
+        if (!riskResult.success) {
+            return { success: false, stage: 'riskAssessment', error: riskResult.error };
+        }
+        
+        // Step 4: Process Application
+        const loanResult = await processLoanApplication(applicationData, chatId, bot);
+        
+        return {
+            success: true,
+            workflow: 'completeLoanWorkflow',
+            results: {
+                dueDiligence: dueDiligence,
+                creditAssessment: creditResult,
+                riskAssessment: riskResult,
+                loanProcessing: loanResult
+            }
+        };
+        
+    } catch (error) {
+        console.error('Complete workflow error:', error.message);
+        return { success: false, error: error.message, workflow: 'completeLoanWorkflow' };
+    }
+}
+
+async function generateCompleteFundReport(fundId, reportingPeriod = 'quarterly', chatId = null, bot = null) {
+    try {
+        console.log('Generating complete fund report');
+        
+        const performance = await generatePerformanceDashboard(fundId, reportingPeriod, chatId, bot);
+        const nav = await calculateNAV(fundId, new Date(), chatId, bot);
+        const quarterlyReport = await generateQuarterlyReport(fundId, { reportingPeriod }, chatId, bot);
+        const compliance = await performComplianceCheck(fundId, {}, chatId, bot);
+        
+        return {
+            success: true,
+            reportType: 'completeFundReport',
+            fundId: fundId,
+            reportingPeriod: reportingPeriod,
+            results: {
+                performance: performance,
+                nav: nav,
+                quarterlyReport: quarterlyReport,
+                compliance: compliance
+            },
+            generatedDate: new Date().toISOString()
+        };
+        
+    } catch (error) {
+        console.error('Complete fund report error:', error.message);
+        return { success: false, error: error.message, reportType: 'completeFundReport' };
+    }
+}
+
+async function processCompleteWealthAssessment(clientId, assessmentData, chatId = null, bot = null) {
+    try {
+        console.log('Starting complete wealth assessment workflow');
+        
+        const realEstateValue = await valuateRealEstate(
+            assessmentData.realEstateId, 
+            assessmentData.realEstateData, 
+            chatId, 
+            bot
+        );
+        
+        const businessValue = await valuateBusiness(
+            assessmentData.businessId,
+            assessmentData.businessData,
+            chatId,
+            bot
+        );
+        
+        const investmentValue = await analyzeInvestmentPerformance(
+            assessmentData.investmentId,
+            assessmentData.investmentData,
+            chatId,
+            bot
+        );
+        
+        const agriculturalValue = await valuateAgriculturalAssets(
+            assessmentData.agriculturalId,
+            assessmentData.agriculturalData,
+            chatId,
+            bot
+        );
+        
+        const resourcesValue = await valuateNaturalResources(
+            assessmentData.resourcesId,
+            assessmentData.resourcesData,
+            chatId,
+            bot
+        );
+        
+        return {
+            success: true,
+            workflow: 'completeWealthAssessment',
+            clientId: clientId,
+            results: {
+                realEstate: realEstateValue,
+                business: businessValue,
+                investments: investmentValue,
+                agricultural: agriculturalValue,
+                naturalResources: resourcesValue
+            },
+            totalWealth: {
+                calculated: true,
+                timestamp: new Date().toISOString()
+            }
+        };
+        
+    } catch (error) {
+        console.error('Complete wealth assessment error:', error.message);
+        return { success: false, error: error.message, workflow: 'completeWealthAssessment' };
+    }
+}
+
+async function processCompleteMarketIntelligence(region = 'cambodia', intelligenceData, chatId = null, bot = null) {
+    try {
+        console.log('Starting complete market intelligence workflow');
+        
+        const economicAnalysis = await analyzeEconomicConditions(region, intelligenceData.economicData, chatId, bot);
+        const marketResearchData = await analyzeMarket(region, intelligenceData.marketData, chatId, bot);
+        const realEstateMarket = await analyzeRealEstateMarket(intelligenceData.realEstateData, region, chatId, bot);
+        const competitiveAnalysis = await analyzeCompetitors(intelligenceData.competitorData, chatId, bot);
+        const legalCompliance = await checkRegulatoryCompliance(region, intelligenceData.complianceData, chatId, bot);
+        
+        return {
+            success: true,
+            workflow: 'completeMarketIntelligence',
+            region: region,
+            results: {
+                economic: economicAnalysis,
+                market: marketResearchData,
+                realEstate: realEstateMarket,
+                competitive: competitiveAnalysis,
+                legal: legalCompliance
+            },
+            generatedDate: new Date().toISOString()
+        };
+        
+    } catch (error) {
+        console.error('Complete market intelligence error:', error.message);
+        return { success: false, error: error.message, workflow: 'completeMarketIntelligence' };
+    }
+}
+
+async function processCompleteClientOnboarding(clientData, chatId = null, bot = null) {
+    try {
+        console.log('Starting complete client onboarding workflow');
+        
+        const qualification = await qualifyClient(clientData, chatId, bot);
+        if (!qualification.success) {
+            return { success: false, stage: 'qualification', error: qualification.error };
+        }
+        
+        const riskProfiling = await performClientRiskProfiling(clientData, chatId, bot);
+        const complianceCheck = await ensureCambodiaCompliance(clientData, {}, chatId, bot);
+        const documentList = await generateClientDocumentChecklist(clientData.clientType, qualification, chatId, bot);
+        const onboardingReport = await generateOnboardingReport(clientData.clientId, {
+            qualification, riskProfiling, complianceCheck, documentList
+        }, chatId, bot);
+        
+        return {
+            success: true,
+            workflow: 'completeClientOnboarding',
+            clientId: clientData.clientId,
+            results: {
+                qualification: qualification,
+                riskProfiling: riskProfiling,
+                compliance: complianceCheck,
+                documents: documentList,
+                report: onboardingReport
+            }
+        };
+        
+    } catch (error) {
+        console.error('Complete client onboarding error:', error.message);
+        return { success: false, error: error.message, workflow: 'completeClientOnboarding' };
+    }
+}
+
+async function processCompleteInvestmentAnalysis(investmentData, chatId = null, bot = null) {
+    try {
+        console.log('Starting complete investment analysis workflow');
+        
+        const stockAnalysis = await analyzeStock(investmentData.stockSymbol, 'comprehensive', chatId, bot);
+        const forexAnalysis = await analyzeForexOpportunity(investmentData.currencyPair, 'comprehensive', chatId, bot);
+        const cryptoAnalysis = await analyzeCryptoOpportunity(investmentData.cryptocurrency, 'comprehensive', chatId, bot);
+        const globalAnalysis = await analyzeGlobalMarketConditions(chatId, bot);
+        const marketTiming = await assessMarketTiming(investmentData.exchange, chatId, bot);
+        
+        return {
+            success: true,
+            workflow: 'completeInvestmentAnalysis',
+            results: {
+                stocks: stockAnalysis,
+                forex: forexAnalysis,
+                crypto: cryptoAnalysis,
+                global: globalAnalysis,
+                timing: marketTiming
+            },
+            generatedDate: new Date().toISOString()
+        };
+        
+    } catch (error) {
+        console.error('Complete investment analysis error:', error.message);
+        return { success: false, error: error.message, workflow: 'completeInvestmentAnalysis' };
+    }
+}
 console.log(`✅ IMPERIUMVAULTSYSTEM index.js loaded - Core: 23 modules + Trading: ${tradingModulesLoaded}/6 modules`);
 console.log(`🎯 Available functions: ${tradingModulesLoaded > 0 ? '85+' : '65+'} functions exported`);
 console.log(`🌟 System ready for Cambodia private lending${tradingModulesLoaded > 0 ? ' + trading operations' : ' operations'}`);
 console.log(`📊 Status: 11 Specialized + 12 Core Lending + ${tradingModulesLoaded} Trading + 6 Workflows`);
+
+// ========================================================================
+// 📊 EXPORT ALL FUNCTIONS
+// ========================================================================
+module.exports = {
+    // SPECIALIZED HANDLER FUNCTIONS (11 modules)
+    // Cambodia Deals Handler
+    processCambodiaDeal,
+    analyzeDealStructure,
+    
+    // LP Management
+    manageLimitedPartners,
+    generateLPReports,
+    trackLPCommitments,
+    
+    // Portfolio Manager
+    optimizePortfolio,
+    rebalancePortfolio,
+    analyzePortfolioPerformance,
+    
+    // Real Estate Wealth
+    valuateRealEstate,
+    analyzeRealEstateMarket,
+    trackPropertyPortfolio,
+    
+    // Business Wealth
+    valuateBusiness,
+    analyzeBusinessPerformance,
+    assessBusinessRisk,
+    
+    // Investment Wealth
+    manageInvestmentPortfolio,
+    analyzeInvestmentPerformance,
+    optimizeAssetAllocation,
+    
+    // Economic Intelligence
+    analyzeEconomicConditions,
+    forecastEconomicTrends,
+    analyzeSectorPerformance,
+    
+    // Legal Regulatory
+    checkRegulatoryCompliance,
+    analyzeLegalRisks,
+    generateLegalDocuments,
+    
+    // Agricultural Wealth
+    valuateAgriculturalAssets,
+    analyzeCropYields,
+    assessAgriculturalRisks,
+    
+    // Resources Wealth
+    valuateNaturalResources,
+    analyzeCommodityPrices,
+    assessResourceExploitation,
+    
+    // Cambodia Lending Utils
+    processLendingTransaction,
+    validateLendingData,
+    
+    // CORE 12 LENDING MODULE FUNCTIONS
+    // Module 1: Credit Assessment
+    runCreditAssessment,
+    calculateCreditScore,
+    
+    // Module 2: Loan Origination
+    processLoanApplication,
+    approveLoan,
+    
+    // Module 3: Loan Servicing
+    serviceLoan,
+    monitorLoanPerformance,
+    
+    // Module 4: Risk Management
+    assessBorrowerRisk,
+    analyzePortfolioRisk,
+    
+    // Module 5: Loan Recovery
+    initiateRecovery,
+    manageCollateral,
+    
+    // Module 6: Cash Flow Management
+    manageCashFlow,
+    forecastLiquidity,
+    
+    // Module 7: Borrower Due Diligence
+    conductDueDiligence,
+    performAMLScreening,
+    
+    // Module 8: Performance Analytics
+    generatePerformanceDashboard,
+    analyzeReturns,
+    
+    // Module 9: Fund Accounting
+    calculateNAV,
+    calculateManagementFees,
+    
+    // Module 10: Investor Reporting
+    generateQuarterlyReport,
+    generateMonthlyUpdate,
+    
+    // Module 11: Compliance Monitoring
+    performComplianceCheck,
+    monitorAlerts,
+    
+    // Module 12: Market Research
+    analyzeMarket,
+    analyzeCompetitors,
+    
+    // TRADING MODULE FUNCTIONS (conditional - will return placeholders if modules not found)
+    // Trading Operations
+    executeCambodiaTrade,
+    constructCambodiaPortfolio,
+    implementTradingRiskManagement,
+    assessMarketTiming,
+    generateTradingReport,
+    calculateTradingCosts,
+    validateCambodiaTradeRules,
+    
+    // Client Onboarding
+    initiateClientOnboarding,
+    qualifyClient,
+    generateClientDocumentChecklist,
+    performClientRiskProfiling,
+    generateComplianceRequirements,
+    ensureCambodiaCompliance,
+    generateOnboardingReport,
+    
+    // Forex Trading
+    analyzeForexOpportunity,
+    executeForexTrade,
+    generateForexStrategy,
+    
+    // Crypto Trading
+    analyzeCryptoOpportunity,
+    executeCryptoTrade,
+    constructCryptoPortfolio,
+    assessCryptoMarketConditions,
+    
+    // Stock Trading
+    analyzeStock,
+    executeStockTrade,
+    constructStockPortfolio,
+    assessStockMarketConditions,
+    
+    // Global Markets
+    analyzeGlobalMarketConditions,
+    constructGlobalPortfolio,
+    monitorGlobalMarketDevelopments,
+    assessGlobalCrisisScenarios,
+    identifyGlobalInvestmentThemes,
+    
+    // COMPOSITE WORKFLOW FUNCTIONS (6 total)
+    processCompleteLoanWorkflow,
+    generateCompleteFundReport,
+    processCompleteWealthAssessment,
+    processCompleteMarketIntelligence,
+    processCompleteClientOnboarding,
+    processCompleteInvestmentAnalysis,
+    
+    // UTILITY FUNCTIONS
+    getTradingModulesStatus: () => ({
+        loaded: tradingModulesLoaded,
+        total: 6,
+        modules: {
+            tradingOperations: !!tradingOperations,
+            clientOnboarding: !!clientOnboarding,
+            forexTrading: !!forexTrading,
+            cryptoTrading: !!cryptoTrading,
+            stockTrading: !!stockTrading,
+            globalMarkets: !!globalMarkets
+        }
+    }),
+    
+    // Direct module access (if needed)
+    modules: {
+        // Core 12 Lending Modules
+        creditAssessment,
+        loanOrigination,
+        loanServicing,
+        riskManagement,
+        loanRecovery,
+        cashFlowManagement,
+        borrowerDueDiligence,
+        performanceAnalytics,
+        fundAccounting,
+        investorReporting,
+        complianceMonitoring,
+        marketResearch,
+        
+        // Specialized Handler Modules
+        cambodiaHandler,
+        lpManagement,
+        portfolioManager,
+        realEstateWealth,
+        businessWealth,
+        investmentWealth,
+        economicIntelligence,
+        legalRegulatory,
+        agriculturalWealth,
+        resourcesWealth,
+        cambodiaLending,
+        
+        // Trading Modules (may be null if not loaded)
+        tradingOperations,
+        clientOnboarding,
+        forexTrading,
+        cryptoTrading,
+        stockTrading,
+        globalMarkets
+    }
+};
 
 // ========================================================================
 // 📊 EXPORT ALL FUNCTIONS
