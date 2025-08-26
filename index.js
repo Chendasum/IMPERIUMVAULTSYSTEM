@@ -2716,15 +2716,37 @@ async function performPeriodicBackup() {
 // Start periodic backup
 setInterval(performPeriodicBackup, BACKUP_INTERVAL);
 
-// 🌐 LIVE DATA & MULTIMODAL INTEGRATION
-const liveData = require('./utils/liveData');
-const metaTrader = require('./utils/metaTrader');
-const {
-    processVoiceMessage,
-    processImageMessage,
-    processDocumentMessage,
-    processVideoMessage,
-} = require("./utils/multimodal");
+// 🌐 LIVE DATA & MULTIMODAL INTEGRATION (Conditional Loading)
+let liveData, metaTrader, multimodal;
+
+try {
+    liveData = require('./utils/liveData');
+    console.log('✅ liveData module loaded');
+} catch (error) {
+    console.log('⚠️ liveData module not found');
+    liveData = null;
+}
+
+try {
+    metaTrader = require('./utils/metaTrader');
+    console.log('✅ metaTrader module loaded');
+} catch (error) {
+    console.log('⚠️ metaTrader module not found');
+    metaTrader = null;
+}
+
+try {
+    multimodal = require('./utils/multimodal');
+    console.log('✅ multimodal module loaded');
+} catch (error) {
+    console.log('⚠️ multimodal module not found');
+    multimodal = {
+        processVoiceMessage: null,
+        processImageMessage: null,
+        processDocumentMessage: null,
+        processVideoMessage: null
+    };
+}
 
 // 🎮 COMMAND HANDLERS MAP - GPT-5 Optimized
 const commandHandlers = {
@@ -2767,12 +2789,23 @@ const commandHandlers = {
     '/backup': handleForceBackup
 };
 
-// 🌐 WEBHOOK ENDPOINT - Main message handler
+// Helper function to check if multimodal is available
+function isMultimodalAvailable() {
+    return multimodal && multimodal.processVoiceMessage && multimodal.processImageMessage;
+}
+
+// 🌐 WEBHOOK ENDPOINT - Main message handler with enhanced error handling
 app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
     const startTime = Date.now();
     
     try {
         const update = req.body;
+        
+        // Validate update structure
+        if (!update || typeof update !== 'object') {
+            console.log('⚠️ Invalid update received');
+            return res.status(200).json({ ok: true });
+        }
         
         // Handle different update types
         if (update.message) {
@@ -2781,15 +2814,94 @@ app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
             await handleCallbackQuery(update.callback_query);
         } else if (update.inline_query) {
             await handleInlineQuery(update.inline_query);
+        } else {
+            console.log('ℹ️ Unhandled update type:', Object.keys(update));
         }
         
-        res.status(200).json({ ok: true });
+        const processingTime = Date.now() - startTime;
+        console.log(`⚡ Webhook processed in ${processingTime}ms`);
+        
+        res.status(200).json({ 
+            ok: true, 
+            processing_time: processingTime,
+            timestamp: new Date().toISOString()
+        });
         
     } catch (error) {
-        console.error('❌ Webhook processing error:', error.message);
-        res.status(200).json({ ok: true }); // Always return 200 to prevent Telegram retries
+        const processingTime = Date.now() - startTime;
+        console.error('❌ Webhook processing error:', {
+            error: error.message,
+            stack: error.stack?.split('\n')[0], // First line of stack for context
+            processingTime: processingTime,
+            updateType: req.body?.message ? 'message' : req.body?.callback_query ? 'callback' : 'unknown'
+        });
+        
+        // Log error for monitoring but always return 200 to prevent Telegram retries
+        if (logger && typeof logger.logError === 'function') {
+            try {
+                await logger.logError({
+                    component: 'webhook_handler',
+                    error: error.message,
+                    processingTime: processingTime,
+                    updateType: req.body?.message ? 'message' : 'other'
+                });
+            } catch (logError) {
+                console.error('❌ Failed to log webhook error:', logError.message);
+            }
+        }
+        
+        res.status(200).json({ 
+            ok: true, 
+            error_handled: true,
+            timestamp: new Date().toISOString()
+        });
     }
 });
+
+// Additional memory test function with fixed formatting
+async function handleMemoryTest(msg, bot) {
+    const chatId = msg.chat.id;
+    const startTime = Date.now();
+    
+    try {
+        console.log('🧠 Testing memory system integration...');
+        
+        // Test memory system components
+        const memoryResults = await testMemoryIntegration(chatId);
+        const processingTime = Date.now() - startTime;
+        
+        // Build status message without problematic formatting characters
+        let statusMessage = `Memory System Health Report\n\n`;
+        statusMessage += `Overall Status: ${memoryResults.status}\n`;
+        statusMessage += `Score: ${memoryResults.score}\n`;
+        statusMessage += `Success Rate: ${memoryResults.percentage}%\n\n`;
+        
+        statusMessage += `Component Status:\n`;
+        Object.entries(memoryResults.tests).forEach(([test, passed]) => {
+            statusMessage += `${passed ? 'PASS' : 'FAIL'} ${test.replace(/_/g, ' ')}\n`;
+        });
+        
+        statusMessage += `\nDatabase: ${memoryResults.postgresqlIntegrated ? 'Connected' : 'Disconnected'}\n`;
+        statusMessage += `Memory System: ${memoryResults.memorySystemIntegrated ? 'Active' : 'Inactive'}\n`;
+        statusMessage += `Processing Time: ${processingTime}ms\n`;
+        statusMessage += `Mode: GPT-5 Only\n`;
+        statusMessage += `Multimodal: ${isMultimodalAvailable() ? 'Available' : 'Unavailable'}\n`;
+        
+        // Send without markdown parsing to prevent formatting errors
+        await bot.sendMessage(chatId, statusMessage, { parse_mode: null });
+        
+        console.log(`✅ Memory test completed: ${memoryResults.percentage}% success rate`);
+        
+    } catch (error) {
+        console.error('❌ Memory test error:', error.message);
+        
+        const errorMessage = `Memory test failed: ${error.message}\n` +
+                            `This may indicate PostgreSQL or memory system issues.\n` +
+                            `Processing time: ${Date.now() - startTime}ms`;
+        
+        await bot.sendMessage(chatId, errorMessage, { parse_mode: null });
+    }
+}
 
 // 🎯 MAIN MESSAGE HANDLER - GPT-5 Only System with Multimodal Support
 async function handleMessage(msg) {
