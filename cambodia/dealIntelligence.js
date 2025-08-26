@@ -1,8 +1,6 @@
 // cambodia/dealIntelligence.js - REAL AI Integration for Cambodia Private Lending
 // Professional deal matching and analysis system using GPT-5
 
-const { executeDualCommand } = require('../utils/dualCommandSystem');
-
 // 🇰🇭 CAMBODIA DEAL INTELLIGENCE CONFIGURATION
 const CAMBODIA_CONFIG = {
     // Market parameters
