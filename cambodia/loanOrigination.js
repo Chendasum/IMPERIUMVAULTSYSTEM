@@ -1,21 +1,6 @@
 // cambodia/loanOrigination.js - COMPLETE: Cambodia Loan Origination & Processing System
 // Enterprise-grade loan processing with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
-const cambodiaHandler = require('../handlers/cambodiaDeals');
-const lpManagement = require('./lpManagement');
-const portfolioManager = require('./portfolioManager');
-const realEstateWealth = require('./realEstateWealth');
-const businessWealth = require('./businessWealth');
-const investmentWealth = require('./investmentWealth');
-const economicIntelligence = require('./economicIntelligence');
-const legalRegulatory = require('./legalRegulatory');
-const agriculturalWealth = require('./agriculturalWealth');
-const resourcesWealth = require('./resourcesWealth');
-const creditAssessment = require('./creditAssessment');
-
 // 💰 CAMBODIA LOAN ORIGINATION FRAMEWORK
 const LOAN_ORIGINATION_FRAMEWORK = {
     // Loan application stages
