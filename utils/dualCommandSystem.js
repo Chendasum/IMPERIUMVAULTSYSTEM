@@ -269,7 +269,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         gpt5Config = {
             model: 'gpt-5-chat-latest',
             temperature: 0.7,
-            max_tokens: 8000,               // ✅ INCREASED from 3000
+            max_completion_tokens: 8000,               // ✅ INCREASED from 3000
             priority: 'chat',
             reason: 'Chat pattern - GPT-5 Chat model'
         };
@@ -366,7 +366,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     
     if (longResponsePatterns.some(pattern => pattern.test(message))) {
         gpt5Config.max_completion_tokens = 16000;  // ✅ INCREASED maximum allowed from 8000
-        if (gpt5Config.max_tokens) gpt5Config.max_tokens = 16000;  // ✅ INCREASED from 8000
+        if (gpt5Config.max_completion_tokens) gpt5Config.max_completion_tokens = 16000;  // ✅ INCREASED from 8000
         gpt5Config.reason += ' (Long response requested)';
     }
     
@@ -379,7 +379,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         reasoning_effort: gpt5Config.reasoning_effort,
         verbosity: gpt5Config.verbosity,
         max_completion_tokens: gpt5Config.max_completion_tokens,
-        max_tokens: gpt5Config.max_tokens, // For chat model
+        max_completion_tokens: gpt5Config.max_completion_tokens, // For chat model
         temperature: gpt5Config.temperature,
         priority: gpt5Config.priority,
         
@@ -449,7 +449,7 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
             model: queryAnalysis.gpt5Model,
             reasoning: queryAnalysis.reasoning_effort,
             verbosity: queryAnalysis.verbosity,
-            tokens: queryAnalysis.max_completion_tokens || queryAnalysis.max_tokens,
+            tokens: queryAnalysis.max_completion_tokens || queryAnalysis.max_completion_tokens,
             hasMemory: !!context,
             priority: queryAnalysis.priority
         });
@@ -457,17 +457,16 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
         // Build options object based on model type
         const options = {};
         
-        // For reasoning models (gpt-5, gpt-5-mini, gpt-5-nano)
-        if (queryAnalysis.gpt5Model !== 'gpt-5-chat-latest') {
-            if (queryAnalysis.reasoning_effort) options.reasoning_effort = queryAnalysis.reasoning_effort;
-            if (queryAnalysis.verbosity) options.verbosity = queryAnalysis.verbosity;
-            // ✅ FIXED: Use max_completion_tokens for Responses API
-            if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
-        } else {
-            // For chat model
-            if (queryAnalysis.temperature) options.temperature = queryAnalysis.temperature;
-            if (queryAnalysis.max_tokens) options.max_tokens = queryAnalysis.max_tokens;
-        }
+// For reasoning models (gpt-5, gpt-5-mini, gpt-5-nano)  
+if (queryAnalysis.gpt5Model !== 'gpt-5-chat-latest') {
+    if (queryAnalysis.reasoning_effort) options.reasoning_effort = queryAnalysis.reasoning_effort;
+    if (queryAnalysis.verbosity) options.verbosity = queryAnalysis.verbosity;
+    if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+} else {
+    // For chat model
+    if (queryAnalysis.temperature) options.temperature = queryAnalysis.temperature;
+    if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+}
         
         const result = await openaiClient.getGPT5Analysis(enhancedMessage, {
             model: queryAnalysis.gpt5Model,
@@ -842,8 +841,8 @@ async function checkGPT5OnlySystemHealth() {
                 options.verbosity = 'low';
             } else {
                 options.temperature = 0.7;
-                options.max_tokens = 20;  // ✅ FIXED: Also increase for chat model
-                delete options.max_completion_tokens;  // Chat API uses max_tokens
+                options.max_completion_tokens = 20;  // ✅ FIXED: Also increase for chat model
+                delete options.max_completion_tokens;  // Chat API uses max_completion_tokens
             }
             
             await openaiClient.getGPT5Analysis('Health check test', options);
