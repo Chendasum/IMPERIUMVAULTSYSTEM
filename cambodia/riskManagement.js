@@ -1,18 +1,6 @@
 // cambodia/riskManagement.js - COMPLETE: Cambodia Risk Management & Portfolio Analytics System
 // Enterprise-grade risk modeling with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
-const cambodiaHandler = require('../handlers/cambodiaDeals');
-const lpManagement = require('./lpManagement');
-const portfolioManager = require('./portfolioManager');
-const loanServicing = require('./loanServicing');
-const creditAssessment = require('./creditAssessment');
-const loanOrigination = require('./loanOrigination');
-const economicIntelligence = require('./economicIntelligence');
-const legalRegulatory = require('./legalRegulatory');
-
 // 🚨 CAMBODIA RISK MANAGEMENT FRAMEWORK
 const RISK_MANAGEMENT_FRAMEWORK = {
     // Risk categories and classifications
