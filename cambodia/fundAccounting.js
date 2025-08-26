@@ -1,16 +1,6 @@
 // cambodia/fundAccounting.js - COMPLETE: Cambodia Fund Accounting & NAV System
 // Enterprise-grade fund accounting with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
-const cambodiaHandler = require('../handlers/cambodiaDeals');
-const lpManagement = require('./lpManagement');
-const portfolioManager = require('./portfolioManager');
-const performanceAnalytics = require('./performanceAnalytics');
-const cashFlowManagement = require('./cashFlowManagement');
-const riskManagement = require('./riskManagement');
-
 // 🧮 CAMBODIA FUND ACCOUNTING FRAMEWORK
 const FUND_ACCOUNTING_FRAMEWORK = {
     // Accounting standards and methods
