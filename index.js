@@ -2740,12 +2740,7 @@ try {
     console.log('✅ multimodal module loaded');
 } catch (error) {
     console.log('⚠️ multimodal module not found');
-    multimodal = {
-        processVoiceMessage: null,
-        processImageMessage: null,
-        processDocumentMessage: null,
-        processVideoMessage: null
-    };
+    multimodal = null;
 }
 
 // 🎮 COMMAND HANDLERS MAP - GPT-5 Optimized
