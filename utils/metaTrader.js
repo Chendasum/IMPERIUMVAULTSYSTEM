@@ -2,9 +2,6 @@
 // Part 1 of 4: Setup, Configuration & Initialization
 
 const MetaApi = require('metaapi.cloud-sdk').default;
-const { getRayDalioMarketData, getYieldCurveAnalysis, getCreditSpreadAnalysis } = require('./liveData');
-// Enhanced integration with Cambodia Lending System
-const { errorHandler, formatter, calculator } = require('./cambodiaLending');
 
 // Initialize MetaAPI with your token
 const METAAPI_TOKEN = process.env.METAAPI_TOKEN;
