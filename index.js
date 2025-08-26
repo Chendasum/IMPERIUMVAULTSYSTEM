@@ -2853,51 +2853,6 @@ app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
     }
 });
 
-// Additional memory test function with fixed formatting
-async function handleMemoryTest(msg, bot) {
-    const chatId = msg.chat.id;
-    const startTime = Date.now();
-    
-    try {
-        console.log('🧠 Testing memory system integration...');
-        
-        // Test memory system components
-        const memoryResults = await testMemoryIntegration(chatId);
-        const processingTime = Date.now() - startTime;
-        
-        // Build status message without problematic formatting characters
-        let statusMessage = `Memory System Health Report\n\n`;
-        statusMessage += `Overall Status: ${memoryResults.status}\n`;
-        statusMessage += `Score: ${memoryResults.score}\n`;
-        statusMessage += `Success Rate: ${memoryResults.percentage}%\n\n`;
-        
-        statusMessage += `Component Status:\n`;
-        Object.entries(memoryResults.tests).forEach(([test, passed]) => {
-            statusMessage += `${passed ? 'PASS' : 'FAIL'} ${test.replace(/_/g, ' ')}\n`;
-        });
-        
-        statusMessage += `\nDatabase: ${memoryResults.postgresqlIntegrated ? 'Connected' : 'Disconnected'}\n`;
-        statusMessage += `Memory System: ${memoryResults.memorySystemIntegrated ? 'Active' : 'Inactive'}\n`;
-        statusMessage += `Processing Time: ${processingTime}ms\n`;
-        statusMessage += `Mode: GPT-5 Only\n`;
-        statusMessage += `Multimodal: ${isMultimodalAvailable() ? 'Available' : 'Unavailable'}\n`;
-        
-        // Send without markdown parsing to prevent formatting errors
-        await bot.sendMessage(chatId, statusMessage, { parse_mode: null });
-        
-        console.log(`✅ Memory test completed: ${memoryResults.percentage}% success rate`);
-        
-    } catch (error) {
-        console.error('❌ Memory test error:', error.message);
-        
-        const errorMessage = `Memory test failed: ${error.message}\n` +
-                            `This may indicate PostgreSQL or memory system issues.\n` +
-                            `Processing time: ${Date.now() - startTime}ms`;
-        
-        await bot.sendMessage(chatId, errorMessage, { parse_mode: null });
-    }
-}
-
 // 🎯 MAIN MESSAGE HANDLER - GPT-5 Only System with Multimodal Support
 async function handleMessage(msg) {
     const startTime = Date.now();
