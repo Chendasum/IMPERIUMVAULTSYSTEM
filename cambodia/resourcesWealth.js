@@ -1,8 +1,6 @@
 // cambodia/resourcesWealth.js - COMPLETE: Cambodia Natural Resources & Mining Intelligence
 // Enterprise-grade resources analysis with GPT-5 integration
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
 // ⛏️ CAMBODIA NATURAL RESOURCES DATA & INTELLIGENCE
 const CAMBODIA_RESOURCES_DATA = {
     // Major natural resources by economic potential
