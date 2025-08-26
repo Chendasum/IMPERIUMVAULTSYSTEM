@@ -2719,16 +2719,12 @@ setInterval(performPeriodicBackup, BACKUP_INTERVAL);
 // 🌐 LIVE DATA & MULTIMODAL INTEGRATION
 const liveData = require('./utils/liveData');
 const metaTrader = require('./utils/metaTrader');
-const multimodal = require('./utils/multimodal');
-// Add this with your other imports
-let multimodal;
-try {
-    multimodal = require('./utils/multimodal'); // or wherever your multimodal.js is located
-    console.log('✅ multimodal module loaded');
-} catch (error) {
-    console.log('⚠️ multimodal module not found:', error.message);
-    multimodal = null;
-}
+const {
+    processVoiceMessage,
+    processImageMessage,
+    processDocumentMessage,
+    processVideoMessage,
+} = require("./utils/multimodal");
 
 // 🎮 COMMAND HANDLERS MAP - GPT-5 Optimized
 const commandHandlers = {
