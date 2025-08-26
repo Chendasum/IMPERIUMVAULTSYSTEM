@@ -116,6 +116,7 @@ const {
     getGPT5PerformanceMetrics        // ⚡ Real-time performance analytics
 } = require("./utils/dualCommandSystem");
 
+// Master coordination for ALL 23 modules: 11 Specialized Handlers + 12 Core Lending Modules
 // 🔧 SPECIALIZED HANDLERS (Preserved for business logic)
 const cambodiaHandler = require('./handlers/cambodiaDeals');
 const lpManagement = require('./cambodia/lpManagement');
@@ -144,7 +145,316 @@ const complianceMonitoring = require('./cambodia/complianceMonitoring');
 const marketResearch = require('./cambodia/marketResearch');
 
 console.log('🏦 IMPERIUMVAULTSYSTEM - Cambodia Private Lending Fund');
-console.log('📊 All 12 core lending modules loaded successfully');
+console.log('📊 All 23 modules loaded: 11 Specialized Handlers + 12 Core Lending');
+
+// ========================================================================
+// 🎯 SPECIALIZED HANDLER FUNCTIONS (11 MODULES)
+// ========================================================================
+
+// 🎯 CAMBODIA DEALS HANDLER FUNCTIONS
+async function processCambodiaDeal(dealData, chatId = null, bot = null) {
+    try {
+        console.log(`🤝 Processing Cambodia deal: ${dealData.dealType || 'unknown type'}`);
+        return await cambodiaHandler.processDeal(dealData, chatId, bot);
+    } catch (error) {
+        console.error('Cambodia deal processing error:', error.message);
+        return { success: false, error: error.message, module: 'cambodiaHandler' };
+    }
+}
+
+async function analyzeDealStructure(dealId, structureData, chatId = null, bot = null) {
+    try {
+        return await cambodiaHandler.analyzeDealStructure(dealId, structureData, chatId, bot);
+    } catch (error) {
+        console.error('Deal structure analysis error:', error.message);
+        return { success: false, error: error.message, module: 'cambodiaHandler' };
+    }
+}
+
+// 🎯 LP MANAGEMENT FUNCTIONS
+async function manageLimitedPartners(lpData, action = 'update', chatId = null, bot = null) {
+    try {
+        console.log(`👥 Managing LP: ${action} for ${lpData.lpName || 'unknown LP'}`);
+        return await lpManagement.manageLPs(lpData, action, chatId, bot);
+    } catch (error) {
+        console.error('LP management error:', error.message);
+        return { success: false, error: error.message, module: 'lpManagement' };
+    }
+}
+
+async function generateLPReports(lpId, reportType = 'quarterly', chatId = null, bot = null) {
+    try {
+        return await lpManagement.generateLPReports(lpId, reportType, chatId, bot);
+    } catch (error) {
+        console.error('LP report generation error:', error.message);
+        return { success: false, error: error.message, module: 'lpManagement' };
+    }
+}
+
+async function trackLPCommitments(lpId, commitmentData, chatId = null, bot = null) {
+    try {
+        return await lpManagement.trackCommitments(lpId, commitmentData, chatId, bot);
+    } catch (error) {
+        console.error('LP commitment tracking error:', error.message);
+        return { success: false, error: error.message, module: 'lpManagement' };
+    }
+}
+
+// 🎯 PORTFOLIO MANAGER FUNCTIONS
+async function optimizePortfolio(portfolioId, optimizationData, chatId = null, bot = null) {
+    try {
+        console.log(`📊 Optimizing portfolio: ${portfolioId}`);
+        return await portfolioManager.optimizePortfolio(portfolioId, optimizationData, chatId, bot);
+    } catch (error) {
+        console.error('Portfolio optimization error:', error.message);
+        return { success: false, error: error.message, module: 'portfolioManager' };
+    }
+}
+
+async function rebalancePortfolio(portfolioId, rebalanceData, chatId = null, bot = null) {
+    try {
+        return await portfolioManager.rebalancePortfolio(portfolioId, rebalanceData, chatId, bot);
+    } catch (error) {
+        console.error('Portfolio rebalancing error:', error.message);
+        return { success: false, error: error.message, module: 'portfolioManager' };
+    }
+}
+
+async function analyzePortfolioPerformance(portfolioId, analysisData, chatId = null, bot = null) {
+    try {
+        return await portfolioManager.analyzePerformance(portfolioId, analysisData, chatId, bot);
+    } catch (error) {
+        console.error('Portfolio performance analysis error:', error.message);
+        return { success: false, error: error.message, module: 'portfolioManager' };
+    }
+}
+
+// 🎯 REAL ESTATE WEALTH FUNCTIONS
+async function valuateRealEstate(propertyId, valuationData, chatId = null, bot = null) {
+    try {
+        console.log(`🏢 Valuating real estate: ${propertyId}`);
+        return await realEstateWealth.valuateProperty(propertyId, valuationData, chatId, bot);
+    } catch (error) {
+        console.error('Real estate valuation error:', error.message);
+        return { success: false, error: error.message, module: 'realEstateWealth' };
+    }
+}
+
+async function analyzeRealEstateMarket(marketData, region = 'cambodia', chatId = null, bot = null) {
+    try {
+        return await realEstateWealth.analyzeMarketTrends(marketData, region, chatId, bot);
+    } catch (error) {
+        console.error('Real estate market analysis error:', error.message);
+        return { success: false, error: error.message, module: 'realEstateWealth' };
+    }
+}
+
+async function trackPropertyPortfolio(portfolioId, trackingData, chatId = null, bot = null) {
+    try {
+        return await realEstateWealth.trackPropertyPortfolio(portfolioId, trackingData, chatId, bot);
+    } catch (error) {
+        console.error('Property portfolio tracking error:', error.message);
+        return { success: false, error: error.message, module: 'realEstateWealth' };
+    }
+}
+
+// 🎯 BUSINESS WEALTH FUNCTIONS
+async function valuateBusiness(businessId, valuationData, chatId = null, bot = null) {
+    try {
+        console.log(`🏭 Valuating business: ${businessId}`);
+        return await businessWealth.valuateBusiness(businessId, valuationData, chatId, bot);
+    } catch (error) {
+        console.error('Business valuation error:', error.message);
+        return { success: false, error: error.message, module: 'businessWealth' };
+    }
+}
+
+async function analyzeBusinessPerformance(businessId, performanceData, chatId = null, bot = null) {
+    try {
+        return await businessWealth.analyzePerformance(businessId, performanceData, chatId, bot);
+    } catch (error) {
+        console.error('Business performance analysis error:', error.message);
+        return { success: false, error: error.message, module: 'businessWealth' };
+    }
+}
+
+async function assessBusinessRisk(businessId, riskData, chatId = null, bot = null) {
+    try {
+        return await businessWealth.assessBusinessRisk(businessId, riskData, chatId, bot);
+    } catch (error) {
+        console.error('Business risk assessment error:', error.message);
+        return { success: false, error: error.message, module: 'businessWealth' };
+    }
+}
+
+// 🎯 INVESTMENT WEALTH FUNCTIONS
+async function manageInvestmentPortfolio(portfolioId, managementData, chatId = null, bot = null) {
+    try {
+        console.log(`📈 Managing investment portfolio: ${portfolioId}`);
+        return await investmentWealth.managePortfolio(portfolioId, managementData, chatId, bot);
+    } catch (error) {
+        console.error('Investment portfolio management error:', error.message);
+        return { success: false, error: error.message, module: 'investmentWealth' };
+    }
+}
+
+async function analyzeInvestmentPerformance(investmentId, analysisData, chatId = null, bot = null) {
+    try {
+        return await investmentWealth.analyzeInvestmentPerformance(investmentId, analysisData, chatId, bot);
+    } catch (error) {
+        console.error('Investment performance analysis error:', error.message);
+        return { success: false, error: error.message, module: 'investmentWealth' };
+    }
+}
+
+async function optimizeAssetAllocation(portfolioId, allocationData, chatId = null, bot = null) {
+    try {
+        return await investmentWealth.optimizeAssetAllocation(portfolioId, allocationData, chatId, bot);
+    } catch (error) {
+        console.error('Asset allocation optimization error:', error.message);
+        return { success: false, error: error.message, module: 'investmentWealth' };
+    }
+}
+
+// 🎯 ECONOMIC INTELLIGENCE FUNCTIONS
+async function analyzeEconomicConditions(region = 'cambodia', analysisData, chatId = null, bot = null) {
+    try {
+        console.log(`🌐 Analyzing economic conditions for: ${region}`);
+        return await economicIntelligence.analyzeEconomicConditions(region, analysisData, chatId, bot);
+    } catch (error) {
+        console.error('Economic analysis error:', error.message);
+        return { success: false, error: error.message, module: 'economicIntelligence' };
+    }
+}
+
+async function forecastEconomicTrends(forecastData, timeframe = '12months', chatId = null, bot = null) {
+    try {
+        return await economicIntelligence.forecastTrends(forecastData, timeframe, chatId, bot);
+    } catch (error) {
+        console.error('Economic forecasting error:', error.message);
+        return { success: false, error: error.message, module: 'economicIntelligence' };
+    }
+}
+
+async function analyzeSectorPerformance(sector, performanceData, chatId = null, bot = null) {
+    try {
+        return await economicIntelligence.analyzeSectorPerformance(sector, performanceData, chatId, bot);
+    } catch (error) {
+        console.error('Sector performance analysis error:', error.message);
+        return { success: false, error: error.message, module: 'economicIntelligence' };
+    }
+}
+
+// 🎯 LEGAL REGULATORY FUNCTIONS
+async function checkRegulatoryCompliance(entityId, complianceData, chatId = null, bot = null) {
+    try {
+        console.log(`⚖️ Checking regulatory compliance for: ${entityId}`);
+        return await legalRegulatory.checkCompliance(entityId, complianceData, chatId, bot);
+    } catch (error) {
+        console.error('Regulatory compliance check error:', error.message);
+        return { success: false, error: error.message, module: 'legalRegulatory' };
+    }
+}
+
+async function analyzeLegalRisks(transactionId, riskData, chatId = null, bot = null) {
+    try {
+        return await legalRegulatory.analyzeLegalRisks(transactionId, riskData, chatId, bot);
+    } catch (error) {
+        console.error('Legal risk analysis error:', error.message);
+        return { success: false, error: error.message, module: 'legalRegulatory' };
+    }
+}
+
+async function generateLegalDocuments(documentType, documentData, chatId = null, bot = null) {
+    try {
+        return await legalRegulatory.generateLegalDocuments(documentType, documentData, chatId, bot);
+    } catch (error) {
+        console.error('Legal document generation error:', error.message);
+        return { success: false, error: error.message, module: 'legalRegulatory' };
+    }
+}
+
+// 🎯 AGRICULTURAL WEALTH FUNCTIONS
+async function valuateAgriculturalAssets(assetId, valuationData, chatId = null, bot = null) {
+    try {
+        console.log(`🌾 Valuating agricultural assets: ${assetId}`);
+        return await agriculturalWealth.valuateAgriculturalAssets(assetId, valuationData, chatId, bot);
+    } catch (error) {
+        console.error('Agricultural valuation error:', error.message);
+        return { success: false, error: error.message, module: 'agriculturalWealth' };
+    }
+}
+
+async function analyzeCropYields(farmId, yieldData, chatId = null, bot = null) {
+    try {
+        return await agriculturalWealth.analyzeCropYields(farmId, yieldData, chatId, bot);
+    } catch (error) {
+        console.error('Crop yield analysis error:', error.message);
+        return { success: false, error: error.message, module: 'agriculturalWealth' };
+    }
+}
+
+async function assessAgriculturalRisks(farmId, riskData, chatId = null, bot = null) {
+    try {
+        return await agriculturalWealth.assessAgriculturalRisks(farmId, riskData, chatId, bot);
+    } catch (error) {
+        console.error('Agricultural risk assessment error:', error.message);
+        return { success: false, error: error.message, module: 'agriculturalWealth' };
+    }
+}
+
+// 🎯 RESOURCES WEALTH FUNCTIONS
+async function valuateNaturalResources(resourceId, valuationData, chatId = null, bot = null) {
+    try {
+        console.log(`💎 Valuating natural resources: ${resourceId}`);
+        return await resourcesWealth.valuateNaturalResources(resourceId, valuationData, chatId, bot);
+    } catch (error) {
+        console.error('Natural resources valuation error:', error.message);
+        return { success: false, error: error.message, module: 'resourcesWealth' };
+    }
+}
+
+async function analyzeCommodityPrices(commodity, priceData, chatId = null, bot = null) {
+    try {
+        return await resourcesWealth.analyzeCommodityPrices(commodity, priceData, chatId, bot);
+    } catch (error) {
+        console.error('Commodity price analysis error:', error.message);
+        return { success: false, error: error.message, module: 'resourcesWealth' };
+    }
+}
+
+async function assessResourceExploitation(resourceId, exploitationData, chatId = null, bot = null) {
+    try {
+        return await resourcesWealth.assessExploitationPotential(resourceId, exploitationData, chatId, bot);
+    } catch (error) {
+        console.error('Resource exploitation assessment error:', error.message);
+        return { success: false, error: error.message, module: 'resourcesWealth' };
+    }
+}
+
+// 🎯 CAMBODIA LENDING UTILITY FUNCTIONS
+async function processLendingTransaction(transactionData, chatId = null, bot = null) {
+    try {
+        console.log(`💰 Processing lending transaction: ${transactionData.transactionType || 'unknown'}`);
+        return await cambodiaLending.processTransaction(transactionData, chatId, bot);
+    } catch (error) {
+        console.error('Lending transaction error:', error.message);
+        return { success: false, error: error.message, module: 'cambodiaLending' };
+    }
+}
+
+async function validateLendingData(validationData, chatId = null, bot = null) {
+    try {
+        return await cambodiaLending.validateData(validationData, chatId, bot);
+    } catch (error) {
+        console.error('Lending data validation error:', error.message);
+        return { success: false, error: error.message, module: 'cambodiaLending' };
+    }
+}
+
+// ========================================================================
+// 🎯 CORE 12 LENDING MODULE FUNCTIONS
+// ========================================================================
 
 // 🎯 MODULE 1: CREDIT ASSESSMENT FUNCTIONS
 async function runCreditAssessment(borrowerId, creditData, chatId = null, bot = null) {
@@ -386,7 +696,10 @@ async function analyzeCompetitors(competitorData, chatId = null, bot = null) {
     }
 }
 
+// ========================================================================
 // 🌟 COMPOSITE WORKFLOW FUNCTIONS
+// ========================================================================
+
 async function processCompleteLoanWorkflow(applicationData, chatId = null, bot = null) {
     try {
         console.log('🔄 Starting complete loan workflow');
@@ -476,8 +789,157 @@ async function generateCompleteFundReport(fundId, reportingPeriod = 'quarterly',
     }
 }
 
+async function processCompleteWealthAssessment(clientId, assessmentData, chatId = null, bot = null) {
+    try {
+        console.log('🔄 Starting complete wealth assessment workflow');
+        
+        const realEstateValue = await valuateRealEstate(
+            assessmentData.realEstateId, 
+            assessmentData.realEstateData, 
+            chatId, 
+            bot
+        );
+        
+        const businessValue = await valuateBusiness(
+            assessmentData.businessId,
+            assessmentData.businessData,
+            chatId,
+            bot
+        );
+        
+        const investmentValue = await analyzeInvestmentPerformance(
+            assessmentData.investmentId,
+            assessmentData.investmentData,
+            chatId,
+            bot
+        );
+        
+        const agriculturalValue = await valuateAgriculturalAssets(
+            assessmentData.agriculturalId,
+            assessmentData.agriculturalData,
+            chatId,
+            bot
+        );
+        
+        const resourcesValue = await valuateNaturalResources(
+            assessmentData.resourcesId,
+            assessmentData.resourcesData,
+            chatId,
+            bot
+        );
+        
+        return {
+            success: true,
+            workflow: 'completeWealthAssessment',
+            clientId: clientId,
+            results: {
+                realEstate: realEstateValue,
+                business: businessValue,
+                investments: investmentValue,
+                agricultural: agriculturalValue,
+                naturalResources: resourcesValue
+            },
+            totalWealth: {
+                calculated: true,
+                timestamp: new Date().toISOString()
+            }
+        };
+        
+    } catch (error) {
+        console.error('Complete wealth assessment error:', error.message);
+        return { success: false, error: error.message, workflow: 'completeWealthAssessment' };
+    }
+}
+
+async function processCompleteMarketIntelligence(region = 'cambodia', intelligenceData, chatId = null, bot = null) {
+    try {
+        console.log('🌐 Starting complete market intelligence workflow');
+        
+        const economicAnalysis = await analyzeEconomicConditions(region, intelligenceData.economicData, chatId, bot);
+        const marketResearchData = await analyzeMarket(region, intelligenceData.marketData, chatId, bot);
+        const realEstateMarket = await analyzeRealEstateMarket(intelligenceData.realEstateData, region, chatId, bot);
+        const competitiveAnalysis = await analyzeCompetitors(intelligenceData.competitorData, chatId, bot);
+        const legalCompliance = await checkRegulatoryCompliance(region, intelligenceData.complianceData, chatId, bot);
+        
+        return {
+            success: true,
+            workflow: 'completeMarketIntelligence',
+            region: region,
+            results: {
+                economic: economicAnalysis,
+                market: marketResearchData,
+                realEstate: realEstateMarket,
+                competitive: competitiveAnalysis,
+                legal: legalCompliance
+            },
+            generatedDate: new Date().toISOString()
+        };
+        
+    } catch (error) {
+        console.error('Complete market intelligence error:', error.message);
+        return { success: false, error: error.message, workflow: 'completeMarketIntelligence' };
+    }
+}
+
+// ========================================================================
 // 📊 EXPORT ALL FUNCTIONS
+// ========================================================================
 module.exports = {
+    // SPECIALIZED HANDLER FUNCTIONS (11 modules)
+    // Cambodia Deals Handler
+    processCambodiaDeal,
+    analyzeDealStructure,
+    
+    // LP Management
+    manageLimitedPartners,
+    generateLPReports,
+    trackLPCommitments,
+    
+    // Portfolio Manager
+    optimizePortfolio,
+    rebalancePortfolio,
+    analyzePortfolioPerformance,
+    
+    // Real Estate Wealth
+    valuateRealEstate,
+    analyzeRealEstateMarket,
+    trackPropertyPortfolio,
+    
+    // Business Wealth
+    valuateBusiness,
+    analyzeBusinessPerformance,
+    assessBusinessRisk,
+    
+    // Investment Wealth
+    manageInvestmentPortfolio,
+    analyzeInvestmentPerformance,
+    optimizeAssetAllocation,
+    
+    // Economic Intelligence
+    analyzeEconomicConditions,
+    forecastEconomicTrends,
+    analyzeSectorPerformance,
+    
+    // Legal Regulatory
+    checkRegulatoryCompliance,
+    analyzeLegalRisks,
+    generateLegalDocuments,
+    
+    // Agricultural Wealth
+    valuateAgriculturalAssets,
+    analyzeCropYields,
+    assessAgriculturalRisks,
+    
+    // Resources Wealth
+    valuateNaturalResources,
+    analyzeCommodityPrices,
+    assessResourceExploitation,
+    
+    // Cambodia Lending Utils
+    processLendingTransaction,
+    validateLendingData,
+    
+    // CORE 12 LENDING MODULE FUNCTIONS
     // Module 1: Credit Assessment
     runCreditAssessment,
     calculateCreditScore,
@@ -526,12 +988,15 @@ module.exports = {
     analyzeMarket,
     analyzeCompetitors,
     
-    // Composite Workflows
+    // COMPOSITE WORKFLOW FUNCTIONS
     processCompleteLoanWorkflow,
     generateCompleteFundReport,
+    processCompleteWealthAssessment,
+    processCompleteMarketIntelligence,
     
     // Direct module access (if needed)
     modules: {
+        // Core 12 Lending Modules
         creditAssessment,
         loanOrigination,
         loanServicing,
@@ -543,13 +1008,27 @@ module.exports = {
         fundAccounting,
         investorReporting,
         complianceMonitoring,
-        marketResearch
+        marketResearch,
+        
+        // Specialized Handler Modules
+        cambodiaHandler,
+        lpManagement,
+        portfolioManager,
+        realEstateWealth,
+        businessWealth,
+        investmentWealth,
+        economicIntelligence,
+        legalRegulatory,
+        agriculturalWealth,
+        resourcesWealth,
+        cambodiaLending
     }
 };
 
-console.log('✅ IMPERIUMVAULTSYSTEM index.js loaded - All 12 modules integrated and ready');
+console.log('✅ IMPERIUMVAULTSYSTEM index.js loaded - All 23 modules integrated and ready');
 console.log('🎯 Available functions:', Object.keys(module.exports).length - 1, 'functions exported');
 console.log('🌟 System ready for Cambodia private lending operations');
+console.log('📊 Module breakdown: 11 Specialized Handlers + 12 Core Lending + 4 Composite Workflows');
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
