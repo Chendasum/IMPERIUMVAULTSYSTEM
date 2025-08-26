@@ -116,31 +116,6 @@ const {
     getGPT5PerformanceMetrics        // ⚡ Real-time performance analytics
 } = require("./utils/dualCommandSystem");
 
-// Import enhanced utility modules
-const { 
-    getRealLiveData, 
-    getEnhancedLiveData, 
-    getEconomicIndicators,
-    getStockMarketData,
-    getRayDalioMarketData,
-    getFredData,
-    getAlphaVantageData,
-    detectEconomicRegime,
-    getYieldCurveAnalysis,
-    detectMarketAnomalies,
-    generateMarketInsights,
-    getCurrentCambodiaDateTime,
-    getCurrentGlobalDateTime,
-    getCreditSpreadAnalysis,
-    getInflationExpectations,
-    getSectorRotationSignals,
-    calculateAssetCorrelations,
-    getEnhancedCryptoData,
-    getMajorForexPairs,
-    getCommodityPrices,
-    getBusinessHeadlines
-} = require("./utils/liveData");
-
 // Master coordination for ALL 23 modules: 11 Specialized Handlers + 12 Core Lending Modules
 // 🔧 SPECIALIZED HANDLERS (Preserved for business logic)
 const cambodiaHandler = require('./handlers/cambodiaDeals');
