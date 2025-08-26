@@ -12,7 +12,6 @@ const fundAccounting = require('./fundAccounting');
 const investorReporting = require('./investorReporting');
 const borrowerDueDiligence = require('./borrowerDueDiligence');
 
-
 // 📋 CAMBODIA COMPLIANCE MONITORING FRAMEWORK
 const COMPLIANCE_MONITORING_FRAMEWORK = {
     // Regulatory authorities and frameworks
