@@ -1,20 +1,6 @@
 // cambodia/cashFlowManagement.js - COMPLETE: Cambodia Cash Flow & Liquidity Management System
 // Enterprise-grade cash flow optimization with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
-const cambodiaHandler = require('../handlers/cambodiaDeals');
-const lpManagement = require('./lpManagement');
-const portfolioManager = require('./portfolioManager');
-const loanServicing = require('./loanServicing');
-const riskManagement = require('./riskManagement');
-const loanRecovery = require('./loanRecovery');
-const creditAssessment = require('./creditAssessment');
-const loanOrigination = require('./loanOrigination');
-const economicIntelligence = require('./economicIntelligence');
-const legalRegulatory = require('./legalRegulatory');
-
 // 💵 CAMBODIA CASH FLOW MANAGEMENT FRAMEWORK
 const CASH_FLOW_FRAMEWORK = {
     // Cash flow categories and classifications
