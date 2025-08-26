@@ -124,22 +124,432 @@ const realEstateWealth = require('./cambodia/realEstateWealth');
 const businessWealth = require('./cambodia/businessWealth');
 const investmentWealth = require('./cambodia/investmentWealth');
 const economicIntelligence = require('./cambodia/economicIntelligence');
-const legalRegulatory = require('./cambodia/legalRegulatory'); // ✅ Legal & compliance
-const agriculturalWealth = require('./cambodia/agriculturalWealth'); // 🌾 Agriculture sector
-const resourcesWealth = require('./cambodia/resourcesWealth'); // ⛏️ Natural resources
+const legalRegulatory = require('./cambodia/legalRegulatory');
+const agriculturalWealth = require('./cambodia/agriculturalWealth');
+const resourcesWealth = require('./cambodia/resourcesWealth');
 const cambodiaLending = require('./utils/cambodiaLending');
+
+// 🏦 CORE 12 CAMBODIA LENDING MODULES
 const creditAssessment = require('./cambodia/creditAssessment');
 const loanOrigination = require('./cambodia/loanOrigination');
-const loanServicing = require('./cambodia/loanServicing'); // 📋 NEW: Loan servicing & collections
-const riskManagement = require('./cambodia/riskManagement'); // 🚨 NEW: Risk assessment & monitoring
-const loanRecovery = require('./cambodia/loanRecovery'); // 💰 NEW: Collections & asset recovery
-const cashFlowManagement = require('./cambodia/cashFlowManagement'); // 💵 NEW: Cash flow & liquidity management
-const borrowerDueDiligence = require('./cambodia/borrowerDueDiligence'); // 🔍 NEW: KYC & due diligence screening
+const loanServicing = require('./cambodia/loanServicing');
+const riskManagement = require('./cambodia/riskManagement');
+const loanRecovery = require('./cambodia/loanRecovery');
+const cashFlowManagement = require('./cambodia/cashFlowManagement');
+const borrowerDueDiligence = require('./cambodia/borrowerDueDiligence');
 const performanceAnalytics = require('./cambodia/performanceAnalytics');
-const fundAccounting = require('./cambodia/fundAccounting'); // 🧮 NEW: NAV & accounting system
-const investorReporting = require('./cambodia/investorReporting'); // 📊 NEW: LP reporting & communications
-const complianceMonitoring = require('./cambodia/complianceMonitoring'); // 📋 NEW: Compliance monitoring & tracking
-const marketResearch = require('./cambodia/marketResearch'); // 🔍 FINAL: Market intelligence & research
+const fundAccounting = require('./cambodia/fundAccounting');
+const investorReporting = require('./cambodia/investorReporting');
+const complianceMonitoring = require('./cambodia/complianceMonitoring');
+const marketResearch = require('./cambodia/marketResearch');
+
+console.log('🏦 IMPERIUMVAULTSYSTEM - Cambodia Private Lending Fund');
+console.log('📊 All 12 core lending modules loaded successfully');
+
+// 🎯 MODULE 1: CREDIT ASSESSMENT FUNCTIONS
+async function runCreditAssessment(borrowerId, creditData, chatId = null, bot = null) {
+    try {
+        console.log(`🔍 Running credit assessment for borrower ${borrowerId}`);
+        return await creditAssessment.assessCreditworthiness(borrowerId, creditData, chatId, bot);
+    } catch (error) {
+        console.error('Credit assessment error:', error.message);
+        return { success: false, error: error.message, module: 'creditAssessment' };
+    }
+}
+
+async function calculateCreditScore(borrowerId, scoreData, chatId = null, bot = null) {
+    try {
+        return await creditAssessment.calculateCreditScore(borrowerId, scoreData, chatId, bot);
+    } catch (error) {
+        console.error('Credit score calculation error:', error.message);
+        return { success: false, error: error.message, module: 'creditAssessment' };
+    }
+}
+
+// 🎯 MODULE 2: LOAN ORIGINATION FUNCTIONS
+async function processLoanApplication(applicationData, chatId = null, bot = null) {
+    try {
+        console.log(`📝 Processing loan application for ${applicationData.borrowerName || 'unknown borrower'}`);
+        return await loanOrigination.processLoanApplication(applicationData, chatId, bot);
+    } catch (error) {
+        console.error('Loan application error:', error.message);
+        return { success: false, error: error.message, module: 'loanOrigination' };
+    }
+}
+
+async function approveLoan(loanId, approvalData, chatId = null, bot = null) {
+    try {
+        return await loanOrigination.approveLoan(loanId, approvalData, chatId, bot);
+    } catch (error) {
+        console.error('Loan approval error:', error.message);
+        return { success: false, error: error.message, module: 'loanOrigination' };
+    }
+}
+
+// 🎯 MODULE 3: LOAN SERVICING FUNCTIONS
+async function serviceLoan(loanId, servicingData, chatId = null, bot = null) {
+    try {
+        console.log(`📋 Servicing loan ${loanId}`);
+        return await loanServicing.serviceLoan(loanId, servicingData, chatId, bot);
+    } catch (error) {
+        console.error('Loan servicing error:', error.message);
+        return { success: false, error: error.message, module: 'loanServicing' };
+    }
+}
+
+async function monitorLoanPerformance(loanId, performanceData, chatId = null, bot = null) {
+    try {
+        return await loanServicing.monitorLoanPerformance(loanId, performanceData, chatId, bot);
+    } catch (error) {
+        console.error('Loan monitoring error:', error.message);
+        return { success: false, error: error.message, module: 'loanServicing' };
+    }
+}
+
+// 🎯 MODULE 4: RISK MANAGEMENT FUNCTIONS
+async function assessBorrowerRisk(borrowerId, riskData, chatId = null, bot = null) {
+    try {
+        console.log(`🚨 Assessing risk for borrower ${borrowerId}`);
+        return await riskManagement.assessBorrowerRisk(borrowerId, riskData, chatId, bot);
+    } catch (error) {
+        console.error('Risk assessment error:', error.message);
+        return { success: false, error: error.message, module: 'riskManagement' };
+    }
+}
+
+async function analyzePortfolioRisk(portfolioId, riskData, chatId = null, bot = null) {
+    try {
+        return await riskManagement.analyzePortfolioRisk(portfolioId, riskData, chatId, bot);
+    } catch (error) {
+        console.error('Portfolio risk analysis error:', error.message);
+        return { success: false, error: error.message, module: 'riskManagement' };
+    }
+}
+
+// 🎯 MODULE 5: LOAN RECOVERY FUNCTIONS
+async function initiateRecovery(loanId, recoveryData, chatId = null, bot = null) {
+    try {
+        console.log(`💰 Initiating recovery for loan ${loanId}`);
+        return await loanRecovery.initiateRecoveryProcess(loanId, recoveryData, chatId, bot);
+    } catch (error) {
+        console.error('Loan recovery error:', error.message);
+        return { success: false, error: error.message, module: 'loanRecovery' };
+    }
+}
+
+async function manageCollateral(collateralId, collateralData, chatId = null, bot = null) {
+    try {
+        return await loanRecovery.manageCollateral(collateralId, collateralData, chatId, bot);
+    } catch (error) {
+        console.error('Collateral management error:', error.message);
+        return { success: false, error: error.message, module: 'loanRecovery' };
+    }
+}
+
+// 🎯 MODULE 6: CASH FLOW MANAGEMENT FUNCTIONS
+async function manageCashFlow(fundId, cashFlowData, chatId = null, bot = null) {
+    try {
+        console.log(`💵 Managing cash flow for fund ${fundId}`);
+        return await cashFlowManagement.optimizeCashFlow(fundId, cashFlowData, chatId, bot);
+    } catch (error) {
+        console.error('Cash flow management error:', error.message);
+        return { success: false, error: error.message, module: 'cashFlowManagement' };
+    }
+}
+
+async function forecastLiquidity(fundId, forecastData, chatId = null, bot = null) {
+    try {
+        return await cashFlowManagement.forecastLiquidityNeeds(fundId, forecastData, chatId, bot);
+    } catch (error) {
+        console.error('Liquidity forecasting error:', error.message);
+        return { success: false, error: error.message, module: 'cashFlowManagement' };
+    }
+}
+
+// 🎯 MODULE 7: BORROWER DUE DILIGENCE FUNCTIONS
+async function conductDueDiligence(borrowerId, dueDiligenceData, chatId = null, bot = null) {
+    try {
+        console.log(`🔍 Conducting due diligence for borrower ${borrowerId}`);
+        return await borrowerDueDiligence.conductComprehensiveDueDiligence(borrowerId, dueDiligenceData, chatId, bot);
+    } catch (error) {
+        console.error('Due diligence error:', error.message);
+        return { success: false, error: error.message, module: 'borrowerDueDiligence' };
+    }
+}
+
+async function performAMLScreening(borrowerId, amlData, chatId = null, bot = null) {
+    try {
+        return await borrowerDueDiligence.performAMLKYCScreening(borrowerId, amlData, chatId, bot);
+    } catch (error) {
+        console.error('AML screening error:', error.message);
+        return { success: false, error: error.message, module: 'borrowerDueDiligence' };
+    }
+}
+
+// 🎯 MODULE 8: PERFORMANCE ANALYTICS FUNCTIONS
+async function generatePerformanceDashboard(fundId, reportingPeriod = 'monthly', chatId = null, bot = null) {
+    try {
+        console.log(`📈 Generating performance dashboard for fund ${fundId}`);
+        return await performanceAnalytics.generateFundPerformanceDashboard(fundId, reportingPeriod, chatId, bot);
+    } catch (error) {
+        console.error('Performance dashboard error:', error.message);
+        return { success: false, error: error.message, module: 'performanceAnalytics' };
+    }
+}
+
+async function analyzeReturns(fundId, returnData, chatId = null, bot = null) {
+    try {
+        return await performanceAnalytics.analyzeReturnPerformance(fundId, returnData, chatId, bot);
+    } catch (error) {
+        console.error('Return analysis error:', error.message);
+        return { success: false, error: error.message, module: 'performanceAnalytics' };
+    }
+}
+
+// 🎯 MODULE 9: FUND ACCOUNTING FUNCTIONS
+async function calculateNAV(fundId, valuationDate = new Date(), chatId = null, bot = null) {
+    try {
+        console.log(`🧮 Calculating NAV for fund ${fundId}`);
+        return await fundAccounting.calculateNAV(fundId, valuationDate, chatId, bot);
+    } catch (error) {
+        console.error('NAV calculation error:', error.message);
+        return { success: false, error: error.message, module: 'fundAccounting' };
+    }
+}
+
+async function calculateManagementFees(fundId, feeData, chatId = null, bot = null) {
+    try {
+        return await fundAccounting.calculateManagementFees(fundId, feeData, chatId, bot);
+    } catch (error) {
+        console.error('Management fee calculation error:', error.message);
+        return { success: false, error: error.message, module: 'fundAccounting' };
+    }
+}
+
+// 🎯 MODULE 10: INVESTOR REPORTING FUNCTIONS
+async function generateQuarterlyReport(fundId, reportData, chatId = null, bot = null) {
+    try {
+        console.log(`📊 Generating quarterly report for fund ${fundId}`);
+        return await investorReporting.generateQuarterlyLPReport(fundId, reportData, chatId, bot);
+    } catch (error) {
+        console.error('Quarterly report error:', error.message);
+        return { success: false, error: error.message, module: 'investorReporting' };
+    }
+}
+
+async function generateMonthlyUpdate(fundId, updateData, chatId = null, bot = null) {
+    try {
+        return await investorReporting.generateMonthlyInvestorUpdate(fundId, updateData, chatId, bot);
+    } catch (error) {
+        console.error('Monthly update error:', error.message);
+        return { success: false, error: error.message, module: 'investorReporting' };
+    }
+}
+
+// 🎯 MODULE 11: COMPLIANCE MONITORING FUNCTIONS
+async function performComplianceCheck(fundId, checkData, chatId = null, bot = null) {
+    try {
+        console.log(`📋 Performing compliance check for fund ${fundId}`);
+        return await complianceMonitoring.performComplianceHealthCheck(fundId, checkData, chatId, bot);
+    } catch (error) {
+        console.error('Compliance check error:', error.message);
+        return { success: false, error: error.message, module: 'complianceMonitoring' };
+    }
+}
+
+async function monitorAlerts(fundId, alertData, chatId = null, bot = null) {
+    try {
+        return await complianceMonitoring.monitorComplianceAlerts(fundId, alertData, chatId, bot);
+    } catch (error) {
+        console.error('Alert monitoring error:', error.message);
+        return { success: false, error: error.message, module: 'complianceMonitoring' };
+    }
+}
+
+// 🎯 MODULE 12: MARKET RESEARCH FUNCTIONS
+async function analyzeMarket(researchScope, analysisData, chatId = null, bot = null) {
+    try {
+        console.log(`🔍 Analyzing Cambodia market: ${researchScope}`);
+        return await marketResearch.generateMarketAnalysis(researchScope, analysisData, chatId, bot);
+    } catch (error) {
+        console.error('Market analysis error:', error.message);
+        return { success: false, error: error.message, module: 'marketResearch' };
+    }
+}
+
+async function analyzeCompetitors(competitorData, chatId = null, bot = null) {
+    try {
+        return await marketResearch.analyzeCompetitiveLandscape(competitorData, chatId, bot);
+    } catch (error) {
+        console.error('Competitive analysis error:', error.message);
+        return { success: false, error: error.message, module: 'marketResearch' };
+    }
+}
+
+// 🌟 COMPOSITE WORKFLOW FUNCTIONS
+async function processCompleteLoanWorkflow(applicationData, chatId = null, bot = null) {
+    try {
+        console.log('🔄 Starting complete loan workflow');
+        
+        // Step 1: Due Diligence
+        const dueDiligence = await conductDueDiligence(
+            applicationData.borrowerId, 
+            applicationData.dueDiligenceData, 
+            chatId, 
+            bot
+        );
+        
+        if (!dueDiligence.success) {
+            return { success: false, stage: 'dueDiligence', error: dueDiligence.error };
+        }
+        
+        // Step 2: Credit Assessment
+        const creditResult = await runCreditAssessment(
+            applicationData.borrowerId,
+            applicationData.creditData,
+            chatId,
+            bot
+        );
+        
+        if (!creditResult.success) {
+            return { success: false, stage: 'creditAssessment', error: creditResult.error };
+        }
+        
+        // Step 3: Risk Assessment
+        const riskResult = await assessBorrowerRisk(
+            applicationData.borrowerId,
+            applicationData.riskData,
+            chatId,
+            bot
+        );
+        
+        if (!riskResult.success) {
+            return { success: false, stage: 'riskAssessment', error: riskResult.error };
+        }
+        
+        // Step 4: Process Application
+        const loanResult = await processLoanApplication(applicationData, chatId, bot);
+        
+        return {
+            success: true,
+            workflow: 'completeLoanWorkflow',
+            results: {
+                dueDiligence: dueDiligence,
+                creditAssessment: creditResult,
+                riskAssessment: riskResult,
+                loanProcessing: loanResult
+            }
+        };
+        
+    } catch (error) {
+        console.error('Complete workflow error:', error.message);
+        return { success: false, error: error.message, workflow: 'completeLoanWorkflow' };
+    }
+}
+
+async function generateCompleteFundReport(fundId, reportingPeriod = 'quarterly', chatId = null, bot = null) {
+    try {
+        console.log('📋 Generating complete fund report');
+        
+        const performance = await generatePerformanceDashboard(fundId, reportingPeriod, chatId, bot);
+        const nav = await calculateNAV(fundId, new Date(), chatId, bot);
+        const quarterlyReport = await generateQuarterlyReport(fundId, { reportingPeriod }, chatId, bot);
+        const compliance = await performComplianceCheck(fundId, {}, chatId, bot);
+        
+        return {
+            success: true,
+            reportType: 'completeFundReport',
+            fundId: fundId,
+            reportingPeriod: reportingPeriod,
+            results: {
+                performance: performance,
+                nav: nav,
+                quarterlyReport: quarterlyReport,
+                compliance: compliance
+            },
+            generatedDate: new Date().toISOString()
+        };
+        
+    } catch (error) {
+        console.error('Complete fund report error:', error.message);
+        return { success: false, error: error.message, reportType: 'completeFundReport' };
+    }
+}
+
+// 📊 EXPORT ALL FUNCTIONS
+module.exports = {
+    // Module 1: Credit Assessment
+    runCreditAssessment,
+    calculateCreditScore,
+    
+    // Module 2: Loan Origination
+    processLoanApplication,
+    approveLoan,
+    
+    // Module 3: Loan Servicing
+    serviceLoan,
+    monitorLoanPerformance,
+    
+    // Module 4: Risk Management
+    assessBorrowerRisk,
+    analyzePortfolioRisk,
+    
+    // Module 5: Loan Recovery
+    initiateRecovery,
+    manageCollateral,
+    
+    // Module 6: Cash Flow Management
+    manageCashFlow,
+    forecastLiquidity,
+    
+    // Module 7: Borrower Due Diligence
+    conductDueDiligence,
+    performAMLScreening,
+    
+    // Module 8: Performance Analytics
+    generatePerformanceDashboard,
+    analyzeReturns,
+    
+    // Module 9: Fund Accounting
+    calculateNAV,
+    calculateManagementFees,
+    
+    // Module 10: Investor Reporting
+    generateQuarterlyReport,
+    generateMonthlyUpdate,
+    
+    // Module 11: Compliance Monitoring
+    performComplianceCheck,
+    monitorAlerts,
+    
+    // Module 12: Market Research
+    analyzeMarket,
+    analyzeCompetitors,
+    
+    // Composite Workflows
+    processCompleteLoanWorkflow,
+    generateCompleteFundReport,
+    
+    // Direct module access (if needed)
+    modules: {
+        creditAssessment,
+        loanOrigination,
+        loanServicing,
+        riskManagement,
+        loanRecovery,
+        cashFlowManagement,
+        borrowerDueDiligence,
+        performanceAnalytics,
+        fundAccounting,
+        investorReporting,
+        complianceMonitoring,
+        marketResearch
+    }
+};
+
+console.log('✅ IMPERIUMVAULTSYSTEM index.js loaded - All 12 modules integrated and ready');
+console.log('🎯 Available functions:', Object.keys(module.exports).length - 1, 'functions exported');
+console.log('🌟 System ready for Cambodia private lending operations');
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
