@@ -1,8 +1,6 @@
 // cambodia/lpManagement.js - COMPLETE LP Management System for Cambodia Fund
 // Professional Limited Partner relationship and investment management
 
-const { executeDualCommand } = require('../utils/dualCommandSystem');
-
 // 🏦 LP MANAGEMENT CONFIGURATION
 const LP_CONFIG = {
     // Investment categories
