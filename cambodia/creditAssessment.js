@@ -1,8 +1,6 @@
 // cambodia/creditAssessment.js - COMPLETE: Cambodia Credit Assessment & Risk Analysis
 // Enterprise-grade credit evaluation with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
 // 🏦 CAMBODIA CREDIT ASSESSMENT FRAMEWORK
 const CAMBODIA_CREDIT_FRAMEWORK = {
     // Credit scoring parameters for Cambodia market
