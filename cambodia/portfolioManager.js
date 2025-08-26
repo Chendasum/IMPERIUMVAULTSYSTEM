@@ -1,8 +1,6 @@
 // cambodia/portfolioManager.js - COMPLETE Portfolio Management System for Cambodia Fund
 // Professional fund portfolio tracking, performance monitoring, and risk management
 
-const { executeDualCommand } = require('../utils/dualCommandSystem');
-
 // 📊 PORTFOLIO CONFIGURATION
 const PORTFOLIO_CONFIG = {
     // Deal statuses
