@@ -1,8 +1,6 @@
 // cambodia/agriculturalWealth.js - COMPLETE: Cambodia Agricultural & Fisheries Intelligence
 // Enterprise-grade agricultural analysis with GPT-5 integration
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
 // 🌾 CAMBODIA AGRICULTURAL DATA & INTELLIGENCE
 const CAMBODIA_AGRICULTURAL_DATA = {
     // Major agricultural sectors by GDP contribution
