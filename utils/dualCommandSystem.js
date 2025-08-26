@@ -173,7 +173,7 @@ function getCurrentGlobalDateTime() {
     }
 }
 
-// 🎯 GPT-5 ONLY QUERY ANALYSIS (Fixed)
+// GPT-5 ONLY QUERY ANALYSIS (Fixed Priority Order)
 function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memoryContext = null) {
     const message = userMessage.toLowerCase();
     
@@ -241,99 +241,99 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     const hasMemoryReference = memoryPatterns.some(pattern => pattern.test(message));
     const hasMemoryContext = memoryContext && memoryContext.length > 100;
     
-    // 🚀 GPT-5 MODEL SELECTION LOGIC with Dynamic Token Scaling
+    // FIXED: GPT-5 MODEL SELECTION LOGIC with CORRECT PRIORITY ORDER
     let gpt5Config = {
         model: 'gpt-5-mini',
         reasoning_effort: 'medium',
         verbosity: 'medium',
-        max_completion_tokens: 8000,        // ✅ INCREASED from 4000
+        max_completion_tokens: 8000,
         temperature: 0.7,
         priority: 'standard',
         reason: 'GPT-5 Mini - Balanced performance'
     };
     
-    // SPEED CRITICAL - GPT-5 Nano (cheapest and fastest)
+    // PRIORITY 1: SPEED CRITICAL - GPT-5 Nano (highest priority)
     if (speedPatterns.some(pattern => pattern.test(message))) {
         gpt5Config = {
             model: 'gpt-5-nano',
             reasoning_effort: 'minimal',
             verbosity: 'low',
-            max_completion_tokens: 6000,    // ✅ INCREASED from 2000
+            max_completion_tokens: 6000,
             priority: 'speed',
             reason: 'Speed critical - GPT-5 Nano for fast response'
         };
     }
     
-    // CHAT PATTERNS - GPT-5 Chat model
+    // PRIORITY 2: CHAT PATTERNS - GPT-5 Chat model
     else if (chatPatterns.some(pattern => pattern.test(message))) {
         gpt5Config = {
             model: 'gpt-5-chat-latest',
             temperature: 0.7,
-            max_completion_tokens: 8000,               // ✅ INCREASED from 3000
+            max_completion_tokens: 8000,
             priority: 'chat',
             reason: 'Chat pattern - GPT-5 Chat model'
         };
     }
     
-    // COMPLEX ANALYSIS - Full GPT-5 (maximum intelligence)
-    else if (complexPatterns.some(pattern => pattern.test(message))) {
-        gpt5Config = {
-            model: 'gpt-5',
-            reasoning_effort: 'high',
-            verbosity: 'high',
-            max_completion_tokens: 16000,    // ✅ INCREASED from 6000
-            temperature: 0.6,
-            priority: 'complex',
-            reason: 'Complex strategic analysis - Full GPT-5 with high reasoning'
-        };
-    }
-    
-    // MATH/CODING - Full GPT-5 with maximum precision
-    else if (mathCodingPatterns.some(pattern => pattern.test(message))) {
-        gpt5Config = {
-            model: 'gpt-5',
-            reasoning_effort: 'high',
-            verbosity: 'medium',
-            max_completion_tokens: 12000,    // ✅ INCREASED from 5000
-            temperature: 0.3,
-            priority: 'mathematical',
-            reason: 'Mathematical/coding precision - Full GPT-5 with high reasoning'
-        };
-    }
-    
-    // CAMBODIA/REGIONAL - GPT-5 Mini (cost efficient)
+    // PRIORITY 3: CAMBODIA/REGIONAL - GPT-5 Mini (MOVED UP - BEFORE COMPLEX)
     else if (cambodiaPatterns.some(pattern => pattern.test(message))) {
         gpt5Config = {
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'high',
-            max_completion_tokens: 10000,    // ✅ INCREASED from 4500
+            max_completion_tokens: 10000,
             temperature: 0.6,
             priority: 'regional',
             reason: 'Cambodia/regional analysis - GPT-5 Mini with detailed output'
         };
     }
     
-    // MARKET ANALYSIS - GPT-5 Mini (balanced)
+    // PRIORITY 4: MARKET ANALYSIS - GPT-5 Mini (MOVED UP - BEFORE COMPLEX)
     else if (marketPatterns.some(pattern => pattern.test(message))) {
         gpt5Config = {
             model: 'gpt-5-mini',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_completion_tokens: 8000,    // ✅ INCREASED from 4000
+            max_completion_tokens: 8000,
             temperature: 0.6,
             priority: 'market',
             reason: 'Market analysis - GPT-5 Mini for balanced performance'
         };
     }
     
-    // MULTIMODAL - Full GPT-5 (vision capabilities)
+    // PRIORITY 5: MATH/CODING - Full GPT-5 with maximum precision
+    else if (mathCodingPatterns.some(pattern => pattern.test(message))) {
+        gpt5Config = {
+            model: 'gpt-5',
+            reasoning_effort: 'high',
+            verbosity: 'medium',
+            max_completion_tokens: 12000,
+            temperature: 0.3,
+            priority: 'mathematical',
+            reason: 'Mathematical/coding precision - Full GPT-5 with high reasoning'
+        };
+    }
+    
+    // PRIORITY 6: COMPLEX ANALYSIS - Full GPT-5 (MOVED DOWN - LOWER PRIORITY)
+    else if (complexPatterns.some(pattern => pattern.test(message))) {
+        gpt5Config = {
+            model: 'gpt-5',
+            reasoning_effort: 'high',
+            verbosity: 'high',
+            max_completion_tokens: 16000,
+            temperature: 0.6,
+            priority: 'complex',
+            reason: 'Complex strategic analysis - Full GPT-5 with high reasoning'
+        };
+    }
+    
+    // PRIORITY 7: MULTIMODAL - Full GPT-5 (vision capabilities)
     else if (hasMedia || messageType !== 'text') {
         gpt5Config = {
             model: 'gpt-5',
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_completion_tokens: 10000,    // ✅ INCREASED from 4500
+            max_completion_tokens: 10000,
             temperature: 0.7,
             priority: 'multimodal',
             reason: 'Multimodal content - Full GPT-5 for vision analysis'
