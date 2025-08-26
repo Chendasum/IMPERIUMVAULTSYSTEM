@@ -1,17 +1,6 @@
 // cambodia/complianceMonitoring.js - COMPLETE: Cambodia Compliance Monitoring & Regulatory Tracking
 // Enterprise-grade compliance monitoring with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
-const cambodiaHandler = require('../handlers/cambodiaDeals');
-const lpManagement = require('./lpManagement');
-const portfolioManager = require('./portfolioManager');
-const performanceAnalytics = require('./performanceAnalytics');
-const fundAccounting = require('./fundAccounting');
-const investorReporting = require('./investorReporting');
-const borrowerDueDiligence = require('./borrowerDueDiligence');
-
 // 📋 CAMBODIA COMPLIANCE MONITORING FRAMEWORK
 const COMPLIANCE_MONITORING_FRAMEWORK = {
     // Regulatory authorities and frameworks
