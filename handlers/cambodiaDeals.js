@@ -1,9 +1,6 @@
 // handlers/cambodiaDeals.js - REAL Telegram Integration for Cambodia Deal Intelligence
 // Connect your Telegram bot to the Cambodia Deal Intelligence System
 
-const cambodiaDeals = require('../cambodia/dealIntelligence');
-const { executeDualCommand } = require('../utils/dualCommandSystem');
-
 // 🇰🇭 CAMBODIA DEAL COMMANDS for Telegram Bot
 
 /**
