@@ -1,22 +1,6 @@
 // cambodia/loanServicing.js - COMPLETE: Cambodia Loan Servicing & Portfolio Management System
 // Enterprise-grade loan servicing with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
-const cambodiaHandler = require('../handlers/cambodiaDeals');
-const lpManagement = require('./lpManagement');
-const portfolioManager = require('./portfolioManager');
-const realEstateWealth = require('./realEstateWealth');
-const businessWealth = require('./businessWealth');
-const investmentWealth = require('./investmentWealth');
-const economicIntelligence = require('./economicIntelligence');
-const legalRegulatory = require('./legalRegulatory');
-const agriculturalWealth = require('./agriculturalWealth');
-const resourcesWealth = require('./resourcesWealth');
-const creditAssessment = require('./creditAssessment');
-const loanOrigination = require('./loanOrigination');
-
 // 🏦 CAMBODIA LOAN SERVICING FRAMEWORK
 const LOAN_SERVICING_FRAMEWORK = {
     // Loan statuses and lifecycle
