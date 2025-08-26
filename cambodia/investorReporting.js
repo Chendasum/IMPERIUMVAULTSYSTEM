@@ -1,16 +1,6 @@
 // cambodia/investorReporting.js - COMPLETE: Cambodia Investor Reporting & LP Communications
 // Enterprise-grade investor relations with GPT-5 intelligence for private lending fund
 
-const { executeEnhancedGPT5Command } = require('../utils/dualCommandSystem');
-
-// 🔧 SPECIALIZED HANDLERS (Integration with existing systems)
-const cambodiaHandler = require('../handlers/cambodiaDeals');
-const lpManagement = require('./lpManagement');
-const portfolioManager = require('./portfolioManager');
-const performanceAnalytics = require('./performanceAnalytics');
-const fundAccounting = require('./fundAccounting');
-const riskManagement = require('./riskManagement');
-
 // 📊 CAMBODIA INVESTOR REPORTING FRAMEWORK
 const INVESTOR_REPORTING_FRAMEWORK = {
     // Reporting standards and frequencies
