@@ -2716,10 +2716,32 @@ async function performPeriodicBackup() {
 // Start periodic backup
 setInterval(performPeriodicBackup, BACKUP_INTERVAL);
 
-// 🌐 LIVE DATA & MULTIMODAL INTEGRATION
-const liveData = require('./utils/liveData');
-const metaTrader = require('./utils/metaTrader');
-const multimodal = require('./utils/multimodal');
+// 🌐 LIVE DATA & MULTIMODAL INTEGRATION (Conditional Loading)
+let liveData, metaTrader, multimodal;
+
+try {
+    liveData = require('./utils/liveData');
+    console.log('✅ liveData module loaded');
+} catch (error) {
+    console.log('⚠️ liveData module not found');
+    liveData = null;
+}
+
+try {
+    metaTrader = require('./utils/metaTrader');
+    console.log('✅ metaTrader module loaded');
+} catch (error) {
+    console.log('⚠️ metaTrader module not found');
+    metaTrader = null;
+}
+
+try {
+    multimodal = require('./utils/multimodal');
+    console.log('✅ multimodal module loaded');
+} catch (error) {
+    console.log('⚠️ multimodal module not found');
+    multimodal = null;  // Set to null, not an object with null properties
+}
 
 // 🎮 COMMAND HANDLERS MAP - GPT-5 Optimized
 const commandHandlers = {
@@ -2761,6 +2783,11 @@ const commandHandlers = {
     '/recover': handleConversationRecovery,
     '/backup': handleForceBackup
 };
+
+// Helper function to check if multimodal is available
+function isMultimodalAvailable() {
+    return multimodal && multimodal.processVoiceMessage && multimodal.processImageMessage;
+}
 
 // 🌐 WEBHOOK ENDPOINT - Main message handler
 app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
@@ -3432,15 +3459,18 @@ async function handleSystemHealth(msg, bot) {
         const healthEmoji = health.healthGrade === 'A+' ? '🟢' : 
                            health.healthGrade === 'A' ? '🟡' : '🔴';
         
-        // Test multimodal system
+// Test multimodal system
         let multimodalStatus = false;
         try {
-            multimodalStatus = typeof multimodal.analyzeImage === 'function' &&
-                              typeof multimodal.analyzeDocument === 'function' &&
-                              typeof multimodal.analyzeVoice === 'function';
+            multimodalStatus = multimodal && 
+                              typeof multimodal.processImageMessage === 'function' &&
+                              typeof multimodal.processDocumentMessage === 'function' &&
+                              typeof multimodal.processVoiceMessage === 'function' &&
+                              typeof multimodal.processVideoMessage === 'function';
             console.log(`✅ Multimodal system: ${multimodalStatus ? 'Available' : 'Limited'}`);
         } catch (error) {
             console.log('❌ Multimodal system unavailable');
+            multimodalStatus = false;
         }
         
         const healthMessage = `🏥 **GPT-5 SYSTEM HEALTH REPORT**
