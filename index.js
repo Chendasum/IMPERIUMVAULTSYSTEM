@@ -3557,37 +3557,39 @@ async function handleMemoryTest(msg, bot) {
     const chatId = msg.chat.id;
     
     try {
-        console.log('Running memory integration test...');
+        console.log('🧪 Running memory integration test...');
         const memoryTest = await testMemoryIntegration(chatId);
         
-        const statusEmoji = memoryTest.status === 'FULL_SUCCESS' ? 'SUCCESS' : 
-                           memoryTest.status === 'MOSTLY_WORKING' ? 'PARTIAL' : 'FAILED';
+        const statusEmoji = memoryTest.status === 'FULL_SUCCESS' ? '🟢' : 
+                           memoryTest.status === 'MOSTLY_WORKING' ? '🟡' : '🔴';
         
-        const memoryMessage = `MEMORY INTEGRATION TEST
-Overall Result: ${statusEmoji}
-Score: ${memoryTest.score} (${memoryTest.percentage}%)
+        const memoryMessage = `🧪 **MEMORY INTEGRATION TEST**
 
-Test Results:
-${memoryTest.tests.postgresqlConnection ? 'PASS' : 'FAIL'} PostgreSQL Connection
-${memoryTest.tests.conversationHistory ? 'PASS' : 'FAIL'} Conversation History
-${memoryTest.tests.persistentMemory ? 'PASS' : 'FAIL'} Persistent Memory
-${memoryTest.tests.memoryBuilding ? 'PASS' : 'FAIL'} Memory Context Building
-${memoryTest.tests.gpt5WithMemory ? 'PASS' : 'FAIL'} GPT-5 + Memory Integration
-${memoryTest.tests.gpt5ModelSelection ? 'PASS' : 'FAIL'} Smart Model Selection
-${memoryTest.tests.telegramIntegration ? 'PASS' : 'FAIL'} Telegram Integration
+${statusEmoji} **Overall Result:** ${memoryTest.status}
+📊 **Score:** ${memoryTest.score} (${memoryTest.percentage}%)
 
-System Integration:
-PostgreSQL Connected: ${memoryTest.postgresqlIntegrated ? 'YES' : 'NO'}
-Memory System Active: ${memoryTest.memorySystemIntegrated ? 'YES' : 'NO'}
-GPT-5 Only Mode: ${memoryTest.gpt5OnlyMode ? 'YES' : 'NO'}
-Test Completed: ${new Date().toLocaleString()}`;
+🧠 **Test Results:**
+${memoryTest.tests.postgresqlConnection ? '✅' : '❌'} PostgreSQL Connection
+${memoryTest.tests.conversationHistory ? '✅' : '❌'} Conversation History
+${memoryTest.tests.persistentMemory ? '✅' : '❌'} Persistent Memory
+${memoryTest.tests.memoryBuilding ? '✅' : '❌'} Memory Context Building
+${memoryTest.tests.gpt5WithMemory ? '✅' : '❌'} GPT-5 + Memory Integration
+${memoryTest.tests.gpt5ModelSelection ? '✅' : '❌'} Smart Model Selection
+${memoryTest.tests.telegramIntegration ? '✅' : '❌'} Telegram Integration
 
-        await bot.sendMessage(chatId, memoryMessage, { parse_mode: null });
+🎯 **System Integration:**
+PostgreSQL Connected: ${memoryTest.postgresqlIntegrated ? '✅' : '❌'}
+Memory System Active: ${memoryTest.memorySystemIntegrated ? '✅' : '❌'}
+GPT-5 Only Mode: ${memoryTest.gpt5OnlyMode ? '✅' : '❌'}
+
+⏰ **Test Completed:** ${new Date().toLocaleString()}`;
+
+        await bot.sendMessage(chatId, memoryMessage, { parse_mode: 'Markdown' });
         
     } catch (error) {
         await bot.sendMessage(chatId, 
-            `Memory test failed: ${error.message}\nThis suggests PostgreSQL or memory system issues.`,
-            { parse_mode: null }
+            `❌ Memory test failed: ${error.message}\n\n` +
+            `This suggests PostgreSQL or memory system issues.`
         );
     }
 }
