@@ -6,7 +6,7 @@ const { OpenAI } = require("openai");
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
     timeout: 180000, // 3 minutes for GPT-5's reasoning
-    maxRetries: 2, // FIXED: Reduced retries to prevent loops
+    maxRetries: 1, // FIXED: Reduced retries to prevent loops
     defaultHeaders: {
         'User-Agent': 'IMPERIUM-VAULT-GPT5/1.0.0'
     }
