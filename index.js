@@ -2843,7 +2843,7 @@ app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
     }
 });
 
-// 🎯 MAIN MESSAGE HANDLER - GPT-5 Only System with Multimodal Support
+// 🎯 MAIN MESSAGE HANDLER - GPT-5 Only System with Cambodia Module Routing
 async function handleMessage(msg) {
     const startTime = Date.now();
     const chatId = msg.chat.id;
@@ -2852,6 +2852,259 @@ async function handleMessage(msg) {
     
     console.log(`\n🎯 Message received from ${chatId}: "${userMessage.substring(0, 50)}..."`);
     
+    // 🏦 COMPREHENSIVE CAMBODIA MODULES ROUTER - All 30 modules
+    if (userMessage && !userMessage.startsWith('/')) {
+        const query = userMessage.toLowerCase();
+        
+        try {
+            // === CORE 12 CAMBODIA LENDING MODULES ===
+            
+            // CREDIT ASSESSMENT
+            if (query.includes('credit score') || query.includes('credit check') || query.includes('creditworthiness')) {
+                const result = await runCreditAssessment(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Credit Assessment:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-credit-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // LOAN ORIGINATION
+            if (query.includes('loan application') || query.includes('apply loan') || query.includes('loan approval')) {
+                const result = await processLoanApplication({ borrowerId: chatId, query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Loan Processing:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-loan-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // LOAN SERVICING
+            if (query.includes('loan servicing') || query.includes('loan management') || query.includes('loan performance')) {
+                const result = await serviceLoan(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Loan Servicing:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-servicing-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // RISK MANAGEMENT
+            if (query.includes('risk assessment') || query.includes('risk analysis') || query.includes('risk management')) {
+                const result = await assessBorrowerRisk(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Risk Assessment:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-risk-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // LOAN RECOVERY
+            if (query.includes('loan recovery') || query.includes('debt collection') || query.includes('collateral')) {
+                const result = await initiateRecovery(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Loan Recovery:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-recovery-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // CASH FLOW MANAGEMENT
+            if (query.includes('cash flow') || query.includes('liquidity') || query.includes('cash management')) {
+                const result = await manageCashFlow(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Cash Flow Analysis:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-cashflow-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // DUE DILIGENCE
+            if (query.includes('due diligence') || query.includes('background check') || query.includes('aml screening')) {
+                const result = await conductDueDiligence(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Due Diligence:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-dd-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // PERFORMANCE ANALYTICS
+            if (query.includes('performance') || query.includes('analytics') || query.includes('dashboard')) {
+                const result = await generatePerformanceDashboard(chatId, 'monthly', chatId, bot);
+                await bot.sendMessage(chatId, `Performance Analytics:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-analytics-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // FUND ACCOUNTING
+            if (query.includes('nav') || query.includes('fund accounting') || query.includes('management fees')) {
+                const result = await calculateNAV(chatId, new Date(), chatId, bot);
+                await bot.sendMessage(chatId, `Fund Accounting:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-accounting-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // INVESTOR REPORTING
+            if (query.includes('quarterly report') || query.includes('investor report') || query.includes('lp report')) {
+                const result = await generateQuarterlyReport(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Investor Report:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-reporting-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // COMPLIANCE MONITORING
+            if (query.includes('compliance') || query.includes('regulatory') || query.includes('compliance check')) {
+                const result = await performComplianceCheck(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Compliance Check:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-compliance-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // MARKET RESEARCH
+            if (query.includes('market research') || query.includes('market analysis') || query.includes('competitive analysis')) {
+                const result = await analyzeMarket('cambodia', { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Market Research:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-market-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // === 11 SPECIALIZED HANDLER MODULES ===
+            
+            // CAMBODIA DEALS
+            if (query.includes('deal') || query.includes('investment opportunity') || query.includes('deal analysis')) {
+                const result = await processCambodiaDeal({ dealType: 'analysis', query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Cambodia Deal Analysis:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-deals-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // LP MANAGEMENT
+            if (query.includes('limited partner') || query.includes('lp management') || query.includes('investor management')) {
+                const result = await manageLimitedPartners({ lpName: 'Query', query: userMessage }, 'analyze', chatId, bot);
+                await bot.sendMessage(chatId, `LP Management:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-lp-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // PORTFOLIO MANAGEMENT
+            if (query.includes('portfolio') || query.includes('portfolio optimization') || query.includes('asset allocation')) {
+                const result = await optimizePortfolio(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Portfolio Analysis:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-portfolio-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // REAL ESTATE WEALTH
+            if (query.includes('real estate') || query.includes('property') || query.includes('real estate valuation')) {
+                const result = await valuateRealEstate(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Real Estate Analysis:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-realestate-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // BUSINESS WEALTH
+            if (query.includes('business valuation') || query.includes('company value') || query.includes('business analysis')) {
+                const result = await valuateBusiness(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Business Valuation:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-business-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // INVESTMENT WEALTH
+            if (query.includes('investment portfolio') || query.includes('investment analysis') || query.includes('asset management')) {
+                const result = await manageInvestmentPortfolio(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Investment Analysis:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-investment-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // ECONOMIC INTELLIGENCE
+            if (query.includes('economic conditions') || query.includes('economic analysis') || query.includes('economic forecast')) {
+                const result = await analyzeEconomicConditions('cambodia', { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Economic Intelligence:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-economic-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // LEGAL REGULATORY
+            if (query.includes('legal') || query.includes('regulatory compliance') || query.includes('legal risk')) {
+                const result = await checkRegulatoryCompliance(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Legal Analysis:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-legal-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // AGRICULTURAL WEALTH
+            if (query.includes('agricultural') || query.includes('farming') || query.includes('crop') || query.includes('agriculture')) {
+                const result = await valuateAgriculturalAssets(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Agricultural Analysis:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-agriculture-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // RESOURCES WEALTH
+            if (query.includes('natural resources') || query.includes('commodities') || query.includes('mining') || query.includes('resources')) {
+                const result = await valuateNaturalResources(chatId, { query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Resources Analysis:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-resources-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // === CAMBODIA LENDING UTILITY ===
+            
+            // CAMBODIA LENDING
+            if (query.includes('lending transaction') || query.includes('validate lending') || query.includes('lending data')) {
+                const result = await processLendingTransaction({ query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Lending Transaction:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-lending-utility', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // === 6 TRADING & GLOBAL MODULES ===
+            
+            // TRADING OPERATIONS
+            if (query.includes('execute trade') || query.includes('trading portfolio') || query.includes('trading costs')) {
+                const result = await executeCambodiaTrade({ symbol: 'QUERY', query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Trading Operations:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-trading-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // CLIENT ONBOARDING
+            if (query.includes('client onboarding') || query.includes('kyc') || query.includes('client qualification')) {
+                const result = await initiateClientOnboarding({ personalDetails: { name: 'Query' }, query: userMessage }, chatId, bot);
+                await bot.sendMessage(chatId, `Client Onboarding:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-onboarding-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // FOREX TRADING
+            if (query.includes('forex') || query.includes('currency') || query.includes('fx trading')) {
+                const result = await analyzeForexOpportunity('USD/KHR', 'comprehensive', chatId, bot);
+                await bot.sendMessage(chatId, `Forex Analysis:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-forex-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // CRYPTO TRADING
+            if (query.includes('crypto') || query.includes('bitcoin') || query.includes('cryptocurrency')) {
+                const result = await analyzeCryptoOpportunity('BTC', 'comprehensive', chatId, bot);
+                await bot.sendMessage(chatId, `Crypto Analysis:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-crypto-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // STOCK TRADING
+            if (query.includes('stock') || query.includes('equity') || query.includes('shares')) {
+                const result = await analyzeStock('QUERY', 'comprehensive', chatId, bot);
+                await bot.sendMessage(chatId, `Stock Analysis:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-stock-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+            // GLOBAL MARKETS
+            if (query.includes('global markets') || query.includes('international') || query.includes('global portfolio')) {
+                const result = await analyzeGlobalMarketConditions(chatId, bot);
+                await bot.sendMessage(chatId, `Global Markets:\n${JSON.stringify(result, null, 2)}`);
+                await saveConversationEmergency(chatId, userMessage, JSON.stringify(result), { aiUsed: 'cambodia-global-module', processingTime: Date.now() - startTime });
+                return;
+            }
+            
+        } catch (error) {
+            console.error('Cambodia module routing error:', error);
+            await bot.sendMessage(chatId, `Module processing error: ${error.message}`);
+            return;
+        }
+    }
+    
+    // (multimodal detection, commands, etc.)
     // 🎨 MULTIMODAL CONTENT DETECTION
     const hasPhoto = !!msg.photo;
     const hasDocument = !!msg.document;
