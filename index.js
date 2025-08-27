@@ -3459,22 +3459,17 @@ async function handleSystemHealth(msg, bot) {
         const healthEmoji = health.healthGrade === 'A+' ? '🟢' : 
                            health.healthGrade === 'A' ? '🟡' : '🔴';
         
-// 🎨 MULTIMODAL INTEGRATION
-let multimodal = {};
-try {
-    multimodal = require('./utils/multimodal');
-    console.log('✅ Multimodal module loaded');
-} catch (error) {
-    console.warn('⚠️ Multimodal module not available:', error.message);
-    multimodal = {
-        analyzeImage: async () => ({ success: false, error: 'Multimodal not available' }),
-        analyzeDocument: async () => ({ success: false, error: 'Multimodal not available' }),
-        analyzeVideo: async () => ({ success: false, error: 'Multimodal not available' }),
-        analyzeVoice: async () => ({ success: false, error: 'Multimodal not available' }),
-        analyzeAudio: async () => ({ success: false, error: 'Multimodal not available' }),
-        analyzeVideoNote: async () => ({ success: false, error: 'Multimodal not available' })
-    };
-}
+        // Test multimodal system
+        let multimodalStatus = false;
+        try {
+            multimodalStatus = typeof multimodal.analyzeImage === 'function' &&
+                              typeof multimodal.analyzeDocument === 'function' &&
+                              typeof multimodal.analyzeVoice === 'function';
+            console.log(`✅ Multimodal system: ${multimodalStatus ? 'Available' : 'Limited'}`);
+        } catch (error) {
+            console.log('❌ Multimodal system unavailable');
+        }
+        
         
         const healthMessage = `🏥 **GPT-5 SYSTEM HEALTH REPORT**
 
