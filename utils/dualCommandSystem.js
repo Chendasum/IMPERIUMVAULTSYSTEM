@@ -1305,12 +1305,57 @@ function getSystemAnalytics() {
     };
 }
 
-// ENHANCED FUNCTIONS FOR GPT-5 INTEGRATION
+// ENHANCED FUNCTIONS FOR GPT-5 INTEGRATION - FIXED MEMORY CONTEXT
 async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
     try {
-        console.log('Executing enhanced GPT-5 command...');
+        console.log('Executing enhanced GPT-5 command with memory integration...');
         
-        const result = await executeDualCommand(userMessage, chatId, options);
+        // Enhanced completion detection with memory awareness
+        let memoryContext = '';
+        
+        // Build memory context to check for completed tasks
+        try {
+            if (memory && typeof memory.buildConversationContext === 'function') {
+                memoryContext = await memory.buildConversationContext(chatId);
+                console.log(`Memory context built: ${memoryContext.length} chars`);
+                
+                // Enhanced completion detection using memory
+                if (memoryContext) {
+                    const completionCheck = detectCompletionStatus(userMessage, memoryContext);
+                    if (completionCheck.shouldSkipGPT5) {
+                        console.log('Completion detected from memory context');
+                        
+                        const completionResponse = generateCompletionResponse(completionCheck, userMessage);
+                        
+                        if (bot) {
+                            await bot.sendMessage(chatId, completionResponse);
+                        }
+                        
+                        return {
+                            success: true,
+                            response: completionResponse,
+                            aiUsed: 'completion-detection',
+                            completionDetected: true,
+                            memoryUsed: true,
+                            contextUsed: true,
+                            telegramDelivered: true
+                        };
+                    }
+                }
+            }
+        } catch (memoryError) {
+            console.warn('Memory context building failed:', memoryError.message);
+        }
+        
+        // Pass memory context and enhanced options to executeDualCommand
+        const enhancedOptions = {
+            ...options,
+            memoryContext: memoryContext,
+            enhanceCompletionDetection: true,
+            projectAwareMemory: true
+        };
+        
+        const result = await executeDualCommand(userMessage, chatId, enhancedOptions);
         
         // Automatic Telegram delivery if bot provided
         if (bot && result.success) {
@@ -1356,7 +1401,8 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
 
 async function quickGPT5Command(message, chatId, bot = null, model = 'auto') {
     const options = { 
-        title: `Quick GPT-5 ${model.toUpperCase()} Response`
+        title: `Quick GPT-5 ${model.toUpperCase()} Response`,
+        preserveMemoryContext: true  // Ensure memory context is preserved
     };
     
     if (model !== 'auto') {
@@ -1378,11 +1424,61 @@ async function quickUltimateCommand(message, chatId, bot = null) {
     return await quickGPT5Command(message, chatId, bot, 'gpt-5');
 }
 
-console.log('GPT-5 Only System loaded (v5.2 - NORMAL CONVERSATION FIXED)');
+// Enhanced completion detection with project awareness
+function enhancedCompletionDetection(message, memoryContext) {
+    const messageText = message.toLowerCase();
+    const contextText = memoryContext.toLowerCase();
+    
+    // Project completion indicators
+    const projectCompletionPatterns = [
+        /built.*already|already.*built|system.*ready|deployment.*complete/i,
+        /done.*building|finished.*building|completed.*setup/i,
+        /working.*now|operational.*now|live.*system|running.*production/i,
+        /no.*need.*build|don't.*need.*build|unnecessary.*rebuild/i,
+        /told.*you.*ready|mentioned.*complete|discussed.*finished/i
+    ];
+    
+    // Look for specific project references in memory
+    const hasProjectCompletion = projectCompletionPatterns.some(pattern => 
+        pattern.test(messageText) || pattern.test(contextText)
+    );
+    
+    // Check if user is expressing frustration about repetition
+    const frustrationPatterns = [
+        /why.*ask.*again|keep.*asking|always.*same|repetitive/i,
+        /already.*told|mentioned.*before|discussed.*already/i,
+        /stop.*asking|don't.*ask.*again|understand.*done/i
+    ];
+    
+    const hasFrustration = frustrationPatterns.some(pattern => pattern.test(messageText));
+    
+    return {
+        hasProjectCompletion,
+        hasFrustration,
+        shouldAcknowledge: hasProjectCompletion || hasFrustration,
+        contextHasCompletion: projectCompletionPatterns.some(pattern => pattern.test(contextText))
+    };
+}
+
+// Project-aware completion responses
+function generateProjectAwareResponse(completionInfo, originalMessage) {
+    if (completionInfo.hasFrustration) {
+        return "You're absolutely right - I apologize for asking about rebuilding something that's already complete. Let's focus on what you need help with next or any new priorities for your project.";
+    }
+    
+    if (completionInfo.hasProjectCompletion || completionInfo.contextHasCompletion) {
+        return "I understand the system/project is already built and operational. What would you like to work on next, or how can I assist with your current priorities?";
+    }
+    
+    return "Got it! Since that's already handled, what's the next task or area you'd like to focus on?";
+}
+
+console.log('GPT-5 Only System loaded (v5.3 - ENHANCED MEMORY INTEGRATION)');
 console.log('Clean flow: index.js → dualCommandSystem.js → openaiClient.js');
-console.log('FIXED: Hello and normal messages now work properly');
+console.log('FIXED: Memory-aware completion detection to prevent rebuild suggestions');
 console.log('Memory testing only runs when explicitly requested');
 console.log('GPT-5 Family: Nano → Mini → Full → Chat');
+console.log('Enhanced project completion awareness active');
 
 module.exports = {
     executeDualCommand,
@@ -1407,6 +1503,12 @@ module.exports = {
     getGPT5ModelRecommendation,
     getGPT5CostEstimate,
     getGPT5PerformanceMetrics,
+    
+    // Enhanced functions for project awareness
+    enhancedCompletionDetection,
+    generateProjectAwareResponse,
+    
+    // Legacy compatibility
     executeGptAnalysis: (msg, analysis, ctx, mem) => executeThroughGPT5System(msg, {...analysis, bestAI: 'gpt'}, ctx, mem),
     executeClaudeAnalysis: (msg, analysis, ctx, mem) => executeThroughGPT5System(msg, {...analysis, bestAI: 'gpt'}, ctx, mem),
     routeConversationIntelligently: analyzeQuery
