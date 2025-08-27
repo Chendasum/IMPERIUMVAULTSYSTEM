@@ -144,6 +144,14 @@ const investorReporting = require('./cambodia/investorReporting');
 const complianceMonitoring = require('./cambodia/complianceMonitoring');
 const marketResearch = require('./cambodia/marketResearch');
 
+// 📈 NEW 6 TRADING & GLOBAL MODULES
+const tradingOperations = require('./cambodia/tradingOperations');
+const clientOnboarding = require('./cambodia/clientOnboarding');
+const forexTrading = require('./cambodia/forexTrading');
+const cryptoTrading = require('./cambodia/cryptoTrading');
+const stockTrading = require('./cambodia/stockTrading');
+const globalMarkets = require('./cambodia/globalMarkets');
+
 // 📈 NEW TRADING MODULES (Conditional Loading)
 let tradingOperations, clientOnboarding, forexTrading, cryptoTrading, stockTrading, globalMarkets;
 let tradingModulesLoaded = 0;
