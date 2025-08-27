@@ -501,11 +501,11 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
         // Build enhanced message with context
         let enhancedMessage = userMessage;
         
-        // Add time context for non-speed queries
-        if (queryAnalysis.priority !== 'speed' && queryAnalysis.priority !== 'casual') {
-            const globalTime = getCurrentGlobalDateTime();
-            enhancedMessage = `Current time: ${globalTime.cambodia.date}, ${globalTime.cambodia.time} Cambodia | NY: ${globalTime.newYork.time} | London: ${globalTime.london.time}\n\n${userMessage}`;
-        }
+// Add Cambodia time context for non-speed queries
+if (queryAnalysis.priority !== 'speed' && queryAnalysis.priority !== 'casual') {
+    const cambodiaTime = getCurrentCambodiaDateTime();
+    enhancedMessage = `Current time: ${cambodiaTime.date}, ${cambodiaTime.time} Cambodia (${cambodiaTime.timezone})\nBusiness hours: ${!cambodiaTime.isWeekend && cambodiaTime.hour >= 8 && cambodiaTime.hour <= 17 ? 'Yes' : 'No'}\n\n${userMessage}`;
+}
         
         // Add memory context with size limits
         if (queryAnalysis.memoryImportant && context && context.length > 0) {
