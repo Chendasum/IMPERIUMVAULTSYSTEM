@@ -236,7 +236,7 @@ function getCurrentGlobalDateTime() {
     }
 }
 
-// GPT-5 QUERY ANALYSIS
+// GPT-5 QUERY ANALYSIS with Smart Retry Logic
 function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memoryContext = null) {
     const message = userMessage.toLowerCase();
     
@@ -270,20 +270,25 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         /^(thanks|thank you|cool|nice|great|ok|okay)$/i
     ];
     
-    // Complex analysis patterns - Use Full GPT-5
+    // Complex analysis patterns - Use Full GPT-5 WITH RETRY
     const complexPatterns = [
         /(strategy|strategic|comprehensive|detailed|thorough|in-depth)/i,
         /(analyze|evaluate|assess|examine|investigate|research)/i,
         /(portfolio|allocation|risk|optimization|diversification)/i,
-        /(complex|sophisticated|multi-factor|multi-dimensional)/i
+        /(complex|sophisticated|multi-factor|multi-dimensional)/i,
+        /(build|create|develop|implement|construct|design)/i,
+        /(plan|planning|framework|structure|architecture)/i,
+        /(write.*comprehensive|detailed.*report|full.*analysis)/i
     ];
     
-    // Math/coding patterns - Use Full GPT-5 with high reasoning
+    // Math/coding patterns - Use Full GPT-5 WITH RETRY
     const mathCodingPatterns = [
         /(calculate|compute|formula|equation|algorithm|optimization)/i,
         /(code|coding|program|script|debug|software|api)/i,
         /(mathematical|statistical|probability|regression|correlation)/i,
-        /(machine learning|ai|neural network|deep learning)/i
+        /(machine learning|ai|neural network|deep learning)/i,
+        /(backtest|monte carlo|var|sharpe|sortino|calmar)/i,
+        /(dcf|npv|irr|wacc|capm|black.*scholes)/i
     ];
     
     // Cambodia/regional patterns - Use GPT-5 Mini
@@ -313,7 +318,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     const hasMemoryReference = memoryPatterns.some(pattern => pattern.test(message));
     const hasMemoryContext = memoryContext && memoryContext.length > 100;
     
-    // GPT-5 MODEL SELECTION LOGIC
+    // GPT-5 MODEL SELECTION LOGIC WITH SMART RETRY
     let gpt5Config = {
         model: 'gpt-5-mini',
         reasoning_effort: 'medium',
@@ -321,10 +326,11 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         max_completion_tokens: 8000,
         temperature: 0.7,
         priority: 'standard',
-        reason: 'GPT-5 Mini - Balanced performance'
+        reason: 'GPT-5 Mini - Balanced performance',
+        maxRetries: 0  // Default: no retries for simple queries
     };
     
-    // PRIORITY 1: SPEED CRITICAL - GPT-5 Nano
+    // PRIORITY 1: SPEED CRITICAL - GPT-5 Nano (no retry needed)
     if (speedPatterns.some(pattern => pattern.test(message))) {
         gpt5Config = {
             model: 'gpt-5-nano',
@@ -332,17 +338,19 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             verbosity: 'low',
             max_completion_tokens: 6000,
             priority: 'speed',
-            reason: 'Speed critical - GPT-5 Nano for fast response'
+            reason: 'Speed critical - GPT-5 Nano for fast response',
+            maxRetries: 0  // No retry for speed queries
         };
     }
-    // PRIORITY 2: CHAT PATTERNS - GPT-5 Chat model
+    // PRIORITY 2: CHAT PATTERNS - GPT-5 Chat model (no retry needed)
     else if (chatPatterns.some(pattern => pattern.test(message))) {
         gpt5Config = {
             model: 'gpt-5-chat-latest',
             temperature: 0.7,
             max_completion_tokens: 8000,
             priority: 'chat',
-            reason: 'Chat pattern - GPT-5 Chat model'
+            reason: 'Chat pattern - GPT-5 Chat model',
+            maxRetries: 0  // No retry for chat
         };
     }
     // PRIORITY 3: CAMBODIA/REGIONAL - GPT-5 Mini
@@ -354,7 +362,8 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             max_completion_tokens: 10000,
             temperature: 0.6,
             priority: 'regional',
-            reason: 'Cambodia/regional analysis - GPT-5 Mini with detailed output'
+            reason: 'Cambodia/regional analysis - GPT-5 Mini with detailed output',
+            maxRetries: 0  // No retry for regional queries
         };
     }
     // PRIORITY 4: MARKET ANALYSIS - GPT-5 Mini
@@ -366,10 +375,11 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             max_completion_tokens: 8000,
             temperature: 0.6,
             priority: 'market',
-            reason: 'Market analysis - GPT-5 Mini for balanced performance'
+            reason: 'Market analysis - GPT-5 Mini for balanced performance',
+            maxRetries: 0  // No retry for market queries
         };
     }
-    // PRIORITY 5: MATH/CODING - Full GPT-5 with maximum precision
+    // PRIORITY 5: MATH/CODING - Full GPT-5 with RETRY ENABLED
     else if (mathCodingPatterns.some(pattern => pattern.test(message))) {
         gpt5Config = {
             model: 'gpt-5',
@@ -378,10 +388,11 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             max_completion_tokens: 12000,
             temperature: 0.3,
             priority: 'mathematical',
-            reason: 'Mathematical/coding precision - Full GPT-5 with high reasoning'
+            reason: 'Mathematical/coding precision - Full GPT-5 with retry',
+            maxRetries: 2  // Enable retry for complex math/coding
         };
     }
-    // PRIORITY 6: COMPLEX ANALYSIS - Full GPT-5
+    // PRIORITY 6: COMPLEX ANALYSIS - Full GPT-5 with RETRY ENABLED
     else if (complexPatterns.some(pattern => pattern.test(message))) {
         gpt5Config = {
             model: 'gpt-5',
@@ -390,10 +401,11 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             max_completion_tokens: 16000,
             temperature: 0.6,
             priority: 'complex',
-            reason: 'Complex strategic analysis - Full GPT-5 with high reasoning'
+            reason: 'Complex strategic analysis - Full GPT-5 with retry',
+            maxRetries: 2  // Enable retry for complex analysis
         };
     }
-    // PRIORITY 7: MULTIMODAL - Full GPT-5
+    // PRIORITY 7: MULTIMODAL - Full GPT-5 with RETRY ENABLED
     else if (hasMedia || messageType !== 'text') {
         gpt5Config = {
             model: 'gpt-5',
@@ -402,7 +414,8 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             max_completion_tokens: 10000,
             temperature: 0.7,
             priority: 'multimodal',
-            reason: 'Multimodal content - Full GPT-5 for vision analysis'
+            reason: 'Multimodal content - Full GPT-5 for vision analysis with retry',
+            maxRetries: 1  // Enable retry for multimodal
         };
     }
     
@@ -418,6 +431,11 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     if (queryComplexity.isVeryComplex) {
         gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.3, 16000);
         gpt5Config.reason += ' (Scaled for complexity)';
+        // Enable retry for very complex queries regardless of pattern
+        if (gpt5Config.maxRetries === 0) {
+            gpt5Config.maxRetries = 1;
+            gpt5Config.reason += ' (Retry enabled for complexity)';
+        }
     }
     
     const longResponsePatterns = [
@@ -430,6 +448,11 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     if (longResponsePatterns.some(pattern => pattern.test(message))) {
         gpt5Config.max_completion_tokens = 16000;
         gpt5Config.reason += ' (Long response requested)';
+        // Enable retry for long response requests
+        if (gpt5Config.maxRetries === 0) {
+            gpt5Config.maxRetries = 1;
+            gpt5Config.reason += ' (Retry enabled for long response)';
+        }
     }
     
     return {
@@ -442,11 +465,18 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         max_completion_tokens: gpt5Config.max_completion_tokens,
         temperature: gpt5Config.temperature,
         priority: gpt5Config.priority,
+        maxRetries: gpt5Config.maxRetries,  // Include retry setting in return
+        
+        // Completion detection results
         isComplete: false,
         completionStatus: completionStatus,
         shouldSkipGPT5: false,
+        
+        // Memory and context
         memoryImportant: hasMemoryReference || hasMemoryContext || gpt5Config.priority === 'complex',
         needsLiveData: gpt5Config.priority === 'complex' || gpt5Config.priority === 'market',
+        
+        // Classification
         complexity: gpt5Config.priority === 'complex' ? 'high' : 
                    gpt5Config.priority === 'speed' ? 'low' : 'medium',
         powerSystemPreference: `GPT5_${gpt5Config.priority.toUpperCase()}`
