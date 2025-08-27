@@ -302,7 +302,7 @@ async function analyzeDocument(bot, document, prompt, chatId) {
     }
 }
 
-// VOICE ANALYSIS (Transcription + Analysis)
+// VOICE ANALYSIS with Whisper API integration
 async function analyzeVoice(bot, voice, prompt, chatId) {
     let tempFilePath = null;
     
@@ -311,46 +311,73 @@ async function analyzeVoice(bot, voice, prompt, chatId) {
             throw new Error('OpenAI client not available');
         }
         
-        console.log('Starting voice analysis...');
+        console.log('Starting voice transcription and analysis...');
         
         // Download voice file
         const filename = generateTempFilename('voice', 'ogg');
         tempFilePath = await downloadTelegramFile(bot, voice.file_id, filename);
         
-        // For now, we'll send a placeholder response
-        // Full voice transcription would require Whisper API integration
-        const analysis = "Voice message received. Transcription and analysis capabilities are being developed. Please send text messages for full GPT-5 analysis.";
+        // Convert to supported format if needed and transcribe
+        const transcription = await openaiClient.openai.audio.transcriptions.create({
+            file: require('fs').createReadStream(tempFilePath),
+            model: 'whisper-1',
+            language: 'en' // or detect automatically
+        });
         
+        const transcribedText = transcription.text;
+        console.log(`Voice transcribed: ${transcribedText.length} chars`);
+        
+        // Analyze transcription with GPT-5
+        const analysisPrompt = `${prompt || 'Analyze this transcribed voice message'}\n\nTranscribed text: "${transcribedText}"`;
+        
+        const analysis = await openaiClient.getGPT5Analysis(analysisPrompt, {
+            model: 'gpt-5-mini',
+            max_completion_tokens: 2000,
+            reasoning_effort: 'medium'
+        });
+        
+        const fullResponse = `**Transcription:**\n${transcribedText}\n\n**Analysis:**\n${analysis}`;
+        
+        // Send response
         const success = await telegramSplitter.sendGPTResponse(
             bot,
             chatId,
-            analysis,
-            'Voice Analysis (Limited)',
+            fullResponse,
+            'Voice Transcription & Analysis',
             {
                 type: 'voice_analysis',
                 duration: voice.duration,
-                aiUsed: 'voice-placeholder'
+                transcriptionLength: transcribedText.length,
+                aiUsed: 'Whisper + GPT-5'
             }
         );
         
         return {
             success: true,
             type: 'voice',
-            analysis: analysis,
-            aiUsed: 'voice-placeholder',
+            analysis: fullResponse,
+            transcription: transcribedText,
+            aiUsed: 'Whisper + GPT-5',
             duration: voice.duration,
-            telegramDelivered: success,
-            transcription: null
+            telegramDelivered: success
         };
         
     } catch (error) {
         console.error('Voice analysis error:', error.message);
         
-        await telegramSplitter.sendAlert(
+        // Fallback to placeholder if Whisper fails
+        const fallbackMessage = `Voice message received (${voice.duration}s). Transcription temporarily unavailable. Please send text for full GPT-5 analysis.`;
+        
+        await telegramSplitter.sendGPTResponse(
             bot,
             chatId,
-            `Voice analysis failed: ${error.message}`,
-            'Voice Analysis Error'
+            fallbackMessage,
+            'Voice Analysis (Limited)',
+            {
+                type: 'voice_fallback',
+                duration: voice.duration,
+                error: error.message
+            }
         );
         
         return {
