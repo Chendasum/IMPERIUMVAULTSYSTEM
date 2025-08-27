@@ -2740,7 +2740,7 @@ try {
     console.log('✅ multimodal module loaded');
 } catch (error) {
     console.log('⚠️ multimodal module not found');
-    multimodal = null;  // Set to null, not an object with null properties
+    multimodal = null;  // Set to null instead of empty object
 }
 
 // 🎮 COMMAND HANDLERS MAP - GPT-5 Optimized
@@ -2784,17 +2784,39 @@ const commandHandlers = {
     '/backup': handleForceBackup
 };
 
+// 💾 MESSAGE DEDUPLICATION - Prevent duplicate processing
+const processedMessages = new Set();
+
+// Cleanup old processed messages every 5 minutes
+setInterval(() => {
+    processedMessages.clear();
+    console.log('🧹 Cleared processed messages cache');
+}, 300000);
+
 // Helper function to check if multimodal is available
 function isMultimodalAvailable() {
-    return multimodal && multimodal.processVoiceMessage && multimodal.processImageMessage;
+    return multimodal && typeof multimodal.analyzeImage === 'function';
 }
 
-// 🌐 WEBHOOK ENDPOINT - Main message handler
+// 🌐 WEBHOOK ENDPOINT - Main message handler with deduplication
 app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
     const startTime = Date.now();
     
     try {
         const update = req.body;
+        
+        // Deduplication check for messages
+        if (update.message) {
+            const messageId = update.message.message_id;
+            const chatId = update.message.chat.id;
+            const dedupeKey = `${chatId}_${messageId}`;
+            
+            if (processedMessages.has(dedupeKey)) {
+                console.log(`🔄 Duplicate message detected: ${dedupeKey} - Skipping`);
+                return res.status(200).json({ ok: true });
+            }
+            processedMessages.add(dedupeKey);
+        }
         
         // Handle different update types
         if (update.message) {
