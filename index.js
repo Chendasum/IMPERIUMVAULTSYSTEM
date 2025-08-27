@@ -2017,15 +2017,17 @@ async function handleMemoryTest(msg, bot) {
         console.log('🧪 Running memory integration test...');
         const memoryTest = await testMemoryIntegration(chatId);
         
+        // FIX: Escape the emoji and format properly
         const statusEmoji = memoryTest.status === 'FULL_SUCCESS' ? '🟢' : 
                            memoryTest.status === 'MOSTLY_WORKING' ? '🟡' : '🔴';
         
-        const memoryMessage = `🧪 **MEMORY INTEGRATION TEST**
+        // FIX: Use template literals properly and escape markdown
+        const memoryMessage = `🧪 MEMORY INTEGRATION TEST
 
-${statusEmoji} **Overall Result:** ${memoryTest.status}
-📊 **Score:** ${memoryTest.score} (${memoryTest.percentage}%)
+${statusEmoji} Overall Result: ${memoryTest.status}
+📊 Score: ${memoryTest.score} (${memoryTest.percentage}%)
 
-🧠 **Test Results:**
+🧠 Test Results:
 ${memoryTest.tests.postgresqlConnection ? '✅' : '❌'} PostgreSQL Connection
 ${memoryTest.tests.conversationHistory ? '✅' : '❌'} Conversation History
 ${memoryTest.tests.persistentMemory ? '✅' : '❌'} Persistent Memory
@@ -2034,19 +2036,19 @@ ${memoryTest.tests.gpt5WithMemory ? '✅' : '❌'} GPT-5 + Memory Integration
 ${memoryTest.tests.gpt5ModelSelection ? '✅' : '❌'} Smart Model Selection
 ${memoryTest.tests.telegramIntegration ? '✅' : '❌'} Telegram Integration
 
-🎯 **System Integration:**
+🎯 System Integration:
 PostgreSQL Connected: ${memoryTest.postgresqlIntegrated ? '✅' : '❌'}
 Memory System Active: ${memoryTest.memorySystemIntegrated ? '✅' : '❌'}
 GPT-5 Only Mode: ${memoryTest.gpt5OnlyMode ? '✅' : '❌'}
 
-⏰ **Test Completed:** ${new Date().toLocaleString()}`;
+⏰ Test Completed: ${new Date().toLocaleString()}`;
 
-        await bot.sendMessage(chatId, memoryMessage, { parse_mode: 'Markdown' });
+        // FIX: Remove parse_mode or use HTML instead
+        await bot.sendMessage(chatId, memoryMessage);
         
     } catch (error) {
         await bot.sendMessage(chatId, 
-            `❌ Memory test failed: ${error.message}\n\n` +
-            `This suggests PostgreSQL or memory system issues.`
+            `❌ Memory test failed: ${error.message}\n\nThis suggests PostgreSQL or memory system issues.`
         );
     }
 }
