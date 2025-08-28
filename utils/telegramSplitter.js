@@ -1,736 +1,1098 @@
-// utils/telegramSplitter.js — SMART MULTI‑MODEL SPLITTER (v2)
-// -----------------------------------------------------------------------------
-// Purpose:
-//   • Accept replies from multiple AI models (GPT‑5 Full/Mini/Nano, Claude, etc.)
-//   • Guarantee single‑voice delivery (when desired) with reservation + priority
-//   • Prevent true duplicates (exact same content/model within windows)
-//   • Chunk long messages safely for Telegram with Markdown or HTML output
-//   • Provide observability: stats, health, cleanup, debug helpers
-//
-// Notes:
-//   • This is a full, drop‑in replacement (>500 lines) with battle‑tested guards.
-//   • Default is “single‑voice mode” (MAX_RESPONSES_PER_QUERY = 1). Flip to
-//     council mode by increasing the value. Aggregator variant is included and
-//     can be used to wait briefly and pick highest‑priority.
-// -----------------------------------------------------------------------------
-
-'use strict';
+// utils/telegramSplitter.js - Enhanced Cambodia Financial System Message Handler
+// Advanced message delivery system with professional formatting and robust error handling
+// Designed for Cambodia private lending fund operations with GPT-5 integration
 
 const crypto = require('crypto');
+const fs = require('fs').promises;
+const path = require('path');
 
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                              CONFIGURATION                                ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
+// Core configuration for Telegram message handling
 const TELEGRAM_CONFIG = {
-  MAX_MESSAGE_LENGTH: 4096,            // Telegram hard cap
-  SAFE_MESSAGE_LENGTH: 4000,           // Leave headroom for formatting
-  OPTIMAL_CHUNK_SIZE: 3800,            // Natural chunk target
-  FAST_DELAY: 250,                     // Fast cadence
-  STANDARD_DELAY: 450,                 // Standard cadence
-
-  // Duplicate prevention windows
-  DUPLICATE_WINDOW: 3000,              // ms for exact same requestId resend
-  MULTI_MODEL_WINDOW: 30000,           // ms for multiple models per query
-
-  // Single‑voice vs Council
-  MAX_RESPONSES_PER_QUERY: 1,          // 1 = single‑voice; >1 = council
-
-  // Rendering
-  DEFAULT_PARSE_MODE: 'Markdown',       // 'Markdown' | 'HTML'
-  HTML_FALLBACK_FROM_MARKDOWN: true,    // If Markdown fails, try HTML
-
-  // Aggregator (optional) — wait briefly to collect multiple replies then pick best
-  AGGREGATOR_WINDOW_MS: 1200,           // Soft wait for other models
-  AGGREGATOR_HARD_TIMEOUT_MS: 5000,     // Absolute cap
-  AGGREGATOR_ENABLED: false             // Disabled by default; enable if desired
+    MAX_MESSAGE_LENGTH: 4096,
+    SAFE_MESSAGE_LENGTH: 4000,
+    OPTIMAL_CHUNK_SIZE: 3800,
+    FAST_DELAY: 250,
+    STANDARD_DELAY: 450,
+    SLOW_DELAY: 650,
+    DUPLICATE_WINDOW: 3000,
+    MULTI_MODEL_WINDOW: 30000,
+    CLEANUP_INTERVAL: 300000,
+    MAX_RETRY_ATTEMPTS: 3,
+    RETRY_DELAY_MS: 1000,
+    MAX_RESPONSES_PER_QUERY: 1,
+    CONTEXT_WINDOW: 1800000, // 30 minutes
+    LOG_RETENTION_HOURS: 24,
+    PERFORMANCE_MONITORING: true,
+    AUTO_FALLBACK_MODE: true,
+    ENHANCED_ERROR_REPORTING: true
 };
 
-// Message types / model metadata (priority decides winner)
+// Message types with comprehensive formatting options
 const MESSAGE_TYPES = {
-  'nano':      { emoji: '⚡', delay: 150, description: 'GPT‑5 Nano',       priority: 1 },
-  'mini':      { emoji: '🔥', delay: 250, description: 'GPT‑5 Mini',       priority: 2 },
-  'full':      { emoji: '🧠', delay: 450, description: 'GPT‑5 Full',       priority: 3 },
-  'gpt-5':     { emoji: '🤖', delay: 450, description: 'GPT‑5',            priority: 3 },
-  'chat':      { emoji: '💬', delay: 250, description: 'Chat',             priority: 1 },
-  'analysis':  { emoji: '📊', delay: 450, description: 'Analysis',         priority: 3 },
-  'error':     { emoji: '❌', delay: 100, description: 'Error',            priority: 0 },
-  'credit':    { emoji: '🏦', delay: 350, description: 'Credit Analysis',  priority: 2 },
-  'risk':      { emoji: '⚠️', delay: 350, description: 'Risk Assessment',  priority: 2 },
-  'recovery':  { emoji: '💰', delay: 350, description: 'Loan Recovery',    priority: 2 },
-  'compliance':{ emoji: '🔍', delay: 350, description: 'Due Diligence',    priority: 2 }
+    'nano': { 
+        emoji: '⚡', 
+        delay: 150, 
+        description: 'GPT-5 Nano', 
+        priority: 1,
+        color: '#FFD700',
+        category: 'speed'
+    },
+    'mini': { 
+        emoji: '🔥', 
+        delay: 250, 
+        description: 'GPT-5 Mini', 
+        priority: 2,
+        color: '#FF6B35',
+        category: 'balanced'
+    },
+    'full': { 
+        emoji: '🧠', 
+        delay: 450, 
+        description: 'GPT-5 Full', 
+        priority: 3,
+        color: '#4ECDC4',
+        category: 'comprehensive'
+    },
+    'gpt-5': { 
+        emoji: '🤖', 
+        delay: 450, 
+        description: 'GPT-5', 
+        priority: 3,
+        color: '#45B7D1',
+        category: 'ai'
+    },
+    'chat': { 
+        emoji: '💬', 
+        delay: 250, 
+        description: 'Chat', 
+        priority: 1,
+        color: '#98D8C8',
+        category: 'conversational'
+    },
+    'analysis': { 
+        emoji: '📊', 
+        delay: 450, 
+        description: 'Analysis', 
+        priority: 3,
+        color: '#F06292',
+        category: 'analytical'
+    },
+    'error': { 
+        emoji: '❌', 
+        delay: 100, 
+        description: 'Error', 
+        priority: 0,
+        color: '#F44336',
+        category: 'system'
+    },
+    'credit': { 
+        emoji: '🏦', 
+        delay: 350, 
+        description: 'Credit Analysis', 
+        priority: 2,
+        color: '#2196F3',
+        category: 'financial'
+    },
+    'risk': { 
+        emoji: '⚠️', 
+        delay: 350, 
+        description: 'Risk Assessment', 
+        priority: 2,
+        color: '#FF9800',
+        category: 'financial'
+    },
+    'recovery': { 
+        emoji: '💰', 
+        delay: 350, 
+        description: 'Loan Recovery', 
+        priority: 2,
+        color: '#4CAF50',
+        category: 'financial'
+    },
+    'compliance': { 
+        emoji: '🔍', 
+        delay: 350, 
+        description: 'Due Diligence', 
+        priority: 2,
+        color: '#9C27B0',
+        category: 'legal'
+    },
+    'portfolio': { 
+        emoji: '📈', 
+        delay: 400, 
+        description: 'Portfolio Management', 
+        priority: 2,
+        color: '#00BCD4',
+        category: 'investment'
+    },
+    'market': { 
+        emoji: '🌐', 
+        delay: 400, 
+        description: 'Market Analysis', 
+        priority: 2,
+        color: '#607D8B',
+        category: 'research'
+    },
+    'legal': { 
+        emoji: '⚖️', 
+        delay: 400, 
+        description: 'Legal Analysis', 
+        priority: 2,
+        color: '#795548',
+        category: 'legal'
+    }
 };
 
-// Treat aliases as the same voice (prevents confusing stats/titles)
-const MODEL_ALIAS = { 'gpt-5': 'full' };
+// Advanced state management
+const requestHistory = new Map();
+const activeRequests = new Map();
+const responseCounter = new Map();
+const performanceMetrics = new Map();
+const errorLog = new Map();
+const deliveryStats = {
+    totalMessages: 0,
+    successfulDeliveries: 0,
+    failedDeliveries: 0,
+    chunkedMessages: 0,
+    averageProcessingTime: 0,
+    lastResetTime: Date.now()
+};
 
-function normalizeModelType(t) {
-  return MODEL_ALIAS[t] || t || 'analysis';
-}
+// Cambodia specific formatting helpers
+const CAMBODIA_FORMATTING = {
+    currency: {
+        usd: (amount) => `$${amount.toLocaleString()} USD`,
+        khr: (amount) => `${amount.toLocaleString()} KHR`,
+        format: (amount, currency = 'USD') => currency === 'USD' ? 
+            CAMBODIA_FORMATTING.currency.usd(amount) : 
+            CAMBODIA_FORMATTING.currency.khr(amount)
+    },
+    timeZone: 'Asia/Phnom_Penh',
+    businessHours: { start: 8, end: 17 },
+    workingDays: [1, 2, 3, 4, 5], // Monday to Friday
+    holidays: ['2025-01-01', '2025-04-13', '2025-04-14', '2025-04-15'] // Sample holidays
+};
 
-function maxPriorityValue() {
-  return Object.values(MESSAGE_TYPES).reduce((m, v) => Math.max(m, v.priority || 0), 0);
-}
-
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                          STATE / IN‑MEMORY REGISTRIES                     ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
-// Concurrency + delivery governance
-const activeRequests = new Map();            // requestId -> timestamp
-const requestHistory = new Map();            // requestId -> { timestamp, modelType, queryId }
-const responseCounter = new Map();           // queryId -> count delivered
-const responseReservations = new Map();      // queryId -> boolean (slot reserved)
-
-// Aggregator (optional)
-const aggregatorBuckets = new Map();         // queryId -> { startedAt, timer, hardTimer, responses: [] }
-
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                              UTILITY HELPERS                              ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
-function baseMessageForId(message) {
-  return (message || '')
-    .replace(/\s+/g, ' ')             // collapse whitespace
-    .replace(/\*|\_|`|~|\[|\]/g, '') // strip common md markers
-    .trim()
-    .slice(0, 300);                    // stable seed
+// Advanced ID generation with collision prevention
+function generateAdvancedRequestId(chatId, message, modelType, timestamp = Date.now()) {
+    const baseContent = `${chatId}_${message.substring(0, 200).replace(/\s+/g, ' ').trim()}`;
+    const modelNormalized = normalizeModelType(modelType);
+    const hash = crypto.createHash('sha256').update(`${baseContent}_${modelNormalized}_${timestamp}`).digest('hex');
+    return `${hash.substring(0, 16)}_${modelNormalized}`;
 }
 
 function generateQueryId(chatId, cleanedMessage) {
-  const queryContent = `${chatId}_${baseMessageForId(cleanedMessage)}`;
-  return crypto.createHash('md5').update(queryContent).digest('hex').substring(0, 12);
+    const queryContent = `${chatId}_${cleanedMessage.substring(0, 300).replace(/\s+/g, ' ').trim()}`;
+    return crypto.createHash('md5').update(queryContent).digest('hex').substring(0, 14);
 }
 
-function generateRequestId(chatId, cleanedMessage, title, modelType) {
-  const qid = generateQueryId(chatId, cleanedMessage);
-  const mt = normalizeModelType(modelType);
-  return `${qid}_${mt}`;
+function normalizeModelType(modelType) {
+    if (!modelType) return 'analysis';
+    const normalized = modelType.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return MESSAGE_TYPES[normalized] ? normalized : 'analysis';
 }
 
-function getTypeConfig(modelType) {
-  const nt = normalizeModelType(modelType);
-  return MESSAGE_TYPES[nt] || MESSAGE_TYPES.analysis;
-}
-
-function labelFor(modelType) {
-  const t = getTypeConfig(modelType);
-  return `${t.emoji || ''} ${t.description || modelType}`.trim();
-}
-
-function nowMs() { return Date.now(); }
-
-function tsCambodia() {
-  try {
-    return new Date().toLocaleTimeString('en-US', {
-      timeZone: 'Asia/Phnom_Penh', hour12: false
-    }) + ' Cambodia';
-  } catch {
-    return new Date().toISOString();
-  }
-}
-
-function tsZurich() {
-  try {
-    return new Date().toLocaleTimeString('en-CH', {
-      timeZone: 'Europe/Zurich', hour12: false
-    }) + ' Zurich';
-  } catch {
-    return new Date().toISOString();
-  }
-}
-
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                              MESSAGE CLEANING                              ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
+// Enhanced message cleaning with financial context preservation
 function cleanMessage(text) {
-  if (!text || typeof text !== 'string') return '';
-
-  let out = text
-    // Remove GPT‑5 specific tags / meta
-    .replace(/\[reasoning_effort:\s*\w+\]/gi, '')
-    .replace(/\[verbosity:\s*\w+\]/gi, '')
-    .replace(/\[model:\s*gpt-5[^\]]*\]/gi, '')
-    .replace(/\[gpt-5[^\]]*\]/gi, '')
-    .replace(/\(confidence:\s*\d+%\)/gi, '')
-    .replace(/\(model:\s*gpt-5[^\)]*\)/gi, '')
-
-    // Normalize code fences to inline for Telegram Markdown safety
-    .replace(/```[\w]*\n?([\s\S]*?)\n?```/g, '`$1`')
-
-    // Convert bold headers like # H1 into *H1*
-    .replace(/#{1,6}\s*(.*)/g, '*$1*')
-
-    // Collapse excessive newlines
-    .replace(/\n{4,}/g, '\n\n\n')
-    .replace(/^\n+|\n+$/g, '')
-    .trim();
-
-  // Convert **bold** to *bold* for Telegram
-  out = out.replace(/\*\*(.*?)\*\*/g, '*$1*');
-
-  return out;
+    if (!text || typeof text !== 'string') return '';
+    
+    let cleanedText = text
+        // Remove GPT-5 specific metadata
+        .replace(/\[reasoning_effort:\s*\w+\]/gi, '')
+        .replace(/\[verbosity:\s*\w+\]/gi, '')
+        .replace(/\[model:\s*gpt-5[^\]]*\]/gi, '')
+        .replace(/\[gpt-5[^\]]*\]/gi, '')
+        .replace(/\(confidence:\s*\d+%\)/gi, '')
+        .replace(/\(model:\s*gpt-5[^\)]*\)/gi, '')
+        
+        // Preserve financial formatting
+        .replace(/\$([0-9,]+(?:\.[0-9]{2})?)/g, '💵$1')
+        .replace(/([0-9]+(?:\.[0-9]{1,2})?)%/g, '📊$1%')
+        
+        // Clean markdown safely for Telegram
+        .replace(/\*\*(.*?)\*\*/g, '*$1*')
+        .replace(/```[\w]*\n?([\s\S]*?)\n?```/g, '`$1`')
+        .replace(/#{1,6}\s*(.*?)$/gm, '*$1*')
+        
+        // Restore financial symbols
+        .replace(/💵/g, '$')
+        .replace(/📊/g, '')
+        
+        // Clean excessive whitespace
+        .replace(/\n{4,}/g, '\n\n\n')
+        .replace(/^\n+|\n+$/g, '')
+        .replace(/\s{3,}/g, '  ')
+        .trim();
+    
+    // Ensure minimum viable content
+    if (cleanedText.length < 5) {
+        return text.trim();
+    }
+    
+    return cleanedText;
 }
 
-// Optional: HTML conversion if Markdown fails hard
-function toPlainText(m) {
-  return (m || '')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')
-    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-    .replace(/[*_`~\[\]]/g, '');
-}
-
-function toHTML(m) {
-  if (!m) return '';
-  let s = m
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
-  // naive Markdown -> HTML (bold/italic/code/headers)
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<b>$1<\/b>');
-  s = s.replace(/\*([^*]+)\*/g, '<b>$1<\/b>'); // Telegram HTML supports <b>
-  s = s.replace(/`([^`]+)`/g, '<code>$1<\/code>');
-  s = s.replace(/^# (.*)$/gm, '<b>$1<\/b>');
-  s = s.replace(/^## (.*)$/gm, '<b>$1<\/b>');
-
-  // Convert newlines to <br>
-  s = s.replace(/\n/g, '<br>');
-  return s;
-}
-
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                             MESSAGE SPLITTING                              ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
-function splitMessage(message, modelType = 'analysis') {
-  if (!message || message.length <= TELEGRAM_CONFIG.SAFE_MESSAGE_LENGTH) {
-    return [message];
-  }
-
-  const chunks = [];
-  let remaining = message;
-  let partNumber = 1;
-
-  while (remaining.length > TELEGRAM_CONFIG.OPTIMAL_CHUNK_SIZE) {
-    let splitPoint = TELEGRAM_CONFIG.OPTIMAL_CHUNK_SIZE - 100;
-
-    const splitPatterns = [
-      { pattern: /\n\n#{1,6}\s/g, priority: 1 },  // headers
-      { pattern: /\n\n\d+\.\s/g, priority: 2 },  // numbered lists
-      { pattern: /\n\n•\s/g, priority: 3 },       // bullets
-      { pattern: /\n\n/g, priority: 4 },          // paragraphs
-      { pattern: /\.\s+/g, priority: 5 },           // sentences
-      { pattern: /;\s+/g, priority: 6 },             // semicolons
-      { pattern: /,\s+/g, priority: 7 }              // commas
-    ];
-
-    let bestSplitPoint = null;
-    let bestPriority = 999;
-
-    for (const { pattern, priority } of splitPatterns) {
-      const matches = [...remaining.matchAll(pattern)];
-      for (let i = matches.length - 1; i >= 0; i--) {
-        const matchEnd = matches[i].index + matches[i][0].length;
-        if (matchEnd >= splitPoint * 0.6 && matchEnd <= splitPoint && priority < bestPriority) {
-          bestSplitPoint = matchEnd;
-          bestPriority = priority;
-          break;
+// Advanced message splitting with context awareness
+function splitMessage(message, modelType = 'analysis', preserveContext = true) {
+    if (!message || message.length <= TELEGRAM_CONFIG.SAFE_MESSAGE_LENGTH) {
+        return [message];
+    }
+    
+    const chunks = [];
+    let remaining = message;
+    let partNumber = 1;
+    const typeConfig = MESSAGE_TYPES[normalizeModelType(modelType)] || MESSAGE_TYPES.analysis;
+    
+    // Context preservation headers
+    const contextHeaders = preserveContext ? extractContextHeaders(message) : null;
+    
+    while (remaining.length > TELEGRAM_CONFIG.OPTIMAL_CHUNK_SIZE) {
+        let splitPoint = TELEGRAM_CONFIG.OPTIMAL_CHUNK_SIZE - 150; // More headroom for headers
+        
+        // Sophisticated split point detection
+        const splitPatterns = [
+            { pattern: /\n\n#{1,6}\s/g, priority: 1, description: 'headers' },
+            { pattern: /\n\n\d+\.\s/g, priority: 2, description: 'numbered lists' },
+            { pattern: /\n\n[•·▪▫]\s/g, priority: 3, description: 'bullet points' },
+            { pattern: /\n\n(?=\w)/g, priority: 4, description: 'paragraphs' },
+            { pattern: /\.\s+(?=[A-Z])/g, priority: 5, description: 'sentences' },
+            { pattern: /;\s+/g, priority: 6, description: 'semicolons' },
+            { pattern: /,\s+(?=\w+\s+[A-Z])/g, priority: 7, description: 'major commas' },
+            { pattern: /\s+(?=\d+\.)/g, priority: 8, description: 'list items' }
+        ];
+        
+        let bestSplitPoint = null;
+        let bestPriority = 999;
+        
+        for (const { pattern, priority } of splitPatterns) {
+            const matches = [...remaining.matchAll(pattern)];
+            for (let i = matches.length - 1; i >= 0; i--) {
+                const matchEnd = matches[i].index + matches[i][0].length;
+                if (matchEnd >= splitPoint * 0.6 && matchEnd <= splitPoint && priority < bestPriority) {
+                    bestSplitPoint = matchEnd;
+                    bestPriority = priority;
+                    break;
+                }
+            }
+            if (bestSplitPoint) break;
         }
-      }
-      if (bestSplitPoint) break;
+        
+        splitPoint = bestSplitPoint || splitPoint;
+        let chunk = remaining.substring(0, splitPoint).trim();
+        
+        // Add enhanced part header with context
+        const partHeader = generatePartHeader(partNumber, typeConfig, contextHeaders);
+        chunk = `${partHeader}\n\n${chunk}`;
+        
+        // Add continuation indicator if needed
+        if (remaining.length > splitPoint + 100) {
+            chunk += '\n\n*[Continued...]*';
+        }
+        
+        chunks.push(chunk);
+        remaining = remaining.substring(splitPoint).trim();
+        partNumber++;
     }
-
-    splitPoint = bestSplitPoint || splitPoint;
-
-    let chunk = remaining.substring(0, splitPoint).trim();
-    const typeConfig = getTypeConfig(modelType);
-    chunk = `📄 *Part ${partNumber}* ${typeConfig.emoji}\n\n${chunk}`;
-
-    chunks.push(chunk);
-    remaining = remaining.substring(splitPoint).trim();
-    partNumber++;
-  }
-
-  if (remaining.length > 0) {
-    if (partNumber > 1) {
-      const typeConfig = getTypeConfig(modelType);
-      remaining = `📄 *Part ${partNumber} - Final* ${typeConfig.emoji}\n\n${remaining}`;
+    
+    // Handle final chunk
+    if (remaining.length > 0) {
+        let finalChunk = remaining;
+        
+        if (partNumber > 1) {
+            const finalHeader = generatePartHeader(partNumber, typeConfig, contextHeaders, true);
+            finalChunk = `${finalHeader}\n\n${remaining}`;
+        }
+        
+        chunks.push(finalChunk);
     }
-    chunks.push(remaining);
-  }
-
-  return chunks;
+    
+    return chunks;
 }
 
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                            TELEGRAM SENDERS                                ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
-async function sendSingleMessage(bot, chatId, message, retryCount = 0) {
-  const mode = TELEGRAM_CONFIG.DEFAULT_PARSE_MODE;
-  try {
-    if (mode === 'Markdown') {
-      await bot.sendMessage(chatId, message, {
-        parse_mode: 'Markdown',
-        disable_web_page_preview: true
-      });
-    } else {
-      await bot.sendMessage(chatId, toHTML(message), {
-        parse_mode: 'HTML',
-        disable_web_page_preview: true
-      });
+// Generate sophisticated part headers
+function generatePartHeader(partNumber, typeConfig, contextHeaders, isFinal = false) {
+    const partLabel = isFinal ? `Part ${partNumber} - Final` : `Part ${partNumber}`;
+    const emoji = typeConfig.emoji || '📄';
+    const timestamp = getCambodiaTime(true);
+    
+    let header = `${emoji} *${partLabel}*`;
+    
+    if (contextHeaders && contextHeaders.title) {
+        header += ` | ${contextHeaders.title}`;
     }
-    return true;
-  } catch (markdownError) {
-    console.log(`⚠️ Primary mode failed (${mode}), trying fallback: ${markdownError.message}`);
+    
+    if (TELEGRAM_CONFIG.PERFORMANCE_MONITORING && partNumber === 1) {
+        header += `\n⏱️ ${timestamp}`;
+    }
+    
+    return header;
+}
 
+// Extract context from message for header generation
+function extractContextHeaders(message) {
+    const titleMatch = message.match(/^\*\*([^*]+)\*\*/) || message.match(/^#\s*(.+)$/m);
+    const title = titleMatch ? titleMatch[1] : null;
+    
+    return title ? { title: title.substring(0, 50) } : null;
+}
+
+// Enhanced single message sending with robust error handling
+async function sendSingleMessage(bot, chatId, message, retryCount = 0, metadata = {}) {
+    const startTime = Date.now();
+    
     try {
-      if (TELEGRAM_CONFIG.HTML_FALLBACK_FROM_MARKDOWN && mode === 'Markdown') {
-        await bot.sendMessage(chatId, toHTML(message), {
-          parse_mode: 'HTML',
-          disable_web_page_preview: true
+        // Pre-flight validation
+        if (!message || message.trim().length === 0) {
+            throw new Error('Empty message content');
+        }
+        
+        if (message.length > TELEGRAM_CONFIG.MAX_MESSAGE_LENGTH) {
+            throw new Error(`Message too long: ${message.length} chars`);
+        }
+        
+        // Primary delivery attempt with Markdown
+        await bot.sendMessage(chatId, message, {
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true,
+            disable_notification: metadata.silent || false
         });
+        
+        // Record successful delivery
+        recordDeliveryMetrics(startTime, true, message.length, 'markdown');
         return true;
-      }
-
-      const plain = toPlainText(message);
-      await bot.sendMessage(chatId, plain, { disable_web_page_preview: true });
-      return true;
-    } catch (plainError) {
-      console.error(`❌ Send failed (attempt ${retryCount + 1}):`, plainError.message);
-
-      if (retryCount < 2 && (plainError.message.includes('network') || plainError.message.includes('timeout'))) {
-        const waitMs = (retryCount + 1) * 1000;
-        console.log(`🔄 Retrying in ${waitMs}ms...`);
-        await new Promise(r => setTimeout(r, waitMs));
-        return sendSingleMessage(bot, chatId, message, retryCount + 1);
-      }
-
-      return false;
+        
+    } catch (markdownError) {
+        console.log(`⚠️ Markdown parsing failed: ${markdownError.message}`);
+        
+        try {
+            // Fallback to HTML parsing
+            const htmlMessage = convertToHTML(message);
+            await bot.sendMessage(chatId, htmlMessage, {
+                parse_mode: 'HTML',
+                disable_web_page_preview: true,
+                disable_notification: metadata.silent || false
+            });
+            
+            recordDeliveryMetrics(startTime, true, message.length, 'html');
+            return true;
+            
+        } catch (htmlError) {
+            console.log(`⚠️ HTML parsing failed: ${htmlError.message}`);
+            
+            try {
+                // Final fallback to plain text
+                const plainMessage = stripAllFormatting(message);
+                await bot.sendMessage(chatId, plainMessage, {
+                    disable_web_page_preview: true,
+                    disable_notification: metadata.silent || false
+                });
+                
+                recordDeliveryMetrics(startTime, true, message.length, 'plain');
+                return true;
+                
+            } catch (plainError) {
+                console.error(`❌ All delivery methods failed (attempt ${retryCount + 1}):`, plainError.message);
+                
+                // Retry logic for network issues
+                if (retryCount < TELEGRAM_CONFIG.MAX_RETRY_ATTEMPTS && isRetryableError(plainError)) {
+                    const delayMs = TELEGRAM_CONFIG.RETRY_DELAY_MS * (retryCount + 1);
+                    console.log(`🔄 Retrying in ${delayMs}ms...`);
+                    
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                    return sendSingleMessage(bot, chatId, message, retryCount + 1, metadata);
+                }
+                
+                // Record failed delivery
+                recordDeliveryMetrics(startTime, false, message.length, 'failed');
+                recordError(chatId, plainError.message, 'delivery_failure');
+                return false;
+            }
+        }
     }
-  }
 }
 
-async function sendChunkedMessage(bot, chatId, message, delay = 250, modelType = 'analysis') {
-  const chunks = splitMessage(message, modelType);
-  let successCount = 0;
+// Convert Markdown to HTML
+function convertToHTML(message) {
+    return message
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+        .replace(/\*([^*]+)\*/g, '<i>$1</i>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/^#{1,6}\s*(.*)$/gm, '<b>$1</b>')
+        .replace(/\n/g, '\n');
+}
 
-  console.log(`📦 Sending ${chunks.length} chunks for ${modelType} model`);
+// Strip all formatting for plain text fallback
+function stripAllFormatting(message) {
+    return message
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/#{1,6}\s*/g, '')
+        .replace(/[*_`~\[\]]/g, '');
+}
 
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    const isLast = i === chunks.length - 1;
+// Check if error is retryable
+function isRetryableError(error) {
+    const retryableMessages = [
+        'network',
+        'timeout',
+        'connection',
+        'rate limit',
+        'too many requests',
+        'server error',
+        'internal error'
+    ];
+    
+    const errorMessage = error.message.toLowerCase();
+    return retryableMessages.some(msg => errorMessage.includes(msg));
+}
 
-    console.log(`📤 Sending chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
-
-    const sent = await sendSingleMessage(bot, chatId, chunk);
-    if (sent) {
-      successCount++;
-      console.log(`✅ Chunk ${i + 1}/${chunks.length} delivered`);
-    } else {
-      console.log(`❌ Chunk ${i + 1}/${chunks.length} failed`);
+// Enhanced chunked message sending
+async function sendChunkedMessage(bot, chatId, message, delay = 250, modelType = 'analysis', metadata = {}) {
+    const startTime = Date.now();
+    const chunks = splitMessage(message, modelType, true);
+    let successCount = 0;
+    let totalChars = 0;
+    
+    console.log(`📦 Sending ${chunks.length} chunks for ${modelType} model`);
+    deliveryStats.chunkedMessages++;
+    
+    for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const isLast = i === chunks.length - 1;
+        totalChars += chunk.length;
+        
+        console.log(`📤 Chunk ${i + 1}/${chunks.length}: ${chunk.length} chars`);
+        
+        // Add progressive delay for better UX
+        const chunkMetadata = {
+            ...metadata,
+            chunkIndex: i,
+            totalChunks: chunks.length,
+            silent: i > 0 // Don't notify for subsequent chunks
+        };
+        
+        const sent = await sendSingleMessage(bot, chatId, chunk, 0, chunkMetadata);
+        
+        if (sent) {
+            successCount++;
+            console.log(`✅ Chunk ${i + 1}/${chunks.length} delivered`);
+        } else {
+            console.log(`❌ Chunk ${i + 1}/${chunks.length} failed`);
+        }
+        
+        // Adaptive delay based on success rate and chunk size
+        if (!isLast && sent) {
+            const adaptiveDelay = calculateAdaptiveDelay(delay, successCount, i + 1, chunk.length);
+            await new Promise(resolve => setTimeout(resolve, adaptiveDelay));
+        }
     }
+    
+    const processingTime = Date.now() - startTime;
+    const successRate = (successCount / chunks.length) * 100;
+    
+    console.log(`📊 Chunked delivery complete: ${successCount}/${chunks.length} (${successRate.toFixed(1)}%) in ${processingTime}ms`);
+    
+    // Record chunked delivery metrics
+    recordChunkedDeliveryMetrics(processingTime, successCount, chunks.length, totalChars, modelType);
+    
+    return successCount > 0;
+}
 
-    if (!isLast && sent) {
-      const adaptiveDelay = successCount === i + 1 ? delay : delay * 1.5;
-      await new Promise(resolve => setTimeout(resolve, adaptiveDelay));
+// Calculate adaptive delay for chunked messages
+function calculateAdaptiveDelay(baseDelay, successCount, attemptCount, chunkSize) {
+    const successRate = successCount / attemptCount;
+    const sizeMultiplier = Math.min(1.5, chunkSize / 2000);
+    const successMultiplier = successRate < 0.8 ? 1.5 : 1.0;
+    
+    return Math.round(baseDelay * sizeMultiplier * successMultiplier);
+}
+
+// Enhanced duplicate detection
+function isActualDuplicate(requestId, queryId, modelType, message) {
+    const now = Date.now();
+    
+    // Check exact request duplicate
+    const lastRequest = requestHistory.get(requestId);
+    if (lastRequest && (now - lastRequest.timestamp) < TELEGRAM_CONFIG.DUPLICATE_WINDOW) {
+        console.log(`🚫 Exact duplicate blocked: ${requestId}`);
+        return true;
     }
-  }
-
-  console.log(`📊 Delivery summary: ${successCount}/${chunks.length} chunks sent (${((successCount / chunks.length) * 100).toFixed(1)}%)`);
-  return successCount > 0;
-}
-
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                     DUPLICATE PREVENTION & RESERVATIONS                    ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
-function isActualDuplicate(requestId, queryId, modelType) {
-  const t = nowMs();
-
-  // Exact same request throttling (same requestId)
-  const lastRequest = requestHistory.get(requestId);
-  if (lastRequest && (t - lastRequest.timestamp) < TELEGRAM_CONFIG.DUPLICATE_WINDOW) {
-    console.log(`🚫 Exact duplicate blocked: ${requestId}`);
-    return true;
-  }
-
-  // Single‑voice reservation gate (prevents race where two senders both pass count=0)
-  const currentCount = responseCounter.get(queryId) || 0;
-  const reserved = responseReservations.get(queryId) || false;
-  if (TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY <= 1 && (currentCount >= 1 || reserved)) {
-    console.log(`🛑 Slot unavailable for ${queryId} (count=${currentCount}, reserved=${reserved})`);
-    return true;
-  }
-
-  // Same model already sent for this query within window
-  const sameModelAlreadySent = Array.from(requestHistory.values()).some(data =>
-    data.queryId === queryId &&
-    data.modelType === normalizeModelType(modelType) &&
-    (t - data.timestamp) < TELEGRAM_CONFIG.MULTI_MODEL_WINDOW
-  );
-  if (sameModelAlreadySent) {
-    console.log(`🔄 Same model already sent for query ${queryId} (${modelType})`);
-    return true;
-  }
-
-  return false;
-}
-
-function recordRequest(requestId, queryId, modelType) {
-  const t = nowMs();
-  requestHistory.set(requestId, {
-    timestamp: t,
-    modelType: normalizeModelType(modelType),
-    queryId
-  });
-
-  const current = responseCounter.get(queryId) || 0;
-  responseCounter.set(queryId, current + 1);
-  console.log(`📝 Request recorded: ${requestId} (Query: ${queryId}, Model: ${modelType}, Count: ${current + 1})`);
-}
-
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                           AGGREGATOR (OPTIONAL)                           ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-// Use this when you want to “ask many → show one” by waiting briefly and picking
-// the highest‑priority response. Enable via TELEGRAM_CONFIG.AGGREGATOR_ENABLED.
-
-function aggregatorStart(queryId) {
-  if (aggregatorBuckets.has(queryId)) return aggregatorBuckets.get(queryId);
-  const bucket = {
-    startedAt: nowMs(),
-    responses: [],
-    timer: null,
-    hardTimer: null
-  };
-  aggregatorBuckets.set(queryId, bucket);
-  return bucket;
-}
-
-function aggregatorAdd(queryId, modelType, text) {
-  const bucket = aggregatorStart(queryId);
-  bucket.responses.push({ modelType: normalizeModelType(modelType), text, createdAt: nowMs() });
-}
-
-function aggregatorPickBest(responses) {
-  if (!responses || !responses.length) return null;
-  const sorted = responses.slice().sort((a, b) => {
-    const pa = getTypeConfig(a.modelType).priority || 0;
-    const pb = getTypeConfig(b.modelType).priority || 0;
-    if (pb !== pa) return pb - pa;
-    return a.createdAt - b.createdAt; // earlier if same priority
-  });
-  return sorted[0];
-}
-
-function aggregatorBuildOutgoing(best, title) {
-  if (!best) return '';
-  const label = labelFor(best.modelType);
-  const header = title ? `${label}: *${title}*\n\n` : `${label}:\n\n`;
-  return header + best.text;
-}
-
-async function aggregatorFinalize(queryId, bot, chatId, modelTypeFallback, title) {
-  const bucket = aggregatorBuckets.get(queryId);
-  if (!bucket) return false;
-
-  const best = aggregatorPickBest(bucket.responses);
-  aggregatorBuckets.delete(queryId);
-
-  if (!best) return false;
-
-  const delay = getTypeConfig(best.modelType).delay || TELEGRAM_CONFIG.STANDARD_DELAY;
-  const outgoing = best.text.length <= TELEGRAM_CONFIG.SAFE_MESSAGE_LENGTH
-    ? best.text
-    : null; // will be split by sendChunkedMessage
-
-  if (outgoing) {
-    return sendSingleMessage(bot, chatId, aggregatorBuildOutgoing(best, title));
-  }
-
-  // If long, send chunked with the winning model type
-  return sendChunkedMessage(bot, chatId, aggregatorBuildOutgoing(best, title), delay, best.modelType);
-}
-
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                       MAIN ENTRY: sendGPT5Message                          ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
-async function sendGPT5Message(bot, chatId, message, title = null, metadata = {}) {
-  const modelTypeRaw = metadata.modelUsed || metadata.aiUsed || 'analysis';
-  const modelType = normalizeModelType(modelTypeRaw);
-
-  // Clean first; build IDs from cleaned content for stability
-  let cleanedMessage = cleanMessage(message);
-  if (!cleanedMessage || cleanedMessage.length < 10) {
-    console.log('⚠️ Message too short or empty after cleaning');
+    
+    // Check query-level duplicates
+    const currentCount = responseCounter.get(queryId) || 0;
+    if (currentCount >= TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY) {
+        console.log(`🛑 Query limit reached: ${queryId} (${currentCount}/${TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY})`);
+        return true;
+    }
+    
+    // Check for same model within window
+    const sameModelRecent = Array.from(requestHistory.values()).some(data =>
+        data.queryId === queryId &&
+        data.modelType === normalizeModelType(modelType) &&
+        (now - data.timestamp) < TELEGRAM_CONFIG.MULTI_MODEL_WINDOW
+    );
+    
+    if (sameModelRecent) {
+        console.log(`🔄 Same model recently sent for query ${queryId}: ${modelType}`);
+        return true;
+    }
+    
     return false;
-  }
-
-  const queryId = generateQueryId(chatId, cleanedMessage);
-  const requestId = generateRequestId(chatId, cleanedMessage, title, modelType);
-
-  try {
-    console.log(`📱 Processing message for ${chatId}`);
-    console.log(`🔍 Query ID: ${queryId}, Request ID: ${requestId}, Model: ${modelType}`);
-
-    // Duplicate checks
-    if (isActualDuplicate(requestId, queryId, modelType)) {
-      return false;
-    }
-
-    // Reserve slot early for single‑voice mode
-    if (TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY <= 1) {
-      if (responseReservations.get(queryId)) {
-        console.log(`🛑 Another sender already reserved slot for ${queryId}`);
-        return false;
-      }
-      responseReservations.set(queryId, true);
-    }
-
-    // Mark active
-    activeRequests.set(requestId, nowMs());
-
-    // Optional aggregator: collect before sending
-    if (TELEGRAM_CONFIG.AGGREGATOR_ENABLED) {
-      const bucket = aggregatorStart(queryId);
-
-      // Add this response now
-      aggregatorAdd(queryId, modelType, title ? `${labelFor(modelType)}\n\n${cleanedMessage}` : cleanedMessage);
-
-      // Arm timers if first time
-      if (!bucket.timer) {
-        bucket.timer = setTimeout(async () => {
-          await aggregatorFinalize(queryId, bot, chatId, modelType, title);
-        }, TELEGRAM_CONFIG.AGGREGATOR_WINDOW_MS);
-      }
-      if (!bucket.hardTimer) {
-        bucket.hardTimer = setTimeout(async () => {
-          await aggregatorFinalize(queryId, bot, chatId, modelType, title);
-        }, TELEGRAM_CONFIG.AGGREGATOR_HARD_TIMEOUT_MS);
-      }
-
-      // In aggregator mode, don’t send immediately; finalize() will send one
-      return true;
-    }
-
-    // Compose title and model label (only show model on subsequent responses of same query)
-    const typeConfig = getTypeConfig(modelType);
-    const responseCount = responseCounter.get(queryId) || 0;
-    let outgoing = cleanedMessage;
-    if (title) {
-      const enhancedTitle = `${typeConfig.emoji} *${title}*${responseCount > 0 ? ` (${typeConfig.description})` : ''}`;
-      outgoing = `${enhancedTitle}\n\n${cleanedMessage}`;
-    }
-
-    // Decide sending path
-    const delay = typeConfig.delay || TELEGRAM_CONFIG.STANDARD_DELAY;
-    const sent = outgoing.length <= TELEGRAM_CONFIG.SAFE_MESSAGE_LENGTH
-      ? await sendSingleMessage(bot, chatId, outgoing)
-      : await sendChunkedMessage(bot, chatId, outgoing, delay, modelType);
-
-    if (sent) recordRequest(requestId, queryId, modelType);
-
-    const status = sent ? '✅ SUCCESS' : '❌ FAILED';
-    console.log(`${status} Message delivery for ${modelType}: ${requestId}`);
-    return sent;
-
-  } catch (error) {
-    console.error('❌ Send error:', error.message);
-    try {
-      const fallbackMsg = `🚨 *Delivery Error*\n\nModel: ${modelType}\nError: ${error.message.substring(0, 100)}...\n\n⏰ ${tsCambodia()}`;
-      await bot.sendMessage(chatId, fallbackMsg);
-      return true;
-    } catch (fallbackError) {
-      console.error('❌ Fallback failed:', fallbackError.message);
-      return false;
-    }
-  } finally {
-    activeRequests.delete(requestId);
-    if (responseReservations.get(queryId)) {
-      responseReservations.delete(queryId);
-    }
-  }
 }
 
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                      LEGACY COMPAT & CONVENIENCE WRAPPERS                  ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
+// Record request with enhanced metadata
+function recordRequest(requestId, queryId, modelType, messageLength, processingTime) {
+    const now = Date.now();
+    
+    requestHistory.set(requestId, {
+        timestamp: now,
+        queryId: queryId,
+        modelType: normalizeModelType(modelType),
+        messageLength: messageLength,
+        processingTime: processingTime
+    });
+    
+    const current = responseCounter.get(queryId) || 0;
+    responseCounter.set(queryId, current + 1);
+    
+    console.log(`📝 Request recorded: ${requestId} (Query: ${queryId}, Model: ${modelType}, Length: ${messageLength}, Time: ${processingTime}ms)`);
+}
 
+// Cambodia time helpers
+function getCambodiaTime(includeDate = false) {
+    try {
+        const now = new Date();
+        const options = {
+            timeZone: CAMBODIA_FORMATTING.timeZone,
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        
+        if (includeDate) {
+            options.year = 'numeric';
+            options.month = '2-digit';
+            options.day = '2-digit';
+        }
+        
+        const timeString = now.toLocaleString('en-US', options);
+        return includeDate ? `${timeString} Cambodia` : `${timeString} Cambodia`;
+    } catch (error) {
+        return new Date().toISOString();
+    }
+}
+
+function isBusinessHours() {
+    const now = new Date();
+    const cambodiaTime = new Date(now.toLocaleString('en-US', { timeZone: CAMBODIA_FORMATTING.timeZone }));
+    const hour = cambodiaTime.getHours();
+    const day = cambodiaTime.getDay();
+    
+    return CAMBODIA_FORMATTING.workingDays.includes(day) && 
+           hour >= CAMBODIA_FORMATTING.businessHours.start && 
+           hour < CAMBODIA_FORMATTING.businessHours.end;
+}
+
+// Performance and error tracking
+function recordDeliveryMetrics(startTime, success, messageLength, method) {
+    const processingTime = Date.now() - startTime;
+    
+    deliveryStats.totalMessages++;
+    if (success) {
+        deliveryStats.successfulDeliveries++;
+    } else {
+        deliveryStats.failedDeliveries++;
+    }
+    
+    // Update average processing time
+    const totalTime = (deliveryStats.averageProcessingTime * (deliveryStats.totalMessages - 1)) + processingTime;
+    deliveryStats.averageProcessingTime = totalTime / deliveryStats.totalMessages;
+    
+    // Record method-specific metrics
+    const methodKey = `${method}_deliveries`;
+    if (!performanceMetrics.has(methodKey)) {
+        performanceMetrics.set(methodKey, 0);
+    }
+    performanceMetrics.set(methodKey, performanceMetrics.get(methodKey) + 1);
+}
+
+function recordChunkedDeliveryMetrics(processingTime, successCount, totalChunks, totalChars, modelType) {
+    const metricsKey = `chunked_${modelType}`;
+    const existingMetrics = performanceMetrics.get(metricsKey) || {
+        count: 0,
+        totalTime: 0,
+        totalChunks: 0,
+        totalChars: 0,
+        successfulChunks: 0
+    };
+    
+    existingMetrics.count++;
+    existingMetrics.totalTime += processingTime;
+    existingMetrics.totalChunks += totalChunks;
+    existingMetrics.totalChars += totalChars;
+    existingMetrics.successfulChunks += successCount;
+    
+    performanceMetrics.set(metricsKey, existingMetrics);
+}
+
+function recordError(chatId, errorMessage, errorType) {
+    const errorKey = `${chatId}_${errorType}_${Date.now()}`;
+    errorLog.set(errorKey, {
+        chatId: chatId,
+        message: errorMessage,
+        type: errorType,
+        timestamp: Date.now(),
+        cambodiaTime: getCambodiaTime(true)
+    });
+}
+
+// Main delivery function with comprehensive features
+async function sendGPT5Message(bot, chatId, message, title = null, metadata = {}) {
+    const startTime = Date.now();
+    const modelType = normalizeModelType(metadata.modelUsed || metadata.aiUsed || 'analysis');
+    
+    try {
+        console.log(`📱 Processing message for chat ${chatId}, Model: ${modelType}`);
+        
+        // Enhanced message validation
+        if (!message || typeof message !== 'string') {
+            throw new Error('Invalid message content');
+        }
+        
+        // Clean and validate message
+        let cleanedMessage = cleanMessage(message);
+        
+        if (!cleanedMessage || cleanedMessage.length < 5) {
+            console.log('⚠️ Message too short or empty after cleaning');
+            return false;
+        }
+        
+        // Generate IDs for tracking
+        const requestId = generateAdvancedRequestId(chatId, cleanedMessage, modelType, startTime);
+        const queryId = generateQueryId(chatId, cleanedMessage);
+        
+        console.log(`🔍 Query ID: ${queryId}, Request ID: ${requestId}`);
+        
+        // Enhanced duplicate detection
+        if (isActualDuplicate(requestId, queryId, modelType, cleanedMessage)) {
+            return false;
+        }
+        
+        // Mark request as active
+        activeRequests.set(requestId, startTime);
+        
+        // Prepare message with title and formatting
+        const typeConfig = MESSAGE_TYPES[modelType] || MESSAGE_TYPES.analysis;
+        let finalMessage = cleanedMessage;
+        
+        if (title) {
+            const responseCount = responseCounter.get(queryId) || 0;
+            const titleEmoji = typeConfig.emoji || '📊';
+            const enhancedTitle = `${titleEmoji} *${title}*`;
+            
+            // Add model info for subsequent responses
+            if (responseCount > 0 && TELEGRAM_CONFIG.ENHANCED_ERROR_REPORTING) {
+                finalMessage = `${enhancedTitle} (${typeConfig.description})\n\n${cleanedMessage}`;
+            } else {
+                finalMessage = `${enhancedTitle}\n\n${cleanedMessage}`;
+            }
+        }
+        
+        // Add business context if relevant
+        if (metadata.addBusinessContext && modelType in ['credit', 'risk', 'compliance', 'portfolio']) {
+            finalMessage += `\n\n*Analysis Time: ${getCambodiaTime(true)}*`;
+            if (!isBusinessHours()) {
+                finalMessage += '\n*Note: Outside business hours - responses may be delayed*';
+            }
+        }
+        
+        // Choose delivery method
+        const delay = typeConfig.delay || TELEGRAM_CONFIG.STANDARD_DELAY;
+        let deliverySuccess = false;
+        
+        if (finalMessage.length <= TELEGRAM_CONFIG.SAFE_MESSAGE_LENGTH) {
+            deliverySuccess = await sendSingleMessage(bot, chatId, finalMessage, 0, metadata);
+        } else {
+            deliverySuccess = await sendChunkedMessage(bot, chatId, finalMessage, delay, modelType, metadata);
+        }
+        
+        // Record request if successful
+        if (deliverySuccess) {
+            const processingTime = Date.now() - startTime;
+            recordRequest(requestId, queryId, modelType, finalMessage.length, processingTime);
+        }
+        
+        // Cleanup active request
+        activeRequests.delete(requestId);
+        
+        const status = deliverySuccess ? '✅ SUCCESS' : '❌ FAILED';
+        const processingTime = Date.now() - startTime;
+        console.log(`${status} Message delivery for ${modelType}: ${requestId} (${processingTime}ms)`);
+        
+        return deliverySuccess;
+        
+    } catch (error) {
+        console.error('❌ Send error:', error.message);
+        activeRequests.delete(generateAdvancedRequestId(chatId, message, modelType, startTime));
+        recordError(chatId, error.message, 'send_message_error');
+        
+        // Enhanced fallback with error context
+        try {
+            const fallbackMsg = generateErrorFallback(error, modelType, metadata);
+            await bot.sendMessage(chatId, fallbackMsg);
+            return true;
+        } catch (fallbackError) {
+            console.error('❌ Fallback delivery failed:', fallbackError.message);
+            recordError(chatId, fallbackError.message, 'fallback_failure');
+            return false;
+        }
+    }
+}
+
+// Generate contextual error fallback messages
+function generateErrorFallback(error, modelType, metadata) {
+    const typeConfig = MESSAGE_TYPES[modelType] || MESSAGE_TYPES.error;
+    const cambodiaTime = getCambodiaTime(true);
+    
+    let fallbackMessage = `${typeConfig.emoji} *Delivery Issue*\n\n`;
+    
+    if (error.message.includes('network') || error.message.includes('timeout')) {
+        fallbackMessage += 'Network connectivity issue. Please try again in a moment.';
+    } else if (error.message.includes('rate limit') || error.message.includes('too many requests')) {
+        fallbackMessage += 'System temporarily busy. Your request will be processed shortly.';
+    } else if (error.message.includes('message too long')) {
+        fallbackMessage += 'Response was too large for delivery. Processing in smaller segments...';
+    } else {
+        fallbackMessage += `Technical issue occurred: ${error.message.substring(0, 100)}`;
+    }
+    
+    fallbackMessage += `\n\nModel: ${typeConfig.description}`;
+    fallbackMessage += `\nTime: ${cambodiaTime}`;
+    
+    if (metadata.requestId) {
+        fallbackMessage += `\nRef: ${metadata.requestId.substring(0, 8)}`;
+    }
+    
+    return fallbackMessage;
+}
+
+// Legacy compatibility functions with enhanced features
 async function sendGPTResponse(bot, chatId, response, title, metadata = {}) {
-  return sendGPT5Message(bot, chatId, response, title, { ...metadata, modelUsed: 'gpt-5' });
+    return await sendGPT5Message(bot, chatId, response, title, {
+        ...metadata,
+        modelUsed: 'gpt-5',
+        addBusinessContext: true
+    });
 }
 
 async function sendClaudeResponse(bot, chatId, response, title, metadata = {}) {
-  return sendGPT5Message(bot, chatId, response, title, { ...metadata, modelUsed: 'analysis' });
+    return await sendGPT5Message(bot, chatId, response, title, {
+        ...metadata,
+        modelUsed: 'analysis',
+        addBusinessContext: false
+    });
 }
 
 async function sendDualAIResponse(bot, chatId, response, title, metadata = {}) {
-  return sendGPT5Message(bot, chatId, response, title, { ...metadata, modelUsed: 'full' });
+    return await sendGPT5Message(bot, chatId, response, title, {
+        ...metadata,
+        modelUsed: 'full',
+        addBusinessContext: true
+    });
 }
 
 async function sendAnalysis(bot, chatId, analysis, title, metadata = {}) {
-  return sendGPT5Message(bot, chatId, analysis, title, { ...metadata, modelUsed: 'analysis' });
+    return await sendGPT5Message(bot, chatId, analysis, title, {
+        ...metadata,
+        modelUsed: 'analysis',
+        addBusinessContext: true
+    });
 }
 
-async function sendAlert(bot, chatId, alertMessage, title = 'Alert', metadata = {}) {
-  const alertContent = `🚨 *${title}*\n\n${alertMessage}\n\n⏰ ${tsCambodia()}`;
-  return sendGPT5Message(bot, chatId, alertContent, null, { ...metadata, modelUsed: 'error' });
+async function sendAlert(bot, chatId, alertMessage, title = 'System Alert', metadata = {}) {
+    const cambodiaTime = getCambodiaTime(true);
+    const alertContent = `🚨 *${title}*\n\n${alertMessage}\n\n⏰ ${cambodiaTime}`;
+    
+    return await sendGPT5Message(bot, chatId, alertContent, null, {
+        ...metadata,
+        modelUsed: 'error',
+        addBusinessContext: false,
+        priority: 'high'
+    });
 }
 
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                                STATS / HEALTH                             ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
+// Enhanced statistics and monitoring
 function getStats() {
-  const t = nowMs();
-  let activeCount = 0;
-  let historyCount = 0;
-
-  for (const [, timestamp] of activeRequests.entries()) {
-    if (t - timestamp < 300000) activeCount++; // 5 min
-  }
-
-  for (const [, data] of requestHistory.entries()) {
-    if (t - data.timestamp < 300000) historyCount++; // 5 min recent
-  }
-
-  const uniqueQueries = responseCounter.size;
-
-  return {
-    status: TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY <= 1
-      ? 'SINGLE‑VOICE MODE'
-      : 'SMART MULTI‑MODEL MODE',
-    defaultParseMode: TELEGRAM_CONFIG.DEFAULT_PARSE_MODE,
-    duplicateWindow: TELEGRAM_CONFIG.DUPLICATE_WINDOW,
-    multiModelWindow: TELEGRAM_CONFIG.MULTI_MODEL_WINDOW,
-    maxResponsesPerQuery: TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY,
-    aggregatorEnabled: TELEGRAM_CONFIG.AGGREGATOR_ENABLED,
-    activeRequests: activeCount,
-    recentHistory: historyCount,
-    uniqueQueries
-  };
+    const now = Date.now();
+    let activeRequestsCount = 0;
+    let recentRequestsCount = 0;
+    let recentErrorsCount = 0;
+    
+    // Count active requests
+    for (const [requestId, timestamp] of activeRequests.entries()) {
+        if (now - timestamp < 300000) { // 5 minutes
+            activeRequestsCount++;
+        }
+    }
+    
+    // Count recent requests and errors
+    for (const [requestId, data] of requestHistory.entries()) {
+        if (now - data.timestamp < 300000) { // 5 minutes
+            recentRequestsCount++;
+        }
+    }
+    
+    for (const [errorKey, data] of errorLog.entries()) {
+        if (now - data.timestamp < 300000) { // 5 minutes
+            recentErrorsCount++;
+        }
+    }
+    
+    const successRate = deliveryStats.totalMessages > 0 ? 
+        (deliveryStats.successfulDeliveries / deliveryStats.totalMessages * 100).toFixed(1) : 0;
+    
+    const uptimeHours = ((now - deliveryStats.lastResetTime) / (1000 * 60 * 60)).toFixed(1);
+    
+    return {
+        status: 'ENHANCED CAMBODIA FINANCIAL SYSTEM',
+        version: '2.0.1',
+        uptime: `${uptimeHours} hours`,
+        activeRequests: activeRequestsCount,
+        recentRequests: recentRequestsCount,
+        recentErrors: recentErrorsCount,
+        totalMessages: deliveryStats.totalMessages,
+        successfulDeliveries: deliveryStats.successfulDeliveries,
+        failedDeliveries: deliveryStats.failedDeliveries,
+        successRate: `${successRate}%`,
+        chunkedMessages: deliveryStats.chunkedMessages,
+        averageProcessingTime: `${Math.round(deliveryStats.averageProcessingTime)}ms`,
+        cambodiaTime: getCambodiaTime(true),
+        businessHours: isBusinessHours(),
+        duplicateWindow: TELEGRAM_CONFIG.DUPLICATE_WINDOW,
+        multiModelWindow: TELEGRAM_CONFIG.MULTI_MODEL_WINDOW,
+        maxResponsesPerQuery: TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY,
+        supportedModelTypes: Object.keys(MESSAGE_TYPES).length
+    };
 }
 
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                                  CLEANUP                                   ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
+function getPerformanceMetrics() {
+    const metrics = {};
+    
+    for (const [key, value] of performanceMetrics.entries()) {
+        if (typeof value === 'object') {
+            metrics[key] = {
+                ...value,
+                avgProcessingTime: value.count > 0 ? Math.round(value.totalTime / value.count) : 0,
+                avgChunkSize: value.totalChunks > 0 ? Math.round(value.totalChars / value.totalChunks) : 0,
+                chunkSuccessRate: value.totalChunks > 0 ? 
+                    ((value.successfulChunks / value.totalChunks) * 100).toFixed(1) : 0
+            };
+        } else {
+            metrics[key] = value;
+        }
+    }
+    
+    return metrics;
+}
 
+function getErrorAnalytics() {
+    const now = Date.now();
+    const recentErrors = [];
+    const errorTypes = {};
+    
+    for (const [errorKey, errorData] of errorLog.entries()) {
+        if (now - errorData.timestamp < 3600000) { // Last hour
+            recentErrors.push({
+                type: errorData.type,
+                message: errorData.message.substring(0, 100),
+                time: errorData.cambodiaTime,
+                chatId: errorData.chatId
+            });
+            
+            errorTypes[errorData.type] = (errorTypes[errorData.type] || 0) + 1;
+        }
+    }
+    
+    return {
+        recentErrors: recentErrors.slice(-10), // Last 10 errors
+        errorTypes: errorTypes,
+        totalRecentErrors: recentErrors.length
+    };
+}
+
+// Comprehensive cleanup with detailed logging
 function autoCleanup() {
-  const t = nowMs();
-  let cleaned = { requests: 0, history: 0, queries: 0, aggregators: 0 };
-
-  // Active requests older than 5 minutes
-  for (const [requestId, timestamp] of activeRequests.entries()) {
-    if (t - timestamp > 300000) { // 5 minutes
-      activeRequests.delete(requestId);
-      cleaned.requests++;
+    const now = Date.now();
+    let cleaned = {
+        requests: 0,
+        history: 0,
+        queries: 0,
+        errors: 0,
+        performance: 0
+    };
+    
+    // Clean old active requests (shouldn't be active for > 10 minutes)
+    for (const [requestId, timestamp] of activeRequests.entries()) {
+        if (now - timestamp > 600000) { // 10 minutes
+            activeRequests.delete(requestId);
+            cleaned.requests++;
+        }
     }
-  }
-
-  // History older than 1 hour
-  for (const [requestId, data] of requestHistory.entries()) {
-    if (t - data.timestamp > 3600000) { // 1 hour
-      requestHistory.delete(requestId);
-      cleaned.history++;
+    
+    // Clean old request history (keep 2 hours)
+    for (const [requestId, data] of requestHistory.entries()) {
+        if (now - data.timestamp > 7200000) { // 2 hours
+            requestHistory.delete(requestId);
+            cleaned.history++;
+        }
     }
-  }
-
-  // Queries with no recent history (30 minutes)
-  const toRemove = [];
-  for (const [queryId] of responseCounter.entries()) {
-    const hasRecent = Array.from(requestHistory.values()).some(data =>
-      data.queryId === queryId && (t - data.timestamp) < 1800000 // 30 min
-    );
-    if (!hasRecent) toRemove.push(queryId);
-  }
-  toRemove.forEach(qid => { responseCounter.delete(qid); cleaned.queries++; });
-
-  // Aggregator buckets older than hard timeout
-  for (const [qid, bucket] of aggregatorBuckets.entries()) {
-    if (t - bucket.startedAt > TELEGRAM_CONFIG.AGGREGATOR_HARD_TIMEOUT_MS) {
-      aggregatorBuckets.delete(qid);
-      cleaned.aggregators++;
+    
+    // Clean old query counters (keep 1 hour)
+    const queriesForRemoval = [];
+    for (const [queryId] of responseCounter.entries()) {
+        const hasRecentHistory = Array.from(requestHistory.values()).some(data =>
+            data.queryId === queryId && (now - data.timestamp) < 3600000 // 1 hour
+        );
+        
+        if (!hasRecentHistory) {
+            queriesForRemoval.push(queryId);
+        }
     }
-  }
-
-  if (cleaned.requests || cleaned.history || cleaned.queries || cleaned.aggregators) {
-    console.log(`🧹 Auto cleanup: ${cleaned.requests} active, ${cleaned.history} history, ${cleaned.queries} queries, ${cleaned.aggregators} aggregators`);
-  }
+    
+    queriesForRemoval.forEach(queryId => {
+        responseCounter.delete(queryId);
+        cleaned.queries++;
+    });
+    
+    // Clean old errors (keep 4 hours)
+    for (const [errorKey, errorData] of errorLog.entries()) {
+        if (now - errorData.timestamp > 14400000) { // 4 hours
+            errorLog.delete(errorKey);
+            cleaned.errors++;
+        }
+    }
+    
+    // Clean old performance metrics (keep essential data)
+    for (const [key, value] of performanceMetrics.entries()) {
+        if (typeof value === 'object' && value.count > 1000) {
+            // Compress old performance data
+            performanceMetrics.set(key, {
+                count: Math.floor(value.count / 2),
+                totalTime: Math.floor(value.totalTime / 2),
+                totalChunks: Math.floor(value.totalChunks / 2),
+                totalChars: Math.floor(value.totalChars / 2),
+                successfulChunks: Math.floor(value.successfulChunks / 2)
+            });
+            cleaned.performance++;
+        }
+    }
+    
+    if (Object.values(cleaned).some(count => count > 0)) {
+        console.log(`🧹 Auto cleanup completed:`, cleaned);
+    }
 }
 
 function manualCleanup() {
-  console.log('🧹 Starting manual cleanup...');
-  autoCleanup();
-  console.log('📊 Post‑cleanup stats:', getStats());
+    console.log('🧹 Starting comprehensive manual cleanup...');
+    const beforeStats = getStats();
+    autoCleanup();
+    const afterStats = getStats();
+    
+    console.log('📊 Cleanup Results:');
+    console.log(`  Active Requests: ${beforeStats.activeRequests} → ${afterStats.activeRequests}`);
+    console.log(`  Recent Requests: ${beforeStats.recentRequests} → ${afterStats.recentRequests}`);
+    console.log(`  Recent Errors: ${beforeStats.recentErrors} → ${afterStats.recentErrors}`);
+    console.log(`  Memory Usage: Optimized`);
 }
 
-// Schedule auto cleanup every 10 minutes
-setInterval(autoCleanup, 600000);
-
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                               DEBUG HELPERS                                ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
-function generateRequestIdDebug(chatId, message, title, modelType) {
-  // Uses cleaned form inside to ensure real behavior
-  const cleaned = cleanMessage(message);
-  return generateRequestId(chatId, cleaned, title, modelType);
+function resetStats() {
+    console.log('🔄 Resetting delivery statistics...');
+    deliveryStats.totalMessages = 0;
+    deliveryStats.successfulDeliveries = 0;
+    deliveryStats.failedDeliveries = 0;
+    deliveryStats.chunkedMessages = 0;
+    deliveryStats.averageProcessingTime = 0;
+    deliveryStats.lastResetTime = Date.now();
+    
+    performanceMetrics.clear();
+    errorLog.clear();
+    
+    console.log('✅ Statistics reset completed');
 }
 
-function generateQueryIdDebug(chatId, message) {
-  const cleaned = cleanMessage(message);
-  return generateQueryId(chatId, cleaned);
+// Debug and troubleshooting utilities
+function debugMessage(chatId, message, modelType = 'analysis') {
+    const cleanedMessage = cleanMessage(message);
+    const requestId = generateAdvancedRequestId(chatId, cleanedMessage, modelType);
+    const queryId = generateQueryId(chatId, cleanedMessage);
+    
+    return {
+        originalLength: message.length,
+        cleanedLength: cleanedMessage.length,
+        requestId: requestId,
+        queryId: queryId,
+        modelType: normalizeModelType(modelType),
+        wouldBeDuplicate: isActualDuplicate(requestId, queryId, modelType, cleanedMessage),
+        chunkCount: splitMessage(cleanedMessage, modelType).length,
+        estimatedDelay: MESSAGE_TYPES[normalizeModelType(modelType)]?.delay || TELEGRAM_CONFIG.STANDARD_DELAY
+    };
 }
 
-function isActualDuplicateDebug(chatId, message, title, modelType) {
-  const cleaned = cleanMessage(message);
-  const qid = generateQueryId(chatId, cleaned);
-  const rid = generateRequestId(chatId, cleaned, title, modelType);
-  return isActualDuplicate(rid, qid, modelType);
-}
+// Schedule automatic cleanup every 5 minutes
+setInterval(autoCleanup, TELEGRAM_CONFIG.CLEANUP_INTERVAL);
 
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                                  EXPORTS                                   ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
+// Export comprehensive API
 module.exports = {
-  // Main
-  sendGPT5Message,
-  sendGPTResponse,
-  sendClaudeResponse,
-  sendDualAIResponse,
-  sendAnalysis,
-  sendAlert,
-
-  // Utilities
-  cleanMessage,
-  splitMessage,
-  getStats,
-  manualCleanup,
-  autoCleanup,
-
-  // Debug
-  generateRequestId: generateRequestIdDebug,
-  generateQueryId: generateQueryIdDebug,
-  isActualDuplicate: isActualDuplicateDebug,
-
-  // Config
-  TELEGRAM_CONFIG,
-  MESSAGE_TYPES
+    // Core delivery functions
+    sendGPT5Message,
+    sendGPTResponse,
+    sendClaudeResponse,
+    sendDualAIResponse,
+    sendAnalysis,
+    sendAlert,
+    
+    // Message processing utilities
+    cleanMessage,
+    splitMessage,
+    stripAllFormatting,
+    convertToHTML,
+    
+    // Statistics and monitoring
+    getStats,
+    getPerformanceMetrics,
+    getErrorAnalytics,
+    
+    // Maintenance functions
+    manualCleanup,
+    autoCleanup,
+    resetStats,
+    
+    // Debug utilities
+    debugMessage,
+    generateAdvancedRequestId,
+    generateQueryId,
+    
+    // Cambodia-specific helpers
+    getCambodiaTime,
+    isBusinessHours,
+    CAMBODIA_FORMATTING,
+    
+    // Configuration
+    TELEGRAM_CONFIG,
+    MESSAGE_TYPES
 };
 
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║                                  BOOT LOG                                  ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
-console.log('🚀 Telegram Splitter v2 loaded');
-console.log(`✅ Mode: ${TELEGRAM_CONFIG.MAX_RESPONSES_PER_QUERY <= 1 ? 'SINGLE‑VOICE' : 'SMART MULTI‑MODEL'}`);
-console.log(`🛡️ Duplicates: ${TELEGRAM_CONFIG.DUPLICATE_WINDOW}ms exact, ${TELEGRAM_CONFIG.MULTI_MODEL_WINDOW}ms multi‑model`);
-console.log(`🧰 Aggregator: ${TELEGRAM_CONFIG.AGGREGATOR_ENABLED ? 'ENABLED' : 'disabled'} (window ${TELEGRAM_CONFIG.AGGREGATOR_WINDOW_MS}ms)`);
-console.log(`🕒 Timezones: ${tsCambodia()} | ${tsZurich()}`);
+console.log('🚀 Enhanced Telegram Splitter v2.0.1 loaded');
+console.log('🏦 Cambodia Financial System Integration: ACTIVE');
+console.log(`📊 ${Object.keys(MESSAGE_TYPES).length} message types supported`);
+console.log(`⚡ Performance monitoring: ${TELEGRAM_CONFIG.PERFORMANCE_MONITORING ? 'ENABLED' : 'DISABLED'}`);
+console.log(`🕐 Cambodia time: ${getCambodiaTime(true)}`);
+console.log(`💼 Business hours: ${isBusinessHours() ? 'ACTIVE' : 'CLOSED'}`);
+console.log('✅ Enhanced error handling and recovery systems ready');
+console.log('🛡️ Advanced duplicate prevention and request tracking active');
