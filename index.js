@@ -894,44 +894,7 @@ Provide comprehensive global market analysis with Cambodia-specific insights.`;
     });
 }
 
-// 📊 DATABASE & MEMORY SYSTEM with GPT-5 Response Handling & Fallback Protection
-const fs = require('fs').promises;
-const path = require('path');
-
-// Import GPT-5 response utilities
-let extractGPTContent, safeTruncate, safeStringify;
-try {
-    const loggerUtils = require('./utils/logger');
-    extractGPTContent = loggerUtils.extractGPTContent || ((response) => {
-        if (typeof response === 'string') return response;
-        if (response && response.content) return response.content;
-        if (response && response.message) return response.message;
-        return JSON.stringify(response);
-    });
-    safeTruncate = loggerUtils.safeTruncate || ((text, maxLength = 1000) => {
-        const str = String(text || '');
-        return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
-    });
-    safeStringify = loggerUtils.safeStringify || ((obj) => {
-        try { return JSON.stringify(obj); } catch { return String(obj); }
-    });
-} catch (error) {
-    console.warn('Logger utils not available, using fallback functions');
-    extractGPTContent = (response) => {
-        if (typeof response === 'string') return response;
-        if (response && response.content) return response.content;
-        return String(response);
-    };
-    safeTruncate = (text, maxLength = 1000) => {
-        const str = String(text || '');
-        return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
-    };
-    safeStringify = (obj) => {
-        try { return JSON.stringify(obj); } catch { return String(obj); }
-    };
-}
-
-// Load core modules with fallback protection
+// 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
 
 try {
@@ -941,9 +904,7 @@ try {
     console.warn('⚠️ Database module failed to load:', error.message);
     database = { 
         getConversationHistoryDB: async () => [],
-        getPersistentMemoryDB: async () => [],
-        saveConversationDB: async () => false,
-        testConnection: async () => { throw new Error('Database not available'); }
+        getPersistentMemoryDB: async () => []
     };
 }
 
@@ -952,19 +913,7 @@ try {
     console.log('✅ Memory module loaded');
 } catch (error) {
     console.warn('⚠️ Memory module failed to load:', error.message);
-    memory = { 
-        buildConversationContext: async (chatId, userMessage) => {
-            // Fallback: use conversation buffer for basic context
-            if (conversationBuffer.has(chatId)) {
-                const recent = conversationBuffer.get(chatId).slice(-3);
-                const context = recent.map(msg => 
-                    `User: ${safeTruncate(msg.userMessage, 100)}\nAssistant: ${safeTruncate(extractGPTContent(msg.gptResponse), 100)}`
-                ).join('\n');
-                return context ? `${context}\n\nUser: ${userMessage}` : userMessage;
-            }
-            return userMessage;
-        }
-    };
+    memory = { buildConversationContext: async () => '' };
 }
 
 try {
@@ -974,16 +923,13 @@ try {
     console.warn('⚠️ Logger module failed to load - using console fallback:', error.message);
     logger = {
         logUserInteraction: async (data) => {
-            const msg = extractGPTContent(data.userMessage || '');
-            console.log(`📝 User [${data.chatId}]: ${safeTruncate(msg, 50)}`);
+            console.log(`📝 User: ${data.chatId} - ${data.userMessage?.substring(0, 50)}...`);
         },
         logGPTResponse: async (data) => {
-            const response = extractGPTContent(data.gptResponse || '');
-            const model = (typeof data.gptResponse === 'object' && data.gptResponse?.model) || data.aiUsed || 'unknown';
-            console.log(`🤖 GPT [${data.chatId}]: ${model} - ${safeTruncate(response, 50)}`);
+            console.log(`🤖 GPT: ${data.chatId} - ${data.aiUsed} (${data.responseTime}ms)`);
         },
         logError: async (data) => {
-            console.error(`❌ Error [${data.chatId}]: ${data.error?.message || data.error}`);
+            console.error(`❌ Error: ${data.chatId} - ${data.error}`);
         }
     };
 }
@@ -993,57 +939,28 @@ let conversationBuffer = new Map(); // In-memory buffer for emergency backup
 let lastBackupTime = Date.now();
 const BACKUP_INTERVAL = 30000; // Backup every 30 seconds
 
-// Helper to extract metadata from GPT-5 responses
-function extractResponseMetadata(gptResponse) {
-    if (typeof gptResponse === 'object' && gptResponse !== null) {
-        return {
-            model: gptResponse.model || 'unknown',
-            usage: gptResponse.usage || null,
-            cost: gptResponse.cost || 0,
-            fallback: gptResponse.fallback || false,
-            finishReason: gptResponse.finishReason || null
-        };
-    }
-    return { model: 'string_response', usage: null, cost: 0, fallback: false };
-}
-
-// 🛡️ EMERGENCY CONVERSATION SAVER with GPT-5 Response Handling
+// 🛡️ EMERGENCY CONVERSATION SAVER with Fallback Logging
 async function saveConversationEmergency(chatId, userMessage, gptResponse, metadata = {}) {
     try {
-        // Extract response content and metadata safely
-        const responseContent = extractGPTContent(gptResponse);
-        const responseMetadata = extractResponseMetadata(gptResponse);
-        
-        let primarySaveSuccess = false;
-        
         // 1. Save to PostgreSQL (Primary) - with fallback
         try {
             if (logger && typeof logger.logUserInteraction === 'function') {
                 await logger.logUserInteraction({
                     chatId,
-                    userMessage: safeTruncate(userMessage, 2000),
+                    userMessage,
                     timestamp: new Date().toISOString(),
                     messageType: 'telegram_webhook_backup',
-                    model: responseMetadata.model,
                     ...metadata
                 });
                 
                 await logger.logGPTResponse({
                     chatId,
-                    userMessage: safeTruncate(userMessage, 1000),
-                    gptResponse: responseContent,
-                    gptResponseRaw: gptResponse, // Keep full object
+                    userMessage,
+                    gptResponse,
                     timestamp: new Date().toISOString(),
                     backupSaved: true,
-                    aiUsed: responseMetadata.model,
-                    tokenUsage: responseMetadata.usage,
-                    cost: responseMetadata.cost,
-                    fallback: responseMetadata.fallback,
                     ...metadata
                 });
-                
-                primarySaveSuccess = true;
-                console.log(`✅ PostgreSQL save successful for chat ${chatId}`);
             } else {
                 console.log(`💾 Backup save (no logger): ${chatId} - Message saved to memory buffer only`);
             }
@@ -1055,104 +972,60 @@ async function saveConversationEmergency(chatId, userMessage, gptResponse, metad
         if (!conversationBuffer.has(chatId)) {
             conversationBuffer.set(chatId, []);
         }
-        
-        const bufferEntry = {
+        conversationBuffer.get(chatId).push({
             timestamp: new Date().toISOString(),
-            userMessage: safeTruncate(userMessage, 2000),
-            gptResponse: responseContent,
-            gptResponseRaw: gptResponse,
-            metadata: {
-                ...metadata,
-                model: responseMetadata.model,
-                usage: responseMetadata.usage,
-                cost: responseMetadata.cost,
-                fallback: responseMetadata.fallback,
-                primarySaved: primarySaveSuccess
-            },
+            userMessage,
+            gptResponse,
+            metadata,
             saved: true
-        };
-        
-        conversationBuffer.get(chatId).push(bufferEntry);
+        });
         
         // Keep only last 50 messages in memory buffer
-        const buffer = conversationBuffer.get(chatId);
-        if (buffer.length > 50) {
-            buffer.splice(0, buffer.length - 50);
+        if (conversationBuffer.get(chatId).length > 50) {
+            conversationBuffer.get(chatId).shift();
         }
         
-        console.log(`💾 Conversation saved with fallback protection for chat ${chatId} (${buffer.length} msgs)`);
-        
-        // 3. Emergency File Backup (Tertiary) - If primary failed
-        if (!primarySaveSuccess) {
-            try {
-                // Ensure backup directory exists
-                const backupDir = './backups';
-                try {
-                    await fs.mkdir(backupDir, { recursive: true });
-                } catch (mkdirError) {
-                    // Directory might already exist
-                }
-                
-                const backupData = {
-                    chatId,
-                    userMessage: safeTruncate(userMessage, 2000),
-                    gptResponse: responseContent,
-                    gptResponseRaw: typeof gptResponse === 'object' ? safeStringify(gptResponse) : gptResponse,
-                    timestamp: new Date().toISOString(),
-                    metadata: {
-                        ...metadata,
-                        model: responseMetadata.model,
-                        usage: responseMetadata.usage,
-                        cost: responseMetadata.cost,
-                        fallback: responseMetadata.fallback
-                    },
-                    emergencyBackup: true
-                };
-                
-                const filename = path.join(backupDir, `emergency_backup_${chatId}.jsonl`);
-                await fs.appendFile(filename, JSON.stringify(backupData) + '\n');
-                console.log(`📁 Emergency file backup created for chat ${chatId}`);
-            } catch (fileError) {
-                console.error(`❌ Emergency file backup failed for chat ${chatId}:`, fileError.message);
-            }
-        }
-        
-        return primarySaveSuccess;
+        console.log(`💾 Conversation saved with fallback protection for chat ${chatId}`);
+        return true;
         
     } catch (error) {
         console.error(`❌ Emergency save failed for chat ${chatId}:`, error.message);
         
-        // Last resort - minimal console log
-        console.log('🆘 LAST RESORT LOG:', {
-            chatId,
-            userMessage: safeTruncate(userMessage, 100),
-            gptResponse: safeTruncate(extractGPTContent(gptResponse), 100),
-            timestamp: new Date().toISOString(),
-            error: error.message
-        });
-        
-        return false;
+        // 3. Emergency File Backup (Tertiary) - Absolute fallback
+        try {
+            const fs = require('fs').promises;
+            const backupData = {
+                chatId,
+                userMessage,
+                gptResponse,
+                timestamp: new Date().toISOString(),
+                metadata,
+                emergencyBackup: true
+            };
+            
+            await fs.appendFile(`./emergency_backup_${chatId}.json`, JSON.stringify(backupData) + '\n');
+            console.log(`📁 Emergency file backup created for chat ${chatId}`);
+            return false; // PostgreSQL failed but file backup worked
+            
+        } catch (fileError) {
+            console.error(`❌ ALL backup methods failed for chat ${chatId}:`, fileError.message);
+            return false;
+        }
     }
 }
 
-// 🔄 CONVERSATION RECOVERY SYSTEM with GPT-5 Support
+// 🔄 CONVERSATION RECOVERY SYSTEM
 async function recoverConversation(chatId) {
     try {
         console.log(`🔍 Attempting conversation recovery for chat ${chatId}...`);
         
         let recoveredMessages = [];
-        let recoveryMethod = 'none';
         
         // 1. Try PostgreSQL first (Primary)
         try {
             const dbMessages = await database.getConversationHistoryDB(chatId, 100);
             if (dbMessages && dbMessages.length > 0) {
-                recoveredMessages = dbMessages.map(msg => ({
-                    ...msg,
-                    gptResponse: extractGPTContent(msg.gptResponse || msg.response),
-                    recoveryMethod: 'postgresql'
-                }));
-                recoveryMethod = 'postgresql';
+                recoveredMessages = dbMessages;
                 console.log(`✅ Recovered ${dbMessages.length} messages from PostgreSQL`);
             }
         } catch (dbError) {
@@ -1162,59 +1035,28 @@ async function recoverConversation(chatId) {
         // 2. Try Memory Buffer (Secondary) 
         if (recoveredMessages.length === 0 && conversationBuffer.has(chatId)) {
             const bufferMessages = conversationBuffer.get(chatId);
-            recoveredMessages = bufferMessages.map(msg => ({
-                ...msg,
-                gptResponse: extractGPTContent(msg.gptResponse),
-                recoveryMethod: 'memory'
-            }));
-            recoveryMethod = 'memory';
+            recoveredMessages = bufferMessages;
             console.log(`✅ Recovered ${bufferMessages.length} messages from memory buffer`);
         }
         
         // 3. Try Emergency File Backup (Tertiary)
         if (recoveredMessages.length === 0) {
-            const possibleFiles = [
-                `./backups/emergency_backup_${chatId}.jsonl`,
-                `./emergency_backup_${chatId}.json`,
-                `./emergency_backup_${chatId}.jsonl`
-            ];
-            
-            for (const filename of possibleFiles) {
-                try {
-                    const fileContent = await fs.readFile(filename, 'utf8');
-                    const fileMessages = fileContent.split('\n')
-                        .filter(line => line.trim())
-                        .map(line => {
-                            try {
-                                const parsed = JSON.parse(line);
-                                return {
-                                    ...parsed,
-                                    gptResponse: extractGPTContent(parsed.gptResponse || parsed.gptResponseRaw),
-                                    recoveryMethod: 'file'
-                                };
-                            } catch (parseError) {
-                                console.warn(`⚠️ Failed to parse backup line: ${parseError.message}`);
-                                return null;
-                            }
-                        })
-                        .filter(msg => msg !== null);
-                    
-                    if (fileMessages.length > 0) {
-                        recoveredMessages = fileMessages;
-                        recoveryMethod = 'file';
-                        console.log(`✅ Recovered ${fileMessages.length} messages from file: ${filename}`);
-                        break;
-                    }
-                } catch (fileError) {
-                    continue; // Try next file
-                }
+            try {
+                const fs = require('fs').promises;
+                const fileContent = await fs.readFile(`./emergency_backup_${chatId}.json`, 'utf8');
+                const fileMessages = fileContent.split('\n')
+                    .filter(line => line.trim())
+                    .map(line => JSON.parse(line));
+                
+                recoveredMessages = fileMessages;
+                console.log(`✅ Recovered ${fileMessages.length} messages from emergency file`);
+            } catch (fileError) {
+                console.log(`⚠️ Emergency file recovery failed: ${fileError.message}`);
             }
         }
         
         if (recoveredMessages.length > 0) {
-            // Sort by timestamp
-            recoveredMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            console.log(`🎉 CONVERSATION RECOVERED! ${recoveredMessages.length} messages restored for chat ${chatId} via ${recoveryMethod}`);
+            console.log(`🎉 CONVERSATION RECOVERED! ${recoveredMessages.length} messages restored for chat ${chatId}`);
             return recoveredMessages;
         } else {
             console.log(`❌ No conversation data found for chat ${chatId}`);
@@ -1227,15 +1069,13 @@ async function recoverConversation(chatId) {
     }
 }
 
-// 📦 PERIODIC BACKUP SYSTEM with GPT-5 Response Handling
+// 📦 PERIODIC BACKUP SYSTEM  
 async function performPeriodicBackup() {
     try {
         const now = Date.now();
         if (now - lastBackupTime < BACKUP_INTERVAL) return;
         
         console.log('📦 Performing periodic conversation backup...');
-        let totalBackedUp = 0;
-        let successCount = 0;
         
         // Backup conversation buffers to database
         for (const [chatId, messages] of conversationBuffer.entries()) {
@@ -1248,23 +1088,7 @@ async function performPeriodicBackup() {
                     console.log(`📦 Backing up ${recentMessages.length} recent messages for chat ${chatId}`);
                     
                     for (const msg of recentMessages) {
-                        try {
-                            const success = await saveConversationEmergency(
-                                chatId, 
-                                msg.userMessage, 
-                                msg.gptResponseRaw || msg.gptResponse,
-                                { 
-                                    ...msg.metadata, 
-                                    periodicBackup: true,
-                                    originalTimestamp: msg.timestamp
-                                }
-                            );
-                            
-                            if (success) successCount++;
-                            totalBackedUp++;
-                        } catch (msgError) {
-                            console.error(`❌ Failed to backup message for chat ${chatId}:`, msgError.message);
-                        }
+                        await saveConversationEmergency(chatId, msg.userMessage, msg.gptResponse, msg.metadata);
                     }
                 }
             } catch (backupError) {
@@ -1273,46 +1097,10 @@ async function performPeriodicBackup() {
         }
         
         lastBackupTime = now;
-        console.log(`✅ Periodic backup completed: ${successCount}/${totalBackedUp} messages backed up successfully`);
-        
-        // Clean up old memory entries
-        cleanupOldMemoryEntries();
+        console.log('✅ Periodic backup completed');
         
     } catch (error) {
         console.error('❌ Periodic backup system error:', error.message);
-    }
-}
-
-// Clean up old memory entries to prevent memory leaks
-function cleanupOldMemoryEntries() {
-    try {
-        const cutoffTime = Date.now() - (24 * 60 * 60 * 1000); // 24 hours ago
-        let cleanedChats = 0;
-        let cleanedMessages = 0;
-        
-        for (const [chatId, messages] of conversationBuffer.entries()) {
-            const originalLength = messages.length;
-            const recentMessages = messages.filter(msg => 
-                new Date(msg.timestamp).getTime() > cutoffTime
-            );
-            
-            if (recentMessages.length < originalLength) {
-                conversationBuffer.set(chatId, recentMessages);
-                cleanedMessages += (originalLength - recentMessages.length);
-                cleanedChats++;
-            }
-            
-            // Remove empty chat buffers
-            if (recentMessages.length === 0) {
-                conversationBuffer.delete(chatId);
-            }
-        }
-        
-        if (cleanedMessages > 0) {
-            console.log(`🧹 Cleaned up ${cleanedMessages} old messages from ${cleanedChats} chats`);
-        }
-    } catch (error) {
-        console.error('❌ Memory cleanup error:', error.message);
     }
 }
 
@@ -1343,42 +1131,7 @@ try {
     console.log('✅ multimodal module loaded');
 } catch (error) {
     console.log('⚠️ multimodal module not found');
-    multimodal = null;
-}
-
-// Helper function to check if multimodal is available
-function isMultimodalAvailable() {
-    return multimodal && typeof multimodal.analyzeImage === 'function';
-}
-
-// Handler for disabled features
-async function handleFeatureDisabled(ctx) {
-    const command = ctx.message.text.split(' ')[0];
-    const featureMap = {
-        '/vision': 'multimodal (vision/image analysis)',
-        '/transcribe': 'multimodal (audio transcription)',
-        '/document': 'multimodal (document analysis)',
-        '/voice': 'multimodal (voice analysis)',
-        '/trade': 'metaTrader (trading analysis)',
-        '/forex': 'metaTrader (forex analysis)',
-        '/signals': 'metaTrader (trading signals)',
-        '/live': 'liveData (live data queries)',
-        '/news': 'liveData (news analysis)',
-        '/weather': 'liveData (weather queries)'
-    };
-    
-    const featureName = featureMap[command] || 'this feature';
-    
-    await ctx.reply(
-        `⚠️ **Feature Not Available**\n\n` +
-        `The ${command} command requires the ${featureName} module, which is not currently loaded.\n\n` +
-        `Available commands:\n` +
-        `• GPT-5: /gpt5, /nano, /mini, /ultimate\n` +
-        `• Analysis: /analyze, /quick\n` +
-        `• System: /health, /status, /help\n` +
-        `• Business: /cambodia, /lending, /portfolio`,
-        { parse_mode: 'Markdown' }
-    );
+    multimodal = null;  // Set to null instead of empty object
 }
 
 // 🎮 COMMAND HANDLERS MAP - GPT-5 Optimized
@@ -1398,42 +1151,28 @@ const commandHandlers = {
     '/analytics': handleSystemAnalytics,
     '/status': handleSystemStatus,
     '/cost': handleCostAnalysis,
-    '/tokens': handleTokenUsage,
     
     // 🌍 UTILITIES
     '/time': handleTimeCommand,
     '/market': handleMarketIntel,
     '/help': handleHelp,
-    '/models': handleModelsInfo,
     
-    // 🎨 MULTIMODAL COMMANDS (conditional)
-    '/vision': multimodal ? handleVisionAnalysis : handleFeatureDisabled,
-    '/transcribe': multimodal ? handleTranscriptionCommand : handleFeatureDisabled,
-    '/document': multimodal ? handleDocumentAnalysis : handleFeatureDisabled,
-    '/voice': multimodal ? handleVoiceAnalysis : handleFeatureDisabled,
+    // 🎨 MULTIMODAL COMMANDS
+    '/vision': handleVisionAnalysis,
+    '/transcribe': handleTranscriptionCommand,
+    '/document': handleDocumentAnalysis,
+    '/voice': handleVoiceAnalysis,
     
     // 🇰🇭 CAMBODIA BUSINESS
     '/cambodia': handleCambodiaAnalysis,
     '/lending': handleLendingAnalysis,
     '/portfolio': handlePortfolioAnalysis,
     
-    // 📈 TRADING COMMANDS (conditional)
-    '/trade': metaTrader ? handleTradeAnalysis : handleFeatureDisabled,
-    '/forex': metaTrader ? handleForexAnalysis : handleFeatureDisabled,
-    '/signals': metaTrader ? handleTradingSignals : handleFeatureDisabled,
-    
-    // 📊 LIVE DATA COMMANDS (conditional)
-    '/live': liveData ? handleLiveDataQuery : handleFeatureDisabled,
-    '/news': liveData ? handleNewsAnalysis : handleFeatureDisabled,
-    '/weather': liveData ? handleWeatherQuery : handleFeatureDisabled,
-    
     // 🔧 ADMIN FUNCTIONS
     '/optimize': handleSystemOptimization,
     '/debug': handleDebugInfo,
     '/recover': handleConversationRecovery,
-    '/backup': handleForceBackup,
-    '/cleanup': handleMemoryCleanup,
-    '/stats': handleUsageStats
+    '/backup': handleForceBackup
 };
 
 // 💾 MESSAGE DEDUPLICATION - Prevent duplicate processing
@@ -1445,225 +1184,12 @@ setInterval(() => {
     console.log('🧹 Cleared processed messages cache');
 }, 300000);
 
-// Enhanced conversation context builder with GPT-5 awareness
-async function buildConversationContext(chatId, userMessage, options = {}) {
-    try {
-        // Get recent conversation history
-        const history = [];
-        
-        // Try database first
-        if (database && database.getConversationHistoryDB) {
-            try {
-                const dbHistory = await database.getConversationHistoryDB(chatId, options.historyLimit || 10);
-                history.push(...dbHistory);
-            } catch (dbError) {
-                console.warn(`Database history failed for ${chatId}:`, dbError.message);
-            }
-        }
-        
-        // Fallback to memory buffer if no database history
-        if (history.length === 0 && conversationBuffer.has(chatId)) {
-            const bufferHistory = conversationBuffer.get(chatId).slice(-(options.historyLimit || 10));
-            history.push(...bufferHistory);
-        }
-        
-        // Use memory module to build context
-        return await memory.buildConversationContext(chatId, userMessage, {
-            ...options,
-            history: history.map(msg => ({
-                userMessage: msg.userMessage,
-                gptResponse: extractGPTContent(msg.gptResponse || msg.response),
-                timestamp: msg.timestamp,
-                metadata: msg.metadata
-            }))
-        });
-        
-    } catch (error) {
-        console.error(`Context building failed for ${chatId}:`, error.message);
-        return userMessage; // Fallback to just the current message
-    }
+// Helper function to check if multimodal is available
+function isMultimodalAvailable() {
+    return multimodal && typeof multimodal.analyzeImage === 'function';
 }
 
-console.log('✅ Database & Memory System initialized with GPT-5 support');
-console.log(`💾 Conversation buffer active, backup interval: ${BACKUP_INTERVAL/1000}s`);
-
-// Export everything
-module.exports = {
-    // Core modules
-    database,
-    memory,
-    logger,
-    
-    // Main functions
-    saveConversationEmergency,
-    recoverConversation,
-    performPeriodicBackup,
-    buildConversationContext,
-    
-    // Utility functions
-    extractGPTContent,
-    extractResponseMetadata,
-    safeTruncate,
-    safeStringify,
-    cleanupOldMemoryEntries,
-    
-    // Feature availability
-    isMultimodalAvailable,
-    handleFeatureDisabled,
-    
-    // Command handlers
-    commandHandlers,
-    
-    // Data structures
-    conversationBuffer,
-    processedMessages,
-    
-    // Optional modules (may be null)
-    liveData,
-    metaTrader,
-    multimodal,
-    
-    // Constants
-    BACKUP_INTERVAL
-};
-
-// Add missing callback handlers before webhook endpoint
-async function handleCallbackQuery(callbackQuery) {
-    try {
-        console.log('Callback query received:', callbackQuery.data);
-        await bot.answerCallbackQuery(callbackQuery.id);
-    } catch (error) {
-        console.error('Callback query error:', error.message);
-    }
-}
-
-async function handleInlineQuery(inlineQuery) {
-    try {
-        console.log('Inline query received:', inlineQuery.query);
-        await bot.answerInlineQuery(inlineQuery.id, []);
-    } catch (error) {
-        console.error('Inline query error:', error.message);
-    }
-}
-
-// Add placeholder Cambodia module functions
-async function runCreditAssessment(chatId, data, chatId2, bot) {
-    await bot.sendMessage(chatId, "Credit assessment functionality is being developed. Please use general queries for now.");
-}
-
-async function processLoanApplication(data, chatId, bot) {
-    await bot.sendMessage(chatId, "Loan application processing is being developed. Please use general queries for now.");
-}
-
-async function serviceLoan(loanId, data, chatId, bot) {
-    await bot.sendMessage(chatId, "Loan servicing functionality is being developed. Please use general queries for now.");
-}
-
-async function assessBorrowerRisk(chatId, data, chatId, bot) {
-    await bot.sendMessage(chatId, "Risk assessment functionality is being developed. Please use general queries for now.");
-}
-
-async function initiateRecovery(chatId, data, chatId, bot) {
-    await bot.sendMessage(chatId, "Recovery initiation is being developed. Please use general queries for now.");
-}
-
-async function manageCashFlow(chatId, data, chatId, bot) {
-    await bot.sendMessage(chatId, "Cash flow management is being developed. Please use general queries for now.");
-}
-
-async function conductDueDiligence(chatId, data, chatId, bot) {
-    await bot.sendMessage(chatId, "Due diligence functionality is being developed. Please use general queries for now.");
-}
-
-async function generatePerformanceDashboard(chatId, period, chatId2, bot) {
-    await bot.sendMessage(chatId, "Performance dashboard is being developed. Please use general queries for now.");
-}
-
-async function calculateNAV(chatId, date, chatId2, bot) {
-    await bot.sendMessage(chatId, "NAV calculation is being developed. Please use general queries for now.");
-}
-
-async function generateQuarterlyReport(chatId, data, chatId2, bot) {
-    await bot.sendMessage(chatId, "Quarterly reporting is being developed. Please use general queries for now.");
-}
-
-async function performComplianceCheck(chatId, data, chatId2, bot) {
-    await bot.sendMessage(chatId, "Compliance checking is being developed. Please use general queries for now.");
-}
-
-async function analyzeMarket(region, data, chatId, bot) {
-    await bot.sendMessage(chatId, "Market analysis is being developed. Please use general queries for now.");
-}
-
-async function processCambodiaDeal(data, chatId, bot) {
-    await bot.sendMessage(chatId, "Deal processing is being developed. Please use general queries for now.");
-}
-
-async function manageLimitedPartners(data, action, chatId, bot) {
-    await bot.sendMessage(chatId, "LP management is being developed. Please use general queries for now.");
-}
-
-async function optimizePortfolio(chatId, data, chatId2, bot) {
-    await bot.sendMessage(chatId, "Portfolio optimization is being developed. Please use general queries for now.");
-}
-
-async function valuateRealEstate(chatId, data, chatId2, bot) {
-    await bot.sendMessage(chatId, "Real estate valuation is being developed. Please use general queries for now.");
-}
-
-async function valuateBusiness(chatId, data, chatId2, bot) {
-    await bot.sendMessage(chatId, "Business valuation is being developed. Please use general queries for now.");
-}
-
-async function manageInvestmentPortfolio(chatId, data, chatId2, bot) {
-    await bot.sendMessage(chatId, "Investment portfolio management is being developed. Please use general queries for now.");
-}
-
-async function analyzeEconomicConditions(region, data, chatId, bot) {
-    await bot.sendMessage(chatId, "Economic analysis is being developed. Please use general queries for now.");
-}
-
-async function checkRegulatoryCompliance(chatId, data, chatId2, bot) {
-    await bot.sendMessage(chatId, "Regulatory compliance is being developed. Please use general queries for now.");
-}
-
-async function valuateAgriculturalAssets(chatId, data, chatId2, bot) {
-    await bot.sendMessage(chatId, "Agricultural valuation is being developed. Please use general queries for now.");
-}
-
-async function valuateNaturalResources(chatId, data, chatId2, bot) {
-    await bot.sendMessage(chatId, "Natural resources valuation is being developed. Please use general queries for now.");
-}
-
-async function processLendingTransaction(data, chatId, bot) {
-    await bot.sendMessage(chatId, "Lending transaction processing is being developed. Please use general queries for now.");
-}
-
-async function executeCambodiaTrade(data, chatId, bot) {
-    await bot.sendMessage(chatId, "Trading operations are being developed. Please use general queries for now.");
-}
-
-async function initiateClientOnboarding(data, chatId, bot) {
-    await bot.sendMessage(chatId, "Client onboarding is being developed. Please use general queries for now.");
-}
-
-async function analyzeForexOpportunity(pair, type, chatId, bot) {
-    await bot.sendMessage(chatId, "Forex analysis is being developed. Please use general queries for now.");
-}
-
-async function analyzeCryptoOpportunity(crypto, type, chatId, bot) {
-    await bot.sendMessage(chatId, "Crypto analysis is being developed. Please use general queries for now.");
-}
-
-async function analyzeStock(symbol, type, chatId, bot) {
-    await bot.sendMessage(chatId, "Stock analysis is being developed. Please use general queries for now.");
-}
-
-async function analyzeGlobalMarketConditions(chatId, bot) {
-    await bot.sendMessage(chatId, "Global market analysis is being developed. Please use general queries for now.");
-}
-
-// Fixed webhook endpoint
+// 🌐 WEBHOOK ENDPOINT - Main message handler with deduplication
 app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
     const startTime = Date.now();
     
@@ -1677,7 +1203,7 @@ app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
             const dedupeKey = `${chatId}_${messageId}`;
             
             if (processedMessages.has(dedupeKey)) {
-                console.log(`Duplicate message detected: ${dedupeKey} - Skipping`);
+                console.log(`🔄 Duplicate message detected: ${dedupeKey} - Skipping`);
                 return res.status(200).json({ ok: true });
             }
             processedMessages.add(dedupeKey);
@@ -1695,38 +1221,216 @@ app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
         res.status(200).json({ ok: true });
         
     } catch (error) {
-        console.error('Webhook processing error:', error.message);
+        console.error('❌ Webhook processing error:', error.message);
         res.status(200).json({ ok: true }); // Always return 200 to prevent Telegram retries
     }
 });
 
-// Fixed main message handler
+// 🎯 MAIN MESSAGE HANDLER - GPT-5 Only System with Cambodia Module Routing
 async function handleMessage(msg) {
     const startTime = Date.now();
     const chatId = msg.chat.id;
     const userMessage = msg.text || '';
     const messageId = msg.message_id;
     
-    console.log(`Message received from ${chatId}: "${userMessage.substring(0, 50)}..."`);
+    console.log(`\n🎯 Message received from ${chatId}: "${userMessage.substring(0, 50)}..."`);
     
-    // COMMENTED OUT Cambodia routing temporarily to prevent errors
-    // Uncomment and fix individual functions as needed
-    /*
+    // 🏦 COMPREHENSIVE CAMBODIA MODULES ROUTER - All 30 modules
     if (userMessage && !userMessage.startsWith('/')) {
         const query = userMessage.toLowerCase();
         
         try {
-            // Cambodia routing logic here...
-            // Enable specific modules as they're developed
+            // === CORE 12 CAMBODIA LENDING MODULES ===
+            
+            // CREDIT ASSESSMENT
+            if (query.includes('credit score') || query.includes('credit check') || query.includes('creditworthiness')) {
+                await runCreditAssessment(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // LOAN ORIGINATION
+            if (query.includes('loan application') || query.includes('apply loan') || query.includes('loan approval')) {
+                await processLoanApplication({ borrowerId: chatId, query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // LOAN SERVICING
+            if (query.includes('loan servicing') || query.includes('loan management') || query.includes('loan performance')) {
+                await serviceLoan(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // RISK MANAGEMENT
+            if (query.includes('risk assessment') || query.includes('risk analysis') || query.includes('risk management')) {
+                await assessBorrowerRisk(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // LOAN RECOVERY
+            if (query.includes('loan recovery') || query.includes('debt collection') || query.includes('collateral')) {
+                await initiateRecovery(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // CASH FLOW MANAGEMENT
+            if (query.includes('cash flow') || query.includes('liquidity') || query.includes('cash management')) {
+                await manageCashFlow(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // DUE DILIGENCE
+            if (query.includes('due diligence') || query.includes('background check') || query.includes('aml screening')) {
+                await conductDueDiligence(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // PERFORMANCE ANALYTICS
+            if (query.includes('performance') || query.includes('analytics') || query.includes('dashboard')) {
+                await generatePerformanceDashboard(chatId, 'monthly', chatId, bot);
+                return;
+            }
+            
+            // FUND ACCOUNTING
+            if (query.includes('nav') || query.includes('fund accounting') || query.includes('management fees')) {
+                await calculateNAV(chatId, new Date(), chatId, bot);
+                return;
+            }
+            
+            // INVESTOR REPORTING
+            if (query.includes('quarterly report') || query.includes('investor report') || query.includes('lp report')) {
+                await generateQuarterlyReport(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // COMPLIANCE MONITORING
+            if (query.includes('compliance') || query.includes('regulatory') || query.includes('compliance check')) {
+                await performComplianceCheck(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // MARKET RESEARCH
+            if (query.includes('market research') || query.includes('market analysis') || query.includes('competitive analysis')) {
+                await analyzeMarket('cambodia', { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // === 11 SPECIALIZED HANDLER MODULES ===
+            
+            // CAMBODIA DEALS
+            if (query.includes('deal') || query.includes('investment opportunity') || query.includes('deal analysis')) {
+                await processCambodiaDeal({ dealType: 'analysis', query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // LP MANAGEMENT
+            if (query.includes('limited partner') || query.includes('lp management') || query.includes('investor management')) {
+                await manageLimitedPartners({ lpName: 'Query', query: userMessage }, 'analyze', chatId, bot);
+                return;
+            }
+            
+            // PORTFOLIO MANAGEMENT
+            if (query.includes('portfolio') || query.includes('portfolio optimization') || query.includes('asset allocation')) {
+                await optimizePortfolio(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // REAL ESTATE WEALTH
+            if (query.includes('real estate') || query.includes('property') || query.includes('real estate valuation')) {
+                await valuateRealEstate(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // BUSINESS WEALTH
+            if (query.includes('business valuation') || query.includes('company value') || query.includes('business analysis')) {
+                await valuateBusiness(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // INVESTMENT WEALTH
+            if (query.includes('investment portfolio') || query.includes('investment analysis') || query.includes('asset management')) {
+                await manageInvestmentPortfolio(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // ECONOMIC INTELLIGENCE
+            if (query.includes('economic conditions') || query.includes('economic analysis') || query.includes('economic forecast')) {
+                await analyzeEconomicConditions('cambodia', { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // LEGAL REGULATORY
+            if (query.includes('legal') || query.includes('regulatory compliance') || query.includes('legal risk')) {
+                await checkRegulatoryCompliance(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // AGRICULTURAL WEALTH
+            if (query.includes('agricultural') || query.includes('farming') || query.includes('crop') || query.includes('agriculture')) {
+                await valuateAgriculturalAssets(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // RESOURCES WEALTH
+            if (query.includes('natural resources') || query.includes('commodities') || query.includes('mining') || query.includes('resources')) {
+                await valuateNaturalResources(chatId, { query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // === CAMBODIA LENDING UTILITY ===
+            
+            // CAMBODIA LENDING
+            if (query.includes('lending transaction') || query.includes('validate lending') || query.includes('lending data')) {
+                await processLendingTransaction({ query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // === 6 TRADING & GLOBAL MODULES ===
+            
+            // TRADING OPERATIONS
+            if (query.includes('execute trade') || query.includes('trading portfolio') || query.includes('trading costs')) {
+                await executeCambodiaTrade({ symbol: 'QUERY', query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // CLIENT ONBOARDING
+            if (query.includes('client onboarding') || query.includes('kyc') || query.includes('client qualification')) {
+                await initiateClientOnboarding({ personalDetails: { name: 'Query' }, query: userMessage }, chatId, bot);
+                return;
+            }
+            
+            // FOREX TRADING
+            if (query.includes('forex') || query.includes('currency') || query.includes('fx trading')) {
+                await analyzeForexOpportunity('USD/KHR', 'comprehensive', chatId, bot);
+                return;
+            }
+            
+            // CRYPTO TRADING
+            if (query.includes('crypto') || query.includes('bitcoin') || query.includes('cryptocurrency')) {
+                await analyzeCryptoOpportunity('BTC', 'comprehensive', chatId, bot);
+                return;
+            }
+            
+            // STOCK TRADING
+            if (query.includes('stock') || query.includes('equity') || query.includes('shares')) {
+                await analyzeStock('QUERY', 'comprehensive', chatId, bot);
+                return;
+            }
+            
+            // GLOBAL MARKETS
+            if (query.includes('global markets') || query.includes('international') || query.includes('global portfolio')) {
+                await analyzeGlobalMarketConditions(chatId, bot);
+                return;
+            }
+            
         } catch (error) {
             console.error('Cambodia module routing error:', error);
-            await bot.sendMessage(chatId, `Module processing error: ${error.message}`);
+            await telegramSplitter.sendAlert(bot, chatId, `Module processing error: ${error.message}`, 'Cambodia Module Error');
             return;
         }
     }
-    */
-    
-    // Multimodal content detection
+      
+    // (multimodal detection, commands, etc.)
+    // 🎨 MULTIMODAL CONTENT DETECTION
     const hasPhoto = !!msg.photo;
     const hasDocument = !!msg.document;
     const hasVideo = !!msg.video;
@@ -1738,7 +1442,7 @@ async function handleMessage(msg) {
     const isMultimodal = hasPhoto || hasDocument || hasVideo || hasVoice || hasAudio || hasVideoNote;
     
     if (isMultimodal) {
-        console.log('Multimodal content detected:', {
+        console.log('🎨 Multimodal content detected:', {
             photo: hasPhoto,
             document: hasDocument,
             video: hasVideo,
@@ -1771,40 +1475,41 @@ async function handleMessage(msg) {
                     }
                 });
             } else {
-                console.log(`User interaction: ${chatId} - "${userMessage.substring(0, 50)}..." (Media: ${isMultimodal})`);
+                // Fallback logging
+                console.log(`📝 User interaction: ${chatId} - "${userMessage.substring(0, 50)}..." (Media: ${isMultimodal})`);
             }
         } catch (logError) {
-            console.warn('Logging failed, continuing without logging:', logError.message);
+            console.warn('⚠️ Logging failed, continuing without logging:', logError.message);
         }
         
-        // Handle multimodal content first
-        if (isMultimodal && multimodal) {
-            console.log('Processing multimodal content with GPT-5 vision/analysis...');
+        // 🎨 HANDLE MULTIMODAL CONTENT FIRST
+        if (isMultimodal) {
+            console.log('🎨 Processing multimodal content with GPT-5 vision/analysis...');
             
             try {
                 let multimodalResult;
                 
-                // Image analysis
+                // 📸 IMAGE ANALYSIS
                 if (hasPhoto) {
-                    const photo = msg.photo[msg.photo.length - 1];
+                    const photo = msg.photo[msg.photo.length - 1]; // Get highest resolution
                     multimodalResult = await multimodal.analyzeImage(bot, photo.file_id, userMessage || "Analyze this image", chatId);
                 }
-                // Document analysis
+                // 📄 DOCUMENT ANALYSIS
                 else if (hasDocument) {
                     multimodalResult = await multimodal.analyzeDocument(bot, msg.document, userMessage || "Analyze this document", chatId);
                 }
-                // Video analysis
+                // 🎥 VIDEO ANALYSIS
                 else if (hasVideo) {
                     multimodalResult = await multimodal.analyzeVideo(bot, msg.video, userMessage || "Analyze this video", chatId);
                 }
-                // Voice/audio analysis
+                // 🎵 VOICE/AUDIO ANALYSIS
                 else if (hasVoice) {
                     multimodalResult = await multimodal.analyzeVoice(bot, msg.voice, userMessage || "Transcribe and analyze this voice message", chatId);
                 }
                 else if (hasAudio) {
                     multimodalResult = await multimodal.analyzeAudio(bot, msg.audio, userMessage || "Transcribe and analyze this audio", chatId);
                 }
-                // Video note analysis
+                // 🎬 VIDEO NOTE ANALYSIS
                 else if (hasVideoNote) {
                     multimodalResult = await multimodal.analyzeVideoNote(bot, msg.video_note, userMessage || "Analyze this video note", chatId);
                 }
@@ -1812,24 +1517,25 @@ async function handleMessage(msg) {
                 if (multimodalResult && multimodalResult.success) {
                     const processingTime = Date.now() - startTime;
                     
-                    console.log(`Multimodal processing complete:`, {
+                    console.log(`✅ Multimodal processing complete:`, {
                         type: multimodalResult.type,
                         aiUsed: multimodalResult.aiUsed,
                         processingTime: processingTime,
                         hasTranscription: !!multimodalResult.transcription
                     });
                     
-                    // Save conversation with extracted content
-                    const responseContent = extractGPTContent(multimodalResult.analysis);
+                    // Log successful multimodal interaction with TRIPLE BACKUP
                     await saveConversationEmergency(
                         chatId,
                         userMessage,
-                        responseContent,
+                        multimodalResult.analysis,
                         {
                             aiUsed: multimodalResult.aiUsed || 'GPT-5-multimodal',
                             modelUsed: 'gpt-5',
                             responseTime: processingTime,
+                            memoryUsed: false,
                             powerMode: 'GPT5_MULTIMODAL',
+                            telegramDelivered: true,
                             gpt5OnlyMode: true,
                             webhookMode: true,
                             multimodalType: multimodalResult.type,
@@ -1839,20 +1545,21 @@ async function handleMessage(msg) {
                     
                     return; // Multimodal processing complete
                 } else {
-                    console.log('Multimodal processing failed, falling back to text processing...');
+                    console.log('⚠️ Multimodal processing failed, falling back to text processing...');
                 }
                 
             } catch (multimodalError) {
-                console.error('Multimodal processing error:', multimodalError.message);
+                console.error('❌ Multimodal processing error:', multimodalError.message);
                 
+                // Send multimodal error message
                 await bot.sendMessage(chatId, 
-                    `I detected media content but encountered an issue processing it.\n\n` +
-                    `Error: ${multimodalError.message}\n\n` +
-                    `Please try:\n` +
+                    `🎨 I detected media content but encountered an issue processing it.\n\n` +
+                    `⚠️ Error: ${multimodalError.message}\n\n` +
+                    `🔧 Please try:\n` +
                     `• Sending the media with a text description\n` +
                     `• Using a different file format\n` +
                     `• Checking if the file is too large\n\n` +
-                    `I can still help with text questions!`
+                    `💡 I can still help with text questions!`
                 );
                 
                 return;
@@ -1865,12 +1572,12 @@ async function handleMessage(msg) {
             const handler = commandHandlers[command];
             
             if (handler) {
-                console.log(`Executing command: ${command}`);
+                console.log(`🎮 Executing command: ${command}`);
                 await handler(msg, bot);
                 return;
             } else {
                 await bot.sendMessage(chatId, 
-                    `Unknown command: ${command}\n\nUse /help to see available commands.`
+                    `❓ Unknown command: ${command}\n\nUse /help to see available commands.`
                 );
                 return;
             }
@@ -1878,47 +1585,58 @@ async function handleMessage(msg) {
         
         // Handle empty messages (media only, no text)
         if (!userMessage && isMultimodal) {
-            console.log('Media-only message already processed');
+            console.log('📝 Media-only message already processed');
             return;
         }
         
         // Skip empty messages
         if (!userMessage.trim()) {
-            console.log('Empty message received, skipping...');
+            console.log('📝 Empty message received, skipping...');
             return;
         }
         
-        // FIXED: Use executeDualCommand instead of executeEnhancedGPT5Command
-        console.log('Processing text with GPT-5 system + memory integration...');
+        // 🚀 MAIN GPT-5 TEXT PROCESSING - Smart routing with memory integration
+        console.log('🧠 Processing text with GPT-5 system + memory integration...');
         
-        const result = await executeDualCommand(userMessage, {
-            chatId,
+        // Enhanced processing with auto-Telegram delivery
+        const result = await executeEnhancedGPT5Command(
+            userMessage, 
+            chatId, 
             bot,
-            messageType: 'telegram_webhook',
-            hasMedia: isMultimodal,
-            max_completion_tokens: 6000,
-            reasoning_effort: 'medium',
-            verbosity: 'medium'
-        });
+            {
+                messageType: 'telegram_webhook',
+                hasMedia: isMultimodal,
+                title: `GPT-5 Smart Analysis`,
+                max_completion_tokens: 6000,  // ✅ ADDED: Higher default token limit
+                reasoning_effort: 'medium',
+                verbosity: 'medium'
+            }
+        );
         
         const processingTime = Date.now() - startTime;
         
-        // Extract response content safely
-        const responseContent = extractGPTContent(result);
-        
-        console.log(`GPT-5 text processing complete:`, {
+        console.log(`✅ GPT-5 text processing complete:`, {
+            aiUsed: result.aiUsed,
+            modelUsed: result.modelUsed,
+            powerMode: result.powerMode,
+            memoryUsed: result.contextUsed,
+            telegramDelivered: result.telegramDelivered,
             processingTime: processingTime,
-            responseLength: responseContent ? responseContent.length : 0
+            costTier: result.cost_tier
         });
         
-        // Save conversation with extracted content
+        // Log successful interaction with TRIPLE BACKUP
         await saveConversationEmergency(
             chatId,
             userMessage,
-            responseContent,
+            result.response,
             {
-                aiUsed: 'gpt-5-auto',
+                aiUsed: result.aiUsed,
+                modelUsed: result.modelUsed,
                 responseTime: processingTime,
+                memoryUsed: result.contextUsed,
+                powerMode: result.powerMode,
+                telegramDelivered: result.telegramDelivered,
                 gpt5OnlyMode: true,
                 webhookMode: true
             }
@@ -1926,32 +1644,34 @@ async function handleMessage(msg) {
         
     } catch (error) {
         const processingTime = Date.now() - startTime;
-        console.error('Message processing error:', error.message);
+        console.error('❌ Message processing error:', error.message);
         
         // Send error message to user
         try {
             await bot.sendMessage(chatId, 
-                `I apologize, but I encountered a technical issue.\n\n` +
-                `Error: ${error.message}\n\n` +
-                `Please try:\n` +
-                `• A simpler question\n` +
+                `🚨 I apologize, but I encountered a technical issue.\n\n` +
+                `⚠️ Error: ${error.message}\n\n` +
+                `🔧 The GPT-5 system is experiencing difficulties. Please:\n` +
+                `• Try a simpler question\n` +
                 `• Wait a moment and try again\n` +
-                `• Use /health to check system status`
+                `• Use /health to check system status\n` +
+                `• Contact support if the issue persists`
             );
         } catch (telegramError) {
-            console.error('Failed to send error message:', telegramError.message);
+            console.error('❌ Failed to send error message:', telegramError.message);
         }
         
         // Log error
-        if (logger && logger.logError) {
-            await logger.logError({
-                chatId,
-                userMessage,
-                error: error.message,
-                processingTime,
-                component: 'webhook_handler'
-            });
-        }
+        await logger.logError({
+            chatId,
+            userMessage,
+            error: error.message,
+            processingTime,
+            component: 'webhook_handler',
+            gpt5OnlyMode: true,
+            webhookMode: true,
+            hasMedia: isMultimodal
+        });
     }
 }
 
