@@ -232,9 +232,9 @@ function buildChatRequest(model, messages, options = {}) {
   
   const maxTokens = validateTokenLimits(
     totalPromptTokens, 
-    options.max_tokens || options.max_completion_tokens
+    options.max_completion_tokens || options.max_completion_tokens
   );
-  request.max_tokens = maxTokens;
+  request.max_completion_tokens = maxTokens;
 
   // GPT-5 specific parameters (only for GPT-5 models)
   if (GPT5_MODELS.has(model)) {
@@ -366,7 +366,7 @@ async function getGPT5Completion(input, options = {}) {
       reasoning_effort: options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING,
       temperature: options.temperature,
       top_p: options.top_p,
-      max_tokens: options.max_tokens || options.max_completion_tokens,
+      max_completion_tokens: options.max_completion_tokens || options.max_completion_tokens,
       tools: options.tools,
       tool_choice: options.tool_choice,
       stream: options.stream
@@ -421,7 +421,7 @@ async function getGPT5Completion(input, options = {}) {
         const fallbackRequest = {
           model: GPT5_CONFIG.FALLBACK_MODEL,
           messages: fallbackMessages,
-          max_tokens: Math.min(options.max_tokens || 8000, 4000),
+          max_completion_tokens: Math.min(options.max_completion_tokens || 8000, 4000),
           temperature: options.temperature || 0.7
         };
 
@@ -463,7 +463,7 @@ async function getQuickResponse(prompt, options = {}) {
     model: GPT5_CONFIG.NANO_MODEL,
     reasoning_effort: 'minimal',
     verbosity: 'low',
-    max_tokens: Math.min(options.max_tokens || 4000, 6000)
+    max_completion_tokens: Math.min(options.max_completion_tokens || 4000, 6000)
   });
 }
 
@@ -476,7 +476,7 @@ async function getStandardResponse(prompt, options = {}) {
     model: GPT5_CONFIG.MINI_MODEL,
     reasoning_effort: 'medium',
     verbosity: 'medium',
-    max_tokens: options.max_tokens || 8000
+    max_completion_tokens: options.max_completion_tokens || 8000
   });
 }
 
@@ -489,7 +489,7 @@ async function getDetailedResponse(prompt, options = {}) {
     model: GPT5_CONFIG.PRIMARY_MODEL,
     reasoning_effort: 'high',
     verbosity: 'high',
-    max_tokens: options.max_tokens || 12000
+    max_completion_tokens: options.max_completion_tokens || 12000
   });
 }
 
@@ -502,7 +502,7 @@ async function getChatResponse(prompt, options = {}) {
     model: GPT5_CONFIG.CHAT_MODEL,
     temperature: options.temperature || 0.7,
     verbosity: 'medium',
-    max_tokens: options.max_tokens || 8000
+    max_completion_tokens: options.max_completion_tokens || 8000
   });
 }
 
@@ -515,7 +515,7 @@ async function testConnection() {
     console.log('[GPT5Client] Testing connection...');
     
     const result = await getQuickResponse('Hello! Please confirm you are GPT-5 and working correctly.', {
-      max_tokens: 100,
+      max_completion_tokens: 100,
       allowFallback: false
     });
     
@@ -555,7 +555,7 @@ async function getSystemHealth() {
 
   // Test each model variant
   const testPrompt = 'Test';
-  const testOptions = { max_tokens: 10, allowFallback: false };
+  const testOptions = { max_completion_tokens: 10, allowFallback: false };
 
   const modelTests = [
     { key: 'nano', fn: () => getQuickResponse(testPrompt, testOptions) },
@@ -578,7 +578,7 @@ async function getSystemHealth() {
     await openai.chat.completions.create({
       model: GPT5_CONFIG.FALLBACK_MODEL,
       messages: [{ role: 'user', content: 'Test' }],
-      max_tokens: 10
+      max_completion_tokens: 10
     });
     health.fallback = true;
   } catch (error) {
