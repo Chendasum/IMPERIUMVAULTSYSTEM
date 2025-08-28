@@ -147,7 +147,6 @@ const complianceMonitoring = require('./cambodia/complianceMonitoring');
 const marketResearch = require('./cambodia/marketResearch');
 
 // 📈 NEW 6 TRADING & GLOBAL MODULES
-const tradingOperations = require('./cambodia/tradingOperations');
 const clientOnboarding = require('./cambodia/clientOnboarding');
 const forexTrading = require('./cambodia/forexTrading');
 const cryptoTrading = require('./cambodia/cryptoTrading');
