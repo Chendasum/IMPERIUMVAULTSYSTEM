@@ -116,6 +116,44 @@ const {
     getGPT5PerformanceMetrics        // ⚡ Real-time performance analytics
 } = require("./utils/dualCommandSystem");
 
+const telegramSplitter = require('./utils/telegramSplitter');
+
+// Master coordination for ALL modules with conditional loading
+// 🔧 SPECIALIZED HANDLERS (Preserved for business logic)
+const cambodiaHandler = require('./handlers/cambodiaDeals');
+const lpManagement = require('./cambodia/lpManagement');
+const portfolioManager = require('./cambodia/portfolioManager');
+const realEstateWealth = require('./cambodia/realEstateWealth'); 
+const businessWealth = require('./cambodia/businessWealth');
+const investmentWealth = require('./cambodia/investmentWealth');
+const economicIntelligence = require('./cambodia/economicIntelligence');
+const legalRegulatory = require('./cambodia/legalRegulatory');
+const agriculturalWealth = require('./cambodia/agriculturalWealth');
+const resourcesWealth = require('./cambodia/resourcesWealth');
+const cambodiaLending = require('./utils/cambodiaLending');
+
+// 🏦 CORE 12 CAMBODIA LENDING MODULES
+const creditAssessment = require('./cambodia/creditAssessment');
+const loanOrigination = require('./cambodia/loanOrigination');
+const loanServicing = require('./cambodia/loanServicing');
+const riskManagement = require('./cambodia/riskManagement');
+const loanRecovery = require('./cambodia/loanRecovery');
+const cashFlowManagement = require('./cambodia/cashFlowManagement');
+const borrowerDueDiligence = require('./cambodia/borrowerDueDiligence');
+const performanceAnalytics = require('./cambodia/performanceAnalytics');
+const fundAccounting = require('./cambodia/fundAccounting');
+const investorReporting = require('./cambodia/investorReporting');
+const complianceMonitoring = require('./cambodia/complianceMonitoring');
+const marketResearch = require('./cambodia/marketResearch');
+
+// 📈 NEW 6 TRADING & GLOBAL MODULES
+const tradingOperations = require('./cambodia/tradingOperations');
+const clientOnboarding = require('./cambodia/clientOnboarding');
+const forexTrading = require('./cambodia/forexTrading');
+const cryptoTrading = require('./cambodia/cryptoTrading');
+const stockTrading = require('./cambodia/stockTrading');
+const globalMarkets = require('./cambodia/globalMarkets')
+
 // ========================================================================
 // GPT-5 CONNECTED CAMBODIA MODULE FUNCTIONS - Clean replacement
 // ========================================================================
