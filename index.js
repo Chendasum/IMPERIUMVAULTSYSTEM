@@ -116,2394 +116,746 @@ const {
     getGPT5PerformanceMetrics        // ⚡ Real-time performance analytics
 } = require("./utils/dualCommandSystem");
 
-const telegramSplitter = require('./utils/telegramSplitter');
-
-// Master coordination for ALL modules with conditional loading
-// 🔧 SPECIALIZED HANDLERS (Preserved for business logic)
-const cambodiaHandler = require('./handlers/cambodiaDeals');
-const lpManagement = require('./cambodia/lpManagement');
-const portfolioManager = require('./cambodia/portfolioManager');
-const realEstateWealth = require('./cambodia/realEstateWealth'); 
-const businessWealth = require('./cambodia/businessWealth');
-const investmentWealth = require('./cambodia/investmentWealth');
-const economicIntelligence = require('./cambodia/economicIntelligence');
-const legalRegulatory = require('./cambodia/legalRegulatory');
-const agriculturalWealth = require('./cambodia/agriculturalWealth');
-const resourcesWealth = require('./cambodia/resourcesWealth');
-const cambodiaLending = require('./utils/cambodiaLending');
-
-// 🏦 CORE 12 CAMBODIA LENDING MODULES
-const creditAssessment = require('./cambodia/creditAssessment');
-const loanOrigination = require('./cambodia/loanOrigination');
-const loanServicing = require('./cambodia/loanServicing');
-const riskManagement = require('./cambodia/riskManagement');
-const loanRecovery = require('./cambodia/loanRecovery');
-const cashFlowManagement = require('./cambodia/cashFlowManagement');
-const borrowerDueDiligence = require('./cambodia/borrowerDueDiligence');
-const performanceAnalytics = require('./cambodia/performanceAnalytics');
-const fundAccounting = require('./cambodia/fundAccounting');
-const investorReporting = require('./cambodia/investorReporting');
-const complianceMonitoring = require('./cambodia/complianceMonitoring');
-const marketResearch = require('./cambodia/marketResearch');
-
-// 📈 NEW TRADING MODULES (Conditional Loading)
-let tradingOperations, clientOnboarding, forexTrading, cryptoTrading, stockTrading, globalMarkets;
-let tradingModulesLoaded = 0;
-
-try {
-    tradingOperations = require('./cambodia/tradingOperations');
-    tradingModulesLoaded++;
-    console.log('✅ tradingOperations loaded');
-} catch (error) {
-    console.log('⚠️ tradingOperations not found - trading functions will return placeholder responses');
-    tradingOperations = null;
-}
-
-try {
-    clientOnboarding = require('./cambodia/clientOnboarding');
-    tradingModulesLoaded++;
-    console.log('✅ clientOnboarding loaded');
-} catch (error) {
-    console.log('⚠️ clientOnboarding not found - onboarding functions will return placeholder responses');
-    clientOnboarding = null;
-}
-
-try {
-    forexTrading = require('./cambodia/forexTrading');
-    tradingModulesLoaded++;
-    console.log('✅ forexTrading loaded');
-} catch (error) {
-    console.log('⚠️ forexTrading not found - forex functions will return placeholder responses');
-    forexTrading = null;
-}
-
-try {
-    cryptoTrading = require('./cambodia/cryptoTrading');
-    tradingModulesLoaded++;
-    console.log('✅ cryptoTrading loaded');
-} catch (error) {
-    console.log('⚠️ cryptoTrading not found - crypto functions will return placeholder responses');
-    cryptoTrading = null;
-}
-
-try {
-    stockTrading = require('./cambodia/stockTrading');
-    tradingModulesLoaded++;
-    console.log('✅ stockTrading loaded');
-} catch (error) {
-    console.log('⚠️ stockTrading not found - stock functions will return placeholder responses');
-    stockTrading = null;
-}
-
-try {
-    globalMarkets = require('./cambodia/globalMarkets');
-    tradingModulesLoaded++;
-    console.log('✅ globalMarkets loaded');
-} catch (error) {
-    console.log('⚠️ globalMarkets not found - global market functions will return placeholder responses');
-    globalMarkets = null;
-}
-
-console.log('🏦 IMPERIUMVAULTSYSTEM - Cambodia Private Lending Fund');
-console.log(`📊 Core modules loaded: 11 Specialized Handlers + 12 Core Lending`);
-console.log(`📈 Trading modules loaded: ${tradingModulesLoaded}/6 trading modules available`);
-
-// Helper function for missing modules
-function createPlaceholderResponse(moduleName, functionName) {
-    return {
-        success: false,
-        error: `${moduleName} module not available - please create ./cambodia/${moduleName}.js`,
-        module: moduleName,
-        function: functionName,
-        placeholder: true,
-        suggestion: `Install ${moduleName} module to enable ${functionName} functionality`
-    };
-}
-
 // ========================================================================
-// 🎯 SPECIALIZED HANDLER FUNCTIONS (11 MODULES)
+// GPT-5 CONNECTED CAMBODIA MODULE FUNCTIONS - Clean replacement
 // ========================================================================
 
-// 🎯 CAMBODIA DEALS HANDLER FUNCTIONS
-async function processCambodiaDeal(dealData, chatId = null, bot = null) {
-    try {
-        console.log(`🤝 Processing Cambodia deal: ${dealData.dealType || 'unknown type'}`);
-        return await cambodiaHandler.processDeal(dealData, chatId, bot);
-    } catch (error) {
-        console.error('Cambodia deal processing error:', error.message);
-        return { success: false, error: error.message, module: 'cambodiaHandler' };
-    }
-}
-
-async function analyzeDealStructure(dealId, structureData, chatId = null, bot = null) {
-    try {
-        return await cambodiaHandler.analyzeDealStructure(dealId, structureData, chatId, bot);
-    } catch (error) {
-        console.error('Deal structure analysis error:', error.message);
-        return { success: false, error: error.message, module: 'cambodiaHandler' };
-    }
-}
-
-// 🎯 LP MANAGEMENT FUNCTIONS
-async function manageLimitedPartners(lpData, action = 'update', chatId = null, bot = null) {
-    try {
-        console.log(`👥 Managing LP: ${action} for ${lpData.lpName || 'unknown LP'}`);
-        return await lpManagement.manageLPs(lpData, action, chatId, bot);
-    } catch (error) {
-        console.error('LP management error:', error.message);
-        return { success: false, error: error.message, module: 'lpManagement' };
-    }
-}
-
-async function generateLPReports(lpId, reportType = 'quarterly', chatId = null, bot = null) {
-    try {
-        return await lpManagement.generateLPReports(lpId, reportType, chatId, bot);
-    } catch (error) {
-        console.error('LP report generation error:', error.message);
-        return { success: false, error: error.message, module: 'lpManagement' };
-    }
-}
-
-async function trackLPCommitments(lpId, commitmentData, chatId = null, bot = null) {
-    try {
-        return await lpManagement.trackCommitments(lpId, commitmentData, chatId, bot);
-    } catch (error) {
-        console.error('LP commitment tracking error:', error.message);
-        return { success: false, error: error.message, module: 'lpManagement' };
-    }
-}
-
-// 🎯 PORTFOLIO MANAGER FUNCTIONS
-async function optimizePortfolio(portfolioId, optimizationData, chatId = null, bot = null) {
-    try {
-        console.log(`📊 Optimizing portfolio: ${portfolioId}`);
-        return await portfolioManager.optimizePortfolio(portfolioId, optimizationData, chatId, bot);
-    } catch (error) {
-        console.error('Portfolio optimization error:', error.message);
-        return { success: false, error: error.message, module: 'portfolioManager' };
-    }
-}
-
-async function rebalancePortfolio(portfolioId, rebalanceData, chatId = null, bot = null) {
-    try {
-        return await portfolioManager.rebalancePortfolio(portfolioId, rebalanceData, chatId, bot);
-    } catch (error) {
-        console.error('Portfolio rebalancing error:', error.message);
-        return { success: false, error: error.message, module: 'portfolioManager' };
-    }
-}
-
-async function analyzePortfolioPerformance(portfolioId, analysisData, chatId = null, bot = null) {
-    try {
-        return await portfolioManager.analyzePerformance(portfolioId, analysisData, chatId, bot);
-    } catch (error) {
-        console.error('Portfolio performance analysis error:', error.message);
-        return { success: false, error: error.message, module: 'portfolioManager' };
-    }
-}
-
-// 🎯 REAL ESTATE WEALTH FUNCTIONS
-async function valuateRealEstate(propertyId, valuationData, chatId = null, bot = null) {
-    try {
-        console.log(`🏢 Valuating real estate: ${propertyId}`);
-        return await realEstateWealth.valuateProperty(propertyId, valuationData, chatId, bot);
-    } catch (error) {
-        console.error('Real estate valuation error:', error.message);
-        return { success: false, error: error.message, module: 'realEstateWealth' };
-    }
-}
-
-async function analyzeRealEstateMarket(marketData, region = 'cambodia', chatId = null, bot = null) {
-    try {
-        return await realEstateWealth.analyzeMarketTrends(marketData, region, chatId, bot);
-    } catch (error) {
-        console.error('Real estate market analysis error:', error.message);
-        return { success: false, error: error.message, module: 'realEstateWealth' };
-    }
-}
-
-async function trackPropertyPortfolio(portfolioId, trackingData, chatId = null, bot = null) {
-    try {
-        return await realEstateWealth.trackPropertyPortfolio(portfolioId, trackingData, chatId, bot);
-    } catch (error) {
-        console.error('Property portfolio tracking error:', error.message);
-        return { success: false, error: error.message, module: 'realEstateWealth' };
-    }
-}
-
-// 🎯 BUSINESS WEALTH FUNCTIONS
-async function valuateBusiness(businessId, valuationData, chatId = null, bot = null) {
-    try {
-        console.log(`🏭 Valuating business: ${businessId}`);
-        return await businessWealth.valuateBusiness(businessId, valuationData, chatId, bot);
-    } catch (error) {
-        console.error('Business valuation error:', error.message);
-        return { success: false, error: error.message, module: 'businessWealth' };
-    }
-}
-
-async function analyzeBusinessPerformance(businessId, performanceData, chatId = null, bot = null) {
-    try {
-        return await businessWealth.analyzePerformance(businessId, performanceData, chatId, bot);
-    } catch (error) {
-        console.error('Business performance analysis error:', error.message);
-        return { success: false, error: error.message, module: 'businessWealth' };
-    }
-}
-
-async function assessBusinessRisk(businessId, riskData, chatId = null, bot = null) {
-    try {
-        return await businessWealth.assessBusinessRisk(businessId, riskData, chatId, bot);
-    } catch (error) {
-        console.error('Business risk assessment error:', error.message);
-        return { success: false, error: error.message, module: 'businessWealth' };
-    }
-}
-
-// 🎯 INVESTMENT WEALTH FUNCTIONS
-async function manageInvestmentPortfolio(portfolioId, managementData, chatId = null, bot = null) {
-    try {
-        console.log(`📈 Managing investment portfolio: ${portfolioId}`);
-        return await investmentWealth.managePortfolio(portfolioId, managementData, chatId, bot);
-    } catch (error) {
-        console.error('Investment portfolio management error:', error.message);
-        return { success: false, error: error.message, module: 'investmentWealth' };
-    }
-}
-
-async function analyzeInvestmentPerformance(investmentId, analysisData, chatId = null, bot = null) {
-    try {
-        return await investmentWealth.analyzeInvestmentPerformance(investmentId, analysisData, chatId, bot);
-    } catch (error) {
-        console.error('Investment performance analysis error:', error.message);
-        return { success: false, error: error.message, module: 'investmentWealth' };
-    }
-}
-
-async function optimizeAssetAllocation(portfolioId, allocationData, chatId = null, bot = null) {
-    try {
-        return await investmentWealth.optimizeAssetAllocation(portfolioId, allocationData, chatId, bot);
-    } catch (error) {
-        console.error('Asset allocation optimization error:', error.message);
-        return { success: false, error: error.message, module: 'investmentWealth' };
-    }
-}
-
-// 🎯 ECONOMIC INTELLIGENCE FUNCTIONS
-async function analyzeEconomicConditions(region = 'cambodia', analysisData, chatId = null, bot = null) {
-    try {
-        console.log(`🌐 Analyzing economic conditions for: ${region}`);
-        return await economicIntelligence.analyzeEconomicConditions(region, analysisData, chatId, bot);
-    } catch (error) {
-        console.error('Economic analysis error:', error.message);
-        return { success: false, error: error.message, module: 'economicIntelligence' };
-    }
-}
-
-async function forecastEconomicTrends(forecastData, timeframe = '12months', chatId = null, bot = null) {
-    try {
-        return await economicIntelligence.forecastTrends(forecastData, timeframe, chatId, bot);
-    } catch (error) {
-        console.error('Economic forecasting error:', error.message);
-        return { success: false, error: error.message, module: 'economicIntelligence' };
-    }
-}
-
-async function analyzeSectorPerformance(sector, performanceData, chatId = null, bot = null) {
-    try {
-        return await economicIntelligence.analyzeSectorPerformance(sector, performanceData, chatId, bot);
-    } catch (error) {
-        console.error('Sector performance analysis error:', error.message);
-        return { success: false, error: error.message, module: 'economicIntelligence' };
-    }
-}
-
-// 🎯 LEGAL REGULATORY FUNCTIONS
-async function checkRegulatoryCompliance(entityId, complianceData, chatId = null, bot = null) {
-    try {
-        console.log(`⚖️ Checking regulatory compliance for: ${entityId}`);
-        return await legalRegulatory.checkCompliance(entityId, complianceData, chatId, bot);
-    } catch (error) {
-        console.error('Regulatory compliance check error:', error.message);
-        return { success: false, error: error.message, module: 'legalRegulatory' };
-    }
-}
-
-async function analyzeLegalRisks(transactionId, riskData, chatId = null, bot = null) {
-    try {
-        return await legalRegulatory.analyzeLegalRisks(transactionId, riskData, chatId, bot);
-    } catch (error) {
-        console.error('Legal risk analysis error:', error.message);
-        return { success: false, error: error.message, module: 'legalRegulatory' };
-    }
-}
-
-async function generateLegalDocuments(documentType, documentData, chatId = null, bot = null) {
-    try {
-        return await legalRegulatory.generateLegalDocuments(documentType, documentData, chatId, bot);
-    } catch (error) {
-        console.error('Legal document generation error:', error.message);
-        return { success: false, error: error.message, module: 'legalRegulatory' };
-    }
-}
-
-// 🎯 AGRICULTURAL WEALTH FUNCTIONS
-async function valuateAgriculturalAssets(assetId, valuationData, chatId = null, bot = null) {
-    try {
-        console.log(`🌾 Valuating agricultural assets: ${assetId}`);
-        return await agriculturalWealth.valuateAgriculturalAssets(assetId, valuationData, chatId, bot);
-    } catch (error) {
-        console.error('Agricultural valuation error:', error.message);
-        return { success: false, error: error.message, module: 'agriculturalWealth' };
-    }
-}
-
-async function analyzeCropYields(farmId, yieldData, chatId = null, bot = null) {
-    try {
-        return await agriculturalWealth.analyzeCropYields(farmId, yieldData, chatId, bot);
-    } catch (error) {
-        console.error('Crop yield analysis error:', error.message);
-        return { success: false, error: error.message, module: 'agriculturalWealth' };
-    }
-}
-
-async function assessAgriculturalRisks(farmId, riskData, chatId = null, bot = null) {
-    try {
-        return await agriculturalWealth.assessAgriculturalRisks(farmId, riskData, chatId, bot);
-    } catch (error) {
-        console.error('Agricultural risk assessment error:', error.message);
-        return { success: false, error: error.message, module: 'agriculturalWealth' };
-    }
-}
-
-// 🎯 RESOURCES WEALTH FUNCTIONS
-async function valuateNaturalResources(resourceId, valuationData, chatId = null, bot = null) {
-    try {
-        console.log(`💎 Valuating natural resources: ${resourceId}`);
-        return await resourcesWealth.valuateNaturalResources(resourceId, valuationData, chatId, bot);
-    } catch (error) {
-        console.error('Natural resources valuation error:', error.message);
-        return { success: false, error: error.message, module: 'resourcesWealth' };
-    }
-}
-
-async function analyzeCommodityPrices(commodity, priceData, chatId = null, bot = null) {
-    try {
-        return await resourcesWealth.analyzeCommodityPrices(commodity, priceData, chatId, bot);
-    } catch (error) {
-        console.error('Commodity price analysis error:', error.message);
-        return { success: false, error: error.message, module: 'resourcesWealth' };
-    }
-}
-
-async function assessResourceExploitation(resourceId, exploitationData, chatId = null, bot = null) {
-    try {
-        return await resourcesWealth.assessExploitationPotential(resourceId, exploitationData, chatId, bot);
-    } catch (error) {
-        console.error('Resource exploitation assessment error:', error.message);
-        return { success: false, error: error.message, module: 'resourcesWealth' };
-    }
-}
-
-// 🎯 CAMBODIA LENDING UTILITY FUNCTIONS
-async function processLendingTransaction(transactionData, chatId = null, bot = null) {
-    try {
-        console.log(`💰 Processing lending transaction: ${transactionData.transactionType || 'unknown'}`);
-        return await cambodiaLending.processTransaction(transactionData, chatId, bot);
-    } catch (error) {
-        console.error('Lending transaction error:', error.message);
-        return { success: false, error: error.message, module: 'cambodiaLending' };
-    }
-}
-
-async function validateLendingData(validationData, chatId = null, bot = null) {
-    try {
-        return await cambodiaLending.validateData(validationData, chatId, bot);
-    } catch (error) {
-        console.error('Lending data validation error:', error.message);
-        return { success: false, error: error.message, module: 'cambodiaLending' };
-    }
-}
-
-// ========================================================================
-// 🎯 CORE 12 LENDING MODULE FUNCTIONS
-// ========================================================================
-
-// 🎯 MODULE 1: CREDIT ASSESSMENT FUNCTIONS
-async function runCreditAssessment(borrowerId, creditData, chatId = null, bot = null) {
-    try {
-        console.log(`🔍 Running credit assessment for borrower ${borrowerId}`);
-        return await creditAssessment.assessCreditworthiness(borrowerId, creditData, chatId, bot);
-    } catch (error) {
-        console.error('Credit assessment error:', error.message);
-        return { success: false, error: error.message, module: 'creditAssessment' };
-    }
-}
-
-async function calculateCreditScore(borrowerId, scoreData, chatId = null, bot = null) {
-    try {
-        return await creditAssessment.calculateCreditScore(borrowerId, scoreData, chatId, bot);
-    } catch (error) {
-        console.error('Credit score calculation error:', error.message);
-        return { success: false, error: error.message, module: 'creditAssessment' };
-    }
-}
-
-// 🎯 MODULE 2: LOAN ORIGINATION FUNCTIONS
-async function processLoanApplication(applicationData, chatId = null, bot = null) {
-    try {
-        console.log(`📝 Processing loan application for ${applicationData.borrowerName || 'unknown borrower'}`);
-        return await loanOrigination.processLoanApplication(applicationData, chatId, bot);
-    } catch (error) {
-        console.error('Loan application error:', error.message);
-        return { success: false, error: error.message, module: 'loanOrigination' };
-    }
-}
-
-async function approveLoan(loanId, approvalData, chatId = null, bot = null) {
-    try {
-        return await loanOrigination.approveLoan(loanId, approvalData, chatId, bot);
-    } catch (error) {
-        console.error('Loan approval error:', error.message);
-        return { success: false, error: error.message, module: 'loanOrigination' };
-    }
-}
-
-// 🎯 MODULE 3: LOAN SERVICING FUNCTIONS
-async function serviceLoan(loanId, servicingData, chatId = null, bot = null) {
-    try {
-        console.log(`📋 Servicing loan ${loanId}`);
-        return await loanServicing.serviceLoan(loanId, servicingData, chatId, bot);
-    } catch (error) {
-        console.error('Loan servicing error:', error.message);
-        return { success: false, error: error.message, module: 'loanServicing' };
-    }
-}
-
-async function monitorLoanPerformance(loanId, performanceData, chatId = null, bot = null) {
-    try {
-        return await loanServicing.monitorLoanPerformance(loanId, performanceData, chatId, bot);
-    } catch (error) {
-        console.error('Loan monitoring error:', error.message);
-        return { success: false, error: error.message, module: 'loanServicing' };
-    }
-}
-
-// 🎯 MODULE 4: RISK MANAGEMENT FUNCTIONS
-async function assessBorrowerRisk(borrowerId, riskData, chatId = null, bot = null) {
-    try {
-        console.log(`🚨 Assessing risk for borrower ${borrowerId}`);
-        return await riskManagement.assessBorrowerRisk(borrowerId, riskData, chatId, bot);
-    } catch (error) {
-        console.error('Risk assessment error:', error.message);
-        return { success: false, error: error.message, module: 'riskManagement' };
-    }
-}
-
-async function analyzePortfolioRisk(portfolioId, riskData, chatId = null, bot = null) {
-    try {
-        return await riskManagement.analyzePortfolioRisk(portfolioId, riskData, chatId, bot);
-    } catch (error) {
-        console.error('Portfolio risk analysis error:', error.message);
-        return { success: false, error: error.message, module: 'riskManagement' };
-    }
-}
-
-// 🎯 MODULE 5: LOAN RECOVERY FUNCTIONS
-async function initiateRecovery(loanId, recoveryData, chatId = null, bot = null) {
-    try {
-        console.log(`💰 Initiating recovery for loan ${loanId}`);
-        return await loanRecovery.initiateRecoveryProcess(loanId, recoveryData, chatId, bot);
-    } catch (error) {
-        console.error('Loan recovery error:', error.message);
-        return { success: false, error: error.message, module: 'loanRecovery' };
-    }
-}
-
-async function manageCollateral(collateralId, collateralData, chatId = null, bot = null) {
-    try {
-        return await loanRecovery.manageCollateral(collateralId, collateralData, chatId, bot);
-    } catch (error) {
-        console.error('Collateral management error:', error.message);
-        return { success: false, error: error.message, module: 'loanRecovery' };
-    }
-}
-
-// 🎯 MODULE 6: CASH FLOW MANAGEMENT FUNCTIONS
-async function manageCashFlow(fundId, cashFlowData, chatId = null, bot = null) {
-    try {
-        console.log(`💵 Managing cash flow for fund ${fundId}`);
-        return await cashFlowManagement.optimizeCashFlow(fundId, cashFlowData, chatId, bot);
-    } catch (error) {
-        console.error('Cash flow management error:', error.message);
-        return { success: false, error: error.message, module: 'cashFlowManagement' };
-    }
-}
-
-async function forecastLiquidity(fundId, forecastData, chatId = null, bot = null) {
-    try {
-        return await cashFlowManagement.forecastLiquidityNeeds(fundId, forecastData, chatId, bot);
-    } catch (error) {
-        console.error('Liquidity forecasting error:', error.message);
-        return { success: false, error: error.message, module: 'cashFlowManagement' };
-    }
-}
-
-// 🎯 MODULE 7: BORROWER DUE DILIGENCE FUNCTIONS
-async function conductDueDiligence(borrowerId, dueDiligenceData, chatId = null, bot = null) {
-    try {
-        console.log(`🔍 Conducting due diligence for borrower ${borrowerId}`);
-        return await borrowerDueDiligence.conductComprehensiveDueDiligence(borrowerId, dueDiligenceData, chatId, bot);
-    } catch (error) {
-        console.error('Due diligence error:', error.message);
-        return { success: false, error: error.message, module: 'borrowerDueDiligence' };
-    }
-}
-
-async function performAMLScreening(borrowerId, amlData, chatId = null, bot = null) {
-    try {
-        return await borrowerDueDiligence.performAMLKYCScreening(borrowerId, amlData, chatId, bot);
-    } catch (error) {
-        console.error('AML screening error:', error.message);
-        return { success: false, error: error.message, module: 'borrowerDueDiligence' };
-    }
-}
-
-// 🎯 MODULE 8: PERFORMANCE ANALYTICS FUNCTIONS
-async function generatePerformanceDashboard(fundId, reportingPeriod = 'monthly', chatId = null, bot = null) {
-    try {
-        console.log(`📈 Generating performance dashboard for fund ${fundId}`);
-        return await performanceAnalytics.generateFundPerformanceDashboard(fundId, reportingPeriod, chatId, bot);
-    } catch (error) {
-        console.error('Performance dashboard error:', error.message);
-        return { success: false, error: error.message, module: 'performanceAnalytics' };
-    }
-}
-
-async function analyzeReturns(fundId, returnData, chatId = null, bot = null) {
-    try {
-        return await performanceAnalytics.analyzeReturnPerformance(fundId, returnData, chatId, bot);
-    } catch (error) {
-        console.error('Return analysis error:', error.message);
-        return { success: false, error: error.message, module: 'performanceAnalytics' };
-    }
-}
-
-// 🎯 MODULE 9: FUND ACCOUNTING FUNCTIONS
-async function calculateNAV(fundId, valuationDate = new Date(), chatId = null, bot = null) {
-    try {
-        console.log(`🧮 Calculating NAV for fund ${fundId}`);
-        return await fundAccounting.calculateNAV(fundId, valuationDate, chatId, bot);
-    } catch (error) {
-        console.error('NAV calculation error:', error.message);
-        return { success: false, error: error.message, module: 'fundAccounting' };
-    }
-}
-
-async function calculateManagementFees(fundId, feeData, chatId = null, bot = null) {
-    try {
-        return await fundAccounting.calculateManagementFees(fundId, feeData, chatId, bot);
-    } catch (error) {
-        console.error('Management fee calculation error:', error.message);
-        return { success: false, error: error.message, module: 'fundAccounting' };
-    }
-}
-
-// 🎯 MODULE 10: INVESTOR REPORTING FUNCTIONS
-async function generateQuarterlyReport(fundId, reportData, chatId = null, bot = null) {
-    try {
-        console.log(`📊 Generating quarterly report for fund ${fundId}`);
-        return await investorReporting.generateQuarterlyLPReport(fundId, reportData, chatId, bot);
-    } catch (error) {
-        console.error('Quarterly report error:', error.message);
-        return { success: false, error: error.message, module: 'investorReporting' };
-    }
-}
-
-async function generateMonthlyUpdate(fundId, updateData, chatId = null, bot = null) {
-    try {
-        return await investorReporting.generateMonthlyInvestorUpdate(fundId, updateData, chatId, bot);
-    } catch (error) {
-        console.error('Monthly update error:', error.message);
-        return { success: false, error: error.message, module: 'investorReporting' };
-    }
-}
-
-// 🎯 MODULE 11: COMPLIANCE MONITORING FUNCTIONS
-async function performComplianceCheck(fundId, checkData, chatId = null, bot = null) {
-    try {
-        console.log(`📋 Performing compliance check for fund ${fundId}`);
-        return await complianceMonitoring.performComplianceHealthCheck(fundId, checkData, chatId, bot);
-    } catch (error) {
-        console.error('Compliance check error:', error.message);
-        return { success: false, error: error.message, module: 'complianceMonitoring' };
-    }
-}
-
-async function monitorAlerts(fundId, alertData, chatId = null, bot = null) {
-    try {
-        return await complianceMonitoring.monitorComplianceAlerts(fundId, alertData, chatId, bot);
-    } catch (error) {
-        console.error('Alert monitoring error:', error.message);
-        return { success: false, error: error.message, module: 'complianceMonitoring' };
-    }
-}
-
-// 🎯 MODULE 12: MARKET RESEARCH FUNCTIONS
-async function analyzeMarket(researchScope, analysisData, chatId = null, bot = null) {
-    try {
-        console.log(`🔍 Analyzing Cambodia market: ${researchScope}`);
-        return await marketResearch.generateMarketAnalysis(researchScope, analysisData, chatId, bot);
-    } catch (error) {
-        console.error('Market analysis error:', error.message);
-        return { success: false, error: error.message, module: 'marketResearch' };
-    }
-}
-
-async function analyzeCompetitors(competitorData, chatId = null, bot = null) {
-    try {
-        return await marketResearch.analyzeCompetitiveLandscape(competitorData, chatId, bot);
-    } catch (error) {
-        console.error('Competitive analysis error:', error.message);
-        return { success: false, error: error.message, module: 'marketResearch' };
-    }
-}
-
-// ========================================================================
-// 📈 NEW 6 TRADING & GLOBAL MODULE FUNCTIONS
-// ========================================================================
-
-// 🎯 NEW MODULE 1: TRADING OPERATIONS FUNCTIONS
-async function executeCambodiaTrade(orderDetails, chatId = null, bot = null) {
-    try {
-        console.log(`📈 Executing Cambodia trade: ${orderDetails.symbol}`);
-        if (!tradingOperations) {
-            return createPlaceholderResponse('tradingOperations', 'executeCambodiaTrade');
-        }
-        return await tradingOperations.executeTrade(orderDetails);
-    } catch (error) {
-        console.error('Trade execution error:', error.message);
-        return { success: false, error: error.message, module: 'tradingOperations' };
-    }
-}
-
-async function constructCambodiaPortfolio(investmentAmount, riskProfile, timeHorizon, chatId = null, bot = null) {
-    try {
-        console.log(`💼 Constructing Cambodia portfolio: ${investmentAmount} (${riskProfile} risk)`);
-        if (!tradingOperations) {
-            return createPlaceholderResponse('tradingOperations', 'constructCambodiaPortfolio');
-        }
-        return await tradingOperations.constructCambodiaPortfolio(investmentAmount, riskProfile, timeHorizon);
-    } catch (error) {
-        console.error('Portfolio construction error:', error.message);
-        return { success: false, error: error.message, module: 'tradingOperations' };
-    }
-}
-
-async function implementTradingRiskManagement(portfolio, chatId = null, bot = null) {
-    try {
-        console.log(`🛡️ Implementing trading risk management for portfolio`);
-        if (!tradingOperations) {
-            return createPlaceholderResponse('tradingOperations', 'implementTradingRiskManagement');
-        }
-        return await tradingOperations.implementRiskManagement(portfolio);
-    } catch (error) {
-        console.error('Trading risk management error:', error.message);
-        return { success: false, error: error.message, module: 'tradingOperations' };
-    }
-}
-
-async function assessMarketTiming(exchange = 'CSX', chatId = null, bot = null) {
-    try {
-        console.log(`⏰ Assessing market timing for ${exchange}`);
-        if (!tradingOperations) {
-            return createPlaceholderResponse('tradingOperations', 'assessMarketTiming');
-        }
-        return await tradingOperations.assessMarketTiming(exchange);
-    } catch (error) {
-        console.error('Market timing assessment error:', error.message);
-        return { success: false, error: error.message, module: 'tradingOperations' };
-    }
-}
-
-async function generateTradingReport(period = 'monthly', chatId = null, bot = null) {
-    try {
-        console.log(`📊 Generating trading report for period: ${period}`);
-        if (!tradingOperations) {
-            return createPlaceholderResponse('tradingOperations', 'generateTradingReport');
-        }
-        return await tradingOperations.generateTradingReport(period);
-    } catch (error) {
-        console.error('Trading report generation error:', error.message);
-        return { success: false, error: error.message, module: 'tradingOperations' };
-    }
-}
-
-async function calculateTradingCosts(orderDetails, chatId = null, bot = null) {
-    try {
-        console.log(`💰 Calculating trading costs for ${orderDetails.symbol}`);
-        if (!tradingOperations) {
-            return createPlaceholderResponse('tradingOperations', 'calculateTradingCosts');
-        }
-        return await tradingOperations.calculateTradingCosts(orderDetails);
-    } catch (error) {
-        console.error('Trading cost calculation error:', error.message);
-        return { success: false, error: error.message, module: 'tradingOperations' };
-    }
-}
-
-async function validateCambodiaTradeRules(orderDetails, chatId = null, bot = null) {
-    try {
-        console.log(`✅ Validating Cambodia trade rules for ${orderDetails.symbol}`);
-        if (!tradingOperations) {
-            return createPlaceholderResponse('tradingOperations', 'validateCambodiaTradeRules');
-        }
-        return await tradingOperations.validateCambodiaTradeRules(orderDetails);
-    } catch (error) {
-        console.error('Trade rule validation error:', error.message);
-        return { success: false, error: error.message, module: 'tradingOperations' };
-    }
-}
-
-// 🎯 NEW MODULE 2: CLIENT ONBOARDING FUNCTIONS
-async function initiateClientOnboarding(clientData, chatId = null, bot = null) {
-    try {
-        console.log(`🎯 Initiating client onboarding: ${clientData.personalDetails?.name || 'unknown'}`);
-        if (!clientOnboarding) {
-            return createPlaceholderResponse('clientOnboarding', 'initiateClientOnboarding');
-        }
-        return await clientOnboarding.initiateClientOnboarding(clientData);
-    } catch (error) {
-        console.error('Client onboarding initiation error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-async function qualifyClient(clientData, chatId = null, bot = null) {
-    try {
-        console.log(`📋 Qualifying client: ${clientData.personalDetails?.name || 'unknown'}`);
-        if (!clientOnboarding) {
-            return createPlaceholderResponse('clientOnboarding', 'qualifyClient');
-        }
-        return await clientOnboarding.qualifyClient(clientData);
-    } catch (error) {
-        console.error('Client qualification error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-async function generateClientDocumentChecklist(clientType, qualificationData, chatId = null, bot = null) {
-    try {
-        console.log(`📄 Generating document checklist for ${clientType} client`);
-        if (!clientOnboarding) {
-            return createPlaceholderResponse('clientOnboarding', 'generateClientDocumentChecklist');
-        }
-        return await clientOnboarding.generateDocumentChecklist(clientType, qualificationData);
-    } catch (error) {
-        console.error('Document checklist generation error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-async function performClientRiskProfiling(clientData, chatId = null, bot = null) {
-    try {
-        console.log(`⚖️ Performing risk profiling for client: ${clientData.personalDetails?.name || 'unknown'}`);
-        if (!clientOnboarding) {
-            return createPlaceholderResponse('clientOnboarding', 'performClientRiskProfiling');
-        }
-        return await clientOnboarding.performRiskProfiling(clientData);
-    } catch (error) {
-        console.error('Risk profiling error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-async function generateComplianceRequirements(qualificationData, chatId = null, bot = null) {
-    try {
-        console.log(`✅ Generating compliance requirements for client`);
-        if (!clientOnboarding) {
-            return createPlaceholderResponse('clientOnboarding', 'generateComplianceRequirements');
-        }
-        return await clientOnboarding.generateComplianceRequirements(qualificationData);
-    } catch (error) {
-        console.error('Compliance requirements error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-async function ensureCambodiaCompliance(clientData, onboardingStatus, chatId = null, bot = null) {
-    try {
-        console.log(`🇰🇭 Ensuring Cambodia regulatory compliance`);
-        if (!clientOnboarding) {
-            return createPlaceholderResponse('clientOnboarding', 'ensureCambodiaCompliance');
-        }
-        return await clientOnboarding.ensureCambodiaCompliance(clientData, onboardingStatus);
-    } catch (error) {
-        console.error('Cambodia compliance check error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-async function generateOnboardingReport(clientId, onboardingData, chatId = null, bot = null) {
-    try {
-        console.log(`📊 Generating onboarding report for client: ${clientId}`);
-        if (!clientOnboarding) {
-            return createPlaceholderResponse('clientOnboarding', 'generateOnboardingReport');
-        }
-        return await clientOnboarding.generateOnboardingReport(clientId, onboardingData);
-    } catch (error) {
-        console.error('Onboarding report generation error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-// 🎯 NEW MODULE 3: FOREX TRADING FUNCTIONS
-async function analyzeForexOpportunity(currencyPair, analysisType, chatId = null, bot = null) {
-    try {
-        console.log(`💱 Analyzing forex opportunity: ${currencyPair}`);
-        if (!forexTrading) {
-            return createPlaceholderResponse('forexTrading', 'analyzeForexOpportunity');
-        }
-        return await forexTrading.analyzeForexOpportunity(currencyPair, analysisType);
-    } catch (error) {
-        console.error('Forex analysis error:', error.message);
-        return { success: false, error: error.message, module: 'forexTrading' };
-    }
-}
-
-async function executeForexTrade(tradeDetails, chatId = null, bot = null) {
-    try {
-        console.log(`💰 Executing forex trade: ${tradeDetails.currencyPair}`);
-        if (!forexTrading) {
-            return createPlaceholderResponse('forexTrading', 'executeForexTrade');
-        }
-        return await forexTrading.executeForexTrade(tradeDetails);
-    } catch (error) {
-        console.error('Forex trade execution error:', error.message);
-        return { success: false, error: error.message, module: 'forexTrading' };
-    }
-}
-
-async function generateForexStrategy(riskProfile, tradingStyle, timeCommitment, chatId = null, bot = null) {
-    try {
-        console.log(`📈 Generating forex strategy: ${tradingStyle} (${riskProfile} risk)`);
-        if (!forexTrading) {
-            return createPlaceholderResponse('forexTrading', 'generateForexStrategy');
-        }
-        return await forexTrading.generateForexStrategy(riskProfile, tradingStyle, timeCommitment);
-    } catch (error) {
-        console.error('Forex strategy generation error:', error.message);
-        return { success: false, error: error.message, module: 'forexTrading' };
-    }
-}
-
-// 🎯 NEW MODULE 4: CRYPTO TRADING FUNCTIONS
-async function analyzeCryptoOpportunity(cryptocurrency, analysisType, chatId = null, bot = null) {
-    try {
-        console.log(`₿ Analyzing crypto opportunity: ${cryptocurrency}`);
-        if (!cryptoTrading) {
-            return createPlaceholderResponse('cryptoTrading', 'analyzeCryptoOpportunity');
-        }
-        return await cryptoTrading.analyzeCryptoOpportunity(cryptocurrency, analysisType);
-    } catch (error) {
-        console.error('Crypto analysis error:', error.message);
-        return { success: false, error: error.message, module: 'cryptoTrading' };
-    }
-}
-
-async function executeCryptoTrade(tradeDetails, chatId = null, bot = null) {
-    try {
-        console.log(`🔗 Executing crypto trade: ${tradeDetails.cryptocurrency}`);
-        if (!cryptoTrading) {
-            return createPlaceholderResponse('cryptoTrading', 'executeCryptoTrade');
-        }
-        return await cryptoTrading.executeCryptoTrade(tradeDetails);
-    } catch (error) {
-        console.error('Crypto trade execution error:', error.message);
-        return { success: false, error: error.message, module: 'cryptoTrading' };
-    }
-}
-
-async function constructCryptoPortfolio(investmentAmount, riskTolerance, investmentGoals, chatId = null, bot = null) {
-    try {
-        console.log(`🔗 Constructing crypto portfolio: ${investmentAmount} (${riskTolerance})`);
-        if (!cryptoTrading) {
-            return createPlaceholderResponse('cryptoTrading', 'constructCryptoPortfolio');
-        }
-        return await cryptoTrading.constructCryptoPortfolio(investmentAmount, riskTolerance, investmentGoals);
-    } catch (error) {
-        console.error('Crypto portfolio construction error:', error.message);
-        return { success: false, error: error.message, module: 'cryptoTrading' };
-    }
-}
-
-async function assessCryptoMarketConditions(chatId = null, bot = null) {
-    try {
-        console.log(`📊 Assessing crypto market conditions`);
-        if (!cryptoTrading) {
-            return createPlaceholderResponse('cryptoTrading', 'assessCryptoMarketConditions');
-        }
-        return await cryptoTrading.assessCryptoMarketConditions();
-    } catch (error) {
-        console.error('Crypto market assessment error:', error.message);
-        return { success: false, error: error.message, module: 'cryptoTrading' };
-    }
-}
+// CORE 12 LENDING MODULES
 
-// 🎯 NEW MODULE 5: STOCK TRADING FUNCTIONS
-async function analyzeStock(stockSymbol, analysisType, chatId = null, bot = null) {
-    try {
-        console.log(`📊 Analyzing stock: ${stockSymbol}`);
-        if (!stockTrading) {
-            return createPlaceholderResponse('stockTrading', 'analyzeStock');
-        }
-        return await stockTrading.analyzeStock(stockSymbol, analysisType);
-    } catch (error) {
-        console.error('Stock analysis error:', error.message);
-        return { success: false, error: error.message, module: 'stockTrading' };
-    }
-}
-
-async function executeStockTrade(tradeDetails, chatId = null, bot = null) {
-    try {
-        console.log(`📈 Executing stock trade: ${tradeDetails.symbol}`);
-        if (!stockTrading) {
-            return createPlaceholderResponse('stockTrading', 'executeStockTrade');
-        }
-        return await stockTrading.executeStockTrade(tradeDetails);
-    } catch (error) {
-        console.error('Stock trade execution error:', error.message);
-        return { success: false, error: error.message, module: 'stockTrading' };
-    }
-}
-
-async function constructStockPortfolio(investmentAmount, riskProfile, investmentObjectives, chatId = null, bot = null) {
-    try {
-        console.log(`📈 Constructing stock portfolio: ${investmentAmount} (${riskProfile})`);
-        if (!stockTrading) {
-            return createPlaceholderResponse('stockTrading', 'constructStockPortfolio');
-        }
-        return await stockTrading.constructStockPortfolio(investmentAmount, riskProfile, investmentObjectives);
-    } catch (error) {
-        console.error('Stock portfolio construction error:', error.message);
-        return { success: false, error: error.message, module: 'stockTrading' };
-    }
-}
-
-async function assessStockMarketConditions(chatId = null, bot = null) {
-    try {
-        console.log(`📊 Assessing stock market conditions`);
-        if (!stockTrading) {
-            return createPlaceholderResponse('stockTrading', 'assessStockMarketConditions');
-        }
-        return await stockTrading.assessStockMarketConditions();
-    } catch (error) {
-        console.error('Stock market assessment error:', error.message);
-        return { success: false, error: error.message, module: 'stockTrading' };
-    }
-}
-
-// 🎯 NEW MODULE 6: GLOBAL MARKETS FUNCTIONS
-async function analyzeGlobalMarketConditions(chatId = null, bot = null) {
-    try {
-        console.log(`🌍 Analyzing global market conditions and Cambodia implications`);
-        if (!globalMarkets) {
-            return createPlaceholderResponse('globalMarkets', 'analyzeGlobalMarketConditions');
-        }
-        return await globalMarkets.analyzeGlobalMarketConditions();
-    } catch (error) {
-        console.error('Global market analysis error:', error.message);
-        return { success: false, error: error.message, module: 'globalMarkets' };
-    }
-}
-
-async function constructGlobalPortfolio(investmentAmount, riskProfile, timeHorizon, cambodiaFocus, chatId = null, bot = null) {
-    try {
-        console.log(`🌐 Constructing global portfolio: ${investmentAmount} (${riskProfile} risk, ${cambodiaFocus * 100}% Cambodia focus)`);
-        if (!globalMarkets) {
-            return createPlaceholderResponse('globalMarkets', 'constructGlobalPortfolio');
-        }
-        return await globalMarkets.constructGlobalPortfolio(investmentAmount, riskProfile, timeHorizon, cambodiaFocus);
-    } catch (error) {
-        console.error('Global portfolio construction error:', error.message);
-        return { success: false, error: error.message, module: 'globalMarkets' };
-    }
-}
-
-async function monitorGlobalMarketDevelopments(chatId = null, bot = null) {
-    try {
-        console.log(`📊 Monitoring global market developments for Cambodia impact`);
-        if (!globalMarkets) {
-            return createPlaceholderResponse('globalMarkets', 'monitorGlobalMarketDevelopments');
-        }
-        return await globalMarkets.monitorGlobalMarketDevelopments();
-    } catch (error) {
-        console.error('Global market monitoring error:', error.message);
-        return { success: false, error: error.message, module: 'globalMarkets' };
-    }
-}
-
-async function assessGlobalCrisisScenarios(chatId = null, bot = null) {
-    try {
-        console.log(`⚠️ Assessing global crisis scenarios and Cambodia vulnerabilities`);
-        if (!globalMarkets) {
-            return createPlaceholderResponse('globalMarkets', 'assessGlobalCrisisScenarios');
-        }
-        return await globalMarkets.assessGlobalCrisisScenarios();
-    } catch (error) {
-        console.error('Crisis scenario assessment error:', error.message);
-        return { success: false, error: error.message, module: 'globalMarkets' };
-    }
-}
-
-async function qualifyClient(clientData, chatId = null, bot = null) {
-    try {
-        console.log(`📋 Qualifying client`);
-        if (!clientOnboarding) {
-            return createPlaceholderResponse('clientOnboarding', 'qualifyClient');
-        }
-        return await clientOnboarding.qualifyClient(clientData);
-    } catch (error) {
-        console.error('Client qualification error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-async function generateClientDocumentChecklist(clientType, qualificationData, chatId = null, bot = null) {
-    try {
-        console.log(`📄 Generating document checklist for ${clientType} client`);
-        return await clientOnboarding.generateDocumentChecklist(clientType, qualificationData);
-    } catch (error) {
-        console.error('Document checklist generation error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-async function performClientRiskProfiling(clientData, chatId = null, bot = null) {
-    try {
-        console.log(`⚖️ Performing risk profiling for client: ${clientData.personalDetails.name}`);
-        return await clientOnboarding.performRiskProfiling(clientData);
-    } catch (error) {
-        console.error('Risk profiling error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-async function generateComplianceRequirements(qualificationData, chatId = null, bot = null) {
-    try {
-        console.log(`✅ Generating compliance requirements for client`);
-        return await clientOnboarding.generateComplianceRequirements(qualificationData);
-    } catch (error) {
-        console.error('Compliance requirements error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-async function ensureCambodiaCompliance(clientData, onboardingStatus, chatId = null, bot = null) {
-    try {
-        console.log(`🇰🇭 Ensuring Cambodia regulatory compliance`);
-        return await clientOnboarding.ensureCambodiaCompliance(clientData, onboardingStatus);
-    } catch (error) {
-        console.error('Cambodia compliance check error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-async function generateOnboardingReport(clientId, onboardingData, chatId = null, bot = null) {
-    try {
-        console.log(`📊 Generating onboarding report for client: ${clientId}`);
-        return await clientOnboarding.generateOnboardingReport(clientId, onboardingData);
-    } catch (error) {
-        console.error('Onboarding report generation error:', error.message);
-        return { success: false, error: error.message, module: 'clientOnboarding' };
-    }
-}
-
-// 🎯 NEW MODULE 3: FOREX TRADING FUNCTIONS
-async function analyzeForexOpportunity(currencyPair, analysisType, chatId = null, bot = null) {
-    try {
-        console.log(`💱 Analyzing forex opportunity: ${currencyPair}`);
-        return await forexTrading.analyzeForexOpportunity(currencyPair, analysisType);
-    } catch (error) {
-        console.error('Forex analysis error:', error.message);
-        return { success: false, error: error.message, module: 'forexTrading' };
-    }
-}
-
-async function executeForexTrade(tradeDetails, chatId = null, bot = null) {
-    try {
-        console.log(`💰 Executing forex trade: ${tradeDetails.currencyPair}`);
-        return await forexTrading.executeForexTrade(tradeDetails);
-    } catch (error) {
-        console.error('Forex trade execution error:', error.message);
-        return { success: false, error: error.message, module: 'forexTrading' };
-    }
-}
-
-async function generateForexStrategy(riskProfile, tradingStyle, timeCommitment, chatId = null, bot = null) {
-    try {
-        console.log(`📈 Generating forex strategy: ${tradingStyle} (${riskProfile} risk)`);
-        return await forexTrading.generateForexStrategy(riskProfile, tradingStyle, timeCommitment);
-    } catch (error) {
-        console.error('Forex strategy generation error:', error.message);
-        return { success: false, error: error.message, module: 'forexTrading' };
-    }
-}
-
-// 🎯 NEW MODULE 4: CRYPTO TRADING FUNCTIONS
-async function analyzeCryptoOpportunity(cryptocurrency, analysisType, chatId = null, bot = null) {
-    try {
-        console.log(`₿ Analyzing crypto opportunity: ${cryptocurrency}`);
-        return await cryptoTrading.analyzeCryptoOpportunity(cryptocurrency, analysisType);
-    } catch (error) {
-        console.error('Crypto analysis error:', error.message);
-        return { success: false, error: error.message, module: 'cryptoTrading' };
-    }
-}
-
-async function executeCryptoTrade(tradeDetails, chatId = null, bot = null) {
-    try {
-        console.log(`🔗 Executing crypto trade: ${tradeDetails.cryptocurrency}`);
-        return await cryptoTrading.executeCryptoTrade(tradeDetails);
-    } catch (error) {
-        console.error('Crypto trade execution error:', error.message);
-        return { success: false, error: error.message, module: 'cryptoTrading' };
-    }
-}
-
-async function constructCryptoPortfolio(investmentAmount, riskTolerance, investmentGoals, chatId = null, bot = null) {
-    try {
-        console.log(`🔗 Constructing crypto portfolio: ${investmentAmount} (${riskTolerance})`);
-        return await cryptoTrading.constructCryptoPortfolio(investmentAmount, riskTolerance, investmentGoals);
-    } catch (error) {
-        console.error('Crypto portfolio construction error:', error.message);
-        return { success: false, error: error.message, module: 'cryptoTrading' };
-    }
-}
-
-async function assessCryptoMarketConditions(chatId = null, bot = null) {
-    try {
-        console.log(`📊 Assessing crypto market conditions`);
-        return await cryptoTrading.assessCryptoMarketConditions();
-    } catch (error) {
-        console.error('Crypto market assessment error:', error.message);
-        return { success: false, error: error.message, module: 'cryptoTrading' };
-    }
-}
-
-// 🎯 NEW MODULE 5: STOCK TRADING FUNCTIONS
-async function analyzeStock(stockSymbol, analysisType, chatId = null, bot = null) {
-    try {
-        console.log(`📊 Analyzing stock: ${stockSymbol}`);
-        return await stockTrading.analyzeStock(stockSymbol, analysisType);
-    } catch (error) {
-        console.error('Stock analysis error:', error.message);
-        return { success: false, error: error.message, module: 'stockTrading' };
-    }
-}
+async function runCreditAssessment(chatId, data, chatId2, bot) {
+    const prompt = `CAMBODIA PRIVATE LENDING CREDIT ASSESSMENT
 
-async function executeStockTrade(tradeDetails, chatId = null, bot = null) {
-    try {
-        console.log(`📈 Executing stock trade: ${tradeDetails.symbol}`);
-        return await stockTrading.executeStockTrade(tradeDetails);
-    } catch (error) {
-        console.error('Stock trade execution error:', error.message);
-        return { success: false, error: error.message, module: 'stockTrading' };
-    }
-}
+Query: ${data.query}
 
-async function constructStockPortfolio(investmentAmount, riskProfile, investmentObjectives, chatId = null, bot = null) {
-    try {
-        console.log(`📈 Constructing stock portfolio: ${investmentAmount} (${riskProfile})`);
-        return await stockTrading.constructStockPortfolio(investmentAmount, riskProfile, investmentObjectives);
-    } catch (error) {
-        console.error('Stock portfolio construction error:', error.message);
-        return { success: false, error: error.message, module: 'stockTrading' };
-    }
-}
+Analyze this credit request with Cambodia market expertise:
+1. Borrower creditworthiness evaluation
+2. Risk score calculation (0-100 scale)
+3. Interest rate recommendation (USD rates)
+4. Loan-to-value ratio assessment
+5. Required documentation and collateral
+6. Approval/decline recommendation
+7. Cambodia-specific risk factors (currency, regulatory, sector)
 
-async function assessStockMarketConditions(chatId = null, bot = null) {
-    try {
-        console.log(`📊 Assessing stock market conditions`);
-        return await stockTrading.assessStockMarketConditions();
-    } catch (error) {
-        console.error('Stock market assessment error:', error.message);
-        return { success: false, error: error.message, module: 'stockTrading' };
-    }
+Provide structured credit analysis for private lending decision.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Credit Assessment",
+        forceModel: "gpt-5"
+    });
 }
 
-// 🎯 NEW MODULE 6: GLOBAL MARKETS FUNCTIONS
-async function analyzeGlobalMarketConditions(chatId = null, bot = null) {
-    try {
-        console.log(`🌍 Analyzing global market conditions and Cambodia implications`);
-        return await globalMarkets.analyzeGlobalMarketConditions();
-    } catch (error) {
-        console.error('Global market analysis error:', error.message);
-        return { success: false, error: error.message, module: 'globalMarkets' };
-    }
-}
+async function calculateCreditScore(borrowerId, scoreData, chatId, bot) {
+    const prompt = `CREDIT SCORE CALCULATION
 
-async function constructGlobalPortfolio(investmentAmount, riskProfile, timeHorizon, cambodiaFocus, chatId = null, bot = null) {
-    try {
-        console.log(`🌐 Constructing global portfolio: ${investmentAmount} (${riskProfile} risk, ${cambodiaFocus * 100}% Cambodia focus)`);
-        return await globalMarkets.constructGlobalPortfolio(investmentAmount, riskProfile, timeHorizon, cambodiaFocus);
-    } catch (error) {
-        console.error('Global portfolio construction error:', error.message);
-        return { success: false, error: error.message, module: 'globalMarkets' };
-    }
-}
+Borrower ID: ${borrowerId}
+Data: ${JSON.stringify(scoreData)}
 
-async function monitorGlobalMarketDevelopments(chatId = null, bot = null) {
-    try {
-        console.log(`📊 Monitoring global market developments for Cambodia impact`);
-        return await globalMarkets.monitorGlobalMarketDevelopments();
-    } catch (error) {
-        console.error('Global market monitoring error:', error.message);
-        return { success: false, error: error.message, module: 'globalMarkets' };
-    }
-}
+Calculate detailed credit score using Cambodia lending criteria:
+- Financial strength (35%)
+- Business evaluation (25%) 
+- Collateral quality (20%)
+- Character assessment (15%)
+- Capacity analysis (5%)
 
-async function assessGlobalCrisisScenarios(chatId = null, bot = null) {
-    try {
-        console.log(`⚠️ Assessing global crisis scenarios and Cambodia vulnerabilities`);
-        return await globalMarkets.assessGlobalCrisisScenarios();
-    } catch (error) {
-        console.error('Crisis scenario assessment error:', error.message);
-        return { success: false, error: error.message, module: 'globalMarkets' };
-    }
+Provide numerical score and detailed breakdown.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Credit Score Analysis",
+        forceModel: "gpt-5-mini"
+    });
 }
 
-async function identifyGlobalInvestmentThemes(chatId = null, bot = null) {
-    try {
-        console.log(`🎯 Identifying global investment themes and opportunities`);
-        return await globalMarkets.identifyGlobalInvestmentThemes();
-    } catch (error) {
-        console.error('Global investment themes error:', error.message);
-        return { success: false, error: error.message, module: 'globalMarkets' };
-    }
-}
+async function processLoanApplication(applicationData, chatId, bot) {
+    const prompt = `CAMBODIA LOAN APPLICATION PROCESSING
 
-// ========================================================================
-// 🌟 COMPOSITE WORKFLOW FUNCTIONS
-// ========================================================================
-
-async function processCompleteLoanWorkflow(applicationData, chatId = null, bot = null) {
-    try {
-        console.log(`🔄 Starting complete loan workflow`);
-        
-        // Step 1: Due Diligence
-        const dueDiligence = await conductDueDiligence(
-            applicationData.borrowerId, 
-            applicationData.dueDiligenceData, 
-            chatId, 
-            bot
-        );
-        
-        if (!dueDiligence.success) {
-            return { success: false, stage: 'dueDiligence', error: dueDiligence.error };
-        }
-        
-        // Step 2: Credit Assessment
-        const creditResult = await runCreditAssessment(
-            applicationData.borrowerId,
-            applicationData.creditData,
-            chatId,
-            bot
-        );
-        
-        if (!creditResult.success) {
-            return { success: false, stage: 'creditAssessment', error: creditResult.error };
-        }
-        
-        // Step 3: Risk Assessment
-        const riskResult = await assessBorrowerRisk(
-            applicationData.borrowerId,
-            applicationData.riskData,
-            chatId,
-            bot
-        );
-        
-        if (!riskResult.success) {
-            return { success: false, stage: 'riskAssessment', error: riskResult.error };
-        }
-        
-        // Step 4: Process Application
-        const loanResult = await processLoanApplication(applicationData, chatId, bot);
-        
-        return {
-            success: true,
-            workflow: 'completeLoanWorkflow',
-            results: {
-                dueDiligence: dueDiligence,
-                creditAssessment: creditResult,
-                riskAssessment: riskResult,
-                loanProcessing: loanResult
-            }
-        };
-        
-    } catch (error) {
-        console.error('Complete workflow error:', error.message);
-        return { success: false, error: error.message, workflow: 'completeLoanWorkflow' };
-    }
-}
+Application: ${JSON.stringify(applicationData)}
 
-async function generateCompleteFundReport(fundId, reportingPeriod = 'quarterly', chatId = null, bot = null) {
-    try {
-        console.log(`📋 Generating complete fund report`);
-        
-        const performance = await generatePerformanceDashboard(fundId, reportingPeriod, chatId, bot);
-        const nav = await calculateNAV(fundId, new Date(), chatId, bot);
-        const quarterlyReport = await generateQuarterlyReport(fundId, { reportingPeriod }, chatId, bot);
-        const compliance = await performComplianceCheck(fundId, {}, chatId, bot);
-        
-        return {
-            success: true,
-            reportType: 'completeFundReport',
-            fundId: fundId,
-            reportingPeriod: reportingPeriod,
-            results: {
-                performance: performance,
-                nav: nav,
-                quarterlyReport: quarterlyReport,
-                compliance: compliance
-            },
-            generatedDate: new Date().toISOString()
-        };
-        
-    } catch (error) {
-        console.error('Complete fund report error:', error.message);
-        return { success: false, error: error.message, reportType: 'completeFundReport' };
-    }
-}
+Process loan application with Cambodia lending standards:
+1. Application completeness review
+2. Financial analysis and verification
+3. Collateral assessment
+4. Risk evaluation
+5. Terms and pricing recommendation
+6. Approval conditions and covenants
+7. Documentation requirements
 
-async function processCompleteWealthAssessment(clientId, assessmentData, chatId = null, bot = null) {
-    try {
-        console.log(`🔄 Starting complete wealth assessment workflow`);
-        
-        const realEstateValue = await valuateRealEstate(
-            assessmentData.realEstateId, 
-            assessmentData.realEstateData, 
-            chatId, 
-            bot
-        );
-        
-        const businessValue = await valuateBusiness(
-            assessmentData.businessId,
-            assessmentData.businessData,
-            chatId,
-            bot
-        );
-        
-        const investmentValue = await analyzeInvestmentPerformance(
-            assessmentData.investmentId,
-            assessmentData.investmentData,
-            chatId,
-            bot
-        );
-        
-        const agriculturalValue = await valuateAgriculturalAssets(
-            assessmentData.agriculturalId,
-            assessmentData.agriculturalData,
-            chatId,
-            bot
-        );
-        
-        const resourcesValue = await valuateNaturalResources(
-            assessmentData.resourcesId,
-            assessmentData.resourcesData,
-            chatId,
-            bot
-        );
-        
-        return {
-            success: true,
-            workflow: 'completeWealthAssessment',
-            clientId: clientId,
-            results: {
-                realEstate: realEstateValue,
-                business: businessValue,
-                investments: investmentValue,
-                agricultural: agriculturalValue,
-                naturalResources: resourcesValue
-            },
-            totalWealth: {
-                calculated: true,
-                timestamp: new Date().toISOString()
-            }
-        };
-        
-    } catch (error) {
-        console.error('Complete wealth assessment error:', error.message);
-        return { success: false, error: error.message, workflow: 'completeWealthAssessment' };
-    }
+Provide comprehensive loan processing decision.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Loan Application Processing",
+        forceModel: "gpt-5"
+    });
 }
 
-async function processCompleteMarketIntelligence(region = 'cambodia', intelligenceData, chatId = null, bot = null) {
-    try {
-        console.log(`🌐 Starting complete market intelligence workflow`);
-        
-        const economicAnalysis = await analyzeEconomicConditions(region, intelligenceData.economicData, chatId, bot);
-        const marketResearchData = await analyzeMarket(region, intelligenceData.marketData, chatId, bot);
-        const realEstateMarket = await analyzeRealEstateMarket(intelligenceData.realEstateData, region, chatId, bot);
-        const competitiveAnalysis = await analyzeCompetitors(intelligenceData.competitorData, chatId, bot);
-        const legalCompliance = await checkRegulatoryCompliance(region, intelligenceData.complianceData, chatId, bot);
-        
-        return {
-            success: true,
-            workflow: 'completeMarketIntelligence',
-            region: region,
-            results: {
-                economic: economicAnalysis,
-                market: marketResearchData,
-                realEstate: realEstateMarket,
-                competitive: competitiveAnalysis,
-                legal: legalCompliance
-            },
-            generatedDate: new Date().toISOString()
-        };
-        
-    } catch (error) {
-        console.error('Complete market intelligence error:', error.message);
-        return { success: false, error: error.message, workflow: 'completeMarketIntelligence' };
-    }
-}
+async function serviceLoan(loanId, servicingData, chatId, bot) {
+    const prompt = `LOAN SERVICING ANALYSIS
 
-// NEW TRADING WORKFLOWS
-async function processCompleteClientOnboarding(clientData, chatId = null, bot = null) {
-    try {
-        console.log(`🎯 Starting complete client onboarding workflow`);
-        
-        const qualification = await qualifyClient(clientData, chatId, bot);
-        if (!qualification.success) {
-            return { success: false, stage: 'qualification', error: qualification.error };
-        }
-        
-        const riskProfiling = await performClientRiskProfiling(clientData, chatId, bot);
-        const complianceCheck = await ensureCambodiaCompliance(clientData, {}, chatId, bot);
-        const documentList = await generateClientDocumentChecklist(clientData.clientType, qualification, chatId, bot);
-        const onboardingReport = await generateOnboardingReport(clientData.clientId, {
-            qualification, riskProfiling, complianceCheck, documentList
-        }, chatId, bot);
-        
-        return {
-            success: true,
-            workflow: 'completeClientOnboarding',
-            clientId: clientData.clientId,
-            results: {
-                qualification: qualification,
-                riskProfiling: riskProfiling,
-                compliance: complianceCheck,
-                documents: documentList,
-                report: onboardingReport
-            }
-        };
-        
-    } catch (error) {
-        console.error('Complete client onboarding error:', error.message);
-        return { success: false, error: error.message, workflow: 'completeClientOnboarding' };
-    }
-}
+Loan ID: ${loanId}
+Query: ${servicingData.query}
 
-async function processCompleteInvestmentAnalysis(investmentData, chatId = null, bot = null) {
-    try {
-        console.log(`📊 Starting complete investment analysis workflow`);
-        
-        const stockAnalysis = await analyzeStock(investmentData.stockSymbol, 'comprehensive', chatId, bot);
-        const forexAnalysis = await analyzeForexOpportunity(investmentData.currencyPair, 'comprehensive', chatId, bot);
-        const cryptoAnalysis = await analyzeCryptoOpportunity(investmentData.cryptocurrency, 'comprehensive', chatId, bot);
-        const globalAnalysis = await analyzeGlobalMarketConditions(chatId, bot);
-        const marketTiming = await assessMarketTiming(investmentData.exchange, chatId, bot);
-        
-        return {
-            success: true,
-            workflow: 'completeInvestmentAnalysis',
-            results: {
-                stocks: stockAnalysis,
-                forex: forexAnalysis,
-                crypto: cryptoAnalysis,
-                global: globalAnalysis,
-                timing: marketTiming
-            },
-            generatedDate: new Date().toISOString()
-        };
-        
-    } catch (error) {
-        console.error('Complete investment analysis error:', error.message);
-        return { success: false, error: error.message, workflow: 'completeInvestmentAnalysis' };
-    }
-}
+Provide loan servicing analysis:
+1. Current loan status and performance
+2. Payment history evaluation
+3. Early warning indicators
+4. Portfolio management recommendations
+5. Risk monitoring requirements
+6. Collection strategies if needed
+7. Relationship management approach
 
-// ========================================================================
-// 📊 EXPORT ALL FUNCTIONS
-// ========================================================================
-module.exports = {
-    // SPECIALIZED HANDLER FUNCTIONS (11 modules)
-    // Cambodia Deals Handler
-    processCambodiaDeal,
-    analyzeDealStructure,
-    
-    // LP Management
-    manageLimitedPartners,
-    generateLPReports,
-    trackLPCommitments,
-    
-    // Portfolio Manager
-    optimizePortfolio,
-    rebalancePortfolio,
-    analyzePortfolioPerformance,
-    
-    // Real Estate Wealth
-    valuateRealEstate,
-    analyzeRealEstateMarket,
-    trackPropertyPortfolio,
-    
-    // Business Wealth
-    valuateBusiness,
-    analyzeBusinessPerformance,
-    assessBusinessRisk,
-    
-    // Investment Wealth
-    manageInvestmentPortfolio,
-    analyzeInvestmentPerformance,
-    optimizeAssetAllocation,
-    
-    // Economic Intelligence
-    analyzeEconomicConditions,
-    forecastEconomicTrends,
-    analyzeSectorPerformance,
-    
-    // Legal Regulatory
-    checkRegulatoryCompliance,
-    analyzeLegalRisks,
-    generateLegalDocuments,
-    
-    // Agricultural Wealth
-    valuateAgriculturalAssets,
-    analyzeCropYields,
-    assessAgriculturalRisks,
-    
-    // Resources Wealth
-    valuateNaturalResources,
-    analyzeCommodityPrices,
-    assessResourceExploitation,
-    
-    // Cambodia Lending Utils
-    processLendingTransaction,
-    validateLendingData,
-    
-    // CORE 12 LENDING MODULE FUNCTIONS
-    // Module 1: Credit Assessment
-    runCreditAssessment,
-    calculateCreditScore,
-    
-    // Module 2: Loan Origination
-    processLoanApplication,
-    approveLoan,
-    
-    // Module 3: Loan Servicing
-    serviceLoan,
-    monitorLoanPerformance,
-    
-    // Module 4: Risk Management
-    assessBorrowerRisk,
-    analyzePortfolioRisk,
-    
-    // Module 5: Loan Recovery
-    initiateRecovery,
-    manageCollateral,
-    
-    // Module 6: Cash Flow Management
-    manageCashFlow,
-    forecastLiquidity,
-    
-    // Module 7: Borrower Due Diligence
-    conductDueDiligence,
-    performAMLScreening,
-    
-    // Module 8: Performance Analytics
-    generatePerformanceDashboard,
-    analyzeReturns,
-    
-    // Module 9: Fund Accounting
-    calculateNAV,
-    calculateManagementFees,
+Focus on proactive loan management for Cambodia market.`;
     
-    // Module 10: Investor Reporting
-    generateQuarterlyReport,
-    generateMonthlyUpdate,
-    
-    // Module 11: Compliance Monitoring
-    performComplianceCheck,
-    monitorAlerts,
-    
-    // Module 12: Market Research
-    analyzeMarket,
-    analyzeCompetitors,
-    
-    // NEW 6 TRADING & GLOBAL MODULE FUNCTIONS
-    // Trading Operations
-    executeCambodiaTrade,
-    constructCambodiaPortfolio,
-    implementTradingRiskManagement,
-    assessMarketTiming,
-    generateTradingReport,
-    calculateTradingCosts,
-    validateCambodiaTradeRules,
-    
-    // Client Onboarding
-    initiateClientOnboarding,
-    qualifyClient,
-    generateClientDocumentChecklist,
-    performClientRiskProfiling,
-    generateComplianceRequirements,
-    ensureCambodiaCompliance,
-    generateOnboardingReport,
-    
-    // Forex Trading
-    analyzeForexOpportunity,
-    executeForexTrade,
-    generateForexStrategy,
-    
-    // Crypto Trading
-    analyzeCryptoOpportunity,
-    executeCryptoTrade,
-    constructCryptoPortfolio,
-    assessCryptoMarketConditions,
-    
-    // Stock Trading
-    analyzeStock,
-    executeStockTrade,
-    constructStockPortfolio,
-    assessStockMarketConditions,
-    
-    // Global Markets
-    analyzeGlobalMarketConditions,
-    constructGlobalPortfolio,
-    monitorGlobalMarketDevelopments,
-    assessGlobalCrisisScenarios,
-    identifyGlobalInvestmentThemes,
-    
-    // COMPOSITE WORKFLOW FUNCTIONS (6 total)
-    processCompleteLoanWorkflow,
-    generateCompleteFundReport,
-    processCompleteWealthAssessment,
-    processCompleteMarketIntelligence,
-    processCompleteClientOnboarding,
-    processCompleteInvestmentAnalysis,
-    
-    // Direct module access (if needed)
-    modules: {
-        // Core 12 Lending Modules
-        creditAssessment,
-        loanOrigination,
-        loanServicing,
-        riskManagement,
-        loanRecovery,
-        cashFlowManagement,
-        borrowerDueDiligence,
-        performanceAnalytics,
-        fundAccounting,
-        investorReporting,
-        complianceMonitoring,
-        marketResearch,
-        
-        // Specialized Handler Modules
-        cambodiaHandler,
-        lpManagement,
-        portfolioManager,
-        realEstateWealth,
-        businessWealth,
-        investmentWealth,
-        economicIntelligence,
-        legalRegulatory,
-        agriculturalWealth,
-        resourcesWealth,
-        cambodiaLending,
-        
-        // New Trading & Global Modules
-        tradingOperations,
-        clientOnboarding,
-        forexTrading,
-        cryptoTrading,
-        stockTrading,
-        globalMarkets
-    }
-};
-
-// ========================================================================
-// 🌟 COMPOSITE WORKFLOW FUNCTIONS
-// ========================================================================
-
-async function processCompleteLoanWorkflow(applicationData, chatId = null, bot = null) {
-    try {
-        console.log('Starting complete loan workflow');
-        
-        // Step 1: Due Diligence
-        const dueDiligence = await conductDueDiligence(
-            applicationData.borrowerId, 
-            applicationData.dueDiligenceData, 
-            chatId, 
-            bot
-        );
-        
-        if (!dueDiligence.success) {
-            return { success: false, stage: 'dueDiligence', error: dueDiligence.error };
-        }
-        
-        // Step 2: Credit Assessment
-        const creditResult = await runCreditAssessment(
-            applicationData.borrowerId,
-            applicationData.creditData,
-            chatId,
-            bot
-        );
-        
-        if (!creditResult.success) {
-            return { success: false, stage: 'creditAssessment', error: creditResult.error };
-        }
-        
-        // Step 3: Risk Assessment
-        const riskResult = await assessBorrowerRisk(
-            applicationData.borrowerId,
-            applicationData.riskData,
-            chatId,
-            bot
-        );
-        
-        if (!riskResult.success) {
-            return { success: false, stage: 'riskAssessment', error: riskResult.error };
-        }
-        
-        // Step 4: Process Application
-        const loanResult = await processLoanApplication(applicationData, chatId, bot);
-        
-        return {
-            success: true,
-            workflow: 'completeLoanWorkflow',
-            results: {
-                dueDiligence: dueDiligence,
-                creditAssessment: creditResult,
-                riskAssessment: riskResult,
-                loanProcessing: loanResult
-            }
-        };
-        
-    } catch (error) {
-        console.error('Complete workflow error:', error.message);
-        return { success: false, error: error.message, workflow: 'completeLoanWorkflow' };
-    }
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Loan Servicing Analysis",
+        forceModel: "gpt-5-mini"
+    });
 }
 
-async function generateCompleteFundReport(fundId, reportingPeriod = 'quarterly', chatId = null, bot = null) {
-    try {
-        console.log('Generating complete fund report');
-        
-        const performance = await generatePerformanceDashboard(fundId, reportingPeriod, chatId, bot);
-        const nav = await calculateNAV(fundId, new Date(), chatId, bot);
-        const quarterlyReport = await generateQuarterlyReport(fundId, { reportingPeriod }, chatId, bot);
-        const compliance = await performComplianceCheck(fundId, {}, chatId, bot);
-        
-        return {
-            success: true,
-            reportType: 'completeFundReport',
-            fundId: fundId,
-            reportingPeriod: reportingPeriod,
-            results: {
-                performance: performance,
-                nav: nav,
-                quarterlyReport: quarterlyReport,
-                compliance: compliance
-            },
-            generatedDate: new Date().toISOString()
-        };
-        
-    } catch (error) {
-        console.error('Complete fund report error:', error.message);
-        return { success: false, error: error.message, reportType: 'completeFundReport' };
-    }
-}
+async function assessBorrowerRisk(borrowerId, riskData, chatId, bot) {
+    const prompt = `BORROWER RISK ASSESSMENT
 
-async function processCompleteWealthAssessment(clientId, assessmentData, chatId = null, bot = null) {
-    try {
-        console.log('Starting complete wealth assessment workflow');
-        
-        const realEstateValue = await valuateRealEstate(
-            assessmentData.realEstateId, 
-            assessmentData.realEstateData, 
-            chatId, 
-            bot
-        );
-        
-        const businessValue = await valuateBusiness(
-            assessmentData.businessId,
-            assessmentData.businessData,
-            chatId,
-            bot
-        );
-        
-        const investmentValue = await analyzeInvestmentPerformance(
-            assessmentData.investmentId,
-            assessmentData.investmentData,
-            chatId,
-            bot
-        );
-        
-        const agriculturalValue = await valuateAgriculturalAssets(
-            assessmentData.agriculturalId,
-            assessmentData.agriculturalData,
-            chatId,
-            bot
-        );
-        
-        const resourcesValue = await valuateNaturalResources(
-            assessmentData.resourcesId,
-            assessmentData.resourcesData,
-            chatId,
-            bot
-        );
-        
-        return {
-            success: true,
-            workflow: 'completeWealthAssessment',
-            clientId: clientId,
-            results: {
-                realEstate: realEstateValue,
-                business: businessValue,
-                investments: investmentValue,
-                agricultural: agriculturalValue,
-                naturalResources: resourcesValue
-            },
-            totalWealth: {
-                calculated: true,
-                timestamp: new Date().toISOString()
-            }
-        };
-        
-    } catch (error) {
-        console.error('Complete wealth assessment error:', error.message);
-        return { success: false, error: error.message, workflow: 'completeWealthAssessment' };
-    }
-}
+Borrower: ${borrowerId}
+Risk Query: ${riskData.query}
 
-async function processCompleteMarketIntelligence(region = 'cambodia', intelligenceData, chatId = null, bot = null) {
-    try {
-        console.log('Starting complete market intelligence workflow');
-        
-        const economicAnalysis = await analyzeEconomicConditions(region, intelligenceData.economicData, chatId, bot);
-        const marketResearchData = await analyzeMarket(region, intelligenceData.marketData, chatId, bot);
-        const realEstateMarket = await analyzeRealEstateMarket(intelligenceData.realEstateData, region, chatId, bot);
-        const competitiveAnalysis = await analyzeCompetitors(intelligenceData.competitorData, chatId, bot);
-        const legalCompliance = await checkRegulatoryCompliance(region, intelligenceData.complianceData, chatId, bot);
-        
-        return {
-            success: true,
-            workflow: 'completeMarketIntelligence',
-            region: region,
-            results: {
-                economic: economicAnalysis,
-                market: marketResearchData,
-                realEstate: realEstateMarket,
-                competitive: competitiveAnalysis,
-                legal: legalCompliance
-            },
-            generatedDate: new Date().toISOString()
-        };
-        
-    } catch (error) {
-        console.error('Complete market intelligence error:', error.message);
-        return { success: false, error: error.message, workflow: 'completeMarketIntelligence' };
-    }
+Comprehensive risk assessment for Cambodia lending:
+1. Financial risk analysis
+2. Business and industry risk
+3. Collateral and security risk
+4. Geographic and political risk
+5. Currency and market risk
+6. Operational risk factors
+7. Risk mitigation strategies
+8. Monitoring and covenant recommendations
+
+Provide actionable risk assessment with mitigation plan.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Borrower Risk Assessment",
+        forceModel: "gpt-5"
+    });
 }
+
+async function initiateRecovery(loanId, recoveryData, chatId, bot) {
+    const prompt = `LOAN RECOVERY INITIATION
 
-async function processCompleteClientOnboarding(clientData, chatId = null, bot = null) {
-    try {
-        console.log('Starting complete client onboarding workflow');
-        
-        const qualification = await qualifyClient(clientData, chatId, bot);
-        if (!qualification.success) {
-            return { success: false, stage: 'qualification', error: qualification.error };
-        }
-        
-        const riskProfiling = await performClientRiskProfiling(clientData, chatId, bot);
-        const complianceCheck = await ensureCambodiaCompliance(clientData, {}, chatId, bot);
-        const documentList = await generateClientDocumentChecklist(clientData.clientType, qualification, chatId, bot);
-        const onboardingReport = await generateOnboardingReport(clientData.clientId, {
-            qualification, riskProfiling, complianceCheck, documentList
-        }, chatId, bot);
-        
-        return {
-            success: true,
-            workflow: 'completeClientOnboarding',
-            clientId: clientData.clientId,
-            results: {
-                qualification: qualification,
-                riskProfiling: riskProfiling,
-                compliance: complianceCheck,
-                documents: documentList,
-                report: onboardingReport
-            }
-        };
-        
-    } catch (error) {
-        console.error('Complete client onboarding error:', error.message);
-        return { success: false, error: error.message, workflow: 'completeClientOnboarding' };
-    }
-}
+Loan ID: ${loanId}
+Recovery Query: ${recoveryData.query}
+
+Design loan recovery strategy for Cambodia:
+1. Current default situation analysis
+2. Collateral evaluation and liquidation options
+3. Legal recovery procedures in Cambodia
+4. Negotiation and workout strategies
+5. Timeline and recovery projections
+6. Cost-benefit analysis
+7. Alternative resolution options
+
+Provide comprehensive recovery plan with expected outcomes.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Loan Recovery Strategy",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function manageCashFlow(fundId, cashFlowData, chatId, bot) {
+    const prompt = `CAMBODIA CASH FLOW OPTIMIZATION
+
+Fund: ${fundId}
+Query: ${cashFlowData.query}
+Goal: Scale from $5,000 to $10,000 monthly cash flow
 
-async function processCompleteInvestmentAnalysis(investmentData, chatId = null, bot = null) {
-    try {
-        console.log('Starting complete investment analysis workflow');
-        
-        const stockAnalysis = await analyzeStock(investmentData.stockSymbol, 'comprehensive', chatId, bot);
-        const forexAnalysis = await analyzeForexOpportunity(investmentData.currencyPair, 'comprehensive', chatId, bot);
-        const cryptoAnalysis = await analyzeCryptoOpportunity(investmentData.cryptocurrency, 'comprehensive', chatId, bot);
-        const globalAnalysis = await analyzeGlobalMarketConditions(chatId, bot);
-        const marketTiming = await assessMarketTiming(investmentData.exchange, chatId, bot);
-        
-        return {
-            success: true,
-            workflow: 'completeInvestmentAnalysis',
-            results: {
-                stocks: stockAnalysis,
-                forex: forexAnalysis,
-                crypto: cryptoAnalysis,
-                global: globalAnalysis,
-                timing: marketTiming
-            },
-            generatedDate: new Date().toISOString()
-        };
-        
-    } catch (error) {
-        console.error('Complete investment analysis error:', error.message);
-        return { success: false, error: error.message, workflow: 'completeInvestmentAnalysis' };
-    }
+Provide Cambodia-specific cash flow strategy:
+1. Current cash flow analysis and assessment
+2. Income diversification opportunities
+3. Cost optimization strategies
+4. Investment timing and allocation
+5. Currency management (USD/KHR)
+6. Market-specific opportunities
+7. Risk management and contingencies
+8. Implementation timeline and milestones
+
+Focus on practical, actionable strategies for Cambodia market.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Cash Flow Optimization",
+        forceModel: "gpt-5"
+    });
+}
+
+async function conductDueDiligence(borrowerId, dueDiligenceData, chatId, bot) {
+    const prompt = `BORROWER DUE DILIGENCE
+
+Borrower: ${borrowerId}
+Query: ${dueDiligenceData.query}
+
+Conduct comprehensive due diligence for Cambodia lending:
+1. Business verification and legitimacy
+2. Financial statement analysis
+3. Management background checks
+4. Legal and regulatory compliance
+5. Market position and competition
+6. Operational assessment
+7. AML/KYC screening
+8. Reference and credit checks
+9. Red flag identification
+
+Provide thorough due diligence report with recommendations.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Due Diligence Report",
+        forceModel: "gpt-5"
+    });
+}
+
+async function generatePerformanceDashboard(fundId, reportingPeriod, chatId, bot) {
+    const prompt = `FUND PERFORMANCE DASHBOARD
+
+Fund: ${fundId}
+Period: ${reportingPeriod}
+
+Generate comprehensive performance dashboard:
+1. Portfolio performance metrics
+2. Risk-adjusted returns analysis
+3. Asset quality indicators
+4. Geographic and sector allocation
+5. Default and recovery statistics
+6. Yield and spread analysis
+7. Liquidity and funding metrics
+8. Benchmark comparison
+9. Trend analysis and outlook
+
+Provide executive-level performance insights for Cambodia private lending fund.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Performance Dashboard",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function calculateNAV(fundId, valuationDate, chatId, bot) {
+    const prompt = `NET ASSET VALUE CALCULATION
+
+Fund: ${fundId}
+Valuation Date: ${valuationDate}
+
+Calculate fund NAV with Cambodia market considerations:
+1. Asset valuation methodology
+2. Loan portfolio marking
+3. Accrued interest calculations
+4. Provision and reserve adjustments
+5. Operating expense allocations
+6. Currency translation effects
+7. Fair value adjustments
+8. NAV per unit calculation
+9. Waterfall and distribution analysis
+
+Provide detailed NAV calculation with supporting analysis.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "NAV Calculation",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function generateQuarterlyReport(fundId, reportData, chatId, bot) {
+    const prompt = `QUARTERLY INVESTOR REPORT
+
+Fund: ${fundId}
+Query: ${reportData.query}
+
+Generate comprehensive quarterly report:
+1. Executive summary and highlights
+2. Fund performance and returns
+3. Portfolio composition and changes
+4. New investments and exits
+5. Risk management updates
+6. Market outlook and strategy
+7. Operational updates
+8. Financial statements summary
+9. Regulatory and compliance status
+
+Provide professional investor-grade quarterly report.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Quarterly Investor Report",
+        forceModel: "gpt-5"
+    });
+}
+
+async function performComplianceCheck(fundId, checkData, chatId, bot) {
+    const prompt = `COMPLIANCE MONITORING CHECK
+
+Fund: ${fundId}
+Query: ${checkData.query}
+
+Comprehensive compliance assessment:
+1. Regulatory compliance status
+2. Internal policy adherence
+3. Risk limit monitoring
+4. Documentation completeness
+5. AML/KYC compliance
+6. Reporting obligations
+7. License and permit status
+8. Audit findings and remediation
+9. Best practice recommendations
+
+Provide detailed compliance status with action items.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Compliance Check",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function analyzeMarket(researchScope, analysisData, chatId, bot) {
+    const prompt = `CAMBODIA MARKET RESEARCH
+
+Research Scope: ${researchScope}
+Query: ${analysisData.query}
+
+Comprehensive Cambodia market analysis:
+1. Economic conditions and outlook
+2. Banking and lending market
+3. Regulatory environment
+4. Competition analysis
+5. Sector opportunities and risks
+6. Currency and political factors
+7. Infrastructure and development
+8. Investment climate assessment
+9. Strategic recommendations
+
+Provide actionable market intelligence for lending decisions.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Market Research Analysis",
+        forceModel: "gpt-5"
+    });
+}
+
+// SPECIALIZED HANDLER MODULES
+
+async function processCambodiaDeal(dealData, chatId, bot) {
+    const prompt = `CAMBODIA DEAL ANALYSIS
+
+Deal Type: ${dealData.dealType}
+Query: ${dealData.query}
+
+Comprehensive deal analysis:
+1. Deal structure and terms evaluation
+2. Market opportunity assessment
+3. Financial projections and returns
+4. Risk analysis and mitigation
+5. Due diligence requirements
+6. Legal and regulatory considerations
+7. Competitive positioning
+8. Exit strategy options
+9. Funding and syndication approach
+
+Provide investment committee-ready deal analysis.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Cambodia Deal Analysis",
+        forceModel: "gpt-5"
+    });
+}
+
+async function manageLimitedPartners(lpData, action, chatId, bot) {
+    const prompt = `LIMITED PARTNER MANAGEMENT
+
+LP: ${lpData.lpName}
+Action: ${action}
+Query: ${lpData.query}
+
+LP relationship management analysis:
+1. Investor profile and preferences
+2. Investment capacity assessment
+3. Risk tolerance and objectives
+4. Communication and reporting needs
+5. Deal matching and allocation
+6. Relationship development strategy
+7. Regulatory and compliance requirements
+8. Performance tracking and reporting
+
+Provide comprehensive LP management recommendations.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "LP Management Analysis",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function optimizePortfolio(portfolioId, optimizationData, chatId, bot) {
+    const prompt = `PORTFOLIO OPTIMIZATION
+
+Portfolio: ${portfolioId}
+Query: ${optimizationData.query}
+
+Portfolio optimization analysis:
+1. Current allocation assessment
+2. Risk-return optimization
+3. Diversification analysis
+4. Concentration risk management
+5. Sector and geographic allocation
+6. Liquidity and maturity matching
+7. Currency hedging strategies
+8. Rebalancing recommendations
+9. Performance enhancement opportunities
+
+Provide actionable portfolio optimization strategy.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Portfolio Optimization",
+        forceModel: "gpt-5"
+    });
+}
+
+async function valuateRealEstate(propertyId, valuationData, chatId, bot) {
+    const prompt = `CAMBODIA REAL ESTATE VALUATION
+
+Property: ${propertyId}
+Query: ${valuationData.query}
+
+Real estate collateral valuation:
+1. Property description and location
+2. Market comparables analysis
+3. Income approach valuation
+4. Cost approach assessment
+5. Market conditions and trends
+6. Liquidity and marketability
+7. Legal and title considerations
+8. Risk factors and adjustments
+9. Loan-to-value recommendations
+
+Provide comprehensive property valuation for lending purposes.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Real Estate Valuation",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function valuateBusiness(businessId, valuationData, chatId, bot) {
+    const prompt = `CAMBODIA BUSINESS VALUATION
+
+Business: ${businessId}
+Query: ${valuationData.query}
+
+Business valuation analysis:
+1. Business model and operations
+2. Financial performance analysis
+3. Market position and competition
+4. Management and key personnel
+5. Asset and liability assessment
+6. Cash flow and earnings analysis
+7. Valuation methodology selection
+8. Risk adjustments and discounts
+9. Loan collateral value assessment
+
+Provide comprehensive business valuation for lending decisions.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Business Valuation",
+        forceModel: "gpt-5"
+    });
+}
+
+async function manageInvestmentPortfolio(portfolioId, managementData, chatId, bot) {
+    const prompt = `INVESTMENT PORTFOLIO MANAGEMENT
+
+Portfolio: ${portfolioId}
+Query: ${managementData.query}
+
+Investment management analysis:
+1. Portfolio performance review
+2. Asset allocation assessment
+3. Risk management evaluation
+4. Investment opportunities
+5. Market timing considerations
+6. Currency and hedging strategy
+7. Liquidity management
+8. Tax optimization strategies
+9. Performance benchmarking
+
+Provide comprehensive investment management recommendations.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Investment Portfolio Management",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function analyzeEconomicConditions(region, analysisData, chatId, bot) {
+    const prompt = `ECONOMIC CONDITIONS ANALYSIS
+
+Region: ${region}
+Query: ${analysisData.query}
+
+Economic intelligence analysis:
+1. GDP growth and economic indicators
+2. Inflation and monetary policy
+3. Banking and financial system
+4. Government fiscal position
+5. Trade and investment flows
+6. Infrastructure development
+7. Political stability and risks
+8. Currency and exchange rates
+9. Economic outlook and forecasts
+
+Provide comprehensive economic analysis for investment decisions.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Economic Intelligence",
+        forceModel: "gpt-5"
+    });
+}
+
+async function checkRegulatoryCompliance(entityId, complianceData, chatId, bot) {
+    const prompt = `REGULATORY COMPLIANCE CHECK
+
+Entity: ${entityId}
+Query: ${complianceData.query}
+
+Regulatory compliance analysis:
+1. Applicable laws and regulations
+2. License and permit requirements
+3. Reporting and disclosure obligations
+4. Capital and operational requirements
+5. Consumer protection compliance
+6. AML and sanctions compliance
+7. Cross-border regulations
+8. Recent regulatory changes
+9. Compliance risk assessment
+
+Provide comprehensive regulatory compliance evaluation.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Regulatory Compliance",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function valuateAgriculturalAssets(assetId, valuationData, chatId, bot) {
+    const prompt = `CAMBODIA AGRICULTURAL ASSET VALUATION
+
+Asset: ${assetId}
+Query: ${valuationData.query}
+
+Agricultural asset valuation:
+1. Land and soil quality assessment
+2. Crop production and yield analysis
+3. Infrastructure and equipment
+4. Water rights and irrigation
+5. Market access and logistics
+6. Seasonal and weather risks
+7. Regulatory and environmental factors
+8. Comparable sales analysis
+9. Income and cash flow projections
+
+Provide comprehensive agricultural asset valuation.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Agricultural Asset Valuation",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function valuateNaturalResources(resourceId, valuationData, chatId, bot) {
+    const prompt = `NATURAL RESOURCES VALUATION
+
+Resource: ${resourceId}
+Query: ${valuationData.query}
+
+Natural resources valuation:
+1. Resource type and reserves
+2. Extraction costs and methods
+3. Market demand and pricing
+4. Transportation and logistics
+5. Environmental and regulatory
+6. Sustainability considerations
+7. Concession and permit status
+8. Risk factors and mitigation
+9. Valuation and collateral assessment
+
+Provide comprehensive natural resources valuation.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Natural Resources Valuation",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function processLendingTransaction(transactionData, chatId, bot) {
+    const prompt = `LENDING TRANSACTION PROCESSING
+
+Query: ${transactionData.query}
+
+Transaction processing analysis:
+1. Transaction structure and terms
+2. Documentation requirements
+3. Fund disbursement procedures
+4. Escrow and security arrangements
+5. Legal and regulatory compliance
+6. Risk management controls
+7. Operational procedures
+8. Monitoring and reporting
+9. Post-closing requirements
+
+Provide comprehensive transaction processing guidance.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Lending Transaction",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+// TRADING & GLOBAL MODULES
+
+async function executeCambodiaTrade(orderDetails, chatId, bot) {
+    const prompt = `CAMBODIA TRADING OPERATIONS
+
+Symbol: ${orderDetails.symbol}
+Query: ${orderDetails.query}
+
+Trading analysis and execution:
+1. Market conditions assessment
+2. Trade timing and execution
+3. Risk management parameters
+4. Currency considerations
+5. Regulatory compliance
+6. Settlement procedures
+7. Performance monitoring
+8. Portfolio impact analysis
+9. Risk reporting
+
+Provide comprehensive trading operations analysis.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Trading Operations",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function initiateClientOnboarding(clientData, chatId, bot) {
+    const prompt = `CLIENT ONBOARDING PROCESS
+
+Client: ${clientData.personalDetails?.name}
+Query: ${clientData.query}
+
+Client onboarding analysis:
+1. Client qualification assessment
+2. KYC and AML procedures
+3. Investment suitability analysis
+4. Documentation requirements
+5. Risk profiling and tolerance
+6. Account setup procedures
+7. Regulatory compliance
+8. Service level agreements
+9. Ongoing monitoring requirements
+
+Provide comprehensive client onboarding plan.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Client Onboarding",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function analyzeForexOpportunity(currencyPair, analysisType, chatId, bot) {
+    const prompt = `FOREX MARKET ANALYSIS
+
+Currency Pair: ${currencyPair}
+Analysis: ${analysisType}
+
+Forex opportunity analysis:
+1. Currency pair fundamentals
+2. Technical analysis indicators
+3. Economic factors and drivers
+4. Central bank policies
+5. Market sentiment analysis
+6. Risk-reward assessment
+7. Trade timing and entry
+8. Risk management strategy
+9. Cambodia market implications
+
+Provide comprehensive forex analysis for investment decisions.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Forex Analysis",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function analyzeCryptoOpportunity(cryptocurrency, analysisType, chatId, bot) {
+    const prompt = `CRYPTOCURRENCY ANALYSIS
+
+Crypto: ${cryptocurrency}
+Analysis: ${analysisType}
+
+Cryptocurrency opportunity analysis:
+1. Fundamental analysis and technology
+2. Market dynamics and adoption
+3. Regulatory environment
+4. Technical analysis patterns
+5. Risk assessment and volatility
+6. Portfolio allocation considerations
+7. Custody and security requirements
+8. Tax and compliance implications
+9. Investment recommendations
+
+Provide comprehensive crypto analysis for investment decisions.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Crypto Analysis",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function analyzeStock(stockSymbol, analysisType, chatId, bot) {
+    const prompt = `STOCK MARKET ANALYSIS
+
+Stock: ${stockSymbol}
+Analysis: ${analysisType}
+
+Stock investment analysis:
+1. Company fundamentals and financials
+2. Industry and competitive position
+3. Technical analysis and charts
+4. Valuation metrics and ratios
+5. Risk factors and opportunities
+6. Management and governance
+7. Market conditions and timing
+8. Investment recommendation
+9. Portfolio fit assessment
+
+Provide comprehensive stock analysis for investment decisions.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Stock Analysis",
+        forceModel: "gpt-5-mini"
+    });
+}
+
+async function analyzeGlobalMarketConditions(chatId, bot) {
+    const prompt = `GLOBAL MARKET CONDITIONS ANALYSIS
+
+Comprehensive global market assessment:
+1. Global economic conditions and trends
+2. Central bank policies and impacts
+3. Geopolitical risks and opportunities
+4. Market volatility and sentiment
+5. Asset class performance and outlook
+6. Currency markets and flows
+7. Commodity markets analysis
+8. Emerging market conditions
+9. Cambodia market implications and opportunities
+
+Provide comprehensive global market analysis with Cambodia-specific insights.`;
+    
+    return await executeEnhancedGPT5Command(prompt, chatId, bot, {
+        title: "Global Market Analysis",
+        forceModel: "gpt-5"
+    });
 }
-console.log(`✅ IMPERIUMVAULTSYSTEM index.js loaded - Core: 23 modules + Trading: ${tradingModulesLoaded}/6 modules`);
-console.log(`🎯 Available functions: ${tradingModulesLoaded > 0 ? '85+' : '65+'} functions exported`);
-console.log(`🌟 System ready for Cambodia private lending${tradingModulesLoaded > 0 ? ' + trading operations' : ' operations'}`);
-console.log(`📊 Status: 11 Specialized + 12 Core Lending + ${tradingModulesLoaded} Trading + 6 Workflows`);
-
-// ========================================================================
-// 📊 EXPORT ALL FUNCTIONS
-// ========================================================================
-module.exports = {
-    // SPECIALIZED HANDLER FUNCTIONS (11 modules)
-    // Cambodia Deals Handler
-    processCambodiaDeal,
-    analyzeDealStructure,
-    
-    // LP Management
-    manageLimitedPartners,
-    generateLPReports,
-    trackLPCommitments,
-    
-    // Portfolio Manager
-    optimizePortfolio,
-    rebalancePortfolio,
-    analyzePortfolioPerformance,
-    
-    // Real Estate Wealth
-    valuateRealEstate,
-    analyzeRealEstateMarket,
-    trackPropertyPortfolio,
-    
-    // Business Wealth
-    valuateBusiness,
-    analyzeBusinessPerformance,
-    assessBusinessRisk,
-    
-    // Investment Wealth
-    manageInvestmentPortfolio,
-    analyzeInvestmentPerformance,
-    optimizeAssetAllocation,
-    
-    // Economic Intelligence
-    analyzeEconomicConditions,
-    forecastEconomicTrends,
-    analyzeSectorPerformance,
-    
-    // Legal Regulatory
-    checkRegulatoryCompliance,
-    analyzeLegalRisks,
-    generateLegalDocuments,
-    
-    // Agricultural Wealth
-    valuateAgriculturalAssets,
-    analyzeCropYields,
-    assessAgriculturalRisks,
-    
-    // Resources Wealth
-    valuateNaturalResources,
-    analyzeCommodityPrices,
-    assessResourceExploitation,
-    
-    // Cambodia Lending Utils
-    processLendingTransaction,
-    validateLendingData,
-    
-    // CORE 12 LENDING MODULE FUNCTIONS
-    // Module 1: Credit Assessment
-    runCreditAssessment,
-    calculateCreditScore,
-    
-    // Module 2: Loan Origination
-    processLoanApplication,
-    approveLoan,
-    
-    // Module 3: Loan Servicing
-    serviceLoan,
-    monitorLoanPerformance,
-    
-    // Module 4: Risk Management
-    assessBorrowerRisk,
-    analyzePortfolioRisk,
-    
-    // Module 5: Loan Recovery
-    initiateRecovery,
-    manageCollateral,
-    
-    // Module 6: Cash Flow Management
-    manageCashFlow,
-    forecastLiquidity,
-    
-    // Module 7: Borrower Due Diligence
-    conductDueDiligence,
-    performAMLScreening,
-    
-    // Module 8: Performance Analytics
-    generatePerformanceDashboard,
-    analyzeReturns,
-    
-    // Module 9: Fund Accounting
-    calculateNAV,
-    calculateManagementFees,
-    
-    // Module 10: Investor Reporting
-    generateQuarterlyReport,
-    generateMonthlyUpdate,
-    
-    // Module 11: Compliance Monitoring
-    performComplianceCheck,
-    monitorAlerts,
-    
-    // Module 12: Market Research
-    analyzeMarket,
-    analyzeCompetitors,
-    
-    // TRADING MODULE FUNCTIONS (conditional - will return placeholders if modules not found)
-    // Trading Operations
-    executeCambodiaTrade,
-    constructCambodiaPortfolio,
-    implementTradingRiskManagement,
-    assessMarketTiming,
-    generateTradingReport,
-    calculateTradingCosts,
-    validateCambodiaTradeRules,
-    
-    // Client Onboarding
-    initiateClientOnboarding,
-    qualifyClient,
-    generateClientDocumentChecklist,
-    performClientRiskProfiling,
-    generateComplianceRequirements,
-    ensureCambodiaCompliance,
-    generateOnboardingReport,
-    
-    // Forex Trading
-    analyzeForexOpportunity,
-    executeForexTrade,
-    generateForexStrategy,
-    
-    // Crypto Trading
-    analyzeCryptoOpportunity,
-    executeCryptoTrade,
-    constructCryptoPortfolio,
-    assessCryptoMarketConditions,
-    
-    // Stock Trading
-    analyzeStock,
-    executeStockTrade,
-    constructStockPortfolio,
-    assessStockMarketConditions,
-    
-    // Global Markets
-    analyzeGlobalMarketConditions,
-    constructGlobalPortfolio,
-    monitorGlobalMarketDevelopments,
-    assessGlobalCrisisScenarios,
-    identifyGlobalInvestmentThemes,
-    
-    // COMPOSITE WORKFLOW FUNCTIONS (6 total)
-    processCompleteLoanWorkflow,
-    generateCompleteFundReport,
-    processCompleteWealthAssessment,
-    processCompleteMarketIntelligence,
-    processCompleteClientOnboarding,
-    processCompleteInvestmentAnalysis,
-    
-    // UTILITY FUNCTIONS
-    getTradingModulesStatus: () => ({
-        loaded: tradingModulesLoaded,
-        total: 6,
-        modules: {
-            tradingOperations: !!tradingOperations,
-            clientOnboarding: !!clientOnboarding,
-            forexTrading: !!forexTrading,
-            cryptoTrading: !!cryptoTrading,
-            stockTrading: !!stockTrading,
-            globalMarkets: !!globalMarkets
-        }
-    }),
-    
-    // Direct module access (if needed)
-    modules: {
-        // Core 12 Lending Modules
-        creditAssessment,
-        loanOrigination,
-        loanServicing,
-        riskManagement,
-        loanRecovery,
-        cashFlowManagement,
-        borrowerDueDiligence,
-        performanceAnalytics,
-        fundAccounting,
-        investorReporting,
-        complianceMonitoring,
-        marketResearch,
-        
-        // Specialized Handler Modules
-        cambodiaHandler,
-        lpManagement,
-        portfolioManager,
-        realEstateWealth,
-        businessWealth,
-        investmentWealth,
-        economicIntelligence,
-        legalRegulatory,
-        agriculturalWealth,
-        resourcesWealth,
-        cambodiaLending,
-        
-        // Trading Modules (may be null if not loaded)
-        tradingOperations,
-        clientOnboarding,
-        forexTrading,
-        cryptoTrading,
-        stockTrading,
-        globalMarkets
-    }
-};
-
-// ========================================================================
-// 📊 EXPORT ALL FUNCTIONS
-// ========================================================================
-module.exports = {
-    // SPECIALIZED HANDLER FUNCTIONS (11 modules)
-    // Cambodia Deals Handler
-    processCambodiaDeal,
-    analyzeDealStructure,
-    
-    // LP Management
-    manageLimitedPartners,
-    generateLPReports,
-    trackLPCommitments,
-    
-    // Portfolio Manager
-    optimizePortfolio,
-    rebalancePortfolio,
-    analyzePortfolioPerformance,
-    
-    // Real Estate Wealth
-    valuateRealEstate,
-    analyzeRealEstateMarket,
-    trackPropertyPortfolio,
-    
-    // Business Wealth
-    valuateBusiness,
-    analyzeBusinessPerformance,
-    assessBusinessRisk,
-    
-    // Investment Wealth
-    manageInvestmentPortfolio,
-    analyzeInvestmentPerformance,
-    optimizeAssetAllocation,
-    
-    // Economic Intelligence
-    analyzeEconomicConditions,
-    forecastEconomicTrends,
-    analyzeSectorPerformance,
-    
-    // Legal Regulatory
-    checkRegulatoryCompliance,
-    analyzeLegalRisks,
-    generateLegalDocuments,
-    
-    // Agricultural Wealth
-    valuateAgriculturalAssets,
-    analyzeCropYields,
-    assessAgriculturalRisks,
-    
-    // Resources Wealth
-    valuateNaturalResources,
-    analyzeCommodityPrices,
-    assessResourceExploitation,
-    
-    // Cambodia Lending Utils
-    processLendingTransaction,
-    validateLendingData,
-    
-    // CORE 12 LENDING MODULE FUNCTIONS
-    // Module 1: Credit Assessment
-    runCreditAssessment,
-    calculateCreditScore,
-    
-    // Module 2: Loan Origination
-    processLoanApplication,
-    approveLoan,
-    
-    // Module 3: Loan Servicing
-    serviceLoan,
-    monitorLoanPerformance,
-    
-    // Module 4: Risk Management
-    assessBorrowerRisk,
-    analyzePortfolioRisk,
-    
-    // Module 5: Loan Recovery
-    initiateRecovery,
-    manageCollateral,
-    
-    // Module 6: Cash Flow Management
-    manageCashFlow,
-    forecastLiquidity,
-    
-    // Module 7: Borrower Due Diligence
-    conductDueDiligence,
-    performAMLScreening,
-    
-    // Module 8: Performance Analytics
-    generatePerformanceDashboard,
-    analyzeReturns,
-    
-    // Module 9: Fund Accounting
-    calculateNAV,
-    calculateManagementFees,
-    
-    // Module 10: Investor Reporting
-    generateQuarterlyReport,
-    generateMonthlyUpdate,
-    
-    // Module 11: Compliance Monitoring
-    performComplianceCheck,
-    monitorAlerts,
-    
-    // Module 12: Market Research
-    analyzeMarket,
-    analyzeCompetitors,
-    
-    // TRADING MODULE FUNCTIONS (conditional - will return placeholders if modules not found)
-    // Trading Operations
-    executeCambodiaTrade,
-    constructCambodiaPortfolio,
-    implementTradingRiskManagement,
-    assessMarketTiming,
-    generateTradingReport,
-    calculateTradingCosts,
-    validateCambodiaTradeRules,
-    
-    // Client Onboarding
-    initiateClientOnboarding,
-    qualifyClient,
-    generateClientDocumentChecklist,
-    performClientRiskProfiling,
-    generateComplianceRequirements,
-    ensureCambodiaCompliance,
-    generateOnboardingReport,
-    
-    // Forex Trading
-    analyzeForexOpportunity,
-    executeForexTrade,
-    generateForexStrategy,
-    
-    // Crypto Trading
-    analyzeCryptoOpportunity,
-    executeCryptoTrade,
-    constructCryptoPortfolio,
-    assessCryptoMarketConditions,
-    
-    // Stock Trading
-    analyzeStock,
-    executeStockTrade,
-    constructStockPortfolio,
-    assessStockMarketConditions,
-    
-    // Global Markets
-    analyzeGlobalMarketConditions,
-    constructGlobalPortfolio,
-    monitorGlobalMarketDevelopments,
-    assessGlobalCrisisScenarios,
-    identifyGlobalInvestmentThemes,
-    
-    // COMPOSITE WORKFLOW FUNCTIONS (6 total)
-    processCompleteLoanWorkflow,
-    generateCompleteFundReport,
-    processCompleteWealthAssessment,
-    processCompleteMarketIntelligence,
-    processCompleteClientOnboarding,
-    processCompleteInvestmentAnalysis,
-    
-    // UTILITY FUNCTIONS
-    getTradingModulesStatus: () => ({
-        loaded: tradingModulesLoaded,
-        total: 6,
-        modules: {
-            tradingOperations: !!tradingOperations,
-            clientOnboarding: !!clientOnboarding,
-            forexTrading: !!forexTrading,
-            cryptoTrading: !!cryptoTrading,
-            stockTrading: !!stockTrading,
-            globalMarkets: !!globalMarkets
-        }
-    }),
-    
-    // Direct module access (if needed)
-    modules: {
-        // Core 12 Lending Modules
-        creditAssessment,
-        loanOrigination,
-        loanServicing,
-        riskManagement,
-        loanRecovery,
-        cashFlowManagement,
-        borrowerDueDiligence,
-        performanceAnalytics,
-        fundAccounting,
-        investorReporting,
-        complianceMonitoring,
-        marketResearch,
-        
-        // Specialized Handler Modules
-        cambodiaHandler,
-        lpManagement,
-        portfolioManager,
-        realEstateWealth,
-        businessWealth,
-        investmentWealth,
-        economicIntelligence,
-        legalRegulatory,
-        agriculturalWealth,
-        resourcesWealth,
-        cambodiaLending,
-        
-        // Trading Modules (may be null if not loaded)
-        tradingOperations,
-        clientOnboarding,
-        forexTrading,
-        cryptoTrading,
-        stockTrading,
-        globalMarkets
-    }
-};
 
 // 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
 let database, memory, logger;
