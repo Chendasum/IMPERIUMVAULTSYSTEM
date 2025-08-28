@@ -894,7 +894,44 @@ Provide comprehensive global market analysis with Cambodia-specific insights.`;
     });
 }
 
-// 📊 DATABASE & MEMORY SYSTEM with Fallback Protection
+// 📊 DATABASE & MEMORY SYSTEM with GPT-5 Response Handling & Fallback Protection
+const fs = require('fs').promises;
+const path = require('path');
+
+// Import GPT-5 response utilities
+let extractGPTContent, safeTruncate, safeStringify;
+try {
+    const loggerUtils = require('./utils/logger');
+    extractGPTContent = loggerUtils.extractGPTContent || ((response) => {
+        if (typeof response === 'string') return response;
+        if (response && response.content) return response.content;
+        if (response && response.message) return response.message;
+        return JSON.stringify(response);
+    });
+    safeTruncate = loggerUtils.safeTruncate || ((text, maxLength = 1000) => {
+        const str = String(text || '');
+        return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
+    });
+    safeStringify = loggerUtils.safeStringify || ((obj) => {
+        try { return JSON.stringify(obj); } catch { return String(obj); }
+    });
+} catch (error) {
+    console.warn('Logger utils not available, using fallback functions');
+    extractGPTContent = (response) => {
+        if (typeof response === 'string') return response;
+        if (response && response.content) return response.content;
+        return String(response);
+    };
+    safeTruncate = (text, maxLength = 1000) => {
+        const str = String(text || '');
+        return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
+    };
+    safeStringify = (obj) => {
+        try { return JSON.stringify(obj); } catch { return String(obj); }
+    };
+}
+
+// Load core modules with fallback protection
 let database, memory, logger;
 
 try {
@@ -904,7 +941,9 @@ try {
     console.warn('⚠️ Database module failed to load:', error.message);
     database = { 
         getConversationHistoryDB: async () => [],
-        getPersistentMemoryDB: async () => []
+        getPersistentMemoryDB: async () => [],
+        saveConversationDB: async () => false,
+        testConnection: async () => { throw new Error('Database not available'); }
     };
 }
 
@@ -913,7 +952,19 @@ try {
     console.log('✅ Memory module loaded');
 } catch (error) {
     console.warn('⚠️ Memory module failed to load:', error.message);
-    memory = { buildConversationContext: async () => '' };
+    memory = { 
+        buildConversationContext: async (chatId, userMessage) => {
+            // Fallback: use conversation buffer for basic context
+            if (conversationBuffer.has(chatId)) {
+                const recent = conversationBuffer.get(chatId).slice(-3);
+                const context = recent.map(msg => 
+                    `User: ${safeTruncate(msg.userMessage, 100)}\nAssistant: ${safeTruncate(extractGPTContent(msg.gptResponse), 100)}`
+                ).join('\n');
+                return context ? `${context}\n\nUser: ${userMessage}` : userMessage;
+            }
+            return userMessage;
+        }
+    };
 }
 
 try {
@@ -923,13 +974,16 @@ try {
     console.warn('⚠️ Logger module failed to load - using console fallback:', error.message);
     logger = {
         logUserInteraction: async (data) => {
-            console.log(`📝 User: ${data.chatId} - ${data.userMessage?.substring(0, 50)}...`);
+            const msg = extractGPTContent(data.userMessage || '');
+            console.log(`📝 User [${data.chatId}]: ${safeTruncate(msg, 50)}`);
         },
         logGPTResponse: async (data) => {
-            console.log(`🤖 GPT: ${data.chatId} - ${data.aiUsed} (${data.responseTime}ms)`);
+            const response = extractGPTContent(data.gptResponse || '');
+            const model = (typeof data.gptResponse === 'object' && data.gptResponse?.model) || data.aiUsed || 'unknown';
+            console.log(`🤖 GPT [${data.chatId}]: ${model} - ${safeTruncate(response, 50)}`);
         },
         logError: async (data) => {
-            console.error(`❌ Error: ${data.chatId} - ${data.error}`);
+            console.error(`❌ Error [${data.chatId}]: ${data.error?.message || data.error}`);
         }
     };
 }
@@ -939,28 +993,57 @@ let conversationBuffer = new Map(); // In-memory buffer for emergency backup
 let lastBackupTime = Date.now();
 const BACKUP_INTERVAL = 30000; // Backup every 30 seconds
 
-// 🛡️ EMERGENCY CONVERSATION SAVER with Fallback Logging
+// Helper to extract metadata from GPT-5 responses
+function extractResponseMetadata(gptResponse) {
+    if (typeof gptResponse === 'object' && gptResponse !== null) {
+        return {
+            model: gptResponse.model || 'unknown',
+            usage: gptResponse.usage || null,
+            cost: gptResponse.cost || 0,
+            fallback: gptResponse.fallback || false,
+            finishReason: gptResponse.finishReason || null
+        };
+    }
+    return { model: 'string_response', usage: null, cost: 0, fallback: false };
+}
+
+// 🛡️ EMERGENCY CONVERSATION SAVER with GPT-5 Response Handling
 async function saveConversationEmergency(chatId, userMessage, gptResponse, metadata = {}) {
     try {
+        // Extract response content and metadata safely
+        const responseContent = extractGPTContent(gptResponse);
+        const responseMetadata = extractResponseMetadata(gptResponse);
+        
+        let primarySaveSuccess = false;
+        
         // 1. Save to PostgreSQL (Primary) - with fallback
         try {
             if (logger && typeof logger.logUserInteraction === 'function') {
                 await logger.logUserInteraction({
                     chatId,
-                    userMessage,
+                    userMessage: safeTruncate(userMessage, 2000),
                     timestamp: new Date().toISOString(),
                     messageType: 'telegram_webhook_backup',
+                    model: responseMetadata.model,
                     ...metadata
                 });
                 
                 await logger.logGPTResponse({
                     chatId,
-                    userMessage,
-                    gptResponse,
+                    userMessage: safeTruncate(userMessage, 1000),
+                    gptResponse: responseContent,
+                    gptResponseRaw: gptResponse, // Keep full object
                     timestamp: new Date().toISOString(),
                     backupSaved: true,
+                    aiUsed: responseMetadata.model,
+                    tokenUsage: responseMetadata.usage,
+                    cost: responseMetadata.cost,
+                    fallback: responseMetadata.fallback,
                     ...metadata
                 });
+                
+                primarySaveSuccess = true;
+                console.log(`✅ PostgreSQL save successful for chat ${chatId}`);
             } else {
                 console.log(`💾 Backup save (no logger): ${chatId} - Message saved to memory buffer only`);
             }
@@ -972,60 +1055,104 @@ async function saveConversationEmergency(chatId, userMessage, gptResponse, metad
         if (!conversationBuffer.has(chatId)) {
             conversationBuffer.set(chatId, []);
         }
-        conversationBuffer.get(chatId).push({
+        
+        const bufferEntry = {
             timestamp: new Date().toISOString(),
-            userMessage,
-            gptResponse,
-            metadata,
+            userMessage: safeTruncate(userMessage, 2000),
+            gptResponse: responseContent,
+            gptResponseRaw: gptResponse,
+            metadata: {
+                ...metadata,
+                model: responseMetadata.model,
+                usage: responseMetadata.usage,
+                cost: responseMetadata.cost,
+                fallback: responseMetadata.fallback,
+                primarySaved: primarySaveSuccess
+            },
             saved: true
-        });
+        };
+        
+        conversationBuffer.get(chatId).push(bufferEntry);
         
         // Keep only last 50 messages in memory buffer
-        if (conversationBuffer.get(chatId).length > 50) {
-            conversationBuffer.get(chatId).shift();
+        const buffer = conversationBuffer.get(chatId);
+        if (buffer.length > 50) {
+            buffer.splice(0, buffer.length - 50);
         }
         
-        console.log(`💾 Conversation saved with fallback protection for chat ${chatId}`);
-        return true;
+        console.log(`💾 Conversation saved with fallback protection for chat ${chatId} (${buffer.length} msgs)`);
+        
+        // 3. Emergency File Backup (Tertiary) - If primary failed
+        if (!primarySaveSuccess) {
+            try {
+                // Ensure backup directory exists
+                const backupDir = './backups';
+                try {
+                    await fs.mkdir(backupDir, { recursive: true });
+                } catch (mkdirError) {
+                    // Directory might already exist
+                }
+                
+                const backupData = {
+                    chatId,
+                    userMessage: safeTruncate(userMessage, 2000),
+                    gptResponse: responseContent,
+                    gptResponseRaw: typeof gptResponse === 'object' ? safeStringify(gptResponse) : gptResponse,
+                    timestamp: new Date().toISOString(),
+                    metadata: {
+                        ...metadata,
+                        model: responseMetadata.model,
+                        usage: responseMetadata.usage,
+                        cost: responseMetadata.cost,
+                        fallback: responseMetadata.fallback
+                    },
+                    emergencyBackup: true
+                };
+                
+                const filename = path.join(backupDir, `emergency_backup_${chatId}.jsonl`);
+                await fs.appendFile(filename, JSON.stringify(backupData) + '\n');
+                console.log(`📁 Emergency file backup created for chat ${chatId}`);
+            } catch (fileError) {
+                console.error(`❌ Emergency file backup failed for chat ${chatId}:`, fileError.message);
+            }
+        }
+        
+        return primarySaveSuccess;
         
     } catch (error) {
         console.error(`❌ Emergency save failed for chat ${chatId}:`, error.message);
         
-        // 3. Emergency File Backup (Tertiary) - Absolute fallback
-        try {
-            const fs = require('fs').promises;
-            const backupData = {
-                chatId,
-                userMessage,
-                gptResponse,
-                timestamp: new Date().toISOString(),
-                metadata,
-                emergencyBackup: true
-            };
-            
-            await fs.appendFile(`./emergency_backup_${chatId}.json`, JSON.stringify(backupData) + '\n');
-            console.log(`📁 Emergency file backup created for chat ${chatId}`);
-            return false; // PostgreSQL failed but file backup worked
-            
-        } catch (fileError) {
-            console.error(`❌ ALL backup methods failed for chat ${chatId}:`, fileError.message);
-            return false;
-        }
+        // Last resort - minimal console log
+        console.log('🆘 LAST RESORT LOG:', {
+            chatId,
+            userMessage: safeTruncate(userMessage, 100),
+            gptResponse: safeTruncate(extractGPTContent(gptResponse), 100),
+            timestamp: new Date().toISOString(),
+            error: error.message
+        });
+        
+        return false;
     }
 }
 
-// 🔄 CONVERSATION RECOVERY SYSTEM
+// 🔄 CONVERSATION RECOVERY SYSTEM with GPT-5 Support
 async function recoverConversation(chatId) {
     try {
         console.log(`🔍 Attempting conversation recovery for chat ${chatId}...`);
         
         let recoveredMessages = [];
+        let recoveryMethod = 'none';
         
         // 1. Try PostgreSQL first (Primary)
         try {
             const dbMessages = await database.getConversationHistoryDB(chatId, 100);
             if (dbMessages && dbMessages.length > 0) {
-                recoveredMessages = dbMessages;
+                recoveredMessages = dbMessages.map(msg => ({
+                    ...msg,
+                    gptResponse: extractGPTContent(msg.gptResponse || msg.response),
+                    recoveryMethod: 'postgresql'
+                }));
+                recoveryMethod = 'postgresql';
                 console.log(`✅ Recovered ${dbMessages.length} messages from PostgreSQL`);
             }
         } catch (dbError) {
@@ -1035,28 +1162,59 @@ async function recoverConversation(chatId) {
         // 2. Try Memory Buffer (Secondary) 
         if (recoveredMessages.length === 0 && conversationBuffer.has(chatId)) {
             const bufferMessages = conversationBuffer.get(chatId);
-            recoveredMessages = bufferMessages;
+            recoveredMessages = bufferMessages.map(msg => ({
+                ...msg,
+                gptResponse: extractGPTContent(msg.gptResponse),
+                recoveryMethod: 'memory'
+            }));
+            recoveryMethod = 'memory';
             console.log(`✅ Recovered ${bufferMessages.length} messages from memory buffer`);
         }
         
         // 3. Try Emergency File Backup (Tertiary)
         if (recoveredMessages.length === 0) {
-            try {
-                const fs = require('fs').promises;
-                const fileContent = await fs.readFile(`./emergency_backup_${chatId}.json`, 'utf8');
-                const fileMessages = fileContent.split('\n')
-                    .filter(line => line.trim())
-                    .map(line => JSON.parse(line));
-                
-                recoveredMessages = fileMessages;
-                console.log(`✅ Recovered ${fileMessages.length} messages from emergency file`);
-            } catch (fileError) {
-                console.log(`⚠️ Emergency file recovery failed: ${fileError.message}`);
+            const possibleFiles = [
+                `./backups/emergency_backup_${chatId}.jsonl`,
+                `./emergency_backup_${chatId}.json`,
+                `./emergency_backup_${chatId}.jsonl`
+            ];
+            
+            for (const filename of possibleFiles) {
+                try {
+                    const fileContent = await fs.readFile(filename, 'utf8');
+                    const fileMessages = fileContent.split('\n')
+                        .filter(line => line.trim())
+                        .map(line => {
+                            try {
+                                const parsed = JSON.parse(line);
+                                return {
+                                    ...parsed,
+                                    gptResponse: extractGPTContent(parsed.gptResponse || parsed.gptResponseRaw),
+                                    recoveryMethod: 'file'
+                                };
+                            } catch (parseError) {
+                                console.warn(`⚠️ Failed to parse backup line: ${parseError.message}`);
+                                return null;
+                            }
+                        })
+                        .filter(msg => msg !== null);
+                    
+                    if (fileMessages.length > 0) {
+                        recoveredMessages = fileMessages;
+                        recoveryMethod = 'file';
+                        console.log(`✅ Recovered ${fileMessages.length} messages from file: ${filename}`);
+                        break;
+                    }
+                } catch (fileError) {
+                    continue; // Try next file
+                }
             }
         }
         
         if (recoveredMessages.length > 0) {
-            console.log(`🎉 CONVERSATION RECOVERED! ${recoveredMessages.length} messages restored for chat ${chatId}`);
+            // Sort by timestamp
+            recoveredMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            console.log(`🎉 CONVERSATION RECOVERED! ${recoveredMessages.length} messages restored for chat ${chatId} via ${recoveryMethod}`);
             return recoveredMessages;
         } else {
             console.log(`❌ No conversation data found for chat ${chatId}`);
@@ -1069,13 +1227,15 @@ async function recoverConversation(chatId) {
     }
 }
 
-// 📦 PERIODIC BACKUP SYSTEM  
+// 📦 PERIODIC BACKUP SYSTEM with GPT-5 Response Handling
 async function performPeriodicBackup() {
     try {
         const now = Date.now();
         if (now - lastBackupTime < BACKUP_INTERVAL) return;
         
         console.log('📦 Performing periodic conversation backup...');
+        let totalBackedUp = 0;
+        let successCount = 0;
         
         // Backup conversation buffers to database
         for (const [chatId, messages] of conversationBuffer.entries()) {
@@ -1088,7 +1248,23 @@ async function performPeriodicBackup() {
                     console.log(`📦 Backing up ${recentMessages.length} recent messages for chat ${chatId}`);
                     
                     for (const msg of recentMessages) {
-                        await saveConversationEmergency(chatId, msg.userMessage, msg.gptResponse, msg.metadata);
+                        try {
+                            const success = await saveConversationEmergency(
+                                chatId, 
+                                msg.userMessage, 
+                                msg.gptResponseRaw || msg.gptResponse,
+                                { 
+                                    ...msg.metadata, 
+                                    periodicBackup: true,
+                                    originalTimestamp: msg.timestamp
+                                }
+                            );
+                            
+                            if (success) successCount++;
+                            totalBackedUp++;
+                        } catch (msgError) {
+                            console.error(`❌ Failed to backup message for chat ${chatId}:`, msgError.message);
+                        }
                     }
                 }
             } catch (backupError) {
@@ -1097,10 +1273,46 @@ async function performPeriodicBackup() {
         }
         
         lastBackupTime = now;
-        console.log('✅ Periodic backup completed');
+        console.log(`✅ Periodic backup completed: ${successCount}/${totalBackedUp} messages backed up successfully`);
+        
+        // Clean up old memory entries
+        cleanupOldMemoryEntries();
         
     } catch (error) {
         console.error('❌ Periodic backup system error:', error.message);
+    }
+}
+
+// Clean up old memory entries to prevent memory leaks
+function cleanupOldMemoryEntries() {
+    try {
+        const cutoffTime = Date.now() - (24 * 60 * 60 * 1000); // 24 hours ago
+        let cleanedChats = 0;
+        let cleanedMessages = 0;
+        
+        for (const [chatId, messages] of conversationBuffer.entries()) {
+            const originalLength = messages.length;
+            const recentMessages = messages.filter(msg => 
+                new Date(msg.timestamp).getTime() > cutoffTime
+            );
+            
+            if (recentMessages.length < originalLength) {
+                conversationBuffer.set(chatId, recentMessages);
+                cleanedMessages += (originalLength - recentMessages.length);
+                cleanedChats++;
+            }
+            
+            // Remove empty chat buffers
+            if (recentMessages.length === 0) {
+                conversationBuffer.delete(chatId);
+            }
+        }
+        
+        if (cleanedMessages > 0) {
+            console.log(`🧹 Cleaned up ${cleanedMessages} old messages from ${cleanedChats} chats`);
+        }
+    } catch (error) {
+        console.error('❌ Memory cleanup error:', error.message);
     }
 }
 
@@ -1131,7 +1343,42 @@ try {
     console.log('✅ multimodal module loaded');
 } catch (error) {
     console.log('⚠️ multimodal module not found');
-    multimodal = null;  // Set to null instead of empty object
+    multimodal = null;
+}
+
+// Helper function to check if multimodal is available
+function isMultimodalAvailable() {
+    return multimodal && typeof multimodal.analyzeImage === 'function';
+}
+
+// Handler for disabled features
+async function handleFeatureDisabled(ctx) {
+    const command = ctx.message.text.split(' ')[0];
+    const featureMap = {
+        '/vision': 'multimodal (vision/image analysis)',
+        '/transcribe': 'multimodal (audio transcription)',
+        '/document': 'multimodal (document analysis)',
+        '/voice': 'multimodal (voice analysis)',
+        '/trade': 'metaTrader (trading analysis)',
+        '/forex': 'metaTrader (forex analysis)',
+        '/signals': 'metaTrader (trading signals)',
+        '/live': 'liveData (live data queries)',
+        '/news': 'liveData (news analysis)',
+        '/weather': 'liveData (weather queries)'
+    };
+    
+    const featureName = featureMap[command] || 'this feature';
+    
+    await ctx.reply(
+        `⚠️ **Feature Not Available**\n\n` +
+        `The ${command} command requires the ${featureName} module, which is not currently loaded.\n\n` +
+        `Available commands:\n` +
+        `• GPT-5: /gpt5, /nano, /mini, /ultimate\n` +
+        `• Analysis: /analyze, /quick\n` +
+        `• System: /health, /status, /help\n` +
+        `• Business: /cambodia, /lending, /portfolio`,
+        { parse_mode: 'Markdown' }
+    );
 }
 
 // 🎮 COMMAND HANDLERS MAP - GPT-5 Optimized
@@ -1151,28 +1398,42 @@ const commandHandlers = {
     '/analytics': handleSystemAnalytics,
     '/status': handleSystemStatus,
     '/cost': handleCostAnalysis,
+    '/tokens': handleTokenUsage,
     
     // 🌍 UTILITIES
     '/time': handleTimeCommand,
     '/market': handleMarketIntel,
     '/help': handleHelp,
+    '/models': handleModelsInfo,
     
-    // 🎨 MULTIMODAL COMMANDS
-    '/vision': handleVisionAnalysis,
-    '/transcribe': handleTranscriptionCommand,
-    '/document': handleDocumentAnalysis,
-    '/voice': handleVoiceAnalysis,
+    // 🎨 MULTIMODAL COMMANDS (conditional)
+    '/vision': multimodal ? handleVisionAnalysis : handleFeatureDisabled,
+    '/transcribe': multimodal ? handleTranscriptionCommand : handleFeatureDisabled,
+    '/document': multimodal ? handleDocumentAnalysis : handleFeatureDisabled,
+    '/voice': multimodal ? handleVoiceAnalysis : handleFeatureDisabled,
     
     // 🇰🇭 CAMBODIA BUSINESS
     '/cambodia': handleCambodiaAnalysis,
     '/lending': handleLendingAnalysis,
     '/portfolio': handlePortfolioAnalysis,
     
+    // 📈 TRADING COMMANDS (conditional)
+    '/trade': metaTrader ? handleTradeAnalysis : handleFeatureDisabled,
+    '/forex': metaTrader ? handleForexAnalysis : handleFeatureDisabled,
+    '/signals': metaTrader ? handleTradingSignals : handleFeatureDisabled,
+    
+    // 📊 LIVE DATA COMMANDS (conditional)
+    '/live': liveData ? handleLiveDataQuery : handleFeatureDisabled,
+    '/news': liveData ? handleNewsAnalysis : handleFeatureDisabled,
+    '/weather': liveData ? handleWeatherQuery : handleFeatureDisabled,
+    
     // 🔧 ADMIN FUNCTIONS
     '/optimize': handleSystemOptimization,
     '/debug': handleDebugInfo,
     '/recover': handleConversationRecovery,
-    '/backup': handleForceBackup
+    '/backup': handleForceBackup,
+    '/cleanup': handleMemoryCleanup,
+    '/stats': handleUsageStats
 };
 
 // 💾 MESSAGE DEDUPLICATION - Prevent duplicate processing
@@ -1184,10 +1445,87 @@ setInterval(() => {
     console.log('🧹 Cleared processed messages cache');
 }, 300000);
 
-// Helper function to check if multimodal is available
-function isMultimodalAvailable() {
-    return multimodal && typeof multimodal.analyzeImage === 'function';
+// Enhanced conversation context builder with GPT-5 awareness
+async function buildConversationContext(chatId, userMessage, options = {}) {
+    try {
+        // Get recent conversation history
+        const history = [];
+        
+        // Try database first
+        if (database && database.getConversationHistoryDB) {
+            try {
+                const dbHistory = await database.getConversationHistoryDB(chatId, options.historyLimit || 10);
+                history.push(...dbHistory);
+            } catch (dbError) {
+                console.warn(`Database history failed for ${chatId}:`, dbError.message);
+            }
+        }
+        
+        // Fallback to memory buffer if no database history
+        if (history.length === 0 && conversationBuffer.has(chatId)) {
+            const bufferHistory = conversationBuffer.get(chatId).slice(-(options.historyLimit || 10));
+            history.push(...bufferHistory);
+        }
+        
+        // Use memory module to build context
+        return await memory.buildConversationContext(chatId, userMessage, {
+            ...options,
+            history: history.map(msg => ({
+                userMessage: msg.userMessage,
+                gptResponse: extractGPTContent(msg.gptResponse || msg.response),
+                timestamp: msg.timestamp,
+                metadata: msg.metadata
+            }))
+        });
+        
+    } catch (error) {
+        console.error(`Context building failed for ${chatId}:`, error.message);
+        return userMessage; // Fallback to just the current message
+    }
 }
+
+console.log('✅ Database & Memory System initialized with GPT-5 support');
+console.log(`💾 Conversation buffer active, backup interval: ${BACKUP_INTERVAL/1000}s`);
+
+// Export everything
+module.exports = {
+    // Core modules
+    database,
+    memory,
+    logger,
+    
+    // Main functions
+    saveConversationEmergency,
+    recoverConversation,
+    performPeriodicBackup,
+    buildConversationContext,
+    
+    // Utility functions
+    extractGPTContent,
+    extractResponseMetadata,
+    safeTruncate,
+    safeStringify,
+    cleanupOldMemoryEntries,
+    
+    // Feature availability
+    isMultimodalAvailable,
+    handleFeatureDisabled,
+    
+    // Command handlers
+    commandHandlers,
+    
+    // Data structures
+    conversationBuffer,
+    processedMessages,
+    
+    // Optional modules (may be null)
+    liveData,
+    metaTrader,
+    multimodal,
+    
+    // Constants
+    BACKUP_INTERVAL
+};
 
 // 🌐 WEBHOOK ENDPOINT - Main message handler with deduplication
 app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
