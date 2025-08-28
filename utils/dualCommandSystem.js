@@ -1335,71 +1335,56 @@ function getSystemAnalytics() {
     };
 }
 
-// ENHANCED FUNCTIONS FOR GPT-5 INTEGRATION - FIXED MEMORY CONTEXT
+// ENHANCED FUNCTIONS FOR GPT-5 INTEGRATION - FIXED AND SIMPLIFIED
 async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
     try {
-        console.log('Executing enhanced GPT-5 command with memory integration...');
+        console.log('Executing enhanced GPT-5 command...');
         
-        // Enhanced completion detection with memory awareness
+        // Build memory context if available
         let memoryContext = '';
-        
-        // Build memory context to check for completed tasks
         try {
             if (memory && typeof memory.buildConversationContext === 'function') {
                 memoryContext = await memory.buildConversationContext(chatId);
                 console.log(`Memory context built: ${memoryContext.length} chars`);
-                
-                // Enhanced completion detection using memory
-                if (memoryContext) {
-                    const completionCheck = detectCompletionStatus(userMessage, memoryContext);
-                    if (completionCheck.shouldSkipGPT5) {
-                        console.log('Completion detected from memory context');
-                        
-                        const completionResponse = generateCompletionResponse(completionCheck, userMessage);
-                        
-                        if (bot) {
-                            await bot.sendMessage(chatId, completionResponse);
-                        }
-                        
-                        return {
-                            success: true,
-                            response: completionResponse,
-                            aiUsed: 'completion-detection',
-                            completionDetected: true,
-                            memoryUsed: true,
-                            contextUsed: true,
-                            telegramDelivered: true
-                        };
-                    }
-                }
             }
         } catch (memoryError) {
             console.warn('Memory context building failed:', memoryError.message);
         }
         
-        // Pass memory context and enhanced options to executeDualCommand
+        // Enhanced options with memory context
         const enhancedOptions = {
             ...options,
-            memoryContext: memoryContext,
-            enhanceCompletionDetection: true,
-            projectAwareMemory: true
+            memoryContext: memoryContext
         };
         
+        // Execute the core GPT-5 command
         const result = await executeDualCommand(userMessage, chatId, enhancedOptions);
         
         // Automatic Telegram delivery if bot provided
-        if (bot && result.success) {
-            if (result.sendToTelegram && typeof result.sendToTelegram === 'function') {
-                const title = result.completionDetected ? 
-                             'Task Completion Acknowledged' : 
-                             options.title || `GPT-5 Analysis`;
-                const telegramSuccess = await result.sendToTelegram(bot, title);
-                result.telegramDelivered = telegramSuccess;
+        if (bot && result.success && result.response) {
+            try {
+                // Use telegramSplitter for professional delivery
+                if (typeof telegramSplitter !== 'undefined' && telegramSplitter.sendGPTResponse) {
+                    const title = options.title || 'GPT-5 Analysis';
+                    const metadata = {
+                        aiUsed: result.aiUsed || 'GPT-5',
+                        modelUsed: result.modelUsed || options.forceModel || 'gpt-5-mini',
+                        processingTime: Date.now() - (result.startTime || Date.now())
+                    };
+                    
+                    const telegramSuccess = await telegramSplitter.sendGPTResponse(
+                        bot, chatId, result.response, title, metadata
+                    );
+                    result.telegramDelivered = telegramSuccess;
+                } else {
+                    // Fallback to basic bot.sendMessage
+                    await bot.sendMessage(chatId, result.response);
+                    result.telegramDelivered = true;
+                }
                 result.autoDelivery = true;
-            } else {
-                await bot.sendMessage(chatId, result.response);
-                result.telegramDelivered = true;
-                result.autoDelivery = true;
+            } catch (telegramError) {
+                console.warn('Telegram delivery failed:', telegramError.message);
+                result.telegramDelivered = false;
             }
         }
         
@@ -1408,20 +1393,29 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
     } catch (error) {
         console.error('Enhanced GPT-5 command error:', error.message);
         
+        // Error handling with Telegram notification
         if (bot) {
             try {
-                await bot.sendMessage(chatId, `I encountered an issue: ${error.message}. Let me try a different approach.`);
+                if (typeof telegramSplitter !== 'undefined' && telegramSplitter.sendAlert) {
+                    await telegramSplitter.sendAlert(bot, chatId, 
+                        `Analysis failed: ${error.message}`, 
+                        'GPT-5 Error'
+                    );
+                } else {
+                    await bot.sendMessage(chatId, 
+                        `I encountered an issue: ${error.message}. Let me try a different approach.`
+                    );
+                }
             } catch (telegramError) {
-                console.error('Error alert delivery failed:', telegramError.message);
+                console.error('Error notification delivery failed:', telegramError.message);
             }
         }
         
         return {
             success: false,
-            response: `I'm having technical difficulties. Please try again.`,
-            aiUsed: 'fallback',
+            response: 'I\'m having technical difficulties. Please try again.',
+            aiUsed: 'error-fallback',
             modelUsed: 'error-handler',
-            powerMode: 'FALLBACK',
             contextUsed: false,
             telegramDelivered: false,
             error: error.message
@@ -1429,10 +1423,81 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
     }
 }
 
+// Core GPT-5 execution function
+async function executeDualCommand(userMessage, chatId, options = {}) {
+    try {
+        const startTime = Date.now();
+        
+        // Prepare the prompt with memory context if available
+        let enhancedPrompt = userMessage;
+        if (options.memoryContext && options.memoryContext.length > 0) {
+            enhancedPrompt = `CONVERSATION CONTEXT:\n${options.memoryContext.substring(0, 8000)}\n\nCURRENT REQUEST:\n${userMessage}`;
+        }
+        
+        // Configure model and parameters
+        const model = options.forceModel || 'gpt-5-mini';
+        const analysisOptions = {
+            model: model,
+            max_completion_tokens: options.max_tokens || 2000,
+            reasoning_effort: options.reasoning_effort || 'medium'
+        };
+        
+        console.log(`Executing GPT-5 analysis with model: ${model}`);
+        
+        // Get GPT-5 analysis
+        const analysis = await openaiClient.getGPT5Analysis(enhancedPrompt, analysisOptions);
+        
+        if (!analysis || analysis.length < 10) {
+            throw new Error('Empty or invalid response from GPT-5');
+        }
+        
+        const processingTime = Date.now() - startTime;
+        console.log(`GPT-5 analysis completed in ${processingTime}ms`);
+        
+        // Save conversation if memory is available
+        if (options.saveToMemory !== false) {
+            try {
+                if (typeof saveConversationEmergency === 'function') {
+                    await saveConversationEmergency(chatId, userMessage, analysis, {
+                        aiUsed: model,
+                        processingTime: processingTime,
+                        memoryContextUsed: !!options.memoryContext
+                    });
+                }
+            } catch (saveError) {
+                console.warn('Conversation save failed:', saveError.message);
+            }
+        }
+        
+        return {
+            success: true,
+            response: analysis,
+            aiUsed: model,
+            modelUsed: model,
+            processingTime: processingTime,
+            memoryContextUsed: !!options.memoryContext,
+            startTime: startTime
+        };
+        
+    } catch (error) {
+        console.error('GPT-5 execution error:', error.message);
+        
+        return {
+            success: false,
+            response: 'Analysis temporarily unavailable. Please try again.',
+            error: error.message,
+            aiUsed: 'error-fallback',
+            modelUsed: 'error-handler',
+            processingTime: 0
+        };
+    }
+}
+
+// Quick command functions for different models
 async function quickGPT5Command(message, chatId, bot = null, model = 'auto') {
     const options = { 
-        title: `Quick GPT-5 ${model.toUpperCase()} Response`,
-        preserveMemoryContext: true  // Ensure memory context is preserved
+        title: `GPT-5 ${model.toUpperCase()} Analysis`,
+        saveToMemory: true
     };
     
     if (model !== 'auto') {
@@ -1454,61 +1519,31 @@ async function quickUltimateCommand(message, chatId, bot = null) {
     return await quickGPT5Command(message, chatId, bot, 'gpt-5');
 }
 
-// Enhanced completion detection with project awareness
-function enhancedCompletionDetection(message, memoryContext) {
-    const messageText = message.toLowerCase();
-    const contextText = memoryContext.toLowerCase();
-    
-    // Project completion indicators
-    const projectCompletionPatterns = [
-        /built.*already|already.*built|system.*ready|deployment.*complete/i,
-        /done.*building|finished.*building|completed.*setup/i,
-        /working.*now|operational.*now|live.*system|running.*production/i,
-        /no.*need.*build|don't.*need.*build|unnecessary.*rebuild/i,
-        /told.*you.*ready|mentioned.*complete|discussed.*finished/i
-    ];
-    
-    // Look for specific project references in memory
-    const hasProjectCompletion = projectCompletionPatterns.some(pattern => 
-        pattern.test(messageText) || pattern.test(contextText)
-    );
-    
-    // Check if user is expressing frustration about repetition
-    const frustrationPatterns = [
-        /why.*ask.*again|keep.*asking|always.*same|repetitive/i,
-        /already.*told|mentioned.*before|discussed.*already/i,
-        /stop.*asking|don't.*ask.*again|understand.*done/i
-    ];
-    
-    const hasFrustration = frustrationPatterns.some(pattern => pattern.test(messageText));
-    
-    return {
-        hasProjectCompletion,
-        hasFrustration,
-        shouldAcknowledge: hasProjectCompletion || hasFrustration,
-        contextHasCompletion: projectCompletionPatterns.some(pattern => pattern.test(contextText))
-    };
+// Utility functions for Cambodia integration
+async function executeGPT5WithContext(prompt, chatId, options = {}) {
+    return await executeDualCommand(prompt, chatId, {
+        ...options,
+        saveToMemory: true
+    });
 }
 
-// Project-aware completion responses
-function generateProjectAwareResponse(completionInfo, originalMessage) {
-    if (completionInfo.hasFrustration) {
-        return "You're absolutely right - I apologize for asking about rebuilding something that's already complete. Let's focus on what you need help with next or any new priorities for your project.";
+async function executeGPT5Analysis(prompt, model = 'gpt-5-mini') {
+    try {
+        return await openaiClient.getGPT5Analysis(prompt, {
+            model: model,
+            max_completion_tokens: 2000,
+            reasoning_effort: 'medium'
+        });
+    } catch (error) {
+        console.error('Direct GPT-5 analysis error:', error.message);
+        return 'Analysis unavailable due to technical issues.';
     }
-    
-    if (completionInfo.hasProjectCompletion || completionInfo.contextHasCompletion) {
-        return "I understand the system/project is already built and operational. What would you like to work on next, or how can I assist with your current priorities?";
-    }
-    
-    return "Got it! Since that's already handled, what's the next task or area you'd like to focus on?";
 }
 
-console.log('GPT-5 Only System loaded (v5.3 - ENHANCED MEMORY INTEGRATION)');
-console.log('Clean flow: index.js → dualCommandSystem.js → openaiClient.js');
-console.log('FIXED: Memory-aware completion detection to prevent rebuild suggestions');
-console.log('Memory testing only runs when explicitly requested');
-console.log('GPT-5 Family: Nano → Mini → Full → Chat');
-console.log('Enhanced project completion awareness active');
+console.log('Enhanced GPT-5 Functions loaded (v2.0 - SIMPLIFIED & FIXED)');
+console.log('Core flow: executeEnhancedGPT5Command → executeDualCommand → openaiClient');
+console.log('Features: Memory integration, Telegram delivery, Error handling');
+console.log('Cambodia module compatibility: ✅ Ready');
 
 module.exports = {
     executeDualCommand,
