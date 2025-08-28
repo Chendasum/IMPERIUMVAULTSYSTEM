@@ -1,5 +1,5 @@
 // utils/multimodal.js - GPT-5 Vision, Document, Voice/Audio, and Video Analysis
-// Integrates with GPT-5's multimodal capabilities and adds robust document parsing.
+// Integrates with GPT-5's multimodal capabilities with conversation memory
 
 // Core deps
 const fs = require('fs').promises;
@@ -40,6 +40,20 @@ try {
   };
 }
 
+// --- Conversation saving for memory persistence ---
+let saveConversationEmergency;
+try {
+  const memoryModule = require('./memoryIntegration');
+  saveConversationEmergency = memoryModule.saveConversationEmergency;
+  console.log('Memory integration loaded for conversation persistence');
+} catch (error) {
+  console.warn('Memory integration not available:', error.message);
+  saveConversationEmergency = null;
+}
+
+// --- Document context storage for follow-up questions ---
+const documentContexts = new Map();
+
 // --- Config ---
 const MULTIMODAL_CONFIG = {
   MAX_FILE_SIZE: 20 * 1024 * 1024, // 20MB
@@ -51,7 +65,8 @@ const MULTIMODAL_CONFIG = {
   SUPPORTED_AUDIO_TYPES: ['mp3', 'wav', 'm4a', 'ogg'],
   SUPPORTED_VIDEO_TYPES: ['mp4', 'mov', 'avi', 'webm'],
   TEMP_DIR: './temp_multimodal',
-  CLEANUP_INTERVAL: 300000 // 5 minutes
+  CLEANUP_INTERVAL: 300000, // 5 minutes
+  DOCUMENT_CONTEXT_TIMEOUT: 1800000 // 30 minutes
 };
 
 // --- Temp dir ensure ---
@@ -76,11 +91,9 @@ function generateTempFilename(originalName, type) {
 async function downloadTelegramFile(bot, fileId, filename) {
   try {
     await ensureTempDir();
-    // getFile to make sure file exists (and get path)
     await bot.getFile(fileId);
     const filePath = path.join(MULTIMODAL_CONFIG.TEMP_DIR, filename);
 
-    // Stream download
     const fileStream = bot.getFileStream(fileId);
     const writeStream = fsc.createWriteStream(filePath);
 
@@ -94,6 +107,39 @@ async function downloadTelegramFile(bot, fileId, filename) {
     console.error('File download error:', error.message);
     throw new Error(`Failed to download file: ${error.message}`);
   }
+}
+
+// --- Store document context for follow-up questions ---
+function storeDocumentContext(chatId, fileName, fileType, extractedText, analysis) {
+  const context = {
+    fileName,
+    fileType,
+    extractedText: extractedText.substring(0, 10000), // Keep first 10k chars
+    analysis,
+    timestamp: Date.now()
+  };
+  
+  documentContexts.set(chatId, context);
+  
+  // Auto-cleanup old contexts
+  setTimeout(() => {
+    if (documentContexts.has(chatId)) {
+      const stored = documentContexts.get(chatId);
+      if (stored.timestamp === context.timestamp) {
+        documentContexts.delete(chatId);
+        console.log('Cleaned up document context for chat:', chatId);
+      }
+    }
+  }, MULTIMODAL_CONFIG.DOCUMENT_CONTEXT_TIMEOUT);
+}
+
+// --- Get recent document context for chat ---
+function getDocumentContext(chatId) {
+  const context = documentContexts.get(chatId);
+  if (context && Date.now() - context.timestamp < MULTIMODAL_CONFIG.DOCUMENT_CONTEXT_TIMEOUT) {
+    return context;
+  }
+  return null;
 }
 
 // --- Cleanup a single file ---
@@ -181,7 +227,7 @@ async function extractTextFromFile(filePath, fileExtension) {
   }
 }
 
-// --- GPT-5 Vision: Image analysis ---
+// --- GPT-5 Vision: Image analysis with memory ---
 async function analyzeImage(bot, fileId, prompt, chatId) {
   let tempFilePath = null;
   const startedAt = Date.now();
@@ -210,6 +256,23 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
       max_completion_tokens: 2000,
       reasoning_effort: 'medium'
     });
+
+    // Store image context for follow-up questions
+    storeDocumentContext(chatId, filename, 'image', 'Image analysis completed', analysis);
+
+    // Save to conversation memory
+    if (saveConversationEmergency) {
+      await saveConversationEmergency(chatId, 
+        'Image uploaded for analysis', 
+        analysis, 
+        { 
+          aiUsed: 'GPT-5-vision',
+          type: 'image_analysis',
+          fileSizeKB: imageSizeKB,
+          processingMs: Date.now() - startedAt
+        }
+      );
+    }
 
     const success = await telegramSplitter.sendGPTResponse(
       bot,
@@ -242,7 +305,7 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
   }
 }
 
-// --- Document analysis (PDF, DOCX, DOC, CSV, XLSX, MD, TXT, PPTX) ---
+// --- Document analysis with memory persistence ---
 async function analyzeDocument(bot, document, prompt, chatId) {
   let tempFilePath = null;
 
@@ -271,6 +334,9 @@ async function analyzeDocument(bot, document, prompt, chatId) {
       throw new Error('No extractable text found in document');
     }
 
+    // Store original text length for context
+    const originalTextLength = documentText.length;
+
     // Limit size for GPT
     const MAX_CHARS = 120_000;
     let truncatedNotice = '';
@@ -279,9 +345,10 @@ async function analyzeDocument(bot, document, prompt, chatId) {
       truncatedNotice = '\n\n⚠️ Note: Large file — content truncated for analysis.';
     }
 
-    // Prompt
+    // Enhanced prompt with document context
     const analysisPrompt =
-      `${prompt || 'Analyze this document and provide a structured summary (sections, key findings, risks, metrics, and action items).'}\n\n` +
+      `${prompt || 'Analyze this document and provide a structured summary with key findings, important data, risks, metrics, and actionable insights.'}\n\n` +
+      `DOCUMENT: ${document.file_name} (${fileExtension.toUpperCase()})\n` +
       `--- BEGIN DOCUMENT TEXT ---\n${documentText}\n--- END DOCUMENT TEXT ---${truncatedNotice}`;
 
     // GPT analysis
@@ -291,11 +358,33 @@ async function analyzeDocument(bot, document, prompt, chatId) {
       reasoning_effort: 'medium'
     });
 
+    // Store document context for follow-up questions
+    storeDocumentContext(chatId, document.file_name, fileExtension, documentText, analysis);
+
+    // Save to conversation memory with document details
+    if (saveConversationEmergency) {
+      await saveConversationEmergency(chatId, 
+        `Document uploaded: ${document.file_name}`, 
+        `DOCUMENT ANALYSIS:\n\n${analysis}\n\n--- ORIGINAL DOCUMENT TEXT (truncated) ---\n${documentText.substring(0, 2000)}${documentText.length > 2000 ? '...' : ''}`, 
+        { 
+          aiUsed: 'GPT-5-document',
+          type: 'document_analysis',
+          fileName: document.file_name,
+          fileType: fileExtension,
+          fileSizeKB: Math.round(document.file_size / 1024),
+          originalTextLength: originalTextLength
+        }
+      );
+    }
+
+    // Enhanced response with document reference
+    const enhancedAnalysis = `**Document:** ${document.file_name} (${fileExtension.toUpperCase()}, ${Math.round(document.file_size / 1024)}KB)\n\n${analysis}\n\n💡 *You can now ask follow-up questions about this document.*`;
+
     // Deliver
     const success = await telegramSplitter.sendGPTResponse(
       bot,
       chatId,
-      analysis,
+      enhancedAnalysis,
       'Document Analysis',
       {
         type: 'document_analysis',
@@ -309,7 +398,7 @@ async function analyzeDocument(bot, document, prompt, chatId) {
     return {
       success: true,
       type: 'document',
-      analysis,
+      analysis: enhancedAnalysis,
       aiUsed: 'GPT-5-document',
       fileName: document.file_name,
       fileType: fileExtension,
@@ -325,21 +414,20 @@ async function analyzeDocument(bot, document, prompt, chatId) {
   }
 }
 
-// --- Helper: transcribe audio file via Whisper (OpenAI) ---
+// --- Helper: transcribe audio file via Whisper ---
 async function transcribeAudioFromFile(filePath) {
   if (!openaiClient || !openaiClient.openai || !openaiClient.openai.audio || !openaiClient.openai.audio.transcriptions) {
     throw new Error('Whisper transcription client not available on openaiClient');
   }
-  // Using your original approach/signature
+  
   const transcription = await openaiClient.openai.audio.transcriptions.create({
     file: fsc.createReadStream(filePath),
-    model: 'whisper-1',
-    // language: 'en' // optional — auto-detect if omitted
+    model: 'whisper-1'
   });
   return transcription && transcription.text ? transcription.text : '';
 }
 
-// --- Voice analysis (uses Telegram voice object) ---
+// --- Voice analysis with memory persistence ---
 async function analyzeVoice(bot, voice, prompt, chatId) {
   let tempFilePath = null;
   try {
@@ -352,7 +440,7 @@ async function analyzeVoice(bot, voice, prompt, chatId) {
     const transcribedText = await transcribeAudioFromFile(tempFilePath);
     if (!transcribedText) throw new Error('No transcription text returned');
 
-    const analysisPrompt = `${prompt || 'Analyze this transcribed voice message and produce a concise summary, sentiment, key points, and action items.'}\n\nTranscribed text:\n"${transcribedText}"`;
+    const analysisPrompt = `${prompt || 'Analyze this transcribed voice message and provide a concise summary, sentiment analysis, key points, and actionable insights.'}\n\nTranscribed voice message:\n"${transcribedText}"`;
 
     const analysis = await openaiClient.getGPT5Analysis(analysisPrompt, {
       model: 'gpt-5-mini',
@@ -360,7 +448,24 @@ async function analyzeVoice(bot, voice, prompt, chatId) {
       reasoning_effort: 'medium'
     });
 
-    const fullResponse = `**Transcription:**\n${transcribedText}\n\n**Analysis:**\n${analysis}`;
+    const fullResponse = `**Voice Transcription (${voice.duration}s):**\n"${transcribedText}"\n\n**Analysis:**\n${analysis}`;
+
+    // Store voice context for follow-up questions
+    storeDocumentContext(chatId, `voice_${Date.now()}`, 'voice', transcribedText, analysis);
+
+    // Save to conversation memory
+    if (saveConversationEmergency) {
+      await saveConversationEmergency(chatId, 
+        'Voice message received and transcribed', 
+        fullResponse, 
+        { 
+          aiUsed: 'Whisper + GPT-5',
+          type: 'voice_analysis',
+          duration: voice.duration,
+          transcriptionLength: transcribedText.length
+        }
+      );
+    }
 
     const success = await telegramSplitter.sendGPTResponse(
       bot,
@@ -399,22 +504,38 @@ async function analyzeVoice(bot, voice, prompt, chatId) {
   }
 }
 
-// --- Audio analysis (Telegram "audio" object) ---
+// --- Audio analysis (same as voice) ---
 async function analyzeAudio(bot, audio, prompt, chatId) {
-  // Same flow as voice; Telegram audio has file_id and duration too.
   return await analyzeVoice(bot, audio, prompt, chatId);
 }
 
-// --- Video analysis (placeholder) ---
+// --- Video analysis (placeholder with memory) ---
 async function analyzeVideo(bot, video, prompt, chatId) {
   try {
     console.log('Video analysis requested (placeholder)...');
-    const analysis =
-      "Video analysis capabilities are being developed. For now, please describe the video content in text and I can analyze based on your description.";
+    const analysis = "Video analysis capabilities are being developed. For now, please describe the video content in text and I can analyze based on your description.";
+    
+    // Store placeholder context
+    storeDocumentContext(chatId, `video_${Date.now()}`, 'video', 'Video analysis requested', analysis);
+    
+    // Save to conversation memory
+    if (saveConversationEmergency) {
+      await saveConversationEmergency(chatId, 
+        'Video uploaded for analysis', 
+        analysis, 
+        { 
+          aiUsed: 'video-placeholder',
+          type: 'video_analysis',
+          duration: video?.duration ?? 0
+        }
+      );
+    }
+
     const success = await telegramSplitter.sendGPTResponse(
       bot, chatId, analysis, 'Video Analysis (Limited)',
       { type: 'video_analysis', duration: video?.duration ?? 0, aiUsed: 'video-placeholder' }
     );
+    
     return {
       success: true,
       type: 'video',
@@ -428,18 +549,35 @@ async function analyzeVideo(bot, video, prompt, chatId) {
   }
 }
 
-// --- Video note analysis (placeholder re-use) ---
+// --- Video note analysis ---
 async function analyzeVideoNote(bot, videoNote, prompt, chatId) {
   return await analyzeVideo(bot, videoNote, prompt, chatId);
 }
 
-// --- Capability / status ---
+// --- Get context for follow-up questions ---
+function getContextForFollowUp(chatId, userMessage) {
+  const context = getDocumentContext(chatId);
+  if (!context) return null;
+  
+  return `RECENT DOCUMENT CONTEXT:
+File: ${context.fileName} (${context.fileType})
+Previous Analysis: ${context.analysis.substring(0, 1000)}...
+Document Content (sample): ${context.extractedText.substring(0, 1000)}...
+
+Current Question: ${userMessage}
+
+Please answer based on the document context above.`;
+}
+
+// --- Capability status ---
 function getMultimodalStatus() {
   return {
     available: !!openaiClient,
+    memoryIntegration: !!saveConversationEmergency,
+    contextTracking: true,
     capabilities: {
       image_analysis: !!openaiClient,
-      voice_transcription: true, // using Whisper via openaiClient
+      voice_transcription: !!openaiClient,
       document_processing: {
         txt: true,
         md: true,
@@ -450,7 +588,8 @@ function getMultimodalStatus() {
         xlsx: !!xlsxLib,
         pptx: !!textract
       },
-      video_analysis: false // placeholder
+      video_analysis: false,
+      follow_up_questions: true
     },
     supported_formats: {
       images: MULTIMODAL_CONFIG.SUPPORTED_IMAGE_TYPES,
@@ -462,14 +601,15 @@ function getMultimodalStatus() {
       !pdfParse ? 'Install pdf-parse for PDF text extraction' : null,
       !mammoth ? 'Install mammoth for DOCX text extraction' : null,
       !xlsxLib ? 'Install xlsx for Excel parsing' : null,
-      !textract ? 'Install textract for DOC/PPTX and broader formats' : null,
+      !textract ? 'Install textract for DOC/PPTX formats' : null,
       `File size limit: ${Math.round(MULTIMODAL_CONFIG.MAX_FILE_SIZE/1024/1024)}MB`
-    ].filter(Boolean)
+    ].filter(Boolean),
+    activeContexts: documentContexts.size
   };
 }
 
-// --- Init ---
-console.log('Multimodal module loaded with GPT-5 vision + extended document support');
+// --- Initialize ---
+console.log('Multimodal module loaded with GPT-5 vision + memory integration');
 ensureTempDir();
 
 // --- Exports ---
@@ -481,6 +621,11 @@ module.exports = {
   analyzeVideo,
   analyzeVideoNote,
   getMultimodalStatus,
+  getContextForFollowUp,
+
+  // Context management
+  getDocumentContext,
+  storeDocumentContext,
 
   // Utilities
   downloadTelegramFile,
@@ -490,4 +635,3 @@ module.exports = {
   // Config
   MULTIMODAL_CONFIG
 };
-
