@@ -1569,9 +1569,9 @@ module.exports = {
     getGPT5CostEstimate,
     getGPT5PerformanceMetrics,
     
-    // Enhanced functions for project awareness
-    enhancedCompletionDetection,
-    generateProjectAwareResponse,
+    // Remove these lines - functions don't exist:
+    // enhancedCompletionDetection,
+    // generateProjectAwareResponse,
     
     // Legacy compatibility
     executeGptAnalysis: (msg, analysis, ctx, mem) => executeThroughGPT5System(msg, {...analysis, bestAI: 'gpt'}, ctx, mem),
