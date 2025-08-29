@@ -618,7 +618,6 @@ module.exports = {
     // Testing and utilities - FIXED: Both function names exported
     testOpenAIConnection,
     checkGPT5SystemHealth,        // Original name
-    checkGPT5OnlySystemHealth,    // Alias for dualCommandSystem
     getStatus,
     
     // Utility functions
