@@ -2797,6 +2797,7 @@ module.exports = {
     getMarketIntelligence,
     getGlobalMarketStatus,
     resetSystemStats,
+    checkGPT5SystemHealth,
     
     // CONTEXT AND MEMORY
     buildMemoryContext,
