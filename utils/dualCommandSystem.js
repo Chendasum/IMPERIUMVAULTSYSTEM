@@ -162,17 +162,22 @@ module.exports.__OPERATOR_WRAPPER__ = {
 // Clean routing: index.js → dualCommandSystem.js → openaiClient.js
 // FIXED: Removed automatic memory testing for normal conversations
 
-// MAIN IMPORT: OpenAI Client for GPT-5 Only
-let openaiClient;
-try {
-    openaiClient = require('./openaiClient');
+// MAIN IMPORT: OpenAI Client for GPT-5 Only (with global cache)
+const openaiClient = (() => {
+  if (globalThis.__OPENAI_CLIENT__) return globalThis.__OPENAI_CLIENT__;
+  try {
+    const c = require('./openaiClient');
     console.log('GPT-5 client loaded successfully');
-} catch (error) {
-    console.error('GPT-5 client import failed:', error.message);
-    openaiClient = { 
-        getGPT5Analysis: async (prompt) => `GPT-5 client unavailable: ${error.message}` 
-    };
-}
+    globalThis.__OPENAI_CLIENT__ = c;
+    return c;
+  } catch (e) {
+    console.error('GPT-5 client import failed:', e.message);
+    const fallbackMsg = `GPT-5 client unavailable: ${e.message}`;
+    const stub = { getGPT5Analysis: async () => fallbackMsg };
+    globalThis.__OPENAI_CLIENT__ = stub;
+    return stub;
+  }
+})();
 
 // COMPLETION DETECTION SYSTEM
 function detectCompletionStatus(message, memoryContext = '') {
