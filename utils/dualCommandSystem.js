@@ -1686,7 +1686,6 @@ module.exports = {
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 5/6
 // SYSTEM MONITORING, ANALYTICS & HEALTH MANAGEMENT
 // This part handles system performance monitoring, cost tracking, and health checks
-
 // SYSTEM ANALYTICS AND PERFORMANCE MONITORING
 function getSystemAnalytics() {
     const uptime = Date.now() - systemState.startTime;
@@ -1884,6 +1883,11 @@ function getCostAnalysis() {
         },
         recommendations: generateCostOptimizationRecommendations()
     };
+}
+
+// LEGACY COMPATIBILITY FUNCTION
+async function checkGPT5OnlySystemHealth() {
+    return await checkSystemHealth();
 }
 
 // SYSTEM HEALTH MONITORING
@@ -2382,6 +2386,7 @@ module.exports = {
     getDetailedPerformanceMetrics,
     getCostAnalysis,
     checkSystemHealth,
+    checkGPT5OnlySystemHealth, // Legacy compatibility
     testMemoryIntegration,
     getMarketIntelligence,
     getGlobalMarketStatus,
@@ -2392,7 +2397,6 @@ module.exports = {
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 6/6 (FINAL)
 // MAIN EXPORTS, UTILITY FUNCTIONS & COMPATIBILITY LAYER
 // This part combines all previous parts and provides the complete API
-
 // ENHANCED UTILITY FUNCTIONS
 async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
     try {
@@ -2787,6 +2791,7 @@ module.exports = {
     // SYSTEM MONITORING & HEALTH
     getSystemAnalytics,
     checkSystemHealth,
+    checkGPT5OnlySystemHealth, // Legacy compatibility
     performGPT5HealthCheck,
     performFullSystemDiagnostics,
     testMemoryIntegration,
@@ -2797,7 +2802,6 @@ module.exports = {
     getMarketIntelligence,
     getGlobalMarketStatus,
     resetSystemStats,
-    checkGPT5SystemHealth,
     
     // CONTEXT AND MEMORY
     buildMemoryContext,
