@@ -1,4 +1,4 @@
-// utils/dualCommandSystem.js - OPERATOR MODE: GPT-5 ONLY MODE + REAL OPERATIONS
+// utils/dualCommandSystem.js - OPERATOR MODE: GPT-5 ONLY MODE + REAL OPERATIONS - PART 1/5
 // Clean routing: index.js → dualCommandSystem.js → openaiClient.js
 // TRANSFORMED: From Assistant/Advisor to Real Operator System
 // PRESERVED: All original functions and architecture maintained
@@ -387,6 +387,8 @@ async function executeSystemOperation(command, options = {}) {
     
     throw new Error('System operation not recognized or implemented');
 }
+
+// utils/dualCommandSystem.js - OPERATOR MODE: GPT-5 ONLY MODE + REAL OPERATIONS - PART 2/5
 
 // DATABASE OPERATION EXECUTOR
 async function executeDatabaseOperation(command, options = {}) {
@@ -868,6 +870,41 @@ function getCurrentGlobalDateTime() {
         };
     }
 }
+// utils/dualCommandSystem.js - OPERATOR MODE: GPT-5 ONLY MODE + REAL OPERATIONS - PART 3/5
+
+function getCurrentGlobalDateTime() {
+    try {
+        const now = new Date();
+        
+        const cambodiaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Phnom_Penh"}));
+        const newYorkTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+        const londonTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/London"}));
+        
+        return {
+            cambodia: {
+                ...getCurrentCambodiaDateTime(),
+                timezone: 'ICT (UTC+7)'
+            },
+            newYork: {
+                time: `${newYorkTime.getHours()}:${newYorkTime.getMinutes().toString().padStart(2, '0')}`,
+                hour: newYorkTime.getHours(),
+                timezone: 'EST/EDT (UTC-5/-4)'
+            },
+            london: {
+                time: `${londonTime.getHours()}:${londonTime.getMinutes().toString().padStart(2, '0')}`,
+                hour: londonTime.getHours(),
+                timezone: 'GMT/BST (UTC+0/+1)'
+            },
+            utc: now.toISOString()
+        };
+    } catch (error) {
+        console.error('Global DateTime error:', error.message);
+        return {
+            cambodia: getCurrentCambodiaDateTime(),
+            error: 'Global timezone calculation failed'
+        };
+    }
+}
 
 // ENHANCED GPT-5 QUERY ANALYSIS with OPERATOR MODE
 function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memoryContext = null) {
@@ -1186,9 +1223,9 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
                 const finalResponse = `[OPERATOR MODE - ${queryAnalysis.operationType.toUpperCase()}]\n\n` +
                     `EXECUTION PLAN:\n${operationPlan}\n\n` +
                     `EXECUTION RESULT:\n` +
-                    `✅ Status: ${operationResult.success ? 'SUCCESS' : 'FAILED'}\n` +
-                    `🔧 Operation ID: ${operationResult.operationId}\n` +
-                    `📊 Details: ${JSON.stringify(operationResult.result || operationResult.error, null, 2)}\n\n` +
+                    `Status: ${operationResult.success ? 'SUCCESS' : 'FAILED'}\n` +
+                    `Operation ID: ${operationResult.operationId}\n` +
+                    `Details: ${JSON.stringify(operationResult.result || operationResult.error, null, 2)}\n\n` +
                     `${operationResult.success ? 'Operation completed successfully.' : `Operation failed: ${operationResult.error}`}`;
                 
                 return {
@@ -1226,7 +1263,7 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
                 return {
                     response: `[OPERATOR MODE - ${queryAnalysis.operationType.toUpperCase()}] EXECUTION FAILED\n\n` +
                         `EXECUTION PLAN:\n${operationPlan}\n\n` +
-                        `❌ EXECUTION ERROR: ${operationError.message}\n\n` +
+                        `EXECUTION ERROR: ${operationError.message}\n\n` +
                         `The operation was planned but could not be executed due to the above error. ` +
                         `Please check system permissions and try again.`,
                     gpt5OnlyMode: true,
@@ -1377,6 +1414,7 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context = null) {
         throw new Error(`All GPT-5 models failed: ${fallbackError.message}`);
     }
 }
+// utils/dualCommandSystem.js - OPERATOR MODE: GPT-5 ONLY MODE + REAL OPERATIONS - PART 4/5
 
 // MAIN COMMAND EXECUTION - ENHANCED WITH OPERATOR MODE
 async function executeDualCommand(userMessage, chatId, options = {}) {
@@ -1834,6 +1872,7 @@ async function testMemoryIntegration(chatId) {
         memorySystemIntegrated: tests.memoryBuilding && tests.gpt5WithMemory
     };
 }
+// utils/dualCommandSystem.js - OPERATOR MODE: GPT-5 ONLY MODE + REAL OPERATIONS - PART 5/5 (FINAL)
 
 // ENHANCED GPT-5 SYSTEM HEALTH CHECK WITH OPERATOR MODE
 async function checkGPT5OnlySystemHealth() {
@@ -2164,9 +2203,9 @@ function getSystemAnalytics() {
         ],
         queryTypes: [
             'completion', 'speed', 'complex', 'mathematical', 'regional', 'market', 
-            'multimodal', 'chat', 'memory-enhanced', 'operational' // NEW
+            'multimodal', 'chat', 'memory-enhanced', 'operational'
         ],
-        operationalCapabilities: [ // NEW
+        operationalCapabilities: [
             'File Operations (create, read, delete, list)',
             'System Operations (health check, command execution)',
             'Database Operations (query, backup, export)',
@@ -2177,6 +2216,7 @@ function getSystemAnalytics() {
         transformedFrom: 'Assistant/Advisor → Real Operator System'
     };
 }
+
 // ENHANCED FUNCTIONS FOR GPT-5 OPERATOR INTEGRATION
 async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
     try {
@@ -2272,10 +2312,9 @@ async function executeOperatorCommand(command, chatId, bot = null, operationType
     const options = {
         title: `OPERATOR ${operationType.toUpperCase()} Command`,
         saveToMemory: true,
-        forceModel: 'gpt-5' // Use full GPT-5 for operational commands
+        forceModel: 'gpt-5'
     };
     
-    // Auto-detect operation type if not specified
     if (operationType === 'auto') {
         const detection = detectOperationalCommand(command);
         if (detection.isOperational) {
@@ -2523,4 +2562,4 @@ console.log('🎯 Core flow: executeEnhancedGPT5Command → executeDualCommand �
 console.log('⚡ Features: Memory integration, Telegram delivery, Real operations, Error handling');
 console.log('🔧 Operator capabilities: File, System, DB, Network, Process, Automation');
 console.log('🚀 Cambodia module compatibility: ✅ Ready + OPERATOR MODE');
-console.log('📊 TRANSFORMATION: From Assistant → Real Operator System COMPLETE'); 
+console.log('📊 TRANSFORMATION: From Assistant → Real Operator System COMPLETE');
