@@ -3036,10 +3036,7 @@ module.exports = {
     executeGPT5WithContext,
     executeDirectGPT5Analysis,
     saveConversationEmergency,
-     
-    // Enhanced functions for project awareness
-    enhancedCompletionDetection,
-    generateProjectAwareResponse,
+
     
     // SYSTEM STATE ACCESS
     getSystemState: () => ({ ...systemState }), // Return copy for safety
