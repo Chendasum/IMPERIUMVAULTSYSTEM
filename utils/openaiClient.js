@@ -488,6 +488,44 @@ async function testOpenAIConnection() {
 }
 
 /**
+ * MISSING FUNCTION: Add to openaiClient.js
+ */
+async function checkGPT5OnlySystemHealth() {
+    console.log('Running GPT-5 system health check...');
+    
+    const health = {
+        timestamp: new Date().toISOString(),
+        overall: false,
+        gpt5Available: false,
+        gpt5MiniAvailable: false,
+        gpt5NanoAvailable: false,
+        gpt5ChatAvailable: false,
+        fallbackWorking: false,
+        errors: []
+    };
+    
+    // Test each model
+    const models = [
+        { name: 'gpt5NanoAvailable', func: () => getQuickNanoResponse("test", {max_completion_tokens: 10}) },
+        { name: 'gpt5MiniAvailable', func: () => getQuickMiniResponse("test", {max_completion_tokens: 10}) },
+        { name: 'gpt5Available', func: () => getDeepAnalysis("test", {max_completion_tokens: 10}) },
+        { name: 'gpt5ChatAvailable', func: () => getChatResponse("test", {max_completion_tokens: 10}) }
+    ];
+    
+    for (const model of models) {
+        try {
+            await model.func();
+            health[model.name] = true;
+        } catch (error) {
+            health.errors.push(`${model.name}: ${error.message}`);
+        }
+    }
+    
+    health.overall = health.gpt5Available || health.gpt5MiniAvailable || health.gpt5NanoAvailable;
+    return health;
+}
+
+/**
  * FIXED: System health check - matches original function name
  */
 async function checkGPT5SystemHealth() {
