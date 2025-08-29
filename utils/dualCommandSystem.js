@@ -2394,6 +2394,109 @@ module.exports = {
     calculatePerformanceTrend
 };
 
+// GPT-5 SYSTEM HEALTH CHECK
+async function checkGPT5OnlySystemHealth() {
+    const health = {
+        gpt5_full: false,
+        gpt5_mini: false,
+        gpt5_nano: false,
+        gpt5_chat: false,
+        completionDetection: false,
+        memorySystem: false,
+        contextBuilding: false,
+        dateTimeSupport: false,
+        telegramIntegration: false,
+        databaseConnection: false,
+        overallHealth: false,
+        errors: [],
+        gpt5OnlyMode: true,
+        postgresqlStatus: 'unknown'
+    };
+    
+    try {
+        const testCompletion = detectCompletionStatus('done ready', 'system built');
+        health.completionDetection = testCompletion.shouldSkipGPT5;
+    } catch (error) {
+        health.errors.push(`Completion Detection: ${error.message}`);
+    }
+    
+    const gpt5Models = [
+        { name: 'gpt5_full', model: 'gpt-5', description: 'Full GPT-5' },
+        { name: 'gpt5_mini', model: 'gpt-5-mini', description: 'GPT-5 Mini' },
+        { name: 'gpt5_nano', model: 'gpt-5-nano', description: 'GPT-5 Nano' },
+        { name: 'gpt5_chat', model: 'gpt-5-chat-latest', description: 'GPT-5 Chat' }
+    ];
+    
+    for (const { name, model, description } of gpt5Models) {
+        try {
+            const options = { model: model, max_completion_tokens: 50 };
+            
+            if (model !== 'gpt-5-chat-latest') {
+                options.reasoning_effort = 'minimal';
+                options.verbosity = 'low';
+            } else {
+                options.temperature = 0.7;
+            }
+            
+            await openaiClient.getGPT5Analysis('Health check test', options);
+            health[name] = true;
+            console.log(`${description} operational`);
+        } catch (error) {
+            health.errors.push(`${model}: ${error.message}`);
+        }
+    }
+    
+    try {
+        const testHistory = await database.getConversationHistoryDB('health_test', 1);
+        health.databaseConnection = Array.isArray(testHistory);
+        health.postgresqlStatus = 'connected';
+    } catch (error) {
+        health.errors.push(`PostgreSQL: ${error.message}`);
+        health.postgresqlStatus = 'disconnected';
+    }
+    
+    try {
+        const testContext = await memory.buildConversationContext('health_test');
+        health.memorySystem = typeof testContext === 'string';
+        health.contextBuilding = true;
+    } catch (error) {
+        health.errors.push(`Memory: ${error.message}`);
+    }
+    
+    try {
+        const cambodiaTime = getCurrentCambodiaDateTime();
+        health.dateTimeSupport = cambodiaTime && cambodiaTime.date;
+    } catch (error) {
+        health.errors.push(`DateTime: ${error.message}`);
+    }
+    
+    try {
+        health.telegramIntegration = typeof telegramSplitter.sendGPTResponse === 'function';
+    } catch (error) {
+        health.errors.push(`Telegram: ${error.message}`);
+    }
+    
+    const healthyModels = [health.gpt5_full, health.gpt5_mini, health.gpt5_nano].filter(Boolean).length;
+    health.overallHealth = healthyModels >= 1 && health.memorySystem && health.databaseConnection;
+    
+    health.healthScore = (
+        (healthyModels * 15) +
+        (health.gpt5_chat ? 10 : 0) +
+        (health.completionDetection ? 15 : 0) +
+        (health.memorySystem ? 10 : 0) +
+        (health.databaseConnection ? 15 : 0) +
+        (health.telegramIntegration ? 5 : 0) +
+        (health.dateTimeSupport ? 5 : 0)
+    );
+    
+    health.healthGrade = health.healthScore >= 95 ? 'A+' :
+                        health.healthScore >= 85 ? 'A' :
+                        health.healthScore >= 75 ? 'B+' :
+                        health.healthScore >= 65 ? 'B' :
+                        health.healthScore >= 50 ? 'C' : 'F';
+    
+    return health;
+}
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 6/6 (FINAL)
 // MAIN EXPORTS, UTILITY FUNCTIONS & COMPATIBILITY LAYER
 // This part combines all previous parts and provides the complete API
