@@ -6,7 +6,7 @@ const { OpenAI } = require("openai");
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
     timeout: 300000, // 5 minutes for complex reasoning tasks
-    maxRetries: 1,
+    maxRetries: 2,
     defaultHeaders: {
         'User-Agent': 'GPT5-Client/2.0.0'
     }
@@ -187,8 +187,7 @@ function buildGPT5Request(model, prompt, options = {}) {
             }
         ],
         // FIXED: Always use max_completion_tokens for GPT-5 models
-        max_completion_tokens: validated.max_completion_tokens || GPT5_CONFIG.LIMITS.DEFAULT_OUTPUT,
-        temperature: validated.temperature ?? GPT5_CONFIG.TEMPERATURE.DEFAULT
+        max_completion_tokens: validated.max_completion_tokens || GPT5_CONFIG.LIMITS.DEFAULT_OUTPUT
     };
     
     // Add GPT-5 specific parameters if model supports them
@@ -200,6 +199,12 @@ function buildGPT5Request(model, prompt, options = {}) {
         if (validated.verbosity) {
             request.verbosity = validated.verbosity;
         }
+        
+        // FIXED: Don't add temperature for reasoning models - they only support default (1)
+        console.log('GPT-5 reasoning model detected - using default temperature');
+    } else {
+        // Only add temperature for chat model or non-reasoning models
+        request.temperature = validated.temperature ?? GPT5_CONFIG.TEMPERATURE.DEFAULT;
     }
     
     return request;
@@ -599,6 +604,7 @@ module.exports = {
     // Testing and monitoring
     testConnection,
     systemHealthCheck,
+    checkGPT5OnlySystemHealth,  // FIXED: Added missing export
     getStatus,
     
     // Utilities
@@ -612,5 +618,6 @@ module.exports = {
     openai,
     
     // Legacy compatibility - FIXED ALIASES
-    getGPT5Completion: getGPT5Analysis  // FIXED: Alias for backward compatibility
+    getGPT5Completion: getGPT5Analysis,  // FIXED: Alias for backward compatibility
+    checkGPT5SystemHealth: checkGPT5OnlySystemHealth  // FIXED: Legacy alias
 };
