@@ -1571,7 +1571,7 @@ function getCostTier(model) {
 function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, responseTime, contextUsed) {
     return async (bot, title = null) => {
         try {
-            const { telegramSplitter } = require('./dualCommandSystem-part1');
+            const { telegramSplitter } = require('./dualCommandSystem');
             
             if (!telegramSplitter || typeof telegramSplitter.sendGPT5 !== 'function') {
                 console.warn('Telegram splitter not available, using basic send');
@@ -1659,7 +1659,7 @@ function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, respo
 function createErrorTelegramSender(chatId, errorResponse, originalError) {
     return async (bot) => {
         try {
-            const { telegramSplitter } = require('./dualCommandSystem-part1');
+            const { telegramSplitter } = require('./dualCommandSystem');
             
             if (telegramSplitter && typeof telegramSplitter.sendAlert === 'function') {
                 return await telegramSplitter.sendAlert(bot, chatId, errorResponse, 'System Error');
@@ -1927,7 +1927,7 @@ async function checkSystemHealth() {
     
     try {
         // Check memory system
-        const { memory } = require('./dualCommandSystem-part1');
+        const { memory } = require('./dualCommandSystem');
         const memoryWorking = typeof memory.buildConversationContext === 'function';
         health.components.memory = { 
             available: memoryWorking,
@@ -1946,7 +1946,7 @@ async function checkSystemHealth() {
     
     try {
         // Check database connectivity
-        const { database } = require('./dualCommandSystem-part1');
+        const { database } = require('./dualCommandSystem');
         const testQuery = await database.getConversationHistoryDB('health_test', 1);
         const dbWorking = Array.isArray(testQuery);
         health.components.database = {
@@ -1966,7 +1966,7 @@ async function checkSystemHealth() {
     
     try {
         // Check Telegram integration
-        const { telegramSplitter } = require('./dualCommandSystem-part1');
+        const { telegramSplitter } = require('./dualCommandSystem');
         const telegramWorking = typeof telegramSplitter.sendGPT5 === 'function';
         health.components.telegram = {
             available: telegramWorking,
@@ -2178,7 +2178,7 @@ async function testMemoryIntegration(chatId) {
     
     try {
         // Test completion detection
-        const { detectCompletionStatus } = require('./dualCommandSystem-part2');
+        const { detectCompletionStatus } = require('./dualCommandSystem');
         const completionTest = detectCompletionStatus('done ready', 'system already built');
         tests.completionDetection = completionTest.shouldSkipGPT5;
         console.log(`Completion Detection: ${tests.completionDetection}`);
@@ -2188,7 +2188,7 @@ async function testMemoryIntegration(chatId) {
     
     try {
         // Test PostgreSQL connection
-        const { database } = require('./dualCommandSystem-part1');
+        const { database } = require('./dualCommandSystem');
         const testConnection = await database.getConversationHistoryDB('test', 1);
         tests.postgresqlConnection = Array.isArray(testConnection);
         console.log(`PostgreSQL Connection: ${tests.postgresqlConnection}`);
@@ -2198,7 +2198,7 @@ async function testMemoryIntegration(chatId) {
     
     try {
         // Test conversation history retrieval
-        const { database } = require('./dualCommandSystem-part1');
+        const { database } = require('./dualCommandSystem');
         const history = await database.getConversationHistoryDB(chatId, 3);
         tests.conversationHistory = Array.isArray(history);
         console.log(`Conversation History: ${tests.conversationHistory} (${history?.length || 0} records)`);
@@ -2208,7 +2208,7 @@ async function testMemoryIntegration(chatId) {
     
     try {
         // Test persistent memory
-        const { database } = require('./dualCommandSystem-part1');
+        const { database } = require('./dualCommandSystem');
         const memories = await database.getPersistentMemoryDB(chatId);
         tests.persistentMemory = Array.isArray(memories);
         console.log(`Persistent Memory: ${tests.persistentMemory} (${memories?.length || 0} records)`);
@@ -2218,7 +2218,7 @@ async function testMemoryIntegration(chatId) {
     
     try {
         // Test memory building
-        const { memory } = require('./dualCommandSystem-part1');
+        const { memory } = require('./dualCommandSystem');
         const context = await memory.buildConversationContext(chatId);
         tests.memoryBuilding = typeof context === 'string';
         console.log(`Memory Building: ${tests.memoryBuilding} (${context?.length || 0} chars)`);
@@ -2228,7 +2228,7 @@ async function testMemoryIntegration(chatId) {
     
     try {
         // Test GPT-5 integration
-        const { openaiClient } = require('./dualCommandSystem-part1');
+        const { openaiClient } = require('./dualCommandSystem');
         const testPrompt = 'Hello, test GPT-5 functionality';
         const directResult = await openaiClient.getGPT5NanoResponse(testPrompt, { max_completion_tokens: 50 });
         tests.gpt5Integration = directResult && directResult.length > 0;
@@ -2247,7 +2247,7 @@ async function testMemoryIntegration(chatId) {
     
     try {
         // Test GPT-5 model selection
-        const { analyzeQuery } = require('./dualCommandSystem-part2');
+        const { analyzeQuery } = require('./dualCommandSystem');
         const analysis = analyzeQuery('What is quantum physics?');
         tests.gpt5ModelSelection = analysis && analysis.gpt5Model;
         console.log(`GPT-5 Model Selection: ${tests.gpt5ModelSelection} (Selected: ${analysis?.gpt5Model})`);
@@ -2257,7 +2257,7 @@ async function testMemoryIntegration(chatId) {
     
     try {
         // Test Telegram integration
-        const { telegramSplitter } = require('./dualCommandSystem-part1');
+        const { telegramSplitter } = require('./dualCommandSystem');
         tests.telegramIntegration = typeof telegramSplitter.sendGPT5 === 'function';
         console.log(`Telegram Integration: ${tests.telegramIntegration}`);
     } catch (error) {
@@ -2334,7 +2334,7 @@ async function getMarketIntelligence(chatId = null) {
     const query = `Current market intelligence summary - Time: ${globalTime.cambodia.date}, ${globalTime.cambodia.time} Cambodia. Provide concise overview of market conditions, key risks, and opportunities.`;
     
     try {
-        const { openaiClient } = require('./dualCommandSystem-part1');
+        const { openaiClient } = require('./dualCommandSystem');
         return await openaiClient.getGPT5MiniResponse(query, {
             reasoning_effort: 'medium',
             verbosity: 'medium',
