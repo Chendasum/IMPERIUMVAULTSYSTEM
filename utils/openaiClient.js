@@ -6,7 +6,7 @@ const { OpenAI } = require("openai");
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
     timeout: 300000, // 5 minutes for complex reasoning tasks
-    maxRetries: 2,
+    maxRetries: 1,
     defaultHeaders: {
         'User-Agent': 'GPT5-Client/2.0.0'
     }
@@ -186,7 +186,8 @@ function buildGPT5Request(model, prompt, options = {}) {
                 content: prompt
             }
         ],
-        max_tokens: validated.max_completion_tokens || GPT5_CONFIG.LIMITS.DEFAULT_OUTPUT,
+        // FIXED: Always use max_completion_tokens for GPT-5 models
+        max_completion_tokens: validated.max_completion_tokens || GPT5_CONFIG.LIMITS.DEFAULT_OUTPUT,
         temperature: validated.temperature ?? GPT5_CONFIG.TEMPERATURE.DEFAULT
     };
     
@@ -246,9 +247,9 @@ async function executeWithRetry(apiCall, maxRetries = 3) {
 }
 
 /**
- * Main GPT-5 completion function
+ * Main GPT-5 completion function - FIXED FUNCTION NAME
  */
-async function getGPT5Completion(prompt, options = {}) {
+async function getGPT5Analysis(prompt, options = {}) {
     const startTime = Date.now();
     
     try {
@@ -261,12 +262,12 @@ async function getGPT5Completion(prompt, options = {}) {
         console.log(`📊 Prompt: ${sanitizedPrompt.length} chars`);
         console.log(`⚙️ Options:`, options);
         
-        // Build request
+        // Build request - FIXED to always use max_completion_tokens
         const request = buildGPT5Request(selectedModel, sanitizedPrompt, options);
         
         console.log(`🔧 Request built:`, {
             model: request.model,
-            max_tokens: request.max_tokens,
+            max_completion_tokens: request.max_completion_tokens, // FIXED: Show correct parameter
             temperature: request.temperature,
             reasoning_effort: request.reasoning_effort,
             verbosity: request.verbosity
@@ -321,12 +322,12 @@ async function getGPT5Completion(prompt, options = {}) {
 }
 
 /**
- * GPT-5 with fallback to GPT-4o
+ * GPT-5 with fallback to GPT-4o - FIXED FUNCTION NAME
  */
 async function getGPT5WithFallback(prompt, options = {}) {
     try {
         // Try GPT-5 first
-        return await getGPT5Completion(prompt, options);
+        return await getGPT5Analysis(prompt, options);
         
     } catch (error) {
         console.warn(`🔄 GPT-5 failed, attempting GPT-4o fallback...`);
@@ -336,12 +337,17 @@ async function getGPT5WithFallback(prompt, options = {}) {
             const fallbackOptions = {
                 ...options,
                 model: GPT5_CONFIG.FALLBACK,
-                // Remove GPT-5 specific parameters
+                // Remove GPT-5 specific parameters and fix parameter name
                 reasoning_effort: undefined,
-                verbosity: undefined
+                verbosity: undefined,
+                // FIXED: Use max_completion_tokens for GPT-4o as well
+                max_completion_tokens: options.max_completion_tokens
             };
             
-            const result = await getGPT5Completion(prompt, fallbackOptions);
+            // Remove max_tokens if it exists to avoid conflicts
+            delete fallbackOptions.max_tokens;
+            
+            const result = await getGPT5Analysis(prompt, fallbackOptions);
             
             return {
                 ...result,
@@ -580,8 +586,8 @@ console.log(`🎯 Available functions: quickResponse, standardResponse, deepAnal
 console.log(`🔧 Utilities: testConnection, systemHealthCheck, getStatus`);
 
 module.exports = {
-    // Main completion functions
-    getGPT5Completion,
+    // Main completion functions - FIXED EXPORT NAMES
+    getGPT5Analysis,  // FIXED: Export the correct function name
     getGPT5WithFallback,
     
     // Quick access functions
@@ -603,5 +609,8 @@ module.exports = {
     
     // Configuration and client
     GPT5_CONFIG,
-    openai
+    openai,
+    
+    // Legacy compatibility - FIXED ALIASES
+    getGPT5Completion: getGPT5Analysis  // FIXED: Alias for backward compatibility
 };
