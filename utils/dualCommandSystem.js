@@ -1033,6 +1033,73 @@ function formatOperatorResponse(structuredActions, executionResults, originalMes
     return response;
 }
 
+/**
+ * MISSING FUNCTION: Add to dualCommandSystem.js
+ */
+async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
+    try {
+        console.log('Executing enhanced GPT-5 command...');
+        
+        // Build memory context if available
+        let memoryContext = '';
+        try {
+            if (memory && typeof memory.buildConversationContext === 'function') {
+                memoryContext = await memory.buildConversationContext(chatId);
+                console.log(`Memory context built: ${memoryContext.length} chars`);
+            }
+        } catch (memoryError) {
+            console.warn('Memory context building failed:', memoryError.message);
+        }
+        
+        // Enhanced options with memory context
+        const enhancedOptions = {
+            ...options,
+            memoryContext: memoryContext
+        };
+        
+        // Execute the core GPT-5 command
+        const result = await executeDualCommand(userMessage, chatId, enhancedOptions);
+        
+        // Automatic Telegram delivery if bot provided
+        if (bot && result.success && result.response) {
+            try {
+                if (typeof telegramSplitter !== 'undefined' && telegramSplitter.sendGPTResponse) {
+                    const title = options.title || 'GPT-5 Analysis';
+                    const metadata = {
+                        aiUsed: result.aiUsed || 'GPT-5',
+                        modelUsed: result.modelUsed || options.forceModel || 'gpt-5-mini',
+                        processingTime: result.responseTime || 0
+                    };
+                    
+                    const telegramSuccess = await telegramSplitter.sendGPTResponse(
+                        bot, chatId, result.response, title, metadata
+                    );
+                    result.telegramDelivered = telegramSuccess;
+                } else {
+                    await bot.sendMessage(chatId, result.response);
+                    result.telegramDelivered = true;
+                }
+                result.autoDelivery = true;
+            } catch (telegramError) {
+                console.warn('Telegram delivery failed:', telegramError.message);
+                result.telegramDelivered = false;
+            }
+        }
+        
+        return result;
+        
+    } catch (error) {
+        console.error('Enhanced GPT-5 command error:', error.message);
+        
+        return {
+            success: false,
+            response: 'Analysis temporarily unavailable. Please try again.',
+            aiUsed: 'error-fallback',
+            error: error.message
+        };
+    }
+}
+
 // MAIN COMMAND EXECUTION FUNCTION
 async function executeDualCommand(userMessage, chatId, options = {}) {
     const startTime = Date.now();
@@ -1232,6 +1299,7 @@ module.exports = {
     executeThroughGPT5System,
     executeOperatorMode,
     executeOperatorActions,
+    executeEnhancedGPT5Command,
     executeAction,
     
     // Utility functions
