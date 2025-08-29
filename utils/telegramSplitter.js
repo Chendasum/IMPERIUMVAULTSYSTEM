@@ -192,6 +192,31 @@ function normalizeModelType(modelType) {
     return MESSAGE_TYPES[normalized] ? normalized : 'analysis';
 }
 
+// Human-friendly model labels and helpers (added v3)
+const MODEL_LABELS = {
+    'gpt-5': 'GPT-5 (Full)',
+    'gpt-5-mini': 'GPT-5 Mini',
+    'gpt-5-nano': 'GPT-5 Nano',
+    'gpt-4o': 'GPT-4o (Fallback)',
+    'full': 'GPT-5 (Full)',
+    'mini': 'GPT-5 Mini',
+    'nano': 'GPT-5 Nano',
+    'analysis': 'Analysis',
+    'chat': 'Chat'
+};
+
+function computeModelBadge(explicitModel, modelType) {
+    const key = String(explicitModel || modelType || '').toLowerCase();
+    return MODEL_LABELS[key] || MODEL_LABELS[modelType] || 'Analysis';
+}
+
+function stripFallbackMarker(text) {
+    if (!text) return { cleaned: text, explicit: null };
+    const m = String(text).match(/^\[(gpt-4o[^\]]*?)\]\s*/i);
+    if (m) return { cleaned: String(text).slice(m[0].length), explicit: 'gpt-4o' };
+    return { cleaned: text, explicit: null };
+}
+
 // Enhanced message cleaning with financial context preservation
 function cleanMessage(text) {
     if (!text || typeof text !== 'string') return '';
@@ -668,7 +693,14 @@ async function sendGPT5Message(bot, chatId, message, title = null, metadata = {}
         // Clean and validate message
         let cleanedMessage = cleanMessage(message);
         
-        if (!cleanedMessage || cleanedMessage.length < 5) {
+        
+        // Detect fallback marker and compute visible model badge
+        const fallbackInfo = stripFallbackMarker(cleanedMessage);
+        cleanedMessage = fallbackInfo.cleaned;
+        let modelType = normalizeModelType(metadata.modelUsed || metadata.aiUsed || 'analysis');
+        const explicitModel = (metadata.modelUsed || metadata.modelName || fallbackInfo.explicit || '').toLowerCase();
+        const modelBadge = computeModelBadge(explicitModel, modelType);
+if (!cleanedMessage || cleanedMessage.length < 5) {
             console.log('⚠️ Message too short or empty after cleaning');
             return false;
         }
@@ -698,13 +730,13 @@ async function sendGPT5Message(bot, chatId, message, title = null, metadata = {}
             
             // Add model info for subsequent responses
             if (responseCount > 0 && TELEGRAM_CONFIG.ENHANCED_ERROR_REPORTING) {
-                finalMessage = `${enhancedTitle} (${typeConfig.description})\n\n${cleanedMessage}`;
+                finalMessage = `${enhancedTitle} (${modelBadge})\n\n${cleanedMessage}`;
             } else {
-                finalMessage = `${enhancedTitle}\n\n${cleanedMessage}`;
+                finalMessage = `${enhancedTitle} (${modelBadge})\n\n${cleanedMessage}`;
             }
         }
         
-        // Add business context if relevant
+        // If no title, show model on top\n        if (!title) { finalMessage = `*Model:* ${modelBadge}\n\n${cleanedMessage}`; }\n\n        // Add business context if relevant
         if (metadata.addBusinessContext && modelType in ['credit', 'risk', 'compliance', 'portfolio']) {
             finalMessage += `\n\n*Analysis Time: ${getCambodiaTime(true)}*`;
             if (!isBusinessHours()) {
@@ -772,7 +804,7 @@ function generateErrorFallback(error, modelType, metadata) {
         fallbackMessage += `Technical issue occurred: ${error.message.substring(0, 100)}`;
     }
     
-    fallbackMessage += `\n\nModel: ${typeConfig.description}`;
+    fallbackMessage += `\n\nModel: ${modelBadge}`;
     fallbackMessage += `\nTime: ${cambodiaTime}`;
     
     if (metadata.requestId) {
@@ -786,7 +818,7 @@ function generateErrorFallback(error, modelType, metadata) {
 async function sendGPTResponse(bot, chatId, response, title, metadata = {}) {
     return await sendGPT5Message(bot, chatId, response, title, {
         ...metadata,
-        modelUsed: 'gpt-5',
+        modelUsed: metadata.modelUsed || 'gpt-5',
         addBusinessContext: true
     });
 }
@@ -794,7 +826,7 @@ async function sendGPTResponse(bot, chatId, response, title, metadata = {}) {
 async function sendClaudeResponse(bot, chatId, response, title, metadata = {}) {
     return await sendGPT5Message(bot, chatId, response, title, {
         ...metadata,
-        modelUsed: 'analysis',
+        modelUsed: metadata.modelUsed || 'analysis',
         addBusinessContext: false
     });
 }
@@ -802,7 +834,7 @@ async function sendClaudeResponse(bot, chatId, response, title, metadata = {}) {
 async function sendDualAIResponse(bot, chatId, response, title, metadata = {}) {
     return await sendGPT5Message(bot, chatId, response, title, {
         ...metadata,
-        modelUsed: 'full',
+        modelUsed: metadata.modelUsed || 'full',
         addBusinessContext: true
     });
 }
@@ -810,7 +842,7 @@ async function sendDualAIResponse(bot, chatId, response, title, metadata = {}) {
 async function sendAnalysis(bot, chatId, analysis, title, metadata = {}) {
     return await sendGPT5Message(bot, chatId, analysis, title, {
         ...metadata,
-        modelUsed: 'analysis',
+        modelUsed: metadata.modelUsed || 'analysis',
         addBusinessContext: true
     });
 }
@@ -821,7 +853,7 @@ async function sendAlert(bot, chatId, alertMessage, title = 'System Alert', meta
     
     return await sendGPT5Message(bot, chatId, alertContent, null, {
         ...metadata,
-        modelUsed: 'error',
+        modelUsed: metadata.modelUsed || 'error',
         addBusinessContext: false,
         priority: 'high'
     });
