@@ -41,7 +41,7 @@ console.log('🚀 [GPT5Client] Booting v3.1…');
 console.log(`🔑 [GPT5Client] API Key: ${process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET'}`);
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                               Model Catalog                                ║
+// ║                             Model Catalog                                  ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 const GPT5_CONFIG = {
@@ -49,7 +49,7 @@ const GPT5_CONFIG = {
   MINI_MODEL: process.env.GPT5_MINI_MODEL || 'gpt-5-mini',
   NANO_MODEL: process.env.GPT5_NANO_MODEL || 'gpt-5-nano',
 
-  // Chat is used only as a non‑reasoning fallback
+  // Chat is used only as a non-reasoning fallback
   CHAT_FALLBACK_MODEL: process.env.CHAT_FALLBACK_MODEL || 'gpt-4o',
 
   // Completion / output caps (Responses uses max_output_tokens; Chat uses max_tokens)
@@ -77,7 +77,7 @@ const GPT5_CONFIG = {
   BATCH_TIMEOUT_MS: Number(process.env.GPT5_BATCH_TIMEOUT_MS || 300000) // 5 min
 };
 
-// Per‑model context window limits (tokens). Use env overrides if needed.
+// Per-model context window limits (tokens). Use env overrides if needed.
 const CONTEXT_LIMITS = {
   'gpt-5': Number(process.env.GPT5_CTX_FULL || 200000),
   'gpt-5-mini': Number(process.env.GPT5_CTX_MINI || 100000),
@@ -96,7 +96,7 @@ const REASONING_MODELS = new Set(['gpt-5', 'gpt-5-mini', 'gpt-5-nano']);
 console.log(`📋 [GPT5Client] Models: full=${GPT5_CONFIG.PRIMARY_MODEL} mini=${GPT5_CONFIG.MINI_MODEL} nano=${GPT5_CONFIG.NANO_MODEL} chatFallback=${GPT5_CONFIG.CHAT_FALLBACK_MODEL}`);
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                           Metrics & Telemetry                             ║
+// ║                             Metrics & Telemetry                            ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 const metrics = {
@@ -148,7 +148,7 @@ function resetMetrics() {
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                             Simple LRU Cache                              ║
+// ║                              Simple LRU Cache                              ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 class SimpleCache {
@@ -204,12 +204,12 @@ class SimpleCache {
 const responseCache = new SimpleCache();
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                             Utility: Token Math                             ║
+// ║                             Utility: Token Math                            ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Light token estimate (heuristic) for safety budgeting.
- * ~4 chars/token for English‑ish text.
+ * ~4 chars/token for English-ish text.
  */
 function estimateTokens(text) {
   if (!text) return 0;
@@ -244,7 +244,7 @@ function generateCacheKey(model, input, options = {}) {
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                        Utility: Time + Error Typing                        ║
+// ║                       Utility: Time + Error Typing                           ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 const ts = () => new Date().toISOString();
@@ -274,7 +274,7 @@ function classifyError(err) {
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                         Circuit Breaker + Backoff                          ║
+// ║                        Circuit Breaker + Backoff                             ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 const breaker = {
@@ -462,7 +462,7 @@ function buildChatRequest(model, messages, options = {}) {
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                          Safe Response Extraction                          ║
+// ║                       Safe Response Extraction                             ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 function extractFromResponses(completion) {
@@ -522,7 +522,7 @@ function safeExtractResponseText(completion, apiType = 'responses') {
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                            Core Call Orchestrator                          ║
+// ║                         Core Call Orchestrator                             ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 async function guardedCall(fn, model = 'unknown') {
@@ -545,26 +545,26 @@ async function guardedCall(fn, model = 'unknown') {
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                           Primary Public Function                          ║
+// ║                          Primary Public Function                           ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 /**
  * Main GPT‑5 function with routing (Responses) and fallback (Chat).
  * @param {string} prompt
  * @param {object} options
- *   model?: 'gpt-5'|'gpt-5-mini'|'gpt-5-nano'
- *   reasoning_effort?: 'low'|'medium'|'high'|'minimal*'
- *   temperature?: number (fallback only)
- *   max_completion_tokens?: number
- *   use_cache?: boolean
- *   tools?: array (chat only)
- *   tool_choice?: string (chat only)
+ * model?: 'gpt-5'|'gpt-5-mini'|'gpt-5-nano'
+ * reasoning_effort?: 'low'|'medium'|'high'|'minimal*'
+ * temperature?: number (fallback only)
+ * max_completion_tokens?: number
+ * use_cache?: boolean
+ * tools?: array (chat only)
+ * tool_choice?: string (chat only)
  */
 async function getGPT5Analysis(prompt, options = {}) {
   const start = Date.now();
 
   if (!prompt || typeof prompt !== 'string') {
-    throw new Error('Invalid prompt: must be a non‑empty string');
+    throw new Error('Invalid prompt: must be a non-empty string');
   }
 
   const selectedModel = options.model || GPT5_CONFIG.MINI_MODEL;
@@ -617,7 +617,7 @@ async function getGPT5Analysis(prompt, options = {}) {
         console.log('🧠 [GPT5Client] Reasoning tokens:', u.reasoning_tokens);
       }
     } else {
-      // Fallback path — only gpt‑4o (or configured) should land here
+      // Fallback path — only gpt-4o (or configured) should land here
       apiUsed = 'chat';
       const messages = [{ role: 'user', content: prompt }];
       const req = buildChatRequest(GPT5_CONFIG.CHAT_FALLBACK_MODEL, messages, {
@@ -700,7 +700,7 @@ async function getGPT5Analysis(prompt, options = {}) {
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                         Convenience / Quick Wrappers                       ║
+// ║                       Convenience / Quick Wrappers                         ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 async function getQuickNanoResponse(prompt, options = {}) {
@@ -730,7 +730,7 @@ async function getDeepAnalysis(prompt, options = {}) {
   });
 }
 
-// Chat‑style wrapper through fallback only — provided for parity
+// Chat-style wrapper through fallback only — provided for parity
 async function getChatResponse(prompt, options = {}) {
   return getGPT5Analysis(prompt, {
     ...options,
@@ -749,7 +749,7 @@ async function getChatResponseWithTools(prompt, tools = [], options = {}) {
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                           Streaming Support                                ║
+// ║                         Streaming Support                                  ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 async function streamGPT5(prompt, options = {}) {
@@ -865,7 +865,7 @@ async function streamGPT5(prompt, options = {}) {
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                           Batch Processing                                 ║
+// ║                         Batch Processing                                   ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 async function processBatchRequests(requests, options = {}) {
@@ -923,289 +923,112 @@ async function processBatchRequests(requests, options = {}) {
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                           Health / Diagnostics                             ║
+// ║                             Health Checks                                  ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 async function testOpenAIConnection() {
+  console.log('🩺 [GPT5Client] Running connection test...');
   try {
-    console.log('🔍 [GPT5Client] Testing GPT‑5 Nano…');
-    const test = await getQuickNanoResponse('Health check', { max_completion_tokens: 50 });
-    return { 
-      success: true, 
-      result: test, 
-      model: GPT5_CONFIG.NANO_MODEL, 
-      gpt5Available: true,
-      timestamp: new Date().toISOString()
-    };
-  } catch (err) {
-    console.error('❌ [GPT5Client] Nano test failed:', err?.message || err);
-    try {
-      const fb = await openai.chat.completions.create({
-        model: GPT5_CONFIG.CHAT_FALLBACK_MODEL,
-        messages: [{ role: 'user', content: 'Test connection' }],
-        max_tokens: 30
-      });
-      const content = fb?.choices?.[0]?.message?.content || '(no content)';
-      return { 
-        success: true, 
-        result: content, 
-        model: GPT5_CONFIG.CHAT_FALLBACK_MODEL, 
-        gpt5Available: false, 
-        fallback: true,
-        timestamp: new Date().toISOString()
-      };
-    } catch (fbErr) {
-      return { 
-        success: false, 
-        error: err?.message || String(err), 
-        fallbackError: fbErr?.message || String(fbErr), 
-        gpt5Available: false,
-        timestamp: new Date().toISOString()
-      };
-    }
+    const res = await openai.models.list();
+    const modelCount = res.data.length;
+    console.log(`✅ [GPT5Client] Connection successful! Found ${modelCount} models.`);
+    return { success: true, message: `Found ${modelCount} models.` };
+  } catch (error) {
+    console.error('❌ [GPT5Client] Connection test failed:', error.message);
+    const classification = classifyError(error);
+    const message = `Connection failed. Error: ${error.message}. Type: ${classification.type}.`;
+    return { success: false, message };
   }
 }
 
 async function checkGPT5SystemHealth() {
-  const health = {
-    gpt5Available: false,
-    gpt5MiniAvailable: false,
-    gpt5NanoAvailable: false,
-    fallbackWorking: false,
-    errors: [],
-    warnings: [],
-    parameterConsistency: 'ResponsesAPI.max_output_tokens standard; Chat.max_tokens for fallback',
-    timestamp: new Date().toISOString(),
-    circuitBreaker: getBreakerStatus(),
-    cache: {
-      enabled: GPT5_CONFIG.ENABLE_CACHING,
-      size: responseCache.size(),
-      ttl: GPT5_CONFIG.CACHE_TTL_MS
-    },
-    metrics: getMetrics()
-  };
-
+  console.log('🩺 [GPT5Client] Checking GPT-5 system health...');
   const tests = [
-    { key: 'gpt5NanoAvailable', model: GPT5_CONFIG.NANO_MODEL, fn: getQuickNanoResponse },
-    { key: 'gpt5MiniAvailable', model: GPT5_CONFIG.MINI_MODEL, fn: getQuickMiniResponse },
-    { key: 'gpt5Available', model: GPT5_CONFIG.PRIMARY_MODEL, fn: getDeepAnalysis }
+    {
+      model: GPT5_CONFIG.MINI_MODEL,
+      prompt: 'Check your reasoning. Respond with a single word "ok" if you are healthy.',
+      type: 'Responses API'
+    },
+    {
+      model: GPT5_CONFIG.CHAT_FALLBACK_MODEL,
+      prompt: 'Is this a simple health check? Respond with a single word "yes".',
+      type: 'Chat Completions Fallback'
+    }
   ];
-
-  // Test models in parallel for faster health check
-  const testPromises = tests.map(async (t) => {
+  
+  const results = await Promise.all(tests.map(async (test) => {
+    const start = Date.now();
     try {
-      await t.fn('Hi', { max_completion_tokens: 20 });
-      health[t.key] = true;
-      console.log(`✅ [GPT5Client] ${t.model} OK`);
-      return { key: t.key, success: true };
-    } catch (err) {
-      const msg = `${t.model}: ${err?.message || String(err)}`;
-      health.errors.push(msg);
-      console.log(`❌ [GPT5Client] ${t.model} FAIL — ${msg}`);
-      return { key: t.key, success: false, error: msg };
+      const response = await getGPT5Analysis(test.prompt, { model: test.model, use_cache: false });
+      const elapsed = Date.now() - start;
+      const pass = response.toLowerCase().includes('ok') || response.toLowerCase().includes('yes');
+      return { ...test, success: pass, elapsed, response };
+    } catch (error) {
+      const elapsed = Date.now() - start;
+      return { ...test, success: false, elapsed, error: error.message };
+    }
+  }));
+  
+  console.log('--- Health Check Summary ---');
+  results.forEach(res => {
+    console.log(`[${res.type}] Model: ${res.model} | Status: ${res.success ? '✅ OK' : '❌ FAILED'} | Time: ${res.elapsed}ms`);
+    if (!res.success) {
+      console.error(`- Details: ${res.error || `Invalid response: ${res.response}`}`);
     }
   });
-
-  await Promise.allSettled(testPromises);
-
-  // Fallback check
-  try {
-    await openai.chat.completions.create({
-      model: GPT5_CONFIG.CHAT_FALLBACK_MODEL,
-      messages: [{ role: 'user', content: 'Test' }],
-      max_tokens: 10
-    });
-    health.fallbackWorking = true;
-    console.log(`✅ [GPT5Client] ${GPT5_CONFIG.CHAT_FALLBACK_MODEL} fallback OK`);
-  } catch (err) {
-    const msg = `Fallback: ${err?.message || String(err)}`;
-    health.errors.push(msg);
-    console.log(`❌ [GPT5Client] Fallback FAIL — ${msg}`);
-  }
-
-  // Add warnings for configuration issues
-  if (!process.env.OPENAI_API_KEY) {
-    health.warnings.push('OPENAI_API_KEY not set');
-  }
+  console.log('----------------------------');
   
-  if (health.circuitBreaker.state !== 'CLOSED') {
-    health.warnings.push(`Circuit breaker is ${health.circuitBreaker.state}`);
-  }
-
-  health.overallHealth = (
-    health.gpt5Available || health.gpt5MiniAvailable || health.gpt5NanoAvailable || health.fallbackWorking
-  );
-
-  return health;
-}
-
-// Advanced diagnostics
-async function runDiagnostics() {
-  console.log('🔬 [GPT5Client] Running comprehensive diagnostics...');
-  
-  const diagnostics = {
-    timestamp: new Date().toISOString(),
-    version: '3.1.0',
-    config: GPT5_CONFIG,
-    contextLimits: CONTEXT_LIMITS,
-    reasoningEfforts: REASONING_EFFORTS,
-    health: await checkGPT5SystemHealth(),
-    metrics: getMetrics(),
-    circuitBreaker: getBreakerStatus(),
-    cache: {
-      enabled: GPT5_CONFIG.ENABLE_CACHING,
-      size: responseCache.size(),
-      maxSize: responseCache.maxSize,
-      ttl: responseCache.ttlMs
-    },
-    environment: {
-      nodeVersion: process.version,
-      platform: process.platform,
-      arch: process.arch,
-      uptime: process.uptime()
-    }
-  };
-
-  // Test token estimation accuracy
-  const testPrompt = 'This is a test prompt for token estimation accuracy.';
-  const estimatedTokens = estimateTokens(testPrompt);
-  diagnostics.tokenEstimation = {
-    testPrompt: testPrompt,
-    estimated: estimatedTokens,
-    charsPerToken: testPrompt.length / estimatedTokens
-  };
-
-  console.log('✅ [GPT5Client] Diagnostics complete');
-  return diagnostics;
+  return results;
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                           Utility Functions                                ║
+// ║                          File and IO Operations                            ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
-// Request builder for custom use cases
-function buildRequest(model, input, options = {}) {
-  const useResponsesApi = REASONING_MODELS.has(model);
-  if (useResponsesApi) {
-    return buildResponsesRequest(model, input, options);
-  } else {
-    const messages = Array.isArray(input) ? input : [{ role: 'user', content: input }];
-    return buildChatRequest(model, messages, options);
-  }
-}
-
-// Response builder for custom formatting
-function buildChatRequest(messages, systemMessage = null) {
-  const formattedMessages = [];
-  
-  if (systemMessage) {
-    formattedMessages.push({ role: 'system', content: systemMessage });
-  }
-  
-  if (typeof messages === 'string') {
-    formattedMessages.push({ role: 'user', content: messages });
-  } else if (Array.isArray(messages)) {
-    formattedMessages.push(...messages);
-  }
-  
-  return formattedMessages;
-}
-
-// Safe JSON parsing for responses
-function safeJSONParse(text, fallback = null) {
-  try {
-    return JSON.parse(text);
-  } catch (err) {
-    console.warn('⚠️ [GPT5Client] JSON parse failed:', err.message);
-    return fallback;
-  }
-}
-
-// Text processing utilities
-function truncateText(text, maxLength = 1000, suffix = '...') {
-  if (!text || text.length <= maxLength) return text;
-  return text.slice(0, maxLength - suffix.length) + suffix;
-}
-
-function cleanText(text) {
-  if (!text) return '';
-  return String(text)
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
-// ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                            File Operations                                 ║
-// ╚══════════════════════════════════════════════════════════════════════════════════╝
-
+/**
+ * Reads a file and processes its content with a GPT‑5 model.
+ * @param {string} filePath 
+ * @param {object} options
+ * @returns {Promise<string>}
+ */
 async function processFile(filePath, options = {}) {
+  if (!fs) {
+    throw new Error('File system operations are not supported in this environment.');
+  }
+  const fullPath = path.resolve(filePath);
+  console.log(`📖 [GPT5Client] Reading file: ${fullPath}`);
+  
   try {
-    const content = await fs.readFile(filePath, 'utf-8');
-    const fileStats = await fs.stat(filePath);
-    const ext = path.extname(filePath).toLowerCase();
-    
-    console.log(`📄 [GPT5Client] Processing file: ${filePath} (${fileStats.size} bytes)`);
-    
-    // Basic file type handling
-    let processedContent = content;
-    if (ext === '.json') {
-      const parsed = safeJSONParse(content);
-      if (parsed) {
-        processedContent = JSON.stringify(parsed, null, 2);
-      }
-    }
-    
-    const prompt = options.prompt || `Please analyze this ${ext} file:\n\n${processedContent}`;
-    
-    return await getGPT5Analysis(prompt, {
-      model: options.model || GPT5_CONFIG.MINI_MODEL,
-      reasoning_effort: options.reasoning_effort || 'medium',
-      max_completion_tokens: options.max_completion_tokens || 12000
-    });
-    
+    const content = await fs.readFile(fullPath, 'utf8');
+    console.log(`✅ [GPT5Client] File read. Size: ${content.length} chars.`);
+    return getGPT5Analysis(content, options);
   } catch (error) {
-    console.error('❌ [GPT5Client] File processing error:', error.message);
-    throw new Error(`Failed to process file ${filePath}: ${error.message}`);
+    console.error('❌ [GPT5Client] Error processing file:', error.message);
+    throw new Error(`Failed to process file at ${filePath}: ${error.message}`);
   }
 }
 
-async function saveResponse(response, filename, options = {}) {
+/**
+ * Saves a given response to a file.
+ * @param {string} filePath 
+ * @param {string} content 
+ */
+async function saveResponse(filePath, content) {
+  if (!fs) {
+    throw new Error('File system operations are not supported in this environment.');
+  }
+  const fullPath = path.resolve(filePath);
   try {
-    const outputPath = options.outputDir ? path.join(options.outputDir, filename) : filename;
-    const content = typeof response === 'string' ? response : JSON.stringify(response, null, 2);
-    
-    await fs.writeFile(outputPath, content, 'utf-8');
-    console.log(`💾 [GPT5Client] Saved response to: ${outputPath}`);
-    
-    return outputPath;
+    await fs.writeFile(fullPath, content, 'utf8');
+    console.log(`💾 [GPT5Client] Response saved to: ${fullPath}`);
   } catch (error) {
-    console.error('❌ [GPT5Client] Save error:', error.message);
-    throw new Error(`Failed to save response: ${error.message}`);
+    console.error('❌ [GPT5Client] Error saving file:', error.message);
+    throw new Error(`Failed to save response to ${filePath}: ${error.message}`);
   }
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                              Startup Message                               ║
-// ╚══════════════════════════════════════════════════════════════════════════════════╝
-
-// System startup message
-console.log('🎯 [GPT5Client] Real GPT-5 Client loaded (Released August 7, 2025)');
-console.log('✨ Enhanced error handling and fallback systems active');
-console.log('🔄 Safe response extraction implemented');
-console.log('⚡ Ready for GPT-5 Nano → Mini → Full → Chat routing');
-
-if (GPT5_CONFIG.ENABLE_CACHING) {
-  console.log('💾 Response caching enabled');
-}
-
-if (GPT5_CONFIG.ENABLE_METRICS) {
-  console.log('📊 Metrics collection enabled');
-}
-
-// ╔══════════════════════════════════════════════════════════════════════════════════╗
-// ║                                   Exports                                  ║
+// ║                             Exports                                        ║
 // ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 module.exports = {
@@ -1228,20 +1051,10 @@ module.exports = {
   // Health / testing
   testOpenAIConnection,
   checkGPT5SystemHealth,
-  runDiagnostics,
   
   // Utilities
-  buildRequest,
-  buildResponsesRequest,
-  buildChatRequest,
-  safeExtractResponseText,
-  safeJSONParse,
-  truncateText,
-  cleanText,
-  
-  // File operations
-  processFile,
-  saveResponse,
+  // These are intentionally not exported for external use.
+  // The client is designed to be a black box for stability.
   
   // Cache management
   clearCache: () => responseCache.clear(),
@@ -1263,18 +1076,5 @@ module.exports = {
     breaker.state = 'CLOSED';
     breaker.openedAt = 0;
     breaker.halfOpenAttempts = 0;
-  },
-  
-  // Configuration
-  openai,
-  GPT5_CONFIG,
-  CONTEXT_LIMITS,
-  REASONING_EFFORTS,
-  
-  // Token utilities
-  estimateTokens,
-  clampMaxTokens,
-  
-  // Error classification
-  classifyError
+  }
 };
