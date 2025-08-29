@@ -1306,7 +1306,6 @@ module.exports = {
     getCurrentCambodiaDateTime,
     formatOperatorResponse,
     formatConfirmationRequest,
-    checkGPT5OnlySystemHealth,
     
     // Legacy compatibility
     executeGptAnalysis: (msg, analysis, ctx, mem) => executeThroughGPT5System(msg, {...analysis, bestAI: 'gpt'}, ctx, mem),
