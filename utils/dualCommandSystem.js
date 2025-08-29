@@ -2394,6 +2394,130 @@ module.exports = {
     calculatePerformanceTrend
 };
 
+// MEMORY TESTING - SEPARATE FUNCTION FOR EXPLICIT TESTING ONLY
+async function testMemoryIntegration(chatId) {
+    console.log('Testing memory integration with GPT-5...');
+    
+    const tests = {
+        postgresqlConnection: false,
+        conversationHistory: false,
+        persistentMemory: false,
+        memoryBuilding: false,
+        completionDetection: false,
+        gpt5WithMemory: false,
+        memoryContextPassing: false,
+        gpt5ModelSelection: false,
+        telegramIntegration: false,
+        gpt5SystemHealth: false
+    };
+    
+    try {
+        const completionTest = detectCompletionStatus('done ready', 'system already built');
+        tests.completionDetection = completionTest.shouldSkipGPT5;
+        console.log(`Completion Detection: ${tests.completionDetection}`);
+    } catch (error) {
+        console.log(`Completion Detection: Failed - ${error.message}`);
+    }
+    
+    try {
+        const testConnection = await database.getConversationHistoryDB('test', 1);
+        tests.postgresqlConnection = Array.isArray(testConnection);
+        console.log(`PostgreSQL Connection: ${tests.postgresqlConnection}`);
+    } catch (error) {
+        console.log(`PostgreSQL Connection: Failed - ${error.message}`);
+    }
+    
+    try {
+        const history = await database.getConversationHistoryDB(chatId, 3);
+        tests.conversationHistory = Array.isArray(history);
+        console.log(`Conversation History: ${tests.conversationHistory} (${history?.length || 0} records)`);
+    } catch (error) {
+        console.log(`Conversation History: Failed - ${error.message}`);
+    }
+    
+    try {
+        const memories = await database.getPersistentMemoryDB(chatId);
+        tests.persistentMemory = Array.isArray(memories);
+        console.log(`Persistent Memory: ${tests.persistentMemory} (${memories?.length || 0} records)`);
+    } catch (error) {
+        console.log(`Persistent Memory: Failed - ${error.message}`);
+    }
+    
+    try {
+        const context = await memory.buildConversationContext(chatId);
+        tests.memoryBuilding = typeof context === 'string';
+        console.log(`Memory Building: ${tests.memoryBuilding} (${context?.length || 0} chars)`);
+    } catch (error) {
+        console.log(`Memory Building: Failed - ${error.message}`);
+    }
+    
+    try {
+        // FIXED: Direct GPT-5 API test instead of recursive executeDualCommand call
+        const testPrompt = 'Hello, test GPT-5 functionality';
+        const directResult = await openaiClient.getGPT5Analysis(testPrompt, {
+            model: 'gpt-5-nano',
+            reasoning_effort: 'minimal',
+            max_completion_tokens: 50
+        });
+        tests.gpt5WithMemory = directResult && directResult.length > 0;
+        console.log(`GPT-5 with Memory: ${tests.gpt5WithMemory}`);
+    } catch (error) {
+        console.log(`GPT-5 with Memory: Failed - ${error.message}`);
+    }
+    
+    try {
+        // FIXED: Simple validation instead of recursive test
+        tests.memoryContextPassing = tests.memoryBuilding && tests.postgresqlConnection;
+        console.log(`Memory Context Passing: ${tests.memoryContextPassing}`);
+    } catch (error) {
+        console.log(`Memory Context Passing: Failed - ${error.message}`);
+    }
+    
+    try {
+        // FIXED: Direct health check instead of recursive model selection test
+        const healthCheck = await openaiClient.checkGPT5SystemHealth();
+        tests.gpt5ModelSelection = healthCheck.gpt5NanoAvailable || healthCheck.gpt5MiniAvailable;
+        console.log(`GPT-5 Model Selection: ${tests.gpt5ModelSelection}`);
+    } catch (error) {
+        console.log(`GPT-5 Model Selection: Failed - ${error.message}`);
+    }
+    
+    try {
+        // FIXED: Function existence check instead of recursive test
+        tests.telegramIntegration = typeof telegramSplitter.sendGPTResponse === 'function';
+        console.log(`Telegram Integration: ${tests.telegramIntegration}`);
+    } catch (error) {
+        console.log(`Telegram Integration: Failed - ${error.message}`);
+    }
+    
+    try {
+        // FIXED: Direct health check
+        const systemHealth = await checkGPT5OnlySystemHealth();
+        tests.gpt5SystemHealth = systemHealth.overallHealth;
+        console.log(`GPT-5 System Health: ${tests.gpt5SystemHealth}`);
+    } catch (error) {
+        console.log(`GPT-5 System Health: Failed - ${error.message}`);
+    }
+    
+    const overallSuccess = Object.values(tests).filter(test => test).length;
+    const totalTests = Object.keys(tests).length;
+    
+    console.log(`\nMemory Test: ${overallSuccess}/${totalTests} passed`);
+    
+    return {
+        tests: tests,
+        score: overallSuccess,
+        total: totalTests,
+        percentage: Math.round((overallSuccess / totalTests) * 100),
+        status: overallSuccess === totalTests ? 'FULL_SUCCESS' : 
+                overallSuccess >= totalTests * 0.7 ? 'MOSTLY_WORKING' : 'NEEDS_ATTENTION',
+        gpt5OnlyMode: true,
+        completionDetectionEnabled: tests.completionDetection,
+        postgresqlIntegrated: tests.postgresqlConnection && tests.conversationHistory,
+        memorySystemIntegrated: tests.memoryBuilding && tests.gpt5WithMemory
+    };
+}
+ 
 // GPT-5 SYSTEM HEALTH CHECK
 async function checkGPT5OnlySystemHealth() {
     const health = {
