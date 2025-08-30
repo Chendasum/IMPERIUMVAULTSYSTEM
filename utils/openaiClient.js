@@ -439,7 +439,7 @@ async function getGPT5Analysis(prompt, options = {}) {
         selectedModel = selectOptimalModel(prompt, options);
         console.log(`Auto-selected model: ${selectedModel} (prompt: ${prompt.length} chars)`);
         
-        inputTokens = Math.ceil(prompt.length / 4); // Rough estimation
+        inputTokens = Math.ceil(prompt.length / 3.5); // More accurate estimation for GPT-5
         
         const response = await circuitBreaker.execute(async () => {
             const useResponsesApi = selectedModel.includes('gpt-5') && selectedModel !== GPT5_CONFIG.CHAT_MODEL;
@@ -457,7 +457,7 @@ async function getGPT5Analysis(prompt, options = {}) {
                 const responsesRequest = buildResponsesRequest(selectedModel, prompt, requestOptions);
                 const completion = await openai.responses.create(responsesRequest);
                 
-                outputTokens = completion.usage?.completion_tokens || Math.ceil(safeExtractResponseText(completion, 'responses').length / 4);
+                outputTokens = completion.usage?.completion_tokens || completion.usage?.output_tokens || Math.ceil(safeExtractResponseText(completion, 'responses').length / 3.5);
                 
                 return safeExtractResponseText(completion, 'responses');
                 
@@ -474,7 +474,7 @@ async function getGPT5Analysis(prompt, options = {}) {
                 const chatRequest = buildChatRequest(selectedModel, messages, requestOptions);
                 const completion = await openai.chat.completions.create(chatRequest);
                 
-                outputTokens = completion.usage?.completion_tokens || Math.ceil(safeExtractResponseText(completion, 'chat').length / 4);
+                outputTokens = completion.usage?.completion_tokens || Math.ceil(safeExtractResponseText(completion, 'chat').length / 3.5);
                 
                 return safeExtractResponseText(completion, 'chat');
             }
