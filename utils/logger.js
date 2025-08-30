@@ -2,8 +2,8 @@
 // -----------------------------------------------------------------------------
 // - Robust extractGPTContent for Responses API (output_text, output[].content[].text)
 // - Supports Chat Completions (choices[0].message.content)
-// - Avoids dumping entire raw response objects into logs
-// - Safe truncation + compact metadata
+// - Compact one-line console summary (toggle verbose with LOGGER_VERBOSE=1)
+// - Safe truncation & JSONL persistence without dumping entire raw responses
 // -----------------------------------------------------------------------------
 
 'use strict';
@@ -12,8 +12,9 @@ const fs = require('fs').promises;
 const path = require('path');
 
 class Logger {
-  constructor() {
+  constructor(opts = {}) {
     this.logDir = path.join(process.cwd(), 'logs');
+    this.verbose = opts.verbose ?? (process.env.LOGGER_VERBOSE === '1');
     // Fire-and-forget; safe if the dir already exists
     this.ensureLogDirectory();
   }
@@ -92,21 +93,16 @@ class Logger {
       const username = data.username || 'unknown';
 
       // Normalize prompt & response
-      const promptPreview = this.safeTruncate(data.prompt, 500);
+      const promptRaw = typeof data.prompt === 'string' ? data.prompt : '';
+      const promptPreview = this.safeTruncate(promptRaw, 500);
       const gptContent = this.extractGPTContent(data.gptResponse);
       const truncatedResponse = this.safeTruncate(gptContent, 1000);
 
       // Safe metadata (don’t assume object shape)
       const isObj = typeof data.gptResponse === 'object' && data.gptResponse !== null;
-      const metadata = isObj
-        ? {
-            model: data.gptResponse.model || 'unknown',
-            tokenUsage: data.gptResponse.usage || null,
-            finishReason: data.gptResponse.finish_reason || data.gptResponse.finishReason || null,
-            fallback: !!data.gptResponse.fallback,
-            error: !!data.gptResponse.error
-          }
-        : { model: 'string_response' };
+      const tokenUsage = isObj ? (data.gptResponse.usage || null) : null;
+      const finishReason = isObj ? (data.gptResponse.finish_reason || data.gptResponse.finishReason || null) : null;
+      const model = isObj ? (data.gptResponse.model || 'unknown') : 'string_response';
 
       const logEntry = {
         timestamp,
@@ -114,20 +110,41 @@ class Logger {
         username,
         prompt: promptPreview,
         response: truncatedResponse,
-        metadata,
+        metadata: {
+          model,
+          tokenUsage,
+          finishReason,
+          fallback: !!(isObj && data.gptResponse.fallback),
+          error: !!(isObj && data.gptResponse.error)
+        },
         responseLength: gptContent.length,
         truncated: gptContent.length > 1000
       };
 
-      // Console summary (compact)
-      console.log('[Logger] GPT Response:', {
-        user: `${username} (${userId})`,
-        model: metadata.model,
-        promptLen: (typeof data.prompt === 'string' ? data.prompt.length : 0),
-        responseLen: gptContent.length,
-        tokens: metadata.tokenUsage?.total_tokens ?? metadata.tokenUsage?.total ?? 'unknown',
-        fallback: metadata.fallback
-      });
+      // Console summary (one-liner by default; object view if verbose)
+      const tokenTotal =
+        tokenUsage?.total_tokens ??
+        tokenUsage?.total ??
+        (typeof tokenUsage?.input_tokens === 'number' || typeof tokenUsage?.output_tokens === 'number'
+          ? (tokenUsage.input_tokens || 0) + (tokenUsage.output_tokens || 0)
+          : 'unknown');
+
+      if (this.verbose) {
+        console.log('[Logger] GPT Response:', {
+          user: `${username} (${userId})`,
+          model,
+          promptLen: promptRaw.length,
+          responseLen: gptContent.length,
+          tokens: tokenTotal,
+          finishReason,
+          fallback: logEntry.metadata.fallback
+        });
+      } else {
+        console.log(
+          `[Logger] ${model} | prompt=${promptRaw.length} chars | response=${gptContent.length} chars | tokens=${tokenTotal}` +
+          (finishReason ? ` | finish=${finishReason}` : '')
+        );
+      }
 
       // Persist asynchronously
       this.writeLogEntry('gpt_responses', logEntry).catch(err => {
@@ -149,6 +166,10 @@ class Logger {
   logConversation(data) {
     try {
       const timestamp = new Date().toISOString();
+      const model =
+        (typeof data.gptResponse === 'object' && data.gptResponse?.model) ||
+        'string_response';
+
       const logEntry = {
         timestamp,
         userId: data.userId || 'unknown',
@@ -159,9 +180,7 @@ class Logger {
         metadata: {
           chatId: data.chatId,
           messageId: data.messageId,
-          model:
-            (typeof data.gptResponse === 'object' && data.gptResponse?.model) ||
-            'string_response',
+          model,
           processingTime: data.processingTime || null
         }
       };
@@ -188,7 +207,11 @@ class Logger {
         type: 'error'
       };
 
-      console.error('[Logger] Error logged:', logEntry.error.message, context);
+      if (this.verbose) {
+        console.error('[Logger] Error logged:', logEntry.error.message, context);
+      } else {
+        console.error(`[Logger] Error: ${logEntry.error.message}`);
+      }
 
       this.writeLogEntry('errors', logEntry).catch(err => {
         console.error('Failed to write error log:', err);
