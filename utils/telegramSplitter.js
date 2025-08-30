@@ -109,12 +109,6 @@ class TelegramFormatter {
         };
     }
     
-    // Advanced retry mechanism with circuit breaker
-    constructor(customConfig = {}) {
-        this.config = { ...CONFIG, ...customConfig };
-        this.MAX_MESSAGE_LENGTH = this.config.MAX_MESSAGE_LENGTH;
-        this.PREFERRED_CHUNK_SIZE = this.config.CHUNK_TARGET;
-        
         // Circuit breaker for delivery failures
         this.circuitBreaker = {
             failures: 0,
@@ -130,7 +124,6 @@ class TelegramFormatter {
             averageDelay: this.config.DELAY_MS,
             lastSuccessTime: Date.now()
         };
-    }
 
     // Main formatting function
     formatMessage(text, options = {}) {
