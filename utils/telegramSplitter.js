@@ -221,8 +221,9 @@ function applyTextStyling(text, model, options = {}) {
     
     return styled;
 }
+// Enhanced message processing with model detection and styling
 function processMessage(text, options = {}) {
-    if (!text || typeof text !== 'string') return '';
+    if (!text || typeof text !== 'string') return { text: '', model: 'default', modelConfig: CONFIG.MODELS.default };
     
     // Step 1: Clean the message
     let processed = text
