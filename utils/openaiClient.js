@@ -1,4 +1,4 @@
-// utils/openaiClient.js — GPT-5 Client (Production, Ultra-Compat CJS)
+// utils/openaiClient.js — GPT-5 Client (Production, Ultra-Compat, NO FALLBACK)
 // Compatibility: no optional chaining, no nullish coalescing, no arrow functions,
 // no destructuring, no template literals, no spread syntax. ASCII-only.
 // Public API:
@@ -119,7 +119,8 @@ GPT5Cache.prototype.set = function (key, data) {
 };
 GPT5Cache.prototype.clear = function () { this.cache.clear(); };
 GPT5Cache.prototype.getStats = function () {
-  var totalHits = 0, n = 0; for (var it of this.cache.values()) { totalHits += (it.hits || 0); n++; }
+  var totalHits = 0, n = 0; var iter = this.cache.values(); var step = iter.next();
+  while (!step.done) { var item = step.value; totalHits += (item.hits || 0); n++; step = iter.next(); }
   return { size: this.cache.size, maxSize: this.maxSize, hitRate: n > 0 ? (totalHits / n).toFixed(2) : "0.00" };
 };
 
@@ -161,8 +162,8 @@ var openai = new OpenAI({
   timeout: Number(process.env.OPENAI_TIMEOUT_MS || 180000),
   maxRetries: Number(process.env.OPENAI_SDK_MAX_RETRIES || 2),
   defaultHeaders: {
-    "User-Agent": "IMPERIUM-VAULT-GPT5/2.6.0",
-    "X-Client-Version": "2.6.0",
+    "User-Agent": "IMPERIUM-VAULT-GPT5/3.0.0",
+    "X-Client-Version": "3.0.0",
     "X-Environment": process.env.NODE_ENV || "development"
   }
 });
@@ -173,7 +174,6 @@ var GPT5_CONFIG = {
   MINI_MODEL: process.env.GPT5_MINI_MODEL || "gpt-5-mini",
   NANO_MODEL: process.env.GPT5_NANO_MODEL || "gpt-5-nano",
   CHAT_MODEL: process.env.GPT5_CHAT_MODEL || "gpt-5-chat-latest",
-  FALLBACK_MODEL: process.env.FALLBACK_CHAT_MODEL || "gpt-4o",
 
   MAX_OUTPUT_TOKENS: 16384,
   MAX_PROMPT_LENGTH: 180000,
@@ -186,8 +186,7 @@ var GPT5_CONFIG = {
     "gpt-5": { maxTokens: 16384, pricing: { input: 0.01, output: 0.03 } },
     "gpt-5-mini": { maxTokens: 8192, pricing: { input: 0.005, output: 0.015 } },
     "gpt-5-nano": { maxTokens: 4096, pricing: { input: 0.003, output: 0.008 } },
-    "gpt-5-chat-latest": { maxTokens: 16384, pricing: { input: 0.01, output: 0.03 } },
-    "gpt-4o": { maxTokens: 8192, pricing: { input: 0.005, output: 0.015 } }
+    "gpt-5-chat-latest": { maxTokens: 16384, pricing: { input: 0.01, output: 0.03 } }
   },
 
   AUTO_SCALE: {
@@ -198,10 +197,7 @@ var GPT5_CONFIG = {
   },
 
   // Short prompts go to chat model to avoid Responses availability hiccups
-  SHORT_CHAT_THRESHOLD: Number(process.env.FORCE_CHAT_BELOW_CHARS || 64),
-
-  // Hide visible fallback tag if desired
-  HIDE_FALLBACK_TAG: String(process.env.HIDE_FALLBACK_TAG || "false").toLowerCase() === "true"
+  SHORT_CHAT_THRESHOLD: Number(process.env.FORCE_CHAT_BELOW_CHARS || 64)
 };
 function capFor(model) {
   var caps = GPT5_CONFIG.MODEL_CAPABILITIES[model];
@@ -399,32 +395,8 @@ function getGPT5Analysis(prompt, options) {
         var merged = provider ? (err.message + " | Provider: " + provider) : (err && err.message ? err.message : String(err));
         logApiCall(selectedModel, apiUsed, inputTokens, outputTokens, ms2, false, merged);
         metrics.recordCall(selectedModel, false, 0, 0, ms2, merged);
-
-        var status = err && (err.status || (err.response && err.response.status)) || 0;
-        var lower = String(merged || "").toLowerCase();
-        var allowFallback = status === 400 || status === 404 || status === 422 ||
-          lower.indexOf("model not found") >= 0 || lower.indexOf("not available") >= 0 || lower.indexOf("not supported") >= 0;
-
-        if (!allowFallback) {
-          return resolve("Service error. Details: " + merged + "\nBreaker: " + circuitBreaker.getState());
-        }
-
-        // Fallback to chat model
-        openai.chat.completions.create({
-          model: GPT5_CONFIG.FALLBACK_MODEL,
-          messages: [{ role: "user", content: str(prompt) }],
-          max_tokens: Math.min(options.max_tokens || options.max_completion_tokens || 8000, capFor(GPT5_CONFIG.FALLBACK_MODEL)),
-          temperature: typeof options.temperature === "number" ? options.temperature : GPT5_CONFIG.DEFAULT_TEMPERATURE
-        }).then(function (fb) {
-          var fbText = safeExtractResponseText(fb, "chat");
-          var u = g(fb, "usage", {}); var fbOut = u.output_tokens || u.completion_tokens || 0;
-          var cost2 = logApiCall(GPT5_CONFIG.FALLBACK_MODEL, "chat", inputTokens, fbOut, Date.now() - start, true);
-          metrics.recordCall(GPT5_CONFIG.FALLBACK_MODEL, true, inputTokens + fbOut, cost2, Date.now() - start);
-          resolve(GPT5_CONFIG.HIDE_FALLBACK_TAG ? fbText : "[GPT-4o Fallback] " + fbText);
-        }).catch(function (fbErr) {
-          var fbMsg = g(fbErr, "response.data.error.message", fbErr && fbErr.message ? fbErr.message : String(fbErr));
-          resolve("Service error. Details: " + merged + "\nFallback Error: " + fbMsg + "\nBreaker: " + circuitBreaker.getState());
-        });
+        // NO FALLBACK: return error to caller
+        resolve("Service error. Details: " + merged + "\nBreaker: " + circuitBreaker.getState());
       });
     } catch (outer) {
       resolve("Service error. Details: " + (outer && outer.message ? outer.message : String(outer)));
@@ -535,17 +507,11 @@ function testOpenAIConnection() {
       return { success: true, result: ok, model: GPT5_CONFIG.NANO_MODEL, gpt5Available: true, timestamp: new Date().toISOString() };
     })
     .catch(function (e) {
-      return openai.chat.completions.create({ model: GPT5_CONFIG.FALLBACK_MODEL, messages: [{ role: "user", content: "FALLBACK OK" }], max_tokens: 5, temperature: 0 })
-        .then(function (fb) {
-          return { success: true, result: g(fb, "choices.0.message.content", null), model: GPT5_CONFIG.FALLBACK_MODEL, gpt5Available: false, fallback: true, timestamp: new Date().toISOString() };
-        })
-        .catch(function (fbErr) {
-          return { success: false, error: e.message, fallbackError: fbErr.message, gpt5Available: false, timestamp: new Date().toISOString() };
-        });
+      return { success: false, error: e.message, gpt5Available: false, timestamp: new Date().toISOString() };
     });
 }
 function checkGPT5SystemHealth() {
-  var health = { timestamp: new Date().toISOString(), gpt5Available: false, gpt5MiniAvailable: false, gpt5NanoAvailable: false, gpt5ChatAvailable: false, fallbackWorking: false, currentModel: null, circuitBreakerState: circuitBreaker.getState(), metrics: metrics.getStats(), cache: cache.getStats(), errors: [], recommendations: [], smartModelSelection: false };
+  var health = { timestamp: new Date().toISOString(), gpt5Available: false, gpt5MiniAvailable: false, gpt5NanoAvailable: false, gpt5ChatAvailable: false, currentModel: null, circuitBreakerState: circuitBreaker.getState(), metrics: metrics.getStats(), cache: cache.getStats(), errors: [], recommendations: [], smartModelSelection: false };
 
   function probe(fn, name, model) {
     return fn("ok", { max_output_tokens: 5, skipCache: true, temperature: 0 })
@@ -559,17 +525,10 @@ function checkGPT5SystemHealth() {
     .then(function(){ return probe(getDeepAnalysis, "gpt5Available", GPT5_CONFIG.PRIMARY_MODEL); })
     .then(function(){ return probe(getChatResponse, "gpt5ChatAvailable", GPT5_CONFIG.CHAT_MODEL); })
     .then(function(){
-      return openai.chat.completions.create({ model: GPT5_CONFIG.FALLBACK_MODEL, messages: [{ role: "user", content: "ok" }], max_tokens: 5, temperature: 0 })
-        .then(function (fb) { if (g(fb, "choices.0.message.content", null)) health.fallbackWorking = true; })
-        .catch(function (e) { health.errors.push("Fallback: " + e.message); });
-    })
-    .then(function(){
       if (health.gpt5Available) health.currentModel = GPT5_CONFIG.PRIMARY_MODEL;
       else if (health.gpt5MiniAvailable) health.currentModel = GPT5_CONFIG.MINI_MODEL;
       else if (health.gpt5NanoAvailable) health.currentModel = GPT5_CONFIG.NANO_MODEL;
       else if (health.gpt5ChatAvailable) health.currentModel = GPT5_CONFIG.CHAT_MODEL;
-      else if (health.fallbackWorking) health.currentModel = GPT5_CONFIG.FALLBACK_MODEL;
-
       health.overallHealth = Boolean(health.currentModel);
 
       try {
