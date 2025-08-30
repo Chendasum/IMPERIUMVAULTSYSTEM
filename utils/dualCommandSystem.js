@@ -39,22 +39,58 @@ try {
     };
 }
 
-// TELEGRAM INTEGRATION
+// TELEGRAM INTEGRATION (robust, legacy-compatible)
 let telegramSplitter = {};
 try {
-    telegramSplitter = require('./telegramSplitter');
-    console.log('Telegram integration loaded');
-} catch (error) {
-    console.warn('Telegram splitter import failed:', error.message);
+  const splitter = require('./utils/telegramSplitter');
+
+  // Prefer the legacy adapter if present; otherwise adapt on the fly.
+  if (splitter && splitter.legacyAdapter) {
+    telegramSplitter = splitter.legacyAdapter;
+  } else if (splitter && typeof splitter.setupTelegramHandler === 'function') {
+    // Build a tiny adapter using the new handler API
+    const make = (model) => (bot, chatId, response, meta) =>
+      splitter.setupTelegramHandler(bot).sendGPTResponse(
+        String(response),
+        Object.assign({ model: model }, meta || {}),
+        chatId
+      );
+
     telegramSplitter = {
-        sendGPT5: async () => false,
-        sendGPT5Mini: async () => false,
-        sendGPT5Nano: async () => false,
-        sendGPTResponse: async () => false,
-        sendAnalysis: async () => false,
-        sendAlert: async () => false
+      sendGPT5:      make('gpt-5'),
+      sendGPT5Mini:  make('gpt-5-mini'),
+      sendGPT5Nano:  make('gpt-5-nano'),
+      sendGPT5Chat:  make('gpt-5-chat-latest'),
+      sendGPTResponse: (bot, chatId, response, meta) =>
+        splitter.setupTelegramHandler(bot).sendGPTResponse(String(response), meta || {}, chatId),
+      sendAlert: (bot, chatId, errorResponse, title) =>
+        splitter.setupTelegramHandler(bot).sendError(
+          (errorResponse instanceof Error) ? errorResponse : new Error(String(errorResponse)),
+          title || 'System Error',
+          chatId
+        )
     };
+  } else {
+    throw new Error('Invalid telegramSplitter export');
+  }
+
+  console.log('Telegram integration loaded');
+} catch (error) {
+  console.warn('Telegram splitter import failed:', error.message);
+  // Safe no-op stubs to keep the app running
+  telegramSplitter = {
+    sendGPT5:        async () => false,
+    sendGPT5Mini:    async () => false,
+    sendGPT5Nano:    async () => false,
+    sendGPT5Chat:    async () => false,
+    sendGPTResponse: async () => false,
+    sendAnalysis:    async () => false,
+    sendAlert:       async () => false
+  };
 }
+
+// export or attach it if needed elsewhere
+module.exports.telegramSplitter = telegramSplitter;
 
 // SYSTEM STATE MANAGEMENT
 const systemState = {
