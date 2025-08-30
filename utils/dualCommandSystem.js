@@ -1613,34 +1613,12 @@ function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, respo
         return false;
       }
 
-      const { telegramSplitter } = require('./dualCommandSystem');
-
-      if (!telegramSplitter || typeof telegramSplitter.sendGPT5 !== 'function') {
-        console.warn('Telegram splitter not available, using basic send');
-        if (bot && bot.sendMessage && chatId) {
-          await bot.sendMessage(chatId, response);
-          return true;
-        }
-        return false;
-      }
+      // ✅ FIXED: Use the new enhanced telegram splitter
+      try {
+        const { sendTelegramMessage, setupTelegramHandler } = require('./telegramSplitter');
         
-        // Prepare comprehensive metadata for model detection and display
-        const metadata = {
-          model: modelUsed,
-          executionTime: responseTime,
-          costTier: getCostTier(modelUsed),
-          tokens: gpt5Result?.tokensUsed || 'estimated',
-          cost: gpt5Result?.cost || calculateEstimatedCost(modelUsed, response.length),
-          complexity: queryAnalysis?.complexity?.complexity || 'medium',
-          confidence: gpt5Result?.confidence || queryAnalysis?.confidence || 0.75,
-          reasoning: queryAnalysis?.reasoning_effort,
-          verbosity: queryAnalysis?.verbosity,
-          contextUsed,
-          fallbackUsed: gpt5Result?.fallbackUsed || false,
-          completionDetected: gpt5Result?.completionDetected || false
-        };
-        
-        console.log(`📤 Using enhanced Telegram delivery for model: ${modelUsed}`);
+        // Determine model used
+        const modelUsed = gpt5Result?.modelUsed || queryAnalysis?.gpt5Model || 'gpt-5-mini';
         
         // Use enhanced delivery with full model detection
         const result = await sendTelegramMessage(bot, chatId, response, metadata);
