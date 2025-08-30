@@ -1,9 +1,9 @@
-// utils/logger.js - GPT-5 Aware Logger (Responses API + Chat Completions)
+// utils/logger.js - GPT-5 Aware Logger (Responses API + Chat Completions) with RAW toggle
 // -----------------------------------------------------------------------------
-// - Robust extractGPTContent for Responses API (output_text, output[].content[].text)
-// - Supports Chat Completions (choices[0].message.content)
-// - Compact one-line console summary (toggle verbose with LOGGER_VERBOSE=1)
-// - Safe truncation & JSONL persistence without dumping entire raw responses
+// - Clean text extraction (Responses API: output_text / output[].content[].text)
+// - Chat Completions: choices[0].message.content
+// - RAW mode via env: LOGGER_RAW=1 (and pretty via LOGGER_PRETTY=1)
+// - Safe truncation + compact metadata; no accidental mega-dumps
 // -----------------------------------------------------------------------------
 
 'use strict';
@@ -11,11 +11,14 @@
 const fs = require('fs').promises;
 const path = require('path');
 
+const RAW_MODE = process.env.LOGGER_RAW === '1';
+const RAW_PRETTY = process.env.LOGGER_PRETTY === '1';
+const MAX_FILE_LINE = 1000;     // max chars per JSONL line segment (for text fields)
+const MAX_CONSOLE_TEXT = 1000;  // cap console response preview
+
 class Logger {
-  constructor(opts = {}) {
+  constructor() {
     this.logDir = path.join(process.cwd(), 'logs');
-    this.verbose = opts.verbose ?? (process.env.LOGGER_VERBOSE === '1');
-    // Fire-and-forget; safe if the dir already exists
     this.ensureLogDirectory();
   }
 
@@ -27,20 +30,18 @@ class Logger {
     }
   }
 
-  // --- Core extractor: normalize any OpenAI response into human-readable text ---
+  // ------------------- Extraction -------------------
+
   extractGPTContent(gptResponse) {
     if (!gptResponse) return '[No response]';
-
-    // 0) Already a string (most callers should pass strings)
     if (typeof gptResponse === 'string') return gptResponse;
 
-    // 1) Responses API (primary)
-    // 1a) Single consolidated field
+    // Responses API: direct consolidated field
     if (typeof gptResponse === 'object' && typeof gptResponse.output_text === 'string') {
       return gptResponse.output_text;
     }
 
-    // 1b) Fragmented content: output[].content[].text
+    // Responses API: fragmented output[].content[].text
     if (gptResponse && Array.isArray(gptResponse.output)) {
       const parts = [];
       for (const item of gptResponse.output) {
@@ -53,23 +54,23 @@ class Logger {
       if (parts.length) return parts.join('');
     }
 
-    // 2) Chat Completions
+    // Chat Completions
     const chatMsg = gptResponse?.choices?.[0]?.message?.content;
     if (typeof chatMsg === 'string') return chatMsg;
 
-    // 3) Common wrapper fields used by some integrators
+    // Common wrappers
     if (typeof gptResponse.content === 'string') return gptResponse.content;
     if (typeof gptResponse.response === 'string') return gptResponse.response;
     if (typeof gptResponse.message === 'string') return gptResponse.message;
     if (typeof gptResponse.text === 'string') return gptResponse.text;
 
-    // 4) As a last resort, return a compact preview instead of full dump
+    // Minimal fallback
     try {
       const minimal = {
         model: gptResponse.model,
         usage: gptResponse.usage,
         finish_reason: gptResponse.finish_reason || gptResponse.finishReason,
-        note: 'Unrecognized response shape; full dump suppressed'
+        note: 'Unrecognized response shape; full dump suppressed (enable LOGGER_RAW=1 to include)',
       };
       return JSON.stringify(minimal, null, 2);
     } catch {
@@ -77,14 +78,40 @@ class Logger {
     }
   }
 
-  // Safe truncation for any input (string or object)
+  // ------------------- Truncation helpers -------------------
+
   safeTruncate(value, maxLength = 1000) {
     const content = this.extractGPTContent(value);
     if (!content) return '[Empty]';
     return content.length <= maxLength ? content : content.substring(0, maxLength) + '... (truncated)';
   }
 
-  // --- High-level logging helpers ------------------------------------------------
+  // Redact big string fields inside arbitrary objects for RAW logs
+  redactLargeStrings(obj, limit = MAX_FILE_LINE) {
+    const seen = new WeakSet();
+    const walk = (v) => {
+      if (v && typeof v === 'object') {
+        if (seen.has(v)) return '[Circular]';
+        seen.add(v);
+
+        if (Array.isArray(v)) return v.map(walk);
+
+        const out = {};
+        for (const [k, val] of Object.entries(v)) {
+          if (typeof val === 'string' && val.length > limit) {
+            out[k] = val.slice(0, limit) + `... [${val.length - limit} more chars]`;
+          } else {
+            out[k] = walk(val);
+          }
+        }
+        return out;
+      }
+      return v;
+    };
+    return walk(obj);
+  }
+
+  // ------------------- High-level logging -------------------
 
   logGPTResponse(data) {
     try {
@@ -92,17 +119,20 @@ class Logger {
       const userId = data.userId || 'unknown';
       const username = data.username || 'unknown';
 
-      // Normalize prompt & response
-      const promptRaw = typeof data.prompt === 'string' ? data.prompt : '';
-      const promptPreview = this.safeTruncate(promptRaw, 500);
+      const promptPreview = this.safeTruncate(data.prompt, 500);
       const gptContent = this.extractGPTContent(data.gptResponse);
-      const truncatedResponse = this.safeTruncate(gptContent, 1000);
+      const truncatedResponse = this.safeTruncate(gptContent, MAX_FILE_LINE);
 
-      // Safe metadata (don’t assume object shape)
       const isObj = typeof data.gptResponse === 'object' && data.gptResponse !== null;
-      const tokenUsage = isObj ? (data.gptResponse.usage || null) : null;
-      const finishReason = isObj ? (data.gptResponse.finish_reason || data.gptResponse.finishReason || null) : null;
-      const model = isObj ? (data.gptResponse.model || 'unknown') : 'string_response';
+      const metadata = isObj
+        ? {
+            model: data.gptResponse.model || 'unknown',
+            tokenUsage: data.gptResponse.usage || null,
+            finishReason: data.gptResponse.finish_reason || data.gptResponse.finishReason || null,
+            fallback: !!data.gptResponse.fallback,
+            error: !!data.gptResponse.error,
+          }
+        : { model: 'string_response' };
 
       const logEntry = {
         timestamp,
@@ -110,44 +140,29 @@ class Logger {
         username,
         prompt: promptPreview,
         response: truncatedResponse,
-        metadata: {
-          model,
-          tokenUsage,
-          finishReason,
-          fallback: !!(isObj && data.gptResponse.fallback),
-          error: !!(isObj && data.gptResponse.error)
-        },
+        metadata,
         responseLength: gptContent.length,
-        truncated: gptContent.length > 1000
+        truncated: gptContent.length > MAX_FILE_LINE,
       };
 
-      // Console summary (one-liner by default; object view if verbose)
-      const tokenTotal =
-        tokenUsage?.total_tokens ??
-        tokenUsage?.total ??
-        (typeof tokenUsage?.input_tokens === 'number' || typeof tokenUsage?.output_tokens === 'number'
-          ? (tokenUsage.input_tokens || 0) + (tokenUsage.output_tokens || 0)
-          : 'unknown');
-
-      if (this.verbose) {
-        console.log('[Logger] GPT Response:', {
-          user: `${username} (${userId})`,
-          model,
-          promptLen: promptRaw.length,
-          responseLen: gptContent.length,
-          tokens: tokenTotal,
-          finishReason,
-          fallback: logEntry.metadata.fallback
-        });
-      } else {
-        console.log(
-          `[Logger] ${model} | prompt=${promptRaw.length} chars | response=${gptContent.length} chars | tokens=${tokenTotal}` +
-          (finishReason ? ` | finish=${finishReason}` : '')
-        );
+      // RAW attachment (optional)
+      if (RAW_MODE) {
+        const redacted = isObj ? this.redactLargeStrings(data.gptResponse) : data.gptResponse;
+        logEntry.raw = RAW_PRETTY ? redacted : redacted; // pretty is applied at write step
       }
 
-      // Persist asynchronously
-      this.writeLogEntry('gpt_responses', logEntry).catch(err => {
+      // Console summary
+      console.log('[Logger] GPT Response:', {
+        user: `${username} (${userId})`,
+        model: metadata.model,
+        promptLen: (typeof data.prompt === 'string' ? data.prompt.length : 0),
+        responseLen: gptContent.length,
+        tokens: metadata.tokenUsage?.total_tokens ?? metadata.tokenUsage?.total ?? 'unknown',
+        fallback: metadata.fallback,
+        raw: RAW_MODE ? 'on' : 'off',
+      });
+
+      this.writeLogEntry('gpt_responses', logEntry, { prettyRaw: RAW_PRETTY }).catch(err => {
         console.error('Failed to write GPT response log:', err);
       });
 
@@ -158,7 +173,7 @@ class Logger {
         isArray: Array.isArray(data?.gptResponse),
         keys: data?.gptResponse && typeof data.gptResponse === 'object'
           ? Object.keys(data.gptResponse)
-          : 'N/A'
+          : 'N/A',
       });
     }
   }
@@ -166,11 +181,7 @@ class Logger {
   logConversation(data) {
     try {
       const timestamp = new Date().toISOString();
-      const model =
-        (typeof data.gptResponse === 'object' && data.gptResponse?.model) ||
-        'string_response';
-
-      const logEntry = {
+      const entry = {
         timestamp,
         userId: data.userId || 'unknown',
         username: data.username || 'unknown',
@@ -180,12 +191,18 @@ class Logger {
         metadata: {
           chatId: data.chatId,
           messageId: data.messageId,
-          model,
-          processingTime: data.processingTime || null
-        }
+          model:
+            (typeof data.gptResponse === 'object' && data.gptResponse?.model) ||
+            'string_response',
+          processingTime: data.processingTime || null,
+        },
       };
 
-      this.writeLogEntry('conversations', logEntry).catch(err => {
+      if (RAW_MODE && data.gptResponse && typeof data.gptResponse === 'object') {
+        entry.raw = this.redactLargeStrings(data.gptResponse);
+      }
+
+      this.writeLogEntry('conversations', entry, { prettyRaw: RAW_PRETTY }).catch(err => {
         console.error('Failed to write conversation log:', err);
       });
     } catch (error) {
@@ -196,24 +213,20 @@ class Logger {
   logError(error, context = {}) {
     try {
       const timestamp = new Date().toISOString();
-      const logEntry = {
+      const entry = {
         timestamp,
+        type: 'error',
         error: {
           message: error?.message || String(error),
           stack: error?.stack || null,
-          name: error?.name || 'Error'
+          name: error?.name || 'Error',
         },
         context,
-        type: 'error'
       };
 
-      if (this.verbose) {
-        console.error('[Logger] Error logged:', logEntry.error.message, context);
-      } else {
-        console.error(`[Logger] Error: ${logEntry.error.message}`);
-      }
+      console.error('[Logger] Error logged:', entry.error.message, context);
 
-      this.writeLogEntry('errors', logEntry).catch(err => {
+      this.writeLogEntry('errors', entry).catch(err => {
         console.error('Failed to write error log:', err);
       });
     } catch (logError) {
@@ -224,15 +237,15 @@ class Logger {
   logSystemHealth(healthData) {
     try {
       const timestamp = new Date().toISOString();
-      const logEntry = {
+      const entry = {
         timestamp,
         type: 'system_health',
         health: healthData,
         uptime: process.uptime(),
-        memory: process.memoryUsage()
+        memory: process.memoryUsage(),
       };
 
-      this.writeLogEntry('system', logEntry).catch(err => {
+      this.writeLogEntry('system', entry).catch(err => {
         console.error('Failed to write system health log:', err);
       });
     } catch (error) {
@@ -240,19 +253,29 @@ class Logger {
     }
   }
 
-  // --- Low-level file writer -----------------------------------------------------
-  async writeLogEntry(logType, entry) {
+  // ------------------- File writer -------------------
+
+  async writeLogEntry(logType, entry, { prettyRaw = false } = {}) {
     try {
       const date = new Date().toISOString().split('T')[0];
       const filename = `${logType}_${date}.jsonl`;
       const filepath = path.join(this.logDir, filename);
-      await fs.appendFile(filepath, JSON.stringify(entry) + '\n', 'utf8');
+
+      // For JSONL, keep one JSON object per line; if RAW present and pretty requested,
+      // only pretty-print the RAW, not the whole line.
+      let out = entry;
+      if (prettyRaw && entry.raw && typeof entry.raw === 'object') {
+        out = { ...entry, raw: JSON.parse(JSON.stringify(entry.raw, null, 2)) };
+      }
+
+      await fs.appendFile(filepath, JSON.stringify(out) + '\n', 'utf8');
     } catch (error) {
       console.error(`Failed to write ${logType} log:`, error);
     }
   }
 
-  // --- Utility stringify with safety caps ---------------------------------------
+  // ------------------- Utilities -------------------
+
   safeStringify(obj, maxLength = 500) {
     try {
       if (typeof obj === 'string') {
@@ -262,12 +285,7 @@ class Logger {
 
       const str = JSON.stringify(
         obj,
-        (key, value) => {
-          if (typeof value === 'string' && value.length > 100) {
-            return value.substring(0, 100) + '...';
-          }
-          return value;
-        },
+        (key, value) => (typeof value === 'string' && value.length > 100 ? value.substring(0, 100) + '...' : value),
         2
       );
       return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
@@ -282,15 +300,13 @@ const logger = new Logger();
 
 module.exports = {
   Logger,
-
-  // Convenience wrappers
+  // Wrappers
   logGPTResponse: (data) => logger.logGPTResponse(data),
   logConversation: (data) => logger.logConversation(data),
   logError: (error, context) => logger.logError(error, context),
   logSystemHealth: (healthData) => logger.logSystemHealth(healthData),
-
-  // Utilities
+  // Utils
   extractGPTContent: (response) => logger.extractGPTContent(response),
   safeTruncate: (text, maxLength) => logger.safeTruncate(text, maxLength),
-  safeStringify: (obj, maxLength) => logger.safeStringify(obj, maxLength)
+  safeStringify: (obj, maxLength) => logger.safeStringify(obj, maxLength),
 };
