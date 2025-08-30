@@ -604,7 +604,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         model: CONFIG.MODELS.MINI,
         reasoning_effort: 'medium',
         verbosity: 'medium',
-        max_completion_tokens: CONFIG.TOKEN_LIMITS.MINI_MAX,
+        max_output_tokens: CONFIG.TOKEN_LIMITS.MINI_MAX,
         temperature: 0.7,
         priority: 'standard',
         reason: 'GPT-5 Mini - Balanced performance',
@@ -617,7 +617,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: CONFIG.MODELS.NANO,
             reasoning_effort: 'minimal',
             verbosity: 'low',
-            max_completion_tokens: CONFIG.TOKEN_LIMITS.NANO_MAX,
+            max_output_tokens: CONFIG.TOKEN_LIMITS.NANO_MAX,
             temperature: 0.3,
             priority: 'speed',
             reason: 'Speed critical - GPT-5 Nano for instant response',
@@ -628,7 +628,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         gpt5Config = {
             model: CONFIG.MODELS.CHAT,
             temperature: 0.7,
-            max_completion_tokens: CONFIG.TOKEN_LIMITS.CHAT_MAX,
+            max_output_tokens: CONFIG.TOKEN_LIMITS.CHAT_MAX,
             priority: 'chat',
             reason: 'Chat pattern - GPT-5 Chat model for natural conversation',
             confidence: 0.8
@@ -639,7 +639,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: CONFIG.MODELS.FULL,
             reasoning_effort: 'high',
             verbosity: 'high',
-            max_completion_tokens: CONFIG.TOKEN_LIMITS.FULL_MAX,
+            max_output_tokens: CONFIG.TOKEN_LIMITS.FULL_MAX,
             temperature: 0.4,
             priority: 'health',
             reason: 'Health/medical query - Full GPT-5 for accuracy',
@@ -651,7 +651,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: CONFIG.MODELS.FULL,
             reasoning_effort: 'high',
             verbosity: 'medium',
-            max_completion_tokens: CONFIG.TOKEN_LIMITS.FULL_MAX,
+            max_output_tokens: CONFIG.TOKEN_LIMITS.FULL_MAX,
             temperature: 0.3,
             priority: 'mathematical',
             reason: 'Mathematical/coding precision - Full GPT-5',
@@ -663,7 +663,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: CONFIG.MODELS.FULL,
             reasoning_effort: 'high',
             verbosity: 'high',
-            max_completion_tokens: CONFIG.TOKEN_LIMITS.FULL_MAX,
+            max_output_tokens: CONFIG.TOKEN_LIMITS.FULL_MAX,
             temperature: 0.6,
             priority: 'complex',
             reason: 'Complex strategic analysis - Full GPT-5',
@@ -675,7 +675,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: CONFIG.MODELS.MINI,
             reasoning_effort: 'medium',
             verbosity: 'high',
-            max_completion_tokens: CONFIG.TOKEN_LIMITS.MINI_MAX,
+            max_output_tokens: CONFIG.TOKEN_LIMITS.MINI_MAX,
             temperature: 0.6,
             priority: 'regional',
             reason: 'Cambodia/regional analysis - GPT-5 Mini with detailed output',
@@ -687,7 +687,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: CONFIG.MODELS.MINI,
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_completion_tokens: CONFIG.TOKEN_LIMITS.MINI_MAX,
+            max_output_tokens: CONFIG.TOKEN_LIMITS.MINI_MAX,
             temperature: 0.6,
             priority: 'market',
             reason: 'Market analysis - GPT-5 Mini for balanced performance',
@@ -699,7 +699,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
             model: CONFIG.MODELS.FULL,
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_completion_tokens: CONFIG.TOKEN_LIMITS.FULL_MAX,
+            max_output_tokens: CONFIG.TOKEN_LIMITS.FULL_MAX,
             temperature: 0.7,
             priority: 'multimodal',
             reason: 'Multimodal content - Full GPT-5 for vision analysis',
@@ -717,12 +717,12 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     const queryLength = message.length;
     
     if (queryLength > 1000) {
-        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.5, CONFIG.TOKEN_LIMITS.FULL_MAX);
+        gpt5Config.max_output_tokens = Math.min(gpt5Config.max_output_tokens * 1.5, CONFIG.TOKEN_LIMITS.FULL_MAX);
         gpt5Config.reason += ' (Scaled for long input)';
     }
     
     if (complexity.isVeryComplex) {
-        gpt5Config.max_completion_tokens = Math.min(gpt5Config.max_completion_tokens * 1.3, CONFIG.TOKEN_LIMITS.FULL_MAX);
+        gpt5Config.max_output_tokens = Math.min(gpt5Config.max_output_tokens * 1.3, CONFIG.TOKEN_LIMITS.FULL_MAX);
         gpt5Config.reason += ' (Scaled for complexity)';
         gpt5Config.confidence = Math.min(gpt5Config.confidence + 0.1, 1.0);
     }
@@ -736,7 +736,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     ];
     
     if (longResponsePatterns.some(pattern => pattern.test(message))) {
-        gpt5Config.max_completion_tokens = CONFIG.TOKEN_LIMITS.FULL_MAX;
+        gpt5Config.max_output_tokens = CONFIG.TOKEN_LIMITS.FULL_MAX;
         gpt5Config.reason += ' (Long response requested)';
     }
     
@@ -747,7 +747,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         gpt5Model: gpt5Config.model,
         reasoning_effort: gpt5Config.reasoning_effort,
         verbosity: gpt5Config.verbosity,
-        max_completion_tokens: gpt5Config.max_completion_tokens,
+        max_output_tokens: gpt5Config.max_output_tokens,
         temperature: gpt5Config.temperature,
         priority: gpt5Config.priority,
         confidence: gpt5Config.confidence,
@@ -777,7 +777,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
         estimatedCost: calculateCostEstimate(
             gpt5Config.model,
             Math.ceil(queryLength / 4), // Rough input token estimate
-            Math.ceil(gpt5Config.max_completion_tokens * 0.7) // Expected output tokens
+            Math.ceil(gpt5Config.max_output_tokens * 0.7) // Expected output tokens
         )
     };
 }
@@ -834,9 +834,9 @@ function validateQueryAnalysis(analysis) {
     }
     
     // Validate token limits
-    if (analysis.max_completion_tokens > CONFIG.TOKEN_LIMITS.FULL_MAX) {
-        warnings.push(`Token limit exceeds maximum: ${analysis.max_completion_tokens}`);
-        analysis.max_completion_tokens = CONFIG.TOKEN_LIMITS.FULL_MAX;
+    if (analysis.max_output_tokens > CONFIG.TOKEN_LIMITS.FULL_MAX) {
+        warnings.push(`Token limit exceeds maximum: ${analysis.max_output_tokens}`);
+        analysis.max_output_tokens = CONFIG.TOKEN_LIMITS.FULL_MAX;
     }
     
     // Validate confidence
@@ -938,7 +938,7 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
             model: queryAnalysis.gpt5Model,
             reasoning: queryAnalysis.reasoning_effort,
             verbosity: queryAnalysis.verbosity,
-            tokens: queryAnalysis.max_completion_tokens,
+            tokens: queryAnalysis.max_output_tokens,
             hasMemory: !!context,
             priority: queryAnalysis.priority,
             messageLength: enhancedMessage.length
@@ -953,12 +953,12 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
         if (queryAnalysis.gpt5Model === CONFIG.MODELS.CHAT) {
             // GPT-5 Chat model parameters
             if (queryAnalysis.temperature) options.temperature = queryAnalysis.temperature;
-            if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+            if (queryAnalysis.max_output_tokens) options.max_output_tokens = queryAnalysis.max_output_tokens;
         } else {
             // Other GPT-5 models with reasoning parameters
             if (queryAnalysis.reasoning_effort) options.reasoning_effort = queryAnalysis.reasoning_effort;
             if (queryAnalysis.verbosity) options.verbosity = queryAnalysis.verbosity;
-            if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+            if (queryAnalysis.max_output_tokens) options.max_output_tokens = queryAnalysis.max_output_tokens;
             if (queryAnalysis.temperature) options.temperature = queryAnalysis.temperature;
         }
         
@@ -1024,11 +1024,11 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context = null, o
             
             if (fallback.model === CONFIG.MODELS.CHAT) {
                 options.temperature = 0.7;
-                options.max_completion_tokens = CONFIG.TOKEN_LIMITS.CHAT_MAX;
+                options.max_output_tokens = CONFIG.TOKEN_LIMITS.CHAT_MAX;
             } else {
                 if (fallback.reasoning) options.reasoning_effort = fallback.reasoning;
                 if (fallback.verbosity) options.verbosity = fallback.verbosity;
-                options.max_completion_tokens = Math.min(6000, CONFIG.TOKEN_LIMITS[fallback.model.replace('gpt-5-', '').toUpperCase() + '_MAX'] || 4000);
+                options.max_output_tokens = Math.min(6000, CONFIG.TOKEN_LIMITS[fallback.model.replace('gpt-5-', '').toUpperCase() + '_MAX'] || 4000);
             }
             
             const result = await openaiClient.getGPT5Analysis(enhancedMessage, options);
@@ -1188,10 +1188,10 @@ async function performGPT5HealthCheck() {
     
     // Test each model with minimal resources
     const modelsToTest = [
-        { name: 'gpt-5-nano', options: { reasoning_effort: 'minimal', verbosity: 'low', max_completion_tokens: 20 } },
-        { name: 'gpt-5-mini', options: { reasoning_effort: 'low', verbosity: 'low', max_completion_tokens: 20 } },
-        { name: 'gpt-5', options: { reasoning_effort: 'minimal', verbosity: 'low', max_completion_tokens: 20 } },
-        { name: 'gpt-5-chat-latest', options: { temperature: 0.3, max_completion_tokens: 20 } }
+        { name: 'gpt-5-nano', options: { reasoning_effort: 'minimal', verbosity: 'low', max_output_tokens: 20 } },
+        { name: 'gpt-5-mini', options: { reasoning_effort: 'low', verbosity: 'low', max_output_tokens: 20 } },
+        { name: 'gpt-5', options: { reasoning_effort: 'minimal', verbosity: 'low', max_output_tokens: 20 } },
+        { name: 'gpt-5-chat-latest', options: { temperature: 0.3, max_output_tokens: 20 } }
     ];
     
     let healthyCount = 0;
@@ -1394,7 +1394,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
             // GPT-5 specific parameters
             reasoning_effort: queryAnalysis.reasoning_effort,
             verbosity: queryAnalysis.verbosity,
-            max_completion_tokens: queryAnalysis.max_completion_tokens,
+            max_output_tokens: queryAnalysis.max_output_tokens,
             
             // Memory and context
             memoryUsed: gpt5Result.memoryUsed,
@@ -2230,7 +2230,7 @@ async function testMemoryIntegration(chatId) {
         // Test GPT-5 integration
         const { openaiClient } = require('./dualCommandSystem');
         const testPrompt = 'Hello, test GPT-5 functionality';
-        const directResult = await openaiClient.getGPT5NanoResponse(testPrompt, { max_completion_tokens: 50 });
+        const directResult = await openaiClient.getGPT5NanoResponse(testPrompt, { max_output_tokens: 50 });
         tests.gpt5Integration = directResult && directResult.length > 0;
         console.log(`GPT-5 Integration: ${tests.gpt5Integration}`);
     } catch (error) {
@@ -2338,14 +2338,14 @@ async function getMarketIntelligence(chatId = null) {
         return await openaiClient.getGPT5MiniResponse(query, {
             reasoning_effort: 'medium',
             verbosity: 'medium',
-            max_completion_tokens: 8000
+            max_output_tokens: 8000
         });
     } catch (error) {
         try {
             return await openaiClient.getGPT5NanoResponse(query, {
                 reasoning_effort: 'minimal',
                 verbosity: 'low',
-                max_completion_tokens: 6000
+                max_output_tokens: 6000
             });
         } catch (fallbackError) {
             return 'Market intelligence temporarily unavailable - GPT-5 system experiencing issues';
@@ -2463,7 +2463,7 @@ async function testMemoryIntegration(chatId) {
         const directResult = await openaiClient.getGPT5Analysis(testPrompt, {
             model: 'gpt-5-nano',
             reasoning_effort: 'minimal',
-            max_completion_tokens: 50
+            max_output_tokens: 50
         });
         tests.gpt5WithMemory = directResult && directResult.length > 0;
         console.log(`GPT-5 with Memory: ${tests.gpt5WithMemory}`);
@@ -2559,7 +2559,7 @@ async function checkGPT5OnlySystemHealth() {
     
     for (const { name, model, description } of gpt5Models) {
         try {
-            const options = { model: model, max_completion_tokens: 50 };
+            const options = { model: model, max_output_tokens: 50 };
             
             if (model !== 'gpt-5-chat-latest') {
                 options.reasoning_effort = 'minimal';
@@ -2736,7 +2736,7 @@ function getGPT5ModelRecommendation(query) {
         configuration: {
             reasoning_effort: analysis.reasoning_effort,
             verbosity: analysis.verbosity,
-            max_completion_tokens: analysis.max_completion_tokens,
+            max_output_tokens: analysis.max_output_tokens,
             temperature: analysis.temperature
         },
         
@@ -2911,7 +2911,7 @@ async function executeDirectGPT5Analysis(prompt, model = 'gpt-5-mini') {
     try {
         const analysisOptions = {
             model: model,
-            max_completion_tokens: 4000
+            max_output_tokens: 4000
         };
         
         // Add model-specific parameters
