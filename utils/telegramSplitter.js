@@ -3,7 +3,7 @@
 
 const crypto = require('crypto');
 
-// Minimal, focused configuration
+// Enhanced configuration with model detection and styling
 const CONFIG = {
     MAX_MESSAGE_LENGTH: 4096,
     SAFE_LENGTH: 3900,
@@ -14,13 +14,70 @@ const CONFIG = {
     MAX_RETRIES: 3,
     RETRY_DELAY_MS: 1000,
     
-    // GPT-5 model delays for optimal UX
-    MODEL_DELAYS: {
-        'gpt-5': 400,
-        'gpt-5-mini': 250,
-        'gpt-5-nano': 150,
-        'gpt-5-chat-latest': 200,
-        'default': 300
+    // GPT-5 model configurations with auto-styling
+    MODELS: {
+        'gpt-5': {
+            delay: 400,
+            emoji: '🧠',
+            name: 'GPT-5',
+            style: 'professional',
+            color: '#4A90E2'
+        },
+        'gpt-5-mini': {
+            delay: 250,
+            emoji: '⚡',
+            name: 'GPT-5 Mini',
+            style: 'balanced',
+            color: '#F5A623'
+        },
+        'gpt-5-nano': {
+            delay: 150,
+            emoji: '🚀',
+            name: 'GPT-5 Nano',
+            style: 'concise',
+            color: '#7ED321'
+        },
+        'gpt-5-chat-latest': {
+            delay: 200,
+            emoji: '💬',
+            name: 'GPT-5 Chat',
+            style: 'conversational',
+            color: '#50E3C2'
+        },
+        'gpt-4o': {
+            delay: 300,
+            emoji: '🔄',
+            name: 'GPT-4o (Fallback)',
+            style: 'reliable',
+            color: '#BD10E0'
+        },
+        'default': {
+            delay: 300,
+            emoji: '🤖',
+            name: 'AI Assistant',
+            style: 'neutral',
+            color: '#9013FE'
+        }
+    },
+    
+    // Auto-emoji patterns for content enhancement
+    AUTO_EMOJIS: {
+        // Financial terms
+        'profit': '💰', 'loss': '📉', 'revenue': '💵', 'investment': '📈',
+        'portfolio': '💼', 'dividend': '💸', 'loan': '🏦', 'budget': '📊',
+        'savings': '🏦', 'expense': '💳', 'income': '💰', 'tax': '📋',
+        
+        // Business terms
+        'analysis': '📊', 'report': '📄', 'strategy': '🎯', 'growth': '📈',
+        'risk': '⚠️', 'opportunity': '🎯', 'market': '📈', 'data': '📊',
+        'performance': '📊', 'metrics': '📈', 'kpi': '🎯', 'roi': '💹',
+        
+        // Status indicators
+        'success': '✅', 'error': '❌', 'warning': '⚠️', 'info': 'ℹ️',
+        'completed': '✅', 'failed': '❌', 'pending': '⏳', 'processing': '⚙️',
+        
+        // Time related
+        'urgent': '🚨', 'deadline': '⏰', 'schedule': '📅', 'reminder': '🔔'
     },
     
     // Simple duplicate prevention (5 second window)
@@ -73,11 +130,102 @@ class SimpleCache {
 const messageCache = new SimpleCache();
 const errorCache = new SimpleCache(50, 60000); // 1 minute for errors
 
-// Efficient message processing
-function cleanMessage(text) {
+// Detect GPT model from message content or metadata
+function detectModel(content, options = {}) {
+    // Explicit model provided
+    if (options.model && CONFIG.MODELS[options.model]) {
+        return options.model;
+    }
+    
+    // Check for GPT-5 indicators in content
+    const text = content.toLowerCase();
+    
+    if (text.includes('[gpt-5 nano') || text.includes('gpt-5-nano')) {
+        return 'gpt-5-nano';
+    }
+    if (text.includes('[gpt-5 mini') || text.includes('gpt-5-mini')) {
+        return 'gpt-5-mini';
+    }
+    if (text.includes('[gpt-5 chat') || text.includes('gpt-5-chat')) {
+        return 'gpt-5-chat-latest';
+    }
+    if (text.includes('[gpt-5') || text.includes('reasoning_effort') || text.includes('verbosity')) {
+        return 'gpt-5';
+    }
+    if (text.includes('[gpt-4o fallback') || text.includes('gpt-4o')) {
+        return 'gpt-4o';
+    }
+    
+    // Default to gpt-5-mini for balance
+    return 'gpt-5-mini';
+}
+
+// Auto-enhance content with contextual emojis
+function addAutoEmojis(text, options = {}) {
+    if (options.noEmojis) return text;
+    
+    let enhanced = text;
+    
+    // Add emojis to key terms (case insensitive, whole words only)
+    for (const [term, emoji] of Object.entries(CONFIG.AUTO_EMOJIS)) {
+        const regex = new RegExp(`\\b${term}\\b`, 'gi');
+        enhanced = enhanced.replace(regex, `${emoji} ${term}`);
+    }
+    
+    // Remove duplicate emojis that might occur
+    enhanced = enhanced.replace(/(\p{Emoji})\s*\1/gu, '$1');
+    
+    return enhanced;
+}
+
+// Apply model-specific text styling
+function applyTextStyling(text, model, options = {}) {
+    const modelConfig = CONFIG.MODELS[model] || CONFIG.MODELS.default;
+    
+    if (options.noStyling) return text;
+    
+    let styled = text;
+    
+    // Apply styling based on model personality
+    switch (modelConfig.style) {
+        case 'professional':
+            // GPT-5: Add structure and emphasis
+            styled = styled
+                .replace(/^([A-Z][^.!?]*[.!?])$/gm, '**$1**') // Bold first sentences
+                .replace(/(\d+[\.\)])\s+([A-Z])/g, '$1 **$2**'); // Bold list items
+            break;
+            
+        case 'concise':
+            // GPT-5 Nano: Simplify and compress
+            styled = styled
+                .replace(/\n\n+/g, '\n') // Reduce spacing
+                .replace(/\b(very|quite|really|extremely)\s+/gi, '') // Remove intensifiers
+                .replace(/In conclusion,?\s*/gi, ''); // Remove verbose conclusions
+            break;
+            
+        case 'conversational':
+            // GPT-5 Chat: Make more friendly
+            styled = styled
+                .replace(/^([A-Z])/gm, match => {
+                    const starters = ['Well, ', 'So, ', 'Actually, ', ''];
+                    const starter = starters[Math.floor(Math.random() * starters.length)];
+                    return starter + match;
+                });
+            break;
+            
+        case 'balanced':
+        default:
+            // GPT-5 Mini & others: Keep natural
+            break;
+    }
+    
+    return styled;
+}
+function processMessage(text, options = {}) {
     if (!text || typeof text !== 'string') return '';
     
-    return text
+    // Step 1: Clean the message
+    let processed = text
         // Remove GPT metadata
         .replace(/\[(?:GPT-\d+|reasoning_effort|verbosity|model):[^\]]*\]/gi, '')
         .replace(/\((?:confidence|tokens?):[^)]*\)/gi, '')
@@ -92,12 +240,34 @@ function cleanMessage(text) {
         .replace(/\n{4,}/g, '\n\n\n')
         .replace(/[ \t]{3,}/g, '  ')
         .trim();
+    
+    // Step 2: Detect the model used
+    const detectedModel = detectModel(processed, options);
+    
+    // Step 3: Apply auto-emojis if enabled
+    if (!options.noEmojis) {
+        processed = addAutoEmojis(processed, options);
+    }
+    
+    // Step 4: Apply model-specific styling
+    if (!options.noStyling) {
+        processed = applyTextStyling(processed, detectedModel, options);
+    }
+    
+    return {
+        text: processed,
+        model: detectedModel,
+        modelConfig: CONFIG.MODELS[detectedModel] || CONFIG.MODELS.default
+    };
+}
 }
 
-// Smart message chunking
-function chunkMessage(text, model = 'default') {
+// Smart message chunking with model-aware headers
+function chunkMessage(processed, options = {}) {
+    const { text, model, modelConfig } = processed;
+    
     if (text.length <= CONFIG.SAFE_LENGTH) {
-        return [text];
+        return [{ text, model, modelConfig }];
     }
     
     const chunks = [];
@@ -108,11 +278,14 @@ function chunkMessage(text, model = 'default') {
         const splitPoint = findBestSplit(remaining, CONFIG.CHUNK_TARGET);
         let chunk = remaining.substring(0, splitPoint).trim();
         
-        // Add chunk header for multi-part messages
+        // Add model-aware chunk header
+        const emoji = modelConfig.emoji || '📄';
+        const modelName = modelConfig.name || 'AI Assistant';
+        
         if (chunkNum === 1) {
-            chunk = `📄 *Part ${chunkNum}*\n\n${chunk}`;
+            chunk = `${emoji} *${modelName} - Part ${chunkNum}*\n\n${chunk}`;
         } else {
-            chunk = `📄 *Part ${chunkNum}*\n\n${chunk}`;
+            chunk = `${emoji} *Part ${chunkNum}*\n\n${chunk}`;
         }
         
         // Add continuation marker
@@ -120,17 +293,18 @@ function chunkMessage(text, model = 'default') {
             chunk += '\n\n*[Continued...]*';
         }
         
-        chunks.push(chunk);
+        chunks.push({ text: chunk, model, modelConfig });
         remaining = remaining.substring(splitPoint).trim();
         chunkNum++;
     }
     
     // Final chunk
     if (remaining.length > 0) {
+        const emoji = modelConfig.emoji || '📄';
         const finalChunk = chunkNum > 1 ? 
-            `📄 *Part ${chunkNum} - Final*\n\n${remaining}` : 
+            `${emoji} *Part ${chunkNum} - Final*\n\n${remaining}` : 
             remaining;
-        chunks.push(finalChunk);
+        chunks.push({ text: finalChunk, model, modelConfig });
     }
     
     return chunks;
@@ -267,7 +441,7 @@ async function sendSingleMessage(bot, chatId, text, options = {}) {
     throw new Error('All formatting methods failed');
 }
 
-// Main delivery function
+// Main delivery function with model detection and styling
 async function deliverMessage(bot, chatId, content, options = {}) {
     const startTime = Date.now();
     
@@ -277,28 +451,29 @@ async function deliverMessage(bot, chatId, content, options = {}) {
             throw new Error('Missing required parameters');
         }
         
-        // Clean and process content
-        const cleaned = cleanMessage(content);
-        if (!cleaned || cleaned.length < 3) {
-            throw new Error('Content too short after cleaning');
+        // Process content with model detection and styling
+        const processed = processMessage(content, options);
+        if (!processed.text || processed.text.length < 3) {
+            throw new Error('Content too short after processing');
         }
         
-        const model = options.model || 'default';
+        const { text, model, modelConfig } = processed;
         
         // Check for duplicates (unless forced)
-        if (!options.force && isDuplicate(chatId, cleaned, model)) {
-            console.log(`Duplicate message blocked for chat ${chatId}`);
+        if (!options.force && isDuplicate(chatId, text, model)) {
+            console.log(`Duplicate message blocked for chat ${chatId} (model: ${model})`);
             return { 
                 success: false, 
                 reason: 'duplicate',
+                model,
                 processing_time: Date.now() - startTime 
             };
         }
         
-        // Add title if provided
+        // Add title with model branding if provided
         const finalContent = options.title ? 
-            `*${options.title}*\n\n${cleaned}` : 
-            cleaned;
+            `${modelConfig.emoji} *${options.title}*\n\n${text}` : 
+            text;
         
         let result;
         
@@ -308,26 +483,26 @@ async function deliverMessage(bot, chatId, content, options = {}) {
             result = { chunks: 1, method: 'single' };
             
         } else {
-            // Chunked delivery
-            const chunks = chunkMessage(finalContent, model);
-            console.log(`Sending ${chunks.length} chunks to chat ${chatId}`);
+            // Chunked delivery with model-aware processing
+            const chunks = chunkMessage({ text: finalContent, model, modelConfig }, options);
+            console.log(`Sending ${chunks.length} chunks to chat ${chatId} (model: ${model})`);
             
             let delivered = 0;
-            const delay = CONFIG.MODEL_DELAYS[model] || CONFIG.MODEL_DELAYS.default;
+            const delay = modelConfig.delay || CONFIG.MODELS.default.delay;
             
             for (let i = 0; i < chunks.length; i++) {
                 const chunk = chunks[i];
                 const isLast = i === chunks.length - 1;
                 
                 try {
-                    await retry(() => sendSingleMessage(bot, chatId, chunk, {
+                    await retry(() => sendSingleMessage(bot, chatId, chunk.text, {
                         ...options,
                         silent: i > 0 // Only first chunk makes notification sound
                     }));
                     
                     delivered++;
                     
-                    // Delay between chunks (but not after last)
+                    // Model-specific delay between chunks
                     if (!isLast) {
                         await new Promise(resolve => setTimeout(resolve, delay));
                     }
@@ -339,7 +514,7 @@ async function deliverMessage(bot, chatId, content, options = {}) {
                     if (i === 0) {
                         try {
                             await bot.sendMessage(chatId, 
-                                `⚠️ *Message Delivery Issue*\n\nTechnical problem: ${error.message.substring(0, 100)}`);
+                                `⚠️ *Message Delivery Issue*\n\nModel: ${modelConfig.name}\nProblem: ${error.message.substring(0, 100)}`);
                         } catch (fallbackError) {
                             console.error('Fallback message also failed:', fallbackError.message);
                         }
@@ -359,14 +534,16 @@ async function deliverMessage(bot, chatId, content, options = {}) {
         }
         
         // Record successful delivery
-        recordMessage(chatId, cleaned, model);
+        recordMessage(chatId, text, model);
         
         const processingTime = Date.now() - startTime;
-        console.log(`✅ Message delivered to ${chatId}: ${result.chunks} chunks, ${processingTime}ms`);
+        console.log(`✅ ${modelConfig.name} message delivered to ${chatId}: ${result.chunks} chunks, ${processingTime}ms`);
         
         return {
             success: true,
             processing_time: processingTime,
+            model,
+            model_config: modelConfig,
             ...result
         };
         
@@ -456,22 +633,26 @@ function getStats() {
     };
 }
 
-function debug(chatId, content, model = 'default') {
-    const cleaned = cleanMessage(content);
-    const chunks = chunkMessage(cleaned, model);
-    const hash = generateMessageHash(chatId, cleaned, model);
+function debug(chatId, content, model = null) {
+    const processed = processMessage(content, { model });
+    const chunks = chunkMessage(processed);
+    const hash = generateMessageHash(chatId, processed.text, processed.model);
     
     return {
+        detected_model: processed.model,
+        model_config: processed.modelConfig,
         original_length: content.length,
-        cleaned_length: cleaned.length,
+        processed_length: processed.text.length,
         chunk_count: chunks.length,
         message_hash: hash,
-        is_duplicate: isDuplicate(chatId, cleaned, model),
-        model_delay: CONFIG.MODEL_DELAYS[model] || CONFIG.MODEL_DELAYS.default,
+        is_duplicate: isDuplicate(chatId, processed.text, processed.model),
+        model_delay: processed.modelConfig.delay,
+        auto_emojis_added: content !== processed.text,
         chunks: chunks.map((chunk, i) => ({
             index: i + 1,
-            length: chunk.length,
-            preview: chunk.substring(0, 50) + '...'
+            length: chunk.text.length,
+            preview: chunk.text.substring(0, 50) + '...',
+            model: chunk.model
         }))
     };
 }
@@ -507,18 +688,27 @@ module.exports = {
     clearCache,
     
     // Helper functions for advanced usage
-    cleanMessage,
-    chunkMessage,
-    isDuplicate: (chatId, text, model) => isDuplicate(chatId, text, model),
+    processMessage,
+    chunkMessage: (content, options = {}) => chunkMessage(processMessage(content, options), options),
+    detectModel,
+    addAutoEmojis,
+    applyTextStyling,
+    isDuplicate: (chatId, text, model) => {
+        const processed = processMessage(text, { model });
+        return isDuplicate(chatId, processed.text, processed.model);
+    },
     
     // Configuration
     CONFIG
 };
 
-console.log('🚀 Perfect Telegram Splitter v4.0 loaded');
-console.log('✅ GPT-5 optimized delivery');
-console.log('✅ Smart chunking with format preservation');
-console.log('✅ Simple duplicate prevention'); 
-console.log('✅ Automatic retry with exponential backoff');
-console.log('✅ Memory-efficient caching');
-console.log('📈 Production ready!');
+console.log('Perfect Telegram Splitter v4.0 loaded');
+console.log('- Smart GPT model detection from content');
+console.log('- Auto-emoji enhancement for financial/business terms');
+console.log('- Model-specific text styling and delays');
+console.log('- Intelligent chunking with branded headers');
+console.log('- Simple duplicate prevention');
+console.log('- Automatic retry with exponential backoff');
+console.log('- Memory-efficient caching');
+console.log(`- ${Object.keys(CONFIG.MODELS).length} model configurations loaded`);
+console.log('Ready for production!');
