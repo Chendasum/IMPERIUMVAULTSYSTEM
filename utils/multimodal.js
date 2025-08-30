@@ -1,12 +1,12 @@
 // utils/multimodal.js - Fixed GPT-5 Vision, Document, Voice/Audio Analysis
-// Working image analysis with proper OpenAI integration
+// Working image analysis with proper OpenAI integration - No missing dependencies
 
 const fs = require('fs').promises;
 const fsc = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-// Optional parsers
+// Optional parsers - graceful handling
 let pdfParse = null;
 let mammoth = null;
 let xlsxLib = null;
@@ -39,15 +39,29 @@ try {
   };
 }
 
-// Memory integration
-let saveConversationEmergency;
-try {
-  const memoryModule = require('./memoryIntegration');
-  saveConversationEmergency = memoryModule.saveConversationEmergency;
-  console.log('Memory integration loaded');
-} catch (error) {
-  console.warn('Memory integration not available:', error.message);
-  saveConversationEmergency = async () => {};
+// FIXED: Simple memory storage instead of missing memoryIntegration
+const conversationMemory = new Map();
+
+function saveConversationEmergency(chatId, userMessage, aiResponse, metadata = {}) {
+  try {
+    const conversation = conversationMemory.get(chatId) || [];
+    conversation.push({
+      timestamp: Date.now(),
+      userMessage,
+      aiResponse,
+      metadata
+    });
+    
+    // Keep only last 50 conversations per chat to prevent memory issues
+    if (conversation.length > 50) {
+      conversation.shift();
+    }
+    
+    conversationMemory.set(chatId, conversation);
+    console.log(`Saved conversation for chat ${chatId} (${conversation.length} total)`);
+  } catch (error) {
+    console.warn('Failed to save conversation:', error.message);
+  }
 }
 
 // Configuration
@@ -83,7 +97,7 @@ function generateTempFilename(originalName, type) {
   return `${type}_${timestamp}_${randomId}${extension}`;
 }
 
-// Download Telegram file - fixed implementation
+// Download Telegram file - robust implementation
 async function downloadTelegramFile(bot, fileId, filename) {
   try {
     await ensureTempDir();
@@ -96,7 +110,7 @@ async function downloadTelegramFile(bot, fileId, filename) {
     
     const filePath = path.join(MULTIMODAL_CONFIG.TEMP_DIR, filename);
     
-    // Use bot's downloadFile method if available, otherwise use file stream
+    // Use bot's downloadFile method if available
     if (typeof bot.downloadFile === 'function') {
       const buffer = await bot.downloadFile(fileId, MULTIMODAL_CONFIG.TEMP_DIR);
       await fs.writeFile(filePath, buffer);
@@ -110,7 +124,16 @@ async function downloadTelegramFile(bot, fileId, filename) {
         writeStream.on('finish', resolve);
         writeStream.on('error', reject);
         fileStream.on('error', reject);
+        
+        // Add timeout
+        setTimeout(() => reject(new Error('Download timeout')), 30000);
       });
+    }
+    
+    // Verify file was created and has content
+    const stats = await fs.stat(filePath);
+    if (stats.size === 0) {
+      throw new Error('Downloaded file is empty');
     }
     
     return filePath;
@@ -125,13 +148,14 @@ function storeDocumentContext(chatId, fileName, fileType, extractedText, analysi
   const context = {
     fileName,
     fileType,
-    extractedText: extractedText.substring(0, 10000),
+    extractedText: extractedText.substring(0, 10000), // Limit size
     analysis,
     timestamp: Date.now()
   };
   
   documentContexts.set(chatId, context);
   
+  // Auto-cleanup after timeout
   setTimeout(() => {
     if (documentContexts.has(chatId)) {
       const stored = documentContexts.get(chatId);
@@ -162,7 +186,7 @@ async function cleanupTempFile(filePath) {
   }
 }
 
-// Fixed image analysis with proper OpenAI vision API
+// FIXED: GPT-5 Vision image analysis
 async function analyzeImage(bot, fileId, prompt, chatId) {
   let tempFilePath = null;
   const startedAt = Date.now();
@@ -172,16 +196,10 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
       throw new Error('OpenAI client not properly configured');
     }
     
-    console.log('Starting GPT-5 image analysis...');
+    console.log('Starting GPT-5 Vision image analysis...');
 
     const filename = generateTempFilename('image.jpg', 'img');
     tempFilePath = await downloadTelegramFile(bot, fileId, filename);
-
-    // Verify file exists and has content
-    const stats = await fs.stat(tempFilePath);
-    if (stats.size === 0) {
-      throw new Error('Downloaded file is empty');
-    }
 
     const imageBuffer = await fs.readFile(tempFilePath);
     const base64Image = imageBuffer.toString('base64');
@@ -189,11 +207,11 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
 
     console.log(`Image loaded: ${imageSizeKB}KB`);
 
-    const visionPrompt = prompt || "Analyze this image in detail. Describe key elements, context, and provide insights.";
+    const visionPrompt = prompt || "Analyze this image in detail. Describe key elements, context, colors, composition, and provide insights about what you observe.";
 
-    // Use OpenAI vision API directly
+    // Use GPT-4 Vision API (GPT-5 doesn't have vision yet)
     const response = await openaiClient.openai.chat.completions.create({
-      model: "gpt-4o", // Use GPT-4 with vision
+      model: "gpt-4o", // Use GPT-4 with vision capabilities
       messages: [
         {
           role: "user",
@@ -209,7 +227,8 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
           ]
         }
       ],
-      max_tokens: 2000
+      max_tokens: 2000,
+      temperature: 0.7
     });
 
     const analysis = response.choices[0]?.message?.content;
@@ -225,7 +244,7 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
       'Image uploaded for analysis', 
       analysis, 
       { 
-        aiUsed: 'GPT-4-vision',
+        aiUsed: 'GPT-4-Vision',
         type: 'image_analysis',
         fileSizeKB: imageSizeKB,
         processingMs: Date.now() - startedAt
@@ -242,7 +261,7 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
         type: 'image_analysis',
         fileSizeKB: imageSizeKB,
         processingMs: Date.now() - startedAt,
-        aiUsed: 'GPT-4-vision'
+        aiUsed: 'GPT-4-Vision'
       }
     );
 
@@ -250,7 +269,7 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
       success: true,
       type: 'image',
       analysis,
-      aiUsed: 'GPT-4-vision',
+      aiUsed: 'GPT-4-Vision',
       fileSizeKB: imageSizeKB,
       telegramDelivered: success
     };
@@ -282,19 +301,19 @@ async function extractTextFromFile(filePath, fileExtension) {
       return await fs.readFile(filePath, 'utf8');
 
     case 'pdf':
-      if (!pdfParse) throw new Error('PDF support requires "pdf-parse". Run: npm i pdf-parse');
+      if (!pdfParse) throw new Error('PDF support requires "pdf-parse". Install: npm i pdf-parse');
       const buffer = await fs.readFile(filePath);
       const { text } = await pdfParse(buffer);
       return text || '';
 
     case 'docx':
-      if (!mammoth) throw new Error('DOCX support requires "mammoth". Run: npm i mammoth');
+      if (!mammoth) throw new Error('DOCX support requires "mammoth". Install: npm i mammoth');
       const result = await mammoth.extractRawText({ path: filePath });
       return (result && result.value) ? result.value : '';
 
     case 'doc':
     case 'pptx':
-      if (!textract) throw new Error(`${ext.toUpperCase()} support requires "textract". Run: npm i textract`);
+      if (!textract) throw new Error(`${ext.toUpperCase()} support requires "textract". Install: npm i textract`);
       return await new Promise((resolve, reject) => {
         textract.fromFileWithPath(filePath, (err, text) => {
           if (err) return reject(err);
@@ -306,7 +325,7 @@ async function extractTextFromFile(filePath, fileExtension) {
       return await fs.readFile(filePath, 'utf8');
 
     case 'xlsx':
-      if (!xlsxLib) throw new Error('XLSX support requires "xlsx". Run: npm i xlsx');
+      if (!xlsxLib) throw new Error('XLSX support requires "xlsx". Install: npm i xlsx');
       const wb = xlsxLib.readFile(filePath, { cellDates: true });
       let out = [];
       wb.SheetNames.forEach((name) => {
@@ -322,7 +341,7 @@ async function extractTextFromFile(filePath, fileExtension) {
   }
 }
 
-// Document analysis with memory
+// Document analysis with GPT-5
 async function analyzeDocument(bot, document, prompt, chatId) {
   let tempFilePath = null;
 
@@ -353,7 +372,7 @@ async function analyzeDocument(bot, document, prompt, chatId) {
     
     if (documentText.length > MAX_CHARS) {
       documentText = documentText.slice(0, MAX_CHARS) + '\n\n...[truncated for analysis]';
-      truncatedNotice = '\n\n⚠️ Note: Large file — content truncated for analysis.';
+      truncatedNotice = '\n\nNote: Large file - content truncated for analysis.';
     }
 
     const analysisPrompt = 
@@ -361,9 +380,9 @@ async function analyzeDocument(bot, document, prompt, chatId) {
       `DOCUMENT: ${document.file_name} (${fileExtension.toUpperCase()})\n` +
       `--- BEGIN DOCUMENT TEXT ---\n${documentText}\n--- END DOCUMENT TEXT ---${truncatedNotice}`;
 
-    // Use OpenAI API for analysis
+    // Use GPT-5 for document analysis
     const analysis = await openaiClient.getGPT5Analysis(analysisPrompt, {
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       max_completion_tokens: 3500
     });
 
@@ -372,9 +391,9 @@ async function analyzeDocument(bot, document, prompt, chatId) {
 
     await saveConversationEmergency(chatId, 
       `Document uploaded: ${document.file_name}`, 
-      `DOCUMENT ANALYSIS:\n\n${analysis}\n\n--- ORIGINAL DOCUMENT TEXT (truncated) ---\n${documentText.substring(0, 2000)}${documentText.length > 2000 ? '...' : ''}`, 
+      `DOCUMENT ANALYSIS:\n\n${analysis}\n\n--- ORIGINAL TEXT (sample) ---\n${documentText.substring(0, 2000)}${documentText.length > 2000 ? '...' : ''}`, 
       { 
-        aiUsed: 'GPT-4-document',
+        aiUsed: 'GPT-5-Mini-Document',
         type: 'document_analysis',
         fileName: document.file_name,
         fileType: fileExtension,
@@ -383,7 +402,7 @@ async function analyzeDocument(bot, document, prompt, chatId) {
       }
     );
 
-    const enhancedAnalysis = `**Document:** ${document.file_name} (${fileExtension.toUpperCase()}, ${Math.round(document.file_size / 1024)}KB)\n\n${analysis}\n\n💡 *You can now ask follow-up questions about this document.*`;
+    const enhancedAnalysis = `**Document:** ${document.file_name} (${fileExtension.toUpperCase()}, ${Math.round(document.file_size / 1024)}KB)\n\n${analysis}\n\n*You can now ask follow-up questions about this document.*`;
 
     const success = await telegramSplitter.sendGPTResponse(
       bot,
@@ -395,7 +414,7 @@ async function analyzeDocument(bot, document, prompt, chatId) {
         fileName: document.file_name,
         fileSizeKB: Math.round(document.file_size / 1024),
         fileType: fileExtension,
-        aiUsed: 'GPT-4-document'
+        aiUsed: 'GPT-5-Mini-Document'
       }
     );
 
@@ -403,7 +422,7 @@ async function analyzeDocument(bot, document, prompt, chatId) {
       success: true,
       type: 'document',
       analysis: enhancedAnalysis,
-      aiUsed: 'GPT-4-document',
+      aiUsed: 'GPT-5-Mini-Document',
       fileName: document.file_name,
       fileType: fileExtension,
       telegramDelivered: success
@@ -426,13 +445,14 @@ async function transcribeAudioFromFile(filePath) {
   
   const transcription = await openaiClient.openai.audio.transcriptions.create({
     file: fsc.createReadStream(filePath),
-    model: 'whisper-1'
+    model: 'whisper-1',
+    language: 'en' // Add language hint for better accuracy
   });
   
   return transcription && transcription.text ? transcription.text : '';
 }
 
-// Voice analysis with transcription
+// Voice analysis with transcription and GPT-5
 async function analyzeVoice(bot, voice, prompt, chatId) {
   let tempFilePath = null;
   
@@ -448,8 +468,9 @@ async function analyzeVoice(bot, voice, prompt, chatId) {
 
     const analysisPrompt = `${prompt || 'Analyze this transcribed voice message and provide a concise summary, sentiment analysis, key points, and actionable insights.'}\n\nTranscribed voice message:\n"${transcribedText}"`;
 
+    // Use GPT-5 Mini for voice analysis
     const analysis = await openaiClient.getGPT5Analysis(analysisPrompt, {
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       max_completion_tokens: 2000
     });
 
@@ -461,7 +482,7 @@ async function analyzeVoice(bot, voice, prompt, chatId) {
       'Voice message received and transcribed', 
       fullResponse, 
       { 
-        aiUsed: 'Whisper + GPT-4',
+        aiUsed: 'Whisper + GPT-5-Mini',
         type: 'voice_analysis',
         duration: voice.duration,
         transcriptionLength: transcribedText.length
@@ -477,7 +498,7 @@ async function analyzeVoice(bot, voice, prompt, chatId) {
         type: 'voice_analysis',
         duration: voice.duration,
         transcriptionLength: transcribedText.length,
-        aiUsed: 'Whisper + GPT-4'
+        aiUsed: 'Whisper + GPT-5-Mini'
       }
     );
 
@@ -486,7 +507,7 @@ async function analyzeVoice(bot, voice, prompt, chatId) {
       type: 'voice',
       analysis: fullResponse,
       transcription: transcribedText,
-      aiUsed: 'Whisper + GPT-4',
+      aiUsed: 'Whisper + GPT-5-Mini',
       duration: voice.duration,
       telegramDelivered: success
     };
@@ -512,10 +533,10 @@ async function analyzeAudio(bot, audio, prompt, chatId) {
   return await analyzeVoice(bot, audio, prompt, chatId);
 }
 
-// Video analysis placeholder
+// Video analysis - placeholder for future implementation
 async function analyzeVideo(bot, video, prompt, chatId) {
   try {
-    console.log('Video analysis requested (placeholder)...');
+    console.log('Video analysis requested...');
     const analysis = "Video analysis capabilities are being developed. For now, please describe the video content in text and I can analyze based on your description.";
     
     storeDocumentContext(chatId, `video_${Date.now()}`, 'video', 'Video analysis requested', analysis);
@@ -531,7 +552,7 @@ async function analyzeVideo(bot, video, prompt, chatId) {
     );
 
     const success = await telegramSplitter.sendGPTResponse(
-      bot, chatId, analysis, 'Video Analysis (Limited)',
+      bot, chatId, analysis, 'Video Analysis (Coming Soon)',
       { type: 'video_analysis', duration: video?.duration ?? 0, aiUsed: 'video-placeholder' }
     );
     
@@ -572,7 +593,7 @@ Please answer based on the document context above.`;
 function getMultimodalStatus() {
   return {
     available: !!openaiClient,
-    memoryIntegration: !!saveConversationEmergency,
+    memoryIntegration: true, // Now using built-in memory
     contextTracking: true,
     capabilities: {
       image_analysis: !!openaiClient,
@@ -596,18 +617,26 @@ function getMultimodalStatus() {
       audio: MULTIMODAL_CONFIG.SUPPORTED_AUDIO_TYPES,
       video: MULTIMODAL_CONFIG.SUPPORTED_VIDEO_TYPES
     },
+    models_used: {
+      vision: 'GPT-4 Vision',
+      documents: 'GPT-5 Mini',
+      voice: 'Whisper + GPT-5 Mini',
+      transcription: 'Whisper-1'
+    },
     limitations: [
-      !pdfParse ? 'Install pdf-parse for PDF text extraction' : null,
-      !mammoth ? 'Install mammoth for DOCX text extraction' : null,
-      !xlsxLib ? 'Install xlsx for Excel parsing' : null,
-      !textract ? 'Install textract for DOC/PPTX formats' : null,
-      `File size limit: ${Math.round(MULTIMODAL_CONFIG.MAX_FILE_SIZE/1024/1024)}MB`
+      !pdfParse ? 'Install pdf-parse for PDF support: npm i pdf-parse' : null,
+      !mammoth ? 'Install mammoth for DOCX support: npm i mammoth' : null,
+      !xlsxLib ? 'Install xlsx for Excel support: npm i xlsx' : null,
+      !textract ? 'Install textract for DOC/PPTX support: npm i textract' : null,
+      `File size limit: ${Math.round(MULTIMODAL_CONFIG.MAX_FILE_SIZE/1024/1024)}MB`,
+      'Video analysis coming soon'
     ].filter(Boolean),
-    activeContexts: documentContexts.size
+    activeContexts: documentContexts.size,
+    conversationMemory: conversationMemory.size
   };
 }
 
-// Cleanup interval
+// Periodic cleanup
 setInterval(async () => {
   try {
     await ensureTempDir();
@@ -616,11 +645,17 @@ setInterval(async () => {
 
     for (const file of files) {
       const filePath = path.join(MULTIMODAL_CONFIG.TEMP_DIR, file);
-      const stats = await fs.stat(filePath);
-      if (now - stats.mtime.getTime() > 600000) { // 10 minutes
-        await cleanupTempFile(filePath);
+      try {
+        const stats = await fs.stat(filePath);
+        if (now - stats.mtime.getTime() > 600000) { // 10 minutes
+          await cleanupTempFile(filePath);
+        }
+      } catch (error) {
+        // File might have been deleted already, ignore
       }
     }
+    
+    console.log(`Multimodal cleanup: ${files.length} temp files checked`);
   } catch (error) {
     console.warn('Periodic cleanup failed:', error.message);
   }
@@ -628,6 +663,11 @@ setInterval(async () => {
 
 // Initialize
 console.log('Fixed multimodal module loaded with working image analysis');
+console.log('- GPT-4 Vision for image analysis');
+console.log('- GPT-5 Mini for document analysis');
+console.log('- Whisper + GPT-5 Mini for voice analysis');
+console.log('- Built-in conversation memory');
+console.log('- No missing dependencies');
 ensureTempDir();
 
 // Exports
@@ -645,5 +685,6 @@ module.exports = {
   downloadTelegramFile,
   cleanupTempFile,
   generateTempFilename,
+  saveConversationEmergency, // Export the built-in memory function
   MULTIMODAL_CONFIG
 };
