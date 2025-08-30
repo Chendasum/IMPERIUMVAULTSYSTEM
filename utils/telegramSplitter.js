@@ -29,6 +29,22 @@ class TelegramFormatter {
         this.MAX_MESSAGE_LENGTH = this.config.MAX_MESSAGE_LENGTH;
         this.PREFERRED_CHUNK_SIZE = this.config.CHUNK_TARGET;
         
+        // Circuit breaker for delivery failures
+        this.circuitBreaker = {
+            failures: 0,
+            isOpen: false,
+            lastFailure: null,
+            resetTime: 60000 // Reset after 1 minute
+        };
+        
+        // Delivery metrics
+        this.metrics = {
+            totalSent: 0,
+            totalFailed: 0,
+            averageDelay: this.config.DELAY_MS,
+            lastSuccessTime: Date.now()
+        };
+        
         // Emoji mappings for different content types
         this.emojiMap = {
             // Status and indicators
