@@ -1696,49 +1696,6 @@ function createErrorTelegramSender(chatId, errorResponse, originalError) {
         return false;
       }
 
-      // Try enhanced delivery first
-      try {
-        const { sendTelegramMessage } = require('./telegramSplitter');
-        
-        const result = await sendTelegramMessage(bot, chatId, errorResponse, {
-          model: 'error-handler',
-          costTier: 'free',
-          error: true,
-          originalError: originalError
-        });
-        
-        if (result.success) {
-          console.log('✅ Enhanced error delivery successful');
-          return true;
-        }
-        
-      } catch (enhancedError) {
-        console.log('⚠️ Enhanced error delivery failed, using basic fallback');
-      }
-      
-      // Basic fallback
-      if (bot && bot.sendMessage) {
-        await bot.sendMessage(chatId, errorResponse);
-        console.log('✅ Basic error delivery: Success');
-        return true;
-      }
-
-      return false;
-    } catch (telegramError) {
-      console.error('❌ Error telegram delivery failed:', telegramError.message);
-      return false;
-    }
-  };
-}
-
-function createErrorTelegramSender(chatId, errorResponse, originalError) {
-  return async (bot) => {
-    try {
-      if (!bot || !chatId) {
-        console.warn(`Error delivery skipped: bot or chatId missing (chatId=${chatId})`);
-        return false;
-      }
-
       const { telegramSplitter } = require('./dualCommandSystem');
 
       if (telegramSplitter && typeof telegramSplitter.sendAlert === 'function') {
