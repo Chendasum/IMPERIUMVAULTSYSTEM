@@ -1605,144 +1605,140 @@ function getCostTier(model) {
   }
 }
 
-// REPLACE the createTelegramSender function in your dualCommandSystem.js with this enhanced version:
+// --- Telegram wiring helpers (put near the top of dualcommandsystem.js) ---
+const { setupTelegramHandler } = require('./utils/telegramSplitter');
 
+let __tgHandlerSingleton = null;
+function getTelegramHandler(bot) {
+  // Simple singleton per process. If you run multiple bots, replace with a Map keyed by bot.
+  if (!__tgHandlerSingleton) __tgHandlerSingleton = setupTelegramHandler(bot);
+  return __tgHandlerSingleton;
+}
+
+function sget(obj, path, defVal) { // safe getter (avoids optional chaining)
+  try {
+    var parts = String(path).split('.');
+    var cur = obj;
+    for (var i = 0; i < parts.length; i++) {
+      if (cur == null) return defVal;
+      cur = cur[parts[i]];
+    }
+    return (cur == null) ? defVal : cur;
+  } catch (e) { return defVal; }
+}
+
+function resolveModelName(modelUsed) {
+  var M = (typeof CONFIG !== 'undefined' && CONFIG.MODELS) ? CONFIG.MODELS : {};
+  if (modelUsed === M.NANO) return 'gpt-5-nano';
+  if (modelUsed === M.MINI) return 'gpt-5-mini';
+  if (modelUsed === M.FULL) return 'gpt-5';
+  if (modelUsed === M.CHAT) return 'gpt-5-chat-latest';
+  return modelUsed || 'gpt-5';
+}
+
+function resolveModelLabel(modelUsed) {
+  var M = (typeof CONFIG !== 'undefined' && CONFIG.MODELS) ? CONFIG.MODELS : {};
+  if (modelUsed === M.NANO) return 'Nano';
+  if (modelUsed === M.MINI) return 'Mini';
+  if (modelUsed === M.FULL) return 'Full';
+  if (modelUsed === M.CHAT) return 'Chat';
+  return 'GPT-5';
+}
+
+// --- REPLACE your createTelegramSender with this ---
 function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, responseTime, contextUsed) {
-  return async (bot, title = null) => {
+  return async function (bot, title) {
     try {
       if (!bot || !chatId) {
-        console.warn(`Delivery skipped: bot or chatId missing (chatId=${chatId})`);
+        console.warn('Delivery skipped: bot or chatId missing (chatId=' + chatId + ')');
         return false;
       }
 
-      // ✅ FIXED: Use the new enhanced telegram splitter
-      try {
-        const { sendTelegramMessage, setupTelegramHandler } = require('./telegramSplitter');
-        
-        // Determine model used
-        const modelUsed = gpt5Result?.modelUsed || queryAnalysis?.gpt5Model || 'gpt-5-mini';
-        
-        // Prepare comprehensive metadata for model detection and display
-        const metadata = {
-          model: modelUsed,
-          executionTime: responseTime,
-          costTier: getCostTier(modelUsed),
-          tokens: gpt5Result?.tokensUsed || 'estimated',
-          cost: gpt5Result?.cost || calculateEstimatedCost(modelUsed, response.length),
-          complexity: queryAnalysis?.complexity?.complexity || 'medium',
-          confidence: gpt5Result?.confidence || queryAnalysis?.confidence || 0.75,
-          reasoning: queryAnalysis?.reasoning_effort,
-          verbosity: queryAnalysis?.verbosity,
-          contextUsed,
-          fallbackUsed: gpt5Result?.fallbackUsed || false,
-          completionDetected: gpt5Result?.completionDetected || false
-        };
-        
-        console.log(`📤 Using enhanced Telegram delivery for model: ${modelUsed}`);
-        
-        // Use enhanced delivery with full model detection
-        const result = await sendTelegramMessage(bot, chatId, response, metadata);
-        
-        if (result.enhanced) {
-          console.log(`✅ Enhanced delivery: ${result.chunks} chunks sent, model: ${result.model || modelUsed}`);
-          return true;
-        } else if (result.fallback) {
-          console.log('⚠️ Enhanced delivery failed, used basic fallback');
-          return true;
-        } else {
-          console.log('❌ Enhanced delivery completely failed');
-          return false;
-        }
-        
-      } catch (enhancedError) {
-        console.error('❌ Enhanced telegram delivery failed:', enhancedError.message);
-        console.log('🔄 Falling back to basic telegram send...');
-        
-        // Fallback to basic send
-        if (bot && bot.sendMessage && chatId) {
-          await bot.sendMessage(chatId, response);
-          console.log('✅ Basic fallback: Success');
-          return true;
-        }
-        
-        return false;
-      }
+      // Use the new splitter handler (formats, splits, retries internally)
+      var tg = getTelegramHandler(bot);
 
-    } catch (generalError) {
-      console.error('❌ All telegram delivery methods failed:', generalError.message);
-      return false;
-    }
-  };
-}
+      // Determine model + title
+      var modelUsed = sget(gpt5Result, 'modelUsed', sget(queryAnalysis, 'gpt5Model', null));
+      var modelLabel = resolveModelLabel(modelUsed);
+      var completionDetected = !!sget(gpt5Result, 'completionDetected', false);
 
-// ✅ ALSO ADD this helper function to calculate estimated cost:
-function calculateEstimatedCost(model, responseLength) {
-  const estimatedTokens = Math.ceil(responseLength / 3.5); // Rough token estimation
-  const costPerMillion = {
-    'gpt-5-nano': 0.40,
-    'gpt-5-mini': 2.00,
-    'gpt-5': 10.00,
-    'gpt-5-chat-latest': 10.00
-  };
-  
-  const rate = costPerMillion[model] || costPerMillion['gpt-5-mini'];
-  return ((estimatedTokens * rate) / 1000000).toFixed(6);
-}
+      var defaultTitle = completionDetected
+        ? 'Task Completion Acknowledged'
+        : ('GPT-5 ' + modelLabel + ' Analysis');
 
-// ✅ UPDATE the createErrorTelegramSender function too:
-function createErrorTelegramSender(chatId, errorResponse, originalError) {
-  return async (bot) => {
-    try {
-      if (!bot || !chatId) {
-        console.warn(`Error delivery skipped: bot or chatId missing (chatId=${chatId})`);
-        return false;
-      }
+      var finalTitle = title || defaultTitle;
 
-      // Try enhanced delivery first
-      try {
-        const { sendTelegramMessage } = require('./telegramSplitter');
-        
-        const result = await sendTelegramMessage(bot, chatId, errorResponse, {
-          model: 'error-handler',
-          costTier: 'free',
-          error: true,
-          originalError: originalError
-        });
-        
-        if (result.success) {
-          console.log('✅ Enhanced error delivery successful');
-          return true;
-        }
-        
-      } catch (enhancedError) {
-        console.log('⚠️ Enhanced error delivery failed, using basic fallback');
-      }
-      
-      // Basic fallback
-      if (bot && bot.sendMessage) {
-        await bot.sendMessage(chatId, errorResponse);
-        console.log('✅ Basic error delivery: Success');
-        return true;
-      }
+      // Build metadata for the header
+      var metadata = {
+        title: finalTitle,
+        ms: responseTime,
+        contextUsed: contextUsed,
+        complexity: sget(queryAnalysis, 'complexity.complexity', 'medium'),
+        confidence: sget(gpt5Result, 'confidence', sget(queryAnalysis, 'confidence', 0.75)),
+        model: resolveModelName(modelUsed),
+        reasoning: sget(queryAnalysis, 'reasoning_effort', null),
+        verbosity: sget(queryAnalysis, 'verbosity', null),
+        costTier: (typeof getCostTier === 'function')
+          ? getCostTier(modelUsed || resolveModelName(modelUsed))
+          : 'standard',
+        fallbackUsed: !!sget(gpt5Result, 'fallbackUsed', false),
+        completionDetected: completionDetected
+      };
 
-      return false;
+      // Send via splitter (nice header + safe Markdown + 4096 split)
+      var res = await tg.sendGPTResponse(String(response), metadata, chatId);
+      return !!(res && res.success);
+
     } catch (telegramError) {
-      console.error('❌ Error telegram delivery failed:', telegramError.message);
+      console.error('Telegram delivery error:', telegramError && telegramError.message ? telegramError.message : telegramError);
+
+      // Last-resort fallback: plain send
+      try {
+        if (bot && bot.sendMessage && chatId) {
+          await bot.sendMessage(chatId, String(response));
+          return true;
+        }
+      } catch (fallbackError) {
+        console.error('Telegram fallback also failed:', fallbackError && fallbackError.message ? fallbackError.message : fallbackError);
+      }
       return false;
     }
   };
 }
 
+// --- REPLACE your createErrorTelegramSender with this ---
+function createErrorTelegramSender(chatId, errorResponse, originalError) {
+  return async function (bot) {
+    try {
+      if (!bot || !chatId) {
+        console.warn('Error delivery skipped: bot or chatId missing (chatId=' + chatId + ')');
+        return false;
+      }
+
+      var tg = getTelegramHandler(bot);
+      var errObj = originalError instanceof Error ? originalError : new Error(String(errorResponse));
+      var res = await tg.sendError(errObj, 'System Error', chatId);
+      return !!(res && res.success);
+
+    } catch (telegramError) {
+      console.error('Error telegram delivery failed:', telegramError && telegramError.message ? telegramError.message : telegramError);
+      return false;
+    }
+  };
+}
+
+// keep your logs
 console.log('Secure GPT-5 Command System - PART 4/6 loaded');
 console.log('Features: Main execution engine, result processing, telegram integration');
 
-// Export functions for Part 5
+// ensure exports include createErrorTelegramSender
 module.exports = {
   executeDualCommand,
   createCompletionResponse,
   createErrorResponse,
   getCostTier,
-  createTelegramSender
+  createTelegramSender,
+  createErrorTelegramSender
 };
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 5/6
