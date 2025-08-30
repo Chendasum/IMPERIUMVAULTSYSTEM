@@ -1291,8 +1291,8 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
 
     // 2) Build memory context (only for non-test conversations)
     const isSystemTest =
-      userMessage.toLowerCase().includes('test memory') ||
-      userMessage.toLowerCase().includes('integration test') ||
+      String(userMessage).toLowerCase().includes('test memory') ||
+      String(userMessage).toLowerCase().includes('integration test') ||
       options.forceMemoryTest === true;
 
     let memoryContext = options.memoryContext || '';
@@ -1321,7 +1321,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
     // 3.1) 🔁 Handle completion detection FIRST (no model required)
     if (queryAnalysis.shouldSkipGPT5) {
       console.log(`Completion detected: ${queryAnalysis.completionStatus.completionType}`);
-      return createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime);
+      return createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime, chatId);
     }
 
     // 4) Validate the analysis (after completion short-circuit)
@@ -1484,7 +1484,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
 
 // HELPER FUNCTIONS
 
-function createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime) {
+function createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime, chatId) {
   const responseTime = Date.now() - startTime;
 
   updateSystemStats('completion_detection', true, responseTime, 'completion', 'none');
@@ -1529,12 +1529,12 @@ function createCompletionResponse(queryAnalysis, memoryContext, memoryData, star
     costTier: 'free',
     timestamp: new Date().toISOString(),
 
-    // Telegram integration
+    // Telegram integration (✅ pass the real chatId)
     sendToTelegram: createTelegramSender(
-      null,
+      chatId,
       queryAnalysis.quickResponse,
       queryAnalysis,
-      { completionDetected: true },
+      { completionDetected: true, modelUsed: CONFIG?.MODELS?.MINI },
       responseTime,
       memoryContext.length > 0
     )
@@ -1608,11 +1608,16 @@ function getCostTier(model) {
 function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, responseTime, contextUsed) {
   return async (bot, title = null) => {
     try {
+      if (!bot || !chatId) {
+        console.warn(`Delivery skipped: bot or chatId missing (chatId=${chatId})`);
+        return false;
+      }
+
       const { telegramSplitter } = require('./dualCommandSystem');
 
       if (!telegramSplitter || typeof telegramSplitter.sendGPT5 !== 'function') {
         console.warn('Telegram splitter not available, using basic send');
-        if (bot && bot.sendMessage) {
+        if (bot && bot.sendMessage && chatId) {
           await bot.sendMessage(chatId, response);
           return true;
         }
@@ -1685,7 +1690,7 @@ function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, respo
 
       // Fallback to basic telegram send
       try {
-        if (bot && bot.sendMessage) {
+        if (bot && bot.sendMessage && chatId) {
           await bot.sendMessage(chatId, response);
           return true;
         }
@@ -1701,6 +1706,11 @@ function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, respo
 function createErrorTelegramSender(chatId, errorResponse, originalError) {
   return async (bot) => {
     try {
+      if (!bot || !chatId) {
+        console.warn(`Error delivery skipped: bot or chatId missing (chatId=${chatId})`);
+        return false;
+      }
+
       const { telegramSplitter } = require('./dualCommandSystem');
 
       if (telegramSplitter && typeof telegramSplitter.sendAlert === 'function') {
