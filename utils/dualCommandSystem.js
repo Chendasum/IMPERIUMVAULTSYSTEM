@@ -1641,6 +1641,8 @@ function getCostTier(model) {
   }
 }
 
+// REPLACE the createTelegramSender function in your dualCommandSystem.js with this enhanced version:
+
 function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, responseTime, contextUsed) {
   return async (bot, title = null) => {
     try {
@@ -1649,96 +1651,81 @@ function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, respo
         return false;
       }
 
-      const { telegramSplitter } = require('./dualCommandSystem');
-
-      if (!telegramSplitter || typeof telegramSplitter.sendGPT5 !== 'function') {
-        console.warn('Telegram splitter not available, using basic send');
+      // ✅ FIXED: Use the new enhanced telegram splitter
+      try {
+        const { sendTelegramMessage, setupTelegramHandler } = require('./telegramSplitter');
+        
+        // Determine model used
+        const modelUsed = gpt5Result?.modelUsed || queryAnalysis?.gpt5Model || 'gpt-5-mini';
+        
+        // Prepare comprehensive metadata for model detection and display
+        const metadata = {
+          model: modelUsed,
+          executionTime: responseTime,
+          costTier: getCostTier(modelUsed),
+          tokens: gpt5Result?.tokensUsed || 'estimated',
+          cost: gpt5Result?.cost || calculateEstimatedCost(modelUsed, response.length),
+          complexity: queryAnalysis?.complexity?.complexity || 'medium',
+          confidence: gpt5Result?.confidence || queryAnalysis?.confidence || 0.75,
+          reasoning: queryAnalysis?.reasoning_effort,
+          verbosity: queryAnalysis?.verbosity,
+          contextUsed,
+          fallbackUsed: gpt5Result?.fallbackUsed || false,
+          completionDetected: gpt5Result?.completionDetected || false
+        };
+        
+        console.log(`📤 Using enhanced Telegram delivery for model: ${modelUsed}`);
+        
+        // Use enhanced delivery with full model detection
+        const result = await sendTelegramMessage(bot, chatId, response, metadata);
+        
+        if (result.enhanced) {
+          console.log(`✅ Enhanced delivery: ${result.chunks} chunks sent, model: ${result.model || modelUsed}`);
+          return true;
+        } else if (result.fallback) {
+          console.log('⚠️ Enhanced delivery failed, used basic fallback');
+          return true;
+        } else {
+          console.log('❌ Enhanced delivery completely failed');
+          return false;
+        }
+        
+      } catch (enhancedError) {
+        console.error('❌ Enhanced telegram delivery failed:', enhancedError.message);
+        console.log('🔄 Falling back to basic telegram send...');
+        
+        // Fallback to basic send
         if (bot && bot.sendMessage && chatId) {
           await bot.sendMessage(chatId, response);
+          console.log('✅ Basic fallback: Success');
           return true;
         }
+        
         return false;
       }
 
-      // Determine appropriate telegram method based on model
-      let telegramMethod;
-      const modelUsed = gpt5Result?.modelUsed || queryAnalysis?.gpt5Model;
-
-      switch (modelUsed) {
-        case CONFIG.MODELS.NANO:
-          telegramMethod = telegramSplitter.sendGPT5Nano;
-          break;
-        case CONFIG.MODELS.MINI:
-          telegramMethod = telegramSplitter.sendGPT5Mini;
-          break;
-        case CONFIG.MODELS.FULL:
-          telegramMethod = telegramSplitter.sendGPT5;
-          break;
-        case CONFIG.MODELS.CHAT:
-          telegramMethod = telegramSplitter.sendGPT5Chat;
-          break;
-        default:
-          telegramMethod = telegramSplitter.sendGPTResponse;
-      }
-
-      if (!telegramMethod) {
-        telegramMethod = telegramSplitter.sendGPTResponse;
-      }
-
-      // Generate appropriate title
-      const modelName =
-        modelUsed === CONFIG.MODELS.NANO
-          ? 'Nano'
-          : modelUsed === CONFIG.MODELS.MINI
-          ? 'Mini'
-          : modelUsed === CONFIG.MODELS.FULL
-          ? 'Full'
-          : modelUsed === CONFIG.MODELS.CHAT
-          ? 'Chat'
-          : 'GPT-5';
-
-      const defaultTitle = gpt5Result?.completionDetected
-        ? 'Task Completion Acknowledged'
-        : `GPT-5 ${modelName} Analysis`;
-
-      const finalTitle = title || defaultTitle;
-
-      // Prepare metadata
-      const metadata = {
-        responseTime,
-        contextUsed,
-        complexity: queryAnalysis?.complexity?.complexity || 'medium',
-        confidence: gpt5Result?.confidence || queryAnalysis?.confidence || 0.75,
-        model: modelUsed,
-        reasoning: queryAnalysis?.reasoning_effort,
-        verbosity: queryAnalysis?.verbosity,
-        costTier: getCostTier(modelUsed),
-        fallbackUsed: gpt5Result?.fallbackUsed || false,
-        completionDetected: gpt5Result?.completionDetected || false
-      };
-
-      return await telegramMethod(bot, chatId, response, {
-        title: finalTitle,
-        ...metadata
-      });
-    } catch (telegramError) {
-      console.error('Telegram delivery error:', telegramError.message);
-
-      // Fallback to basic telegram send
-      try {
-        if (bot && bot.sendMessage && chatId) {
-          await bot.sendMessage(chatId, response);
-          return true;
-        }
-      } catch (fallbackError) {
-        console.error('Telegram fallback also failed:', fallbackError.message);
-      }
-
+    } catch (generalError) {
+      console.error('❌ All telegram delivery methods failed:', generalError.message);
       return false;
     }
   };
 }
 
+// ✅ ALSO ADD this helper function to calculate estimated cost:
+function calculateEstimatedCost(model, responseLength) {
+  const estimatedTokens = Math.ceil(responseLength / 3.5); // Rough token estimation
+  const costPerMillion = {
+    'gpt-5-nano': 0.40,
+    'gpt-5-mini': 2.00,
+    'gpt-5': 10.00,
+    'gpt-5-chat-latest': 10.00
+  };
+  
+  const rate = costPerMillion[model] || costPerMillion['gpt-5-mini'];
+  return ((estimatedTokens * rate) / 1000000).toFixed(6);
+}
+
+// ✅ UPDATE the createErrorTelegramSender function too:
 function createErrorTelegramSender(chatId, errorResponse, originalError) {
   return async (bot) => {
     try {
@@ -1747,18 +1734,36 @@ function createErrorTelegramSender(chatId, errorResponse, originalError) {
         return false;
       }
 
-      const { telegramSplitter } = require('./dualCommandSystem');
-
-      if (telegramSplitter && typeof telegramSplitter.sendAlert === 'function') {
-        return await telegramSplitter.sendAlert(bot, chatId, errorResponse, 'System Error');
-      } else if (bot && bot.sendMessage) {
+      // Try enhanced delivery first
+      try {
+        const { sendTelegramMessage } = require('./telegramSplitter');
+        
+        const result = await sendTelegramMessage(bot, chatId, errorResponse, {
+          model: 'error-handler',
+          costTier: 'free',
+          error: true,
+          originalError: originalError
+        });
+        
+        if (result.success) {
+          console.log('✅ Enhanced error delivery successful');
+          return true;
+        }
+        
+      } catch (enhancedError) {
+        console.log('⚠️ Enhanced error delivery failed, using basic fallback');
+      }
+      
+      // Basic fallback
+      if (bot && bot.sendMessage) {
         await bot.sendMessage(chatId, errorResponse);
+        console.log('✅ Basic error delivery: Success');
         return true;
       }
 
       return false;
     } catch (telegramError) {
-      console.error('Error telegram delivery failed:', telegramError.message);
+      console.error('❌ Error telegram delivery failed:', telegramError.message);
       return false;
     }
   };
