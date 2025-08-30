@@ -1277,421 +1277,445 @@ module.exports = {
 
 // MAIN COMMAND EXECUTION FUNCTION
 async function executeDualCommand(userMessage, chatId, options = {}) {
-    const startTime = Date.now();
-    
-    try {
-        console.log(`Executing secure GPT-5 command for chat ${chatId}`);
-        console.log('Message preview:', userMessage.substring(0, 100));
-        
-        // Preprocess the query
-        const preprocessed = preprocessQuery(userMessage, options);
-        if (preprocessed.isEmpty) {
-            return createErrorResponse('Message too short or empty', startTime, chatId);
-        }
-        
-        // Build memory context (only for non-test conversations)
-        const isSystemTest = userMessage.toLowerCase().includes('test memory') || 
-                           userMessage.toLowerCase().includes('integration test') ||
-                           options.forceMemoryTest === true;
-        
-        let memoryContext = options.memoryContext || '';
-        let memoryData = {
-            conversationHistory: options.conversationHistory || [],
-            persistentMemory: options.persistentMemory || []
-        };
-        
-        if (!isSystemTest && !memoryContext && !options.conversationHistory && !options.persistentMemory) {
-            console.log('Building memory context for normal conversation...');
-            const memoryResult = await buildMemoryContext(chatId, { forceDatabaseFallback: options.forceDatabaseFallback });
-            memoryContext = memoryResult.context;
-            memoryData = memoryResult.memoryData;
-        }
-        
-        // Analyze query for optimal GPT-5 model selection
-        const queryAnalysis = analyzeQuery(
-            preprocessed.cleaned,
-            options.messageType || 'text',
-            options.hasMedia || false,
-            memoryContext
-        );
-        
-        // Validate the analysis
-        const validation = validateQueryAnalysis(queryAnalysis);
-        if (!validation.isValid) {
-            console.error('Query analysis validation failed:', validation.errors);
-            return createErrorResponse(`Analysis validation failed: ${validation.errors.join(', ')}`, startTime, chatId);
-        }
-        
-        if (validation.warnings.length > 0) {
-            console.warn('Query analysis warnings:', validation.warnings);
-        }
-        
-        // Handle completion detection BEFORE GPT-5 processing
-        if (queryAnalysis.shouldSkipGPT5) {
-            console.log(`Completion detected: ${queryAnalysis.completionStatus.completionType}`);
-            return createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime);
-        }
-        
-        // Override model if forced
-        if (options.forceModel && options.forceModel.includes('gpt-5')) {
-            queryAnalysis.gpt5Model = options.forceModel;
-            queryAnalysis.reason = `Forced to use ${options.forceModel}`;
-            console.log(`Model override: Using ${options.forceModel}`);
-        }
-        
-        console.log(`Query analysis complete:`, {
-            type: queryAnalysis.type,
-            priority: queryAnalysis.priority,
-            model: queryAnalysis.gpt5Model,
-            reasoning: queryAnalysis.reasoning_effort,
-            verbosity: queryAnalysis.verbosity,
-            confidence: queryAnalysis.confidence,
-            memoryImportant: queryAnalysis.memoryImportant,
-            estimatedCost: queryAnalysis.estimatedCost?.totalCost
-        });
-        
-        // Execute through GPT-5 system
-        let gpt5Result;
-        try {
-            gpt5Result = await executeThroughGPT5System(
-                preprocessed.cleaned,
-                queryAnalysis,
-                memoryContext,
-                memoryData,
-                chatId
-            );
-            
-            console.log(`GPT-5 execution successful:`, {
-                aiUsed: gpt5Result.aiUsed,
-                processingTime: gpt5Result.processingTime,
-                tokensUsed: gpt5Result.tokensUsed,
-                memoryUsed: gpt5Result.memoryUsed
-            });
-            
-        } catch (gpt5Error) {
-            console.error('GPT-5 system failed:', gpt5Error.message);
-            return createErrorResponse(gpt5Error.message, startTime, chatId, {
-                originalQuery: userMessage,
-                analysisAttempted: true,
-                queryAnalysis: queryAnalysis
-            });
-        }
-        
-        // Process the response
-        const processedResponse = processResponse(gpt5Result.response, queryAnalysis, {
-            chatId: chatId,
-            processingTime: gpt5Result.processingTime,
-            memoryUsed: gpt5Result.memoryUsed
-        });
-        
-        const totalResponseTime = Date.now() - startTime;
-        
-        // Build comprehensive result
-        const result = {
-            response: processedResponse,
-            success: true,
-            
-            // AI and model information
-            aiUsed: gpt5Result.aiUsed,
-            modelUsed: gpt5Result.modelUsed,
-            gpt5System: true,
-            
-            // Query analysis results
-            queryType: queryAnalysis.type,
-            priority: queryAnalysis.priority,
-            complexity: queryAnalysis.complexity?.complexity || 'medium',
-            reasoning: queryAnalysis.reason,
-            confidence: gpt5Result.confidence || queryAnalysis.confidence,
-            
-            // Processing information
-            processingTime: gpt5Result.processingTime,
-            totalResponseTime: totalResponseTime,
-            tokensUsed: gpt5Result.tokensUsed,
-            
-            // GPT-5 specific parameters
-            reasoning_effort: queryAnalysis.reasoning_effort,
-            verbosity: queryAnalysis.verbosity,
-            max_output_tokens: queryAnalysis.max_output_tokens,
-            
-            // Memory and context
-            memoryUsed: gpt5Result.memoryUsed,
-            contextLength: memoryContext.length,
-            memoryData: {
-                contextLength: memoryContext.length,
-                conversationRecords: memoryData.conversationHistory.length,
-                persistentMemories: memoryData.persistentMemory.length,
-                memoryImportant: queryAnalysis.memoryImportant,
-                memoryUsed: memoryContext.length > 0,
-                postgresqlConnected: memoryData.conversationHistory.length > 0 || memoryData.persistentMemory.length > 0
-            },
-            
-            // Cost and performance
-            costTier: getCostTier(queryAnalysis.gpt5Model),
-            costEstimate: queryAnalysis.estimatedCost,
-            fallbackUsed: gpt5Result.fallbackUsed || false,
-            costSaved: gpt5Result.costSaved || false,
-            
-            // Classification and analytics
-            powerMode: `GPT5_${queryAnalysis.priority.toUpperCase()}`,
-            analytics: {
-                queryComplexity: queryAnalysis.complexity?.complexity || 'medium',
-                domainClassification: queryAnalysis.type,
-                priorityLevel: queryAnalysis.priority,
-                modelOptimization: 'GPT-5 smart selection',
-                costOptimized: true,
-                performanceOptimized: true
-            },
-            
-            // System information
-            timestamp: new Date().toISOString(),
-            cambodiaTime: getCurrentCambodiaDateTime(),
-            
-            // Telegram integration
-            sendToTelegram: createTelegramSender(chatId, processedResponse, queryAnalysis, gpt5Result, totalResponseTime, memoryContext.length > 0)
-        };
-        
-        console.log(`Command execution complete:`, {
-            success: true,
-            aiUsed: result.aiUsed,
-            processingTime: result.processingTime,
-            tokensUsed: result.tokensUsed,
-            memoryUsed: result.memoryUsed,
-            costTier: result.costTier
-        });
-        
-        return result;
-        
-    } catch (error) {
-        console.error('Command execution error:', error.message);
-        return createErrorResponse(error.message, startTime, chatId, { 
-            originalMessage: userMessage,
-            stack: error.stack 
-        });
+  const startTime = Date.now();
+
+  try {
+    console.log(`Executing secure GPT-5 command for chat ${chatId}`);
+    console.log('Message preview:', String(userMessage).substring(0, 100));
+
+    // 1) Preprocess the query
+    const preprocessed = preprocessQuery(userMessage, options);
+    if (preprocessed.isEmpty) {
+      return createErrorResponse('Message too short or empty', startTime, chatId);
     }
+
+    // 2) Build memory context (only for non-test conversations)
+    const isSystemTest =
+      userMessage.toLowerCase().includes('test memory') ||
+      userMessage.toLowerCase().includes('integration test') ||
+      options.forceMemoryTest === true;
+
+    let memoryContext = options.memoryContext || '';
+    let memoryData = {
+      conversationHistory: options.conversationHistory || [],
+      persistentMemory: options.persistentMemory || []
+    };
+
+    if (!isSystemTest && !memoryContext && !options.conversationHistory && !options.persistentMemory) {
+      console.log('Building memory context for normal conversation...');
+      const memoryResult = await buildMemoryContext(chatId, {
+        forceDatabaseFallback: options.forceDatabaseFallback
+      });
+      memoryContext = memoryResult.context;
+      memoryData = memoryResult.memoryData;
+    }
+
+    // 3) Analyze query for optimal GPT-5 model selection
+    const queryAnalysis = analyzeQuery(
+      preprocessed.cleaned,
+      options.messageType || 'text',
+      options.hasMedia || false,
+      memoryContext
+    );
+
+    // 3.1) 🔁 Handle completion detection FIRST (no model required)
+    if (queryAnalysis.shouldSkipGPT5) {
+      console.log(`Completion detected: ${queryAnalysis.completionStatus.completionType}`);
+      return createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime);
+    }
+
+    // 4) Validate the analysis (after completion short-circuit)
+    const validation = validateQueryAnalysis(queryAnalysis);
+    if (!validation.isValid) {
+      console.error('Query analysis validation failed:', validation.errors);
+      return createErrorResponse(
+        `Analysis validation failed: ${validation.errors.join(', ')}`,
+        startTime,
+        chatId
+      );
+    }
+    if (validation.warnings.length > 0) {
+      console.warn('Query analysis warnings:', validation.warnings);
+    }
+
+    // 5) Override model if forced
+    if (options.forceModel && options.forceModel.includes('gpt-5')) {
+      queryAnalysis.gpt5Model = options.forceModel;
+      queryAnalysis.reason = `Forced to use ${options.forceModel}`;
+      console.log(`Model override: Using ${options.forceModel}`);
+    }
+
+    console.log('Query analysis complete:', {
+      type: queryAnalysis.type,
+      priority: queryAnalysis.priority,
+      model: queryAnalysis.gpt5Model,
+      reasoning: queryAnalysis.reasoning_effort,
+      verbosity: queryAnalysis.verbosity,
+      confidence: queryAnalysis.confidence,
+      memoryImportant: queryAnalysis.memoryImportant,
+      estimatedCost: queryAnalysis.estimatedCost?.totalCost
+    });
+
+    // 6) Execute through GPT-5 system
+    let gpt5Result;
+    try {
+      gpt5Result = await executeThroughGPT5System(
+        preprocessed.cleaned,
+        queryAnalysis,
+        memoryContext,
+        memoryData,
+        chatId
+      );
+
+      console.log('GPT-5 execution successful:', {
+        aiUsed: gpt5Result.aiUsed,
+        processingTime: gpt5Result.processingTime,
+        tokensUsed: gpt5Result.tokensUsed,
+        memoryUsed: gpt5Result.memoryUsed
+      });
+    } catch (gpt5Error) {
+      console.error('GPT-5 system failed:', gpt5Error.message);
+      return createErrorResponse(gpt5Error.message, startTime, chatId, {
+        originalQuery: userMessage,
+        analysisAttempted: true,
+        queryAnalysis
+      });
+    }
+
+    // 7) Process the response
+    const processedResponse = processResponse(gpt5Result.response, queryAnalysis, {
+      chatId,
+      processingTime: gpt5Result.processingTime,
+      memoryUsed: gpt5Result.memoryUsed
+    });
+
+    const totalResponseTime = Date.now() - startTime;
+
+    // 8) Build comprehensive result object
+    const result = {
+      response: processedResponse,
+      success: true,
+
+      // AI and model information
+      aiUsed: gpt5Result.aiUsed,
+      modelUsed: gpt5Result.modelUsed,
+      gpt5System: true,
+
+      // Query analysis results
+      queryType: queryAnalysis.type,
+      priority: queryAnalysis.priority,
+      complexity: queryAnalysis.complexity?.complexity || 'medium',
+      reasoning: queryAnalysis.reason,
+      confidence: gpt5Result.confidence || queryAnalysis.confidence,
+
+      // Processing information
+      processingTime: gpt5Result.processingTime,
+      totalResponseTime,
+      tokensUsed: gpt5Result.tokensUsed,
+
+      // GPT-5 specific parameters
+      reasoning_effort: queryAnalysis.reasoning_effort,
+      verbosity: queryAnalysis.verbosity,
+      max_output_tokens: queryAnalysis.max_output_tokens,
+
+      // Memory and context
+      memoryUsed: gpt5Result.memoryUsed,
+      contextLength: memoryContext.length,
+      memoryData: {
+        contextLength: memoryContext.length,
+        conversationRecords: memoryData.conversationHistory.length,
+        persistentMemories: memoryData.persistentMemory.length,
+        memoryImportant: queryAnalysis.memoryImportant,
+        memoryUsed: memoryContext.length > 0,
+        postgresqlConnected:
+          memoryData.conversationHistory.length > 0 || memoryData.persistentMemory.length > 0
+      },
+
+      // Cost and performance
+      costTier: getCostTier(queryAnalysis.gpt5Model),
+      costEstimate: queryAnalysis.estimatedCost,
+      fallbackUsed: gpt5Result.fallbackUsed || false,
+      costSaved: gpt5Result.costSaved || false,
+
+      // Classification and analytics
+      powerMode: `GPT5_${queryAnalysis.priority.toUpperCase()}`,
+      analytics: {
+        queryComplexity: queryAnalysis.complexity?.complexity || 'medium',
+        domainClassification: queryAnalysis.type,
+        priorityLevel: queryAnalysis.priority,
+        modelOptimization: 'GPT-5 smart selection',
+        costOptimized: true,
+        performanceOptimized: true
+      },
+
+      // System information
+      timestamp: new Date().toISOString(),
+      cambodiaTime: getCurrentCambodiaDateTime(),
+
+      // Telegram integration
+      sendToTelegram: createTelegramSender(
+        chatId,
+        processedResponse,
+        queryAnalysis,
+        gpt5Result,
+        totalResponseTime,
+        memoryContext.length > 0
+      )
+    };
+
+    console.log('Command execution complete:', {
+      success: true,
+      aiUsed: result.aiUsed,
+      processingTime: result.processingTime,
+      tokensUsed: result.tokensUsed,
+      memoryUsed: result.memoryUsed,
+      costTier: result.costTier
+    });
+
+    return result;
+  } catch (error) {
+    console.error('Command execution error:', error.message);
+    return createErrorResponse(error.message, startTime, chatId, {
+      originalMessage: userMessage,
+      stack: error.stack
+    });
+  }
 }
 
 // HELPER FUNCTIONS
 
 function createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime) {
-    const responseTime = Date.now() - startTime;
-    
-    updateSystemStats('completion_detection', true, responseTime, 'completion', 'none');
-    
-    return {
-        response: queryAnalysis.quickResponse,
-        success: true,
-        
-        // Completion detection information
-        aiUsed: 'completion-detection',
-        queryType: 'completion',
-        complexity: 'low',
-        reasoning: `Completion detected - ${queryAnalysis.completionStatus.completionType}`,
-        priority: 'completion',
-        confidence: queryAnalysis.completionStatus.confidence,
-        
-        // Processing information
-        processingTime: responseTime,
-        totalResponseTime: responseTime,
-        tokensUsed: 0,
-        
-        // Completion specific
-        completionDetected: true,
-        completionType: queryAnalysis.completionStatus.completionType,
-        skippedGPT5: true,
-        costSaved: true,
-        
-        // Memory information
-        memoryData: {
-            contextLength: memoryContext.length,
-            conversationRecords: memoryData.conversationHistory.length,
-            persistentMemories: memoryData.persistentMemory.length,
-            memoryImportant: false,
-            memoryUsed: memoryContext.length > 0,
-            postgresqlConnected: memoryData.conversationHistory.length > 0 || memoryData.persistentMemory.length > 0
-        },
-        
-        // System information
-        gpt5System: false,
-        powerMode: 'COMPLETION_DETECTION',
-        costTier: 'free',
-        timestamp: new Date().toISOString(),
-        
-        // Telegram integration
-        sendToTelegram: createTelegramSender(null, queryAnalysis.quickResponse, queryAnalysis, { 
-            completionDetected: true 
-        }, responseTime, memoryContext.length > 0)
-    };
+  const responseTime = Date.now() - startTime;
+
+  updateSystemStats('completion_detection', true, responseTime, 'completion', 'none');
+
+  return {
+    response: queryAnalysis.quickResponse,
+    success: true,
+
+    // Completion detection information
+    aiUsed: 'completion-detection',
+    queryType: 'completion',
+    complexity: 'low',
+    reasoning: `Completion detected - ${queryAnalysis.completionStatus.completionType}`,
+    priority: 'completion',
+    confidence: queryAnalysis.completionStatus.confidence,
+
+    // Processing information
+    processingTime: responseTime,
+    totalResponseTime: responseTime,
+    tokensUsed: 0,
+
+    // Completion specific
+    completionDetected: true,
+    completionType: queryAnalysis.completionStatus.completionType,
+    skippedGPT5: true,
+    costSaved: true,
+
+    // Memory information
+    memoryData: {
+      contextLength: memoryContext.length,
+      conversationRecords: memoryData.conversationHistory.length,
+      persistentMemories: memoryData.persistentMemory.length,
+      memoryImportant: false,
+      memoryUsed: memoryContext.length > 0,
+      postgresqlConnected:
+        memoryData.conversationHistory.length > 0 || memoryData.persistentMemory.length > 0
+    },
+
+    // System information
+    gpt5System: false,
+    powerMode: 'COMPLETION_DETECTION',
+    costTier: 'free',
+    timestamp: new Date().toISOString(),
+
+    // Telegram integration
+    sendToTelegram: createTelegramSender(
+      null,
+      queryAnalysis.quickResponse,
+      queryAnalysis,
+      { completionDetected: true },
+      responseTime,
+      memoryContext.length > 0
+    )
+  };
 }
 
 function createErrorResponse(errorMessage, startTime, chatId, metadata = {}) {
-    const responseTime = Date.now() - startTime;
-    
-    updateSystemStats('error', false, responseTime, 'error', 'none');
-    
-    const errorResponse = `I apologize, but I encountered a technical issue: ${errorMessage}\n\nPlease try:\n• A simpler question\n• Waiting a moment and trying again\n• Checking your connection`;
-    
-    return {
-        response: errorResponse,
-        success: false,
-        error: errorMessage,
-        
-        // Error information
-        aiUsed: 'error-handler',
-        queryType: 'error',
-        complexity: 'low',
-        reasoning: 'System error occurred',
-        confidence: 0.0,
-        
-        // Processing information
-        processingTime: responseTime,
-        totalResponseTime: responseTime,
-        tokensUsed: 0,
-        
-        // System information
-        gpt5System: false,
-        powerMode: 'ERROR',
-        costTier: 'free',
-        timestamp: new Date().toISOString(),
-        
-        // Memory information (minimal for errors)
-        memoryData: {
-            contextLength: 0,
-            conversationRecords: 0,
-            persistentMemories: 0,
-            memoryImportant: false,
-            memoryUsed: false,
-            postgresqlConnected: false
-        },
-        
-        // Debug information
-        metadata: metadata,
-        
-        // Telegram integration
-        sendToTelegram: createErrorTelegramSender(chatId, errorResponse, errorMessage)
-    };
+  const responseTime = Date.now() - startTime;
+
+  updateSystemStats('error', false, responseTime, 'error', 'none');
+
+  const errorResponse =
+    `I apologize, but I encountered a technical issue: ${errorMessage}\n\n` +
+    'Please try:\n• A simpler question\n• Waiting a moment and trying again\n• Checking your connection';
+
+  return {
+    response: errorResponse,
+    success: false,
+    error: errorMessage,
+
+    // Error information
+    aiUsed: 'error-handler',
+    queryType: 'error',
+    complexity: 'low',
+    reasoning: 'System error occurred',
+    confidence: 0.0,
+
+    // Processing information
+    processingTime: responseTime,
+    totalResponseTime: responseTime,
+    tokensUsed: 0,
+
+    // System information
+    gpt5System: false,
+    powerMode: 'ERROR',
+    costTier: 'free',
+    timestamp: new Date().toISOString(),
+
+    // Memory information (minimal for errors)
+    memoryData: {
+      contextLength: 0,
+      conversationRecords: 0,
+      persistentMemories: 0,
+      memoryImportant: false,
+      memoryUsed: false,
+      postgresqlConnected: false
+    },
+
+    // Debug information
+    metadata,
+
+    // Telegram integration
+    sendToTelegram: createErrorTelegramSender(chatId, errorResponse, errorMessage)
+  };
 }
 
 function getCostTier(model) {
-    switch (model) {
-        case CONFIG.MODELS.NANO:
-            return 'economy';
-        case CONFIG.MODELS.MINI:
-            return 'standard';
-        case CONFIG.MODELS.FULL:
-        case CONFIG.MODELS.CHAT:
-            return 'premium';
-        default:
-            return 'unknown';
-    }
+  switch (model) {
+    case CONFIG.MODELS.NANO:
+      return 'economy';
+    case CONFIG.MODELS.MINI:
+      return 'standard';
+    case CONFIG.MODELS.FULL:
+    case CONFIG.MODELS.CHAT:
+      return 'premium';
+    default:
+      return 'unknown';
+  }
 }
 
 function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, responseTime, contextUsed) {
-    return async (bot, title = null) => {
-        try {
-            const { telegramSplitter } = require('./dualCommandSystem');
-            
-            if (!telegramSplitter || typeof telegramSplitter.sendGPT5 !== 'function') {
-                console.warn('Telegram splitter not available, using basic send');
-                if (bot && bot.sendMessage) {
-                    await bot.sendMessage(chatId, response);
-                    return true;
-                }
-                return false;
-            }
-            
-            // Determine appropriate telegram method based on model
-            let telegramMethod;
-            const modelUsed = gpt5Result?.modelUsed || queryAnalysis?.gpt5Model;
-            
-            switch (modelUsed) {
-                case CONFIG.MODELS.NANO:
-                    telegramMethod = telegramSplitter.sendGPT5Nano;
-                    break;
-                case CONFIG.MODELS.MINI:
-                    telegramMethod = telegramSplitter.sendGPT5Mini;
-                    break;
-                case CONFIG.MODELS.FULL:
-                    telegramMethod = telegramSplitter.sendGPT5;
-                    break;
-                case CONFIG.MODELS.CHAT:
-                    telegramMethod = telegramSplitter.sendGPT5Chat;
-                    break;
-                default:
-                    telegramMethod = telegramSplitter.sendGPTResponse;
-            }
-            
-            if (!telegramMethod) {
-                telegramMethod = telegramSplitter.sendGPTResponse;
-            }
-            
-            // Generate appropriate title
-            const modelName = modelUsed === CONFIG.MODELS.NANO ? 'Nano' :
-                             modelUsed === CONFIG.MODELS.MINI ? 'Mini' :
-                             modelUsed === CONFIG.MODELS.FULL ? 'Full' :
-                             modelUsed === CONFIG.MODELS.CHAT ? 'Chat' : 'GPT-5';
-            
-            const defaultTitle = gpt5Result?.completionDetected 
-                ? 'Task Completion Acknowledged'
-                : `GPT-5 ${modelName} Analysis`;
-            
-            const finalTitle = title || defaultTitle;
-            
-            // Prepare metadata
-            const metadata = {
-                responseTime: responseTime,
-                contextUsed: contextUsed,
-                complexity: queryAnalysis?.complexity?.complexity || 'medium',
-                confidence: gpt5Result?.confidence || queryAnalysis?.confidence || 0.75,
-                model: modelUsed,
-                reasoning: queryAnalysis?.reasoning_effort,
-                verbosity: queryAnalysis?.verbosity,
-                costTier: getCostTier(modelUsed),
-                fallbackUsed: gpt5Result?.fallbackUsed || false,
-                completionDetected: gpt5Result?.completionDetected || false
-            };
-            
-            return await telegramMethod(bot, chatId, response, { 
-                title: finalTitle, 
-                ...metadata 
-            });
-            
-        } catch (telegramError) {
-            console.error('Telegram delivery error:', telegramError.message);
-            
-            // Fallback to basic telegram send
-            try {
-                if (bot && bot.sendMessage) {
-                    await bot.sendMessage(chatId, response);
-                    return true;
-                }
-            } catch (fallbackError) {
-                console.error('Telegram fallback also failed:', fallbackError.message);
-            }
-            
-            return false;
+  return async (bot, title = null) => {
+    try {
+      const { telegramSplitter } = require('./dualCommandSystem');
+
+      if (!telegramSplitter || typeof telegramSplitter.sendGPT5 !== 'function') {
+        console.warn('Telegram splitter not available, using basic send');
+        if (bot && bot.sendMessage) {
+          await bot.sendMessage(chatId, response);
+          return true;
         }
-    };
+        return false;
+      }
+
+      // Determine appropriate telegram method based on model
+      let telegramMethod;
+      const modelUsed = gpt5Result?.modelUsed || queryAnalysis?.gpt5Model;
+
+      switch (modelUsed) {
+        case CONFIG.MODELS.NANO:
+          telegramMethod = telegramSplitter.sendGPT5Nano;
+          break;
+        case CONFIG.MODELS.MINI:
+          telegramMethod = telegramSplitter.sendGPT5Mini;
+          break;
+        case CONFIG.MODELS.FULL:
+          telegramMethod = telegramSplitter.sendGPT5;
+          break;
+        case CONFIG.MODELS.CHAT:
+          telegramMethod = telegramSplitter.sendGPT5Chat;
+          break;
+        default:
+          telegramMethod = telegramSplitter.sendGPTResponse;
+      }
+
+      if (!telegramMethod) {
+        telegramMethod = telegramSplitter.sendGPTResponse;
+      }
+
+      // Generate appropriate title
+      const modelName =
+        modelUsed === CONFIG.MODELS.NANO
+          ? 'Nano'
+          : modelUsed === CONFIG.MODELS.MINI
+          ? 'Mini'
+          : modelUsed === CONFIG.MODELS.FULL
+          ? 'Full'
+          : modelUsed === CONFIG.MODELS.CHAT
+          ? 'Chat'
+          : 'GPT-5';
+
+      const defaultTitle = gpt5Result?.completionDetected
+        ? 'Task Completion Acknowledged'
+        : `GPT-5 ${modelName} Analysis`;
+
+      const finalTitle = title || defaultTitle;
+
+      // Prepare metadata
+      const metadata = {
+        responseTime,
+        contextUsed,
+        complexity: queryAnalysis?.complexity?.complexity || 'medium',
+        confidence: gpt5Result?.confidence || queryAnalysis?.confidence || 0.75,
+        model: modelUsed,
+        reasoning: queryAnalysis?.reasoning_effort,
+        verbosity: queryAnalysis?.verbosity,
+        costTier: getCostTier(modelUsed),
+        fallbackUsed: gpt5Result?.fallbackUsed || false,
+        completionDetected: gpt5Result?.completionDetected || false
+      };
+
+      return await telegramMethod(bot, chatId, response, {
+        title: finalTitle,
+        ...metadata
+      });
+    } catch (telegramError) {
+      console.error('Telegram delivery error:', telegramError.message);
+
+      // Fallback to basic telegram send
+      try {
+        if (bot && bot.sendMessage) {
+          await bot.sendMessage(chatId, response);
+          return true;
+        }
+      } catch (fallbackError) {
+        console.error('Telegram fallback also failed:', fallbackError.message);
+      }
+
+      return false;
+    }
+  };
 }
 
 function createErrorTelegramSender(chatId, errorResponse, originalError) {
-    return async (bot) => {
-        try {
-            const { telegramSplitter } = require('./dualCommandSystem');
-            
-            if (telegramSplitter && typeof telegramSplitter.sendAlert === 'function') {
-                return await telegramSplitter.sendAlert(bot, chatId, errorResponse, 'System Error');
-            } else if (bot && bot.sendMessage) {
-                await bot.sendMessage(chatId, errorResponse);
-                return true;
-            }
-            
-            return false;
-            
-        } catch (telegramError) {
-            console.error('Error telegram delivery failed:', telegramError.message);
-            return false;
-        }
-    };
+  return async (bot) => {
+    try {
+      const { telegramSplitter } = require('./dualCommandSystem');
+
+      if (telegramSplitter && typeof telegramSplitter.sendAlert === 'function') {
+        return await telegramSplitter.sendAlert(bot, chatId, errorResponse, 'System Error');
+      } else if (bot && bot.sendMessage) {
+        await bot.sendMessage(chatId, errorResponse);
+        return true;
+      }
+
+      return false;
+    } catch (telegramError) {
+      console.error('Error telegram delivery failed:', telegramError.message);
+      return false;
+    }
+  };
 }
 
 console.log('Secure GPT-5 Command System - PART 4/6 loaded');
@@ -1699,11 +1723,11 @@ console.log('Features: Main execution engine, result processing, telegram integr
 
 // Export functions for Part 5
 module.exports = {
-    executeDualCommand,
-    createCompletionResponse,
-    createErrorResponse,
-    getCostTier,
-    createTelegramSender
+  executeDualCommand,
+  createCompletionResponse,
+  createErrorResponse,
+  getCostTier,
+  createTelegramSender
 };
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 5/6
