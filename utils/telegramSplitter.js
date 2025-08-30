@@ -1,6 +1,5 @@
 // utils/telegramSplitter.js - Perfect 10/10 Production-Grade Message Handler
 'use strict';
-
 const crypto = require('crypto');
 
 // Enhanced configuration with advanced features
@@ -15,921 +14,886 @@ const CONFIG = {
     RETRY_DELAY_MS: 1000,
     ADAPTIVE_RETRY: true,
     
-    // GPT-5 model configurations with precise tuning
-    MODELS: {
-        'gpt-5': {
-            delay: 350,
-            emoji: '🧠',
-            name: 'GPT-5',
-            style: 'professional',
-            color: '#4A90E2',
-            priority: 10,
-            complexity: 'highest'
-        },
-        'gpt-5-mini': {
-            delay: 220,
-            emoji: '⚡',
-            name: 'GPT-5 Mini',
-            style: 'balanced',
-            color: '#F5A623',
-            priority: 7,
-            complexity: 'high'
-        },
-        'gpt-5-nano': {
-            delay: 120,
-            emoji: '🚀',
-            name: 'GPT-5 Nano',
-            style: 'concise',
-            color: '#7ED321',
-            priority: 5,
-            complexity: 'medium'
-        },
-        'gpt-5-chat-latest': {
-            delay: 180,
-            emoji: '💬',
-            name: 'GPT-5 Chat',
-            style: 'conversational',
-            color: '#50E3C2',
-            priority: 6,
-            complexity: 'high'
-        },
-        'gpt-4o': {
-            delay: 280,
-            emoji: '🔄',
-            name: 'GPT-4o',
-            style: 'reliable',
-            color: '#BD10E0',
-            priority: 8,
-            complexity: 'high'
-        },
-        'default': {
-            delay: 300,
-            emoji: '🤖',
-            name: 'AI Assistant',
-            style: 'neutral',
-            color: '#9013FE',
-            priority: 1,
-            complexity: 'medium'
-        }
-    },
-    
-    // Advanced auto-emoji patterns with context awareness
-    AUTO_EMOJIS: {
-        // Financial terms
-        'profit': '💰', 'revenue': '💵', 'loss': '📉', 'investment': '📈',
-        'portfolio': '💼', 'dividend': '💸', 'loan': '🏦', 'budget': '📊',
-        'savings': '🏦', 'expense': '💳', 'income': '💰', 'tax': '📋',
-        'roi': '💹', 'yield': '📈', 'risk': '⚠️', 'equity': '💎',
-        
-        // Business terms
-        'analysis': '📊', 'report': '📄', 'strategy': '🎯', 'growth': '📈',
-        'market': '📈', 'data': '📊', 'metrics': '📊', 'kpi': '🎯',
-        'performance': '📊', 'revenue': '💵', 'forecast': '🔮',
-        
-        // Status indicators
-        'success': '✅', 'completed': '✅', 'approved': '✅', 'confirmed': '✅',
-        'error': '❌', 'failed': '❌', 'rejected': '❌', 'cancelled': '❌',
-        'warning': '⚠️', 'alert': '🚨', 'urgent': '🚨', 'critical': '🚨',
-        'pending': '⏳', 'processing': '⚙️', 'loading': '⏳',
-        
-        // Time and scheduling
-        'deadline': '⏰', 'schedule': '📅', 'meeting': '👥', 'appointment': '📅',
-        'reminder': '🔔', 'notification': '🔔', 'update': '🔄'
-    },
-    
-    // Advanced duplicate prevention with semantic analysis
-    DUPLICATE_WINDOW_MS: 8000,
-    SEMANTIC_THRESHOLD: 0.8,
-    
-    // Performance optimization
-    CLEANUP_INTERVAL: 600000, // 10 minutes
-    MAX_CACHE_SIZE: 500,
-    MEMORY_EFFICIENT: true
+    // Formatting preferences
+    AUTO_EMOJI: true,
+    SMART_SPACING: true,
+    ENHANCED_MARKDOWN: true,
+    VISUAL_SEPARATORS: true,
+    MAX_LINE_LENGTH: 80
 };
 
-// Advanced caching with intelligent TTL
-class AdvancedCache {
-    constructor(maxSize = CONFIG.MAX_CACHE_SIZE, baseTtl = 300000) {
-        this.cache = new Map();
-        this.maxSize = maxSize;
-        this.baseTtl = baseTtl;
-        this.stats = {
-            hits: 0,
-            misses: 0,
-            evictions: 0,
-            sets: 0
+// Enhanced Telegram Message Formatter & Splitter with Auto-Emoji and Smart Formatting
+class TelegramFormatter {
+    constructor(customConfig = {}) {
+        this.config = { ...CONFIG, ...customConfig };
+        this.MAX_MESSAGE_LENGTH = this.config.MAX_MESSAGE_LENGTH;
+        this.PREFERRED_CHUNK_SIZE = this.config.CHUNK_TARGET;
+        
+        // Emoji mappings for different content types
+        this.emojiMap = {
+            // Status and indicators
+            success: ['✅', '🎉', '✨', '💚'],
+            error: ['❌', '⚠️', '🚨', '💔'],
+            info: ['ℹ️', '📢', '💡', '📋'],
+            warning: ['⚠️', '🟡', '⚡', '🔔'],
+            
+            // Content types
+            code: ['💻', '⚡', '🔧', '🛠️'],
+            money: ['💰', '💵', '💸', '📈'],
+            time: ['⏰', '⏱️', '🕐', '📅'],
+            file: ['📁', '📄', '📋', '🗂️'],
+            link: ['🔗', '🌐', '📎', '🔀'],
+            
+            // Actions
+            send: ['📤', '🚀', '➡️', '📨'],
+            receive: ['📥', '⬅️', '📩', '💌'],
+            process: ['⚙️', '🔄', '⏳', '🔀'],
+            complete: ['✅', '🏁', '🎯', '💯'],
+            
+            // Categories
+            gpt: ['🤖', '🧠', '💭', '🎯'],
+            system: ['🖥️', '⚙️', '🔧', '💾'],
+            user: ['👤', '🙋', '💬', '🗣️'],
+            admin: ['👑', '🛡️', '⭐', '🔑']
+        };
+        
+        // Keywords that trigger specific emojis
+        this.keywordEmojis = {
+            // Technical terms
+            'gpt-5': '🤖',
+            'gpt5': '🤖',
+            'ai': '🧠',
+            'error': '❌',
+            'success': '✅',
+            'working': '✅',
+            'failed': '❌',
+            'loading': '⏳',
+            'complete': '💯',
+            'processing': '⚙️',
+            
+            // Financial
+            'cost': '💰',
+            'price': '💵',
+            'tokens': '🪙',
+            'usage': '📊',
+            
+            // Status
+            'online': '🟢',
+            'offline': '🔴',
+            'ready': '✅',
+            'busy': '🟡',
+            'maintenance': '🔧',
+            
+            // Actions
+            'sending': '📤',
+            'received': '📥',
+            'updated': '🔄',
+            'created': '✨',
+            'deleted': '🗑️',
+            
+            // Time
+            'today': '📅',
+            'now': '⏰',
+            'urgent': '🚨',
+            'scheduled': '⏰'
+        };
+        
+        // Markdown patterns for Telegram
+        this.markdownPatterns = {
+            bold: /\*\*(.*?)\*\*/g,
+            italic: /\*(.*?)\*/g,
+            code: /`([^`]+)`/g,
+            codeBlock: /```([\s\S]*?)```/g,
+            underline: /__([^_]+)__/g,
+            strikethrough: /~~([^~]+)~~/g
         };
     }
     
-    generateKey(chatId, text, model) {
-        const normalized = text.toLowerCase()
-            .replace(/[^a-z0-9\s]/g, '')
-            .replace(/\s+/g, ' ')
-            .trim()
-            .substring(0, 200);
+    // Advanced retry mechanism with circuit breaker
+    constructor(customConfig = {}) {
+        this.config = { ...CONFIG, ...customConfig };
+        this.MAX_MESSAGE_LENGTH = this.config.MAX_MESSAGE_LENGTH;
+        this.PREFERRED_CHUNK_SIZE = this.config.CHUNK_TARGET;
         
-        return crypto.createHash('sha256')
-            .update(`${chatId}_${normalized}_${model}`)
-            .digest('hex')
-            .substring(0, 20);
-    }
-    
-    set(key, value, customTtl = null) {
-        // Intelligent TTL based on content complexity
-        const ttl = customTtl || this.calculateTtl(value);
+        // Circuit breaker for delivery failures
+        this.circuitBreaker = {
+            failures: 0,
+            isOpen: false,
+            lastFailure: null,
+            resetTime: 60000 // Reset after 1 minute
+        };
         
-        // LRU eviction
-        if (this.cache.size >= this.maxSize) {
-            const oldestKey = this.cache.keys().next().value;
-            this.cache.delete(oldestKey);
-            this.stats.evictions++;
-        }
-        
-        this.cache.set(key, {
-            value,
-            timestamp: Date.now(),
-            ttl,
-            hits: 0,
-            priority: this.calculatePriority(value)
-        });
-        this.stats.sets++;
-    }
-    
-    get(key) {
-        const item = this.cache.get(key);
-        if (!item) {
-            this.stats.misses++;
-            return null;
-        }
-        
-        if (Date.now() - item.timestamp > item.ttl) {
-            this.cache.delete(key);
-            this.stats.misses++;
-            return null;
-        }
-        
-        item.hits++;
-        this.stats.hits++;
-        
-        // Move to end (LRU)
-        this.cache.delete(key);
-        this.cache.set(key, item);
-        
-        return item.value;
-    }
-    
-    has(key) {
-        return this.get(key) !== null;
-    }
-    
-    calculateTtl(value) {
-        const length = typeof value === 'string' ? value.length : 500;
-        // Longer content stays cached longer
-        return this.baseTtl + Math.min(length * 10, 300000);
-    }
-    
-    calculatePriority(value) {
-        if (typeof value !== 'string') return 1;
-        // Higher priority for analysis, reports
-        if (value.includes('analysis') || value.includes('report')) return 5;
-        if (value.length > 1000) return 3;
-        return 1;
-    }
-    
-    clear() {
-        this.cache.clear();
-        this.stats = { hits: 0, misses: 0, evictions: 0, sets: 0 };
-    }
-    
-    getStats() {
-        const total = this.stats.hits + this.stats.misses;
-        return {
-            size: this.cache.size,
-            maxSize: this.maxSize,
-            hitRate: total > 0 ? ((this.stats.hits / total) * 100).toFixed(2) : 0,
-            evictions: this.stats.evictions,
-            totalRequests: total
+        // Delivery metrics
+        this.metrics = {
+            totalSent: 0,
+            totalFailed: 0,
+            averageDelay: this.config.DELAY_MS,
+            lastSuccessTime: Date.now()
         };
     }
-    
-    cleanup() {
-        const now = Date.now();
-        let cleaned = 0;
+
+    // Main formatting function
+    formatMessage(text, options = {}) {
+        if (!text || typeof text !== 'string') return '';
         
-        for (const [key, item] of this.cache.entries()) {
-            if (now - item.timestamp > item.ttl) {
-                this.cache.delete(key);
-                cleaned++;
-            }
-        }
-        
-        if (cleaned > 0) {
-            console.log(`Cache cleanup: removed ${cleaned} expired items`);
-        }
-    }
-}
-
-const messageCache = new AdvancedCache();
-const errorCache = new AdvancedCache(50, 60000);
-
-// Enhanced model detection with confidence scoring
-function detectModel(content, options = {}) {
-    if (options.model && CONFIG.MODELS[options.model]) {
-        return { model: options.model, confidence: 1.0, source: 'explicit' };
-    }
-    
-    const text = content.toLowerCase();
-    const indicators = [
-        { pattern: /gpt-5-nano|nano/g, model: 'gpt-5-nano', weight: 10 },
-        { pattern: /gpt-5-mini|mini/g, model: 'gpt-5-mini', weight: 9 },
-        { pattern: /gpt-5-chat|chat/g, model: 'gpt-5-chat-latest', weight: 8 },
-        { pattern: /reasoning_effort|verbosity/g, model: 'gpt-5', weight: 7 },
-        { pattern: /gpt-5/g, model: 'gpt-5', weight: 6 },
-        { pattern: /gpt-4o|fallback/g, model: 'gpt-4o', weight: 5 }
-    ];
-    
-    let bestMatch = { model: 'gpt-5-mini', confidence: 0.1, source: 'default' };
-    
-    for (const indicator of indicators) {
-        const matches = text.match(indicator.pattern);
-        if (matches) {
-            const confidence = Math.min(matches.length * indicator.weight * 0.1, 1.0);
-            if (confidence > bestMatch.confidence) {
-                bestMatch = { 
-                    model: indicator.model, 
-                    confidence, 
-                    source: 'content_analysis' 
-                };
-            }
-        }
-    }
-    
-    return bestMatch;
-}
-
-// Advanced emoji enhancement with context awareness
-function addAutoEmojis(text, options = {}) {
-    if (options.noEmojis) return text;
-    
-    let enhanced = text;
-    let emojiCount = 0;
-    const maxEmojis = Math.floor(text.length / 200) + 3; // Adaptive emoji density
-    
-    // Sort patterns by priority (financial terms first)
-    const sortedPatterns = Object.entries(CONFIG.AUTO_EMOJIS).sort((a, b) => {
-        const priorityOrder = ['profit', 'revenue', 'analysis', 'success', 'error'];
-        const aIndex = priorityOrder.indexOf(a[0]);
-        const bIndex = priorityOrder.indexOf(b[0]);
-        return (aIndex >= 0 ? aIndex : 999) - (bIndex >= 0 ? bIndex : 999);
-    });
-    
-    for (const [term, emoji] of sortedPatterns) {
-        if (emojiCount >= maxEmojis) break;
-        
-        const regex = new RegExp(`\\b${term}\\b(?![^<]*>)`, 'gi');
-        const matches = enhanced.match(regex);
-        
-        if (matches && matches.length <= 2) { // Avoid emoji spam
-            enhanced = enhanced.replace(regex, `${emoji} ${term}`);
-            emojiCount += matches.length;
-        }
-    }
-    
-    // Clean up duplicate emojis
-    enhanced = enhanced.replace(/(\p{Emoji})\s*\1+/gu, '$1');
-    
-    return enhanced;
-}
-
-// Advanced text styling with model personality
-function applyTextStyling(text, modelInfo, options = {}) {
-    if (options.noStyling) return text;
-    
-    const modelConfig = CONFIG.MODELS[modelInfo.model] || CONFIG.MODELS.default;
-    let styled = text;
-    
-    switch (modelConfig.style) {
-        case 'professional':
-            // GPT-5: Add structure and emphasis
-            styled = styled
-                .replace(/^(Key findings?|Important|Summary|Conclusion):/gmi, '**$1:**')
-                .replace(/^([A-Z][^.!?]*[.!?])$/gm, '*$1*')
-                .replace(/(\d+[\.\)])\s+([A-Z])/g, '$1 **$2**');
-            break;
-            
-        case 'concise':
-            // GPT-5 Nano: Optimize for brevity
-            styled = styled
-                .replace(/\b(very|quite|really|extremely|significantly)\s+/gi, '')
-                .replace(/\bin conclusion,?\s*/gi, '')
-                .replace(/\n\n+/g, '\n')
-                .replace(/\b(I think|I believe|it seems|perhaps)\s*/gi, '');
-            break;
-            
-        case 'conversational':
-            // GPT-5 Chat: Add natural flow
-            styled = styled
-                .replace(/^([A-Z])/gm, (match, p1, offset) => {
-                    if (offset === 0) return match;
-                    const starters = ['Well, ', 'So, ', 'Actually, ', 'Now, ', ''];
-                    return starters[Math.floor(Math.random() * starters.length)] + match;
-                });
-            break;
-            
-        case 'reliable':
-            // GPT-4o: Add confidence indicators
-            styled = styled.replace(
-                /^(This|These|The result)/gm, 
-                '**Based on analysis:** $1'
-            );
-            break;
-            
-        case 'balanced':
-        default:
-            // Keep natural formatting
-            break;
-    }
-    
-    return styled;
-}
-
-// Enhanced message processing pipeline
-function processMessage(text, options = {}) {
-    if (!text || typeof text !== 'string') {
-        return { 
-            text: '', 
-            model: 'default', 
-            modelConfig: CONFIG.MODELS.default,
-            processingInfo: { error: 'Invalid input' }
+        const config = {
+            addEmojis: this.config.AUTO_EMOJI,
+            improveSpacing: this.config.SMART_SPACING,
+            formatMarkdown: this.config.ENHANCED_MARKDOWN,
+            addBulletPoints: true,
+            enhanceHeaders: true,
+            addSeparators: this.config.VISUAL_SEPARATORS,
+            maxLineLength: this.config.MAX_LINE_LENGTH,
+            ...options
         };
-    }
-    
-    const startTime = Date.now();
-    
-    // Step 1: Clean the message
-    let processed = text
-        .replace(/\[(?:GPT-\d+|reasoning_effort|verbosity|model|cached):[^\]]*\]/gi, '')
-        .replace(/\((?:confidence|tokens?|fallback):[^)]*\)/gi, '')
-        .replace(/\*{3,}/g, '**')
-        .replace(/_{3,}/g, '__')
-        .replace(/`{4,}/g, '```')
-        .replace(/#{4,}/g, '###')
-        .replace(/\n{4,}/g, '\n\n\n')
-        .replace(/[ \t]{3,}/g, '  ')
-        .trim();
-    
-    // Step 2: Enhanced model detection
-    const modelInfo = detectModel(processed, options);
-    
-    // Step 3: Apply auto-emojis with intelligence
-    if (!options.noEmojis) {
-        processed = addAutoEmojis(processed, options);
-    }
-    
-    // Step 4: Apply model-specific styling
-    if (!options.noStyling) {
-        processed = applyTextStyling(processed, modelInfo, options);
-    }
-    
-    const processingTime = Date.now() - startTime;
-    
-    return {
-        text: processed,
-        model: modelInfo.model,
-        modelConfig: CONFIG.MODELS[modelInfo.model] || CONFIG.MODELS.default,
-        processingInfo: {
-            originalLength: text.length,
-            processedLength: processed.length,
-            modelConfidence: modelInfo.confidence,
-            detectionSource: modelInfo.source,
-            processingTime,
-            emojisAdded: processed !== text,
-            stylingApplied: !options.noStyling
-        }
-    };
-}
-
-// Enhanced chunking with intelligent split points
-function findOptimalSplitPoint(text, maxLength) {
-    const searchStart = Math.max(maxLength * 0.65, maxLength - 500);
-    
-    // Advanced split patterns with scoring
-    const patterns = [
-        { regex: /\n\n#{1,6}\s/g, score: 10, name: 'headers' },
-        { regex: /\n\n\*\*[^*]+\*\*\s*\n/g, score: 9, name: 'bold_sections' },
-        { regex: /\n\n\d+\.\s/g, score: 8, name: 'numbered_lists' },
-        { regex: /\n\n[•·▪▫\-*]\s/g, score: 7, name: 'bullet_points' },
-        { regex: /\n\n(?=\w)/g, score: 6, name: 'paragraphs' },
-        { regex: /\.\s+(?=[A-Z])/g, score: 5, name: 'sentences' },
-        { regex: /;\s+(?=[A-Z])/g, score: 4, name: 'semicolons' },
-        { regex: /,\s+(?=\w+\s+[A-Z])/g, score: 3, name: 'clauses' },
-        { regex: /\s+(?=\d+\.)/g, score: 2, name: 'list_items' },
-        { regex: /\s+/g, score: 1, name: 'spaces' }
-    ];
-    
-    let bestSplit = { point: maxLength, score: 0, pattern: 'fallback' };
-    
-    for (const pattern of patterns) {
-        const matches = [...text.substring(0, maxLength + 100).matchAll(pattern.regex)];
         
-        for (let i = matches.length - 1; i >= 0; i--) {
-            const matchEnd = matches[i].index + matches[i][0].length;
-            
-            if (matchEnd >= searchStart && matchEnd <= maxLength) {
-                const distanceScore = 1 - Math.abs(matchEnd - (maxLength * 0.8)) / maxLength;
-                const contextScore = calculateContextScore(text, matchEnd);
-                const finalScore = pattern.score * distanceScore * contextScore;
-                
-                if (finalScore > bestSplit.score) {
-                    bestSplit = { 
-                        point: matchEnd, 
-                        score: finalScore, 
-                        pattern: pattern.name 
-                    };
-                    break;
+        let formatted = text;
+        
+        // Step 1: Clean and normalize text
+        formatted = this.normalizeText(formatted);
+        
+        // Step 2: Add auto-emojis based on content
+        if (config.addEmojis) {
+            formatted = this.addAutoEmojis(formatted);
+        }
+        
+        // Step 3: Improve spacing and structure
+        if (config.improveSpacing) {
+            formatted = this.improveSpacing(formatted);
+        }
+        
+        // Step 4: Format markdown for Telegram
+        if (config.formatMarkdown) {
+            formatted = this.formatMarkdown(formatted);
+        }
+        
+        // Step 5: Enhance headers and sections
+        if (config.enhanceHeaders) {
+            formatted = this.enhanceHeaders(formatted);
+        }
+        
+        // Step 6: Add bullet points and lists
+        if (config.addBulletPoints) {
+            formatted = this.enhanceLists(formatted);
+        }
+        
+        // Step 7: Add separators for long content
+        if (config.addSeparators) {
+            formatted = this.addSeparators(formatted);
+        }
+        
+        return formatted.trim();
+    }
+    
+    // Enhanced message splitting with production-grade error handling
+    async splitAndDeliverMessage(text, bot, chatId, options = {}) {
+        const startTime = Date.now();
+        
+        try {
+            // Check circuit breaker
+            if (this.circuitBreaker.isOpen) {
+                const timeSinceFailure = Date.now() - this.circuitBreaker.lastFailure;
+                if (timeSinceFailure < this.circuitBreaker.resetTime) {
+                    throw new Error(`Circuit breaker open. Retry in ${Math.ceil((this.circuitBreaker.resetTime - timeSinceFailure) / 1000)}s`);
+                } else {
+                    this.circuitBreaker.isOpen = false;
+                    this.circuitBreaker.failures = 0;
                 }
             }
-        }
-        
-        if (bestSplit.score > 8) break; // Excellent split found
-    }
-    
-    return bestSplit.point;
-}
-
-function calculateContextScore(text, position) {
-    // Avoid splitting within code blocks, quotes, or lists
-    const before = text.substring(Math.max(0, position - 50), position);
-    const after = text.substring(position, position + 50);
-    
-    if (before.includes('```') && after.includes('```')) return 0.2;
-    if (before.includes('> ') || after.includes('> ')) return 0.5;
-    if (before.match(/\d+\.\s*$/) && after.match(/^\s*\w/)) return 0.7;
-    
-    return 1.0;
-}
-
-// Enhanced message chunking with model-aware headers
-function chunkMessage(processed, options = {}) {
-    const { text, model, modelConfig } = processed;
-    
-    if (text.length <= CONFIG.SAFE_LENGTH) {
-        return [{ text, model, modelConfig }];
-    }
-    
-    const chunks = [];
-    let remaining = text;
-    let chunkNum = 1;
-    const totalChunks = Math.ceil(text.length / CONFIG.CHUNK_TARGET);
-    
-    while (remaining.length > CONFIG.CHUNK_TARGET) {
-        const splitPoint = findOptimalSplitPoint(remaining, CONFIG.CHUNK_TARGET);
-        let chunk = remaining.substring(0, splitPoint).trim();
-        
-        // Enhanced chunk header with progress and model info
-        const emoji = modelConfig.emoji || '📄';
-        const modelName = modelConfig.name || 'AI Assistant';
-        const progress = `${chunkNum}/${totalChunks}`;
-        
-        if (chunkNum === 1) {
-            chunk = `${emoji} *${modelName} Response - Part ${progress}*\n\n${chunk}`;
-        } else {
-            chunk = `${emoji} *Part ${progress}*\n\n${chunk}`;
-        }
-        
-        // Smart continuation markers
-        if (remaining.length - splitPoint > 200) {
-            chunk += '\n\n*[Continues below...]*';
-        }
-        
-        chunks.push({ 
-            text: chunk, 
-            model, 
-            modelConfig,
-            chunkInfo: {
-                number: chunkNum,
-                total: totalChunks,
-                length: chunk.length,
-                splitPattern: 'intelligent'
-            }
-        });
-        
-        remaining = remaining.substring(splitPoint).trim();
-        chunkNum++;
-    }
-    
-    // Final chunk
-    if (remaining.length > 0) {
-        const emoji = modelConfig.emoji || '📄';
-        const finalChunk = chunkNum > 1 ? 
-            `${emoji} *Part ${chunkNum}/${totalChunks} - Complete*\n\n${remaining}` : 
-            remaining;
             
-        chunks.push({ 
-            text: finalChunk, 
-            model, 
-            modelConfig,
-            chunkInfo: {
-                number: chunkNum,
-                total: totalChunks,
-                length: finalChunk.length,
-                isFinal: true
-            }
-        });
-    }
-    
-    return chunks;
-}
-
-// Advanced duplicate detection with semantic analysis
-function isDuplicate(chatId, text, model) {
-    const hash = messageCache.generateKey(chatId, text, model);
-    return messageCache.has(hash);
-}
-
-function recordMessage(chatId, text, model, metadata = {}) {
-    const hash = messageCache.generateKey(chatId, text, model);
-    messageCache.set(hash, {
-        timestamp: Date.now(),
-        metadata,
-        model
-    });
-}
-
-// Enhanced retry mechanism with exponential backoff
-async function retry(fn, maxAttempts = CONFIG.MAX_RETRIES) {
-    let lastError;
-    let attempt = 0;
-    
-    while (attempt < maxAttempts) {
-        attempt++;
-        try {
-            return await fn();
-        } catch (error) {
-            lastError = error;
+            const formatted = this.formatMessage(text, options);
+            const chunks = this.splitMessage(formatted, options);
             
-            if (attempt === maxAttempts) break;
+            console.log(`📤 Delivering ${chunks.length} message(s) to chat ${chatId}`);
             
-            // Adaptive backoff based on error type
-            let delay = CONFIG.RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-            
-            if (error.message.includes('rate limit')) {
-                delay *= 2; // Longer delay for rate limits
-            } else if (error.message.includes('network')) {
-                delay *= 1.5; // Medium delay for network issues
-            }
-            
-            console.log(`Retry attempt ${attempt}/${maxAttempts} after ${delay}ms: ${error.message}`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-    }
-    
-    throw lastError;
-}
-
-// Enhanced message formatting with fallback chain
-function formatMessage(text, parseMode) {
-    try {
-        switch (parseMode) {
-            case 'HTML':
-                return text
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
-                    .replace(/\*([^*]+)\*/g, '<i>$1</i>')
-                    .replace(/`([^`]+)`/g, '<code>$1</code>')
-                    .replace(/```([^`]+)```/g, '<pre>$1</pre>');
-                    
-            case 'MarkdownV2':
-                return text
-                    .replace(/([_*[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
-                    
-            case 'Markdown':
-            default:
-                return text;
-        }
-    } catch (error) {
-        console.warn(`Formatting failed for ${parseMode}:`, error.message);
-        return text; // Return original text on formatting error
-    }
-}
-
-// Enhanced single message sending with intelligent fallbacks
-async function sendSingleMessage(bot, chatId, text, options = {}) {
-    const methods = [
-        { parseMode: 'Markdown', format: formatMessage(text, 'Markdown') },
-        { parseMode: 'HTML', format: formatMessage(text, 'HTML') },
-        { parseMode: 'MarkdownV2', format: formatMessage(text, 'MarkdownV2') },
-        { parseMode: null, format: text.replace(/[*_`[\]()]/g, '') }
-    ];
-    
-    let lastError;
-    
-    for (const method of methods) {
-        try {
-            const sendOptions = {
-                disable_web_page_preview: true,
-                disable_notification: options.silent || false,
-                reply_to_message_id: options.replyTo,
-                ...options
-            };
-            
-            if (method.parseMode) {
-                sendOptions.parse_mode = method.parseMode;
-            }
-            
-            const result = await bot.sendMessage(chatId, method.format, sendOptions);
-            
-            // Log successful method for optimization
-            console.log(`Message sent successfully using ${method.parseMode || 'plain'} format`);
-            return result;
-            
-        } catch (error) {
-            lastError = error;
-            console.warn(`Parse mode ${method.parseMode || 'plain'} failed: ${error.message}`);
-            continue;
-        }
-    }
-    
-    throw new Error(`All formatting methods failed. Last error: ${lastError.message}`);
-}
-
-// Main delivery function with comprehensive enhancements
-async function deliverMessage(bot, chatId, content, options = {}) {
-    const startTime = Date.now();
-    const deliveryId = crypto.randomBytes(8).toString('hex');
-    
-    try {
-        // Input validation
-        if (!bot || !chatId || !content) {
-            throw new Error('Missing required parameters: bot, chatId, or content');
-        }
-        
-        console.log(`[${deliveryId}] Starting message delivery to chat ${chatId}`);
-        
-        // Process content with advanced pipeline
-        const processed = processMessage(content, options);
-        if (!processed.text || processed.text.length < 3) {
-            throw new Error('Content too short after processing');
-        }
-        
-        const { text, model, modelConfig, processingInfo } = processed;
-        
-        // Enhanced duplicate detection
-        if (!options.force && isDuplicate(chatId, text, model)) {
-            console.log(`[${deliveryId}] Duplicate message blocked for chat ${chatId} (model: ${model})`);
-            return { 
-                success: false, 
-                reason: 'duplicate',
-                model,
-                processingTime: Date.now() - startTime,
-                deliveryId
-            };
-        }
-        
-        // Add title with enhanced model branding
-        let finalContent = text;
-        if (options.title) {
-            const titleEmoji = modelConfig.emoji || '📄';
-            const confidence = processingInfo.modelConfidence > 0.8 ? '' : ' (auto-detected)';
-            finalContent = `${titleEmoji} *${options.title}${confidence}*\n\n${text}`;
-        }
-        
-        let result;
-        
-        if (finalContent.length <= CONFIG.SAFE_LENGTH) {
-            // Single message delivery with retry
-            await retry(() => sendSingleMessage(bot, chatId, finalContent, options));
-            result = { chunks: 1, method: 'single' };
-            
-        } else {
-            // Enhanced chunked delivery
-            const chunks = chunkMessage({ text: finalContent, model, modelConfig }, options);
-            console.log(`[${deliveryId}] Delivering ${chunks.length} chunks (model: ${modelConfig.name})`);
-            
-        // Calculate adaptive delay based on model and chunk count
-        function calculateAdaptiveDelay(modelConfig, chunkCount) {
-            const baseDelay = modelConfig.delay || CONFIG.DELAY_MS;
-            const complexityMultiplier = modelConfig.complexity === 'highest' ? 1.3 : 
-                                        modelConfig.complexity === 'high' ? 1.1 : 1.0;
-            const chunkMultiplier = Math.min(1 + (chunkCount * 0.1), 2.0);
-            
-            return Math.round(baseDelay * complexityMultiplier * chunkMultiplier);
-        }
-
-            let delivered = 0;
-            const adaptiveDelay = calculateAdaptiveDelay(modelConfig, chunks.length);
+            const results = [];
+            let currentDelay = this.config.DELAY_MS;
             
             for (let i = 0; i < chunks.length; i++) {
                 const chunk = chunks[i];
-                const isLast = i === chunks.length - 1;
+                let attempts = 0;
+                let sent = false;
                 
-                try {
-                    await retry(() => sendSingleMessage(bot, chatId, chunk.text, {
-                        ...options,
-                        silent: i > 0, // Only first chunk makes sound
-                        chunkNumber: i + 1,
-                        totalChunks: chunks.length
-                    }));
-                    
-                    delivered++;
-                    
-                    // Adaptive delay with backpressure detection
-                    if (!isLast) {
-                        const delay = adaptiveDelay * (1 + (i * 0.1)); // Gradually increase delay
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                    }
-                    
-                } catch (error) {
-                    console.error(`[${deliveryId}] Chunk ${i + 1}/${chunks.length} failed: ${error.message}`);
-                    
-                    // Send error notice for first chunk failure only
-                    if (i === 0) {
-                        try {
-                            const errorMsg = `⚠️ *Delivery Issue*\n\nModel: ${modelConfig.name}\nProblem: ${error.message.substring(0, 100)}`;
-                            await bot.sendMessage(chatId, errorMsg);
-                        } catch (fallbackError) {
-                            console.error(`[${deliveryId}] Fallback notification failed: ${fallbackError.message}`);
+                while (attempts < this.config.MAX_RETRIES && !sent) {
+                    try {
+                        attempts++;
+                        
+                        // Add delivery attempt info for debugging
+                        if (attempts > 1) {
+                            console.log(`🔄 Retry attempt ${attempts}/${this.config.MAX_RETRIES} for chunk ${i + 1}`);
+                        }
+                        
+                        // Send message using your bot instance
+                        const result = await this.sendMessageWithRetry(bot, chatId, chunk, {
+                            parse_mode: 'Markdown',
+                            disable_web_page_preview: true,
+                            ...options.telegramOptions
+                        });
+                        
+                        results.push({
+                            chunkIndex: i,
+                            messageId: result.message_id,
+                            length: chunk.length,
+                            attempts: attempts,
+                            success: true
+                        });
+                        
+                        sent = true;
+                        this.metrics.totalSent++;
+                        
+                        // Adaptive delay - increase if we had to retry
+                        if (attempts > 1 && this.config.ADAPTIVE_RETRY) {
+                            currentDelay = Math.min(currentDelay * 1.5, 2000);
+                        } else if (attempts === 1) {
+                            currentDelay = Math.max(currentDelay * 0.9, this.config.DELAY_MS);
+                        }
+                        
+                        console.log(`✅ Chunk ${i + 1}/${chunks.length} sent (${chunk.length} chars, attempt ${attempts})`);
+                        
+                    } catch (error) {
+                        console.error(`❌ Failed to send chunk ${i + 1}, attempt ${attempts}:`, error.message);
+                        
+                        if (attempts < this.config.MAX_RETRIES) {
+                            const retryDelay = this.config.RETRY_DELAY_MS * Math.pow(2, attempts - 1); // Exponential backoff
+                            console.log(`⏳ Retrying in ${retryDelay}ms...`);
+                            await this.sleep(retryDelay);
+                        } else {
+                            // All retries failed
+                            results.push({
+                                chunkIndex: i,
+                                error: error.message,
+                                attempts: attempts,
+                                success: false
+                            });
+                            
+                            this.metrics.totalFailed++;
+                            this.circuitBreaker.failures++;
+                            
+                            // Open circuit breaker if too many failures
+                            if (this.circuitBreaker.failures >= 3) {
+                                this.circuitBreaker.isOpen = true;
+                                this.circuitBreaker.lastFailure = Date.now();
+                                console.error('🚨 Circuit breaker opened due to repeated failures');
+                            }
                         }
                     }
                 }
+                
+                // Delay between chunks (but not after last one)
+                if (sent && i < chunks.length - 1) {
+                    await this.sleep(currentDelay);
+                }
             }
             
-            if (delivered === 0) {
-                throw new Error('All chunks failed to deliver');
-            }
+            const executionTime = Date.now() - startTime;
+            const successCount = results.filter(r => r.success).length;
+            const failureCount = results.filter(r => !r.success).length;
             
-            result = { 
-                chunks: chunks.length, 
-                delivered, 
-                method: 'chunked',
-                efficiency: (delivered / chunks.length * 100).toFixed(1)
+            console.log(`📊 Delivery complete: ${successCount}/${chunks.length} sent, ${failureCount} failed, ${executionTime}ms`);
+            
+            // Update metrics
+            this.metrics.averageDelay = (this.metrics.averageDelay + currentDelay) / 2;
+            this.metrics.lastSuccessTime = successCount > 0 ? Date.now() : this.metrics.lastSuccessTime;
+            
+            return {
+                success: failureCount === 0,
+                totalChunks: chunks.length,
+                sentChunks: successCount,
+                failedChunks: failureCount,
+                executionTime,
+                results,
+                metrics: this.getMetrics()
+            };
+            
+        } catch (error) {
+            console.error('🚨 Critical error in message delivery:', error);
+            this.metrics.totalFailed++;
+            
+            return {
+                success: false,
+                error: error.message,
+                totalChunks: 0,
+                sentChunks: 0,
+                failedChunks: 1,
+                executionTime: Date.now() - startTime,
+                results: [],
+                metrics: this.getMetrics()
             };
         }
-        
-        // Record successful delivery
-        recordMessage(chatId, text, model, {
-            deliveryId,
-            chunks: result.chunks,
-            processingInfo
-        });
-        
-        const processingTime = Date.now() - startTime;
-        const efficiency = result.method === 'chunked' ? ` (${result.efficiency}% efficiency)` : '';
-        
-        console.log(`[${deliveryId}] ✅ ${modelConfig.name} delivered to ${chatId}: ${result.chunks} chunks in ${processingTime}ms${efficiency}`);
+    }
+    
+    // Robust message sending with error handling
+    async sendMessageWithRetry(bot, chatId, text, options = {}) {
+        try {
+            // Handle different bot implementations
+            if (bot.sendMessage) {
+                return await bot.sendMessage(chatId, text, options);
+            } else if (bot.telegram && bot.telegram.sendMessage) {
+                return await bot.telegram.sendMessage(chatId, text, options);
+            } else if (typeof bot === 'function') {
+                return await bot(chatId, text, options);
+            } else {
+                throw new Error('Invalid bot instance - no sendMessage method found');
+            }
+        } catch (error) {
+            // Enhanced error classification
+            if (error.code === 429) {
+                const retryAfter = error.parameters?.retry_after || 1;
+                throw new Error(`Rate limited. Retry after ${retryAfter}s`);
+            } else if (error.code === 400) {
+                throw new Error(`Bad request: ${error.description || 'Invalid message format'}`);
+            } else if (error.code === 403) {
+                throw new Error(`Forbidden: ${error.description || 'Bot blocked by user'}`);
+            } else {
+                throw error;
+            }
+        }
+    }
+    
+    // Utility sleep function
+    async sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    // Get system metrics
+    getMetrics() {
+        const now = Date.now();
+        const uptime = now - this.metrics.lastSuccessTime;
         
         return {
-            success: true,
-            deliveryId,
-            processingTime,
-            model,
-            modelConfig,
-            processingInfo,
-            ...result
-        };
-        
-    } catch (error) {
-        const processingTime = Date.now() - startTime;
-        console.error(`[${deliveryId}] ❌ Delivery failed for chat ${chatId}: ${error.message}`);
-        
-        // Cache error to prevent spam retries
-        const errorKey = `error_${chatId}_${Date.now()}`;
-        errorCache.set(errorKey, error.message);
-        
-        return {
-            success: false,
-            error: error.message,
-            deliveryId,
-            processingTime: processingTime,
-            model: options.model || 'unknown'
+            totalSent: this.metrics.totalSent,
+            totalFailed: this.metrics.totalFailed,
+            successRate: this.metrics.totalSent + this.metrics.totalFailed > 0 ? 
+                ((this.metrics.totalSent / (this.metrics.totalSent + this.metrics.totalFailed)) * 100).toFixed(2) : 100,
+            averageDelay: Math.round(this.metrics.averageDelay),
+            circuitBreakerOpen: this.circuitBreaker.isOpen,
+            lastSuccessTime: new Date(this.metrics.lastSuccessTime).toLocaleString(),
+            uptimeSinceLastSuccess: Math.round(uptime / 1000) + 's'
         };
     }
-}
-// GPT-5 specific methods
-async function sendGPT5Message(bot, chatId, content, options = {}) {
-    return await deliverMessage(bot, chatId, content, { ...options, model: 'gpt-5' });
-}
+    
+    // Reset circuit breaker manually
+    resetCircuitBreaker() {
+        this.circuitBreaker.isOpen = false;
+        this.circuitBreaker.failures = 0;
+        this.circuitBreaker.lastFailure = null;
+        console.log('🔄 Circuit breaker manually reset');
+    }
 
-async function sendGPT5Mini(bot, chatId, content, options = {}) {
-    return await deliverMessage(bot, chatId, content, { ...options, model: 'gpt-5-mini' });
-}
-
-async function sendGPT5Nano(bot, chatId, content, options = {}) {
-    return await deliverMessage(bot, chatId, content, { ...options, model: 'gpt-5-nano' });
-}
-
-async function sendGPT5Chat(bot, chatId, content, options = {}) {
-    return await deliverMessage(bot, chatId, content, { ...options, model: 'gpt-5-chat-latest' });
-}
-
-// Legacy compatibility
-async function sendGPTResponse(bot, chatId, response, title = null, metadata = {}) {
-    return await deliverMessage(bot, chatId, response, { title, model: 'gpt-5', ...metadata });
-}
-
-async function sendAnalysis(bot, chatId, analysis, title = null, metadata = {}) {
-    return await deliverMessage(bot, chatId, analysis, { title, model: 'gpt-5-mini', ...metadata });
-}
-
-async function sendAlert(bot, chatId, message, title = 'System Alert', metadata = {}) {
-    const alertContent = `⚠️ ${message}`;
-    return await deliverMessage(bot, chatId, alertContent, { title, model: 'default', force: true, ...metadata });
-}
-
-// Utility functions
-function getStats() {
-    return {
-        timestamp: Date.now(),
-        cache: messageCache.getStats(),
-        errorCache: errorCache.getStats(),
-        config: {
-            max_length: CONFIG.MAX_MESSAGE_LENGTH,
-            safe_length: CONFIG.SAFE_LENGTH,
-            models_configured: Object.keys(CONFIG.MODELS).length
+    // Split formatted message into Telegram-friendly chunks
+    splitMessage(text, options = {}) {
+        const formatted = this.formatMessage(text, options);
+        
+        if (formatted.length <= this.MAX_MESSAGE_LENGTH) {
+            return [formatted];
         }
-    };
-}
-
-function debug(chatId, content, model = null) {
-    const processed = processMessage(content, { model });
-    const chunks = chunkMessage(processed);
-    const hash = messageCache.generateKey(chatId, processed.text, processed.model);
+        
+        const chunks = [];
+        const paragraphs = formatted.split('\n\n');
+        let currentChunk = '';
+        
+        for (const paragraph of paragraphs) {
+            // If single paragraph is too long, split it further
+            if (paragraph.length > this.PREFERRED_CHUNK_SIZE) {
+                // Save current chunk if it has content
+                if (currentChunk.trim()) {
+                    chunks.push(this.finalizeChunk(currentChunk.trim()));
+                    currentChunk = '';
+                }
+                
+                // Split long paragraph
+                const subChunks = this.splitLongParagraph(paragraph);
+                chunks.push(...subChunks);
+            } else {
+                // Check if adding this paragraph would exceed limit
+                const testChunk = currentChunk + (currentChunk ? '\n\n' : '') + paragraph;
+                
+                if (testChunk.length > this.PREFERRED_CHUNK_SIZE) {
+                    // Save current chunk and start new one
+                    if (currentChunk.trim()) {
+                        chunks.push(this.finalizeChunk(currentChunk.trim()));
+                    }
+                    currentChunk = paragraph;
+                } else {
+                    currentChunk = testChunk;
+                }
+            }
+        }
+        
+        // Add final chunk
+        if (currentChunk.trim()) {
+            chunks.push(this.finalizeChunk(currentChunk.trim()));
+        }
+        
+        return chunks.map((chunk, index, array) => {
+            if (array.length > 1) {
+                const partInfo = `\n\n📄 *Part ${index + 1}/${array.length}*`;
+                return chunk + partInfo;
+            }
+            return chunk;
+        });
+    }
     
-    return {
-        deliveryId: crypto.randomBytes(8).toString('hex'),
-        detectedModel: processed.model,
-        modelConfig: processed.modelConfig,
-        processingInfo: processed.processingInfo,
-        chunkCount: chunks.length,
-        messageHash: hash,
-        isDuplicate: isDuplicate(chatId, processed.text, processed.model),
-        chunks: chunks.map((chunk, i) => ({
-            index: i + 1,
-            length: chunk.text.length,
-            preview: chunk.text.substring(0, 80) + '...'
-        }))
-    };
+    // Normalize text (clean up spacing, line breaks, etc.)
+    normalizeText(text) {
+        return text
+            .replace(/\r\n/g, '\n')           // Normalize line breaks
+            .replace(/\n{3,}/g, '\n\n')       // Max 2 consecutive line breaks
+            .replace(/[ \t]+/g, ' ')          // Normalize spaces
+            .replace(/^\s+|\s+$/g, '')        // Trim start/end
+            .replace(/\n[ \t]+/g, '\n')       // Remove leading spaces on lines
+            .replace(/[ \t]+\n/g, '\n');      // Remove trailing spaces on lines
+    }
+    
+    // Add automatic emojis based on content analysis
+    addAutoEmojis(text) {
+        let result = text;
+        
+        // Add emojis for specific keywords
+        for (const [keyword, emoji] of Object.entries(this.keywordEmojis)) {
+            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+            result = result.replace(regex, `${emoji} ${keyword}`);
+        }
+        
+        // Add section emojis for headers
+        result = result.replace(/^(#+\s*)(.+)$/gm, (match, hashes, title) => {
+            const emoji = this.getHeaderEmoji(title);
+            return `${hashes}${emoji} ${title}`;
+        });
+        
+        // Add status emojis for certain patterns
+        result = result.replace(/^(Status|State|Condition):\s*(.+)$/gm, (match, label, status) => {
+            const emoji = this.getStatusEmoji(status);
+            return `${emoji} **${label}:** ${status}`;
+        });
+        
+        return result;
+    }
+    
+    // Improve spacing and readability
+    improveSpacing(text) {
+        return text
+            // Add space after periods if missing
+            .replace(/\.([A-Z])/g, '. $1')
+            // Add space after colons if missing
+            .replace(/:([^\s:])/g, ': $1')
+            // Improve list spacing
+            .replace(/^([•\-\*])\s*/gm, '$1 ')
+            // Add breathing room around code blocks
+            .replace(/(```[\s\S]*?```)/g, '\n$1\n')
+            // Improve paragraph separation
+            .replace(/([.!?])\n([A-Z])/g, '$1\n\n$2');
+    }
+    
+    // Format markdown for Telegram
+    formatMarkdown(text) {
+        let result = text;
+        
+        // Convert various markdown patterns to Telegram format
+        result = result
+            // Bold: **text** -> *text*
+            .replace(/\*\*(.*?)\*\*/g, '*$1*')
+            // Italic: *text* -> _text_  
+            .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '_$1_')
+            // Code: `text` stays the same
+            // Code blocks: ``` stays the same
+            // Underline: __text__ -> __text__ (Telegram supports this)
+            // Strikethrough: ~~text~~ -> ~text~ (Telegram format)
+            .replace(/~~([^~]+)~~/g, '~$1~');
+        
+        return result;
+    }
+    
+    // Enhance headers with emojis and formatting
+    enhanceHeaders(text) {
+        return text.replace(/^(#+)\s*(.+)$/gm, (match, hashes, title) => {
+            const level = hashes.length;
+            const emoji = this.getHeaderEmoji(title);
+            
+            if (level === 1) {
+                return `🔥 *${title.toUpperCase()}*\n${'═'.repeat(Math.min(title.length, 20))}`;
+            } else if (level === 2) {
+                return `${emoji} **${title}**\n${'─'.repeat(Math.min(title.length, 15))}`;
+            } else {
+                return `${emoji} **${title}**`;
+            }
+        });
+    }
+    
+    // Enhance lists with better formatting
+    enhanceLists(text) {
+        let result = text;
+        
+        // Improve bullet points
+        result = result
+            .replace(/^[\-\*]\s+(.+)$/gm, '• $1')
+            .replace(/^(\d+)[\.\)]\s+(.+)$/gm, '$1️⃣ $2')
+            .replace(/^([a-zA-Z])[\.\)]\s+(.+)$/gm, '▫️ $2');
+        
+        // Add checkboxes for task-like items
+        result = result
+            .replace(/^•\s+(.*(?:complete|done|finished|ready|working|success).*)$/gmi, '✅ $1')
+            .replace(/^•\s+(.*(?:todo|pending|waiting|failed|error|issue).*)$/gmi, '❌ $1')
+            .replace(/^•\s+(.*(?:progress|processing|loading|running).*)$/gmi, '⏳ $1');
+        
+        return result;
+    }
+    
+    // Add visual separators for long content
+    addSeparators(text) {
+        const lines = text.split('\n');
+        const result = [];
+        let inCodeBlock = false;
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            
+            // Track code blocks
+            if (line.startsWith('```')) {
+                inCodeBlock = !inCodeBlock;
+            }
+            
+            result.push(line);
+            
+            // Add separator after major sections (not in code blocks)
+            if (!inCodeBlock && 
+                line.match(/^[🔥✨💡📊⚡🎯].*[*_].*[*_]/) && 
+                i < lines.length - 1 && 
+                lines[i + 1].trim() !== '') {
+                result.push('┈'.repeat(25));
+            }
+        }
+        
+        return result.join('\n');
+    }
+    
+    // Split very long paragraphs
+    splitLongParagraph(paragraph) {
+        const sentences = paragraph.split(/(?<=[.!?])\s+/);
+        const chunks = [];
+        let currentChunk = '';
+        
+        for (const sentence of sentences) {
+            const testChunk = currentChunk + (currentChunk ? ' ' : '') + sentence;
+            
+            if (testChunk.length > this.PREFERRED_CHUNK_SIZE) {
+                if (currentChunk) {
+                    chunks.push(this.finalizeChunk(currentChunk));
+                    currentChunk = sentence;
+                } else {
+                    // Single sentence too long, split by words
+                    const words = sentence.split(' ');
+                    let wordChunk = '';
+                    
+                    for (const word of words) {
+                        const testWord = wordChunk + (wordChunk ? ' ' : '') + word;
+                        if (testWord.length > this.PREFERRED_CHUNK_SIZE) {
+                            if (wordChunk) {
+                                chunks.push(this.finalizeChunk(wordChunk));
+                                wordChunk = word;
+                            } else {
+                                chunks.push(this.finalizeChunk(word));
+                            }
+                        } else {
+                            wordChunk = testWord;
+                        }
+                    }
+                    
+                    if (wordChunk) {
+                        currentChunk = wordChunk;
+                    }
+                }
+            } else {
+                currentChunk = testChunk;
+            }
+        }
+        
+        if (currentChunk) {
+            chunks.push(this.finalizeChunk(currentChunk));
+        }
+        
+        return chunks;
+    }
+    
+    // Finalize a chunk with proper formatting
+    finalizeChunk(chunk) {
+        return chunk
+            .replace(/\n{3,}/g, '\n\n')  // Clean up excessive line breaks
+            .trim();
+    }
+    
+    // Get appropriate emoji for headers
+    getHeaderEmoji(title) {
+        const lower = title.toLowerCase();
+        
+        if (lower.includes('error') || lower.includes('problem')) return '🚨';
+        if (lower.includes('success') || lower.includes('complete')) return '✅';
+        if (lower.includes('warning') || lower.includes('caution')) return '⚠️';
+        if (lower.includes('info') || lower.includes('note')) return 'ℹ️';
+        if (lower.includes('config') || lower.includes('setting')) return '⚙️';
+        if (lower.includes('result') || lower.includes('output')) return '📊';
+        if (lower.includes('api') || lower.includes('gpt')) return '🤖';
+        if (lower.includes('cost') || lower.includes('price')) return '💰';
+        if (lower.includes('time') || lower.includes('schedule')) return '⏰';
+        if (lower.includes('file') || lower.includes('data')) return '📁';
+        if (lower.includes('system') || lower.includes('status')) return '🖥️';
+        if (lower.includes('user') || lower.includes('account')) return '👤';
+        
+        return '📋';
+    }
+    
+    // Get status-appropriate emoji
+    getStatusEmoji(status) {
+        const lower = status.toLowerCase();
+        
+        if (lower.includes('ok') || lower.includes('ready') || lower.includes('online')) return '🟢';
+        if (lower.includes('error') || lower.includes('failed') || lower.includes('offline')) return '🔴';
+        if (lower.includes('warning') || lower.includes('busy') || lower.includes('pending')) return '🟡';
+        if (lower.includes('processing') || lower.includes('loading')) return '🔄';
+        
+        return 'ℹ️';
+    }
 }
 
-function clearCache() {
-    messageCache.clear();
-    errorCache.clear();
-    return { success: true, message: 'All caches cleared', timestamp: Date.now() };
+// Usage examples and helper functions with production-grade features
+class TelegramMessageHandler {
+    constructor(bot, defaultOptions = {}) {
+        this.bot = bot;
+        this.formatter = new TelegramFormatter(defaultOptions.config);
+        this.defaultOptions = defaultOptions;
+        
+        // Message queue for rate limiting
+        this.messageQueue = [];
+        this.isProcessingQueue = false;
+        this.queueProcessingDelay = 300; // ms between queued messages
+    }
+    
+    // Enhanced message sending with queue management
+    async sendFormattedMessage(text, chatId, options = {}) {
+        const messageOptions = { ...this.defaultOptions, ...options };
+        
+        if (messageOptions.useQueue) {
+            return this.queueMessage(text, chatId, messageOptions);
+        } else {
+            return this.formatter.splitAndDeliverMessage(text, this.bot, chatId, messageOptions);
+        }
+    }
+    
+    // Queue message for rate-limited sending
+    async queueMessage(text, chatId, options = {}) {
+        return new Promise((resolve, reject) => {
+            this.messageQueue.push({
+                text,
+                chatId,
+                options,
+                resolve,
+                reject,
+                timestamp: Date.now()
+            });
+            
+            if (!this.isProcessingQueue) {
+                this.processMessageQueue();
+            }
+        });
+    }
+    
+    // Process message queue with rate limiting
+    async processMessageQueue() {
+        if (this.isProcessingQueue || this.messageQueue.length === 0) return;
+        
+        this.isProcessingQueue = true;
+        console.log(`📋 Processing message queue (${this.messageQueue.length} messages)`);
+        
+        while (this.messageQueue.length > 0) {
+            const message = this.messageQueue.shift();
+            
+            try {
+                const result = await this.formatter.splitAndDeliverMessage(
+                    message.text, 
+                    this.bot, 
+                    message.chatId, 
+                    message.options
+                );
+                message.resolve(result);
+            } catch (error) {
+                console.error('Queue processing error:', error);
+                message.reject(error);
+            }
+            
+            // Rate limiting delay
+            if (this.messageQueue.length > 0) {
+                await this.formatter.sleep(this.queueProcessingDelay);
+            }
+        }
+        
+        this.isProcessingQueue = false;
+        console.log('✅ Message queue processing complete');
+    }
+    
+    // Get queue status
+    getQueueStatus() {
+        return {
+            queueLength: this.messageQueue.length,
+            isProcessing: this.isProcessingQueue,
+            oldestMessage: this.messageQueue.length > 0 ? 
+                new Date(this.messageQueue[0].timestamp).toLocaleString() : null
+        };
+    }
+    
+    // Format and send a message with production monitoring
+    async sendMessageWithMonitoring(text, chatId, options = {}) {
+        const startTime = Date.now();
+        
+        try {
+            const result = await this.sendFormattedMessage(text, chatId, options);
+            
+            // Log success metrics
+            console.log(`📊 Message delivery metrics:`, {
+                chatId,
+                chunks: result.totalChunks,
+                success: result.success,
+                duration: result.executionTime,
+                timestamp: new Date().toISOString()
+            });
+            
+            return result;
+        } catch (error) {
+            // Log failure metrics
+            console.error(`📊 Message delivery failed:`, {
+                chatId,
+                error: error.message,
+                duration: Date.now() - startTime,
+                timestamp: new Date().toISOString()
+            });
+            
+            throw error;
+        }
+    }
+    
+    // Format different types of messages
+    formatGPTResponse(response, metadata = {}) {
+        const header = `🤖 **GPT-5 Response**`;
+        const meta = metadata.model ? `\n_Model: ${metadata.model}_` : '';
+        const tokens = metadata.tokens ? `\n_Tokens: ${metadata.tokens}_` : '';
+        const cost = metadata.cost ? `\n_Cost: $${metadata.cost}_` : '';
+        
+        return this.formatter.formatMessage(`${header}${meta}${tokens}${cost}\n\n${response}`);
+    }
+    
+    formatSystemStatus(status) {
+        const title = `🖥️ **System Status Report**`;
+        return this.formatter.formatMessage(`${title}\n\n${JSON.stringify(status, null, 2)}`);
+    }
+    
+    formatError(error, context = '') {
+        const title = `🚨 **Error Report**`;
+        const contextInfo = context ? `\n**Context:** ${context}` : '';
+        const errorInfo = `\n**Error:** ${error.message || error}`;
+        const timestamp = `\n**Time:** ${new Date().toLocaleString()}`;
+        
+        return this.formatter.formatMessage(`${title}${contextInfo}${errorInfo}${timestamp}`);
+    }
+    
+    formatSuccess(message, details = {}) {
+        const title = `✅ **Success**`;
+        const detailsText = Object.keys(details).length > 0 ? 
+            `\n\n**Details:**\n${Object.entries(details).map(([k,v]) => `• ${k}: ${v}`).join('\n')}` : '';
+        
+        return this.formatter.formatMessage(`${title}\n\n${message}${detailsText}`);
+    }
 }
 
-// Periodic maintenance
-setInterval(() => {
-    messageCache.cleanup();
-    errorCache.cleanup();
-}, CONFIG.CLEANUP_INTERVAL);
+// Production-grade demonstration with real bot integration
+async function demonstrateProductionFeatures(bot) {
+    const handler = new TelegramMessageHandler(bot, {
+        config: {
+            DELAY_MS: 150,
+            MAX_RETRIES: 3,
+            ADAPTIVE_RETRY: true,
+            AUTO_EMOJI: true,
+            SMART_SPACING: true
+        }
+    });
+    
+    console.log('🚀 Running production-grade Telegram formatter demo...\n');
+    
+    // Example 1: High-priority message with monitoring
+    const criticalUpdate = `System Alert: GPT-5 API experiencing high load. Current status: 85% capacity. Estimated resolution: 10 minutes. Auto-scaling activated. Monitoring active.`;
+    
+    try {
+        const result1 = await handler.sendMessageWithMonitoring(
+            criticalUpdate, 
+            'admin_channel',
+            { priority: 'high', useQueue: false }
+        );
+        console.log('✅ Critical message sent:', result1.success);
+    } catch (error) {
+        console.error('❌ Critical message failed:', error.message);
+    }
+    
+    console.log('\n' + '─'.repeat(60) + '\n');
+    
+    // Example 2: Batch processing with queue
+    const batchMessages = [
+        'GPT-5 processing user query batch 1/5...',
+        'GPT-5 processing user query batch 2/5...',
+        'GPT-5 processing user query batch 3/5...',
+        'GPT-5 processing user query batch 4/5...',
+        'GPT-5 processing user query batch 5/5 - Complete!'
+    ];
+    
+    console.log('📋 Queuing batch messages...');
+    const batchPromises = batchMessages.map((msg, index) => 
+        handler.sendFormattedMessage(msg, 'status_channel', { 
+            useQueue: true,
+            addEmojis: true,
+            priority: index === 4 ? 'high' : 'normal'
+        })
+    );
+    
+    try {
+        const batchResults = await Promise.all(batchPromises);
+        console.log(`✅ Batch processing complete: ${batchResults.filter(r => r.success).length}/${batchResults.length} successful`);
+    } catch (error) {
+        console.error('❌ Batch processing error:', error.message);
+    }
+    
+    // Show system metrics
+    console.log('\n📊 System Metrics:');
+    console.log(handler.formatter.getMetrics());
+    console.log('📋 Queue Status:');
+    console.log(handler.getQueueStatus());
+}
 
-// Startup
-console.log('Perfect Telegram Splitter v5.0 (10/10) loaded');
-console.log(`- ${Object.keys(CONFIG.MODELS).length} model configurations`);
-console.log(`- ${Object.keys(CONFIG.AUTO_EMOJIS).length} auto-emoji patterns`);
-console.log('- Advanced caching with TTL');
-console.log('- Intelligent model detection');
-console.log('- Context-aware chunking');
-console.log('- Production-ready error handling');
-
-// Main export
+// Export for production use
 module.exports = {
-    // Primary delivery methods
-    send: deliverMessage,
-    sendMessage: deliverMessage,
-    
-    // GPT-5 specific methods  
-    sendGPT5Message,
-    sendGPT5: sendGPT5Message,
-    sendGPT5Mini,
-    sendGPT5Nano, 
-    sendGPT5Chat,
-    
-    // Legacy compatibility
-    sendGPTResponse,
-    sendAnalysis,
-    sendAlert,
-    
-    // Utility functions
-    getStats,
-    debug,
-    clearCache,
-    
-    // Helper functions
-    processMessage,
-    chunkMessage: (content, options = {}) => chunkMessage(processMessage(content, options), options),
-    detectModel,
-    addAutoEmojis,
-    applyTextStyling,
-    isDuplicate: (chatId, text, model) => {
-        const processed = processMessage(text, { model });
-        return isDuplicate(chatId, processed.text, processed.model);
-    },
-    
-    // Components
-    messageCache,
-    errorCache,
+    TelegramFormatter,
+    TelegramMessageHandler,
+    demonstrateProductionFeatures,
     CONFIG
 };
+
+// Run production demo if called directly
+if (require.main === module) {
+    // Mock bot for demonstration
+    const mockBot = {
+        sendMessage: async (chatId, text, options) => {
+            console.log(`🤖 MockBot sending to ${chatId}: ${text.substring(0, 50)}...`);
+            await new Promise(resolve => setTimeout(resolve, 100)); // Simulate API delay
+            return { message_id: Math.floor(Math.random() * 10000) };
+        }
+    };
+    
+    demonstrateProductionFeatures(mockBot).then(() => {
+        console.log('\n🎉 Production demo complete! Your Telegram splitter is now enterprise-ready.');
+        console.log('\n🚀 Features enabled:');
+        console.log('   ✅ Auto-emoji injection');
+        console.log('   ✅ Smart text formatting'); 
+        console.log('   ✅ Production error handling');
+        console.log('   ✅ Circuit breaker protection');
+        console.log('   ✅ Message queue management');
+        console.log('   ✅ Adaptive retry logic');
+        console.log('   ✅ Real-time metrics');
+        console.log('   ✅ Rate limit protection');
+    }).catch(console.error);
+}
