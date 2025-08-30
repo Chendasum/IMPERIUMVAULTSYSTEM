@@ -703,6 +703,27 @@ module.exports = {
     CONFIG
 };
 
+// Utility functions
+function getStats() {
+    return {
+        timestamp: Date.now(),
+        cache_size: messageCache.cache.size,
+        error_cache_size: errorCache.cache.size,
+        config: {
+            max_length: CONFIG.MAX_MESSAGE_LENGTH,
+            safe_length: CONFIG.SAFE_LENGTH,
+            duplicate_window: CONFIG.DUPLICATE_WINDOW_MS
+        }
+    };
+}
+
+function clearCache() {
+    messageCache.clear();
+    errorCache.clear();
+    console.log('Message and error caches cleared');
+    return { success: true };
+}
+
 console.log('Perfect Telegram Splitter v4.0 loaded');
 console.log('- Smart GPT model detection from content');
 console.log('- Auto-emoji enhancement for financial/business terms');
