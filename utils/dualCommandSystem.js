@@ -2669,7 +2669,125 @@ module.exports = {
 // MAIN EXPORTS, UTILITY FUNCTIONS & COMPATIBILITY LAYER
 // This part combines all previous parts and provides the complete API
 
+// ───────────────────────────────────────────────────────────────────────────────
+// MEMORY WRITE HELPERS (so Part 3 can read useful context next turn)
+
+// Normalize assistant text before saving
+function normalizeAssistantText(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/^(Assistant:|AI:|GPT-?5?:)\s*/i, '')
+    .trim()
+    .slice(0, 8000); // sanity cap
+}
+
+// Try to infer a short topic from the user message
+function inferTopic(userMessage) {
+  if (!userMessage) return 'general';
+  const s = String(userMessage).toLowerCase();
+  if (s.includes('error') || s.includes('bug')) return 'troubleshooting';
+  if (s.includes('report') || s.includes('analysis')) return 'analysis';
+  if (s.includes('deploy') || s.includes('production')) return 'deployment';
+  if (s.includes('memory') || s.includes('context')) return 'memory';
+  if (s.length < 30) return userMessage.trim();
+  return userMessage.slice(0, 60).trim();
+}
+
+// Upsert a fact into persistent memory (via memory module if present; else DB)
+async function upsertPersistentFact(chatId, key, value, { ttlMs = 7 * 24 * 60 * 60 * 1000 } = {}) {
+  try {
+    if (!chatId || !key) return false;
+
+    if (memory && typeof memory.saveToMemory === 'function') {
+      await memory.saveToMemory(chatId, {
+        type: 'fact',
+        key,
+        value,
+        createdAt: new Date().toISOString(),
+        expiresAt: ttlMs ? new Date(Date.now() + ttlMs).toISOString() : null
+      });
+      return true;
+    }
+
+    if (database && typeof database.saveConversation === 'function') {
+      await database.saveConversation(chatId, `[FACT:${key}]`, String(value), {
+        kind: 'fact',
+        key,
+        expiresAt: ttlMs ? new Date(Date.now() + ttlMs).toISOString() : null
+      });
+      return true;
+    }
+
+    return false;
+  } catch (err) {
+    console.warn('upsertPersistentFact failed:', err.message);
+    return false;
+  }
+}
+
+// Save the full conversation turn (user + assistant) to DB
+async function persistConversationTurn(chatId, userMessage, assistantResponse, meta = {}) {
+  try {
+    if (!chatId) return false;
+    const assistant = normalizeAssistantText(assistantResponse);
+
+    if (database && typeof database.saveConversation === 'function') {
+      await database.saveConversation(chatId, userMessage, assistant, {
+        ...meta,
+        savedAt: new Date().toISOString()
+      });
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.warn('persistConversationTurn failed:', err.message);
+    return false;
+  }
+}
+
+// High-level “remember” entry point used after each successful command
+async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnalysis, gpt5Result) {
+  if (!chatId) return { saved: false };
+
+  // 1) persist the turn so Part 3 can rebuild context
+  const turnSaved = await persistConversationTurn(chatId, userMessage, processedResponse, {
+    modelUsed: gpt5Result?.modelUsed || queryAnalysis?.gpt5Model,
+    priority: queryAnalysis?.priority,
+    complexity: queryAnalysis?.complexity?.complexity || 'unknown',
+    processingTime: gpt5Result?.processingTime
+  });
+
+  // 2) mark completion if detected
+  if (
+    queryAnalysis?.completionStatus?.isFrustrated ||
+    queryAnalysis?.completionStatus?.isComplete ||
+    gpt5Result?.completionDetected
+  ) {
+    await upsertPersistentFact(
+      chatId,
+      'last_completion',
+      `Completed at ${new Date().toISOString()} — type: ${queryAnalysis?.completionStatus?.completionType || 'direct'}`,
+      { ttlMs: 14 * 24 * 60 * 60 * 1000 }
+    );
+  }
+
+  // 3) remember a tiny topic breadcrumb
+  await upsertPersistentFact(chatId, 'last_topic', inferTopic(userMessage), { ttlMs: 48 * 60 * 60 * 1000 });
+
+  // 4) heuristic: capture a “next action” line if present
+  const nextMatch = String(processedResponse || '').match(/(?:^|\n)(?:next|todo|action)\b.*$/im);
+  if (nextMatch) {
+    await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
+      ttlMs: 7 * 24 * 60 * 60 * 1000
+    });
+  }
+
+  return { saved: turnSaved };
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
 // ENHANCED UTILITY FUNCTIONS
+
 async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
   try {
     console.log('Executing enhanced GPT-5 command with auto-delivery...');
@@ -2677,6 +2795,29 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
 
     // Execute the core command
     const result = await executeDualCommand(userMessage, chatId, options);
+
+    // 🔁 Persist memory write-backs after success
+    try {
+      if (result?.success && options.saveToMemory !== false) {
+        await maybeSaveMemory(
+          chatId,
+          userMessage,
+          result.response,
+          {
+            type: result.queryType,
+            priority: result.priority,
+            gpt5Model: result.modelUsed,
+            complexity: { complexity: result.complexity },
+            completionStatus: result.completionDetected
+              ? { isComplete: true, completionType: result.completionType || 'direct' }
+              : { isComplete: false }
+          },
+          { modelUsed: result.modelUsed, processingTime: result.processingTime }
+        );
+      }
+    } catch (persistErr) {
+      console.warn('Memory persist warning (enhanced):', persistErr.message);
+    }
 
     // Automatic Telegram delivery if bot provided
     if (bot && result.success && result.response) {
@@ -2707,7 +2848,7 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
     if (bot) {
       try {
         const errorMsg = `Analysis failed: ${error.message}. Please try a simpler request.`;
-        if (telegramSplitter.sendAlert) {
+        if (telegramSplitter?.sendAlert) {
           await telegramSplitter.sendAlert(bot, chatId, errorMsg, 'System Error');
         } else if (bot.sendMessage) {
           await bot.sendMessage(chatId, errorMsg);
@@ -2728,7 +2869,9 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
   }
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
 // QUICK COMMAND FUNCTIONS
+
 async function quickGPT5Command(message, chatId, bot = null, model = 'auto') {
   const options = {
     title: `GPT-5 ${model.toUpperCase()} Response`,
@@ -2755,7 +2898,9 @@ async function quickChatCommand(message, chatId, bot = null) {
   return await quickGPT5Command(message, chatId, bot, 'gpt-5-chat-latest');
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
 // GPT-5 MODEL RECOMMENDATION SYSTEM
+
 function getGPT5ModelRecommendation(query) {
   const analysis = analyzeQuery(query);
 
@@ -2824,7 +2969,9 @@ function generateModelAlternatives(analysis) {
   return alternatives;
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
 // COST ESTIMATION SYSTEM
+
 function getGPT5CostEstimate(query, estimatedTokens = 1000) {
   const analysis = analyzeQuery(query);
 
@@ -2876,7 +3023,9 @@ function getGPT5CostEstimate(query, estimatedTokens = 1000) {
   };
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
 // PERFORMANCE METRICS SNAPSHOT
+
 function getGPT5PerformanceMetrics() {
   const analytics = getSystemAnalytics();
 
@@ -2921,7 +3070,9 @@ function getGPT5PerformanceMetrics() {
   };
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
 // EMERGENCY FALLBACK FUNCTIONS
+
 async function saveConversationEmergency(chatId, userMessage, response, metadata = {}) {
   try {
     if (database && typeof database.saveConversation === 'function') {
@@ -2947,7 +3098,7 @@ async function executeGPT5WithContext(prompt, chatId, options = {}) {
   });
 }
 
-// ✅ Chat token param fix included here
+// ✅ Direct analysis with correct token params per API
 async function executeDirectGPT5Analysis(prompt, model = 'gpt-5-mini') {
   try {
     const analysisOptions = { model, max_output_tokens: 4000 };
@@ -2969,7 +3120,9 @@ async function executeDirectGPT5Analysis(prompt, model = 'gpt-5-mini') {
   }
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
 // SYSTEM HEALTH AND DIAGNOSTICS
+
 async function performFullSystemDiagnostics() {
   console.log('Running comprehensive system diagnostics...');
 
@@ -3006,7 +3159,9 @@ async function performFullSystemDiagnostics() {
   return diagnostics;
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
 // COMPATIBILITY LAYER FOR LEGACY CODE
+
 const legacyCompatibility = {
   // Legacy function names
   executeGptAnalysis: (msg, analysis, ctx, mem) =>
@@ -3032,7 +3187,9 @@ console.log('📊 Monitoring: Performance analytics, health checks, cost trackin
 console.log('🌏 Context: Cambodia timezone, global market awareness, memory integration');
 console.log('✅ Ready for production deployment with comprehensive error handling');
 
+// ───────────────────────────────────────────────────────────────────────────────
 // MAIN MODULE EXPORTS (single export block)
+
 module.exports = {
   // CORE FUNCTIONS
   executeDualCommand,
@@ -3072,6 +3229,11 @@ module.exports = {
   executeGPT5WithContext,
   executeDirectGPT5Analysis,
   saveConversationEmergency,
+
+  // NEW memory write helpers (so callers can use directly if they want)
+  maybeSaveMemory,
+  upsertPersistentFact,
+  persistConversationTurn,
 
   // SYSTEM STATE ACCESS
   getSystemState: () => ({ ...systemState }), // Return copy for safety
