@@ -125,22 +125,6 @@ class TelegramFormatter {
         };
     }
     
-        // Circuit breaker for delivery failures
-        this.circuitBreaker = {
-            failures: 0,
-            isOpen: false,
-            lastFailure: null,
-            resetTime: 60000 // Reset after 1 minute
-        };
-        
-        // Delivery metrics
-        this.metrics = {
-            totalSent: 0,
-            totalFailed: 0,
-            averageDelay: this.config.DELAY_MS,
-            lastSuccessTime: Date.now()
-        };
-
     // Main formatting function
     formatMessage(text, options = {}) {
         if (!text || typeof text !== 'string') return '';
