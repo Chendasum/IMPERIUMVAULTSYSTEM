@@ -278,10 +278,8 @@ function buildResponsesRequest(model, input, options) {
   if (effort === "low" || effort === "medium" || effort === "high") req.reasoning = { effort: effort };
   var asked = options.max_output_tokens || options.max_completion_tokens || 8000;
   req.max_output_tokens = Math.max(16, Math.min(asked, capFor(model)));
-  if (typeof options.temperature === "number") req.temperature = options.temperature;
-  if (typeof options.top_p === "number") req.top_p = options.top_p;
-  if (typeof options.frequency_penalty === "number") req.frequency_penalty = options.frequency_penalty;
-  if (typeof options.presence_penalty === "number") req.presence_penalty = options.presence_penalty;
+  // NOTE: Sampling controls like temperature/top_p/penalties are NOT supported on GPT-5 Responses.
+  // Do not set them here to avoid 400: Unsupported parameter errors.
   return req;
 }
 function buildChatRequest(model, messages, options) {
@@ -361,10 +359,9 @@ function getGPT5Analysis(prompt, options) {
       circuitBreaker.execute(function () {
         if (useResponses) {
           var req = buildResponsesRequest(selectedModel, text, {
-            reasoning_effort: options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING,
-            max_output_tokens: options.max_output_tokens || options.max_completion_tokens || 8000,
-            temperature: typeof options.temperature === "number" ? options.temperature : GPT5_CONFIG.DEFAULT_TEMPERATURE
-          });
+          reasoning_effort: options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING,
+          max_output_tokens: options.max_output_tokens || options.max_completion_tokens || 8000
+        });
           return withBackoff(function () { return openai.responses.create(req); });
         } else {
           var messages = [{ role: "user", content: text }];
