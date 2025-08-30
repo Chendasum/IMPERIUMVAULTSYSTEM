@@ -1,4 +1,13 @@
-// utils/openaiClient.js — Rebuilt (Aug 2025)
+async function getText(prompt, opts = {}) {
+  const model = smartSelectModel(opts, roughTokenEstimate(prompt));
+  const mergedOpts = { ...opts, model };
+  return coreInvoke({ prompt, options: mergedOpts, preferModel: model || 'auto', useResponses: 'auto' });
+}
+
+async function getTextWithMemory(prompt, memory, opts = {}) {
+  const promptWithMem = attachMemoryToPrompt(prompt, memory);
+  return getText(promptWithMem, opts);
+}// utils/openaiClient.js — Rebuilt (Aug 2025)
 // Production‑grade OpenAI client for GPT‑5 family with:
 // - Responses vs Chat auto‑selection + graceful fallback
 // - Token cap per model (prevents 400s)
@@ -167,6 +176,61 @@ function pickModel(prefer = 'auto') {
   return process.env.GPT5_TIER === 'nano' ? GPT5_CONFIG.NANO_MODEL
        : process.env.GPT5_TIER === 'mini' ? GPT5_CONFIG.MINI_MODEL
        : GPT5_CONFIG.PRIMARY_MODEL;
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Smart token estimate + model selection + memory merge
+// ───────────────────────────────────────────────────────────────────────────────
+function roughTokenEstimate(input) {
+  try {
+    if (Array.isArray(input)) {
+      return input.reduce((sum, m) => sum + roughTokenEstimate(m.content || ''), 0);
+    }
+    const s = String(input || '');
+    // ~4 chars per token heuristic
+    return Math.ceil(s.length / 4);
+  } catch { return 0; }
+}
+
+function smartSelectModel(opts = {}, estimatedTokens = 0) {
+  if (opts.model && opts.model !== 'auto') return opts.model;
+  if (process.env.SMART_MODEL_SELECT === 'false') return pickModel('auto');
+  const wantReasoning = (opts.reasoning_effort && opts.reasoning_effort !== 'low');
+  const target = estimatedTokens + (opts.max_output_tokens || opts.max_tokens || 1500);
+  // Simple thresholds; tune in env if you like
+  if (target <= 3500 && !wantReasoning) return GPT5_CONFIG.NANO_MODEL;     // ultra fast
+  if (target <= 9000) return GPT5_CONFIG.MINI_MODEL;                        // balanced
+  return GPT5_CONFIG.PRIMARY_MODEL;                                         // full
+}
+
+function attachMemoryToMessages(messages = [], memory = {}) {
+  const { systemPreamble, recall = [] } = memory || {};
+  const blocks = [];
+  if (systemPreamble && String(systemPreamble).trim()) {
+    blocks.push({ role: 'system', content: String(systemPreamble).trim() });
+  }
+  if (Array.isArray(recall) && recall.length) {
+    const recallText = recall.map((r, i) => `• ${r}`).join('
+');
+    blocks.push({ role: 'system', content: `Persistent Memory Context (read‑only)
+${recallText}` });
+  }
+  return [...blocks, ...messages];
+}
+
+function attachMemoryToPrompt(prompt = '', memory = {}) {
+  const { systemPreamble, recall = [] } = memory || {};
+  const header = systemPreamble ? `SYSTEM:
+${systemPreamble}
+
+` : '';
+  const recallText = (Array.isArray(recall) && recall.length) ? `MEMORY:
+${recall.map(r => `• ${r}`).join('
+')}
+
+` : '';
+  return `${header}${recallText}USER:
+${String(prompt)}`;
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -376,10 +440,15 @@ async function getText(prompt, opts = {}) {
  */
 async function getChat(messages, opts = {}) {
   const prefer = opts.model || 'auto';
-  // If user explicitly asks for CHAT route or passes a non‑gpt‑5 model, force chat
-  const forceChat = (opts.forceChat === true) || (!String(pickModel(prefer)).startsWith('gpt-5'));
+  const model = smartSelectModel(opts, roughTokenEstimate(messages));
+  const forceChat = (opts.forceChat === true) || (!String(model).startsWith('gpt-5'));
   const useResponses = forceChat ? false : 'auto';
-  return coreInvoke({ messages, options: opts, preferModel: prefer, useResponses });
+  return coreInvoke({ messages, options: { ...opts, model }, preferModel: model || prefer, useResponses });
+}
+
+async function getChatWithMemory(messages, memory, opts = {}) {
+  const msgs = attachMemoryToMessages(messages, memory);
+  return getChat(msgs, opts);
 }
 
 /**
@@ -453,9 +522,15 @@ module.exports = {
   getEmbedding,
   getModeration,
 
+  // Memory‑aware helpers
+  getTextWithMemory,
+  getChatWithMemory,
+
   // Legacy aliases (health checks and older modules expect these)
   getGPT5Analysis,
   getGPT5Chat,
+  // Legacy convenience with memory
+  getGPT5AnalysisWithMemory: getTextWithMemory,
 
   // Builders (useful for tests)
   buildResponsesRequest,
