@@ -1,10 +1,8 @@
-// utils/openaiClient.js - PERFECT 10/10: Production-Grade GPT-5 Client (2025-08)
-// Token param correctness: Responses -> max_output_tokens, Chat -> max_tokens
+// utils/openaiClient.js - FIXED: Production-Grade GPT-5 Client with Accurate Token Counting
 require("dotenv").config();
 const { OpenAI } = require("openai");
 const crypto = require("crypto");
 
-// ───────────────────────────────────────────────────────────────────────────────
 // Advanced metrics and monitoring
 class GPT5Metrics {
   constructor() {
@@ -22,6 +20,7 @@ class GPT5Metrics {
     };
     this.startTime = Date.now();
   }
+
   recordCall(model, success, tokens, cost, responseTime, error = null) {
     this.stats.totalCalls++;
     if (success) {
@@ -29,17 +28,15 @@ class GPT5Metrics {
       this.stats.totalTokensUsed += tokens;
       this.stats.totalCost += cost;
       this.stats.responseTimes.push(responseTime);
-      this.stats.averageResponseTime =
-        this.stats.responseTimes.reduce((a, b) => a + b, 0) /
-        this.stats.responseTimes.length;
+      this.stats.averageResponseTime = this.stats.responseTimes.reduce((a, b) => a + b, 0) / this.stats.responseTimes.length;
     } else {
       this.stats.failedCalls++;
       if (error) {
         this.stats.errorTypes[error] = (this.stats.errorTypes[error] || 0) + 1;
       }
     }
-    this.stats.modelUsageStats[model] =
-      this.stats.modelUsageStats[model] || { calls: 0, tokens: 0, cost: 0 };
+    
+    this.stats.modelUsageStats[model] = this.stats.modelUsageStats[model] || { calls: 0, tokens: 0, cost: 0 };
     this.stats.modelUsageStats[model].calls++;
     this.stats.modelUsageStats[model].tokens += tokens;
     this.stats.modelUsageStats[model].cost += cost;
@@ -48,16 +45,15 @@ class GPT5Metrics {
       this.stats.responseTimes = this.stats.responseTimes.slice(-1000);
     }
   }
+
   getStats() {
     return {
       ...this.stats,
       uptime: Date.now() - this.startTime,
-      successRate:
-        this.stats.totalCalls > 0
-          ? ((this.stats.successfulCalls / this.stats.totalCalls) * 100).toFixed(2)
-          : 0
+      successRate: this.stats.totalCalls > 0 ? ((this.stats.successfulCalls / this.stats.totalCalls) * 100).toFixed(2) : 0
     };
   }
+
   reset() {
     this.stats = {
       totalCalls: 0,
@@ -74,22 +70,20 @@ class GPT5Metrics {
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Intelligent response caching (LRU-ish)
+// Intelligent response caching
 class GPT5Cache {
   constructor(maxSize = 1000, ttl = 3600000) {
     this.cache = new Map();
     this.maxSize = maxSize;
     this.ttl = ttl;
   }
+
   generateKey(prompt, options) {
     const clean = { ...options };
     delete clean.skipCache;
-    return crypto
-      .createHash("sha256")
-      .update(prompt + JSON.stringify(clean))
-      .digest("hex");
+    return crypto.createHash("sha256").update(prompt + JSON.stringify(clean)).digest("hex");
   }
+
   get(key) {
     const item = this.cache.get(key);
     if (!item) return null;
@@ -100,6 +94,7 @@ class GPT5Cache {
     item.hits++;
     return item.data;
   }
+
   set(key, data) {
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
@@ -107,9 +102,11 @@ class GPT5Cache {
     }
     this.cache.set(key, { data, timestamp: Date.now(), hits: 0 });
   }
+
   clear() {
     this.cache.clear();
   }
+
   getStats() {
     let totalHits = 0;
     let totalItems = 0;
@@ -125,7 +122,6 @@ class GPT5Cache {
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
 // Circuit breaker
 class CircuitBreaker {
   constructor(threshold = 5, timeout = 60000) {
@@ -133,8 +129,9 @@ class CircuitBreaker {
     this.timeout = timeout;
     this.failureCount = 0;
     this.lastFailureTime = null;
-    this.state = "CLOSED"; // CLOSED, OPEN, HALF_OPEN
+    this.state = "CLOSED";
   }
+
   async execute(fn) {
     if (this.state === "OPEN") {
       if (Date.now() - this.lastFailureTime > this.timeout) {
@@ -152,22 +149,24 @@ class CircuitBreaker {
       throw err;
     }
   }
+
   onSuccess() {
     this.failureCount = 0;
     this.state = "CLOSED";
   }
+
   onFailure() {
     this.failureCount++;
     this.lastFailureTime = Date.now();
     if (this.failureCount >= this.threshold) this.state = "OPEN";
   }
+
   getState() {
     return this.state;
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Initialize advanced components
+// Initialize components
 const metrics = new GPT5Metrics();
 const cache = new GPT5Cache();
 const circuitBreaker = new CircuitBreaker();
@@ -184,8 +183,7 @@ const openai = new OpenAI({
   }
 });
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Config
+// Configuration
 const GPT5_CONFIG = {
   PRIMARY_MODEL: "gpt-5",
   MINI_MODEL: "gpt-5-mini",
@@ -194,7 +192,7 @@ const GPT5_CONFIG = {
   FALLBACK_MODEL: "gpt-4o",
 
   ENHANCED_CONTEXT_WINDOW: 200000,
-  MAX_OUTPUT_TOKENS: 16384, // ← unified, replaces MAX_COMPLETION_TOKENS
+  MAX_OUTPUT_TOKENS: 16384,
   MAX_PROMPT_LENGTH: 180000,
 
   REASONING_EFFORTS: ["minimal", "low", "medium", "high"],
@@ -244,55 +242,30 @@ const GPT5_CONFIG = {
   AUTO_SCALE: {
     NANO_MAX_LENGTH: 2000,
     MINI_MAX_LENGTH: 10000,
-    COMPLEXITY_KEYWORDS: [
-      "analyze",
-      "compare",
-      "evaluate",
-      "research",
-      "complex",
-      "detailed",
-      "comprehensive"
-    ]
+    COMPLEXITY_KEYWORDS: ["analyze", "compare", "evaluate", "research", "complex", "detailed", "comprehensive"]
   }
 };
 
-// ───────────────────────────────────────────────────────────────────────────────
 // Model selection
 function selectOptimalModel(prompt, options = {}) {
   if (options.model) return options.model;
   const promptLength = prompt.length;
-  const hasComplex = GPT5_CONFIG.AUTO_SCALE.COMPLEXITY_KEYWORDS.some(k =>
-    prompt.toLowerCase().includes(k)
-  );
-  if (promptLength < GPT5_CONFIG.AUTO_SCALE.NANO_MAX_LENGTH && !hasComplex)
-    return GPT5_CONFIG.NANO_MODEL;
-  if (promptLength < GPT5_CONFIG.AUTO_SCALE.MINI_MAX_LENGTH && !hasComplex)
-    return GPT5_CONFIG.MINI_MODEL;
-  if (hasComplex || options.reasoning_effort === "high")
-    return GPT5_CONFIG.PRIMARY_MODEL;
+  const hasComplex = GPT5_CONFIG.AUTO_SCALE.COMPLEXITY_KEYWORDS.some(k => prompt.toLowerCase().includes(k));
+  if (promptLength < GPT5_CONFIG.AUTO_SCALE.NANO_MAX_LENGTH && !hasComplex) return GPT5_CONFIG.NANO_MODEL;
+  if (promptLength < GPT5_CONFIG.AUTO_SCALE.MINI_MAX_LENGTH && !hasComplex) return GPT5_CONFIG.MINI_MODEL;
+  if (hasComplex || options.reasoning_effort === "high") return GPT5_CONFIG.PRIMARY_MODEL;
   return GPT5_CONFIG.MINI_MODEL;
 }
 
-// Cost calc
+// Cost calculation
 function calculateCost(model, inputTokens, outputTokens) {
   const pricing = GPT5_CONFIG.MODEL_CAPABILITIES[model]?.pricing;
   if (!pricing) return 0;
-  return (
-    (inputTokens * pricing.input) / 1000 +
-    (outputTokens * pricing.output) / 1000
-  );
+  return (inputTokens * pricing.input) / 1000 + (outputTokens * pricing.output) / 1000;
 }
 
 // Structured logging
-function logApiCall(
-  model,
-  apiType,
-  inputTokens,
-  outputTokens,
-  executionTime,
-  success,
-  error = null
-) {
+function logApiCall(model, apiType, inputTokens, outputTokens, executionTime, success, error = null) {
   const cost = calculateCost(model, inputTokens, outputTokens);
   const logData = {
     timestamp: new Date().toISOString(),
@@ -311,13 +284,19 @@ function logApiCall(
   return cost;
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Response extraction
+// FIXED: Response extraction with proper empty response handling
 function safeExtractResponseText(completion, apiType = "responses") {
   try {
     if (apiType === "responses") {
-      if (completion?.output_text) return completion.output_text.trim();
+      // Check for direct output_text field
+      if (typeof completion?.output_text === "string") {
+        if (completion.output_text.trim() === "") {
+          return "[Empty response from GPT-5 API]";
+        }
+        return completion.output_text.trim();
+      }
 
+      // Check fragmented output structure
       if (completion?.output?.[0]?.content?.[0]?.text) {
         let text = "";
         for (const item of completion.output) {
@@ -325,55 +304,35 @@ function safeExtractResponseText(completion, apiType = "responses") {
             for (const c of item.content) if (c?.text) text += c.text;
           }
         }
-        return text;
+        return text || "[No text content in output array]";
       }
+
+      // Fallback to chat structure
       if (completion?.choices?.[0]?.message?.content) {
         return completion.choices[0].message.content.trim();
       }
-      console.warn(
-        "Unknown Responses API structure:",
-        JSON.stringify(completion, null, 2)
-      );
-      return "Response structure not recognized - please check API format";
+
+      // Log unknown structure for debugging
+      console.warn("Unknown Responses API structure. Keys:", Object.keys(completion || {}));
+      return "[Unknown response structure]";
+
     } else {
+      // Chat Completions API
       const msg = completion?.choices?.[0]?.message?.content;
       if (!msg) {
-        console.warn("Invalid Chat API structure:", JSON.stringify(completion, null, 2));
-        return "No message content found in response";
+        console.warn("Invalid Chat API structure. Keys:", Object.keys(completion || {}));
+        return "[No message content found]";
       }
       return msg.trim();
     }
   } catch (e) {
     console.error("Error extracting response text:", e);
-    return `Error extracting response: ${e.message}`;
-    }
+    return `[Extraction error: ${e.message}]`;
+  }
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Backward-compat shim: normalize options fields
-function normalizeOptionsForResponses(options = {}) {
-  return {
-    reasoning_effort: options.reasoning_effort,
-    verbosity: options.verbosity,
-    // accept legacy & new; prefer explicit max_output_tokens
-    max_output_tokens:
-      options.max_output_tokens ??
-      options.max_completion_tokens ?? // legacy alias
-      8000
-  };
-}
-function normalizeOptionsForChat(options = {}) {
-  return {
-    temperature: options.temperature,
-    top_p: options.top_p,
-    // accept legacy & new; chat uses max_tokens
-    max_tokens: options.max_tokens ?? options.max_completion_tokens ?? 8000
-  };
-}
-
-// Builders
+// Request builders with parameter normalization
 function buildResponsesRequest(model, input, options = {}) {
-  const norm = normalizeOptionsForResponses(options);
   const req = { model, input };
 
   if (options.reasoning_effort && GPT5_CONFIG.REASONING_EFFORTS.includes(options.reasoning_effort)) {
@@ -382,28 +341,30 @@ function buildResponsesRequest(model, input, options = {}) {
   if (options.verbosity && GPT5_CONFIG.VERBOSITY_LEVELS.includes(options.verbosity)) {
     req.text = { verbosity: options.verbosity };
   }
-  req.max_output_tokens = Math.max(
-    16,
-    Math.min(norm.max_output_tokens, GPT5_CONFIG.MAX_OUTPUT_TOKENS)
-  );
+
+  const maxTokens = options.max_output_tokens || options.max_completion_tokens || 8000;
+  req.max_output_tokens = Math.max(16, Math.min(maxTokens, GPT5_CONFIG.MAX_OUTPUT_TOKENS));
+
   return req;
 }
 
 function buildChatRequest(model, messages, options = {}) {
-  const norm = normalizeOptionsForChat(options);
   const req = { model, messages };
-  if (norm.temperature !== undefined) {
-    req.temperature = Math.max(0, Math.min(2, norm.temperature));
+
+  if (options.temperature !== undefined) {
+    req.temperature = Math.max(0, Math.min(2, options.temperature));
   }
-  if (norm.top_p !== undefined) {
-    req.top_p = Math.max(0, Math.min(1, norm.top_p));
+  if (options.top_p !== undefined) {
+    req.top_p = Math.max(0, Math.min(1, options.top_p));
   }
-  req.max_tokens = Math.max(1, Math.min(norm.max_tokens, 16384));
+
+  const maxTokens = options.max_tokens || options.max_completion_tokens || 8000;
+  req.max_tokens = Math.max(1, Math.min(maxTokens, 16384));
+
   return req;
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Core execution
+// FIXED: Core execution with accurate token counting
 async function getGPT5Analysis(prompt, options = {}) {
   const startTime = Date.now();
   let inputTokens = 0;
@@ -415,15 +376,13 @@ async function getGPT5Analysis(prompt, options = {}) {
     if (!prompt || typeof prompt !== "string") {
       throw new Error("Invalid prompt: must be non-empty string");
     }
+
     if (prompt.length > GPT5_CONFIG.MAX_PROMPT_LENGTH) {
-      console.warn(
-        `Prompt too long (${prompt.length} chars), truncating to ${GPT5_CONFIG.MAX_PROMPT_LENGTH}`
-      );
-      prompt =
-        prompt.substring(0, GPT5_CONFIG.MAX_PROMPT_LENGTH) +
-        "\n... (truncated for length)";
+      console.warn(`Prompt too long (${prompt.length} chars), truncating to ${GPT5_CONFIG.MAX_PROMPT_LENGTH}`);
+      prompt = prompt.substring(0, GPT5_CONFIG.MAX_PROMPT_LENGTH) + "\n... (truncated for length)";
     }
 
+    // Check cache
     if (!options.skipCache) {
       const cacheKey = cache.generateKey(prompt, options);
       const cached = cache.get(cacheKey);
@@ -434,200 +393,153 @@ async function getGPT5Analysis(prompt, options = {}) {
     }
 
     selectedModel = selectOptimalModel(prompt, options);
-    console.log(
-      `Auto-selected model: ${selectedModel} (prompt: ${prompt.length} chars)`
-    );
+    console.log(`Auto-selected model: ${selectedModel} (prompt: ${prompt.length} chars)`);
 
     inputTokens = Math.ceil(prompt.length / 3.5);
 
     const response = await circuitBreaker.execute(async () => {
-      const useResponsesApi =
-        selectedModel.includes("gpt-5") && selectedModel !== GPT5_CONFIG.CHAT_MODEL;
+      const useResponsesApi = selectedModel.includes("gpt-5") && selectedModel !== GPT5_CONFIG.CHAT_MODEL;
 
       if (useResponsesApi) {
         console.log(`Using Responses API with ${selectedModel}...`);
         apiUsed = "responses";
 
-        const responsesRequest = buildResponsesRequest(
-          selectedModel,
-          prompt,
-          {
-            reasoning_effort: options.reasoning_effort ?? GPT5_CONFIG.DEFAULT_REASONING,
-            verbosity: options.verbosity ?? GPT5_CONFIG.DEFAULT_VERBOSITY,
-            max_output_tokens:
-              options.max_output_tokens ??
-              options.max_completion_tokens ?? // legacy alias
-              8000
-          }
-        );
+        const responsesRequest = buildResponsesRequest(selectedModel, prompt, {
+          reasoning_effort: options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING,
+          verbosity: options.verbosity || GPT5_CONFIG.DEFAULT_VERBOSITY,
+          max_output_tokens: options.max_output_tokens || options.max_completion_tokens || 8000
+        });
 
         const completion = await openai.responses.create(responsesRequest);
 
+        // FIXED: Use actual API usage data, never estimate from fallback text
         const usage = completion.usage || {};
         inputTokens = usage.input_tokens || inputTokens;
-        outputTokens =
-          usage.output_tokens ||
-          usage.completion_tokens || // legacy
-          Math.ceil(safeExtractResponseText(completion, "responses").length / 3.5);
+        outputTokens = usage.output_tokens || usage.completion_tokens || 0;
 
+        // Log reasoning tokens if available
         if (usage.output_tokens_details?.reasoning_tokens) {
-          console.log(
-            `Reasoning tokens used: ${usage.output_tokens_details.reasoning_tokens}`
-          );
+          console.log(`Reasoning tokens used: ${usage.output_tokens_details.reasoning_tokens}`);
         }
 
-        return safeExtractResponseText(completion, "responses");
+        // Extract response text
+        const responseText = safeExtractResponseText(completion, "responses");
+        
+        // Check for API failures
+        if (outputTokens === 0 && responseText.startsWith("[Empty response")) {
+          throw new Error("GPT-5 API returned empty response - check parameters or quota");
+        }
+
+        return responseText;
+
       } else {
         console.log(`Using Chat Completions API with ${selectedModel}...`);
         apiUsed = "chat";
 
         const messages = [{ role: "user", content: prompt }];
         const chatRequest = buildChatRequest(selectedModel, messages, {
-          temperature: options.temperature ?? GPT5_CONFIG.DEFAULT_TEMPERATURE,
-          max_tokens: options.max_tokens ?? options.max_completion_tokens ?? 8000
+          temperature: options.temperature || GPT5_CONFIG.DEFAULT_TEMPERATURE,
+          max_tokens: options.max_tokens || options.max_completion_tokens || 8000
         });
 
         const completion = await openai.chat.completions.create(chatRequest);
 
+        // FIXED: Use actual API usage data
         const usage = completion.usage || {};
         inputTokens = usage.input_tokens || usage.prompt_tokens || inputTokens;
-        outputTokens =
-          usage.output_tokens ||
-          usage.completion_tokens ||
-          Math.ceil(safeExtractResponseText(completion, "chat").length / 3.5);
+        outputTokens = usage.output_tokens || usage.completion_tokens || 0;
 
-        return safeExtractResponseText(completion, "chat");
+        const responseText = safeExtractResponseText(completion, "chat");
+
+        // Check for API failures
+        if (outputTokens === 0 && responseText.startsWith("[No message content")) {
+          throw new Error("Chat API returned empty response - check parameters");
+        }
+
+        return responseText;
       }
     });
 
-    if (!response || response.length === 0) {
-      throw new Error("Empty response received from GPT-5");
+    // Validate response
+    if (!response || response.length === 0 || response.startsWith("[Empty response") || response.startsWith("[No message content")) {
+      throw new Error("Empty or invalid response received from API");
     }
 
     const executionTime = Date.now() - startTime;
-    const cost = logApiCall(
-      selectedModel,
-      apiUsed,
-      inputTokens,
-      outputTokens,
-      executionTime,
-      true
-    );
+    const cost = logApiCall(selectedModel, apiUsed, inputTokens, outputTokens, executionTime, true);
 
-    metrics.recordCall(
-      selectedModel,
-      true,
-      inputTokens + outputTokens,
-      cost,
-      executionTime
-    );
+    metrics.recordCall(selectedModel, true, inputTokens + outputTokens, cost, executionTime);
 
-    if (!options.skipCache && response.length > 10) {
+    // Cache successful responses
+    if (!options.skipCache && response.length > 10 && !response.startsWith("[")) {
       const cacheKey = cache.generateKey(prompt, options);
       cache.set(cacheKey, response);
     }
 
-    console.log(
-      `✅ GPT-5 Success: ${selectedModel} | ${inputTokens + outputTokens} tokens | ${executionTime}ms | $${cost.toFixed(
-        6
-      )}`
-    );
+    console.log(`GPT-5 Success: ${selectedModel} | ${inputTokens + outputTokens} tokens | ${executionTime}ms | $${cost.toFixed(6)}`);
 
     return response;
+
   } catch (error) {
     const executionTime = Date.now() - startTime;
-    logApiCall(
-      selectedModel || "unknown",
-      apiUsed,
-      inputTokens,
-      outputTokens,
-      executionTime,
-      false,
-      error
-    );
-    metrics.recordCall(
-      selectedModel || "unknown",
-      false,
-      0,
-      0,
-      executionTime,
-      error.message
-    );
+    logApiCall(selectedModel || "unknown", apiUsed, inputTokens, outputTokens, executionTime, false, error);
+    metrics.recordCall(selectedModel || "unknown", false, 0, 0, executionTime, error.message);
 
-    console.error(`❌ GPT-5 Error: ${error.message}`);
+    console.error(`GPT-5 Error: ${error.message}`);
 
+    // Intelligent fallback
     if (!error.message.includes("rate_limit") && !error.message.includes("quota")) {
-      console.log("🔄 Attempting GPT-4o fallback...");
+      console.log("Attempting GPT-4o fallback...");
 
       try {
         const fallbackCompletion = await openai.chat.completions.create({
           model: GPT5_CONFIG.FALLBACK_MODEL,
           messages: [{ role: "user", content: prompt }],
-          max_tokens: Math.min(options.max_tokens ?? options.max_completion_tokens ?? 8000, 16384),
-          temperature: options.temperature ?? GPT5_CONFIG.DEFAULT_TEMPERATURE
+          max_tokens: Math.min(options.max_tokens || options.max_completion_tokens || 8000, 16384),
+          temperature: options.temperature || GPT5_CONFIG.DEFAULT_TEMPERATURE
         });
 
         const fallbackResponse = safeExtractResponseText(fallbackCompletion, "chat");
         const fallbackExecutionTime = Date.now() - startTime;
-        const fallbackCost = logApiCall(
-          GPT5_CONFIG.FALLBACK_MODEL,
-          "chat",
-          inputTokens,
-          fallbackCompletion.usage?.completion_tokens || 0,
-          fallbackExecutionTime,
-          true
-        );
+        const fallbackTokens = fallbackCompletion.usage?.completion_tokens || 0;
+        const fallbackCost = logApiCall(GPT5_CONFIG.FALLBACK_MODEL, "chat", inputTokens, fallbackTokens, fallbackExecutionTime, true);
 
-        metrics.recordCall(
-          GPT5_CONFIG.FALLBACK_MODEL,
-          true,
-          inputTokens + (fallbackCompletion.usage?.completion_tokens || 0),
-          fallbackCost,
-          fallbackExecutionTime
-        );
+        metrics.recordCall(GPT5_CONFIG.FALLBACK_MODEL, true, inputTokens + fallbackTokens, fallbackCost, fallbackExecutionTime);
 
-        console.log(
-          `✅ Fallback Success: GPT-4o | ${fallbackExecutionTime}ms | $${fallbackCost.toFixed(6)}`
-        );
+        console.log(`Fallback Success: GPT-4o | ${fallbackExecutionTime}ms | $${fallbackCost.toFixed(6)}`);
         return `[GPT-4o Fallback] ${fallbackResponse}`;
+
       } catch (fallbackError) {
-        console.error(`❌ Fallback failed: ${fallbackError.message}`);
-        metrics.recordCall(
-          GPT5_CONFIG.FALLBACK_MODEL,
-          false,
-          0,
-          0,
-          Date.now() - startTime,
-          fallbackError.message
-        );
+        console.error(`Fallback failed: ${fallbackError.message}`);
+        metrics.recordCall(GPT5_CONFIG.FALLBACK_MODEL, false, 0, 0, Date.now() - startTime, fallbackError.message);
       }
     }
 
+    // Enhanced error message
     return `I apologize, but I'm experiencing technical difficulties with the AI service.
 
-🔍 **Error Details**: ${error.message}
+Error Details: ${error.message}
 
-💡 **Please try**:
+Please try:
 • Use a shorter, simpler message (under 10,000 characters)
-• Wait 30–60 seconds and try again
-• Check service status or quotas
-• Rephrase your request
+• Wait 30-60 seconds and try again
+• Check if the service is temporarily unavailable
+• Consider rephrasing your request
 
-📊 **System Status**: Circuit Breaker ${circuitBreaker.getState()} | Success Rate: ${metrics.getStats().successRate}%
+System Status: Circuit Breaker ${circuitBreaker.getState()} | Success Rate: ${metrics.getStats().successRate}%
 
 Your message was received but couldn't be processed at this time.`;
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Quick wrappers
+// Quick access functions
 async function getQuickNanoResponse(prompt, options = {}) {
   return await getGPT5Analysis(prompt, {
     ...options,
     model: GPT5_CONFIG.NANO_MODEL,
     reasoning_effort: "minimal",
     verbosity: "low",
-    max_output_tokens: 6000 // Responses API param
+    max_output_tokens: 6000
   });
 }
 
@@ -655,21 +567,20 @@ async function getChatResponse(prompt, options = {}) {
   return await getGPT5Analysis(prompt, {
     ...options,
     model: GPT5_CONFIG.CHAT_MODEL,
-    temperature: options.temperature ?? GPT5_CONFIG.DEFAULT_TEMPERATURE,
-    max_tokens: 12000 // Chat param
+    temperature: options.temperature || GPT5_CONFIG.DEFAULT_TEMPERATURE,
+    max_tokens: 12000
   });
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Connection test
+// Connection testing
 async function testOpenAIConnection() {
   try {
-    console.log("🧪 Testing GPT-5 connection...");
+    console.log("Testing GPT-5 connection...");
     const testResponse = await getQuickNanoResponse(
       "Hello! Please confirm you are GPT-5 and respond with just 'GPT-5 READY'",
       { max_output_tokens: 50, skipCache: true }
     );
-    console.log("✅ GPT-5 connection test successful");
+    console.log("GPT-5 connection test successful");
     return {
       success: true,
       result: testResponse,
@@ -678,7 +589,7 @@ async function testOpenAIConnection() {
       timestamp: new Date().toISOString()
     };
   } catch (error) {
-    console.error("❌ GPT-5 connection test failed:", error.message);
+    console.error("GPT-5 connection test failed:", error.message);
     try {
       const fallbackResponse = await openai.chat.completions.create({
         model: GPT5_CONFIG.FALLBACK_MODEL,
@@ -705,10 +616,9 @@ async function testOpenAIConnection() {
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-// System health
+// System health check
 async function checkGPT5SystemHealth() {
-  console.log("🏥 Running comprehensive system health check...");
+  console.log("Running comprehensive system health check...");
 
   const health = {
     timestamp: new Date().toISOString(),
@@ -735,16 +645,17 @@ async function checkGPT5SystemHealth() {
   for (const test of testModels) {
     try {
       const result = await test.func("Hi", { max_output_tokens: 10, skipCache: true });
-      if (result && result.length > 0) {
+      if (result && result.length > 0 && !result.startsWith("[Empty") && !result.startsWith("[No message")) {
         health[test.name] = true;
-        console.log(`✅ ${test.model} working`);
+        console.log(`${test.model} working`);
       }
     } catch (error) {
       health.errors.push(`${test.model}: ${error.message}`);
-      console.log(`❌ ${test.model} failed: ${error.message}`);
+      console.log(`${test.model} failed: ${error.message}`);
     }
   }
 
+  // Test fallback
   try {
     const fallbackTest = await openai.chat.completions.create({
       model: GPT5_CONFIG.FALLBACK_MODEL,
@@ -753,13 +664,14 @@ async function checkGPT5SystemHealth() {
     });
     if (fallbackTest.choices?.[0]?.message?.content) {
       health.fallbackWorking = true;
-      console.log("✅ GPT-4o fallback working");
+      console.log("GPT-4o fallback working");
     }
   } catch (error) {
     health.errors.push(`Fallback: ${error.message}`);
-    console.log(`❌ GPT-4o fallback failed: ${error.message}`);
+    console.log(`GPT-4o fallback failed: ${error.message}`);
   }
 
+  // Determine best available model
   if (health.gpt5Available) {
     health.currentModel = GPT5_CONFIG.PRIMARY_MODEL;
   } else if (health.gpt5MiniAvailable) {
@@ -774,6 +686,7 @@ async function checkGPT5SystemHealth() {
 
   health.overallHealth = health.currentModel !== null;
 
+  // Recommendations
   if (health.metrics.successRate < 95) {
     health.recommendations.push("Success rate below 95% - check API key and quotas");
   }
@@ -784,21 +697,23 @@ async function checkGPT5SystemHealth() {
     health.recommendations.push("Cache is empty - responses will be slower");
   }
 
-  console.log(`🏥 Health check complete. Overall: ${health.overallHealth ? "✅ HEALTHY" : "❌ DEGRADED"}`);
+  console.log(`Health check complete. Overall: ${health.overallHealth ? "HEALTHY" : "DEGRADED"}`);
   return health;
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
+// Utility functions
 async function clearCache() {
   cache.clear();
-  console.log("🧹 Cache cleared");
+  console.log("Cache cleared");
   return { success: true, message: "Cache cleared successfully" };
 }
+
 async function resetMetrics() {
   metrics.reset();
-  console.log("📊 Metrics reset");
+  console.log("Metrics reset");
   return { success: true, message: "Metrics reset successfully" };
 }
+
 async function getSystemStats() {
   return {
     metrics: metrics.getStats(),
@@ -809,51 +724,51 @@ async function getSystemStats() {
   };
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-console.log("🚀 IMPERIUM VAULT GPT-5 Client v2.0.0 Loading...");
-console.log("📅 GPT-5 Release Date: August 7, 2025");
-console.log(`🔑 API Key: ${process.env.OPENAI_API_KEY ? "✅ SET" : "❌ NOT SET"}`);
-console.log(`🎯 Primary Model: ${GPT5_CONFIG.PRIMARY_MODEL}`);
-console.log("⚡ Auto-Selection: Enabled");
-console.log("🧠 Intelligent Caching: Enabled");
-console.log("🔄 Circuit Breaker: Active");
-console.log("📊 Advanced Metrics: Active");
-console.log("💰 Cost Tracking: Enabled");
-console.log("✨ Ready for production deployment!");
+// Startup
+console.log("IMPERIUM VAULT GPT-5 Client v2.0.0 Loading...");
+console.log("GPT-5 Release Date: August 7, 2025");
+console.log(`API Key: ${process.env.OPENAI_API_KEY ? "SET" : "NOT SET"}`);
+console.log(`Primary Model: ${GPT5_CONFIG.PRIMARY_MODEL}`);
+console.log("Auto-Selection: Enabled");
+console.log("Intelligent Caching: Enabled");
+console.log("Circuit Breaker: Active");
+console.log("Advanced Metrics: Active");
+console.log("Cost Tracking: Enabled");
+console.log("FIXED: Accurate token counting from API usage data");
+console.log("Ready for production deployment!");
 
-// ───────────────────────────────────────────────────────────────────────────────
 module.exports = {
-  // Core
+  // Core functions
   getGPT5Analysis,
-
-  // Quick access
+  
+  // Quick access functions
   getQuickNanoResponse,
   getQuickMiniResponse,
   getDeepAnalysis,
   getChatResponse,
-
-  // System
+  
+  // System functions
   testOpenAIConnection,
   checkGPT5SystemHealth,
-
-  // Utils
+  
+  // Utility functions
   clearCache,
   resetMetrics,
   getSystemStats,
   selectOptimalModel,
   calculateCost,
-
-  // Builders
+  
+  // Builder functions
   buildResponsesRequest,
   buildChatRequest,
   safeExtractResponseText,
-
-  // Components
+  
+  // Advanced components
   metrics,
   cache,
   circuitBreaker,
-
-  // Client & config
+  
+  // Config and client
   openai,
   GPT5_CONFIG
 };
