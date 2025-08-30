@@ -1605,140 +1605,139 @@ function getCostTier(model) {
   }
 }
 
-// --- Telegram wiring helpers (put near the top of dualcommandsystem.js) ---
-const { setupTelegramHandler } = require('./utils/telegramSplitter');
-
-let __tgHandlerSingleton = null;
-function getTelegramHandler(bot) {
-  // Simple singleton per process. If you run multiple bots, replace with a Map keyed by bot.
-  if (!__tgHandlerSingleton) __tgHandlerSingleton = setupTelegramHandler(bot);
-  return __tgHandlerSingleton;
-}
-
-function sget(obj, path, defVal) { // safe getter (avoids optional chaining)
-  try {
-    var parts = String(path).split('.');
-    var cur = obj;
-    for (var i = 0; i < parts.length; i++) {
-      if (cur == null) return defVal;
-      cur = cur[parts[i]];
-    }
-    return (cur == null) ? defVal : cur;
-  } catch (e) { return defVal; }
-}
-
-function resolveModelName(modelUsed) {
-  var M = (typeof CONFIG !== 'undefined' && CONFIG.MODELS) ? CONFIG.MODELS : {};
-  if (modelUsed === M.NANO) return 'gpt-5-nano';
-  if (modelUsed === M.MINI) return 'gpt-5-mini';
-  if (modelUsed === M.FULL) return 'gpt-5';
-  if (modelUsed === M.CHAT) return 'gpt-5-chat-latest';
-  return modelUsed || 'gpt-5';
-}
-
-function resolveModelLabel(modelUsed) {
-  var M = (typeof CONFIG !== 'undefined' && CONFIG.MODELS) ? CONFIG.MODELS : {};
-  if (modelUsed === M.NANO) return 'Nano';
-  if (modelUsed === M.MINI) return 'Mini';
-  if (modelUsed === M.FULL) return 'Full';
-  if (modelUsed === M.CHAT) return 'Chat';
-  return 'GPT-5';
-}
-
-// --- REPLACE your createTelegramSender with this ---
 function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, responseTime, contextUsed) {
-  return async function (bot, title) {
+  return async (bot, title = null) => {
     try {
       if (!bot || !chatId) {
-        console.warn('Delivery skipped: bot or chatId missing (chatId=' + chatId + ')');
+        console.warn(`Delivery skipped: bot or chatId missing (chatId=${chatId})`);
         return false;
       }
 
-      // Use the new splitter handler (formats, splits, retries internally)
-      var tg = getTelegramHandler(bot);
+      const { telegramSplitter } = require('./dualCommandSystem');
 
-      // Determine model + title
-      var modelUsed = sget(gpt5Result, 'modelUsed', sget(queryAnalysis, 'gpt5Model', null));
-      var modelLabel = resolveModelLabel(modelUsed);
-      var completionDetected = !!sget(gpt5Result, 'completionDetected', false);
+      if (!telegramSplitter || typeof telegramSplitter.sendGPT5 !== 'function') {
+        console.warn('Telegram splitter not available, using basic send');
+        if (bot && bot.sendMessage && chatId) {
+          await bot.sendMessage(chatId, response);
+          return true;
+        }
+        return false;
+      }
 
-      var defaultTitle = completionDetected
+      // Determine appropriate telegram method based on model
+      let telegramMethod;
+      const modelUsed = gpt5Result?.modelUsed || queryAnalysis?.gpt5Model;
+
+      switch (modelUsed) {
+        case CONFIG.MODELS.NANO:
+          telegramMethod = telegramSplitter.sendGPT5Nano;
+          break;
+        case CONFIG.MODELS.MINI:
+          telegramMethod = telegramSplitter.sendGPT5Mini;
+          break;
+        case CONFIG.MODELS.FULL:
+          telegramMethod = telegramSplitter.sendGPT5;
+          break;
+        case CONFIG.MODELS.CHAT:
+          telegramMethod = telegramSplitter.sendGPT5Chat;
+          break;
+        default:
+          telegramMethod = telegramSplitter.sendGPTResponse;
+      }
+
+      if (!telegramMethod) {
+        telegramMethod = telegramSplitter.sendGPTResponse;
+      }
+
+      // Generate appropriate title
+      const modelName =
+        modelUsed === CONFIG.MODELS.NANO
+          ? 'Nano'
+          : modelUsed === CONFIG.MODELS.MINI
+          ? 'Mini'
+          : modelUsed === CONFIG.MODELS.FULL
+          ? 'Full'
+          : modelUsed === CONFIG.MODELS.CHAT
+          ? 'Chat'
+          : 'GPT-5';
+
+      const defaultTitle = gpt5Result?.completionDetected
         ? 'Task Completion Acknowledged'
-        : ('GPT-5 ' + modelLabel + ' Analysis');
+        : `GPT-5 ${modelName} Analysis`;
 
-      var finalTitle = title || defaultTitle;
+      const finalTitle = title || defaultTitle;
 
-      // Build metadata for the header
-      var metadata = {
-        title: finalTitle,
-        ms: responseTime,
-        contextUsed: contextUsed,
-        complexity: sget(queryAnalysis, 'complexity.complexity', 'medium'),
-        confidence: sget(gpt5Result, 'confidence', sget(queryAnalysis, 'confidence', 0.75)),
-        model: resolveModelName(modelUsed),
-        reasoning: sget(queryAnalysis, 'reasoning_effort', null),
-        verbosity: sget(queryAnalysis, 'verbosity', null),
-        costTier: (typeof getCostTier === 'function')
-          ? getCostTier(modelUsed || resolveModelName(modelUsed))
-          : 'standard',
-        fallbackUsed: !!sget(gpt5Result, 'fallbackUsed', false),
-        completionDetected: completionDetected
+      // Prepare metadata
+      const metadata = {
+        responseTime,
+        contextUsed,
+        complexity: queryAnalysis?.complexity?.complexity || 'medium',
+        confidence: gpt5Result?.confidence || queryAnalysis?.confidence || 0.75,
+        model: modelUsed,
+        reasoning: queryAnalysis?.reasoning_effort,
+        verbosity: queryAnalysis?.verbosity,
+        costTier: getCostTier(modelUsed),
+        fallbackUsed: gpt5Result?.fallbackUsed || false,
+        completionDetected: gpt5Result?.completionDetected || false
       };
 
-      // Send via splitter (nice header + safe Markdown + 4096 split)
-      var res = await tg.sendGPTResponse(String(response), metadata, chatId);
-      return !!(res && res.success);
-
+      return await telegramMethod(bot, chatId, response, {
+        title: finalTitle,
+        ...metadata
+      });
     } catch (telegramError) {
-      console.error('Telegram delivery error:', telegramError && telegramError.message ? telegramError.message : telegramError);
+      console.error('Telegram delivery error:', telegramError.message);
 
-      // Last-resort fallback: plain send
+      // Fallback to basic telegram send
       try {
         if (bot && bot.sendMessage && chatId) {
-          await bot.sendMessage(chatId, String(response));
+          await bot.sendMessage(chatId, response);
           return true;
         }
       } catch (fallbackError) {
-        console.error('Telegram fallback also failed:', fallbackError && fallbackError.message ? fallbackError.message : fallbackError);
+        console.error('Telegram fallback also failed:', fallbackError.message);
       }
+
       return false;
     }
   };
 }
 
-// --- REPLACE your createErrorTelegramSender with this ---
 function createErrorTelegramSender(chatId, errorResponse, originalError) {
-  return async function (bot) {
+  return async (bot) => {
     try {
       if (!bot || !chatId) {
-        console.warn('Error delivery skipped: bot or chatId missing (chatId=' + chatId + ')');
+        console.warn(`Error delivery skipped: bot or chatId missing (chatId=${chatId})`);
         return false;
       }
 
-      var tg = getTelegramHandler(bot);
-      var errObj = originalError instanceof Error ? originalError : new Error(String(errorResponse));
-      var res = await tg.sendError(errObj, 'System Error', chatId);
-      return !!(res && res.success);
+      const { telegramSplitter } = require('./dualCommandSystem');
 
+      if (telegramSplitter && typeof telegramSplitter.sendAlert === 'function') {
+        return await telegramSplitter.sendAlert(bot, chatId, errorResponse, 'System Error');
+      } else if (bot && bot.sendMessage) {
+        await bot.sendMessage(chatId, errorResponse);
+        return true;
+      }
+
+      return false;
     } catch (telegramError) {
-      console.error('Error telegram delivery failed:', telegramError && telegramError.message ? telegramError.message : telegramError);
+      console.error('Error telegram delivery failed:', telegramError.message);
       return false;
     }
   };
 }
 
-// keep your logs
 console.log('Secure GPT-5 Command System - PART 4/6 loaded');
 console.log('Features: Main execution engine, result processing, telegram integration');
 
-// ensure exports include createErrorTelegramSender
+// Export functions for Part 5
 module.exports = {
   executeDualCommand,
   createCompletionResponse,
   createErrorResponse,
   getCostTier,
-  createTelegramSender,
-  createErrorTelegramSender
+  createTelegramSender
 };
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 5/6
