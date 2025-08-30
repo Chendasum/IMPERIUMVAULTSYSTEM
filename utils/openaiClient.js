@@ -425,9 +425,9 @@ async function getGPT5Analysis(prompt, options = {}) {
         // Extract response text
         const responseText = safeExtractResponseText(completion, "responses");
         
-        // Check for API failures
-        if (outputTokens === 0 && responseText.startsWith("[Empty response")) {
-          throw new Error("GPT-5 API returned empty response - check parameters or quota");
+        // Log empty responses for debugging but don't throw errors
+        if (outputTokens === 0) {
+          console.warn(`GPT-5 returned 0 output tokens. Response: ${responseText.substring(0, 100)}`);
         }
 
         return responseText;
@@ -451,18 +451,18 @@ async function getGPT5Analysis(prompt, options = {}) {
 
         const responseText = safeExtractResponseText(completion, "chat");
 
-        // Check for API failures
-        if (outputTokens === 0 && responseText.startsWith("[No message content")) {
-          throw new Error("Chat API returned empty response - check parameters");
+        // Log empty responses for debugging but don't throw errors
+        if (outputTokens === 0) {
+          console.warn(`Chat API returned 0 output tokens. Response: ${responseText.substring(0, 100)}`);
         }
 
         return responseText;
       }
     });
 
-    // Validate response
-    if (!response || response.length === 0 || response.startsWith("[Empty response") || response.startsWith("[No message content")) {
-      throw new Error("Empty or invalid response received from API");
+    // Validate response - only check for completely invalid responses
+    if (!response || response.length === 0) {
+      throw new Error("Completely empty response received from API");
     }
 
     const executionTime = Date.now() - startTime;
