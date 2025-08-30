@@ -1613,12 +1613,16 @@ function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, respo
         return false;
       }
 
-      // ✅ FIXED: Use the new enhanced telegram splitter
-      try {
-        const { sendTelegramMessage, setupTelegramHandler } = require('./telegramSplitter');
-        
-        // Determine model used
-        const modelUsed = gpt5Result?.modelUsed || queryAnalysis?.gpt5Model || 'gpt-5-mini';
+      const { telegramSplitter } = require('./dualCommandSystem');
+
+      if (!telegramSplitter || typeof telegramSplitter.sendGPT5 !== 'function') {
+        console.warn('Telegram splitter not available, using basic send');
+        if (bot && bot.sendMessage && chatId) {
+          await bot.sendMessage(chatId, response);
+          return true;
+        }
+        return false;
+      }
         
         // Prepare comprehensive metadata for model detection and display
         const metadata = {
@@ -1696,18 +1700,36 @@ function createErrorTelegramSender(chatId, errorResponse, originalError) {
         return false;
       }
 
-      const { telegramSplitter } = require('./dualCommandSystem');
-
-      if (telegramSplitter && typeof telegramSplitter.sendAlert === 'function') {
-        return await telegramSplitter.sendAlert(bot, chatId, errorResponse, 'System Error');
-      } else if (bot && bot.sendMessage) {
+      // Try enhanced delivery first
+      try {
+        const { sendTelegramMessage } = require('./telegramSplitter');
+        
+        const result = await sendTelegramMessage(bot, chatId, errorResponse, {
+          model: 'error-handler',
+          costTier: 'free',
+          error: true,
+          originalError: originalError
+        });
+        
+        if (result.success) {
+          console.log('✅ Enhanced error delivery successful');
+          return true;
+        }
+        
+      } catch (enhancedError) {
+        console.log('⚠️ Enhanced error delivery failed, using basic fallback');
+      }
+      
+      // Basic fallback
+      if (bot && bot.sendMessage) {
         await bot.sendMessage(chatId, errorResponse);
+        console.log('✅ Basic error delivery: Success');
         return true;
       }
 
       return false;
     } catch (telegramError) {
-      console.error('Error telegram delivery failed:', telegramError.message);
+      console.error('❌ Error telegram delivery failed:', telegramError.message);
       return false;
     }
   };
