@@ -1731,6 +1731,31 @@ function createErrorTelegramSender(chatId, errorResponse, originalError) {
   };
 }
 
+function createErrorTelegramSender(chatId, errorResponse, originalError) {
+  return async (bot) => {
+    try {
+      if (!bot || !chatId) {
+        console.warn(`Error delivery skipped: bot or chatId missing (chatId=${chatId})`);
+        return false;
+      }
+
+      const { telegramSplitter } = require('./dualCommandSystem');
+
+      if (telegramSplitter && typeof telegramSplitter.sendAlert === 'function') {
+        return await telegramSplitter.sendAlert(bot, chatId, errorResponse, 'System Error');
+      } else if (bot && bot.sendMessage) {
+        await bot.sendMessage(chatId, errorResponse);
+        return true;
+      }
+
+      return false;
+    } catch (telegramError) {
+      console.error('Error telegram delivery failed:', telegramError.message);
+      return false;
+    }
+  };
+}
+
 console.log('Secure GPT-5 Command System - PART 4/6 loaded');
 console.log('Features: Main execution engine, result processing, telegram integration');
 
