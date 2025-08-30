@@ -1,97 +1,74 @@
 // utils/openaiClient.js
-// -----------------------------------------------------------------------------
-// GPT-5 Client (Responses API + Chat Completions) with:
-// - Auto route by model (Responses for gpt-5/gpt-5-mini/gpt-5-nano, Chat for gpt-5-chat-*)
-// - Correct param mapping (verbosity -> text.verbosity; reasoning -> {effort})
-// - max_output_tokens vs max_tokens handled properly
-// - Robust normalization to plain string
-// - Retry + simple circuit breaker
-// - Compact cost/usage logging (compatible with your logger.js)
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// OpenAI GPT-5 Client (Responses API + Chat Completions)
+// - Single entry: getGPT5Analysis(prompt, options)
+// - Auto-selects API: Responses for gpt-5 / -mini / -nano; Chat for -chat-latest
+// - Correct payloads: input_text + text.verbosity, reasoning.effort, tokens params
+// - Robust logging, retries, timeout, cost estimate, circuit breaker (simple)
+// ----------------------------------------------------------------------------
 
 'use strict';
 
-const PKG_NAME = 'openaiClient';
-const DEFAULT_TIMEOUT_MS = 30_000;
+const os = require('os');
 
-// Prefer global fetch (Node 18+), fallback to node-fetch if needed
-let fetchFn = globalThis.fetch;
-if (!fetchFn) {
-  fetchFn = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
+// Prefer Node 18+ global fetch; lazy-load node-fetch only if needed
+async function httpPost(url, body, headers = {}, { timeoutMs = 20000 } = {}) {
+  const payload = JSON.stringify(body);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    if (typeof fetch === 'function') {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...headers },
+        body: payload,
+        signal: controller.signal
+      });
+      return res;
+    }
+    // Node < 18 fallback
+    const { default: nodeFetch } = await import('node-fetch');
+    const res = await nodeFetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: payload,
+      signal: controller.signal
+    });
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-const API_BASE = 'https://api.openai.com/v1';
-const RESPONSES_URL = `${API_BASE}/responses`;
-const CHAT_URL = `${API_BASE}/chat/completions`;
+// --- Small helpers -----------------------------------------------------------
 
-const API_KEY = process.env.OPENAI_API_KEY;
-if (!API_KEY) {
-  console.error(`[${PKG_NAME}] ⚠️ Missing OPENAI_API_KEY env var`);
+function nowIso() {
+  return new Date().toISOString();
 }
 
-let logger;
-try {
-  logger = require('./logger');
-} catch {
-  logger = null;
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────────────────────────────────────
+function safeNumber(n, fallback) {
+  return Number.isFinite(n) ? n : fallback;
+}
 
-const CHAT_REGEX = /gpt-.*chat/i;
+function approxTokenCountFromText(text) {
+  const s = String(text || '');
+  // quick heuristic ~4 chars per token
+  return Math.max(1, Math.ceil(s.length / 4));
+}
 
 function isChatModel(model = '') {
-  return CHAT_REGEX.test(model);
+  return typeof model === 'string' && model.toLowerCase().includes('chat');
 }
 
-// Map verbosity to Responses API shape
-// Accept legacy { verbosity: 'low|medium|high' } and place under body.text.verbosity
-function mapVerbosity(body, options = {}) {
-  if (options.verbosity) {
-    body.text = { ...(body.text || {}), verbosity: options.verbosity };
-  }
-}
-
-// Map reasoning to Responses API shape
-// Accept { reasoning_effort: 'low|medium|high' } or { reasoning: { effort } }
-function mapReasoning(body, options = {}) {
-  if (options.reasoning && typeof options.reasoning === 'object' && options.reasoning.effort) {
-    body.reasoning = { effort: options.reasoning.effort };
-  } else if (options.reasoning_effort) {
-    body.reasoning = { effort: options.reasoning_effort };
-  }
-}
-
-// Cost estimator (per million tokens)
-function calculateCostEstimate(model, inputTokens = 0, outputTokens = 0) {
-  const costs = {
-    'gpt-5-nano': { input: 0.05, output: 0.40 },
-    'gpt-5-mini': { input: 0.25, output: 2.00 },
-    'gpt-5': { input: 1.25, output: 10.00 },
-    'gpt-5-chat-latest': { input: 1.25, output: 10.00 }
-  };
-  const m = costs[model] || costs['gpt-5-mini'];
-  const inputCost = (inputTokens / 1_000_000) * m.input;
-  const outputCost = (outputTokens / 1_000_000) * m.output;
-  return {
-    model,
-    inputTokens,
-    outputTokens,
-    totalTokens: inputTokens + outputTokens,
-    inputCost: +inputCost.toFixed(6),
-    outputCost: +outputCost.toFixed(6),
-    totalCost: +(inputCost + outputCost).toFixed(6)
-  };
-}
-
-// Normalize Responses API JSON → string
-function normalizeResponsesOutput(json) {
+// Extract plain text from Responses API
+function extractTextFromResponses(json) {
   if (!json) return '';
-  if (typeof json.output_text === 'string' && json.output_text.trim()) {
-    return json.output_text;
-  }
+  if (typeof json.output_text === 'string') return json.output_text;
   if (Array.isArray(json.output)) {
     const parts = [];
     for (const item of json.output) {
@@ -103,83 +80,57 @@ function normalizeResponsesOutput(json) {
     }
     if (parts.length) return parts.join('');
   }
-  // Nothing recognized
   return '';
 }
 
-// Normalize Chat Completions JSON → string
-function normalizeChatOutput(json) {
+// Extract plain text from Chat Completions
+function extractTextFromChat(json) {
   return json?.choices?.[0]?.message?.content ?? '';
 }
 
-// Trim common artifacts
-function postprocessText(text, addAttribution = false, model = '', reasoningEffort = null) {
-  if (!text) return '';
-  let t = String(text)
-    .replace(/^(Assistant:|AI:|GPT-?5?:)\s*/i, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-
-  if (addAttribution && t.length > 200 && !/gpt/i.test(t)) {
-    const modelName = /nano/i.test(model) ? 'GPT-5 Nano'
-      : /mini/i.test(model) ? 'GPT-5 Mini'
-      : /chat/i.test(model) ? 'GPT-5 Chat'
-      : 'GPT-5';
-    t += `\n\n*Powered by ${modelName}${reasoningEffort ? ` (${reasoningEffort} reasoning)` : ''}*`;
-  }
-  return t;
-}
-
-// Timeout wrapper
-function withTimeout(promise, ms, onTimeoutMsg = 'Request timed out') {
-  return new Promise((resolve, reject) => {
-    const id = setTimeout(() => reject(new Error(onTimeoutMsg)), ms);
-    promise.then(
-      (res) => { clearTimeout(id); resolve(res); },
-      (err) => { clearTimeout(id); reject(err); }
-    );
-  });
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-/** Circuit breaker (simple) */
-// ──────────────────────────────────────────────────────────────────────────────
-const breaker = {
-  state: 'CLOSED',
-  failures: 0,
-  openedAt: 0,
-  openAfter: 3,           // failures to open
-  resetAfterMs: 20_000,   // cool down period
+// Pricing (per 1M tokens). Adjust if your pricing changes.
+const PRICES_PER_MTOK = {
+  'gpt-5-nano': { input: 0.05, output: 0.40 },
+  'gpt-5-mini': { input: 0.25, output: 2.00 },
+  'gpt-5':      { input: 1.25, output: 10.00 },
+  'gpt-5-chat-latest': { input: 1.25, output: 10.00 }
 };
 
-function breakerCanProceed() {
-  if (breaker.state === 'OPEN') {
-    const elapsed = Date.now() - breaker.openedAt;
-    if (elapsed >= breaker.resetAfterMs) {
-      breaker.state = 'HALF_OPEN';
-      return true;
-    }
-    return false;
+function calcCostUSD(model, inTok, outTok) {
+  const rate = PRICES_PER_MTOK[model] || PRICES_PER_MTOK['gpt-5-mini'];
+  const inputCost  = (inTok / 1_000_000) * rate.input;
+  const outputCost = (outTok / 1_000_000) * rate.output;
+  return {
+    inputTokens: inTok,
+    outputTokens: outTok,
+    totalTokens: inTok + outTok,
+    inputCost: +inputCost.toFixed(6),
+    outputCost: +outputCost.toFixed(6),
+    totalCost: +(inputCost + outputCost).toFixed(6)
+  };
+}
+
+// --- Request builders --------------------------------------------------------
+
+function mapReasoning(body, options = {}) {
+  // Responses API: reasoning: { effort: 'low|medium|high|minimal' }
+  const eff =
+    options.reasoning?.effort ||
+    options.reasoning_effort ||
+    options.reasoningEffort ||
+    null;
+
+  if (eff) {
+    body.reasoning = { effort: String(eff) };
   }
-  return true;
 }
 
-function breakerRecordSuccess() {
-  breaker.state = 'CLOSED';
-  breaker.failures = 0;
-}
-
-function breakerRecordFailure() {
-  breaker.failures += 1;
-  if (breaker.failures >= breaker.openAfter) {
-    breaker.state = 'OPEN';
-    breaker.openedAt = Date.now();
+function mapVerbosity(body, options = {}) {
+  // Responses API moved verbosity under text.verbosity
+  if (options.verbosity) {
+    body.text = { ...(body.text || {}), verbosity: String(options.verbosity) };
   }
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Request builders
-// ──────────────────────────────────────────────────────────────────────────────
 
 function buildResponsesBody(prompt, options = {}) {
   const body = {
@@ -187,21 +138,32 @@ function buildResponsesBody(prompt, options = {}) {
     input: [
       {
         role: 'user',
-        content: [{ type: 'text', text: String(prompt ?? '') }]
+        // ✅ must be input_text
+        content: [{ type: 'input_text', text: String(prompt ?? '') }]
       }
     ]
   };
-  if (Number.isFinite(options.max_output_tokens)) body.max_output_tokens = options.max_output_tokens;
-  if (Number.isFinite(options.temperature)) body.temperature = options.temperature;
-  if (Number.isFinite(options.top_p)) body.top_p = options.top_p;
 
-  mapReasoning(body, options);
+  // token & sampling knobs (Responses API)
+  const maxOut = safeNumber(options.max_output_tokens, undefined);
+  if (Number.isFinite(maxOut)) body.max_output_tokens = maxOut;
+
+  const temp = safeNumber(options.temperature, undefined);
+  if (Number.isFinite(temp)) body.temperature = temp;
+
+  const topP = safeNumber(options.top_p, undefined);
+  if (Number.isFinite(topP)) body.top_p = topP;
+
+  // Map verbosity and reasoning shapes
   mapVerbosity(body, options);
+  mapReasoning(body, options);
 
-  // Clean null/undefined
-  for (const k of Object.keys(body)) {
-    if (body[k] == null) delete body[k];
-  }
+  // Optional: truncation control, top_logprobs etc., if provided
+  if (options.truncation) body.truncation = options.truncation; // e.g., 'disabled'
+  if (Number.isFinite(options.top_logprobs)) body.top_logprobs = options.top_logprobs;
+
+  // Clean undefined/null
+  for (const k of Object.keys(body)) if (body[k] == null) delete body[k];
   return body;
 }
 
@@ -210,205 +172,208 @@ function buildChatBody(prompt, options = {}) {
     model: options.model,
     messages: [{ role: 'user', content: String(prompt ?? '') }]
   };
-  // Chat API uses max_tokens (not max_output_tokens)
-  if (Number.isFinite(options.max_tokens)) body.max_tokens = options.max_tokens;
-  else if (Number.isFinite(options.max_output_tokens)) body.max_tokens = options.max_output_tokens;
 
-  if (Number.isFinite(options.temperature)) body.temperature = options.temperature;
-  if (Number.isFinite(options.top_p)) body.top_p = options.top_p;
+  // token & sampling knobs (Chat API)
+  const maxTok = safeNumber(options.max_tokens ?? options.max_output_tokens, undefined);
+  if (Number.isFinite(maxTok)) body.max_tokens = maxTok;
 
-  // NOTE: Chat API does not support text.verbosity; ignore options.verbosity here.
-  // NOTE: Chat API does not accept reasoning object in the same way; we keep it simple.
+  const temp = safeNumber(options.temperature, undefined);
+  if (Number.isFinite(temp)) body.temperature = temp;
 
-  for (const k of Object.keys(body)) {
-    if (body[k] == null) delete body[k];
-  }
+  const topP = safeNumber(options.top_p, undefined);
+  if (Number.isFinite(topP)) body.top_p = topP;
+
+  // Presence/frequency penalties passthrough if caller supplies
+  ['presence_penalty', 'frequency_penalty'].forEach(k => {
+    if (Number.isFinite(options[k])) body[k] = options[k];
+  });
+
+  // NOTE: Chat API doesn’t support text.verbosity / reasoning.effort like Responses
   return body;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Core caller with retry & telemetry
-// ──────────────────────────────────────────────────────────────────────────────
+// --- Client ------------------------------------------------------------------
 
-async function doFetchJson(url, body, timeoutMs = DEFAULT_TIMEOUT_MS) {
-  const res = await withTimeout(
-    fetchFn(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    }),
-    timeoutMs,
-    'OpenAI request timed out'
-  );
+class OpenAIClient {
+  constructor() {
+    this.apiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY;
+    if (!this.apiKey) {
+      console.error('❌ OPENAI_API_KEY is missing.');
+    }
+    this.baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`OpenAI ${url.includes('/responses') ? 'Responses' : 'Chat'} API error ${res.status}: ${text}`);
-  }
-  return res.json();
-}
-
-async function callWithRetry(kind, url, body, { model, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
-  const t0 = Date.now();
-  if (!breakerCanProceed()) {
-    throw new Error('Circuit breaker OPEN (cooling down after repeated failures)');
+    // Simple circuit breaker
+    this.cb = {
+      state: 'CLOSED', // CLOSED | OPEN | HALF_OPEN
+      failures: 0,
+      openedAt: 0,
+      openMs: 10_000
+    };
   }
 
-  let attempt = 0;
-  const maxAttempts = 3;
-  let lastErr;
+  // Main entry used by your system
+  async getGPT5Analysis(prompt, options = {}) {
+    const model = options.model || 'gpt-5-mini';
+    const apiType = isChatModel(model) ? 'chat' : 'responses';
 
-  while (attempt < maxAttempts) {
-    attempt += 1;
+    if (this._circuitOpen()) {
+      const msg = 'Circuit breaker is OPEN. Skipping API call.';
+      this._logError(model, apiType, 0, 0, 0, null, msg);
+      throw new Error(msg);
+    }
+
+    const start = Date.now();
+    let textOut = '';
+    let inputTokens = 0;
+    let outputTokens = 0;
+
     try {
-      const json = await doFetchJson(url, body, timeoutMs);
-      breakerRecordSuccess();
-
-      // Minimal usage fields for logs if present
-      const usage = json?.usage || {};
-      const inputTokens = usage.input_tokens ?? usage.prompt_tokens ?? 0;
-      const outputTokens = usage.output_tokens ?? usage.completion_tokens ?? 0;
-
-      if (logger && logger.logGPTResponse) {
-        try {
-          const meta = calculateCostEstimate(model, inputTokens, outputTokens);
-          const entry = {
-            timestamp: new Date().toISOString(),
-            model,
-            apiType: url.includes('/responses') ? 'responses' : 'chat',
-            inputTokens,
-            outputTokens,
-            totalTokens: inputTokens + outputTokens,
-            cost: meta.totalCost.toFixed(6),
-            executionTime: Date.now() - t0,
-            success: true,
-            error: null,
-            circuitBreakerState: breaker.state
-          };
-          console.log(`[GPT5-API] ${JSON.stringify(entry)}`);
-        } catch { /* no-op */ }
+      const resJson = await this._callOpenAI(prompt, { ...options, model }, apiType);
+      if (apiType === 'responses') {
+        textOut = extractTextFromResponses(resJson);
+        // Usage may be present in modern Responses payloads
+        inputTokens  = resJson?.usage?.input_tokens ?? approxTokenCountFromText(prompt);
+        outputTokens = resJson?.usage?.output_tokens ?? approxTokenCountFromText(textOut);
+      } else {
+        textOut = extractTextFromChat(resJson);
+        inputTokens  = resJson?.usage?.prompt_tokens ?? approxTokenCountFromText(prompt);
+        outputTokens = resJson?.usage?.completion_tokens ?? approxTokenCountFromText(textOut);
       }
 
-      return json;
+      const timeMs = Date.now() - start;
+      const cost = calcCostUSD(model, inputTokens, outputTokens);
+
+      this._logSuccess(model, apiType, inputTokens, outputTokens, timeMs, cost.totalCost);
+      this._resetBreaker();
+      return textOut || ''; // your callers expect a string
+
     } catch (err) {
-      lastErr = err;
-      if (attempt >= maxAttempts) {
-        breakerRecordFailure();
+      const timeMs = Date.now() - start;
+      this._tripBreaker();
+      this._logError(model, apiType, inputTokens, outputTokens, timeMs, null, err?.message || String(err));
+      throw err;
+    }
+  }
 
-        if (logger && logger.logGPTResponse) {
-          try {
-            const entry = {
-              timestamp: new Date().toISOString(),
-              model,
-              apiType: url.includes('/responses') ? 'responses' : 'chat',
-              inputTokens: 0,
-              outputTokens: 0,
-              totalTokens: 0,
-              cost: null,
-              executionTime: Date.now() - t0,
-              success: false,
-              error: err.message,
-              circuitBreakerState: breaker.state
-            };
-            console.error(`[GPT5-API-ERROR] ${JSON.stringify(entry)}`);
-          } catch { /* no-op */ }
+  // Low-level unified call with retries
+  async _callOpenAI(prompt, options, apiType) {
+    const url =
+      apiType === 'responses'
+        ? `${this.baseUrl}/responses`
+        : `${this.baseUrl}/chat/completions`;
+
+    const headers = {
+      Authorization: `Bearer ${this.apiKey}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'gpt-5.1' // keep if you’re on a beta flag; otherwise remove
+    };
+
+    // Build correct body
+    const body =
+      apiType === 'responses'
+        ? buildResponsesBody(prompt, options)
+        : buildChatBody(prompt, options);
+
+    // Simple retry (3 attempts, backoff)
+    const maxAttempts = 3;
+    let lastErr;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const res = await httpPost(url, body, headers, { timeoutMs: options.timeoutMs || 20000 });
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          const errMsg = `OpenAI ${apiType} API error ${res.status}: ${txt}`;
+          // 400s are usually not retriable unless it’s a transient param mismatch you’re fixing
+          if (res.status >= 500 && attempt < maxAttempts) {
+            await sleep(attempt * 300);
+            continue;
+          }
+          throw new Error(errMsg);
         }
-        throw err;
+        const json = await res.json();
+        return json;
+      } catch (e) {
+        lastErr = e;
+        if (attempt < maxAttempts) {
+          await sleep(attempt * 300);
+          continue;
+        }
       }
+    }
+    throw lastErr;
+  }
 
-      // backoff
-      const delay = 300 * Math.pow(2, attempt - 1);
-      await new Promise(r => setTimeout(r, delay));
+  // --- Circuit breaker helpers ----------------------------------------------
+  _circuitOpen() {
+    if (this.cb.state === 'OPEN') {
+      const elapsed = Date.now() - this.cb.openedAt;
+      if (elapsed > this.cb.openMs) {
+        this.cb.state = 'HALF_OPEN';
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  _tripBreaker() {
+    this.cb.failures += 1;
+    if (this.cb.failures >= 3 && this.cb.state !== 'OPEN') {
+      this.cb.state = 'OPEN';
+      this.cb.openedAt = Date.now();
     }
   }
-  throw lastErr;
-}
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Public API
-// ─────────────────────────────────────────────────────────────────────────────-
-
-async function callResponses(prompt, options = {}) {
-  const body = buildResponsesBody(prompt, options);
-  const json = await callWithRetry('responses', RESPONSES_URL, body, { model: options.model, timeoutMs: options.timeoutMs });
-  return json;
-}
-
-async function callChat(prompt, options = {}) {
-  const body = buildChatBody(prompt, options);
-  const json = await callWithRetry('chat', CHAT_URL, body, { model: options.model, timeoutMs: options.timeoutMs });
-  return json;
-}
-
-/**
- * Main entry used by dualCommandSystem:
- * - Decides endpoint by model
- * - Returns a plain string (normalized + lightly postprocessed)
- */
-async function getGPT5Analysis(prompt, options = {}) {
-  const model = options.model || 'gpt-5-mini';
-  const start = Date.now();
-
-  if (!API_KEY) {
-    throw new Error('OPENAI_API_KEY is not set');
+  _resetBreaker() {
+    this.cb.failures = 0;
+    if (this.cb.state !== 'CLOSED') this.cb.state = 'CLOSED';
   }
 
-  // Route to proper API
-  let json;
-  if (isChatModel(model)) {
-    // Ensure Chat uses max_tokens
-    const chatOpts = { ...options };
-    if (Number.isFinite(chatOpts.max_output_tokens) && !Number.isFinite(chatOpts.max_tokens)) {
-      chatOpts.max_tokens = chatOpts.max_output_tokens;
-      delete chatOpts.max_output_tokens;
-    }
-    json = await callChat(prompt, chatOpts);
-  } else {
-    // Responses API
-    json = await callResponses(prompt, options);
+  // --- Logging ---------------------------------------------------------------
+  _logSuccess(model, apiType, inTok, outTok, ms, cost) {
+    const payload = {
+      timestamp: nowIso(),
+      model,
+      apiType,
+      inputTokens: inTok,
+      outputTokens: outTok,
+      totalTokens: inTok + outTok,
+      cost: cost != null ? cost.toFixed(6) : null,
+      executionTime: ms,
+      success: true,
+      error: null,
+      circuitBreakerState: this.cb.state
+    };
+    console.log(`[GPT5-API] ${JSON.stringify(payload)}`);
   }
 
-  // Normalize to text
-  const text = isChatModel(model) ? normalizeChatOutput(json) : normalizeResponsesOutput(json);
-
-  // If the service returned nothing, provide a safe empty marker (so callers don't crash on .length)
-  const safe = text && text.trim() ? text : '[Empty response from GPT-5 API]';
-
-  // Optional post-processing (adds attribution only for non-chat when long)
-  const processed = postprocessText(
-    safe,
-    /* addAttribution */ !isChatModel(model),
-    model,
-    options.reasoning_effort || options?.reasoning?.effort || null
-  );
-
-  // Optional debug console (kept compact)
-  console.log(`Using ${isChatModel(model) ? 'Chat' : 'Responses'} API with ${model}...`);
-  if (!text || !text.trim()) {
-    console.log('GPT-5 returned 0 output tokens. Response:', processed);
+  _logError(model, apiType, inTok, outTok, ms, cost, errMsg) {
+    const payload = {
+      timestamp: nowIso(),
+      model,
+      apiType,
+      inputTokens: inTok,
+      outputTokens: outTok,
+      totalTokens: inTok + outTok,
+      cost: cost,
+      executionTime: ms,
+      success: false,
+      error: errMsg,
+      circuitBreakerState: this.cb.state
+    };
+    console.error(`[GPT5-API-ERROR] ${JSON.stringify(payload)}`);
   }
-
-  return processed;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Exports
-// ─────────────────────────────────────────────────────────────────────────────-
+// Singleton instance
+const openaiClient = new OpenAIClient();
 
 module.exports = {
-  // High-level used by your system
-  getGPT5Analysis,
-
-  // Lower-level (optional) if you need them
-  callResponses,
-  callChat,
-
-  // Utilities
-  calculateCostEstimate,
-  normalizeResponsesOutput,
-  normalizeChatOutput,
-  isChatModel
+  OpenAIClient,
+  openaiClient,
+  // Primary function your code calls everywhere:
+  getGPT5Analysis: (...args) => openaiClient.getGPT5Analysis(...args),
+  // Useful exports
+  PRICES_PER_MTOK,
+  calcCostUSD
 };
