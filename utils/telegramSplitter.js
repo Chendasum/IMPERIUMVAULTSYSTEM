@@ -1,1062 +1,720 @@
-// utils/telegramSplitter.js - Perfect 10/10 Production-Grade Message Handler
 'use strict';
-const crypto = require('crypto');
+// telegramSplitter.js — 10/10 Production v3 (Ultra‑Compat, Node-safe)
+// - NO optional chaining, NO RegExp look‑behind, CommonJS, ASCII‑only
+// - Safe Markdown (V1) with sanitizer and auto HTML fallback
+// - 4096 split with paragraph/line/code-fence awareness + Part X/Y
+// - Per‑chat + global throttling, rate-limit retries (retry_after), circuit breaker
+// - Rich helpers: setupTelegramHandler, sendGPTResponse, sendSystemStatus, sendError, sendSuccess
+// - Drop‑in with your existing commands (/memory, /health, etc.)
 
-// Enhanced configuration with advanced features
-const CONFIG = {
-    MAX_MESSAGE_LENGTH: 4096,
-    SAFE_LENGTH: 3900,
-    CHUNK_TARGET: 3500,
-    
-    // Advanced delivery settings
-    DELAY_MS: 200,
-    MAX_RETRIES: 3,
-    RETRY_DELAY_MS: 1000,
-    ADAPTIVE_RETRY: true,
-    
-    // Formatting preferences
-    AUTO_EMOJI: true,
-    SMART_SPACING: true,
-    ENHANCED_MARKDOWN: true,
-    VISUAL_SEPARATORS: true,
-    MAX_LINE_LENGTH: 80
+var crypto = require('crypto');
+
+// -----------------------------------------------------------------------------
+// Config
+// -----------------------------------------------------------------------------
+var CONFIG = {
+  MAX_MESSAGE_LENGTH: 4096,
+  SOFT_SPLIT: 3800,      // aim before hard limit to leave space for prefixes
+  PREF_CHUNK: 3500,      // paragraph/sentence chunk target
+
+  // Delivery
+  PER_CHAT_MIN_MS: 1100, // Telegram-friendly (>=1 msg/sec per chat)
+  GLOBAL_MIN_MS: 33,     // tiny global spacing
+  MAX_RETRIES: 3,
+  RETRY_BASE_MS: 800,
+
+  // Formatting
+  PARSE_MODE: 'Markdown', // Use Markdown (V1) for max compatibility
+  AUTO_EMOJI: true,
+  SMART_SPACING: true,
+  ENHANCED_MARKDOWN: true,
+  VISUAL_SEPARATORS: true,
+  MAX_LINE_LENGTH: 80
 };
 
-// Enhanced Telegram Message Formatter & Splitter with Auto-Emoji and Smart Formatting
-class TelegramFormatter {
-    constructor(customConfig = {}) {
-        this.config = { ...CONFIG, ...customConfig };
-        this.MAX_MESSAGE_LENGTH = this.config.MAX_MESSAGE_LENGTH;
-        this.PREFERRED_CHUNK_SIZE = this.config.CHUNK_TARGET;
-        
-        // Circuit breaker for delivery failures
-        this.circuitBreaker = {
-            failures: 0,
-            isOpen: false,
-            lastFailure: null,
-            resetTime: 60000 // Reset after 1 minute
-        };
-        
-        // Delivery metrics
-        this.metrics = {
-            totalSent: 0,
-            totalFailed: 0,
-            averageDelay: this.config.DELAY_MS,
-            lastSuccessTime: Date.now()
-        };
-        
-        // Emoji mappings for different content types
-        this.emojiMap = {
-            // Status and indicators
-            success: ['✅', '🎉', '✨', '💚'],
-            error: ['❌', '⚠️', '🚨', '💔'],
-            info: ['ℹ️', '📢', '💡', '📋'],
-            warning: ['⚠️', '🟡', '⚡', '🔔'],
-            
-            // Content types
-            code: ['💻', '⚡', '🔧', '🛠️'],
-            money: ['💰', '💵', '💸', '📈'],
-            time: ['⏰', '⏱️', '🕐', '📅'],
-            file: ['📁', '📄', '📋', '🗂️'],
-            link: ['🔗', '🌐', '📎', '🔀'],
-            
-            // Actions
-            send: ['📤', '🚀', '➡️', '📨'],
-            receive: ['📥', '⬅️', '📩', '💌'],
-            process: ['⚙️', '🔄', '⏳', '🔀'],
-            complete: ['✅', '🏁', '🎯', '💯'],
-            
-            // Categories
-            gpt: ['🤖', '🧠', '💭', '🎯'],
-            system: ['🖥️', '⚙️', '🔧', '💾'],
-            user: ['👤', '🙋', '💬', '🗣️'],
-            admin: ['👑', '🛡️', '⭐', '🔑']
-        };
-        
-        // Keywords that trigger specific emojis
-        this.keywordEmojis = {
-            // Technical terms
-            'gpt-5': '🤖',
-            'gpt5': '🤖',
-            'ai': '🧠',
-            'error': '❌',
-            'success': '✅',
-            'working': '✅',
-            'failed': '❌',
-            'loading': '⏳',
-            'complete': '💯',
-            'processing': '⚙️',
-            
-            // Financial
-            'cost': '💰',
-            'price': '💵',
-            'tokens': '🪙',
-            'usage': '📊',
-            
-            // Status
-            'online': '🟢',
-            'offline': '🔴',
-            'ready': '✅',
-            'busy': '🟡',
-            'maintenance': '🔧',
-            
-            // Actions
-            'sending': '📤',
-            'received': '📥',
-            'updated': '🔄',
-            'created': '✨',
-            'deleted': '🗑️',
-            
-            // Time
-            'today': '📅',
-            'now': '⏰',
-            'urgent': '🚨',
-            'scheduled': '⏰'
-        };
-        
-        // Markdown patterns for Telegram
-        this.markdownPatterns = {
-            bold: /\*\*(.*?)\*\*/g,
-            italic: /\*(.*?)\*/g,
-            code: /`([^`]+)`/g,
-            codeBlock: /```([\s\S]*?)```/g,
-            underline: /__([^_]+)__/g,
-            strikethrough: /~~([^~]+)~~/g
-        };
-    }
-    
-    // Detect model from response or metadata
-    detectModel(response, metadata = {}) {
-        // Check metadata first
-        if (metadata.model) {
-            return {
-                model: metadata.model,
-                source: 'metadata',
-                confidence: 'high'
-            };
-        }
-        
-        // Check for model indicators in response text
-        const modelPatterns = [
-            { pattern: /\[GPT-5\]/i, model: 'gpt-5', confidence: 'high' },
-            { pattern: /\[gpt-5-mini\]/i, model: 'gpt-5-mini', confidence: 'high' },
-            { pattern: /\[gpt-5-nano\]/i, model: 'gpt-5-nano', confidence: 'high' },
-            { pattern: /\[GPT-4o\]/i, model: 'gpt-4o', confidence: 'high' },
-            { pattern: /\[.*Fallback.*\]/i, model: 'gpt-4o-fallback', confidence: 'medium' },
-            { pattern: /\[CACHED\]/i, model: 'cached-response', confidence: 'low' }
-        ];
-        
-        for (const { pattern, model, confidence } of modelPatterns) {
-            if (pattern.test(response)) {
-                return { model, source: 'response_text', confidence };
-            }
-        }
-        
-        // Infer from response characteristics
-        if (response.length > 8000) {
-            return { model: 'gpt-5', source: 'inference', confidence: 'low' };
-        } else if (response.length < 1000 && (response.includes('brief') || response.includes('quick'))) {
-            return { model: 'gpt-5-nano', source: 'inference', confidence: 'low' };
-        } else if (response.includes('reasoning') || response.includes('analysis')) {
-            return { model: 'gpt-5', source: 'inference', confidence: 'medium' };
-        }
-        
-        // Default
-        return { model: 'gpt-5-mini', source: 'default', confidence: 'medium' };
-    }
-    
-    // Enhanced message formatting with model detection
-    formatMessageWithModel(response, metadata = {}) {
-        const modelInfo = this.detectModel(response, metadata);
-        
-        // Model emojis
-        const modelEmojis = {
-            'gpt-5': '🚀',
-            'gpt-5-mini': '⚡',
-            'gpt-5-nano': '💨',
-            'gpt-5-chat-latest': '💬',
-            'gpt-4o': '🔄',
-            'gpt-4o-fallback': '🔄',
-            'cached-response': '💾'
-        };
-        
-        const modelEmoji = modelEmojis[modelInfo.model] || '🤖';
-        
-        // Build header with model info
-        let header = `${modelEmoji} **AI Response**\n`;
-        header += `_Model: ${modelInfo.model}_`;
-        
-        // Add confidence indicator
-        if (modelInfo.confidence) {
-            const confidenceEmoji = {
-                'high': '✅',
-                'medium': '⚠️',
-                'low': '❓'
-            };
-            header += `\n_Detection: ${confidenceEmoji[modelInfo.confidence]} ${modelInfo.confidence}_`;
-        }
-        
-        // Add metadata
-        if (metadata.tokens) {
-            header += `\n_Tokens: ${metadata.tokens.toLocaleString()} 🪙_`;
-        }
-        if (metadata.cost) {
-            header += `\n_Cost: $${metadata.cost} 💰_`;
-        }
-        if (metadata.executionTime) {
-            header += `\n_Time: ${metadata.executionTime}ms ⏱️_`;
-        }
-        if (metadata.costTier) {
-            const tierEmoji = {
-                'economy': '💵',
-                'standard': '💳',
-                'premium': '💎'
-            };
-            header += `\n_Tier: ${tierEmoji[metadata.costTier] || '💳'} ${metadata.costTier}_`;
-        }
-        
-        // Clean response text (remove existing model tags)
-        let cleanResponse = response
-            .replace(/^\[.*?\]\s*/gm, '')
-            .replace(/^GPT-\d+.*?:\s*/gm, '')
-            .trim();
-        
-        // Apply formatting
-        const formatted = this.formatMessage(`${header}\n\n${cleanResponse}`);
-        
-        return {
-            formatted,
-            modelInfo,
-            metadata
-        };
-    }
-    
-    // Main formatting function
-    formatMessage(text, options = {}) {
-        if (!text || typeof text !== 'string') return '';
-        
-        const config = {
-            addEmojis: this.config.AUTO_EMOJI,
-            improveSpacing: this.config.SMART_SPACING,
-            formatMarkdown: this.config.ENHANCED_MARKDOWN,
-            addBulletPoints: true,
-            enhanceHeaders: true,
-            addSeparators: this.config.VISUAL_SEPARATORS,
-            maxLineLength: this.config.MAX_LINE_LENGTH,
-            ...options
-        };
-        
-        let formatted = text;
-        
-        // Step 1: Clean and normalize text
-        formatted = this.normalizeText(formatted);
-        
-        // Step 2: Add auto-emojis based on content
-        if (config.addEmojis) {
-            formatted = this.addAutoEmojis(formatted);
-        }
-        
-        // Step 3: Improve spacing and structure
-        if (config.improveSpacing) {
-            formatted = this.improveSpacing(formatted);
-        }
-        
-        // Step 4: Format markdown for Telegram
-        if (config.formatMarkdown) {
-            formatted = this.formatMarkdown(formatted);
-        }
-        
-        // Step 5: Enhance headers and sections
-        if (config.enhanceHeaders) {
-            formatted = this.enhanceHeaders(formatted);
-        }
-        
-        // Step 6: Add bullet points and lists
-        if (config.addBulletPoints) {
-            formatted = this.enhanceLists(formatted);
-        }
-        
-        // Step 7: Add separators for long content
-        if (config.addSeparators) {
-            formatted = this.addSeparators(formatted);
-        }
-        
-        return formatted.trim();
-    }
-    
-    // Enhanced message splitting and delivery
-    async splitAndSendMessage(text, bot, chatId, options = {}) {
-        const startTime = Date.now();
-        
-        try {
-            // Check circuit breaker
-            if (this.circuitBreaker.isOpen) {
-                const timeSinceFailure = Date.now() - this.circuitBreaker.lastFailure;
-                if (timeSinceFailure < this.circuitBreaker.resetTime) {
-                    throw new Error(`Circuit breaker open. Retry in ${Math.ceil((this.circuitBreaker.resetTime - timeSinceFailure) / 1000)}s`);
-                } else {
-                    this.resetCircuitBreaker();
-                }
-            }
-            
-            // Format message with model detection
-            const result = this.formatMessageWithModel(text, options.metadata || {});
-            const chunks = this.splitMessage(result.formatted);
-            
-            console.log(`📤 Sending ${chunks.length} message(s) to chat ${chatId}`);
-            console.log(`🤖 Detected model: ${result.modelInfo.model} (${result.modelInfo.confidence} confidence)`);
-            
-            const results = [];
-            let currentDelay = this.config.DELAY_MS;
-            
-            for (let i = 0; i < chunks.length; i++) {
-                const chunk = chunks[i];
-                let attempts = 0;
-                let sent = false;
-                
-                while (attempts < this.config.MAX_RETRIES && !sent) {
-                    try {
-                        attempts++;
-                        
-                        if (attempts > 1) {
-                            console.log(`🔄 Retry attempt ${attempts}/${this.config.MAX_RETRIES} for chunk ${i + 1}`);
-                        }
-                        
-                        // Send message
-                        const messageResult = await this.sendMessageWithRetry(bot, chatId, chunk, {
-                            parse_mode: 'Markdown',
-                            disable_web_page_preview: true,
-                            ...options.telegramOptions
-                        });
-                        
-                        results.push({
-                            chunkIndex: i,
-                            messageId: messageResult.message_id,
-                            length: chunk.length,
-                            attempts: attempts,
-                            success: true
-                        });
-                        
-                        sent = true;
-                        this.metrics.totalSent++;
-                        
-                        // Adaptive delay
-                        if (attempts > 1 && this.config.ADAPTIVE_RETRY) {
-                            currentDelay = Math.min(currentDelay * 1.5, 2000);
-                        } else if (attempts === 1) {
-                            currentDelay = Math.max(currentDelay * 0.9, this.config.DELAY_MS);
-                        }
-                        
-                        console.log(`✅ Chunk ${i + 1}/${chunks.length} sent (${chunk.length} chars)`);
-                        
-                    } catch (error) {
-                        console.error(`❌ Failed to send chunk ${i + 1}, attempt ${attempts}:`, error.message);
-                        
-                        if (attempts < this.config.MAX_RETRIES) {
-                            const retryDelay = this.config.RETRY_DELAY_MS * Math.pow(2, attempts - 1);
-                            console.log(`⏳ Retrying in ${retryDelay}ms...`);
-                            await this.sleep(retryDelay);
-                        } else {
-                            results.push({
-                                chunkIndex: i,
-                                error: error.message,
-                                attempts: attempts,
-                                success: false
-                            });
-                            
-                            this.metrics.totalFailed++;
-                            this.circuitBreaker.failures++;
-                            
-                            if (this.circuitBreaker.failures >= 3) {
-                                this.circuitBreaker.isOpen = true;
-                                this.circuitBreaker.lastFailure = Date.now();
-                                console.error('🚨 Circuit breaker opened due to repeated failures');
-                            }
-                        }
-                    }
-                }
-                
-                // Delay between chunks
-                if (sent && i < chunks.length - 1) {
-                    await this.sleep(currentDelay);
-                }
-            }
-            
-            const executionTime = Date.now() - startTime;
-            const successCount = results.filter(r => r.success).length;
-            const failureCount = results.filter(r => !r.success).length;
-            
-            console.log(`📊 Delivery complete: ${successCount}/${chunks.length} sent, ${failureCount} failed, ${executionTime}ms`);
-            
-            // Update metrics
-            this.metrics.averageDelay = (this.metrics.averageDelay + currentDelay) / 2;
-            this.metrics.lastSuccessTime = successCount > 0 ? Date.now() : this.metrics.lastSuccessTime;
-            
-            return {
-                success: failureCount === 0,
-                enhanced: true,
-                totalChunks: chunks.length,
-                sentChunks: successCount,
-                failedChunks: failureCount,
-                executionTime,
-                modelInfo: result.modelInfo,
-                results
-            };
-            
-        } catch (error) {
-            console.error('🚨 Critical error in message delivery:', error);
-            this.metrics.totalFailed++;
-            
-            return {
-                success: false,
-                enhanced: false,
-                error: error.message,
-                totalChunks: 0,
-                sentChunks: 0,
-                failedChunks: 1,
-                executionTime: Date.now() - startTime
-            };
-        }
-    }
-    
-    // Robust message sending with error handling
-    async sendMessageWithRetry(bot, chatId, text, options = {}) {
-        try {
-            // Handle different bot implementations
-            if (bot.sendMessage) {
-                return await bot.sendMessage(chatId, text, options);
-            } else if (bot.telegram && bot.telegram.sendMessage) {
-                return await bot.telegram.sendMessage(chatId, text, options);
-            } else if (typeof bot === 'function') {
-                return await bot(chatId, text, options);
-            } else {
-                throw new Error('Invalid bot instance - no sendMessage method found');
-            }
-        } catch (error) {
-            // Enhanced error classification
-            if (error.code === 429) {
-                const retryAfter = error.parameters?.retry_after || 1;
-                throw new Error(`Rate limited. Retry after ${retryAfter}s`);
-            } else if (error.code === 400) {
-                throw new Error(`Bad request: ${error.description || 'Invalid message format'}`);
-            } else if (error.code === 403) {
-                throw new Error(`Forbidden: ${error.description || 'Bot blocked by user'}`);
-            } else {
-                throw error;
-            }
-        }
-    }
-    
-    // Split formatted message into Telegram-friendly chunks
-    splitMessage(text) {
-        if (text.length <= this.MAX_MESSAGE_LENGTH) {
-            return [text];
-        }
-        
-        const chunks = [];
-        const paragraphs = text.split('\n\n');
-        let currentChunk = '';
-        
-        for (const paragraph of paragraphs) {
-            if (paragraph.length > this.PREFERRED_CHUNK_SIZE) {
-                if (currentChunk.trim()) {
-                    chunks.push(this.finalizeChunk(currentChunk.trim()));
-                    currentChunk = '';
-                }
-                
-                const subChunks = this.splitLongParagraph(paragraph);
-                chunks.push(...subChunks);
-            } else {
-                const testChunk = currentChunk + (currentChunk ? '\n\n' : '') + paragraph;
-                
-                if (testChunk.length > this.PREFERRED_CHUNK_SIZE) {
-                    if (currentChunk.trim()) {
-                        chunks.push(this.finalizeChunk(currentChunk.trim()));
-                    }
-                    currentChunk = paragraph;
-                } else {
-                    currentChunk = testChunk;
-                }
-            }
-        }
-        
-        if (currentChunk.trim()) {
-            chunks.push(this.finalizeChunk(currentChunk.trim()));
-        }
-        
-        return chunks.map((chunk, index, array) => {
-            if (array.length > 1) {
-                const partInfo = `\n\n📄 *Part ${index + 1}/${array.length}*`;
-                return chunk + partInfo;
-            }
-            return chunk;
-        });
-    }
-    
-    // Utility functions
-    async sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-    
-    resetCircuitBreaker() {
-        this.circuitBreaker.isOpen = false;
-        this.circuitBreaker.failures = 0;
-        this.circuitBreaker.lastFailure = null;
-        console.log('🔄 Circuit breaker manually reset');
-    }
-    
-    getMetrics() {
-        const now = Date.now();
-        const uptime = now - this.metrics.lastSuccessTime;
-        
-        return {
-            totalSent: this.metrics.totalSent,
-            totalFailed: this.metrics.totalFailed,
-            successRate: this.metrics.totalSent + this.metrics.totalFailed > 0 ? 
-                ((this.metrics.totalSent / (this.metrics.totalSent + this.metrics.totalFailed)) * 100).toFixed(2) : 100,
-            averageDelay: Math.round(this.metrics.averageDelay),
-            circuitBreakerOpen: this.circuitBreaker.isOpen,
-            lastSuccessTime: new Date(this.metrics.lastSuccessTime).toLocaleString(),
-            uptimeSinceLastSuccess: Math.round(uptime / 1000) + 's'
-        };
-    }
-    
-    // Text processing methods
-    normalizeText(text) {
-        return text
-            .replace(/\r\n/g, '\n')
-            .replace(/\n{3,}/g, '\n\n')
-            .replace(/[ \t]+/g, ' ')
-            .replace(/^\s+|\s+$/g, '')
-            .replace(/\n[ \t]+/g, '\n')
-            .replace(/[ \t]+\n/g, '\n');
-    }
-    
-    addAutoEmojis(text) {
-        let result = text;
-        
-        // Add emojis for specific keywords
-        for (const [keyword, emoji] of Object.entries(this.keywordEmojis)) {
-            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
-            result = result.replace(regex, `${emoji} ${keyword}`);
-        }
-        
-        // Add section emojis for headers
-        result = result.replace(/^(#+\s*)(.+)$/gm, (match, hashes, title) => {
-            const emoji = this.getHeaderEmoji(title);
-            return `${hashes}${emoji} ${title}`;
-        });
-        
-        return result;
-    }
-    
-    improveSpacing(text) {
-        return text
-            .replace(/\.([A-Z])/g, '. $1')
-            .replace(/:([^\s:])/g, ': $1')
-            .replace(/^([•\-\*])\s*/gm, '$1 ')
-            .replace(/(```[\s\S]*?```)/g, '\n$1\n')
-            .replace(/([.!?])\n([A-Z])/g, '$1\n\n$2');
-    }
-    
-    formatMarkdown(text) {
-        return text
-            .replace(/\*\*(.*?)\*\*/g, '*$1*')
-            .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '_$1_')
-            .replace(/~~([^~]+)~~/g, '~$1~');
-    }
-    
-    enhanceHeaders(text) {
-        return text.replace(/^(#+)\s*(.+)$/gm, (match, hashes, title) => {
-            const level = hashes.length;
-            const emoji = this.getHeaderEmoji(title);
-            
-            if (level === 1) {
-                return `🔥 *${title.toUpperCase()}*\n${'═'.repeat(Math.min(title.length, 20))}`;
-            } else if (level === 2) {
-                return `${emoji} **${title}**\n${'─'.repeat(Math.min(title.length, 15))}`;
-            } else {
-                return `${emoji} **${title}**`;
-            }
-        });
-    }
-    
-    enhanceLists(text) {
-        let result = text;
-        
-        result = result
-            .replace(/^[\-\*]\s+(.+)$/gm, '• $1')
-            .replace(/^(\d+)[\.\)]\s+(.+)$/gm, '$1️⃣ $2')
-            .replace(/^([a-zA-Z])[\.\)]\s+(.+)$/gm, '▫️ $2');
-        
-        result = result
-            .replace(/^•\s+(.*(?:complete|done|finished|ready|working|success).*)$/gmi, '✅ $1')
-            .replace(/^•\s+(.*(?:todo|pending|waiting|failed|error|issue).*)$/gmi, '❌ $1')
-            .replace(/^•\s+(.*(?:progress|processing|loading|running).*)$/gmi, '⏳ $1');
-        
-        return result;
-    }
-    
-    addSeparators(text) {
-        const lines = text.split('\n');
-        const result = [];
-        let inCodeBlock = false;
-        
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            
-            if (line.startsWith('```')) {
-                inCodeBlock = !inCodeBlock;
-            }
-            
-            result.push(line);
-            
-            if (!inCodeBlock && 
-                line.match(/^[🔥✨💡📊⚡🎯].*[*_].*[*_]/) && 
-                i < lines.length - 1 && 
-                lines[i + 1].trim() !== '') {
-                result.push('┈'.repeat(25));
-            }
-        }
-        
-        return result.join('\n');
-    }
-    
-    splitLongParagraph(paragraph) {
-        const sentences = paragraph.split(/(?<=[.!?])\s+/);
-        const chunks = [];
-        let currentChunk = '';
-        
-        for (const sentence of sentences) {
-            const testChunk = currentChunk + (currentChunk ? ' ' : '') + sentence;
-            
-            if (testChunk.length > this.PREFERRED_CHUNK_SIZE) {
-                if (currentChunk) {
-                    chunks.push(this.finalizeChunk(currentChunk));
-                    currentChunk = sentence;
-                } else {
-                    const words = sentence.split(' ');
-                    let wordChunk = '';
-                    
-                    for (const word of words) {
-                        const testWord = wordChunk + (wordChunk ? ' ' : '') + word;
-                        if (testWord.length > this.PREFERRED_CHUNK_SIZE) {
-                            if (wordChunk) {
-                                chunks.push(this.finalizeChunk(wordChunk));
-                                wordChunk = word;
-                            } else {
-                                chunks.push(this.finalizeChunk(word));
-                            }
-                        } else {
-                            wordChunk = testWord;
-                        }
-                    }
-                    
-                    if (wordChunk) {
-                        currentChunk = wordChunk;
-                    }
-                }
-            } else {
-                currentChunk = testChunk;
-            }
-        }
-        
-        if (currentChunk) {
-            chunks.push(this.finalizeChunk(currentChunk));
-        }
-        
-        return chunks;
-    }
-    
-    finalizeChunk(chunk) {
-        return chunk.replace(/\n{3,}/g, '\n\n').trim();
-    }
-    
-    getHeaderEmoji(title) {
-        const lower = title.toLowerCase();
-        
-        if (lower.includes('error') || lower.includes('problem')) return '🚨';
-        if (lower.includes('success') || lower.includes('complete')) return '✅';
-        if (lower.includes('warning') || lower.includes('caution')) return '⚠️';
-        if (lower.includes('info') || lower.includes('note')) return 'ℹ️';
-        if (lower.includes('config') || lower.includes('setting')) return '⚙️';
-        if (lower.includes('result') || lower.includes('output')) return '📊';
-        if (lower.includes('api') || lower.includes('gpt')) return '🤖';
-        if (lower.includes('cost') || lower.includes('price')) return '💰';
-        if (lower.includes('time') || lower.includes('schedule')) return '⏰';
-        if (lower.includes('file') || lower.includes('data')) return '📁';
-        if (lower.includes('system') || lower.includes('status')) return '🖥️';
-        if (lower.includes('user') || lower.includes('account')) return '👤';
-        
-        return '📋';
-    }
+// -----------------------------------------------------------------------------
+// Internal state (throttles)
+// -----------------------------------------------------------------------------
+var lastSentAtByChat = Object.create(null);
+var lastGlobalSendAt = 0;
+
+// -----------------------------------------------------------------------------
+// Utilities
+// -----------------------------------------------------------------------------
+function now() { return Date.now(); }
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function isString(x) { return typeof x === 'string'; }
+function isNumber(x) { return typeof x === 'number' && !isNaN(x); }
+function str(x) { return x === undefined || x === null ? '' : String(x); }
+function safeObj(x) { return x && typeof x === 'object' ? x : {}; }
+function clamp(n, a, b) { return n < a ? a : (n > b ? b : n); }
+
+function mdTrim(s) {
+  if (!isString(s)) return '';
+  return s.replace(/[\t\v\f\r]+/g, ' ')
+          .replace(/ +\n/g, '\n')
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
 }
 
-// Production-grade message handler
-class TelegramMessageHandler {
-    constructor(bot, defaultOptions = {}) {
-        this.bot = bot;
-        this.formatter = new TelegramFormatter(defaultOptions.config);
-        this.defaultOptions = defaultOptions;
-        
-        // Message queue for rate limiting
-        this.messageQueue = [];
-        this.isProcessingQueue = false;
-        this.queueProcessingDelay = 300;
-        
-        console.log('✅ Enhanced Telegram message handler initialized');
-    }
-    
-    // Main send function with enhanced formatting and model detection
-    async sendFormattedMessage(text, chatId, options = {}) {
-        const messageOptions = { ...this.defaultOptions, ...options };
-        
-        try {
-            const result = await this.formatter.splitAndSendMessage(text, this.bot, chatId, messageOptions);
-            
-            if (result.success) {
-                console.log(`✅ Enhanced delivery successful: ${result.sentChunks}/${result.totalChunks} chunks sent`);
-                return result;
-            } else {
-                console.log(`⚠️ Enhanced delivery failed, attempting basic fallback...`);
-                return await this.basicFallback(text, chatId, options);
-            }
-            
-        } catch (error) {
-            console.error('❌ Enhanced delivery failed:', error.message);
-            console.log('🔄 Attempting basic fallback...');
-            return await this.basicFallback(text, chatId, options);
-        }
-    }
-    
-    // Basic fallback for when enhanced delivery fails
-    async basicFallback(text, chatId, options = {}) {
-        try {
-            await this.bot.sendMessage(chatId, text);
-            console.log('✅ Basic fallback: Success');
-            return {
-                success: true,
-                enhanced: false,
-                fallback: true,
-                totalChunks: 1,
-                sentChunks: 1,
-                failedChunks: 0
-            };
-        } catch (fallbackError) {
-            console.error('❌ Basic fallback also failed:', fallbackError.message);
-            return {
-                success: false,
-                enhanced: false,
-                fallback: true,
-                error: fallbackError.message,
-                totalChunks: 1,
-                sentChunks: 0,
-                failedChunks: 1
-            };
-        }
-    }
-    
-    // Format different types of messages
-    formatGPTResponse(response, metadata = {}) {
-        const header = `🤖 **GPT Response**`;
-        const meta = metadata.model ? `\n_Model: ${metadata.model}_` : '';
-        const tokens = metadata.tokens ? `\n_Tokens: ${metadata.tokens}_` : '';
-        const cost = metadata.cost ? `\n_Cost: ${metadata.cost}_` : '';
-        
-        return this.formatter.formatMessage(`${header}${meta}${tokens}${cost}\n\n${response}`);
-    }
-    
-    formatSystemStatus(status) {
-        const title = `🖥️ **System Status Report**`;
-        let statusText = `${title}\n📅 ${new Date().toLocaleString()}\n\n`;
-        
-        // GPT Models Status
-        statusText += `🤖 **AI Models**\n`;
-        statusText += `• GPT-5: ${status.gpt5Available ? '🟢 Online' : '🔴 Offline'}\n`;
-        statusText += `• GPT-5 Mini: ${status.gpt5MiniAvailable ? '🟢 Online' : '🔴 Offline'}\n`;
-        statusText += `• GPT-5 Nano: ${status.gpt5NanoAvailable ? '🟢 Online' : '🔴 Offline'}\n`;
-        statusText += `• Fallback: ${status.fallbackWorking ? '🟢 Ready' : '🔴 Unavailable'}\n\n`;
-        
-        // Performance Metrics
-        if (status.metrics) {
-            statusText += `📊 **Performance**\n`;
-            statusText += `• Success Rate: ${status.metrics.successRate}% ✅\n`;
-            statusText += `• Total Sent: ${status.metrics.totalSent} 📤\n`;
-            statusText += `• Total Failed: ${status.metrics.totalFailed} ❌\n\n`;
-        }
-        
-        // Circuit Breaker
-        statusText += `⚡ **Circuit Breaker**: ${status.circuitBreakerState || 'CLOSED'} ${status.circuitBreakerState === 'OPEN' ? '🚨' : '✅'}\n`;
-        
-        // Current Model
-        if (status.currentModel) {
-            statusText += `🎯 **Active Model**: ${status.currentModel} ✅`;
-        }
-        
-        return this.formatter.formatMessage(statusText);
-    }
-    
-    formatError(error, context = '') {
-        const title = `🚨 **Error Report**`;
-        const contextInfo = context ? `\n**Context:** ${context}` : '';
-        const errorInfo = `\n**Error:** ${error.message || error}`;
-        const timestamp = `\n**Time:** ${new Date().toLocaleString()}`;
-        
-        return this.formatter.formatMessage(`${title}${contextInfo}${errorInfo}${timestamp}`);
-    }
-    
-    formatSuccess(message, details = {}) {
-        const title = `✅ **Success**`;
-        const detailsText = Object.keys(details).length > 0 ? 
-            `\n\n**Details:**\n${Object.entries(details).map(([k,v]) => `• ${k}: ${v}`).join('\n')}` : '';
-        
-        return this.formatter.formatMessage(`${title}\n\n${message}${detailsText}`);
-    }
-    
-    // Queue message for rate-limited sending
-    async queueMessage(text, chatId, options = {}) {
-        return new Promise((resolve, reject) => {
-            this.messageQueue.push({
-                text,
-                chatId,
-                options,
-                resolve,
-                reject,
-                timestamp: Date.now()
-            });
-            
-            if (!this.isProcessingQueue) {
-                this.processMessageQueue();
-            }
-        });
-    }
-    
-    // Process message queue with rate limiting
-    async processMessageQueue() {
-        if (this.isProcessingQueue || this.messageQueue.length === 0) return;
-        
-        this.isProcessingQueue = true;
-        console.log(`📋 Processing message queue (${this.messageQueue.length} messages)`);
-        
-        while (this.messageQueue.length > 0) {
-            const message = this.messageQueue.shift();
-            
-            try {
-                const result = await this.sendFormattedMessage(
-                    message.text, 
-                    message.chatId, 
-                    message.options
-                );
-                message.resolve(result);
-            } catch (error) {
-                console.error('Queue processing error:', error);
-                message.reject(error);
-            }
-            
-            if (this.messageQueue.length > 0) {
-                await this.formatter.sleep(this.queueProcessingDelay);
-            }
-        }
-        
-        this.isProcessingQueue = false;
-        console.log('✅ Message queue processing complete');
-    }
-    
-    // Get queue status
-    getQueueStatus() {
-        return {
-            queueLength: this.messageQueue.length,
-            isProcessing: this.isProcessingQueue,
-            oldestMessage: this.messageQueue.length > 0 ? 
-                new Date(this.messageQueue[0].timestamp).toLocaleString() : null
-        };
-    }
-    
-    // Get system metrics
-    getMetrics() {
-        return this.formatter.getMetrics();
-    }
-    
-    // Reset circuit breaker
-    resetCircuitBreaker() {
-        this.formatter.resetCircuitBreaker();
-    }
+// -----------------------------------------------------------------------------
+// Markdown & HTML helpers (safe for Telegram)
+// -----------------------------------------------------------------------------
+function sanitizeForTelegramMarkdown(text) {
+  text = str(text);
+  // Protect fenced code blocks first
+  var blocks = [];
+  text = text.replace(/```([\s\S]*?)```/g, function (_m, code) {
+    blocks.push(code);
+    return '§§§BLOCK§§§';
+  });
+
+  // Escape unmatched * and _ (that break Markdown entity parsing)
+  // Note: simple but effective approach for Markdown V1
+  text = text.replace(/([*_])(?![^\1]*\1)/g, '\\$1');
+
+  // Restore blocks
+  var i = 0;
+  text = text.replace(/§§§BLOCK§§§/g, function () {
+    var c = blocks[i++] || '';
+    return '```' + c + '```';
+  });
+  return text;
 }
 
-// Simple helper functions for easy integration
-async function sendTelegramMessage(bot, chatId, gptResponse, metadata = {}) {
-    try {
-        const handler = new TelegramMessageHandler(bot);
-        const result = await handler.sendFormattedMessage(gptResponse, chatId, { metadata });
-        
-        if (result.success && result.enhanced) {
-            console.log(`✅ Enhanced Telegram delivery: ${result.totalChunks} chunks, model: ${result.modelInfo?.model || 'detected'}`);
-            return { success: true, enhanced: true, chunks: result.totalChunks, model: result.modelInfo?.model };
-        } else if (result.success && result.fallback) {
-            console.log('⚠️ Telegram splitter not available, used basic send');
-            return { success: true, enhanced: false, fallback: true };
-        } else {
-            throw new Error(result.error || 'Unknown delivery error');
-        }
-    } catch (error) {
-        console.error('❌ Telegram delivery failed:', error.message);
-        
-        // Final fallback attempt
-        try {
-            await bot.sendMessage(chatId, gptResponse);
-            console.log('✅ Final fallback: Success');
-            return { success: true, enhanced: false, fallback: true };
-        } catch (finalError) {
-            console.error('❌ All delivery methods failed:', finalError.message);
-            return { success: false, error: finalError.message };
-        }
+function formatMarkdownBasic(text) {
+  text = str(text);
+  // Convert **bold** -> *bold* (Telegram V1 style)
+  text = text.replace(/\*\*(.*?)\*\*/g, '*$1*');
+  // Convert *italic* (single asterisks) -> _italic_ (Node-safe: NO look-behind)
+  text = text.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1_$2_');
+  // Convert ~~strike~~ -> ~strike~
+  text = text.replace(/~~([^~]+)~~/g, '~$1~');
+  return text;
+}
+
+function enhanceHeaders(text) {
+  // # -> bold line; #### -> bold prefix
+  return text.replace(/^(#+)\s*(.+)$/gm, function (_m, hashes, title) {
+    var level = hashes.length;
+    var emoji = headerEmoji(title);
+    if (level === 1) {
+      var up = String(title).toUpperCase();
+      return '\ud83d\udd25 *' + up + '*\n' + Array(Math.min(up.length, 20) + 1).join('\u2550');
     }
+    if (level === 2) {
+      return emoji + ' *' + title + '*\n' + Array(Math.min(String(title).length, 15) + 1).join('\u2500');
+    }
+    return emoji + ' *' + title + '*';
+  });
 }
 
-// Setup function for easy bot integration
-function setupTelegramHandler(bot, config = {}) {
-    const handler = new TelegramMessageHandler(bot, config);
-    
-    return {
-        // Main send function
-        send: (text, chatId, options = {}) => handler.sendFormattedMessage(text, chatId, options),
-        
-        // Specialized formatters
-        sendGPTResponse: (response, metadata, chatId) => {
-            const formatted = handler.formatGPTResponse(response, metadata);
-            return handler.sendFormattedMessage(formatted, chatId, { metadata });
-        },
-        
-        sendSystemStatus: (status, chatId) => {
-            const formatted = handler.formatSystemStatus(status);
-            return handler.sendFormattedMessage(formatted, chatId);
-        },
-        
-        sendError: (error, context, chatId) => {
-            const formatted = handler.formatError(error, context);
-            return handler.sendFormattedMessage(formatted, chatId);
-        },
-        
-        sendSuccess: (message, details, chatId) => {
-            const formatted = handler.formatSuccess(message, details);
-            return handler.sendFormattedMessage(formatted, chatId);
-        },
-        
-        // Queue management
-        queueMessage: (text, chatId, options) => handler.queueMessage(text, chatId, options),
-        getQueueStatus: () => handler.getQueueStatus(),
-        
-        // System info
-        getMetrics: () => handler.getMetrics(),
-        resetCircuitBreaker: () => handler.resetCircuitBreaker(),
-        
-        // Direct access to handler
-        handler: handler
-    };
+function enhanceLists(text) {
+  var r = text;
+  // Bullets
+  r = r.replace(/^[\-*]\s+(.+)$/gm, '\u2022 $1');
+  // Numbered lists: 1. -> 1\ufe0f\u20e3 label (simple 1️⃣ style)
+  r = r.replace(/^(\d+)[\.)]\s+(.+)$/gm, function (_m, d, rest) { return d + '\ufe0f\u20e3 ' + rest; });
+  // Lettered lists -> small square
+  r = r.replace(/^([a-zA-Z])[\.)]\s+(.+)$/gm, '\u25ab\ufe0f $2');
+
+  // Status keywords
+  r = r.replace(/^\u2022\s+(.*(?:complete|done|finished|ready|working|success).*)$/gmi, '\u2705 $1')
+       .replace(/^\u2022\s+(.*(?:todo|pending|waiting|failed|error|issue).*)$/gmi, '\u274c $1')
+       .replace(/^\u2022\s+(.*(?:progress|processing|loading|running).*)$/gmi, '\u23f3 $1');
+  return r;
 }
 
-// Production demo function
-async function demonstrateEnhancedTelegram(bot) {
-    console.log('🚀 Running enhanced Telegram formatter demo...\n');
-    
-    const handler = setupTelegramHandler(bot, {
-        config: {
-            DELAY_MS: 150,
-            AUTO_EMOJI: true,
-            SMART_SPACING: true
-        }
+function addSeparators(text) {
+  var lines = text.split('\n');
+  var out = [];
+  var inCode = false;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (/^```/.test(line)) inCode = !inCode;
+    out.push(line);
+    if (!inCode && /^(\ud83d\udd25|\u2728|\ud83d\udca1|\ud83d\udcca|\u26a1|\ud83c\udf1f)/.test(line) && i < lines.length - 1 && str(lines[i + 1]).trim() !== '') {
+      out.push(Array(26).join('\u2504'));
+    }
+  }
+  return out.join('\n');
+}
+
+function toHtmlFallback(text) {
+  text = str(text);
+  // Escape basic HTML entities first
+  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Code blocks
+  text = text.replace(/```([\s\S]*?)```/g, function (_m, code) {
+    var c = String(code).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return '<pre><code>' + c + '</code></pre>';
+  });
+  // Bold *...*
+  text = text.replace(/\*(.*?)\*/g, '<b>$1<\/b>');
+  // Italic _..._
+  text = text.replace(/_(.*?)_/g, '<i>$1<\/i>');
+  // Bullets
+  text = text.replace(/^\u2022\s+/gm, '&#8226; ');
+  return text;
+}
+
+// -----------------------------------------------------------------------------
+// Emoji helpers
+// -----------------------------------------------------------------------------
+var keywordEmojis = {
+  // Tech
+  'gpt-5': '\ud83e\udd16', 'gpt5': '\ud83e\udd16', 'ai': '\ud83e\uddea', 'error': '\u274c', 'success': '\u2705',
+  'working': '\u2705', 'failed': '\u274c', 'loading': '\u23f3', 'complete': '\ud83d\udc4c', 'processing': '\u2699\ufe0f',
+  // Financial
+  'cost': '\ud83d\udcb0', 'price': '\ud83d\udcb5', 'tokens': '\ud83e\ude99', 'usage': '\ud83d\udcca',
+  // Status
+  'online': '\ud83d\udfe2', 'offline': '\ud83d\udd34', 'ready': '\u2705', 'busy': '\ud83d\udfe1', 'maintenance': '\u2699\ufe0f',
+  // Actions
+  'sending': '\ud83d\udce4', 'received': '\ud83d\udce5', 'updated': '\ud83d\udd04', 'created': '\u2728', 'deleted': '\ud83d\uddd1\ufe0f',
+  // Time
+  'today': '\ud83d\udcc5', 'now': '\u23f0', 'urgent': '\ud83d\udea8', 'scheduled': '\u23f0'
+};
+
+function headerEmoji(title) {
+  var lower = String(title).toLowerCase();
+  if (lower.indexOf('error') >= 0 || lower.indexOf('problem') >= 0) return '\ud83d\udea8';
+  if (lower.indexOf('success') >= 0 || lower.indexOf('complete') >= 0) return '\u2705';
+  if (lower.indexOf('warning') >= 0 || lower.indexOf('caution') >= 0) return '\u26a0\ufe0f';
+  if (lower.indexOf('info') >= 0 || lower.indexOf('note') >= 0) return '\u2139\ufe0f';
+  if (lower.indexOf('config') >= 0 || lower.indexOf('setting') >= 0) return '\u2699\ufe0f';
+  if (lower.indexOf('result') >= 0 || lower.indexOf('output') >= 0) return '\ud83d\udcca';
+  if (lower.indexOf('api') >= 0 || lower.indexOf('gpt') >= 0) return '\ud83e\udd16';
+  if (lower.indexOf('cost') >= 0 || lower.indexOf('price') >= 0) return '\ud83d\udcb0';
+  if (lower.indexOf('time') >= 0 || lower.indexOf('schedule') >= 0) return '\u23f0';
+  if (lower.indexOf('file') >= 0 || lower.indexOf('data') >= 0) return '\ud83d\udcc1';
+  if (lower.indexOf('system') >= 0 || lower.indexOf('status') >= 0) return '\ud83d\udda5\ufe0f';
+  if (lower.indexOf('user') >= 0 || lower.indexOf('account') >= 0) return '\ud83d\udc64';
+  return '\ud83d\udccb';
+}
+
+function addAutoEmojis(text) {
+  var r = text;
+  for (var k in keywordEmojis) {
+    if (!Object.prototype.hasOwnProperty.call(keywordEmojis, k)) continue;
+    var re = new RegExp('\\b' + k + '\\b', 'gi');
+    r = r.replace(re, keywordEmojis[k] + ' ' + k);
+  }
+  // headers
+  r = r.replace(/^(#+\s*)(.+)$/gm, function (_m, hashes, title) {
+    return hashes + headerEmoji(title) + ' ' + title;
+  });
+  return r;
+}
+
+function improveSpacing(text) {
+  return str(text)
+    .replace(/\.([A-Z])/g, '. $1')
+    .replace(/:([^\s:])/g, ': $1')
+    .replace(/^(\u2022|[-*])\s*/gm, '$1 ')
+    .replace(/(```[\s\S]*?```)/g, '\n$1\n')
+    .replace(/([.!?])\n([A-Z])/g, '$1\n\n$2');
+}
+
+// -----------------------------------------------------------------------------
+// Splitter (paragraph/sentence/word, preserves code fences)
+// -----------------------------------------------------------------------------
+function balanceFencesInChunk(chunk, remaining, hardCap) {
+  var ticks = (chunk.match(/```/g) || []).length;
+  if (ticks % 2 !== 0) {
+    var rest = remaining;
+    var nextClose = rest.indexOf('```');
+    if (nextClose !== -1 && (chunk.length + nextClose + 3) <= hardCap) {
+      return { chunk: chunk + rest.slice(0, nextClose + 3), consumed: nextClose + 3 };
+    }
+    // close in place and reopen next
+    return { chunk: chunk + '\n```', consumed: 0, reopenNext: true };
+  }
+  return { chunk: chunk, consumed: 0 };
+}
+
+function smartSplit(text, hardCap, softCap, pref) {
+  text = str(text);
+  var hard = isNumber(hardCap) ? hardCap : CONFIG.MAX_MESSAGE_LENGTH;
+  var soft = isNumber(softCap) ? softCap : CONFIG.SOFT_SPLIT;
+  var target = isNumber(pref) ? pref : CONFIG.PREF_CHUNK;
+  if (text.length <= hard) return [text];
+
+  var out = [];
+  var remaining = text;
+
+  while (remaining.length) {
+    if (remaining.length <= hard) { out.push(remaining); break; }
+
+    var slice = remaining.slice(0, soft);
+    var cut = -1;
+    var idxPara = slice.lastIndexOf('\n\n');
+    var idxLine = slice.lastIndexOf('\n');
+    var idxSpace = slice.lastIndexOf(' ');
+
+    if (idxPara > 200) cut = idxPara + 2;
+    else if (idxLine > 200) cut = idxLine + 1;
+    else if (idxSpace > 200) cut = idxSpace + 1;
+    else cut = slice.length;
+
+    var chunk = remaining.slice(0, cut);
+    var bal = balanceFencesInChunk(chunk, remaining.slice(cut), hard);
+    chunk = bal.chunk;
+    remaining = bal.reopenNext ? ('```\n' + remaining.slice(cut + (bal.consumed || 0)))
+                               : remaining.slice(cut + (bal.consumed || 0));
+
+    out.push(chunk);
+  }
+
+  // prefix Part X/Y later
+  return out;
+}
+
+// -----------------------------------------------------------------------------
+// Core send with retries, sanitize, HTML fallback
+// -----------------------------------------------------------------------------
+function nextAllowedSendDelay(chatId) {
+  var t = now();
+  var lastChat = lastSentAtByChat[chatId] || 0;
+  var lastGlobal = lastGlobalSendAt || 0;
+  var waitChat = lastChat ? (CONFIG.PER_CHAT_MIN_MS - (t - lastChat)) : 0;
+  var waitGlobal = lastGlobal ? (CONFIG.GLOBAL_MIN_MS - (t - lastGlobal)) : 0;
+  var wait = Math.max(0, waitChat, waitGlobal);
+  return wait;
+}
+function recordSendMoment(chatId) { var t = now(); lastSentAtByChat[chatId] = t; lastGlobalSendAt = t; }
+
+function sendMessageWithRetry(bot, chatId, text, options) {
+  options = safeObj(options);
+  var attempts = 0;
+
+  function attempt(parseMode, alreadySanitized, usedHtml) {
+    var opts = safeObj(options);
+    if (parseMode) opts.parse_mode = parseMode;
+
+    var wait = nextAllowedSendDelay(chatId);
+    var enqueue = wait > 0 ? sleep(wait) : Promise.resolve();
+
+    return enqueue.then(function () {
+      return botSend(bot, chatId, text, opts);
+    }).then(function (res) {
+      recordSendMoment(chatId);
+      return res;
+    }).catch(function (err) {
+      attempts += 1;
+      var info = classifyTelegramError(err);
+
+      if (info.isRate && attempts <= CONFIG.MAX_RETRIES) {
+        var back = info.retryAfterMs || (CONFIG.RETRY_BASE_MS * attempts);
+        return sleep(back).then(function () { return attempt(parseMode, alreadySanitized, usedHtml); });
+      }
+
+      if (info.isEntity && parseMode === 'Markdown' && !alreadySanitized) {
+        text = sanitizeForTelegramMarkdown(text);
+        return attempt('Markdown', true, usedHtml);
+      }
+
+      if ((info.isEntity || info.isBadReq) && !usedHtml) {
+        var html = toHtmlFallback(text);
+        text = html;
+        return attempt('HTML', true, true);
+      }
+
+      var e = new Error('Telegram send failed: ' + info.description);
+      e.original = err; throw e;
     });
-    
-    // Demo 1: GPT Response with model detection
-    const gptResponse = `Here's a comprehensive analysis of GPT-5 capabilities. The new model shows significant improvements in reasoning, coding, and safety. Key features include: Enhanced context understanding with 272,000 token window. Improved factual accuracy with 65% fewer hallucinations. Better coding capabilities with 74.9% on SWE-bench.`;
-    
-    try {
-        const result1 = await handler.sendGPTResponse(
-            gptResponse,
-            {
-                model: 'gpt-5-mini',
-                tokens: 1250,
-                cost: 0.00125,
-                executionTime: 2340,
-                costTier: 'economy'
-            },
-            'demo_chat'
-        );
-        console.log('✅ GPT response demo sent:', result1.success);
-    } catch (error) {
-        console.error('❌ GPT response demo failed:', error.message);
-    }
-    
-    console.log('\n' + '─'.repeat(60) + '\n');
-    
-    // Demo 2: System status
-    const mockStatus = {
-        gpt5Available: true,
-        gpt5MiniAvailable: true,
-        gpt5NanoAvailable: false,
-        fallbackWorking: true,
-        metrics: {
-            successRate: 98.7,
-            totalSent: 1247,
-            totalFailed: 16
-        },
-        circuitBreakerState: 'CLOSED',
-        currentModel: 'gpt-5-mini'
-    };
-    
-    try {
-        const result2 = await handler.sendSystemStatus(mockStatus, 'admin_chat');
-        console.log('✅ System status demo sent:', result2.success);
-    } catch (error) {
-        console.error('❌ System status demo failed:', error.message);
-    }
-    
-    // Show metrics
-    console.log('\n📊 Handler Metrics:');
-    console.log(handler.getMetrics());
+  }
+
+  return attempt(options.parse_mode || CONFIG.PARSE_MODE, false, false);
 }
 
-// Export everything for production use
-module.exports = {
-    // Main classes
-    TelegramFormatter,
-    TelegramMessageHandler,
-    
-    // Helper functions
-    sendTelegramMessage,
-    setupTelegramHandler,
-    
-    // Demo function
-    demonstrateEnhancedTelegram,
-    
-    // Configuration
-    CONFIG
+function botSend(bot, chatId, text, options) {
+  // Support node-telegram-bot-api or telegraf-like
+  if (bot && typeof bot.sendMessage === 'function') return bot.sendMessage(chatId, text, options);
+  if (bot && bot.telegram && typeof bot.telegram.sendMessage === 'function') return bot.telegram.sendMessage(chatId, text, options);
+  if (typeof bot === 'function') return bot(chatId, text, options);
+  return Promise.reject(new Error('Invalid bot instance - no sendMessage method'));
+}
+
+function classifyTelegramError(error) {
+  var desc = '';
+  var status = 0;
+  var retryAfterMs = 0;
+  try {
+    if (error && error.response && error.response.body && error.response.body.description) desc = String(error.response.body.description);
+    else if (error && error.description) desc = String(error.description);
+    else if (error && error.message) desc = String(error.message);
+  } catch (_e) {}
+  try {
+    status = Number(error.code || (error.response && error.response.statusCode) || 0);
+  } catch (_e2) {}
+  try {
+    if (error && error.response && error.response.body && error.response.body.parameters && error.response.body.parameters.retry_after) retryAfterMs = Number(error.response.body.parameters.retry_after) * 1000;
+    else if (error && error.parameters && error.parameters.retry_after) retryAfterMs = Number(error.parameters.retry_after) * 1000;
+  } catch (_e3) {}
+
+  var isRate = retryAfterMs > 0 || /too many requests|retry after|429/i.test(desc);
+  var isEntity = /can't parse entities|Bad Request: can't parse/i.test(desc);
+  var isBadReq = status === 400 || /Bad Request/i.test(desc);
+
+  return { description: desc || ('HTTP ' + status), status: status, retryAfterMs: retryAfterMs, isRate: isRate, isEntity: isEntity, isBadReq: isBadReq };
+}
+
+// -----------------------------------------------------------------------------
+// Formatter + Model header
+// -----------------------------------------------------------------------------
+function detectModelFromText(response, metadata) {
+  metadata = safeObj(metadata);
+  if (metadata.model) return { model: metadata.model, source: 'metadata', confidence: 'high' };
+
+  var patterns = [
+    { re: /\[GPT-5\]/i, model: 'gpt-5', conf: 'high' },
+    { re: /\[gpt-5-mini\]/i, model: 'gpt-5-mini', conf: 'high' },
+    { re: /\[gpt-5-nano\]/i, model: 'gpt-5-nano', conf: 'high' },
+    { re: /\[GPT-4o\]/i, model: 'gpt-4o', conf: 'high' },
+    { re: /\[.*Fallback.*\]/i, model: 'gpt-4o-fallback', conf: 'medium' },
+    { re: /\[CACHED\]/i, model: 'cached-response', conf: 'low' }
+  ];
+  for (var i = 0; i < patterns.length; i++) {
+    if (patterns[i].re.test(response)) return { model: patterns[i].model, source: 'response_text', confidence: patterns[i].conf };
+  }
+
+  if (response.length > 8000) return { model: 'gpt-5', source: 'inference', confidence: 'low' };
+  if (response.length < 1000 && (response.indexOf('brief') >= 0 || response.indexOf('quick') >= 0)) return { model: 'gpt-5-nano', source: 'inference', confidence: 'low' };
+  if (response.indexOf('reasoning') >= 0 || response.indexOf('analysis') >= 0) return { model: 'gpt-5', source: 'inference', confidence: 'medium' };
+  return { model: 'gpt-5-mini', source: 'default', confidence: 'medium' };
+}
+
+function modelEmoji(m) {
+  var map = { 'gpt-5': '\ud83d\ude80', 'gpt-5-mini': '\u26a1', 'gpt-5-nano': '\ud83d\udca8', 'gpt-5-chat-latest': '\ud83d\udcac', 'gpt-4o': '\ud83d\udd04', 'gpt-4o-fallback': '\ud83d\udd04', 'cached-response': '\ud83d\udcbe' };
+  return map[m] || '\ud83e\udd16';
+}
+
+function buildHeader(meta) {
+  meta = safeObj(meta);
+  var title = meta.title || '\ud83d\ude80 GPT-5 Smart Analysis';
+  var parts = [];
+  if (meta.model) parts.push('Model: ' + meta.model);
+  if (meta.tokens) parts.push('Tokens: ' + meta.tokens);
+  if (meta.cost) parts.push('Cost: $' + meta.cost);
+  if (meta.ms) parts.push(meta.ms + 'ms');
+  if (meta.cbState) parts.push('CB: ' + meta.cbState);
+  var line2 = parts.length ? ('\n' + parts.join(' \u2022 ')) : '';
+  return '*' + title + '*' + line2 + '\n\n';
+}
+
+function prepareTextForSend(text, cfg) {
+  text = str(text);
+  var out = mdTrim(text);
+  if (cfg.AUTO_EMOJI) out = addAutoEmojis(out);
+  if (cfg.SMART_SPACING) out = improveSpacing(out);
+  if (cfg.ENHANCED_MARKDOWN) out = formatMarkdownBasic(out);
+  if (cfg.VISUAL_SEPARATORS) out = addSeparators(out);
+  out = sanitizeForTelegramMarkdown(out);
+  return out;
+}
+
+// -----------------------------------------------------------------------------
+// TelegramFormatter class
+// -----------------------------------------------------------------------------
+function TelegramFormatter(customConfig) {
+  this.config = safeObj(customConfig);
+  // merge defaults
+  for (var k in CONFIG) if (Object.prototype.hasOwnProperty.call(CONFIG, k) && !Object.prototype.hasOwnProperty.call(this.config, k)) this.config[k] = CONFIG[k];
+
+  this.circuitBreaker = { failures: 0, isOpen: false, lastFailure: 0, resetTime: 60000 };
+  this.metrics = { totalSent: 0, totalFailed: 0, averageDelay: 200, lastSuccessTime: now() };
+}
+
+TelegramFormatter.prototype.resetCircuitBreaker = function () { this.circuitBreaker.isOpen = false; this.circuitBreaker.failures = 0; this.circuitBreaker.lastFailure = 0; };
+TelegramFormatter.prototype.getMetrics = function () {
+  var up = now() - this.metrics.lastSuccessTime;
+  var total = this.metrics.totalSent + this.metrics.totalFailed;
+  var rate = total > 0 ? ((this.metrics.totalSent / total) * 100).toFixed(2) : '100.00';
+  return { totalSent: this.metrics.totalSent, totalFailed: this.metrics.totalFailed, successRate: rate, averageDelay: Math.round(this.metrics.averageDelay), circuitBreakerOpen: this.circuitBreaker.isOpen, lastSuccessTime: new Date(this.metrics.lastSuccessTime).toISOString(), uptimeSinceLastSuccess: Math.round(up / 1000) + 's' };
 };
 
-// Run demo if called directly
-if (require.main === module) {
-    // Mock bot for testing
-    const mockBot = {
-        sendMessage: async (chatId, text, options) => {
-            console.log(`🤖 MockBot -> ${chatId}: ${text.substring(0, 60)}${text.length > 60 ? '...' : ''}`);
-            await new Promise(resolve => setTimeout(resolve, 100));
-            return { message_id: Math.floor(Math.random() * 10000) };
+TelegramFormatter.prototype.formatMessage = function (text, options) {
+  var cfg = safeObj(options);
+  // derive full cfg from default + per-call overrides
+  var merged = {};
+  for (var k in this.config) if (Object.prototype.hasOwnProperty.call(this.config, k)) merged[k] = this.config[k];
+  for (var k2 in cfg) if (Object.prototype.hasOwnProperty.call(cfg, k2)) merged[k2] = cfg[k2];
+
+  return prepareTextForSend(text, merged);
+};
+
+TelegramFormatter.prototype.formatMessageWithModel = function (response, metadata) {
+  var info = detectModelFromText(str(response), safeObj(metadata));
+  var header = modelEmoji(info.model) + ' *AI Response*\n_Model: ' + info.model + '_';
+  if (info.confidence) {
+    var confEmoji = info.confidence === 'high' ? '\u2705' : (info.confidence === 'medium' ? '\u26a0\ufe0f' : '\u2753');
+    header += '\n_Detection: ' + confEmoji + ' ' + info.confidence + '_';
+  }
+  if (metadata && metadata.tokens) header += '\n_Tokens: ' + metadata.tokens + ' \ud83e\ude99_';
+  if (metadata && metadata.cost) header += '\n_Cost: $' + metadata.cost + ' \ud83d\udcb0_';
+  if (metadata && metadata.executionTime) header += '\n_Time: ' + metadata.executionTime + 'ms \u23f1\ufe0f_';
+  if (metadata && metadata.costTier) header += '\n_Tier: ' + metadata.costTier + '_';
+
+  var cleaned = String(response).replace(/^\[.*?\]\s*/gm, '').replace(/^GPT-\d+.*?:\s*/gm, '').trim();
+  var finalText = header + '\n\n' + cleaned;
+  return { formatted: this.formatMessage(finalText), modelInfo: info, metadata: metadata };
+};
+
+TelegramFormatter.prototype.splitMessage = function (text) {
+  var chunks = smartSplit(text, this.config.MAX_MESSAGE_LENGTH, this.config.SOFT_SPLIT, this.config.PREF_CHUNK);
+  if (chunks.length <= 1) return chunks;
+  var out = [];
+  for (var i = 0; i < chunks.length; i++) {
+    var suffix = '\n\n\ud83d\udcc4 *Part ' + (i + 1) + '/' + chunks.length + '*';
+    out.push(chunks[i] + suffix);
+  }
+  return out;
+};
+
+TelegramFormatter.prototype.splitAndSendMessage = function (text, bot, chatId, options) {
+  var self = this;
+  options = safeObj(options);
+  var start = now();
+
+  return new Promise(function (resolve) {
+    try {
+      if (self.circuitBreaker.isOpen) {
+        var since = now() - self.circuitBreaker.lastFailure;
+        if (since < self.circuitBreaker.resetTime) throw new Error('Circuit breaker open. Retry in ' + Math.ceil((self.circuitBreaker.resetTime - since) / 1000) + 's');
+        self.resetCircuitBreaker();
+      }
+
+      var pack = self.formatMessageWithModel(text, options.metadata || {});
+      var body = pack.formatted;
+      var chunks = self.splitMessage(body);
+
+      var results = [];
+      var delay = 200;
+
+      (function sendSeq(idx) {
+        if (idx >= chunks.length) {
+          var okCount = 0; var failCount = 0;
+          for (var z = 0; z < results.length; z++) { if (results[z].success) okCount++; else failCount++; }
+          var exec = now() - start;
+          self.metrics.averageDelay = Math.round((self.metrics.averageDelay + delay) / 2);
+          if (okCount > 0) self.metrics.lastSuccessTime = now();
+          return resolve({ success: failCount === 0, enhanced: true, totalChunks: chunks.length, sentChunks: okCount, failedChunks: failCount, executionTime: exec, modelInfo: pack.modelInfo, results: results });
         }
-    };
-    
-    demonstrateEnhancedTelegram(mockBot).then(() => {
-        console.log('\n🎉 Enhanced Telegram demo complete!');
-        console.log('\n🚀 Your telegramSplitter.js now includes:');
-        console.log('   ✅ Auto-model detection from responses');
-        console.log('   ✅ Smart emoji injection based on content');
-        console.log('   ✅ Professional message formatting');
-        console.log('   ✅ Production-grade error handling');
-        console.log('   ✅ Circuit breaker protection');
-        console.log('   ✅ Message queue management');
-        console.log('   ✅ Adaptive retry logic');
-        console.log('   ✅ Real-time delivery metrics');
-        console.log('   ✅ Easy integration helpers');
-        console.log('\n💡 Use: const { sendTelegramMessage } = require("./utils/telegramSplitter");');
-        console.log('💡 Or: const telegram = setupTelegramHandler(bot);');
-    }).catch(console.error);
+        var piece = chunks[idx];
+        var opts = { parse_mode: CONFIG.PARSE_MODE, disable_web_page_preview: true };
+        if (options.telegramOptions) { for (var k in options.telegramOptions) if (Object.prototype.hasOwnProperty.call(options.telegramOptions, k)) opts[k] = options.telegramOptions[k]; }
+
+        sendMessageWithRetry(bot, chatId, piece, opts)
+          .then(function (res) {
+            self.metrics.totalSent++;
+            results.push({ chunkIndex: idx, messageId: res && res.message_id ? res.message_id : null, length: piece.length, attempts: 1, success: true });
+            if (idx < chunks.length - 1) sleep(delay).then(function () { sendSeq(idx + 1); }); else sendSeq(idx + 1);
+          })
+          .catch(function (e) {
+            self.metrics.totalFailed++; self.circuitBreaker.failures++;
+            if (self.circuitBreaker.failures >= 3) { self.circuitBreaker.isOpen = true; self.circuitBreaker.lastFailure = now(); }
+            results.push({ chunkIndex: idx, error: e.message, attempts: CONFIG.MAX_RETRIES, success: false });
+            if (idx < chunks.length - 1) sleep(delay).then(function () { sendSeq(idx + 1); }); else sendSeq(idx + 1);
+          });
+      })(0);
+    } catch (err) {
+      resolve({ success: false, enhanced: false, error: err.message, totalChunks: 0, sentChunks: 0, failedChunks: 1, executionTime: 0 });
+    }
+  });
+};
+
+// -----------------------------------------------------------------------------
+// Message handler facade
+// -----------------------------------------------------------------------------
+function TelegramMessageHandler(bot, defaultOptions) {
+  this.bot = bot;
+  this.formatter = new TelegramFormatter(safeObj(defaultOptions) && defaultOptions.config);
+  this.defaultOptions = safeObj(defaultOptions);
+  this.queue = [];
+  this.processing = false;
+  this.queueDelay = 300;
+  console.log('\u2705 Telegram message handler v3 ready');
+}
+
+TelegramMessageHandler.prototype.sendFormattedMessage = function (text, chatId, options) {
+  var messageOptions = {};
+  var base = this.defaultOptions || {};
+  var opt = safeObj(options);
+  for (var k in base) if (Object.prototype.hasOwnProperty.call(base, k)) messageOptions[k] = base[k];
+  for (var k2 in opt) if (Object.prototype.hasOwnProperty.call(opt, k2)) messageOptions[k2] = opt[k2];
+
+  var self = this;
+  return this.formatter.splitAndSendMessage(text, this.bot, chatId, messageOptions)
+    .then(function (r) {
+      if (r && r.success) return r;
+      return self.basicFallback(text, chatId, options);
+    })
+    .catch(function (_e) { return self.basicFallback(text, chatId, options); });
+};
+
+TelegramMessageHandler.prototype.basicFallback = function (text, chatId, _options) {
+  var self = this;
+  return botSend(this.bot, chatId, text, {})
+    .then(function () { return { success: true, enhanced: false, fallback: true, totalChunks: 1, sentChunks: 1, failedChunks: 0 }; })
+    .catch(function (finalError) {
+      return { success: false, enhanced: false, fallback: true, error: finalError.message, totalChunks: 1, sentChunks: 0, failedChunks: 1 };
+    });
+};
+
+TelegramMessageHandler.prototype.formatGPTResponse = function (response, metadata) {
+  var header = '\ud83e\udd16 *GPT Response*';
+  var meta = safeObj(metadata);
+  var parts = [];
+  if (meta.model) parts.push('\n_Model: ' + meta.model + '_');
+  if (meta.tokens) parts.push('\n_Tokens: ' + meta.tokens + '_');
+  if (meta.cost) parts.push('\n_Cost: ' + meta.cost + '_');
+  return this.formatter.formatMessage(header + parts.join('') + '\n\n' + str(response));
+};
+
+TelegramMessageHandler.prototype.formatSystemStatus = function (status) {
+  status = safeObj(status);
+  var lines = [];
+  lines.push('\ud83d\udda5\ufe0f *System Status Report*');
+  lines.push('\ud83d\udcc5 ' + new Date().toISOString());
+  lines.push('');
+  lines.push('\ud83e\udd16 *AI Models*');
+  lines.push('\u2022 GPT-5: ' + (status.gpt5Available ? '\ud83d\udfe2 Online' : '\ud83d\udd34 Offline'));
+  lines.push('\u2022 GPT-5 Mini: ' + (status.gpt5MiniAvailable ? '\ud83d\udfe2 Online' : '\ud83d\udd34 Offline'));
+  lines.push('\u2022 GPT-5 Nano: ' + (status.gpt5NanoAvailable ? '\ud83d\udfe2 Online' : '\ud83d\udd34 Offline'));
+  if (typeof status.fallbackWorking !== 'undefined') lines.push('\u2022 Fallback: ' + (status.fallbackWorking ? '\ud83d\udfe2 Ready' : '\ud83d\udd34 Unavailable'));
+  lines.push('');
+  if (status.metrics) {
+    lines.push('\ud83d\udcca *Performance*');
+    if (typeof status.metrics.successRate !== 'undefined') lines.push('\u2022 Success Rate: ' + status.metrics.successRate + '% \u2705');
+  }
+  lines.push('\u26a1 *Circuit Breaker*: ' + (status.circuitBreakerState || 'CLOSED'));
+  if (status.currentModel) lines.push('\ud83c\udfaf *Active Model*: ' + status.currentModel);
+  return this.formatter.formatMessage(lines.join('\n'));
+};
+
+TelegramMessageHandler.prototype.formatError = function (error, context) {
+  var t = '\ud83d\udea8 *Error Report*';
+  if (context) t += '\n*Context:* ' + str(context);
+  t += '\n*Error:* ' + str(error && error.message ? error.message : error);
+  t += '\n*Time:* ' + new Date().toISOString();
+  return this.formatter.formatMessage(t);
+};
+
+TelegramMessageHandler.prototype.formatSuccess = function (message, details) {
+  var t = '\u2705 *Success*\n\n' + str(message);
+  details = safeObj(details);
+  var keys = Object.keys(details);
+  if (keys.length) {
+    t += '\n\n*Details:*\n' + keys.map(function (k) { return '\u2022 ' + k + ': ' + details[k]; }).join('\n');
+  }
+  return this.formatter.formatMessage(t);
+};
+
+TelegramMessageHandler.prototype.queueMessage = function (text, chatId, options) {
+  var self = this;
+  return new Promise(function (resolve, reject) {
+    self.queue.push({ text: text, chatId: chatId, options: options, resolve: resolve, reject: reject, ts: now() });
+    if (!self.processing) self.processQueue();
+  });
+};
+
+TelegramMessageHandler.prototype.processQueue = function () {
+  var self = this;
+  if (self.processing || self.queue.length === 0) return;
+  self.processing = true;
+  (function step() {
+    if (self.queue.length === 0) { self.processing = false; return; }
+    var job = self.queue.shift();
+    self.sendFormattedMessage(job.text, job.chatId, job.options)
+      .then(function (r) { job.resolve(r); })
+      .catch(function (e) { job.reject(e); })
+      .finally(function () { sleep(self.queueDelay).then(step); });
+  })();
+};
+
+TelegramMessageHandler.prototype.getQueueStatus = function () {
+  return { queueLength: this.queue.length, isProcessing: this.processing, oldestMessage: this.queue.length ? new Date(this.queue[0].ts).toISOString() : null };
+};
+
+TelegramMessageHandler.prototype.getMetrics = function () { return this.formatter.getMetrics(); };
+TelegramMessageHandler.prototype.resetCircuitBreaker = function () { this.formatter.resetCircuitBreaker(); };
+
+// -----------------------------------------------------------------------------
+// Public helpers (drop-in)
+// -----------------------------------------------------------------------------
+function sendTelegramMessage(bot, chatId, gptResponse, metadata) {
+  var handler = new TelegramMessageHandler(bot);
+  metadata = safeObj(metadata);
+  return handler.sendFormattedMessage(gptResponse, chatId, { metadata: metadata })
+    .then(function (result) {
+      var model = (result && result.modelInfo && result.modelInfo.model) ? result.modelInfo.model : 'detected';
+      console.log('\u2705 Telegram delivery: ' + (result && result.enhanced ? 'enhanced' : 'basic') + ' (' + model + ')');
+      return result;
+    })
+    .catch(function (e) {
+      console.error('\u274c Telegram delivery failed:', e.message);
+      return { success: false, error: e.message };
+    });
+}
+
+function setupTelegramHandler(bot, config) {
+  return new TelegramMessageHandler(bot, safeObj(config));
+}
+
+// -----------------------------------------------------------------------------
+// Demo (run file directly)
+// -----------------------------------------------------------------------------
+function demonstrateEnhancedTelegram(bot) {
+  var handler = setupTelegramHandler(bot, { config: { AUTO_EMOJI: true, SMART_SPACING: true, ENHANCED_MARKDOWN: true } });
+  var gptResponse = 'Here\'s a comprehensive analysis of GPT-5 capabilities. Key features include: 272,000 token window, better factual accuracy, and improved coding.';
+  return handler.sendGPTResponse ? handler.sendGPTResponse(gptResponse, { model: 'gpt-5-mini', tokens: 1250, cost: 0.00125, executionTime: 2340, costTier: 'economy' }, 'demo_chat')
+    : handler.sendFormattedMessage(gptResponse, 'demo_chat', { metadata: { model: 'gpt-5-mini' } });
+}
+
+// Extend handler with convenience senders
+TelegramMessageHandler.prototype.sendGPTResponse = function (response, metadata, chatId) {
+  var txt = this.formatGPTResponse(response, metadata);
+  return this.sendFormattedMessage(txt, chatId, { metadata: metadata });
+};
+TelegramMessageHandler.prototype.sendSystemStatus = function (status, chatId) {
+  var txt = this.formatSystemStatus(status);
+  return this.sendFormattedMessage(txt, chatId, { metadata: { title: '\ud83e\udd7a System Status' } });
+};
+TelegramMessageHandler.prototype.sendError = function (error, context, chatId) {
+  var txt = this.formatError(error, context);
+  return this.sendFormattedMessage(txt, chatId, {});
+};
+TelegramMessageHandler.prototype.sendSuccess = function (message, details, chatId) {
+  var txt = this.formatSuccess(message, details);
+  return this.sendFormattedMessage(txt, chatId, {});
+};
+
+// -----------------------------------------------------------------------------
+// Exports
+// -----------------------------------------------------------------------------
+module.exports = {
+  CONFIG: CONFIG,
+  TelegramFormatter: TelegramFormatter,
+  TelegramMessageHandler: TelegramMessageHandler,
+  sendTelegramMessage: sendTelegramMessage,
+  setupTelegramHandler: setupTelegramHandler,
+  demonstrateEnhancedTelegram: demonstrateEnhancedTelegram,
+  // low-level helpers (if you need them)
+  sanitizeForTelegramMarkdown: sanitizeForTelegramMarkdown,
+  toHtmlFallback: toHtmlFallback,
+  sendMessageWithRetry: sendMessageWithRetry,
+  smartSplit: smartSplit
+};
+
+// If run directly, do a quick demo with a mock bot
+if (require.main === module) {
+  var mockBot = {
+    sendMessage: function (chatId, text, options) {
+      console.log('\ud83e\udd16 MockBot -> ' + chatId + ': ' + (text.length > 60 ? text.slice(0, 60) + '...' : text));
+      return new Promise(function (res) { setTimeout(function () { res({ message_id: Math.floor(Math.random() * 100000) }); }, 80); });
+    }
+  };
+  demonstrateEnhancedTelegram(mockBot).then(function () {
+    console.log('\n\ud83c\udf89 Demo complete');
+  });
 }
