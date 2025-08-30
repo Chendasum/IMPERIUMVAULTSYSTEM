@@ -326,29 +326,40 @@ function logApiCall(model, apiType, inputTokens, outputTokens, executionTime, su
     return cost;
 }
 
-// Safe response extraction with enhanced error handling
+// Safe response extraction with enhanced error handling - FIXED for GPT-5 API
 function safeExtractResponseText(completion, apiType = 'responses') {
     try {
         if (apiType === 'responses') {
-            if (!completion?.output?.[0]?.content?.[0]?.text) {
-                console.warn('Invalid responses API structure:', JSON.stringify(completion, null, 2));
-                return "Response structure invalid - no text content found";
+            // FIXED: GPT-5 Responses API uses direct output_text field
+            if (completion?.output_text) {
+                return completion.output_text.trim();
             }
             
-            let responseText = "";
-            for (const item of completion.output) {
-                if (item?.content && Array.isArray(item.content)) {
-                    for (const content of item.content) {
-                        if (content?.text) {
-                            responseText += content.text;
+            // Fallback: Check legacy structure
+            if (completion?.output?.[0]?.content?.[0]?.text) {
+                let responseText = "";
+                for (const item of completion.output) {
+                    if (item?.content && Array.isArray(item.content)) {
+                        for (const content of item.content) {
+                            if (content?.text) {
+                                responseText += content.text;
+                            }
                         }
                     }
                 }
+                return responseText;
             }
             
-            return responseText || "No text content found in response";
+            // Additional fallback: Check if response is in choices format
+            if (completion?.choices?.[0]?.message?.content) {
+                return completion.choices[0].message.content.trim();
+            }
+            
+            console.warn('Unknown responses API structure. Full response:', JSON.stringify(completion, null, 2));
+            return "Response structure not recognized - please check API format";
             
         } else {
+            // Chat Completions API
             const message = completion?.choices?.[0]?.message?.content;
             if (!message) {
                 console.warn('Invalid chat API structure:', JSON.stringify(completion, null, 2));
@@ -457,7 +468,15 @@ async function getGPT5Analysis(prompt, options = {}) {
                 const responsesRequest = buildResponsesRequest(selectedModel, prompt, requestOptions);
                 const completion = await openai.responses.create(responsesRequest);
                 
-                outputTokens = completion.usage?.completion_tokens || completion.usage?.output_tokens || Math.ceil(safeExtractResponseText(completion, 'responses').length / 3.5);
+                // FIXED: Extract tokens from actual API response structure
+                const actualUsage = completion.usage || {};
+                inputTokens = actualUsage.input_tokens || inputTokens;
+                outputTokens = actualUsage.output_tokens || actualUsage.completion_tokens || Math.ceil(safeExtractResponseText(completion, 'responses').length / 3.5);
+                
+                // Log reasoning tokens if available
+                if (actualUsage.output_tokens_details?.reasoning_tokens) {
+                    console.log(`Reasoning tokens used: ${actualUsage.output_tokens_details.reasoning_tokens}`);
+                }
                 
                 return safeExtractResponseText(completion, 'responses');
                 
@@ -474,7 +493,10 @@ async function getGPT5Analysis(prompt, options = {}) {
                 const chatRequest = buildChatRequest(selectedModel, messages, requestOptions);
                 const completion = await openai.chat.completions.create(chatRequest);
                 
-                outputTokens = completion.usage?.completion_tokens || Math.ceil(safeExtractResponseText(completion, 'chat').length / 3.5);
+                // FIXED: Extract tokens from Chat API response
+                const actualUsage = completion.usage || {};
+                inputTokens = actualUsage.input_tokens || actualUsage.prompt_tokens || inputTokens;
+                outputTokens = actualUsage.output_tokens || actualUsage.completion_tokens || Math.ceil(safeExtractResponseText(completion, 'chat').length / 3.5);
                 
                 return safeExtractResponseText(completion, 'chat');
             }
