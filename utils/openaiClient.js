@@ -154,15 +154,12 @@ const openai = new OpenAI({
 });
 
 // ----------------------------- Config ----------------------------------------
-const GPT5_CONFIG = {
-  PRIMARY_MODEL: process.env.GPT5_PRIMARY_MODEL || 'gpt-5',
-  MINI_MODEL: process.env.GPT5_MINI_MODEL || 'gpt-5-mini',
-  NANO_MODEL: process.env.GPT5_NANO_MODEL || 'gpt-5-nano',
-  CHAT_MODEL: process.env.GPT5_CHAT_MODEL || 'gpt-5-chat-latest',
-  FALLBACK_MODEL: process.env.FALLBACK_CHAT_MODEL || 'gpt-4o',
+const GPT5_CONFIG = {$1MAX_PROMPT_LENGTH: 180000,
 
-  MAX_OUTPUT_TOKENS: 16384,
-  MAX_PROMPT_LENGTH: 180000,
+  // New: route tiny prompts to chat to avoid Responses availability hiccups
+  SHORT_CHAT_THRESHOLD: Number(process.env.FORCE_CHAT_BELOW_CHARS || 64),
+  // New: hide the fallback banner if desired
+  HIDE_FALLBACK_TAG: String(process.env.HIDE_FALLBACK_TAG || 'false').toLowerCase() === 'true',
 
   REASONING_EFFORTS: ['low','medium','high'],
   DEFAULT_REASONING: 'medium',
@@ -189,9 +186,11 @@ function capFor(model) { return GPT5_CONFIG.MODEL_CAPABILITIES[model]?.maxTokens
 // --------------------------- Model Select ------------------------------------
 function selectOptimalModel(prompt, options) {
   if (options && options.model) return options.model;
-  if (!GPT5_CONFIG.AUTO_SCALE.ENABLED) return GPT5_CONFIG.PRIMARY_MODEL;
   var text = String(prompt || '');
   var len = text.length;
+  // Force chat for very short prompts (configurable)
+  if (len <= GPT5_CONFIG.SHORT_CHAT_THRESHOLD) return GPT5_CONFIG.CHAT_MODEL;
+  if (!GPT5_CONFIG.AUTO_SCALE.ENABLED) return GPT5_CONFIG.PRIMARY_MODEL;
   var hasComplex = GPT5_CONFIG.AUTO_SCALE.COMPLEXITY_KEYWORDS.some(function(k){ return text.toLowerCase().includes(k); });
   if (len < GPT5_CONFIG.AUTO_SCALE.NANO_MAX_LENGTH && !hasComplex) return GPT5_CONFIG.NANO_MODEL;
   if (len < GPT5_CONFIG.AUTO_SCALE.MINI_MAX_LENGTH && !hasComplex) return GPT5_CONFIG.MINI_MODEL;
@@ -260,7 +259,8 @@ async function getGPT5Analysis(prompt, options) {
   try {
     if (!prompt || typeof prompt !== 'string') throw new Error('Invalid prompt: must be non-empty string');
     var text = String(prompt);
-    if (text.length > GPT5_CONFIG.MAX_PROMPT_LENGTH) text = text.slice(0, GPT5_CONFIG.MAX_PROMPT_LENGTH) + '\n... (truncated)';
+    if (text.length > GPT5_CONFIG.MAX_PROMPT_LENGTH) text = text.slice(0, GPT5_CONFIG.MAX_PROMPT_LENGTH) + '
+... (truncated)';
 
     if (!options.skipCache) {
       var key = cache.generateKey(text, options); var cached = cache.get(key);
@@ -327,7 +327,14 @@ async function getGPT5Analysis(prompt, options) {
     logApiCall(selectedModel, apiUsed, inputTokens, outputTokens, ms2, false, merged);
     metrics.recordCall(selectedModel, false, 0, 0, ms2, merged);
 
-    // Fallback to chat model
+    // Fallback to chat model ONLY on schema/availability errors
+    var status = (err && (err.status || (err.response && err.response.status))) || 0;
+    var msgAll = String(merged || '').toLowerCase();
+    var allowFallback = status === 400 || status === 404 || status === 422 || /model not found|not available|not supported/.test(msgAll);
+    if (!allowFallback) {
+      return 'Service error. Details: ' + merged + '
+Breaker: ' + circuitBreaker.getState();
+    }
     try {
       var fb = await openai.chat.completions.create({
         model: GPT5_CONFIG.FALLBACK_MODEL,
@@ -339,10 +346,12 @@ async function getGPT5Analysis(prompt, options) {
       var u = fb.usage || {}; var fbOut = u.output_tokens || u.completion_tokens || 0;
       var cost2 = logApiCall(GPT5_CONFIG.FALLBACK_MODEL, 'chat', inputTokens, fbOut, Date.now() - start, true);
       metrics.recordCall(GPT5_CONFIG.FALLBACK_MODEL, true, inputTokens + fbOut, cost2, Date.now() - start);
-      return '[GPT-4o Fallback] ' + fbText;
+      return GPT5_CONFIG.HIDE_FALLBACK_TAG ? fbText : '[GPT-4o Fallback] ' + fbText;
     } catch (fbErr) {
       var fbMsg = (fbErr && fbErr.response && fbErr.response.data && fbErr.response.data.error && fbErr.response.data.error.message) || fbErr.message;
-      return 'Service error. Details: ' + merged + '\nFallback Error: ' + fbMsg + '\nBreaker: ' + circuitBreaker.getState();
+      return 'Service error. Details: ' + merged + '
+Fallback Error: ' + fbMsg + '
+Breaker: ' + circuitBreaker.getState();
     }
   }
 }
