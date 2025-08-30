@@ -428,6 +428,18 @@ function clearCache() { cache.clear(); return { ok: true }; }
 function getMetrics() { return metrics.getStats(); }
 
 // ───────────────────────────────────────────────────────────────────────────────
+// Backward‑compatibility shims (for older callers)
+// ───────────────────────────────────────────────────────────────────────────────
+async function getGPT5Analysis(prompt, opts = {}) {
+  // legacy alias → single prompt text completion via Responses (or fallback)
+  return getText(prompt, opts);
+}
+async function getGPT5Chat(messages, opts = {}) {
+  // legacy alias → structured chat; forceChat respects opts.forceChat
+  return getChat(messages, opts);
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
 // Exports
 // ───────────────────────────────────────────────────────────────────────────────
 module.exports = {
@@ -440,6 +452,10 @@ module.exports = {
   getChat,
   getEmbedding,
   getModeration,
+
+  // Legacy aliases (health checks and older modules expect these)
+  getGPT5Analysis,
+  getGPT5Chat,
 
   // Builders (useful for tests)
   buildResponsesRequest,
