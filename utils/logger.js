@@ -1,11 +1,4 @@
-// utils/logger.js - GPT-5 Aware Logger (Responses API + Chat Completions) with RAW toggle
-// -----------------------------------------------------------------------------
-// - Clean text extraction (Responses API: output_text / output[].content[].text)
-// - Chat Completions: choices[0].message.content
-// - RAW mode via env: LOGGER_RAW=1 (and pretty via LOGGER_PRETTY=1)
-// - Safe truncation + compact metadata; no accidental mega-dumps
-// -----------------------------------------------------------------------------
-
+// utils/logger.js - Fixed GPT-5 Response Extraction
 'use strict';
 
 const fs = require('fs').promises;
@@ -13,8 +6,8 @@ const path = require('path');
 
 const RAW_MODE = process.env.LOGGER_RAW === '1';
 const RAW_PRETTY = process.env.LOGGER_PRETTY === '1';
-const MAX_FILE_LINE = 1000;     // max chars per JSONL line segment (for text fields)
-const MAX_CONSOLE_TEXT = 1000;  // cap console response preview
+const MAX_FILE_LINE = 1000;
+const MAX_CONSOLE_TEXT = 1000;
 
 class Logger {
   constructor() {
@@ -30,18 +23,24 @@ class Logger {
     }
   }
 
-  // ------------------- Extraction -------------------
-
+  // FIXED: Better GPT-5 response extraction
   extractGPTContent(gptResponse) {
     if (!gptResponse) return '[No response]';
     if (typeof gptResponse === 'string') return gptResponse;
 
-    // Responses API: direct consolidated field
+    // GPT-5 Responses API: Check output_text first
     if (typeof gptResponse === 'object' && typeof gptResponse.output_text === 'string') {
+      if (gptResponse.output_text.trim() === '') {
+        // Empty response - check if this is an error condition
+        if (gptResponse.usage?.output_tokens === 0) {
+          return '[Empty response - 0 tokens generated]';
+        }
+        return '[Empty output_text field]';
+      }
       return gptResponse.output_text;
     }
 
-    // Responses API: fragmented output[].content[].text
+    // GPT-5 Responses API: Fallback to fragmented output
     if (gptResponse && Array.isArray(gptResponse.output)) {
       const parts = [];
       for (const item of gptResponse.output) {
@@ -54,7 +53,7 @@ class Logger {
       if (parts.length) return parts.join('');
     }
 
-    // Chat Completions
+    // Chat Completions API
     const chatMsg = gptResponse?.choices?.[0]?.message?.content;
     if (typeof chatMsg === 'string') return chatMsg;
 
@@ -64,29 +63,43 @@ class Logger {
     if (typeof gptResponse.message === 'string') return gptResponse.message;
     if (typeof gptResponse.text === 'string') return gptResponse.text;
 
-    // Minimal fallback
+    // Check for error conditions
+    if (gptResponse?.usage?.output_tokens === 0) {
+      const reason = gptResponse.finish_reason || 'unknown';
+      return `[No content generated - finish_reason: ${reason}]`;
+    }
+
+    // Enhanced fallback with more details
     try {
       const minimal = {
         model: gptResponse.model,
         usage: gptResponse.usage,
         finish_reason: gptResponse.finish_reason || gptResponse.finishReason,
-        note: 'Unrecognized response shape; full dump suppressed (enable LOGGER_RAW=1 to include)',
+        has_output_text: 'output_text' in gptResponse,
+        output_text_empty: gptResponse.output_text === '',
+        has_output_array: Array.isArray(gptResponse.output),
+        note: 'Unrecognized response shape - enable LOGGER_RAW=1 for full details',
       };
-      return JSON.stringify(minimal, null, 2);
+      return `[Complex response structure]\n${JSON.stringify(minimal, null, 2)}`;
     } catch {
       return '[Invalid response object]';
     }
   }
 
-  // ------------------- Truncation helpers -------------------
-
+  // Enhanced truncation with better handling
   safeTruncate(value, maxLength = 1000) {
     const content = this.extractGPTContent(value);
-    if (!content) return '[Empty]';
+    if (!content || content === '[No response]') return '[Empty]';
+    
+    // Don't truncate diagnostic messages
+    if (content.startsWith('[') && content.endsWith(']')) {
+      return content;
+    }
+    
     return content.length <= maxLength ? content : content.substring(0, maxLength) + '... (truncated)';
   }
 
-  // Redact big string fields inside arbitrary objects for RAW logs
+  // Redact large strings for RAW logs
   redactLargeStrings(obj, limit = MAX_FILE_LINE) {
     const seen = new WeakSet();
     const walk = (v) => {
@@ -111,8 +124,7 @@ class Logger {
     return walk(obj);
   }
 
-  // ------------------- High-level logging -------------------
-
+  // Main GPT response logger with enhanced diagnostics
   logGPTResponse(data) {
     try {
       const timestamp = new Date().toISOString();
@@ -124,6 +136,8 @@ class Logger {
       const truncatedResponse = this.safeTruncate(gptContent, MAX_FILE_LINE);
 
       const isObj = typeof data.gptResponse === 'object' && data.gptResponse !== null;
+      
+      // Enhanced metadata with GPT-5 specific info
       const metadata = isObj
         ? {
             model: data.gptResponse.model || 'unknown',
@@ -131,6 +145,12 @@ class Logger {
             finishReason: data.gptResponse.finish_reason || data.gptResponse.finishReason || null,
             fallback: !!data.gptResponse.fallback,
             error: !!data.gptResponse.error,
+            // GPT-5 specific diagnostics
+            hasOutputText: 'output_text' in data.gptResponse,
+            outputTextEmpty: data.gptResponse.output_text === '',
+            hasOutputArray: Array.isArray(data.gptResponse.output),
+            outputTokens: data.gptResponse.usage?.output_tokens || 0,
+            reasoningTokens: data.gptResponse.usage?.output_tokens_details?.reasoning_tokens || 0
           }
         : { model: 'string_response' };
 
@@ -145,22 +165,32 @@ class Logger {
         truncated: gptContent.length > MAX_FILE_LINE,
       };
 
-      // RAW attachment (optional)
+      // RAW attachment for debugging
       if (RAW_MODE) {
         const redacted = isObj ? this.redactLargeStrings(data.gptResponse) : data.gptResponse;
-        logEntry.raw = RAW_PRETTY ? redacted : redacted; // pretty is applied at write step
+        logEntry.raw = redacted;
       }
 
-      // Console summary
-      console.log('[Logger] GPT Response:', {
+      // Enhanced console output with diagnostics
+      const diagnostics = {
         user: `${username} (${userId})`,
         model: metadata.model,
         promptLen: (typeof data.prompt === 'string' ? data.prompt.length : 0),
         responseLen: gptContent.length,
-        tokens: metadata.tokenUsage?.total_tokens ?? metadata.tokenUsage?.total ?? 'unknown',
+        tokens: metadata.tokenUsage?.total_tokens ?? 'unknown',
+        outputTokens: metadata.outputTokens,
+        reasoningTokens: metadata.reasoningTokens,
         fallback: metadata.fallback,
+        empty: metadata.outputTextEmpty,
         raw: RAW_MODE ? 'on' : 'off',
-      });
+      };
+
+      console.log('[Logger] GPT Response:', diagnostics);
+
+      // Flag potential issues
+      if (metadata.outputTextEmpty && metadata.outputTokens === 0) {
+        console.warn('[Logger] ⚠️ Empty GPT-5 response detected - check API configuration');
+      }
 
       this.writeLogEntry('gpt_responses', logEntry, { prettyRaw: RAW_PRETTY }).catch(err => {
         console.error('Failed to write GPT response log:', err);
@@ -171,8 +201,10 @@ class Logger {
       console.error('Data received (shape):', {
         isObject: typeof data?.gptResponse === 'object',
         isArray: Array.isArray(data?.gptResponse),
+        hasOutputText: data?.gptResponse && 'output_text' in data.gptResponse,
+        outputTextValue: data?.gptResponse?.output_text,
         keys: data?.gptResponse && typeof data.gptResponse === 'object'
-          ? Object.keys(data.gptResponse)
+          ? Object.keys(data.gptResponse).slice(0, 10) // Limit key output
           : 'N/A',
       });
     }
@@ -191,9 +223,7 @@ class Logger {
         metadata: {
           chatId: data.chatId,
           messageId: data.messageId,
-          model:
-            (typeof data.gptResponse === 'object' && data.gptResponse?.model) ||
-            'string_response',
+          model: (typeof data.gptResponse === 'object' && data.gptResponse?.model) || 'string_response',
           processingTime: data.processingTime || null,
         },
       };
@@ -253,16 +283,13 @@ class Logger {
     }
   }
 
-  // ------------------- File writer -------------------
-
+  // File writer with better error handling
   async writeLogEntry(logType, entry, { prettyRaw = false } = {}) {
     try {
       const date = new Date().toISOString().split('T')[0];
       const filename = `${logType}_${date}.jsonl`;
       const filepath = path.join(this.logDir, filename);
 
-      // For JSONL, keep one JSON object per line; if RAW present and pretty requested,
-      // only pretty-print the RAW, not the whole line.
       let out = entry;
       if (prettyRaw && entry.raw && typeof entry.raw === 'object') {
         out = { ...entry, raw: JSON.parse(JSON.stringify(entry.raw, null, 2)) };
@@ -274,8 +301,7 @@ class Logger {
     }
   }
 
-  // ------------------- Utilities -------------------
-
+  // Utilities
   safeStringify(obj, maxLength = 500) {
     try {
       if (typeof obj === 'string') {
@@ -295,17 +321,21 @@ class Logger {
   }
 }
 
-// Singleton
+// Singleton instance
 const logger = new Logger();
+
+console.log('Enhanced Logger loaded with GPT-5 diagnostics');
+console.log(`RAW mode: ${RAW_MODE ? 'ENABLED' : 'DISABLED'}`);
+console.log(`Pretty RAW: ${RAW_PRETTY ? 'ENABLED' : 'DISABLED'}`);
 
 module.exports = {
   Logger,
-  // Wrappers
+  // Wrapper functions
   logGPTResponse: (data) => logger.logGPTResponse(data),
   logConversation: (data) => logger.logConversation(data),
   logError: (error, context) => logger.logError(error, context),
   logSystemHealth: (healthData) => logger.logSystemHealth(healthData),
-  // Utils
+  // Utility functions
   extractGPTContent: (response) => logger.extractGPTContent(response),
   safeTruncate: (text, maxLength) => logger.safeTruncate(text, maxLength),
   safeStringify: (obj, maxLength) => logger.safeStringify(obj, maxLength),
