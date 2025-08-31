@@ -3844,14 +3844,14 @@ async function handleInlineQuery(inlineQuery, bot) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// MEMORY WRITE HELPERS (Part 6) — safe, compact, and TTL-based
+// MEMORY WRITE HELPERS (Part 6) — safe, compact, TTL-based, chitchat-aware
 // ───────────────────────────────────────────────────────────────────────────────
 
 // TTL presets (ms)
 const TTL = {
-  FACT: 7 * 24 * 60 * 60 * 1000,           // 7 days
-  LAST_COMPLETION: 14 * 24 * 60 * 60 * 1000,// 14 days
-  LAST_TOPIC: 48 * 60 * 60 * 1000           // 48 hours
+  FACT: 7 * 24 * 60 * 60 * 1000,             // 7 days
+  LAST_COMPLETION: 14 * 24 * 60 * 60 * 1000,  // 14 days
+  LAST_TOPIC: 48 * 60 * 60 * 1000             // 48 hours
 };
 
 // Compact assistant text before saving
@@ -3859,10 +3859,10 @@ function normalizeAssistantText(text) {
   if (!text) return '';
   return String(text)
     .replace(/^(Assistant:|AI:|GPT-?5?:)\s*/i, '')
-    .replace(/\s+\n/g, '\n')       // trim extra spaces before newlines
-    .replace(/\n{3,}/g, '\n\n')    // collapse >2 blank lines
+    .replace(/\s+\n/g, '\n')    // trim extra spaces before newlines
+    .replace(/\n{3,}/g, '\n\n') // collapse >2 blank lines
     .trim()
-    .slice(0, 8000);               // sanity cap
+    .slice(0, 8000);            // sanity cap
 }
 
 // Heuristic topic picker (skip trivial greetings)
@@ -3969,17 +3969,16 @@ async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnal
   const topic = inferTopic(userMessage);
   if (topic !== 'chitchat') {
     await upsertPersistentFact(chatId, 'last_topic', topic, { ttlMs: TTL.LAST_TOPIC });
-  }
 
-  // 4) Heuristic: capture “next action” / “next steps” / “todo” line if present
-  // Matches lines that start with "next", "next steps", "todo", or "action"
-  const nextMatch = String(processedResponse || '').match(
-    /(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?)[^\n]*$/im
-  );
-  if (nextMatch) {
-    await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
-      ttlMs: TTL.FACT
-    });
+    // 4) Only capture “next action / next steps / todo / action(s)” if not chitchat
+    const nextMatch = String(processedResponse || '').match(
+      /(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?)[^\n]*$/im
+    );
+    if (nextMatch) {
+      await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
+        ttlMs: TTL.FACT
+      });
+    }
   }
 
   return { saved: turnSaved };
