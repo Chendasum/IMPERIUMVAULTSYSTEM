@@ -219,6 +219,26 @@ async function handleInlineQuery(inlineQuery, bot) {
     console.error('Inline query error:', error.message);
   }
 }
+
+// In your index.js, find this section:
+let DualCommandSystem;
+try {
+  DualCommandSystem = require('./utils/dualCommandSystem');
+  console.log('✅ dualCommandSystem.js loaded - ALL routing handled here');
+} catch (error) {
+  console.error('❌ CRITICAL: dualCommandSystem.js failed to load:', error.message);
+  process.exit(1);
+}
+
+// ADD THE DEBUG CODE RIGHT HERE (after the above section):
+console.log('📋 Available functions:', Object.keys(DualCommandSystem));
+console.log('🔍 handleTelegramMessage type:', typeof DualCommandSystem.handleTelegramMessage);
+
+if (DualCommandSystem.handleTelegramMessage) {
+  console.log('✅ handleTelegramMessage found');
+} else {
+  console.log('❌ handleTelegramMessage missing from exports');
+}
 // At the bottom of your dualCommandSystem.js, find your existing module.exports and ADD these:
 
 module.exports = {
