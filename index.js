@@ -116,8 +116,6 @@ const {
     getGPT5PerformanceMetrics        // ⚡ Real-time performance analytics
 } = require("./utils/dualCommandSystem");
 
-const telegramSplitter = require('./utils/telegramSplitter');
-
 // Master coordination for ALL modules with conditional loading
 // 🔧 SPECIALIZED HANDLERS (Preserved for business logic)
 const cambodiaHandler = require('./handlers/cambodiaDeals');
