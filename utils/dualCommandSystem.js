@@ -479,6 +479,799 @@ module.exports = {
   VERBOSITY_LEVELS: CONFIG.VERBOSITY_LEVELS
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CAMBODIA / TRADING MODULE INTEGRATION (moved from index.js → dualCommandSystem)
+// Location: utils/dualCommandSystem.js
+// ─────────────────────────────────────────────────────────────────────────────
+
+(function attachCambodiaStack() {
+  'use strict';
+
+  // Reuse the lazy loader from earlier in this file (or define a small local one)
+  function _lazy(name, candidates, stubFactory) {
+    for (let i = 0; i < candidates.length; i++) {
+      try {
+        const mod = require(candidates[i]);
+        console.log(`[dualCommandSystem] Loaded ${name} from ${candidates[i]}`);
+        return mod;
+      } catch (_e) {}
+    }
+    const stub = typeof stubFactory === 'function' ? stubFactory() : {};
+    console.warn(`[dualCommandSystem] ${name} not found, using stub`);
+    return stub;
+  }
+
+  // ── Imports (paths corrected for /utils/)
+  const cambodiaHandler       = _lazy('cambodiaDeals',         ['../handlers/cambodiaDeals']);
+  const lpManagement          = _lazy('lpManagement',          ['../cambodia/lpManagement']);
+  const portfolioManager      = _lazy('portfolioManager',      ['../cambodia/portfolioManager']);
+  const realEstateWealth      = _lazy('realEstateWealth',      ['../cambodia/realEstateWealth']);
+  const businessWealth        = _lazy('businessWealth',        ['../cambodia/businessWealth']);
+  const investmentWealth      = _lazy('investmentWealth',      ['../cambodia/investmentWealth']);
+  const economicIntelligence  = _lazy('economicIntelligence',  ['../cambodia/economicIntelligence']);
+  const legalRegulatory       = _lazy('legalRegulatory',       ['../cambodia/legalRegulatory']);
+  const agriculturalWealth    = _lazy('agriculturalWealth',    ['../cambodia/agriculturalWealth']);
+  const resourcesWealth       = _lazy('resourcesWealth',       ['../cambodia/resourcesWealth']);
+  const cambodiaLending       = _lazy('cambodiaLending',       ['./cambodiaLending', '../utils/cambodiaLending']);
+
+  // CORE 12 lending modules
+  const creditAssessment      = _lazy('creditAssessment',      ['../cambodia/creditAssessment']);
+  const loanOrigination       = _lazy('loanOrigination',       ['../cambodia/loanOrigination']);
+  const loanServicing         = _lazy('loanServicing',         ['../cambodia/loanServicing']);
+  const riskManagement        = _lazy('riskManagement',        ['../cambodia/riskManagement']);
+  const loanRecovery          = _lazy('loanRecovery',          ['../cambodia/loanRecovery']);
+  const cashFlowManagement    = _lazy('cashFlowManagement',    ['../cambodia/cashFlowManagement']);
+  const borrowerDueDiligence  = _lazy('borrowerDueDiligence',  ['../cambodia/borrowerDueDiligence']);
+  const performanceAnalytics  = _lazy('performanceAnalytics',  ['../cambodia/performanceAnalytics']);
+  const fundAccounting        = _lazy('fundAccounting',        ['../cambodia/fundAccounting']);
+  const investorReporting     = _lazy('investorReporting',     ['../cambodia/investorReporting']);
+  const complianceMonitoring  = _lazy('complianceMonitoring',  ['../cambodia/complianceMonitoring']);
+  const marketResearch        = _lazy('marketResearch',        ['../cambodia/marketResearch']);
+
+  // Trading & global
+  const clientOnboarding      = _lazy('clientOnboarding',      ['../cambodia/clientOnboarding']);
+  const forexTrading          = _lazy('forexTrading',          ['../cambodia/forexTrading']);
+  const cryptoTrading         = _lazy('cryptoTrading',         ['../cambodia/cryptoTrading']);
+  const stockTrading          = _lazy('stockTrading',          ['../cambodia/stockTrading']);
+  const globalMarkets         = _lazy('globalMarkets',         ['../cambodia/globalMarkets']);
+
+  // Access components that should already exist on module.exports (from your earlier parts)
+  const _exports = module.exports || {};
+  const openaiClient = _exports.openaiClient || _lazy('openaiClient', ['./openaiClient', '../utils/openaiClient', '../openaiClient'], () => ({
+    getGPT5Analysis: async () => { throw new Error('openaiClient missing'); }
+  }));
+  const telegramSplitter = _exports.telegramSplitter || _lazy('telegramSplitter', ['./telegramSplitter'], () => ({
+    sendGPTResponse: async (bot, chatId, txt) => (bot && bot.sendMessage ? bot.sendMessage(chatId, String(txt)) : false)
+  }));
+
+  // Provide a safe helper if your file doesn’t already define it
+  if (typeof _exports.executeEnhancedGPT5Command !== 'function') {
+    _exports.executeEnhancedGPT5Command = async function executeEnhancedGPT5Command(prompt, chatId, bot, meta) {
+      const t0 = Date.now();
+      meta = meta || {};
+      const opts = {};
+      if (meta.forceModel) opts.model = meta.forceModel;
+      let response, err;
+      try {
+        response = await openaiClient.getGPT5Analysis(String(prompt), opts);
+      } catch (e) {
+        err = e;
+        response = 'Service ❌ error. Details: ' + (e && e.message ? e.message : e);
+      }
+      const ms = Date.now() - t0;
+
+      // try pretty Telegram send, fallback to bot.sendMessage
+      try {
+        if (telegramSplitter && typeof telegramSplitter.sendGPTResponse === 'function') {
+          await telegramSplitter.sendGPTResponse(bot, chatId, response, {
+            title: meta.title || 'GPT-5 Analysis',
+            model: meta.forceModel || 'gpt-5',
+            executionTime: ms
+          });
+        } else if (bot && bot.sendMessage) {
+          await bot.sendMessage(chatId, response);
+        }
+      } catch (_e) {
+        if (bot && bot.sendMessage) await bot.sendMessage(chatId, response);
+      }
+
+      if (typeof _exports.updateSystemStats === 'function') {
+        _exports.updateSystemStats(meta.title || 'analysis', !err, ms, 'analysis', meta.forceModel || 'gpt-5');
+      }
+
+      return {
+        response,
+        responseTime: ms,
+        gpt5Result: { modelUsed: meta.forceModel || 'gpt-5', fallbackUsed: false, completionDetected: false, confidence: 0.8 },
+        queryAnalysis: { gpt5Model: meta.forceModel || 'gpt-5', reasoning_effort: 'medium', verbosity: 'medium' },
+        contextUsed: null
+      };
+    };
+  }
+
+  const executeEnhancedGPT5Command = _exports.executeEnhancedGPT5Command;
+
+  // ── FUNCTIONS (exact behavior preserved; forceModel wired)
+  async function runCreditAssessment(chatId, data, _chatId2, bot) {
+    const prompt = `CAMBODIA PRIVATE LENDING CREDIT ASSESSMENT
+
+Query: ${data.query}
+
+Analyze this credit request with Cambodia market expertise:
+1. Borrower creditworthiness evaluation
+2. Risk score calculation (0-100 scale)
+3. Interest rate recommendation (USD rates)
+4. Loan-to-value ratio assessment
+5. Required documentation and collateral
+6. Approval/decline recommendation
+7. Cambodia-specific risk factors (currency, regulatory, sector)
+
+Provide structured credit analysis for private lending decision.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Credit Assessment', forceModel: 'gpt-5' });
+  }
+
+  async function calculateCreditScore(borrowerId, scoreData, chatId, bot) {
+    const prompt = `CREDIT SCORE CALCULATION
+
+Borrower ID: ${borrowerId}
+Data: ${JSON.stringify(scoreData)}
+
+Calculate detailed credit score using Cambodia lending criteria:
+- Financial strength (35%)
+- Business evaluation (25%) 
+- Collateral quality (20%)
+- Character assessment (15%)
+- Capacity analysis (5%)
+
+Provide numerical score and detailed breakdown.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Credit Score Analysis', forceModel: 'gpt-5-mini' });
+  }
+
+  async function processLoanApplication(applicationData, chatId, bot) {
+    const prompt = `CAMBODIA LOAN APPLICATION PROCESSING
+
+Application: ${JSON.stringify(applicationData)}
+
+Process loan application with Cambodia lending standards:
+1. Application completeness review
+2. Financial analysis and verification
+3. Collateral assessment
+4. Risk evaluation
+5. Terms and pricing recommendation
+6. Approval conditions and covenants
+7. Documentation requirements
+
+Provide comprehensive loan processing decision.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Loan Application Processing', forceModel: 'gpt-5' });
+  }
+
+  async function serviceLoan(loanId, servicingData, chatId, bot) {
+    const prompt = `LOAN SERVICING ANALYSIS
+
+Loan ID: ${loanId}
+Query: ${servicingData.query}
+
+Provide loan servicing analysis:
+1. Current loan status and performance
+2. Payment history evaluation
+3. Early warning indicators
+4. Portfolio management recommendations
+5. Risk monitoring requirements
+6. Collection strategies if needed
+7. Relationship management approach
+
+Focus on proactive loan management for Cambodia market.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Loan Servicing Analysis', forceModel: 'gpt-5-mini' });
+  }
+
+  async function assessBorrowerRisk(borrowerId, riskData, chatId, bot) {
+    const prompt = `BORROWER RISK ASSESSMENT
+
+Borrower: ${borrowerId}
+Risk Query: ${riskData.query}
+
+Comprehensive risk assessment for Cambodia lending:
+1. Financial risk analysis
+2. Business and industry risk
+3. Collateral and security risk
+4. Geographic and political risk
+5. Currency and market risk
+6. Operational risk factors
+7. Risk mitigation strategies
+8. Monitoring and covenant recommendations
+
+Provide actionable risk assessment with mitigation plan.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Borrower Risk Assessment', forceModel: 'gpt-5' });
+  }
+
+  async function initiateRecovery(loanId, recoveryData, chatId, bot) {
+    const prompt = `LOAN RECOVERY INITIATION
+
+Loan ID: ${loanId}
+Recovery Query: ${recoveryData.query}
+
+Design loan recovery strategy for Cambodia:
+1. Current default situation analysis
+2. Collateral evaluation and liquidation options
+3. Legal recovery procedures in Cambodia
+4. Negotiation and workout strategies
+5. Timeline and recovery projections
+6. Cost-benefit analysis
+7. Alternative resolution options
+
+Provide comprehensive recovery plan with expected outcomes.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Loan Recovery Strategy', forceModel: 'gpt-5-mini' });
+  }
+
+  async function manageCashFlow(fundId, cashFlowData, chatId, bot) {
+    const prompt = `CAMBODIA CASH FLOW OPTIMIZATION
+
+Fund: ${fundId}
+Query: ${cashFlowData.query}
+Goal: Scale from $5,000 to $10,000 monthly cash flow
+
+Provide Cambodia-specific cash flow strategy:
+1. Current cash flow analysis and assessment
+2. Income diversification opportunities
+3. Cost optimization strategies
+4. Investment timing and allocation
+5. Currency management (USD/KHR)
+6. Market-specific opportunities
+7. Risk management and contingencies
+8. Implementation timeline and milestones
+
+Focus on practical, actionable strategies for Cambodia market.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Cash Flow Optimization', forceModel: 'gpt-5' });
+  }
+
+  async function conductDueDiligence(borrowerId, dueDiligenceData, chatId, bot) {
+    const prompt = `BORROWER DUE DILIGENCE
+
+Borrower: ${borrowerId}
+Query: ${dueDiligenceData.query}
+
+Conduct comprehensive due diligence for Cambodia lending:
+1. Business verification and legitimacy
+2. Financial statement analysis
+3. Management background checks
+4. Legal and regulatory compliance
+5. Market position and competition
+6. Operational assessment
+7. AML/KYC screening
+8. Reference and credit checks
+9. Red flag identification
+
+Provide thorough due diligence report with recommendations.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Due Diligence Report', forceModel: 'gpt-5' });
+  }
+
+  async function generatePerformanceDashboard(fundId, reportingPeriod, chatId, bot) {
+    const prompt = `FUND PERFORMANCE DASHBOARD
+
+Fund: ${fundId}
+Period: ${reportingPeriod}
+
+Generate comprehensive performance dashboard:
+1. Portfolio performance metrics
+2. Risk-adjusted returns analysis
+3. Asset quality indicators
+4. Geographic and sector allocation
+5. Default and recovery statistics
+6. Yield and spread analysis
+7. Liquidity and funding metrics
+8. Benchmark comparison
+9. Trend analysis and outlook
+
+Provide executive-level performance insights for Cambodia private lending fund.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Performance Dashboard', forceModel: 'gpt-5-mini' });
+  }
+
+  async function calculateNAV(fundId, valuationDate, chatId, bot) {
+    const prompt = `NET ASSET VALUE CALCULATION
+
+Fund: ${fundId}
+Valuation Date: ${valuationDate}
+
+Calculate fund NAV with Cambodia market considerations:
+1. Asset valuation methodology
+2. Loan portfolio marking
+3. Accrued interest calculations
+4. Provision and reserve adjustments
+5. Operating expense allocations
+6. Currency translation effects
+7. Fair value adjustments
+8. NAV per unit calculation
+9. Waterfall and distribution analysis
+
+Provide detailed NAV calculation with supporting analysis.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'NAV Calculation', forceModel: 'gpt-5-mini' });
+  }
+
+  async function generateQuarterlyReport(fundId, reportData, chatId, bot) {
+    const prompt = `QUARTERLY INVESTOR REPORT
+
+Fund: ${fundId}
+Query: ${reportData.query}
+
+Generate comprehensive quarterly report:
+1. Executive summary and highlights
+2. Fund performance and returns
+3. Portfolio composition and changes
+4. New investments and exits
+5. Risk management updates
+6. Market outlook and strategy
+7. Operational updates
+8. Financial statements summary
+9. Regulatory and compliance status
+
+Provide professional investor-grade quarterly report.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Quarterly Investor Report', forceModel: 'gpt-5' });
+  }
+
+  async function performComplianceCheck(fundId, checkData, chatId, bot) {
+    const prompt = `COMPLIANCE MONITORING CHECK
+
+Fund: ${fundId}
+Query: ${checkData.query}
+
+Comprehensive compliance assessment:
+1. Regulatory compliance status
+2. Internal policy adherence
+3. Risk limit monitoring
+4. Documentation completeness
+5. AML/KYC compliance
+6. Reporting obligations
+7. License and permit status
+8. Audit findings and remediation
+9. Best practice recommendations
+
+Provide detailed compliance status with action items.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Compliance Check', forceModel: 'gpt-5-mini' });
+  }
+
+  async function analyzeMarket(researchScope, analysisData, chatId, bot) {
+    const prompt = `CAMBODIA MARKET RESEARCH
+
+Research Scope: ${researchScope}
+Query: ${analysisData.query}
+
+Comprehensive Cambodia market analysis:
+1. Economic conditions and outlook
+2. Banking and lending market
+3. Regulatory environment
+4. Competition analysis
+5. Sector opportunities and risks
+6. Currency and political factors
+7. Infrastructure and development
+8. Investment climate assessment
+9. Strategic recommendations
+
+Provide actionable market intelligence for lending decisions.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Market Research Analysis', forceModel: 'gpt-5' });
+  }
+
+  async function processCambodiaDeal(dealData, chatId, bot) {
+    const prompt = `CAMBODIA DEAL ANALYSIS
+
+Deal Type: ${dealData.dealType}
+Query: ${dealData.query}
+
+Comprehensive deal analysis:
+1. Deal structure and terms evaluation
+2. Market opportunity assessment
+3. Financial projections and returns
+4. Risk analysis and mitigation
+5. Due diligence requirements
+6. Legal and regulatory considerations
+7. Competitive positioning
+8. Exit strategy options
+9. Funding and syndication approach
+
+Provide investment committee-ready deal analysis.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Cambodia Deal Analysis', forceModel: 'gpt-5' });
+  }
+
+  async function manageLimitedPartners(lpData, action, chatId, bot) {
+    const prompt = `LIMITED PARTNER MANAGEMENT
+
+LP: ${lpData.lpName}
+Action: ${action}
+Query: ${lpData.query}
+
+LP relationship management analysis:
+1. Investor profile and preferences
+2. Investment capacity assessment
+3. Risk tolerance and objectives
+4. Communication and reporting needs
+5. Deal matching and allocation
+6. Relationship development strategy
+7. Regulatory and compliance requirements
+8. Performance tracking and reporting
+
+Provide comprehensive LP management recommendations.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'LP Management Analysis', forceModel: 'gpt-5-mini' });
+  }
+
+  async function optimizePortfolio(portfolioId, optimizationData, chatId, bot) {
+    const prompt = `PORTFOLIO OPTIMIZATION
+
+Portfolio: ${portfolioId}
+Query: ${optimizationData.query}
+
+Portfolio optimization analysis:
+1. Current allocation assessment
+2. Risk-return optimization
+3. Diversification analysis
+4. Concentration risk management
+5. Sector and geographic allocation
+6. Liquidity and maturity matching
+7. Currency hedging strategies
+8. Rebalancing recommendations
+9. Performance enhancement opportunities
+
+Provide actionable portfolio optimization strategy.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Portfolio Optimization', forceModel: 'gpt-5' });
+  }
+
+  async function valuateRealEstate(propertyId, valuationData, chatId, bot) {
+    const prompt = `CAMBODIA REAL ESTATE VALUATION
+
+Property: ${propertyId}
+Query: ${valuationData.query}
+
+Real estate collateral valuation:
+1. Property description and location
+2. Market comparables analysis
+3. Income approach valuation
+4. Cost approach assessment
+5. Market conditions and trends
+6. Liquidity and marketability
+7. Legal and title considerations
+8. Risk factors and adjustments
+9. Loan-to-value recommendations
+
+Provide comprehensive property valuation for lending purposes.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Real Estate Valuation', forceModel: 'gpt-5-mini' });
+  }
+
+  async function valuateBusiness(businessId, valuationData, chatId, bot) {
+    const prompt = `CAMBODIA BUSINESS VALUATION
+
+Business: ${businessId}
+Query: ${valuationData.query}
+
+Business valuation analysis:
+1. Business model and operations
+2. Financial performance analysis
+3. Market position and competition
+4. Management and key personnel
+5. Asset and liability assessment
+6. Cash flow and earnings analysis
+7. Valuation methodology selection
+8. Risk adjustments and discounts
+9. Loan collateral value assessment
+
+Provide comprehensive business valuation for lending decisions.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Business Valuation', forceModel: 'gpt-5' });
+  }
+
+  async function manageInvestmentPortfolio(portfolioId, managementData, chatId, bot) {
+    const prompt = `INVESTMENT PORTFOLIO MANAGEMENT
+
+Portfolio: ${portfolioId}
+Query: ${managementData.query}
+
+Investment management analysis:
+1. Portfolio performance review
+2. Asset allocation assessment
+3. Risk management evaluation
+4. Investment opportunities
+5. Market timing considerations
+6. Currency and hedging strategy
+7. Liquidity management
+8. Tax optimization strategies
+9. Performance benchmarking
+
+Provide comprehensive investment management recommendations.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Investment Portfolio Management', forceModel: 'gpt-5-mini' });
+  }
+
+  async function analyzeEconomicConditions(region, analysisData, chatId, bot) {
+    const prompt = `ECONOMIC CONDITIONS ANALYSIS
+
+Region: ${region}
+Query: ${analysisData.query}
+
+Economic intelligence analysis:
+1. GDP growth and economic indicators
+2. Inflation and monetary policy
+3. Banking and financial system
+4. Government fiscal position
+5. Trade and investment flows
+6. Infrastructure development
+7. Political stability and risks
+8. Currency and exchange rates
+9. Economic outlook and forecasts
+
+Provide comprehensive economic analysis for investment decisions.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Economic Intelligence', forceModel: 'gpt-5' });
+  }
+
+  async function checkRegulatoryCompliance(entityId, complianceData, chatId, bot) {
+    const prompt = `REGULATORY COMPLIANCE CHECK
+
+Entity: ${entityId}
+Query: ${complianceData.query}
+
+Regulatory compliance analysis:
+1. Applicable laws and regulations
+2. License and permit requirements
+3. Reporting and disclosure obligations
+4. Capital and operational requirements
+5. Consumer protection compliance
+6. AML and sanctions compliance
+7. Cross-border regulations
+8. Recent regulatory changes
+9. Compliance risk assessment
+
+Provide comprehensive regulatory compliance evaluation.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Regulatory Compliance', forceModel: 'gpt-5-mini' });
+  }
+
+  async function valuateAgriculturalAssets(assetId, valuationData, chatId, bot) {
+    const prompt = `CAMBODIA AGRICULTURAL ASSET VALUATION
+
+Asset: ${assetId}
+Query: ${valuationData.query}
+
+Agricultural asset valuation:
+1. Land and soil quality assessment
+2. Crop production and yield analysis
+3. Infrastructure and equipment
+4. Water rights and irrigation
+5. Market access and logistics
+6. Seasonal and weather risks
+7. Regulatory and environmental factors
+8. Comparable sales analysis
+9. Income and cash flow projections
+
+Provide comprehensive agricultural asset valuation.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Agricultural Asset Valuation', forceModel: 'gpt-5-mini' });
+  }
+
+  async function valuateNaturalResources(resourceId, valuationData, chatId, bot) {
+    const prompt = `NATURAL RESOURCES VALUATION
+
+Resource: ${resourceId}
+Query: ${valuationData.query}
+
+Natural resources valuation:
+1. Resource type and reserves
+2. Extraction costs and methods
+3. Market demand and pricing
+4. Transportation and logistics
+5. Environmental and regulatory
+6. Sustainability considerations
+7. Concession and permit status
+8. Risk factors and mitigation
+9. Valuation and collateral assessment
+
+Provide comprehensive natural resources valuation.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Natural Resources Valuation', forceModel: 'gpt-5-mini' });
+  }
+
+  async function processLendingTransaction(transactionData, chatId, bot) {
+    const prompt = `LENDING TRANSACTION PROCESSING
+
+Query: ${transactionData.query}
+
+Transaction processing analysis:
+1. Transaction structure and terms
+2. Documentation requirements
+3. Fund disbursement procedures
+4. Escrow and security arrangements
+5. Legal and regulatory compliance
+6. Risk management controls
+7. Operational procedures
+8. Monitoring and reporting
+9. Post-closing requirements
+
+Provide comprehensive transaction processing guidance.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Lending Transaction', forceModel: 'gpt-5-mini' });
+  }
+
+  async function executeCambodiaTrade(orderDetails, chatId, bot) {
+    const prompt = `CAMBODIA TRADING OPERATIONS
+
+Symbol: ${orderDetails.symbol}
+Query: ${orderDetails.query}
+
+Trading analysis and execution:
+1. Market conditions assessment
+2. Trade timing and execution
+3. Risk management parameters
+4. Currency considerations
+5. Regulatory compliance
+6. Settlement procedures
+7. Performance monitoring
+8. Portfolio impact analysis
+9. Risk reporting
+
+Provide comprehensive trading operations analysis.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Trading Operations', forceModel: 'gpt-5-mini' });
+  }
+
+  async function initiateClientOnboarding(clientData, chatId, bot) {
+    const prompt = `CLIENT ONBOARDING PROCESS
+
+Client: ${clientData.personalDetails && clientData.personalDetails.name}
+Query: ${clientData.query}
+
+Client onboarding analysis:
+1. Client qualification assessment
+2. KYC and AML procedures
+3. Investment suitability analysis
+4. Documentation requirements
+5. Risk profiling and tolerance
+6. Account setup procedures
+7. Regulatory compliance
+8. Service level agreements
+9. Ongoing monitoring requirements
+
+Provide comprehensive client onboarding plan.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Client Onboarding', forceModel: 'gpt-5-mini' });
+  }
+
+  async function analyzeForexOpportunity(currencyPair, analysisType, chatId, bot) {
+    const prompt = `FOREX MARKET ANALYSIS
+
+Currency Pair: ${currencyPair}
+Analysis: ${analysisType}
+
+Forex opportunity analysis:
+1. Currency pair fundamentals
+2. Technical analysis indicators
+3. Economic factors and drivers
+4. Central bank policies
+5. Market sentiment analysis
+6. Risk-reward assessment
+7. Trade timing and entry
+8. Risk management strategy
+9. Cambodia market implications
+
+Provide comprehensive forex analysis for investment decisions.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Forex Analysis', forceModel: 'gpt-5-mini' });
+  }
+
+  async function analyzeCryptoOpportunity(cryptocurrency, analysisType, chatId, bot) {
+    const prompt = `CRYPTOCURRENCY ANALYSIS
+
+Crypto: ${cryptocurrency}
+Analysis: ${analysisType}
+
+Cryptocurrency opportunity analysis:
+1. Fundamental analysis and technology
+2. Market dynamics and adoption
+3. Regulatory environment
+4. Technical analysis patterns
+5. Risk assessment and volatility
+6. Portfolio allocation considerations
+7. Custody and security requirements
+8. Tax and compliance implications
+9. Investment recommendations
+
+Provide comprehensive crypto analysis for investment decisions.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Crypto Analysis', forceModel: 'gpt-5-mini' });
+  }
+
+  async function analyzeStock(stockSymbol, analysisType, chatId, bot) {
+    const prompt = `STOCK MARKET ANALYSIS
+
+Stock: ${stockSymbol}
+Analysis: ${analysisType}
+
+Stock investment analysis:
+1. Company fundamentals and financials
+2. Industry and competitive position
+3. Technical analysis and charts
+4. Valuation metrics and ratios
+5. Risk factors and opportunities
+6. Management and governance
+7. Market conditions and timing
+8. Investment recommendation
+9. Portfolio fit assessment
+
+Provide comprehensive stock analysis for investment decisions.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Stock Analysis', forceModel: 'gpt-5-mini' });
+  }
+
+  async function analyzeGlobalMarketConditions(chatId, bot) {
+    const prompt = `GLOBAL MARKET CONDITIONS ANALYSIS
+
+Comprehensive global market assessment:
+1. Global economic conditions and trends
+2. Central bank policies and impacts
+3. Geopolitical risks and opportunities
+4. Market volatility and sentiment
+5. Asset class performance and outlook
+6. Currency markets and flows
+7. Commodity markets analysis
+8. Emerging market conditions
+9. Cambodia market implications and opportunities
+
+Provide comprehensive global market analysis with Cambodia-specific insights.`;
+    return executeEnhancedGPT5Command(prompt, chatId, bot, { title: 'Global Market Analysis', forceModel: 'gpt-5' });
+  }
+
+  // ── Export without overwriting your existing exports
+  module.exports.runCreditAssessment               = runCreditAssessment;
+  module.exports.calculateCreditScore              = calculateCreditScore;
+  module.exports.processLoanApplication            = processLoanApplication;
+  module.exports.serviceLoan                       = serviceLoan;
+  module.exports.assessBorrowerRisk                = assessBorrowerRisk;
+  module.exports.initiateRecovery                  = initiateRecovery;
+  module.exports.manageCashFlow                    = manageCashFlow;
+  module.exports.conductDueDiligence               = conductDueDiligence;
+  module.exports.generatePerformanceDashboard      = generatePerformanceDashboard;
+  module.exports.calculateNAV                      = calculateNAV;
+  module.exports.generateQuarterlyReport           = generateQuarterlyReport;
+  module.exports.performComplianceCheck            = performComplianceCheck;
+  module.exports.analyzeMarket                     = analyzeMarket;
+
+  module.exports.processCambodiaDeal               = processCambodiaDeal;
+  module.exports.manageLimitedPartners             = manageLimitedPartners;
+  module.exports.optimizePortfolio                 = optimizePortfolio;
+  module.exports.valuateRealEstate                 = valuateRealEstate;
+  module.exports.valuateBusiness                   = valuateBusiness;
+  module.exports.manageInvestmentPortfolio         = manageInvestmentPortfolio;
+  module.exports.analyzeEconomicConditions         = analyzeEconomicConditions;
+  module.exports.checkRegulatoryCompliance         = checkRegulatoryCompliance;
+  module.exports.valuateAgriculturalAssets         = valuateAgriculturalAssets;
+  module.exports.valuateNaturalResources           = valuateNaturalResources;
+  module.exports.processLendingTransaction         = processLendingTransaction;
+
+  module.exports.executeCambodiaTrade              = executeCambodiaTrade;
+  module.exports.initiateClientOnboarding          = initiateClientOnboarding;
+  module.exports.analyzeForexOpportunity           = analyzeForexOpportunity;
+  module.exports.analyzeCryptoOpportunity          = analyzeCryptoOpportunity;
+  module.exports.analyzeStock                      = analyzeStock;
+  module.exports.analyzeGlobalMarketConditions     = analyzeGlobalMarketConditions;
+
+  // Optional grouped export
+  module.exports.cambodiaModules = {
+    runCreditAssessment,
+    calculateCreditScore,
+    processLoanApplication,
+    serviceLoan,
+    assessBorrowerRisk,
+    initiateRecovery,
+    manageCashFlow,
+    conductDueDiligence,
+    generatePerformanceDashboard,
+    calculateNAV,
+    generateQuarterlyReport,
+    performComplianceCheck,
+    analyzeMarket,
+    processCambodiaDeal,
+    manageLimitedPartners,
+    optimizePortfolio,
+    valuateRealEstate,
+    valuateBusiness,
+    manageInvestmentPortfolio,
+    analyzeEconomicConditions,
+    checkRegulatoryCompliance,
+    valuateAgriculturalAssets,
+    valuateNaturalResources,
+    processLendingTransaction,
+    executeCambodiaTrade,
+    initiateClientOnboarding,
+    analyzeForexOpportunity,
+    analyzeCryptoOpportunity,
+    analyzeStock,
+    analyzeGlobalMarketConditions
+  };
+})();
+
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 2/6
 // COMPLETION DETECTION & INTELLIGENT QUERY ANALYSIS
 // This part handles smart detection of completed tasks and optimal GPT-5 model selection
