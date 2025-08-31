@@ -2193,64 +2193,6 @@ module.exports = {
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 4/6
 // MAIN COMMAND EXECUTION ENGINE
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Optional inline query handler (exported at bottom so index.js can import it)
-async function handleInlineQuery(inlineQuery, bot) {
-  try {
-    await bot.answerInlineQuery(inlineQuery.id, [], { cache_time: 1 });
-    console.log('Inline query handled');
-  } catch (error) {
-    console.error('Inline query error:', error.message);
-  }
-}
-
-// ───────────────────────────────────────────────────────────────────────────────
-// Chitchat short-circuit (prevents heavy replies on simple greetings)
-// ───────────────────────────────────────────────────────────────────────────────
-const CHITCHAT_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
-const chitchatGate = new Map(); // chatId -> { ts, lastMode }
-
-function isGreetingOnly(text) {
-  if (!text) return false;
-  const raw = String(text).trim();
-  const s = raw.toLowerCase();
-  const short = raw.split(/\s+/).length <= 6;
-  const greet = /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you)\b/.test(s);
-  const hasQuestion = /[?]\s*$/.test(raw);
-  const looksCommand = raw.startsWith('/');
-  return greet && short && !hasQuestion && !looksCommand;
-}
-
-function pickLastTopic(memoryData) {
-  try {
-    const facts = Array.isArray(memoryData && memoryData.persistentMemory) ? memoryData.persistentMemory : [];
-    const last = facts.find(f => String(f && f.key).toLowerCase() === 'last_topic');
-    return (last && last.value) ? String(last.value) : null;
-  } catch (_e) { return null; }
-}
-
-function buildChitchatReply(chatId, memoryData) {
-  const last = pickLastTopic(memoryData);
-  const now = Date.now();
-  const gate = chitchatGate.get(chatId) || { ts: 0, lastMode: 'full' };
-  const fresh = (now - gate.ts) < CHITCHAT_COOLDOWN_MS;
-
-  if (last && !fresh) {
-    chitchatGate.set(chatId, { ts: now, lastMode: 'full' });
-    return {
-      text: `👋 Hi! Would you like to continue on “${last}”?  \nReply with **yes** to resume or tell me what you need.`,
-      compact: true
-    };
-  }
-
-  chitchatGate.set(chatId, { ts: now, lastMode: 'compact' });
-  return {
-    text: `👋 Hi! What can I help you with today?`,
-    compact: true
-  };
-}
-
-// ───────────────────────────────────────────────────────────────────────────────
 // MAIN COMMAND EXECUTION FUNCTION
 async function executeDualCommand(userMessage, chatId, options) {
   options = options || {};
@@ -2288,37 +2230,6 @@ async function executeDualCommand(userMessage, chatId, options) {
       memoryData = memoryResult.memoryData;
     }
 
-    // 2.5) Chitchat short-circuit (skip GPT-5 on simple greetings; compact reply)
-    if (isGreetingOnly(preprocessed.cleaned)) {
-      const quick = buildChitchatReply(chatId, memoryData);
-
-      const chitchatAnalysis = {
-        shouldSkipGPT5: true,
-        quickResponse: quick.text,
-        completionStatus: { completionType: 'chitchat', confidence: 0.99 },
-        gpt5Model: (CONFIG && CONFIG.MODELS && CONFIG.MODELS.NANO) ? CONFIG.MODELS.NANO : 'gpt-5-nano',
-        complexity: { complexity: 'low' },
-        priority: 'chitchat',
-        reasoning_effort: 'low',
-        verbosity: 'low',
-        // style hints for telegramSplitter
-        displayStyle: 'compact',
-        banner: 'none'
-      };
-
-      const result = createCompletionResponse(chitchatAnalysis, memoryContext, memoryData, startTime, chatId);
-      // augment style hints for splitter (it will ignore if unsupported)
-      result.sendToTelegram = createTelegramSender(
-        chatId,
-        chitchatAnalysis.quickResponse,
-        chitchatAnalysis,
-        { completionDetected: true, modelUsed: chitchatAnalysis.gpt5Model, displayStyle: 'compact', banner: 'none' },
-        Date.now() - startTime,
-        memoryContext.length > 0
-      );
-      return result;
-    }
-
     // 3) Analyze query for optimal GPT-5 model selection
     const queryAnalysis = analyzeQuery(
       preprocessed.cleaned,
@@ -2330,9 +2241,6 @@ async function executeDualCommand(userMessage, chatId, options) {
     // 3.1) Handle completion detection FIRST
     if (queryAnalysis.shouldSkipGPT5) {
       console.log('Completion detected: ' + queryAnalysis.completionStatus.completionType);
-      // add compact style for completion detections
-      queryAnalysis.displayStyle = 'compact';
-      queryAnalysis.banner = 'none';
       return createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime, chatId);
     }
 
@@ -2494,8 +2402,8 @@ async function executeDualCommand(userMessage, chatId, options) {
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
 // HELPER FUNCTIONS
+
 function createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime, chatId) {
   const responseTime = Date.now() - startTime;
 
@@ -2506,12 +2414,6 @@ function createCompletionResponse(queryAnalysis, memoryContext, memoryData, star
      CONFIG &&
      CONFIG.MODELS &&
      CONFIG.MODELS.MINI) ? CONFIG.MODELS.MINI : 'gpt-5-mini';
-
-  // compact style hints if caller set them
-  const styleHints = {
-    displayStyle: queryAnalysis.displayStyle || 'compact',
-    banner: queryAnalysis.banner || 'none'
-  };
 
   return {
     response: queryAnalysis.quickResponse,
@@ -2558,7 +2460,7 @@ function createCompletionResponse(queryAnalysis, memoryContext, memoryData, star
       chatId,
       queryAnalysis.quickResponse,
       queryAnalysis,
-      { completionDetected: true, modelUsed: modelMini, ...styleHints },
+      { completionDetected: true, modelUsed: modelMini },
       responseTime,
       memoryContext.length > 0
     )
@@ -2662,10 +2564,6 @@ function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, respo
           completionDetected: !!(gpt5Result && gpt5Result.completionDetected)
         };
 
-        // pass optional style hints for compact/no-banner layouts
-        if (gpt5Result && gpt5Result.displayStyle) meta.displayStyle = gpt5Result.displayStyle;
-        if (gpt5Result && gpt5Result.banner) meta.banner = gpt5Result.banner;
-
         if (typeof sendTelegramMessage === 'function') {
           const result = await sendTelegramMessage(bot, chatId, String(response || ''), meta);
           if (result && (result.enhanced || result.fallback || result.success)) {
@@ -2743,7 +2641,6 @@ function createErrorTelegramSender(chatId, errorResponse, originalError) {
   };
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
 // EXPORTS for Part 4
 module.exports = {
   executeDualCommand,
@@ -2752,8 +2649,7 @@ module.exports = {
   getCostTier,
   createTelegramSender,
   createErrorTelegramSender,
-  calculateEstimatedCost,
-  handleInlineQuery // exported so index.js can import and wire it
+  calculateEstimatedCost
 };
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 5/6
@@ -3948,15 +3844,14 @@ async function handleInlineQuery(inlineQuery, bot) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// MEMORY WRITE HELPERS (Part 6) — safe, compact, TTL-based, chitchat-aware
-// ES5-compatible: no optional chaining, no spread
+// MEMORY WRITE HELPERS (Part 6) — safe, compact, and TTL-based
 // ───────────────────────────────────────────────────────────────────────────────
 
 // TTL presets (ms)
-var TTL = {
-  FACT: 7 * 24 * 60 * 60 * 1000,              // 7 days
-  LAST_COMPLETION: 14 * 24 * 60 * 60 * 1000,   // 14 days
-  LAST_TOPIC: 48 * 60 * 60 * 1000              // 48 hours
+const TTL = {
+  FACT: 7 * 24 * 60 * 60 * 1000,           // 7 days
+  LAST_COMPLETION: 14 * 24 * 60 * 60 * 1000,// 14 days
+  LAST_TOPIC: 48 * 60 * 60 * 1000           // 48 hours
 };
 
 // Compact assistant text before saving
@@ -3964,56 +3859,43 @@ function normalizeAssistantText(text) {
   if (!text) return '';
   return String(text)
     .replace(/^(Assistant:|AI:|GPT-?5?:)\s*/i, '')
-    .replace(/\s+\n/g, '\n')     // trim extra spaces before newlines
-    .replace(/\n{3,}/g, '\n\n')  // collapse >2 blank lines
+    .replace(/\s+\n/g, '\n')       // trim extra spaces before newlines
+    .replace(/\n{3,}/g, '\n\n')    // collapse >2 blank lines
     .trim()
-    .slice(0, 8000);             // sanity cap
-}
-
-// Detect trivial greetings (used by topic + memory heuristics)
-function isTrivialGreeting(input) {
-  if (!input) return false;
-  var raw = String(input).trim();
-  var s = raw.toLowerCase();
-  var short = raw.split(/\s+/).length <= 6;
-  var greet = /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you)\b/.test(s);
-  var hasQuestion = /\?\s*$/.test(raw);
-  var looksCommand = raw.indexOf('/') === 0;
-  return greet && short && !hasQuestion && !looksCommand;
+    .slice(0, 8000);               // sanity cap
 }
 
 // Heuristic topic picker (skip trivial greetings)
 function inferTopic(userMessage) {
   if (!userMessage) return 'general';
-  var raw = String(userMessage).trim();
-  var s = raw.toLowerCase();
+  const raw = String(userMessage).trim();
+  const s = raw.toLowerCase();
 
   // Don’t memorize “hello/hi/how are you” as a topic
-  if (isTrivialGreeting(raw)) return 'chitchat';
+  const isGreeting =
+    /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you)\b/.test(s) &&
+    raw.split(/\s+/).length <= 6;
 
-  if (s.indexOf('error') >= 0 || s.indexOf('bug') >= 0) return 'troubleshooting';
-  if (s.indexOf('report') >= 0 || s.indexOf('analysis') >= 0) return 'analysis';
-  if (s.indexOf('deploy') >= 0 || s.indexOf('production') >= 0) return 'deployment';
-  if (s.indexOf('memory') >= 0 || s.indexOf('context') >= 0) return 'memory';
+  if (isGreeting) return 'chitchat';
+
+  if (s.includes('error') || s.includes('bug')) return 'troubleshooting';
+  if (s.includes('report') || s.includes('analysis')) return 'analysis';
+  if (s.includes('deploy') || s.includes('production')) return 'deployment';
+  if (s.includes('memory') || s.includes('context')) return 'memory';
   if (raw.length < 30) return raw;
   return raw.slice(0, 60).trim();
 }
 
 // Upsert a tiny fact into persistent memory (prefer memory module, fallback DB)
-async function upsertPersistentFact(chatId, key, value, opts) {
-  opts = opts || {};
-  var ttlMs = typeof opts.ttlMs === 'number' ? opts.ttlMs : TTL.FACT;
-
+async function upsertPersistentFact(chatId, key, value, opts = {}) {
+  const ttlMs = typeof opts.ttlMs === 'number' ? opts.ttlMs : TTL.FACT;
   try {
     if (!chatId || !key) return false;
 
-    // Prefer dedicated memory module
-    if (typeof memory !== 'undefined' &&
-        memory &&
-        typeof memory.saveToMemory === 'function') {
+    if (typeof memory?.saveToMemory === 'function') {
       await memory.saveToMemory(chatId, {
         type: 'fact',
-        key: key,
+        key,
         value: String(value),
         createdAt: new Date().toISOString(),
         expiresAt: ttlMs ? new Date(Date.now() + ttlMs).toISOString() : null
@@ -4021,13 +3903,10 @@ async function upsertPersistentFact(chatId, key, value, opts) {
       return true;
     }
 
-    // Fallback: store as a conversation row
-    if (typeof database !== 'undefined' &&
-        database &&
-        typeof database.saveConversation === 'function') {
-      await database.saveConversation(chatId, '[FACT:' + key + ']', String(value), {
+    if (typeof database?.saveConversation === 'function') {
+      await database.saveConversation(chatId, `[FACT:${key}]`, String(value), {
         kind: 'fact',
-        key: key,
+        key,
         expiresAt: ttlMs ? new Date(Date.now() + ttlMs).toISOString() : null
       });
       return true;
@@ -4035,40 +3914,27 @@ async function upsertPersistentFact(chatId, key, value, opts) {
 
     return false;
   } catch (err) {
-    console.warn('upsertPersistentFact failed:', err && err.message ? err.message : String(err));
+    console.warn('upsertPersistentFact failed:', err.message);
     return false;
   }
 }
 
 // Save the full conversation turn (user + assistant) to DB for context rebuilds
-async function persistConversationTurn(chatId, userMessage, assistantResponse, meta) {
-  meta = meta || {};
+async function persistConversationTurn(chatId, userMessage, assistantResponse, meta = {}) {
   try {
     if (!chatId) return false;
-    var assistant = normalizeAssistantText(assistantResponse);
+    const assistant = normalizeAssistantText(assistantResponse);
 
-    // Merge meta safely (no spread)
-    var metaOut = { savedAt: new Date().toISOString() };
-    for (var k in meta) {
-      if (Object.prototype.hasOwnProperty.call(meta, k)) {
-        metaOut[k] = meta[k];
-      }
-    }
-
-    if (typeof database !== 'undefined' &&
-        database &&
-        typeof database.saveConversation === 'function') {
-      await database.saveConversation(
-        chatId,
-        String(userMessage || ''),
-        assistant,
-        metaOut
-      );
+    if (typeof database?.saveConversation === 'function') {
+      await database.saveConversation(chatId, String(userMessage || ''), assistant, {
+        ...meta,
+        savedAt: new Date().toISOString()
+      });
       return true;
     }
     return false;
   } catch (err) {
-    console.warn('persistConversationTurn failed:', err && err.message ? err.message : String(err));
+    console.warn('persistConversationTurn failed:', err.message);
     return false;
   }
 }
@@ -4077,62 +3943,43 @@ async function persistConversationTurn(chatId, userMessage, assistantResponse, m
 async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnalysis, gpt5Result) {
   if (!chatId) return { saved: false };
 
-  // Safe reads (no optional chaining)
-  var modelFromResult = gpt5Result && gpt5Result.modelUsed ? gpt5Result.modelUsed : null;
-  var modelFromAnalysis = queryAnalysis && queryAnalysis.gpt5Model ? queryAnalysis.gpt5Model : null;
-  var chosenModel = modelFromResult || modelFromAnalysis || 'gpt-5-mini';
-
-  var complexity =
-    (queryAnalysis && queryAnalysis.complexity && queryAnalysis.complexity.complexity)
-      ? queryAnalysis.complexity.complexity
-      : 'unknown';
-
-  var completionFlag =
-    (queryAnalysis && queryAnalysis.completionStatus &&
-     (queryAnalysis.completionStatus.isFrustrated || queryAnalysis.completionStatus.isComplete)) ||
-    (gpt5Result && gpt5Result.completionDetected) ||
-    false;
-
-  var completionType =
-    (queryAnalysis && queryAnalysis.completionStatus && queryAnalysis.completionStatus.completionType) ||
-    (gpt5Result && gpt5Result.completionType) ||
-    'direct';
-
-  var processingTime = gpt5Result && gpt5Result.processingTime ? gpt5Result.processingTime : undefined;
-
   // 1) Persist the turn
-  var turnSaved = await persistConversationTurn(chatId, userMessage, processedResponse, {
-    modelUsed: chosenModel,
-    priority: queryAnalysis && queryAnalysis.priority ? queryAnalysis.priority : undefined,
-    complexity: complexity,
-    processingTime: processingTime
+  const turnSaved = await persistConversationTurn(chatId, userMessage, processedResponse, {
+    modelUsed: gpt5Result?.modelUsed || queryAnalysis?.gpt5Model,
+    priority: queryAnalysis?.priority,
+    complexity: queryAnalysis?.complexity?.complexity || 'unknown',
+    processingTime: gpt5Result?.processingTime
   });
 
   // 2) Mark completion if detected
-  if (completionFlag) {
+  if (
+    queryAnalysis?.completionStatus?.isFrustrated ||
+    queryAnalysis?.completionStatus?.isComplete ||
+    gpt5Result?.completionDetected
+  ) {
     await upsertPersistentFact(
       chatId,
       'last_completion',
-      'Completed at ' + new Date().toISOString() + ' — type: ' + completionType,
+      `Completed at ${new Date().toISOString()} — type: ${queryAnalysis?.completionStatus?.completionType || 'direct'}`,
       { ttlMs: TTL.LAST_COMPLETION }
     );
   }
 
   // 3) Leave a tiny breadcrumb for topic — skip if it was trivial chitchat
-  var topic = inferTopic(userMessage);
+  const topic = inferTopic(userMessage);
   if (topic !== 'chitchat') {
     await upsertPersistentFact(chatId, 'last_topic', topic, { ttlMs: TTL.LAST_TOPIC });
+  }
 
-    // 4) Only capture “next action / next steps / todo / action(s)” if not chitchat
-    var resp = String(processedResponse || '');
-    if (resp.length >= 1) {
-      var nextMatch = resp.match(/(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?)[^\n]*$/im);
-      if (nextMatch) {
-        await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
-          ttlMs: TTL.FACT
-        });
-      }
-    }
+  // 4) Heuristic: capture “next action” / “next steps” / “todo” line if present
+  // Matches lines that start with "next", "next steps", "todo", or "action"
+  const nextMatch = String(processedResponse || '').match(
+    /(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?)[^\n]*$/im
+  );
+  if (nextMatch) {
+    await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
+      ttlMs: TTL.FACT
+    });
   }
 
   return { saved: turnSaved };
