@@ -4,6 +4,7 @@
 // SIMPLIFIED: Removed complex adapter logic, direct function imports
 
 'use strict';
+const multimodal = require('./multimodal');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CLEAN TELEGRAM INTEGRATION - ALIGNED WITH NEW SPLITTER
@@ -1270,9 +1271,6 @@ Provide comprehensive global market analysis with Cambodia-specific insights.`;
     analyzeGlobalMarketConditions
   };
 })();
-
-// ADD THIS TO THE TOP of your dualCommandSystem.js (after existing requires)
-const multimodal = require('./multimodal');
 
 // ADD THIS FUNCTION to your dualCommandSystem.js
 async function handleTelegramMessage(message, bot) {
