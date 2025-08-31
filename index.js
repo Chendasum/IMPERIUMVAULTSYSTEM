@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// IMPERIUM VAULT SYSTEM - CLEAN INDEX.JS
+// IMPERIUM VAULT SYSTEM - CLEAN INDEX.JS (+ Database Health)
 // Pure server setup → ALL routing handled by dualCommandSystem.js
 // Clean separation: index.js (server) → dualCommandSystem.js (routing) → openaiClient.js (api)
 
@@ -13,6 +13,22 @@ require('dotenv').config();
 
 const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DATABASE (safe import; graceful if unavailable)
+// ─────────────────────────────────────────────────────────────────────────────
+let Database = null;
+try {
+  Database = require('./utils/database');
+  console.log('✅ database.js loaded (pool + schema + heartbeat)');
+} catch (e) {
+  console.warn('⚠️ database.js not available:', e.message);
+  // Fallback stub so the server still boots
+  Database = {
+    healthCheck: async () => ({ ok: false, error: 'database module missing' }),
+    shutdown: async () => {}
+  };
+}
 
 // CLEAN SERVER CONFIGURATION
 const PORT = process.env.PORT || 8080;
@@ -56,9 +72,10 @@ app.use((req, res, next) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HEALTH ENDPOINTS - SERVER STATUS ONLY
+// HEALTH ENDPOINTS - SERVER + DB STATUS ONLY
 // ─────────────────────────────────────────────────────────────────────────────
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
+  const db = await Database.healthCheck().catch(() => ({ ok: false, error: 'health check failed' }));
   res.json({
     status: 'IMPERIUM VAULT GPT-5 System Online',
     architecture: 'Clean Separation Architecture',
@@ -68,11 +85,13 @@ app.get('/', (req, res) => {
     formatting: 'telegramSplitter.js (Smart Unicode)',
     mode: 'Railway Production Webhook',
     timestamp: new Date().toISOString(),
-    port: PORT
+    port: PORT,
+    database: db.ok ? 'connected' : `degraded (${db.error || 'unknown'})`
   });
 });
 
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
+  const db = await Database.healthCheck().catch((e) => ({ ok: false, error: e.message || 'health check failed' }));
   res.status(200).json({
     status: 'healthy',
     service: 'IMPERIUM VAULT Server',
@@ -83,6 +102,10 @@ app.get('/health', (req, res) => {
     },
     routing_system: DualCommandSystem ? 'loaded' : 'failed',
     multimodal_support: DualCommandSystem && DualCommandSystem.handleTelegramMessage ? 'ready' : 'missing',
+    database: {
+      ok: !!db.ok,
+      detail: db.ok ? 'Postgres reachable' : (db.error || 'unavailable')
+    },
     timestamp: new Date().toISOString()
   });
 });
@@ -98,6 +121,17 @@ app.get('/status', (req, res) => {
     },
     timestamp: new Date().toISOString() 
   });
+});
+
+// Dedicated DB health endpoint (useful for Railway/uptime pings)
+app.get('/db-health', async (req, res) => {
+  try {
+    const db = await Database.healthCheck();
+    if (db.ok) return res.status(200).json({ ok: true, detail: 'Postgres OK' });
+    return res.status(503).json({ ok: false, error: db.error || 'unknown' });
+  } catch (e) {
+    return res.status(503).json({ ok: false, error: e.message || 'health check failed' });
+  }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -172,6 +206,18 @@ async function initializeServer() {
       }
     }
 
+    // Database quick probe (non-fatal)
+    try {
+      const db = await Database.healthCheck();
+      if (db.ok) {
+        console.log('🗄️  Database health: OK');
+      } else {
+        console.warn('🗄️  Database health: DEGRADED →', db.error || 'unknown');
+      }
+    } catch (e) {
+      console.warn('🗄️  Database health: PROBE FAILED →', e.message);
+    }
+
     // Setup webhook
     const webhookUrl = `${WEBHOOK_URL}/webhook/${BOT_TOKEN}`;
     console.log(`🌐 Setting webhook: ${webhookUrl}`);
@@ -218,12 +264,19 @@ process.on('SIGINT', async () => {
   try {
     await bot.deleteWebHook();
     console.log('✅ Webhook deleted');
-    
+
     // Shutdown dual command system if it has cleanup
     if (DualCommandSystem.shutdown) {
       console.log('🔄 Shutting down dualCommandSystem...');
       await DualCommandSystem.shutdown();
       console.log('✅ dualCommandSystem shutdown complete');
+    }
+
+    // Close DB pool
+    if (Database && Database.shutdown) {
+      console.log('🗄️  Closing database pool…');
+      await Database.shutdown();
+      console.log('✅ Database pool closed');
     }
   } catch (error) {
     console.log('⚠️  Shutdown error:', error.message);
