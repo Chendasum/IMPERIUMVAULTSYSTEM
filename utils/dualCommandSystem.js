@@ -1464,23 +1464,7 @@ module.exports = {
   // NEW - Add these three functions
   handleTelegramMessage,
   handleCallbackQuery,
-  handleInlineQuery,
-  
-  // EXISTING - Keep all your current exports
-  executeEnhancedGPT5Command,
-  analyzeQuery,
-  checkGPT5OnlySystemHealth,
-  testMemoryIntegration,
-  getSystemAnalytics,
-  getGPT5PerformanceMetrics,
-  getGPT5ModelRecommendation,
-  getGPT5CostEstimate,
-  getMarketIntelligence,
-  getCurrentCambodiaDateTime,
-  quickNanoCommand,
-  quickMiniCommand,
-  quickUltimateCommand
-  // ... add any other functions you currently export
+  handleInlineQuery
 };
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 2/6
