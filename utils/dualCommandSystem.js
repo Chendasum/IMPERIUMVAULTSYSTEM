@@ -3844,46 +3844,66 @@ async function handleInlineQuery(inlineQuery, bot) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// MEMORY WRITE HELPERS (so Part 3 can read useful context next turn)
+// MEMORY WRITE HELPERS (Part 6) — safe, compact, and TTL-based
+// ───────────────────────────────────────────────────────────────────────────────
 
-// Normalize assistant text before saving
+// TTL presets (ms)
+const TTL = {
+  FACT: 7 * 24 * 60 * 60 * 1000,           // 7 days
+  LAST_COMPLETION: 14 * 24 * 60 * 60 * 1000,// 14 days
+  LAST_TOPIC: 48 * 60 * 60 * 1000           // 48 hours
+};
+
+// Compact assistant text before saving
 function normalizeAssistantText(text) {
   if (!text) return '';
   return String(text)
     .replace(/^(Assistant:|AI:|GPT-?5?:)\s*/i, '')
+    .replace(/\s+\n/g, '\n')       // trim extra spaces before newlines
+    .replace(/\n{3,}/g, '\n\n')    // collapse >2 blank lines
     .trim()
-    .slice(0, 8000); // sanity cap
+    .slice(0, 8000);               // sanity cap
 }
 
-// Try to infer a short topic from the user message
+// Heuristic topic picker (skip trivial greetings)
 function inferTopic(userMessage) {
   if (!userMessage) return 'general';
-  const s = String(userMessage).toLowerCase();
+  const raw = String(userMessage).trim();
+  const s = raw.toLowerCase();
+
+  // Don’t memorize “hello/hi/how are you” as a topic
+  const isGreeting =
+    /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you)\b/.test(s) &&
+    raw.split(/\s+/).length <= 6;
+
+  if (isGreeting) return 'chitchat';
+
   if (s.includes('error') || s.includes('bug')) return 'troubleshooting';
   if (s.includes('report') || s.includes('analysis')) return 'analysis';
   if (s.includes('deploy') || s.includes('production')) return 'deployment';
   if (s.includes('memory') || s.includes('context')) return 'memory';
-  if (s.length < 30) return userMessage.trim();
-  return userMessage.slice(0, 60).trim();
+  if (raw.length < 30) return raw;
+  return raw.slice(0, 60).trim();
 }
 
-// Upsert a fact into persistent memory (via memory module if present; else DB)
-async function upsertPersistentFact(chatId, key, value, { ttlMs = 7 * 24 * 60 * 60 * 1000 } = {}) {
+// Upsert a tiny fact into persistent memory (prefer memory module, fallback DB)
+async function upsertPersistentFact(chatId, key, value, opts = {}) {
+  const ttlMs = typeof opts.ttlMs === 'number' ? opts.ttlMs : TTL.FACT;
   try {
     if (!chatId || !key) return false;
 
-    if (memory && typeof memory.saveToMemory === 'function') {
+    if (typeof memory?.saveToMemory === 'function') {
       await memory.saveToMemory(chatId, {
         type: 'fact',
         key,
-        value,
+        value: String(value),
         createdAt: new Date().toISOString(),
         expiresAt: ttlMs ? new Date(Date.now() + ttlMs).toISOString() : null
       });
       return true;
     }
 
-    if (database && typeof database.saveConversation === 'function') {
+    if (typeof database?.saveConversation === 'function') {
       await database.saveConversation(chatId, `[FACT:${key}]`, String(value), {
         kind: 'fact',
         key,
@@ -3899,14 +3919,14 @@ async function upsertPersistentFact(chatId, key, value, { ttlMs = 7 * 24 * 60 * 
   }
 }
 
-// Save the full conversation turn (user + assistant) to DB
+// Save the full conversation turn (user + assistant) to DB for context rebuilds
 async function persistConversationTurn(chatId, userMessage, assistantResponse, meta = {}) {
   try {
     if (!chatId) return false;
     const assistant = normalizeAssistantText(assistantResponse);
 
-    if (database && typeof database.saveConversation === 'function') {
-      await database.saveConversation(chatId, userMessage, assistant, {
+    if (typeof database?.saveConversation === 'function') {
+      await database.saveConversation(chatId, String(userMessage || ''), assistant, {
         ...meta,
         savedAt: new Date().toISOString()
       });
@@ -3919,11 +3939,11 @@ async function persistConversationTurn(chatId, userMessage, assistantResponse, m
   }
 }
 
-// High-level "remember" entry point used after each successful command
+// High-level memory writer called after successful responses
 async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnalysis, gpt5Result) {
   if (!chatId) return { saved: false };
 
-  // 1) persist the turn so Part 3 can rebuild context
+  // 1) Persist the turn
   const turnSaved = await persistConversationTurn(chatId, userMessage, processedResponse, {
     modelUsed: gpt5Result?.modelUsed || queryAnalysis?.gpt5Model,
     priority: queryAnalysis?.priority,
@@ -3931,7 +3951,7 @@ async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnal
     processingTime: gpt5Result?.processingTime
   });
 
-  // 2) mark completion if detected
+  // 2) Mark completion if detected
   if (
     queryAnalysis?.completionStatus?.isFrustrated ||
     queryAnalysis?.completionStatus?.isComplete ||
@@ -3941,18 +3961,24 @@ async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnal
       chatId,
       'last_completion',
       `Completed at ${new Date().toISOString()} — type: ${queryAnalysis?.completionStatus?.completionType || 'direct'}`,
-      { ttlMs: 14 * 24 * 60 * 60 * 1000 }
+      { ttlMs: TTL.LAST_COMPLETION }
     );
   }
 
-  // 3) remember a tiny topic breadcrumb
-  await upsertPersistentFact(chatId, 'last_topic', inferTopic(userMessage), { ttlMs: 48 * 60 * 60 * 1000 });
+  // 3) Leave a tiny breadcrumb for topic — skip if it was trivial chitchat
+  const topic = inferTopic(userMessage);
+  if (topic !== 'chitchat') {
+    await upsertPersistentFact(chatId, 'last_topic', topic, { ttlMs: TTL.LAST_TOPIC });
+  }
 
-  // 4) heuristic: capture a "next action" line if present
-  const nextMatch = String(processedResponse || '').match(/(?:^|\n)(?:next|todo|action)\b.*$/im);
+  // 4) Heuristic: capture “next action” / “next steps” / “todo” line if present
+  // Matches lines that start with "next", "next steps", "todo", or "action"
+  const nextMatch = String(processedResponse || '').match(
+    /(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?)[^\n]*$/im
+  );
   if (nextMatch) {
     await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
-      ttlMs: 7 * 24 * 60 * 60 * 1000
+      ttlMs: TTL.FACT
     });
   }
 
