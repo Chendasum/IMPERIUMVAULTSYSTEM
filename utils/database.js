@@ -261,6 +261,28 @@ async function upsertMemoryFact(chatId, key, value, expiresAtIso) {
   }
 }
 
+// utils/database.js
+
+async function health() {
+  // … your existing health logic (e.g., run SELECT 1, check tables, etc.)
+  return { ok: true, details: { ping: 'ok' } };
+}
+
+// 👇 Add this alias so index.js can call healthCheck()
+async function healthCheck() {
+  return health();
+}
+
+module.exports = {
+  // … your other exports
+  initialize,
+  saveConversation,
+  getConversationHistoryDB,
+  upsertMemoryFact,
+  health,
+  healthCheck, // 👈 make sure this is exported
+};
+
 /*──────────────────────────────────────────────────────────────────────────────*/
 
 module.exports = {
