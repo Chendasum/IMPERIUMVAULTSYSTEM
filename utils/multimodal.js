@@ -1,8 +1,5 @@
 // utils/multimodal.js - GPT-5 Multimodal: Vision, Documents, Voice/Audio (2025-08)
-// ✔ Uses max_output_tokens for GPT-5 wrappers
-// ✔ Keeps Chat paths (gpt-4o vision) on max_tokens (handled by your openaiClient)
-// ✔ Adds safe auto-chunking for very large documents
-// ✔ Graceful optional parsers and robust Telegram download
+// FIXED VERSION - Compatible with smart telegramSplitter.js
 
 const fs = require('fs').promises;
 const fsc = require('fs');
@@ -31,17 +28,14 @@ try {
   openaiClient = null;
 }
 
-// Telegram splitter (graceful fallback)
+// Telegram splitter - FIXED to use correct function names
 let telegramSplitter;
 try {
   telegramSplitter = require('./telegramSplitter');
   console.log('Telegram splitter loaded');
 } catch (error) {
   console.warn('Telegram splitter not available:', error.message);
-  telegramSplitter = {
-    sendGPTResponse: async () => false,
-    sendAlert: async () => false
-  };
+  telegramSplitter = null;
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -183,7 +177,63 @@ async function cleanupTempFile(filePath) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// IMAGE ANALYSIS (GPT-4o vision via Chat Completions)
+// SMART TELEGRAM DELIVERY - FIXED VERSION
+// ───────────────────────────────────────────────────────────────────────────────
+
+async function sendToTelegram(bot, chatId, analysis, metadata = {}) {
+  try {
+    if (telegramSplitter) {
+      // Use the correct function from your telegramSplitter.js
+      const { sendTelegramMessage } = telegramSplitter;
+      
+      if (sendTelegramMessage) {
+        const result = await sendTelegramMessage(bot, chatId, analysis, metadata);
+        return result.success;
+      }
+      
+      // Fallback to setupTelegramHandler approach
+      const { setupTelegramHandler } = telegramSplitter;
+      if (setupTelegramHandler) {
+        const handler = setupTelegramHandler(bot);
+        const result = await handler.send(analysis, chatId, { metadata });
+        return result.success;
+      }
+    }
+    
+    // Basic fallback - direct bot.sendMessage
+    await bot.sendMessage(chatId, analysis);
+    console.log('Basic telegram delivery successful');
+    return true;
+    
+  } catch (error) {
+    console.error('Telegram delivery failed:', error.message);
+    
+    // Final fallback
+    try {
+      await bot.sendMessage(chatId, analysis);
+      console.log('Final fallback delivery successful');
+      return true;
+    } catch (finalError) {
+      console.error('All delivery methods failed:', finalError.message);
+      return false;
+    }
+  }
+}
+
+async function sendErrorToTelegram(bot, chatId, errorMessage) {
+  try {
+    await bot.sendMessage(chatId, errorMessage);
+    return true;
+  } catch (error) {
+    console.error('Error message delivery failed:', error.message);
+    return false;
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// IMAGE ANALYSIS (GPT-4o vision via Chat Completions) - FIXED
+// ───────────────────────────────────────────────────────────────────────────────
+
 async function analyzeImage(bot, fileId, prompt, chatId) {
   let tempFilePath = null;
   const startedAt = Date.now();
@@ -205,7 +255,7 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
       prompt ||
       "Analyze this image. Describe key elements, context, composition, notable objects, and provide concise, useful insights.";
 
-    // NOTE: Your openaiClient fallback uses Chat; we call the SDK directly here for vision
+    // Call GPT-4o Vision directly
     const response = await openaiClient.openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -241,18 +291,13 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
       }
     );
 
-    const success = await telegramSplitter.sendGPTResponse(
-      bot,
-      chatId,
-      analysis,
-      'Vision Analysis',
-      {
-        type: 'image_analysis',
-        fileSizeKB: imageSizeKB,
-        processingMs: Date.now() - startedAt,
-        aiUsed: 'GPT-4o-Vision'
-      }
-    );
+    // Use the FIXED telegram delivery
+    const success = await sendToTelegram(bot, chatId, analysis, {
+      type: 'image_analysis',
+      fileSizeKB: imageSizeKB,
+      processingMs: Date.now() - startedAt,
+      aiUsed: 'GPT-4o-Vision'
+    });
 
     return {
       success: true,
@@ -264,7 +309,8 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
     };
   } catch (error) {
     console.error('Image analysis error:', error.message);
-    await telegramSplitter.sendAlert(bot, chatId, `Image analysis failed: ${error.message}`, 'Vision Analysis Error');
+    const errorMsg = `Image analysis failed: ${error.message}`;
+    await sendErrorToTelegram(bot, chatId, errorMsg);
     return { success: false, error: error.message, type: 'image' };
   } finally {
     if (tempFilePath) await cleanupTempFile(tempFilePath);
@@ -273,6 +319,8 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
 
 // ───────────────────────────────────────────────────────────────────────────────
 // FILE TEXT EXTRACTION
+// ───────────────────────────────────────────────────────────────────────────────
+
 async function extractTextFromFile(filePath, fileExtension) {
   const ext = (fileExtension || path.extname(filePath).slice(1)).toLowerCase();
 
@@ -325,6 +373,8 @@ async function extractTextFromFile(filePath, fileExtension) {
 
 // ───────────────────────────────────────────────────────────────────────────────
 // TEXT CHUNKING + HIERARCHICAL SUMMARIZATION (for huge docs)
+// ───────────────────────────────────────────────────────────────────────────────
+
 function splitTextIntoChunks(text, size, overlap) {
   const chunks = [];
   let i = 0;
@@ -374,7 +424,9 @@ ${summaries.map((s, i) => `\n[Chunk ${i + 1}]\n${s}`).join('\n')}
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// DOCUMENT ANALYSIS (GPT-5)
+// DOCUMENT ANALYSIS (GPT-5) - FIXED
+// ───────────────────────────────────────────────────────────────────────────────
+
 async function analyzeDocument(bot, document, prompt, chatId) {
   let tempFilePath = null;
 
@@ -455,22 +507,17 @@ ${documentText.slice(0, MULTIMODAL_CONFIG.DOC_MAX_CHARS_DIRECT)}
     );
 
     const enhancedAnalysis =
-      `**Document:** ${document.file_name} (${fileExtension.toUpperCase()}, ${Math.round(document.file_size / 1024)}KB)\n\n` +
-      `${finalAnalysis}\n\n*You can now ask follow-up questions about this document.*`;
+      `Document: ${document.file_name} (${fileExtension.toUpperCase()}, ${Math.round(document.file_size / 1024)}KB)\n\n` +
+      `${finalAnalysis}\n\nYou can now ask follow-up questions about this document.`;
 
-    const success = await telegramSplitter.sendGPTResponse(
-      bot,
-      chatId,
-      enhancedAnalysis,
-      'Document Analysis',
-      {
-        type: 'document_analysis',
-        fileName: document.file_name,
-        fileSizeKB: Math.round(document.file_size / 1024),
-        fileType: fileExtension,
-        aiUsed: 'GPT-5-Document'
-      }
-    );
+    // Use the FIXED telegram delivery
+    const success = await sendToTelegram(bot, chatId, enhancedAnalysis, {
+      type: 'document_analysis',
+      fileName: document.file_name,
+      fileSizeKB: Math.round(document.file_size / 1024),
+      fileType: fileExtension,
+      aiUsed: 'GPT-5-Document'
+    });
 
     return {
       success: true,
@@ -483,7 +530,8 @@ ${documentText.slice(0, MULTIMODAL_CONFIG.DOC_MAX_CHARS_DIRECT)}
     };
   } catch (error) {
     console.error('Document analysis error:', error.message);
-    await telegramSplitter.sendAlert(bot, chatId, `Document analysis failed: ${error.message}`, 'Document Analysis Error');
+    const errorMsg = `Document analysis failed: ${error.message}`;
+    await sendErrorToTelegram(bot, chatId, errorMsg);
     return { success: false, error: error.message, type: 'document' };
   } finally {
     if (tempFilePath) await cleanupTempFile(tempFilePath);
@@ -491,7 +539,9 @@ ${documentText.slice(0, MULTIMODAL_CONFIG.DOC_MAX_CHARS_DIRECT)}
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// AUDIO / VOICE
+// AUDIO / VOICE - FIXED
+// ───────────────────────────────────────────────────────────────────────────────
+
 async function transcribeAudioFromFile(filePath) {
   if (!openaiClient || !openaiClient.openai) {
     throw new Error('OpenAI client not available for transcription');
@@ -531,10 +581,10 @@ Transcribed voice message:
     });
 
     const fullResponse =
-`**Voice Transcription (${voice.duration}s):**
+`Voice Transcription (${voice.duration}s):
 "${transcribedText}"
 
-**Analysis:**
+Analysis:
 ${analysis}`;
 
     storeDocumentContext(chatId, `voice_${Date.now()}`, 'voice', transcribedText, analysis);
@@ -551,18 +601,13 @@ ${analysis}`;
       }
     );
 
-    const success = await telegramSplitter.sendGPTResponse(
-      bot,
-      chatId,
-      fullResponse,
-      'Voice Transcription & Analysis',
-      {
-        type: 'voice_analysis',
-        duration: voice.duration,
-        transcriptionLength: transcribedText.length,
-        aiUsed: 'Whisper + GPT-5-Mini'
-      }
-    );
+    // Use the FIXED telegram delivery
+    const success = await sendToTelegram(bot, chatId, fullResponse, {
+      type: 'voice_analysis',
+      duration: voice.duration,
+      transcriptionLength: transcribedText.length,
+      aiUsed: 'Whisper + GPT-5-Mini'
+    });
 
     return {
       success: true,
@@ -579,13 +624,11 @@ ${analysis}`;
       `Voice message received (${voice?.duration ?? 0}s). Transcription temporarily unavailable. ` +
       `Please send text for full analysis.\n\nError: ${error.message}`;
 
-    await telegramSplitter.sendGPTResponse(
-      bot,
-      chatId,
-      fallbackMessage,
-      'Voice Analysis (Limited)',
-      { type: 'voice_fallback', duration: voice?.duration ?? 0, error: error.message }
-    );
+    await sendToTelegram(bot, chatId, fallbackMessage, { 
+      type: 'voice_fallback', 
+      duration: voice?.duration ?? 0, 
+      error: error.message 
+    });
 
     return { success: false, error: error.message, type: 'voice' };
   } finally {
@@ -598,7 +641,9 @@ async function analyzeAudio(bot, audio, prompt, chatId) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// VIDEO (placeholder)
+// VIDEO (placeholder) - FIXED
+// ───────────────────────────────────────────────────────────────────────────────
+
 async function analyzeVideo(bot, video, prompt, chatId) {
   try {
     console.log('Video analysis requested...');
@@ -614,13 +659,12 @@ async function analyzeVideo(bot, video, prompt, chatId) {
       { aiUsed: 'video-placeholder', type: 'video_analysis', duration: video?.duration ?? 0 }
     );
 
-    const success = await telegramSplitter.sendGPTResponse(
-      bot,
-      chatId,
-      analysis,
-      'Video Analysis (Coming Soon)',
-      { type: 'video_analysis', duration: video?.duration ?? 0, aiUsed: 'video-placeholder' }
-    );
+    // Use the FIXED telegram delivery
+    const success = await sendToTelegram(bot, chatId, analysis, { 
+      type: 'video_analysis', 
+      duration: video?.duration ?? 0, 
+      aiUsed: 'video-placeholder' 
+    });
 
     return {
       success: true,
@@ -641,6 +685,8 @@ async function analyzeVideoNote(bot, videoNote, prompt, chatId) {
 
 // ───────────────────────────────────────────────────────────────────────────────
 // FOLLOW-UP CONTEXT
+// ───────────────────────────────────────────────────────────────────────────────
+
 function getContextForFollowUp(chatId, userMessage) {
   const context = getDocumentContext(chatId);
   if (!context) return null;
@@ -657,6 +703,8 @@ Answer precisely based on the document context above.`;
 
 // ───────────────────────────────────────────────────────────────────────────────
 // STATUS
+// ───────────────────────────────────────────────────────────────────────────────
+
 function getMultimodalStatus() {
   return {
     available: !!openaiClient,
@@ -699,12 +747,14 @@ function getMultimodalStatus() {
       'Video analysis coming soon'
     ].filter(Boolean),
     activeContexts: documentContexts.size,
-    conversationMemory: conversationMemory.size
+    conversationMemory: conversationMemory.size,
+    telegramSplitterCompatible: !!telegramSplitter
   };
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
 // Periodic cleanup of temp files
+// ───────────────────────────────────────────────────────────────────────────────
 setInterval(async () => {
   try {
     await ensureTempDir();
@@ -731,29 +781,45 @@ setInterval(async () => {
 
 // ───────────────────────────────────────────────────────────────────────────────
 // Init
-console.log('Multimodal module loaded');
+// ───────────────────────────────────────────────────────────────────────────────
+
+console.log('Multimodal module loaded - FIXED VERSION');
 console.log('- GPT-4o Vision for image analysis');
 console.log('- GPT-5 Mini/Primary for document analysis (+ chunking)');
 console.log('- Whisper + GPT-5 Mini for voice analysis');
+console.log('- Compatible with smart telegramSplitter.js');
 console.log('- Built-in conversation memory');
 ensureTempDir();
 
 // ───────────────────────────────────────────────────────────────────────────────
-// Exports
+// EXPORTS
+// ───────────────────────────────────────────────────────────────────────────────
+
 module.exports = {
+  // Main analysis functions
   analyzeImage,
   analyzeDocument,
   analyzeVoice,
   analyzeAudio,
   analyzeVideo,
   analyzeVideoNote,
+  
+  // Status and management
   getMultimodalStatus,
   getContextForFollowUp,
   getDocumentContext,
   storeDocumentContext,
+  
+  // Utilities
   downloadTelegramFile,
   cleanupTempFile,
   generateTempFilename,
   saveConversationEmergency,
+  
+  // Telegram delivery functions - FIXED
+  sendToTelegram,
+  sendErrorToTelegram,
+  
+  // Configuration
   MULTIMODAL_CONFIG
 };
