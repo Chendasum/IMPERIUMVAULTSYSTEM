@@ -1271,6 +1271,283 @@ Provide comprehensive global market analysis with Cambodia-specific insights.`;
   };
 })();
 
+// Add this to the TOP of your dualCommandSystem.js (after other requires)
+const multimodal = require('./multimodal');
+
+// Add this MAIN HANDLER function to your dualCommandSystem.js
+async function handleTelegramMessage(message, bot) {
+  const startTime = Date.now();
+  const chatId = message.chat.id;
+  const userMessage = message.text || '';
+  const messageId = message.message_id;
+
+  console.log(`🎯 DualCommandSystem: Processing message from ${chatId}: "${userMessage.substring(0, 50)}..."`);
+
+  try {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 🎨 MULTIMODAL DETECTION AND ROUTING
+    // ─────────────────────────────────────────────────────────────────────────────
+    
+    const hasPhoto = !!message.photo;
+    const hasDocument = !!message.document;
+    const hasVoice = !!message.voice;
+    const hasAudio = !!message.audio;
+    const hasVideo = !!message.video;
+    const hasVideoNote = !!message.video_note;
+    const hasSticker = !!message.sticker;
+
+    const isMultimodal = hasPhoto || hasDocument || hasVoice || hasAudio || hasVideo || hasVideoNote;
+
+    if (isMultimodal) {
+      console.log('🎨 Multimodal content detected:', {
+        photo: hasPhoto,
+        document: hasDocument,
+        voice: hasVoice,
+        audio: hasAudio,
+        video: hasVideo,
+        video_note: hasVideoNote,
+        sticker: hasSticker
+      });
+
+      try {
+        let multimodalResult;
+
+        // 🖼️ IMAGE ANALYSIS (GPT-4o Vision)
+        if (hasPhoto) {
+          const photo = message.photo[message.photo.length - 1]; // Highest resolution
+          console.log('📸 Processing image with GPT-4o Vision...');
+          multimodalResult = await multimodal.analyzeImage(
+            bot, 
+            photo.file_id, 
+            userMessage || 'Analyze this image in detail', 
+            chatId
+          );
+        }
+        
+        // 📄 DOCUMENT ANALYSIS (GPT-5)
+        else if (hasDocument) {
+          console.log(`📄 Processing document: ${message.document.file_name} (${Math.round(message.document.file_size / 1024)}KB)`);
+          multimodalResult = await multimodal.analyzeDocument(
+            bot,
+            message.document,
+            userMessage || 'Analyze this document and provide comprehensive insights',
+            chatId
+          );
+        }
+        
+        // 🎵 VOICE ANALYSIS (Whisper + GPT-5)
+        else if (hasVoice) {
+          console.log(`🎵 Processing voice message (${message.voice.duration}s)...`);
+          multimodalResult = await multimodal.analyzeVoice(
+            bot,
+            message.voice,
+            userMessage || 'Transcribe and analyze this voice message',
+            chatId
+          );
+        }
+        
+        // 🎵 AUDIO ANALYSIS
+        else if (hasAudio) {
+          console.log(`🎵 Processing audio file: ${message.audio.file_name || 'audio'} (${message.audio.duration || 'unknown'}s)`);
+          multimodalResult = await multimodal.analyzeAudio(
+            bot,
+            message.audio,
+            userMessage || 'Transcribe and analyze this audio',
+            chatId
+          );
+        }
+        
+        // 🎥 VIDEO ANALYSIS (Future)
+        else if (hasVideo) {
+          console.log(`🎥 Processing video: ${message.video.file_name || 'video'}`);
+          multimodalResult = await multimodal.analyzeVideo(
+            bot,
+            message.video,
+            userMessage || 'Analyze this video',
+            chatId
+          );
+        }
+        
+        // 🎥 VIDEO NOTE
+        else if (hasVideoNote) {
+          console.log(`🎥 Processing video note (${message.video_note.duration || 'unknown'}s)...`);
+          multimodalResult = await multimodal.analyzeVideoNote(
+            bot,
+            message.video_note,
+            userMessage || 'Analyze this video note',
+            chatId
+          );
+        }
+
+        // Handle multimodal result
+        if (multimodalResult && multimodalResult.success) {
+          const processingTime = Date.now() - startTime;
+          console.log('✅ Multimodal analysis successful:', {
+            type: multimodalResult.type,
+            aiUsed: multimodalResult.aiUsed,
+            delivered: multimodalResult.telegramDelivered,
+            processingTime: `${processingTime}ms`
+          });
+          
+          return multimodalResult; // Multimodal processing complete
+        } else {
+          console.log('⚠️ Multimodal processing failed, falling back to text analysis...');
+          // Continue to text processing below
+        }
+
+      } catch (multimodalError) {
+        console.error('❌ Multimodal processing error:', multimodalError.message);
+        
+        // Send user-friendly error message
+        await bot.sendMessage(
+          chatId,
+          `🎨 Media detected but processing failed.\n\n` +
+          `❌ Error: ${multimodalError.message}\n\n` +
+          `💡 Try:\n` +
+          `• Add a description with your media\n` +
+          `• Check file size (max 20MB)\n` +
+          `• Use supported formats: JPG, PNG, PDF, MP3, etc.\n\n` +
+          `📝 I can still help with text questions!`
+        );
+        return;
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 📝 TEXT PROCESSING - Route to Your Existing Function
+    // ─────────────────────────────────────────────────────────────────────────────
+    
+    // Check for document follow-up questions
+    if (userMessage && !userMessage.startsWith('/')) {
+      try {
+        const documentContext = multimodal.getContextForFollowUp(chatId, userMessage);
+        if (documentContext) {
+          console.log('📄 Document context found - processing follow-up question...');
+          
+          return await executeEnhancedGPT5Command(
+            documentContext, 
+            chatId, 
+            bot, 
+            {
+              title: 'Document Follow-up',
+              messageType: 'document_followup',
+              originalMessage: userMessage,
+              forceModel: 'gpt-5-mini',
+              max_completion_tokens: 3000,
+              reasoning_effort: 'medium',
+              verbosity: 'medium'
+            }
+          );
+        }
+      } catch (contextError) {
+        console.log('📄 No document context available, proceeding with normal processing');
+      }
+    }
+
+    // Handle empty messages
+    if (!userMessage.trim() && !isMultimodal) {
+      console.log('📝 Empty message received, skipping...');
+      return;
+    }
+
+    // 🚀 ROUTE TO YOUR MAIN GPT-5 FUNCTION
+    console.log('📝 Routing to executeEnhancedGPT5Command...');
+    
+    return await executeEnhancedGPT5Command(
+      userMessage,
+      chatId,
+      bot,
+      {
+        messageType: 'telegram_webhook',
+        hasMedia: isMultimodal,
+        messageId: messageId,
+        processingStartTime: startTime
+      }
+    );
+
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+    console.error('❌ Message processing error:', error.message);
+
+    try {
+      await bot.sendMessage(
+        chatId,
+        `🚨 I encountered a technical issue.\n\n` +
+        `⚠️ Error: ${error.message}\n\n` +
+        `🔧 Please try:\n• A simpler question\n• Wait a moment and try again\n• /health to check system status`
+      );
+    } catch (telegramError) {
+      console.error('❌ Failed to send error message:', telegramError.message);
+    }
+
+    // Log error (if logger available)
+    try {
+      if (typeof logError === 'function') {
+        await logError({
+          chatId,
+          userMessage,
+          error: error.message,
+          processingTime,
+          component: 'handleTelegramMessage',
+          hasMedia: isMultimodal
+        });
+      }
+    } catch (logError) {
+      console.warn('⚠️ Error logging failed:', logError.message);
+    }
+  }
+}
+
+// Optional callback handlers (add if not already present)
+async function handleCallbackQuery(callbackQuery, bot) {
+  try {
+    await bot.answerCallbackQuery(callbackQuery.id);
+    console.log('📞 Callback query handled');
+    
+    // Add any callback-specific logic here if needed
+    
+  } catch (error) {
+    console.error('❌ Callback query error:', error.message);
+  }
+}
+
+async function handleInlineQuery(inlineQuery, bot) {
+  try {
+    await bot.answerInlineQuery(inlineQuery.id, [], { cache_time: 1 });
+    console.log('📝 Inline query handled');
+  } catch (error) {
+    console.error('❌ Inline query error:', error.message);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UPDATE YOUR MODULE.EXPORTS (add these to your existing exports)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ADD THESE to your existing module.exports:
+module.exports = {
+  // NEW - Required for clean index.js routing
+  handleTelegramMessage,
+  handleCallbackQuery,
+  handleInlineQuery,
+  
+  // EXISTING - Keep all your current exports
+  executeEnhancedGPT5Command,
+  analyzeQuery,
+  checkGPT5OnlySystemHealth,
+  testMemoryIntegration,
+  getSystemAnalytics,
+  getGPT5PerformanceMetrics,
+  getGPT5ModelRecommendation,
+  getGPT5CostEstimate,
+  getMarketIntelligence,
+  getCurrentCambodiaDateTime,
+  quickNanoCommand,
+  quickMiniCommand,
+  quickUltimateCommand,
+  // ... any other functions you currently export
+};
+
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 2/6
 // COMPLETION DETECTION & INTELLIGENT QUERY ANALYSIS
 // This part handles smart detection of completed tasks and optimal GPT-5 model selection
