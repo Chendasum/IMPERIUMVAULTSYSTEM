@@ -5,65 +5,37 @@
 
 'use strict';
 
-// MAIN IMPORTS - GPT-5 Client Integration
-let openaiClient;
-try {
-    openaiClient = require('./openaiClient');
-    console.log('GPT-5 client loaded successfully');
-} catch (error) {
-    console.error('GPT-5 client import failed:', error.message);
-    openaiClient = { 
-        getGPT5Analysis: async (prompt) => `GPT-5 client unavailable: ${error.message}`,
-        getGPT5MiniResponse: async (prompt) => `GPT-5 Mini unavailable: ${error.message}`,
-        getGPT5NanoResponse: async (prompt) => `GPT-5 Nano unavailable: ${error.message}`,
-        checkGPT5Health: async () => ({ success: false, error: error.message })
-    };
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// TELEGRAM INTEGRATION (utils/dualCommandSystem.js)
+// ─────────────────────────────────────────────────────────────────────────────
+const path = require('path');
 
-// MEMORY AND DATABASE INTEGRATION
-let memory, database;
+let telegramSplitter;
 try {
-    memory = require('./memory');
-    database = require('./database');
-    console.log('Memory and database systems loaded');
-} catch (error) {
-    console.warn('Memory system imports failed:', error.message);
-    memory = { 
-        buildConversationContext: async () => '',
-        saveToMemory: async () => true
-    };
-    database = { 
-        getConversationHistoryDB: async () => [],
-        getPersistentMemoryDB: async () => [],
-        saveConversation: async () => true
-    };
-}
+  // ✅ correct path (same folder as this file)
+  const splitter = require('./telegramSplitter');
 
-// TELEGRAM INTEGRATION (robust, legacy-compatible)
-let telegramSplitter = {};
-try {
-  const splitter = require('./utils/telegramSplitter');
-
-  // Prefer the legacy adapter if present; otherwise adapt on the fly.
+  // Prefer the legacy adapter if available; otherwise adapt on the fly
   if (splitter && splitter.legacyAdapter) {
     telegramSplitter = splitter.legacyAdapter;
   } else if (splitter && typeof splitter.setupTelegramHandler === 'function') {
-    // Build a tiny adapter using the new handler API
     const make = (model) => (bot, chatId, response, meta) =>
-      splitter.setupTelegramHandler(bot).sendGPTResponse(
-        String(response),
-        Object.assign({ model: model }, meta || {}),
-        chatId
-      );
+      splitter
+        .setupTelegramHandler(bot)
+        .sendGPTResponse(
+          String(response),
+          Object.assign({ model: model }, meta || {}),
+          chatId
+        );
 
     telegramSplitter = {
-      sendGPT5:      make('gpt-5'),
-      sendGPT5Mini:  make('gpt-5-mini'),
-      sendGPT5Nano:  make('gpt-5-nano'),
-      sendGPT5Chat:  make('gpt-5-chat-latest'),
-      sendGPTResponse: (bot, chatId, response, meta) =>
+      sendGPT5:         make('gpt-5'),
+      sendGPT5Mini:     make('gpt-5-mini'),
+      sendGPT5Nano:     make('gpt-5-nano'),
+      sendGPT5Chat:     make('gpt-5-chat-latest'),
+      sendGPTResponse:  (bot, chatId, response, meta) =>
         splitter.setupTelegramHandler(bot).sendGPTResponse(String(response), meta || {}, chatId),
-      sendAlert: (bot, chatId, errorResponse, title) =>
+      sendAlert:        (bot, chatId, errorResponse, title) =>
         splitter.setupTelegramHandler(bot).sendError(
           (errorResponse instanceof Error) ? errorResponse : new Error(String(errorResponse)),
           title || 'System Error',
@@ -74,282 +46,338 @@ try {
     throw new Error('Invalid telegramSplitter export');
   }
 
-  console.log('Telegram integration loaded');
+  console.log('Telegram integration loaded from', path.join(__dirname, 'telegramSplitter'));
 } catch (error) {
   console.warn('Telegram splitter import failed:', error.message);
   // Safe no-op stubs to keep the app running
   telegramSplitter = {
-    sendGPT5:        async () => false,
-    sendGPT5Mini:    async () => false,
-    sendGPT5Nano:    async () => false,
-    sendGPT5Chat:    async () => false,
-    sendGPTResponse: async () => false,
-    sendAnalysis:    async () => false,
-    sendAlert:       async () => false
+    sendGPT5:         async () => false,
+    sendGPT5Mini:     async () => false,
+    sendGPT5Nano:     async () => false,
+    sendGPT5Chat:     async () => false,
+    sendGPTResponse:  async () => false,
+    sendAnalysis:     async () => false,
+    sendAlert:        async () => false
   };
 }
 
-// export or attach it if needed elsewhere
-module.exports.telegramSplitter = telegramSplitter;
-
-// SYSTEM STATE MANAGEMENT
-const systemState = {
-    mode: 'SECURE_GPT5',
-    version: '7.0-SECURE',
-    startTime: Date.now(),
-    requestCount: 0,
-    successCount: 0,
-    errorCount: 0,
-    completionDetectionCount: 0,
-    
-    // Performance tracking
-    responseTimeHistory: [],
-    modelUsageStats: {
-        'gpt-5': 0,
-        'gpt-5-mini': 0,
-        'gpt-5-nano': 0,
-        'gpt-5-chat-latest': 0
-    },
-    
-    // Query classification stats
-    queryTypeStats: {
-        completion: 0,
-        speed: 0,
-        complex: 0,
-        mathematical: 0,
-        regional: 0,
-        market: 0,
-        multimodal: 0,
-        chat: 0,
-        analysis: 0
-    },
-    
-    // Cost tracking
-    estimatedCosts: {
-        total: 0,
-        saved: 0,
-        completionSavings: 0
-    },
-    
-    // Health monitoring
-    lastHealthCheck: null,
-    healthStatus: 'unknown',
-    availableModels: []
-};
-
-// CONFIGURATION CONSTANTS
-const CONFIG = {
-    // GPT-5 Model Selection
-    MODELS: {
-        NANO: 'gpt-5-nano',
-        MINI: 'gpt-5-mini', 
-        FULL: 'gpt-5',
-        CHAT: 'gpt-5-chat-latest'
-    },
-    
-    // Reasoning and verbosity settings
-    REASONING_LEVELS: ['minimal', 'low', 'medium', 'high'],
-    VERBOSITY_LEVELS: ['low', 'medium', 'high'],
-    
-    // Token limits
-    TOKEN_LIMITS: {
-        NANO_MAX: 4000,
-        MINI_MAX: 8000,
-        FULL_MAX: 16000,
-        CHAT_MAX: 8000
-    },
-    
-    // Response time targets (ms)
-    TIME_TARGETS: {
-        SPEED_CRITICAL: 2000,
-        STANDARD: 5000,
-        COMPLEX: 10000
-    },
-    
-    // Memory integration settings
-    MEMORY: {
-        MAX_CONTEXT_LENGTH: 2000,
-        MAX_CONVERSATION_HISTORY: 5,
-        MAX_PERSISTENT_MEMORIES: 3
-    },
-    
-    // Performance monitoring
-    PERFORMANCE: {
-        RESPONSE_HISTORY_SIZE: 100,
-        HEALTH_CHECK_INTERVAL: 300000, // 5 minutes
-        STATS_RESET_INTERVAL: 86400000 // 24 hours
-    }
-};
-
-// DATETIME UTILITIES - Cambodia Focus
-function getCurrentCambodiaDateTime() {
+// ─────────────────────────────────────────────────────────────────────────────
+// SAFE LAZY IMPORTS (avoid crashing when optional modules are missing)
+// ─────────────────────────────────────────────────────────────────────────────
+function lazyLoad(name, candidates, stubFactory) {
+  for (let i = 0; i < candidates.length; i++) {
     try {
-        const now = new Date();
-        const cambodiaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Phnom_Penh"}));
-        
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
-                       'July', 'August', 'September', 'October', 'November', 'December'];
-        
-        const dayName = days[cambodiaTime.getDay()];
-        const monthName = months[cambodiaTime.getMonth()];
-        const date = cambodiaTime.getDate();
-        const year = cambodiaTime.getFullYear();
-        const hour = cambodiaTime.getHours();
-        const minute = cambodiaTime.getMinutes();
-        const isWeekend = cambodiaTime.getDay() === 0 || cambodiaTime.getDay() === 6;
-        
-        return {
-            date: `${dayName}, ${monthName} ${date}, ${year}`,
-            time: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
-            hour: hour,
-            minute: minute,
-            dayName: dayName,
-            isWeekend: isWeekend,
-            isBusinessHours: !isWeekend && hour >= 8 && hour <= 17,
-            timezone: 'ICT (UTC+7)',
-            timestamp: cambodiaTime.toISOString()
-        };
-    } catch (error) {
-        console.error('Cambodia DateTime error:', error.message);
-        const fallback = new Date();
-        return {
-            date: fallback.toDateString(),
-            time: fallback.toTimeString().slice(0, 5),
-            hour: fallback.getHours(),
-            isWeekend: [0, 6].includes(fallback.getDay()),
-            isBusinessHours: false,
-            timezone: 'UTC',
-            error: 'Timezone calculation failed'
-        };
-    }
+      const mod = require(candidates[i]);
+      console.log(`[dualCommandSystem] Loaded ${name} from ${candidates[i]}`);
+      return mod;
+    } catch (e) { /* try next */ }
+  }
+  const stub = (typeof stubFactory === 'function') ? stubFactory() : {};
+  console.warn(`[dualCommandSystem] ${name} not found, using safe stub`);
+  return stub;
+}
+
+const openaiClient = lazyLoad(
+  'openaiClient',
+  ['./openaiClient', '../utils/openaiClient', '../openaiClient'],
+  function () {
+    return {
+      getGPT5Analysis: async () => { throw new Error('openaiClient stub: getGPT5Analysis unavailable'); },
+      testOpenAIConnection: async () => ({ success: false, gpt5Available: false }),
+      checkGPT5SystemHealth: async () => ({ overallHealth: false })
+    };
+  }
+);
+
+const memory = lazyLoad(
+  'memory',
+  ['./memory', '../utils/memory', '../memory'],
+  function () {
+    return {
+      loadContext: async () => ({ history: [], persistent: [] }),
+      saveContext: async () => true
+    };
+  }
+);
+
+const database = lazyLoad(
+  'database',
+  ['./database', '../utils/database', '../database'],
+  function () {
+    return {
+      query: async () => [],
+      upsert: async () => true,
+      health: async () => ({ ok: true })
+    };
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SYSTEM STATE MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+const systemState = {
+  mode: 'SECURE_GPT5',
+  version: '7.0-SECURE',
+  startTime: Date.now(),
+  requestCount: 0,
+  successCount: 0,
+  errorCount: 0,
+  completionDetectionCount: 0,
+
+  // Performance tracking
+  responseTimeHistory: [],
+  modelUsageStats: {
+    'gpt-5': 0,
+    'gpt-5-mini': 0,
+    'gpt-5-nano': 0,
+    'gpt-5-chat-latest': 0
+  },
+
+  // Query classification stats
+  queryTypeStats: {
+    completion: 0,
+    speed: 0,
+    complex: 0,
+    mathematical: 0,
+    regional: 0,
+    market: 0,
+    multimodal: 0,
+    chat: 0,
+    analysis: 0
+  },
+
+  // Cost tracking
+  estimatedCosts: {
+    total: 0,
+    saved: 0,
+    completionSavings: 0
+  },
+
+  // Health monitoring
+  lastHealthCheck: null,
+  healthStatus: 'unknown',
+  availableModels: []
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIGURATION CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+const CONFIG = {
+  // GPT-5 Model Selection
+  MODELS: {
+    NANO: 'gpt-5-nano',
+    MINI: 'gpt-5-mini',
+    FULL: 'gpt-5',
+    CHAT: 'gpt-5-chat-latest'
+  },
+
+  // Reasoning and verbosity settings
+  REASONING_LEVELS: ['minimal', 'low', 'medium', 'high'],
+  VERBOSITY_LEVELS: ['low', 'medium', 'high'],
+
+  // Token limits
+  TOKEN_LIMITS: {
+    NANO_MAX: 4000,
+    MINI_MAX: 8000,
+    FULL_MAX: 16000,
+    CHAT_MAX: 8000
+  },
+
+  // Response time targets (ms)
+  TIME_TARGETS: {
+    SPEED_CRITICAL: 2000,
+    STANDARD: 5000,
+    COMPLEX: 10000
+  },
+
+  // Memory integration settings
+  MEMORY: {
+    MAX_CONTEXT_LENGTH: 2000,
+    MAX_CONVERSATION_HISTORY: 5,
+    MAX_PERSISTENT_MEMORIES: 3
+  },
+
+  // Performance monitoring
+  PERFORMANCE: {
+    RESPONSE_HISTORY_SIZE: 100,
+    HEALTH_CHECK_INTERVAL: 300000, // 5 minutes
+    STATS_RESET_INTERVAL: 86400000 // 24 hours
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DATETIME UTILITIES - Cambodia Focus
+// ─────────────────────────────────────────────────────────────────────────────
+function getCurrentCambodiaDateTime() {
+  try {
+    const now = new Date();
+    const cambodiaTime = new Date(
+      now.toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' })
+    );
+
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    const dayName = days[cambodiaTime.getDay()];
+    const monthName = months[cambodiaTime.getMonth()];
+    const date = cambodiaTime.getDate();
+    const year = cambodiaTime.getFullYear();
+    const hour = cambodiaTime.getHours();
+    const minute = cambodiaTime.getMinutes();
+    const isWeekend = cambodiaTime.getDay() === 0 || cambodiaTime.getDay() === 6;
+
+    return {
+      date: `${dayName}, ${monthName} ${date}, ${year}`,
+      time: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+      hour: hour,
+      minute: minute,
+      dayName: dayName,
+      isWeekend: isWeekend,
+      isBusinessHours: !isWeekend && hour >= 8 && hour <= 17,
+      timezone: 'ICT (UTC+7)',
+      timestamp: cambodiaTime.toISOString()
+    };
+  } catch (error) {
+    console.error('Cambodia DateTime error:', error.message);
+    const fallback = new Date();
+    return {
+      date: fallback.toDateString(),
+      time: fallback.toTimeString().slice(0, 5),
+      hour: fallback.getHours(),
+      isWeekend: [0, 6].includes(fallback.getDay()),
+      isBusinessHours: false,
+      timezone: 'UTC',
+      error: 'Timezone calculation failed'
+    };
+  }
 }
 
 function getCurrentGlobalDateTime() {
-    try {
-        const now = new Date();
-        
-        const cambodiaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Phnom_Penh"}));
-        const newYorkTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-        const londonTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/London"}));
-        
-        return {
-            cambodia: {
-                ...getCurrentCambodiaDateTime(),
-                timezone: 'ICT (UTC+7)'
-            },
-            newYork: {
-                time: `${newYorkTime.getHours().toString().padStart(2, '0')}:${newYorkTime.getMinutes().toString().padStart(2, '0')}`,
-                hour: newYorkTime.getHours(),
-                timezone: 'EST/EDT (UTC-5/-4)',
-                isMarketHours: !cambodiaTime.getDay() === 0 && !cambodiaTime.getDay() === 6 && 
-                              newYorkTime.getHours() >= 9 && newYorkTime.getHours() <= 16
-            },
-            london: {
-                time: `${londonTime.getHours().toString().padStart(2, '0')}:${londonTime.getMinutes().toString().padStart(2, '0')}`,
-                hour: londonTime.getHours(),
-                timezone: 'GMT/BST (UTC+0/+1)',
-                isMarketHours: !cambodiaTime.getDay() === 0 && !cambodiaTime.getDay() === 6 && 
-                              londonTime.getHours() >= 8 && londonTime.getHours() <= 16
-            },
-            utc: now.toISOString()
-        };
-    } catch (error) {
-        console.error('Global DateTime error:', error.message);
-        return {
-            cambodia: getCurrentCambodiaDateTime(),
-            error: 'Global timezone calculation failed'
-        };
-    }
+  try {
+    const now = new Date();
+
+    const cambodiaTime = new Date(
+      now.toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' })
+    );
+    const newYorkTime = new Date(
+      now.toLocaleString('en-US', { timeZone: 'America/New_York' })
+    );
+    const londonTime = new Date(
+      now.toLocaleString('en-US', { timeZone: 'Europe/London' })
+    );
+
+    const isCambodiaBusinessDay = cambodiaTime.getDay() !== 0 && cambodiaTime.getDay() !== 6;
+
+    return {
+      cambodia: Object.assign({}, getCurrentCambodiaDateTime(), { timezone: 'ICT (UTC+7)' }),
+      newYork: {
+        time: `${newYorkTime.getHours().toString().padStart(2, '0')}:${newYorkTime.getMinutes().toString().padStart(2, '0')}`,
+        hour: newYorkTime.getHours(),
+        timezone: 'EST/EDT (UTC-5/-4)',
+        // 9:00–16:00 local NY, on Cambodia business days (simple heuristic)
+        isMarketHours: isCambodiaBusinessDay && newYorkTime.getHours() >= 9 && newYorkTime.getHours() <= 16
+      },
+      london: {
+        time: `${londonTime.getHours().toString().padStart(2, '0')}:${londonTime.getMinutes().toString().padStart(2, '0')}`,
+        hour: londonTime.getHours(),
+        timezone: 'GMT/BST (UTC+0/+1)',
+        // 8:00–16:00 local London, on Cambodia business days (simple heuristic)
+        isMarketHours: isCambodiaBusinessDay && londonTime.getHours() >= 8 && londonTime.getHours() <= 16
+      },
+      utc: now.toISOString()
+    };
+  } catch (error) {
+    console.error('Global DateTime error:', error.message);
+    return {
+      cambodia: getCurrentCambodiaDateTime(),
+      error: 'Global timezone calculation failed'
+    };
+  }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // UTILITY FUNCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
 function updateSystemStats(operation, success = true, responseTime = 0, queryType = 'unknown', model = 'unknown') {
-    systemState.requestCount++;
-    
-    if (success) {
-        systemState.successCount++;
-    } else {
-        systemState.errorCount++;
+  systemState.requestCount++;
+
+  if (success) systemState.successCount++;
+  else systemState.errorCount++;
+
+  if (queryType === 'completion') systemState.completionDetectionCount++;
+
+  // Performance tracking
+  if (responseTime > 0) {
+    systemState.responseTimeHistory.push({
+      time: responseTime,
+      timestamp: Date.now(),
+      operation: operation,
+      model: model
+    });
+    if (systemState.responseTimeHistory.length > CONFIG.PERFORMANCE.RESPONSE_HISTORY_SIZE) {
+      systemState.responseTimeHistory.shift();
     }
-    
-    if (queryType === 'completion') {
-        systemState.completionDetectionCount++;
-    }
-    
-    // Update performance tracking
-    if (responseTime > 0) {
-        systemState.responseTimeHistory.push({
-            time: responseTime,
-            timestamp: Date.now(),
-            operation: operation,
-            model: model
-        });
-        
-        // Keep only recent history
-        if (systemState.responseTimeHistory.length > CONFIG.PERFORMANCE.RESPONSE_HISTORY_SIZE) {
-            systemState.responseTimeHistory.shift();
-        }
-    }
-    
-    // Update model usage stats
-    if (systemState.modelUsageStats.hasOwnProperty(model)) {
-        systemState.modelUsageStats[model]++;
-    }
-    
-    // Update query type stats
-    if (systemState.queryTypeStats.hasOwnProperty(queryType)) {
-        systemState.queryTypeStats[queryType]++;
-    }
+  }
+
+  // Model usage
+  if (Object.prototype.hasOwnProperty.call(systemState.modelUsageStats, model)) {
+    systemState.modelUsageStats[model]++;
+  }
+
+  // Query type stats
+  if (Object.prototype.hasOwnProperty.call(systemState.queryTypeStats, queryType)) {
+    systemState.queryTypeStats[queryType]++;
+  }
 }
 
 function calculateCostEstimate(model, inputTokens, outputTokens) {
-    const costs = {
-        'gpt-5-nano': { input: 0.05, output: 0.40 },
-        'gpt-5-mini': { input: 0.25, output: 2.00 },
-        'gpt-5': { input: 1.25, output: 10.00 },
-        'gpt-5-chat-latest': { input: 1.25, output: 10.00 }
-    };
-    
-    const modelCosts = costs[model] || costs['gpt-5-mini'];
-    const inputCost = (inputTokens / 1000000) * modelCosts.input;
-    const outputCost = (outputTokens / 1000000) * modelCosts.output;
-    
-    return {
-        inputCost: inputCost,
-        outputCost: outputCost,
-        totalCost: inputCost + outputCost,
-        model: model,
-        inputTokens: inputTokens,
-        outputTokens: outputTokens
-    };
+  const costs = {
+    'gpt-5-nano': { input: 0.05, output: 0.40 },
+    'gpt-5-mini': { input: 0.25, output: 2.00 },
+    'gpt-5': { input: 1.25, output: 10.00 },
+    'gpt-5-chat-latest': { input: 1.25, output: 10.00 }
+  };
+
+  const modelCosts = costs[model] || costs['gpt-5-mini'];
+  // assume prices per 1,000,000 tokens; adjust here if your pricing differs
+  const inputCost = (inputTokens / 1e6) * modelCosts.input;
+  const outputCost = (outputTokens / 1e6) * modelCosts.output;
+
+  return {
+    inputCost: inputCost,
+    outputCost: outputCost,
+    totalCost: inputCost + outputCost,
+    model: model,
+    inputTokens: inputTokens,
+    outputTokens: outputTokens
+  };
 }
 
 function resetSystemStats() {
-    console.log('Resetting system statistics...');
-    
-    systemState.requestCount = 0;
-    systemState.successCount = 0;
-    systemState.errorCount = 0;
-    systemState.completionDetectionCount = 0;
-    systemState.responseTimeHistory = [];
-    
-    // Reset model usage stats
-    Object.keys(systemState.modelUsageStats).forEach(key => {
-        systemState.modelUsageStats[key] = 0;
-    });
-    
-    // Reset query type stats
-    Object.keys(systemState.queryTypeStats).forEach(key => {
-        systemState.queryTypeStats[key] = 0;
-    });
-    
-    // Reset cost tracking
-    systemState.estimatedCosts.total = 0;
-    systemState.estimatedCosts.saved = 0;
-    systemState.estimatedCosts.completionSavings = 0;
-    
-    console.log('System statistics reset completed');
+  console.log('Resetting system statistics...');
+
+  systemState.requestCount = 0;
+  systemState.successCount = 0;
+  systemState.errorCount = 0;
+  systemState.completionDetectionCount = 0;
+  systemState.responseTimeHistory = [];
+
+  // Reset model usage stats
+  Object.keys(systemState.modelUsageStats).forEach(function (key) {
+    systemState.modelUsageStats[key] = 0;
+  });
+
+  // Reset query type stats
+  Object.keys(systemState.queryTypeStats).forEach(function (key) {
+    systemState.queryTypeStats[key] = 0;
+  });
+
+  // Reset cost tracking
+  systemState.estimatedCosts.total = 0;
+  systemState.estimatedCosts.saved = 0;
+  systemState.estimatedCosts.completionSavings = 0;
+
+  console.log('System statistics reset completed');
 }
 
 // AUTO-RESET STATS DAILY
@@ -363,29 +391,31 @@ console.log('📊 Features: Performance tracking, cost estimation, health monito
 console.log('🌏 Cambodia timezone support with global market awareness');
 console.log('✅ Ready for intelligent GPT-5 model selection and routing');
 
-// Export configuration and utilities for other parts
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORTS
+// ─────────────────────────────────────────────────────────────────────────────
 module.exports = {
-    // Core system components
-    openaiClient,
-    memory,
-    database,
-    telegramSplitter,
-    
-    // System state and configuration
-    systemState,
-    CONFIG,
-    
-    // Utility functions
-    getCurrentCambodiaDateTime,
-    getCurrentGlobalDateTime,
-    updateSystemStats,
-    calculateCostEstimate,
-    resetSystemStats,
-    
-    // Constants
-    MODELS: CONFIG.MODELS,
-    REASONING_LEVELS: CONFIG.REASONING_LEVELS,
-    VERBOSITY_LEVELS: CONFIG.VERBOSITY_LEVELS
+  // Core system components (lazy-loaded, safe stubs if missing)
+  openaiClient,
+  memory,
+  database,
+  telegramSplitter,
+
+  // System state and configuration
+  systemState,
+  CONFIG,
+
+  // Utility functions
+  getCurrentCambodiaDateTime,
+  getCurrentGlobalDateTime,
+  updateSystemStats,
+  calculateCostEstimate,
+  resetSystemStats,
+
+  // Constants
+  MODELS: CONFIG.MODELS,
+  REASONING_LEVELS: CONFIG.REASONING_LEVELS,
+  VERBOSITY_LEVELS: CONFIG.VERBOSITY_LEVELS
 };
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 2/6
