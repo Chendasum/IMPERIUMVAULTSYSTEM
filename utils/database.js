@@ -1,300 +1,346 @@
 // utils/database.js
-// IMPERIUM VAULT — Defensive Postgres wrapper + auto-migrations
-// Exposes: initialize, shutdown, query, saveConversation, getConversationHistoryDB
-//          upsertMemoryFact (optional), ensureSchemaAll
+// IMPERIUM VAULT — PostgreSQL driver (Pool-based)
+// Safe defaults, schema auto-heal, and tiny helpers for conversations + memory.
+// Exports:
+//   initialize(), health(), healthCheck(), close()
+//   saveConversation(chatId, userMsg, assistantMsg, meta)
+//   getConversationHistoryDB(chatId, limit)
+//   upsertMemoryFact(chatId, key, value, { expiresAt })
+//   getPersistentMemoryDB(chatId, limit)
+//   getMemoryFacts(chatId, { includeExpired })
+//   deleteMemoryFact(chatId, key)
+//   pruneExpiredFacts()
+//   query(text, params)
 
-'use strict';
-require('dotenv').config();
+"use strict";
 
-const SLEEP = (ms) => new Promise(r => setTimeout(r, ms));
+require("dotenv").config();
+const { Pool } = require("pg");
 
-let Pool, pool;
-try {
-  ({ Pool } = require('pg'));
-} catch (e) {
-  console.warn('[db] pg not installed; database features disabled');
-}
+// ───────────────────────────────────────────────────────────────────────────────
+// Pool configuration (DATABASE_URL preferred; Railway-friendly SSL)
+// ───────────────────────────────────────────────────────────────────────────────
+const connectionString =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.PG_URL ||
+  null;
 
-/*──────────────────────────────────────────────────────────────────────────────*/
+const inferredSSL =
+  process.env.PGSSLMODE === "disable"
+    ? false
+    : { rejectUnauthorized: false };
 
-function getPool() {
-  if (pool) return pool;
-  if (!process.env.DATABASE_URL) {
-    console.warn('[db] No DATABASE_URL; running in memory-only mode');
-    return null;
-  }
-  if (!Pool) return null;
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.PGSSLMODE === 'disable' ? false : { rejectUnauthorized: false },
-    max: Number(process.env.PG_POOL_MAX || 5),
-    idleTimeoutMillis: 30000
-  });
-  return pool;
-}
+const pool =
+  connectionString
+    ? new Pool({ connectionString, ssl: inferredSSL })
+    : new Pool({
+        host: process.env.PGHOST || "localhost",
+        port: Number(process.env.PGPORT || 5432),
+        user: process.env.PGUSER || "postgres",
+        password: process.env.PGPASSWORD || "",
+        database: process.env.PGDATABASE || "postgres",
+        ssl: inferredSSL,
+      });
 
-async function query(sql, params) {
-  const p = getPool();
-  if (!p) throw new Error('No database pool');
-  const client = await p.connect();
+pool.on("error", (err) => {
+  console.error("[db] Pool error:", err && err.message ? err.message : err);
+});
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Low-level query helper
+// ───────────────────────────────────────────────────────────────────────────────
+async function query(text, params) {
+  const client = await pool.connect();
   try {
-    return await client.query(sql, params || []);
+    return await client.query(text, params || []);
   } finally {
     client.release();
   }
 }
 
-/*──────────────────────────────────────────────────────────────────────────────*
- *                             MIGRATION HELPERS
- *──────────────────────────────────────────────────────────────────────────────*/
+// ───────────────────────────────────────────────────────────────────────────────
+// Schema management (idempotent, “auto-heal”)
+// ───────────────────────────────────────────────────────────────────────────────
+async function ensureSchema() {
+  // 1) Base tables
+  await query(`
+    CREATE TABLE IF NOT EXISTS conversations (
+      id                BIGSERIAL PRIMARY KEY,
+      chat_id           TEXT NOT NULL,
+      user_message      TEXT,
+      assistant_response TEXT,
+      meta              JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
 
-async function ensureTable(name, createSQL) {
-  await query(createSQL);
-  // small delay helps on some managed PGs where DDL visibility lags
+  await query(`
+    CREATE TABLE IF NOT EXISTS memory_facts (
+      id          BIGSERIAL PRIMARY KEY,
+      chat_id     TEXT NOT NULL,
+      key         TEXT NOT NULL,
+      value       TEXT NOT NULL,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at  TIMESTAMPTZ NULL,
+      UNIQUE (chat_id, key)
+    );
+  `);
+
+  // 2) “Auto-heal” missing columns (handles your previous error)
+  await query(`ALTER TABLE conversations
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();`);
+  await query(`ALTER TABLE conversations
+    ADD COLUMN IF NOT EXISTS meta JSONB NOT NULL DEFAULT '{}'::jsonb;`);
+
+  await query(`ALTER TABLE memory_facts
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();`);
+  await query(`ALTER TABLE memory_facts
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();`);
+  await query(`ALTER TABLE memory_facts
+    ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ NULL;`);
+
+  // 3) Indices
+  await query(`CREATE INDEX IF NOT EXISTS idx_conversations_chat_created
+               ON conversations (chat_id, created_at DESC);`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_memory_facts_chat
+               ON memory_facts (chat_id);`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_memory_facts_expiry
+               ON memory_facts (expires_at);`);
 }
 
-async function addColumnIfMissing(table, addSQL) {
-  try {
-    await query(addSQL);
-  } catch (e) {
-    if (!/already exists/i.test(e.message)) throw e;
-  }
-}
-
-async function tryRenameColumn(table, from, to) {
-  try {
-    await query(`ALTER TABLE ${table} RENAME COLUMN "${from}" TO ${to}`);
-  } catch (e) {
-    // ignore if it doesn't exist
-    if (!/does not exist/i.test(e.message)) throw e;
-  }
-}
-
-async function createIndexSafe(sql) {
-  try {
-    await query(sql);
-  } catch (e) {
-    // skip unique/partial index if existing data conflicts
-    console.warn('[db] index creation skipped:', e.message);
-  }
-}
-
-async function tableHasColumn(table, column) {
-  const r = await query(
-    `SELECT 1 FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`,
-    [table, column]
-  );
-  return r.rowCount > 0;
-}
-
-/*──────────────────────────────────────────────────────────────────────────────*
- *                                SCHEMA
- *──────────────────────────────────────────────────────────────────────────────*/
-
-async function ensureSchemaMemory() {
-  // 1) Base table (old installs may lack created_at/expires_at)
-  await ensureTable(
-    'ai_memory',
-    `CREATE TABLE IF NOT EXISTS ai_memory (
-       id BIGSERIAL PRIMARY KEY,
-       chat_id TEXT NOT NULL,
-       type TEXT NOT NULL,
-       mem_key TEXT NOT NULL,
-       mem_value TEXT NOT NULL
-     )`
-  );
-
-  // 2) Column migrations (camelCase → snake_case, add if missing)
-  await tryRenameColumn('ai_memory', 'createdAt', 'created_at');
-  await tryRenameColumn('ai_memory', 'expiresAt', 'expires_at');
-
-  await addColumnIfMissing('ai_memory',
-    `ALTER TABLE ai_memory ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
-  );
-  await addColumnIfMissing('ai_memory',
-    `ALTER TABLE ai_memory ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ NULL`
-  );
-
-  // 3) Indexes
-  await createIndexSafe(`CREATE INDEX IF NOT EXISTS ai_memory_chat_idx ON ai_memory(chat_id)`);
-  await createIndexSafe(`CREATE INDEX IF NOT EXISTS ai_memory_key_idx ON ai_memory(mem_key)`);
-
-  // Partial unique index (one live row per (chat, key)); will skip if duplicates exist
-  await createIndexSafe(
-    `CREATE UNIQUE INDEX IF NOT EXISTS ai_memory_unique_latest
-       ON ai_memory(chat_id, mem_key) WHERE expires_at IS NULL`
-  );
-}
-
-async function ensureSchemaConversations() {
-  // 1) Base table
-  await ensureTable(
-    'conversations',
-    `CREATE TABLE IF NOT EXISTS conversations (
-       id BIGSERIAL PRIMARY KEY,
-       chat_id TEXT NOT NULL,
-       user_message TEXT,
-       ai_response TEXT,
-       meta JSONB
-     )`
-  );
-
-  // 2) Column migrations (camelCase → snake_case)
-  await tryRenameColumn('conversations', 'createdAt', 'created_at');
-
-  // 3) Add created_at if missing
-  await addColumnIfMissing('conversations',
-    `ALTER TABLE conversations ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
-  );
-
-  // 4) Indexes
-  await createIndexSafe(`CREATE INDEX IF NOT EXISTS conv_chat_idx ON conversations(chat_id)`);
-  await createIndexSafe(`CREATE INDEX IF NOT EXISTS conv_created_idx ON conversations(created_at)`);
-}
-
-async function ensureSchemaAll() {
-  await ensureSchemaMemory();
-  await ensureSchemaConversations();
-}
-
-/*──────────────────────────────────────────────────────────────────────────────*
- *                                LIFECYCLE
- *──────────────────────────────────────────────────────────────────────────────*/
-
+// ───────────────────────────────────────────────────────────────────────────────
+// Initialization + health
+// ───────────────────────────────────────────────────────────────────────────────
 async function initialize() {
-  const p = getPool();
-  if (!p) {
-    console.warn('[db] initialize: no pool (memory-only mode)');
-    return { backend: 'none' };
-  }
-  let lastErr = null;
-  for (let i = 1; i <= 3; i++) {
+  const tries = 3;
+  for (let i = 1; i <= tries; i++) {
     try {
-      await ensureSchemaAll();
-      console.log('[db] schema ready');
-      return { backend: 'postgres' };
-    } catch (e) {
-      lastErr = e;
-      console.warn(`[db] ensureSchema failed (attempt ${i}/3): ${e.message}`);
-      await SLEEP(400 * i);
+      console.log(`[db] ensureSchema attempt ${i}/${tries}…`);
+      await ensureSchema();
+      console.log("[db] Schema ready");
+      // First opportunistic prune (non-fatal if fails)
+      try { await pruneExpiredFacts(); } catch (_e) {}
+      return;
+    } catch (err) {
+      console.warn(`[db] ensureSchema failed (attempt ${i}/${tries}): ${err.message}`);
+      if (i === tries) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * i));
     }
   }
-  console.error('[db] DB init failed:', lastErr && lastErr.message);
-  throw lastErr;
 }
-
-async function shutdown() {
-  if (pool) {
-    try { await pool.end(); } catch (e) { /* ignore */ }
-  }
-}
-
-/*──────────────────────────────────────────────────────────────────────────────*
- *                                   API
- *──────────────────────────────────────────────────────────────────────────────*/
-
-async function saveConversation(chatId, userMessage, aiResponse, meta) {
-  // If no DB, just pretend success so the app keeps running
-  if (!getPool()) return false;
-  const m = meta ? JSON.stringify(meta) : null;
-  await query(
-    `INSERT INTO conversations (chat_id, user_message, ai_response, meta)
-     VALUES ($1, $2, $3, COALESCE($4::jsonb, '{}'::jsonb))`,
-    [String(chatId), String(userMessage || ''), String(aiResponse || ''), m]
-  );
-  return true;
-}
-
-async function getConversationHistoryDB(chatId, limit) {
-  if (!getPool()) return [];
-  const lim = Math.max(1, Math.min(Number(limit || 50), 200));
-  const r = await query(
-    `SELECT user_message, ai_response, created_at
-       FROM conversations
-      WHERE chat_id = $1
-      ORDER BY created_at DESC
-      LIMIT $2`,
-    [String(chatId), lim]
-  );
-  return r.rows.map(row => ({
-    timestamp: row.created_at,
-    userMessage: row.user_message || '',
-    aiResponse: row.ai_response || ''
-  }));
-}
-
-// Optional: some callers log facts via database when memory module is absent
-async function upsertMemoryFact(chatId, key, value, expiresAtIso) {
-  if (!getPool()) return false;
-
-  // Ensure columns exist (defensive if called before initialize)
-  const hasCreated = await tableHasColumn('ai_memory', 'created_at').catch(() => false);
-  if (!hasCreated) await ensureSchemaMemory();
-
-  // Use an UPSERT keyed by (chat_id, mem_key) when expires_at IS NULL
-  // To keep it simple and portable, we store only one live row per key and
-  // treat "expiresAtIso" as the new expiry.
-  try {
-    await query(
-      `INSERT INTO ai_memory (chat_id, type, mem_key, mem_value, created_at, expires_at)
-       VALUES ($1, 'fact', $2, $3, NOW(), $4)
-       ON CONFLICT (chat_id, mem_key) WHERE ai_memory.expires_at IS NULL
-       DO UPDATE SET mem_value = EXCLUDED.mem_value,
-                     created_at = NOW(),
-                     expires_at = EXCLUDED.expires_at`,
-      [String(chatId), String(key), String(value), expiresAtIso || null]
-    );
-    return true;
-  } catch (e) {
-    // If partial index conflict rules differ in older DBs, fallback to two-step
-    console.warn('[db] upsertMemoryFact UPSERT fallback:', e.message);
-    await query(
-      `DELETE FROM ai_memory WHERE chat_id = $1 AND mem_key = $2 AND (expires_at IS NULL OR expires_at > NOW())`,
-      [String(chatId), String(key)]
-    );
-    await query(
-      `INSERT INTO ai_memory (chat_id, type, mem_key, mem_value, created_at, expires_at)
-       VALUES ($1, 'fact', $2, $3, NOW(), $4)`,
-      [String(chatId), String(key), String(value), expiresAtIso || null]
-    );
-    return true;
-  }
-}
-
-// utils/database.js
 
 async function health() {
-  // … your existing health logic (e.g., run SELECT 1, check tables, etc.)
-  return { ok: true, details: { ping: 'ok' } };
+  try {
+    const r = await query("SELECT 1 as ok");
+    const ok = r && r.rows && r.rows[0] && r.rows[0].ok === 1;
+    return {
+      ok: !!ok,
+      details: {
+        poolTotal: pool.totalCount,
+        poolIdle: pool.idleCount,
+        poolWaiting: pool.waitingCount,
+      },
+      timestamp: new Date().toISOString(),
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e.message,
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
 
-// 👇 Add this alias so index.js can call healthCheck()
+// Alias for index.js expectation
 async function healthCheck() {
   return health();
 }
 
-module.exports = {
-  // … your other exports
-  initialize,
-  saveConversation,
-  getConversationHistoryDB,
-  upsertMemoryFact,
-  health,
-  healthCheck, // 👈 make sure this is exported
-};
+// ───────────────────────────────────────────────────────────────────────────────
+// Conversations (used by dualCommandSystem + emergency save)
+// ───────────────────────────────────────────────────────────────────────────────
+async function saveConversation(chatId, userMessage, assistantResponse, meta) {
+  try {
+    const payload = meta && typeof meta === "object" ? meta : {};
+    await query(
+      `INSERT INTO conversations (chat_id, user_message, assistant_response, meta)
+       VALUES ($1, $2, $3, $4::jsonb)`,
+      [String(chatId), String(userMessage || ""), String(assistantResponse || ""), JSON.stringify(payload)]
+    );
+    return { ok: true };
+  } catch (e) {
+    console.warn("[db] saveConversation failed:", e.message);
+    return { ok: false, error: e.message };
+  }
+}
 
-/*──────────────────────────────────────────────────────────────────────────────*/
+async function getConversationHistoryDB(chatId, limit) {
+  const lim = Math.max(1, Math.min(Number(limit || 100), 1000));
+  try {
+    const r = await query(
+      `SELECT id, chat_id, user_message, assistant_response, meta, created_at
+         FROM conversations
+        WHERE chat_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2`,
+      [String(chatId), lim]
+    );
+    return r.rows || [];
+  } catch (e) {
+    console.warn("[db] getConversationHistoryDB failed:", e.message);
+    return [];
+  }
+}
 
+// ───────────────────────────────────────────────────────────────────────────────
+// Memory Facts (TTL, upsert, fetch) — used by memory.js + Part 6 helpers
+// ───────────────────────────────────────────────────────────────────────────────
+async function upsertMemoryFact(chatId, key, value, options) {
+  const expiresAt =
+    options && options.expiresAt
+      ? new Date(options.expiresAt)
+      : null;
+
+  try {
+    await query(
+      `INSERT INTO memory_facts (chat_id, key, value, expires_at)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (chat_id, key)
+       DO UPDATE SET value = EXCLUDED.value,
+                     expires_at = EXCLUDED.expires_at,
+                     updated_at = NOW()`,
+      [String(chatId), String(key), String(value), expiresAt]
+    );
+    return { ok: true };
+  } catch (e) {
+    console.warn("[db] upsertMemoryFact failed:", e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+/**
+ * Return only non-expired facts by default.
+ * @param {string} chatId
+ * @param {object} opts { includeExpired?: boolean, limit?: number }
+ */
+async function getMemoryFacts(chatId, opts) {
+  const includeExpired = !!(opts && opts.includeExpired);
+  const lim = Math.max(1, Math.min(Number((opts && opts.limit) || 500), 2000));
+
+  try {
+    const r = includeExpired
+      ? await query(
+          `SELECT chat_id, key, value, created_at, updated_at, expires_at
+             FROM memory_facts
+            WHERE chat_id = $1
+            ORDER BY updated_at DESC
+            LIMIT $2`,
+          [String(chatId), lim]
+        )
+      : await query(
+          `SELECT chat_id, key, value, created_at, updated_at, expires_at
+             FROM memory_facts
+            WHERE chat_id = $1
+              AND (expires_at IS NULL OR expires_at > NOW())
+            ORDER BY updated_at DESC
+            LIMIT $2`,
+          [String(chatId), lim]
+        );
+
+    return r.rows || [];
+  } catch (e) {
+    console.warn("[db] getMemoryFacts failed:", e.message);
+    return [];
+  }
+}
+
+// Backward-compat name used elsewhere in your code
+async function getPersistentMemoryDB(chatId, limit) {
+  return getMemoryFacts(chatId, { limit: limit || 500, includeExpired: false });
+}
+
+// Convenience wrapper used by your Part 6 memory helpers (if memory module absent)
+async function saveToMemory(chatId, fact) {
+  // fact: { type: 'fact', key, value, createdAt, expiresAt }
+  if (!fact || !fact.key) {
+    return { ok: false, error: "invalid fact" };
+  }
+  return upsertMemoryFact(chatId, fact.key, fact.value, {
+    expiresAt: fact.expiresAt || null,
+  });
+}
+
+async function deleteMemoryFact(chatId, key) {
+  try {
+    const r = await query(
+      `DELETE FROM memory_facts WHERE chat_id = $1 AND key = $2`,
+      [String(chatId), String(key)]
+    );
+    return { ok: true, deleted: r.rowCount || 0 };
+  } catch (e) {
+    console.warn("[db] deleteMemoryFact failed:", e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+async function pruneExpiredFacts() {
+  try {
+    const r = await query(
+      `DELETE FROM memory_facts WHERE expires_at IS NOT NULL AND expires_at <= NOW()`
+    );
+    if (r && typeof r.rowCount === "number" && r.rowCount > 0) {
+      console.log(`[db] Pruned ${r.rowCount} expired memory facts`);
+    }
+    return { ok: true, pruned: r.rowCount || 0 };
+  } catch (e) {
+    console.warn("[db] pruneExpiredFacts failed:", e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Graceful close
+// ───────────────────────────────────────────────────────────────────────────────
+async function close() {
+  try {
+    await pool.end();
+    console.log("[db] Pool closed");
+  } catch (e) {
+    console.warn("[db] Pool close failed:", e.message);
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Optional: hourly auto-prune (silent if it fails)
+// ───────────────────────────────────────────────────────────────────────────────
+setInterval(() => {
+  pruneExpiredFacts().catch(() => {});
+}, 60 * 60 * 1000);
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Exports
+// ───────────────────────────────────────────────────────────────────────────────
 module.exports = {
   // lifecycle
   initialize,
-  shutdown,
-  // sql
+  health,
+  healthCheck, // alias expected by index.js
+  close,
+
+  // low-level
   query,
-  // app helpers
+
+  // conversations
   saveConversation,
   getConversationHistoryDB,
+
+  // memory
+  saveToMemory,
   upsertMemoryFact,
-  // migrations (optional external use)
-  ensureSchemaAll
+  getMemoryFacts,
+  getPersistentMemoryDB,
+  deleteMemoryFact,
+  pruneExpiredFacts,
 };
