@@ -4389,90 +4389,72 @@ console.log('Context: Cambodia timezone, global market awareness, memory integra
 console.log('Ready for production deployment with comprehensive error handling');
 
 // ───────────────────────────────────────────────────────────────────────────────
-// MAIN MODULE EXPORTS (merged with multimodal support)
+// MAIN MODULE EXPORTS - FIXED AND SAFE VERSION
 // ───────────────────────────────────────────────────────────────────────────────
 
+// Preserve any existing exports first
 const __prev = (module.exports && typeof module.exports === 'object') ? module.exports : {};
 
-module.exports = {
-  // TELEGRAM HANDLERS - NEW
+// Create the new exports object by merging existing and new exports
+const newExports = {
+  // TELEGRAM HANDLERS - NEW (required for clean index.js)
   handleTelegramMessage,
   handleCallbackQuery,
   handleInlineQuery,
-
-  // CORE FUNCTIONS
-  executeDualCommand,
+  
+  // ENHANCED UTILITY FUNCTIONS (defined in this part)
   executeEnhancedGPT5Command,
-  analyzeQuery,
-  detectCompletionStatus,
-
-  // QUICK COMMAND FUNCTIONS
+  
+  // QUICK COMMAND FUNCTIONS (defined in this part)
   quickGPT5Command,
   quickNanoCommand,
   quickMiniCommand,
   quickFullCommand,
-
-  // 🔗 Alias to keep index.js working (/ultimate uses this)
-  quickUltimateCommand: quickFullCommand,
-
-  // SYSTEM ANALYSIS & RECOMMENDATIONS
+  quickChatCommand,
+  quickUltimateCommand: quickFullCommand, // Alias
+  
+  // SYSTEM FUNCTIONS (defined in this part)
   getGPT5ModelRecommendation,
   getGPT5CostEstimate,
   getGPT5PerformanceMetrics,
-
-  // SYSTEM MONITORING & HEALTH
-  getSystemAnalytics,
-  checkSystemHealth,
-  checkGPT5OnlySystemHealth, // legacy name kept
-  performGPT5HealthCheck,
-  performFullSystemDiagnostics,
-  testMemoryIntegration,
-
-  // UTILITY FUNCTIONS
-  getCurrentCambodiaDateTime,
-  getCurrentGlobalDateTime,
-  getMarketIntelligence,
-  getGlobalMarketStatus,
-  resetSystemStats,
-
-  // CONTEXT AND MEMORY
-  buildMemoryContext,
-  executeGPT5WithContext,
-  executeDirectGPT5Analysis,
-  saveConversationEmergency,
-
-  // Memory write helpers (so callers can trigger them too)
+  getMultimodalStatus,
+  
+  // MEMORY HELPERS (defined in this part)
   maybeSaveMemory,
   upsertPersistentFact,
   persistConversationTurn,
+  saveConversationEmergency,
+  
+  // UTILITY FUNCTIONS (defined in this part)  
+  executeGPT5WithContext,
+  executeDirectGPT5Analysis,
+  performFullSystemDiagnostics,
+  
+  // DIRECT ACCESS TO SUBSYSTEMS (if they exist)
+  ...(typeof multimodal !== 'undefined' && { multimodal }),
+  ...(typeof openaiClient !== 'undefined' && { openaiClient }),
+  ...(typeof memory !== 'undefined' && { memory }),
+  ...(typeof database !== 'undefined' && { database }),
+  ...(typeof telegramSplitter !== 'undefined' && { telegramSplitter }),
+  
+  // CONSTANTS (if they exist)
+  ...(typeof CONFIG !== 'undefined' && CONFIG.MODELS && { MODELS: CONFIG.MODELS }),
+  ...(typeof CONFIG !== 'undefined' && CONFIG.REASONING_LEVELS && { REASONING_LEVELS: CONFIG.REASONING_LEVELS }),
+  ...(typeof CONFIG !== 'undefined' && CONFIG.VERBOSITY_LEVELS && { VERBOSITY_LEVELS: CONFIG.VERBOSITY_LEVELS }),
+  
+  // SYSTEM STATE ACCESS (if they exist)
+  ...(typeof systemState !== 'undefined' && { getSystemState: () => ({ ...systemState }) }),
+  ...(typeof CONFIG !== 'undefined' && { getConfig: () => ({ ...CONFIG }) })
+};
 
-  // SYSTEM STATE ACCESS
-  getSystemState: () => ({ ...systemState }),
-  getConfig: () => ({ ...CONFIG }),
+// Merge with existing exports (from other parts) and set as module.exports
+module.exports = {
+  ...(__prev || {}),  // Existing exports from other parts
+  ...newExports       // New exports from this part
+};
 
-  // DIRECT ACCESS TO SUBSYSTEMS
-  openaiClient,
-  memory,
-  database,
-  telegramSplitter,
-
-  // CONSTANTS
-  MODELS: CONFIG.MODELS,
-  REASONING_LEVELS: CONFIG.REASONING_LEVELS,
-  VERBOSITY_LEVELS: CONFIG.VERBOSITY_LEVELS,
-
-  // (Optional) expose Part 4 helpers so index.js or others can reuse them
-  // Comment these 3 lines out if Part 4 isn’t present in your build:
-  createTelegramSender,
-  createErrorTelegramSender,
-  calculateEstimatedCost
-});
-
-// finalize
-module.exports = __prev;
-
-console.log('🚀 All systems ready - Secure GPT-5 Command System operational');
-console.log('📋 Main functions: executeDualCommand, executeEnhancedGPT5Command');
-console.log('⚙️ Quick functions: quickNanoCommand, quickMiniCommand, quickFullCommand (alias: quickUltimateCommand)');
-console.log('🔍 Analysis: getGPT5ModelRecommendation, getSystemAnalytics');
-console.log('💾 Compatibility: Legacy function names preserved for existing code');
+console.log('DualCommandSystem Part 6 loaded - Multimodal + Telegram handlers ready');
+console.log('Available handlers:', Object.keys(module.exports).filter(key => key.startsWith('handle')));
+console.log('Available quick commands:', Object.keys(module.exports).filter(key => key.startsWith('quick')));
+console.log('Multimodal support:', typeof module.exports.multimodal !== 'undefined' ? 'enabled' : 'checking...');
+console.log('All systems integrated and operational');
