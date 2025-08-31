@@ -1,6 +1,7 @@
 // utils/database.js
-// Postgres pool + schema ensure (idempotent) + helpers
-// Backward-compatible with ai_memory.{key,value} AND ai_memory.{mem_key,mem_value}
+// Postgres pool + idempotent schema + helpers
+// Compatible with ai_memory.{key,value} AND ai_memory.{mem_key,mem_value}
+// Fixes: no expressions in PK; adds canonical_key and unique constraint.
 
 "use strict";
 
@@ -8,7 +9,7 @@ const { Pool } = require("pg");
 
 const CONN_STR = process.env.DATABASE_URL;
 if (!CONN_STR) {
-  console.warn("[db] DATABASE_URL not set — DB ops will fail; server still boots.");
+  console.warn("[db] DATABASE_URL not set — DB ops may fail; server will still boot.");
 }
 
 const pool = new Pool({
@@ -26,7 +27,7 @@ async function q(sql, params) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// SCHEMA ENSURE (idempotent) + LEGACY COMPAT
+// SCHEMA (idempotent)
 // ───────────────────────────────────────────────────────────────────────────────
 
 async function ensureSchema() {
@@ -41,39 +42,57 @@ async function ensureSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
   await safeAlter("conversations", "assistant_response", "TEXT");
   await safeAlter("conversations", "meta", "JSONB", "'{}'::jsonb");
   await safeAlter("conversations", "created_at", "TIMESTAMPTZ", "NOW()");
   await q(`CREATE INDEX IF NOT EXISTS idx_conversations_chat_created ON conversations(chat_id, created_at DESC);`);
 
-  // ai_memory (new columns)
+  // ai_memory with surrogate PK + canonical_key
   await q(`
     CREATE TABLE IF NOT EXISTS ai_memory (
+      id BIGSERIAL PRIMARY KEY,
       chat_id TEXT NOT NULL,
       key TEXT,
       value TEXT,
-      type TEXT DEFAULT 'fact',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      expires_at TIMESTAMPTZ NULL,
       mem_key TEXT,
       mem_value TEXT,
-      PRIMARY KEY (chat_id, COALESCE(key, mem_key))
+      canonical_key TEXT,
+      type TEXT DEFAULT 'fact',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at TIMESTAMPTZ NULL
     );
   `);
 
-  // make sure all columns exist even if table was created earlier without them
+  // make sure columns exist even if table was older
   await safeAlter("ai_memory", "key", "TEXT");
   await safeAlter("ai_memory", "value", "TEXT");
+  await safeAlter("ai_memory", "mem_key", "TEXT");
+  await safeAlter("ai_memory", "mem_value", "TEXT");
+  await safeAlter("ai_memory", "canonical_key", "TEXT");
   await safeAlter("ai_memory", "type", "TEXT", "'fact'");
   await safeAlter("ai_memory", "created_at", "TIMESTAMPTZ", "NOW()");
   await safeAlter("ai_memory", "expires_at", "TIMESTAMPTZ");
-  await safeAlter("ai_memory", "mem_key", "TEXT");
-  await safeAlter("ai_memory", "mem_value", "TEXT");
 
-  await q(`CREATE INDEX IF NOT EXISTS idx_ai_memory_expires ON ai_memory(expires_at) WHERE expires_at IS NOT NULL;`);
+  // Unique constraint on (chat_id, canonical_key)
+  await q(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE schemaname = ANY (current_schemas(true))
+          AND indexname = 'uniq_ai_memory_chat_canonical'
+      ) THEN
+        EXECUTE 'CREATE UNIQUE INDEX uniq_ai_memory_chat_canonical ON ai_memory (chat_id, canonical_key);';
+      END IF;
+    END$$;
+  `);
 
-  // backfill legacy/new columns in both directions so either naming works
+  // Backfill canonical_key and cross-copy legacy/new columns both directions
   await backfillLegacyColumns();
+
+  // Index on non-expired items
+  await q(`CREATE INDEX IF NOT EXISTS idx_ai_memory_expires ON ai_memory(expires_at) WHERE expires_at IS NOT NULL;`);
 }
 
 async function safeAlter(table, col, type, defaultExpr) {
@@ -93,13 +112,14 @@ async function safeAlter(table, col, type, defaultExpr) {
 }
 
 async function backfillLegacyColumns() {
-  // If mem_key/mem_value are NULL but key/value present → copy forward
+  // Prefer explicit key/value; sync both ways to keep compatibility
   await q(`UPDATE ai_memory SET mem_key = key WHERE mem_key IS NULL AND key IS NOT NULL;`);
   await q(`UPDATE ai_memory SET mem_value = value WHERE mem_value IS NULL AND value IS NOT NULL;`);
-
-  // If key/value are NULL but mem_key/mem_value present → copy backward
   await q(`UPDATE ai_memory SET key = mem_key WHERE key IS NULL AND mem_key IS NOT NULL;`);
   await q(`UPDATE ai_memory SET value = mem_value WHERE value IS NULL AND mem_value IS NOT NULL;`);
+
+  // canonical_key = coalesce(key, mem_key)
+  await q(`UPDATE ai_memory SET canonical_key = COALESCE(key, mem_key) WHERE canonical_key IS NULL;`);
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -155,7 +175,6 @@ async function getConversationHistoryDB(chatId, limit) {
         LIMIT $2;`,
       [String(chatId), Number(limit || 100)]
     );
-    // shape expected by memory/context builders
     return r.rows
       .map(row => ({
         timestamp: row.created_at,
@@ -163,7 +182,7 @@ async function getConversationHistoryDB(chatId, limit) {
         assistantResponse: row.assistant_response,
         metadata: row.meta || {}
       }))
-      .reverse(); // oldest → newest
+      .reverse();
   } catch (e) {
     console.error("[db] getConversationHistoryDB failed:", e.message);
     return [];
@@ -171,33 +190,45 @@ async function getConversationHistoryDB(chatId, limit) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-/* MEMORY (backward-compatible)
-   - Writes set BOTH (key,value) and (mem_key,mem_value).
-   - Reads coalesce in either direction so legacy/new callers work. */
+// MEMORY (backward-compatible; upsert via canonical_key)
 // ───────────────────────────────────────────────────────────────────────────────
 
 async function saveToMemory(chatId, payload) {
   try {
-    const k = String(payload.key);
-    const v = String(payload.value);
-    const t = payload.type ? String(payload.type) : "fact";
-    const createdAt = payload.createdAt || new Date().toISOString();
-    const expiresAt = payload.expiresAt || null;
+    const k = payload && payload.key != null ? String(payload.key) : null;
+    const mk = payload && payload.mem_key != null ? String(payload.mem_key) : null;
+    const v = payload && payload.value != null ? String(payload.value) : null;
+    const mv = payload && payload.mem_value != null ? String(payload.mem_value) : null;
+    const t = payload && payload.type ? String(payload.type) : "fact";
+    const createdAt = (payload && payload.createdAt) || new Date().toISOString();
+    const expiresAt = (payload && payload.expiresAt) || null;
 
-    // Upsert writing both pairs to keep them in sync
+    const canonical = k || mk;
+    if (!canonical) {
+      console.warn("[db] saveToMemory skipped: neither key nor mem_key provided");
+      return;
+    }
+
+    // Keep both pairs in sync, but enforce uniqueness on (chat_id, canonical_key)
     await q(
-      `INSERT INTO ai_memory (chat_id, key, value, type, created_at, expires_at, mem_key, mem_value)
-       VALUES ($1,$2,$3,$4,$5,$6,$2,$3)
-       ON CONFLICT (chat_id, COALESCE(key, mem_key))
+      `INSERT INTO ai_memory (chat_id, key, value, mem_key, mem_value, canonical_key, type, created_at, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       ON CONFLICT (chat_id, canonical_key)
        DO UPDATE SET
-         key       = COALESCE(EXCLUDED.key, EXCLUDED.mem_key),
-         mem_key   = COALESCE(EXCLUDED.mem_key, EXCLUDED.key),
-         value     = COALESCE(EXCLUDED.value, EXCLUDED.mem_value),
-         mem_value = COALESCE(EXCLUDED.mem_value, EXCLUDED.value),
-         type      = EXCLUDED.type,
-         created_at= EXCLUDED.created_at,
-         expires_at= EXCLUDED.expires_at;`,
-      [String(chatId), k, v, t, createdAt, expiresAt]
+         key        = COALESCE(EXCLUDED.key, ai_memory.key),
+         mem_key    = COALESCE(EXCLUDED.mem_key, ai_memory.mem_key),
+         value      = COALESCE(EXCLUDED.value, ai_memory.value),
+         mem_value  = COALESCE(EXCLUDED.mem_value, ai_memory.mem_value),
+         type       = EXCLUDED.type,
+         created_at = EXCLUDED.created_at,
+         expires_at = EXCLUDED.expires_at;`,
+      [
+        String(chatId),
+        k, v,
+        mk, mv,
+        canonical,
+        t, createdAt, expiresAt
+      ]
     );
   } catch (e) {
     console.error("[db] saveToMemory failed:", e.message);
@@ -206,10 +237,11 @@ async function saveToMemory(chatId, payload) {
 
 async function getPersistentMemoryDB(chatId) {
   try {
+    // prune expired
     await q(`DELETE FROM ai_memory WHERE expires_at IS NOT NULL AND expires_at < NOW();`);
     const r = await q(
       `SELECT
-         COALESCE(key, mem_key)  AS key,
+         COALESCE(key, mem_key)    AS key,
          COALESCE(value, mem_value) AS value,
          type, created_at, expires_at
        FROM ai_memory
@@ -226,17 +258,21 @@ async function getPersistentMemoryDB(chatId) {
   }
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
+// EXPORTS
+// ───────────────────────────────────────────────────────────────────────────────
+
 module.exports = {
-  // lifecycle
   initialize,
   healthCheck,
   shutdown,
 
-  // conversations
   saveConversation,
   getConversationHistoryDB,
 
-  // memory
   saveToMemory,
   getPersistentMemoryDB
 };
+
+// Auto-init schema (non-fatal)
+initialize().catch(e => console.error("[db] init error:", e.message));
