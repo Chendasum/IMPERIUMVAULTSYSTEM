@@ -3949,13 +3949,14 @@ async function handleInlineQuery(inlineQuery, bot) {
 
 // ───────────────────────────────────────────────────────────────────────────────
 // MEMORY WRITE HELPERS (Part 6) — safe, compact, TTL-based, chitchat-aware
+// ES5-compatible: no optional chaining, no spread
 // ───────────────────────────────────────────────────────────────────────────────
 
 // TTL presets (ms)
-const TTL = {
-  FACT: 7 * 24 * 60 * 60 * 1000,             // 7 days
-  LAST_COMPLETION: 14 * 24 * 60 * 60 * 1000,  // 14 days
-  LAST_TOPIC: 48 * 60 * 60 * 1000             // 48 hours
+var TTL = {
+  FACT: 7 * 24 * 60 * 60 * 1000,              // 7 days
+  LAST_COMPLETION: 14 * 24 * 60 * 60 * 1000,   // 14 days
+  LAST_TOPIC: 48 * 60 * 60 * 1000              // 48 hours
 };
 
 // Compact assistant text before saving
@@ -3963,43 +3964,56 @@ function normalizeAssistantText(text) {
   if (!text) return '';
   return String(text)
     .replace(/^(Assistant:|AI:|GPT-?5?:)\s*/i, '')
-    .replace(/\s+\n/g, '\n')    // trim extra spaces before newlines
-    .replace(/\n{3,}/g, '\n\n') // collapse >2 blank lines
+    .replace(/\s+\n/g, '\n')     // trim extra spaces before newlines
+    .replace(/\n{3,}/g, '\n\n')  // collapse >2 blank lines
     .trim()
-    .slice(0, 8000);            // sanity cap
+    .slice(0, 8000);             // sanity cap
+}
+
+// Detect trivial greetings (used by topic + memory heuristics)
+function isTrivialGreeting(input) {
+  if (!input) return false;
+  var raw = String(input).trim();
+  var s = raw.toLowerCase();
+  var short = raw.split(/\s+/).length <= 6;
+  var greet = /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you)\b/.test(s);
+  var hasQuestion = /\?\s*$/.test(raw);
+  var looksCommand = raw.indexOf('/') === 0;
+  return greet && short && !hasQuestion && !looksCommand;
 }
 
 // Heuristic topic picker (skip trivial greetings)
 function inferTopic(userMessage) {
   if (!userMessage) return 'general';
-  const raw = String(userMessage).trim();
-  const s = raw.toLowerCase();
+  var raw = String(userMessage).trim();
+  var s = raw.toLowerCase();
 
   // Don’t memorize “hello/hi/how are you” as a topic
-  const isGreeting =
-    /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you)\b/.test(s) &&
-    raw.split(/\s+/).length <= 6;
+  if (isTrivialGreeting(raw)) return 'chitchat';
 
-  if (isGreeting) return 'chitchat';
-
-  if (s.includes('error') || s.includes('bug')) return 'troubleshooting';
-  if (s.includes('report') || s.includes('analysis')) return 'analysis';
-  if (s.includes('deploy') || s.includes('production')) return 'deployment';
-  if (s.includes('memory') || s.includes('context')) return 'memory';
+  if (s.indexOf('error') >= 0 || s.indexOf('bug') >= 0) return 'troubleshooting';
+  if (s.indexOf('report') >= 0 || s.indexOf('analysis') >= 0) return 'analysis';
+  if (s.indexOf('deploy') >= 0 || s.indexOf('production') >= 0) return 'deployment';
+  if (s.indexOf('memory') >= 0 || s.indexOf('context') >= 0) return 'memory';
   if (raw.length < 30) return raw;
   return raw.slice(0, 60).trim();
 }
 
 // Upsert a tiny fact into persistent memory (prefer memory module, fallback DB)
-async function upsertPersistentFact(chatId, key, value, opts = {}) {
-  const ttlMs = typeof opts.ttlMs === 'number' ? opts.ttlMs : TTL.FACT;
+async function upsertPersistentFact(chatId, key, value, opts) {
+  opts = opts || {};
+  var ttlMs = typeof opts.ttlMs === 'number' ? opts.ttlMs : TTL.FACT;
+
   try {
     if (!chatId || !key) return false;
 
-    if (typeof memory?.saveToMemory === 'function') {
+    // Prefer dedicated memory module
+    if (typeof memory !== 'undefined' &&
+        memory &&
+        typeof memory.saveToMemory === 'function') {
       await memory.saveToMemory(chatId, {
         type: 'fact',
-        key,
+        key: key,
         value: String(value),
         createdAt: new Date().toISOString(),
         expiresAt: ttlMs ? new Date(Date.now() + ttlMs).toISOString() : null
@@ -4007,10 +4021,13 @@ async function upsertPersistentFact(chatId, key, value, opts = {}) {
       return true;
     }
 
-    if (typeof database?.saveConversation === 'function') {
-      await database.saveConversation(chatId, `[FACT:${key}]`, String(value), {
+    // Fallback: store as a conversation row
+    if (typeof database !== 'undefined' &&
+        database &&
+        typeof database.saveConversation === 'function') {
+      await database.saveConversation(chatId, '[FACT:' + key + ']', String(value), {
         kind: 'fact',
-        key,
+        key: key,
         expiresAt: ttlMs ? new Date(Date.now() + ttlMs).toISOString() : null
       });
       return true;
@@ -4018,27 +4035,40 @@ async function upsertPersistentFact(chatId, key, value, opts = {}) {
 
     return false;
   } catch (err) {
-    console.warn('upsertPersistentFact failed:', err.message);
+    console.warn('upsertPersistentFact failed:', err && err.message ? err.message : String(err));
     return false;
   }
 }
 
 // Save the full conversation turn (user + assistant) to DB for context rebuilds
-async function persistConversationTurn(chatId, userMessage, assistantResponse, meta = {}) {
+async function persistConversationTurn(chatId, userMessage, assistantResponse, meta) {
+  meta = meta || {};
   try {
     if (!chatId) return false;
-    const assistant = normalizeAssistantText(assistantResponse);
+    var assistant = normalizeAssistantText(assistantResponse);
 
-    if (typeof database?.saveConversation === 'function') {
-      await database.saveConversation(chatId, String(userMessage || ''), assistant, {
-        ...meta,
-        savedAt: new Date().toISOString()
-      });
+    // Merge meta safely (no spread)
+    var metaOut = { savedAt: new Date().toISOString() };
+    for (var k in meta) {
+      if (Object.prototype.hasOwnProperty.call(meta, k)) {
+        metaOut[k] = meta[k];
+      }
+    }
+
+    if (typeof database !== 'undefined' &&
+        database &&
+        typeof database.saveConversation === 'function') {
+      await database.saveConversation(
+        chatId,
+        String(userMessage || ''),
+        assistant,
+        metaOut
+      );
       return true;
     }
     return false;
   } catch (err) {
-    console.warn('persistConversationTurn failed:', err.message);
+    console.warn('persistConversationTurn failed:', err && err.message ? err.message : String(err));
     return false;
   }
 }
@@ -4047,41 +4077,61 @@ async function persistConversationTurn(chatId, userMessage, assistantResponse, m
 async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnalysis, gpt5Result) {
   if (!chatId) return { saved: false };
 
+  // Safe reads (no optional chaining)
+  var modelFromResult = gpt5Result && gpt5Result.modelUsed ? gpt5Result.modelUsed : null;
+  var modelFromAnalysis = queryAnalysis && queryAnalysis.gpt5Model ? queryAnalysis.gpt5Model : null;
+  var chosenModel = modelFromResult || modelFromAnalysis || 'gpt-5-mini';
+
+  var complexity =
+    (queryAnalysis && queryAnalysis.complexity && queryAnalysis.complexity.complexity)
+      ? queryAnalysis.complexity.complexity
+      : 'unknown';
+
+  var completionFlag =
+    (queryAnalysis && queryAnalysis.completionStatus &&
+     (queryAnalysis.completionStatus.isFrustrated || queryAnalysis.completionStatus.isComplete)) ||
+    (gpt5Result && gpt5Result.completionDetected) ||
+    false;
+
+  var completionType =
+    (queryAnalysis && queryAnalysis.completionStatus && queryAnalysis.completionStatus.completionType) ||
+    (gpt5Result && gpt5Result.completionType) ||
+    'direct';
+
+  var processingTime = gpt5Result && gpt5Result.processingTime ? gpt5Result.processingTime : undefined;
+
   // 1) Persist the turn
-  const turnSaved = await persistConversationTurn(chatId, userMessage, processedResponse, {
-    modelUsed: gpt5Result?.modelUsed || queryAnalysis?.gpt5Model,
-    priority: queryAnalysis?.priority,
-    complexity: queryAnalysis?.complexity?.complexity || 'unknown',
-    processingTime: gpt5Result?.processingTime
+  var turnSaved = await persistConversationTurn(chatId, userMessage, processedResponse, {
+    modelUsed: chosenModel,
+    priority: queryAnalysis && queryAnalysis.priority ? queryAnalysis.priority : undefined,
+    complexity: complexity,
+    processingTime: processingTime
   });
 
   // 2) Mark completion if detected
-  if (
-    queryAnalysis?.completionStatus?.isFrustrated ||
-    queryAnalysis?.completionStatus?.isComplete ||
-    gpt5Result?.completionDetected
-  ) {
+  if (completionFlag) {
     await upsertPersistentFact(
       chatId,
       'last_completion',
-      `Completed at ${new Date().toISOString()} — type: ${queryAnalysis?.completionStatus?.completionType || 'direct'}`,
+      'Completed at ' + new Date().toISOString() + ' — type: ' + completionType,
       { ttlMs: TTL.LAST_COMPLETION }
     );
   }
 
   // 3) Leave a tiny breadcrumb for topic — skip if it was trivial chitchat
-  const topic = inferTopic(userMessage);
+  var topic = inferTopic(userMessage);
   if (topic !== 'chitchat') {
     await upsertPersistentFact(chatId, 'last_topic', topic, { ttlMs: TTL.LAST_TOPIC });
 
     // 4) Only capture “next action / next steps / todo / action(s)” if not chitchat
-    const nextMatch = String(processedResponse || '').match(
-      /(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?)[^\n]*$/im
-    );
-    if (nextMatch) {
-      await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
-        ttlMs: TTL.FACT
-      });
+    var resp = String(processedResponse || '');
+    if (resp.length >= 1) {
+      var nextMatch = resp.match(/(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?)[^\n]*$/im);
+      if (nextMatch) {
+        await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
+          ttlMs: TTL.FACT
+        });
+      }
     }
   }
 
