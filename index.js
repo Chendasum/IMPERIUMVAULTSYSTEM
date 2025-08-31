@@ -134,8 +134,7 @@ app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
       console.log(`📨 Routing inline query to dualCommandSystem.js`);
       await DualCommandSystem.handleInlineQuery(update.inline_query, bot);
     } else {
-      console.log(`📨 Unknown update type, routing to dualCommandSystem.js`);
-      await DualCommandSystem.handleUnknownUpdate(update, bot);
+      console.log(`📨 Unknown update type received`);
     }
 
     res.status(200).json({ ok: true });
