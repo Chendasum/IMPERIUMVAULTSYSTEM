@@ -1,32 +1,32 @@
 #!/usr/bin/env node
 
-// 🚀 IMPERIUM VAULT SYSTEM - CLEAN INDEX.JS
+// IMPERIUM VAULT SYSTEM - CLEAN INDEX.JS
 // Pure server setup → ALL routing handled by dualCommandSystem.js
-// Clean separation: index.js (server) → dualCommandSystem.js (AI routing) → openaiClient.js (API)
+// Clean separation: index.js (server) → dualCommandSystem.js (routing) → openaiClient.js (api)
 
-console.log('🚀 IMPERIUM VAULT - Clean Server Starting...');
-console.log('📋 Clean Flow: index.js (server) → dualCommandSystem.js (routing) → openaiClient.js (api)');
-console.log('🧠 Routing Logic: 100% in dualCommandSystem.js (no conflicts)');
-console.log('🌐 Mode: Railway Webhook Production');
+console.log('IMPERIUM VAULT - Clean Server Starting...');
+console.log('Clean Flow: index.js (server) → dualCommandSystem.js (routing) → openaiClient.js (api)');
+console.log('Routing Logic: 100% in dualCommandSystem.js (no conflicts)');
+console.log('Mode: Railway Webhook Production');
 
 require('dotenv').config();
 
 const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
 
-// 🌐 CLEAN SERVER CONFIGURATION
+// CLEAN SERVER CONFIGURATION
 const PORT = process.env.PORT || 8080;
 const WEBHOOK_URL = process.env.WEBHOOK_URL || `https://imperiumvaultsystem-production.up.railway.app`;
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 if (!BOT_TOKEN) {
-  console.error('❌ TELEGRAM_BOT_TOKEN not found');
+  console.error('TELEGRAM_BOT_TOKEN not found');
   process.exit(1);
 }
 
-console.log(`🌐 Server Config: Port ${PORT}, Webhook: ${WEBHOOK_URL}`);
+console.log(`Server Config: Port ${PORT}, Webhook: ${WEBHOOK_URL}`);
 
-// 📱 TELEGRAM BOT SETUP - Webhook Only
+// TELEGRAM BOT SETUP - Webhook Only
 const bot = new TelegramBot(BOT_TOKEN);
 const app = express();
 
@@ -63,7 +63,7 @@ app.get('/', (req, res) => {
     status: 'IMPERIUM VAULT GPT-5 System Online',
     architecture: 'Clean Separation Architecture',
     server: 'index.js (Express + Telegram Webhook)',
-    routing: 'dualCommandSystem.js (All AI Logic)',
+    routing: 'dualCommandSystem.js (All AI Logic + Multimodal)',
     api: 'openaiClient.js (GPT-5 API)',
     formatting: 'telegramSplitter.js (Smart Unicode)',
     mode: 'Railway Production Webhook',
@@ -82,6 +82,7 @@ app.get('/health', (req, res) => {
       total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
     },
     routing_system: DualCommandSystem ? 'loaded' : 'failed',
+    multimodal_support: DualCommandSystem && DualCommandSystem.handleTelegramMessage ? 'ready' : 'missing',
     timestamp: new Date().toISOString()
   });
 });
@@ -90,6 +91,11 @@ app.get('/status', (req, res) => {
   res.json({ 
     server: 'online', 
     routing: DualCommandSystem ? 'ready' : 'failed',
+    handlers: {
+      telegram: !!DualCommandSystem.handleTelegramMessage,
+      callback: !!DualCommandSystem.handleCallbackQuery,
+      inline: !!DualCommandSystem.handleInlineQuery
+    },
     timestamp: new Date().toISOString() 
   });
 });
@@ -161,6 +167,8 @@ async function initializeServer() {
     for (const method of requiredMethods) {
       if (!DualCommandSystem[method]) {
         console.warn(`⚠️  dualCommandSystem.${method} not found - may cause routing issues`);
+      } else {
+        console.log(`✅ dualCommandSystem.${method} found`);
       }
     }
 
