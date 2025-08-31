@@ -2193,6 +2193,64 @@ module.exports = {
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 4/6
 // MAIN COMMAND EXECUTION ENGINE
 
+// ───────────────────────────────────────────────────────────────────────────────
+// Optional inline query handler (exported at bottom so index.js can import it)
+async function handleInlineQuery(inlineQuery, bot) {
+  try {
+    await bot.answerInlineQuery(inlineQuery.id, [], { cache_time: 1 });
+    console.log('Inline query handled');
+  } catch (error) {
+    console.error('Inline query error:', error.message);
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Chitchat short-circuit (prevents heavy replies on simple greetings)
+// ───────────────────────────────────────────────────────────────────────────────
+const CHITCHAT_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+const chitchatGate = new Map(); // chatId -> { ts, lastMode }
+
+function isGreetingOnly(text) {
+  if (!text) return false;
+  const raw = String(text).trim();
+  const s = raw.toLowerCase();
+  const short = raw.split(/\s+/).length <= 6;
+  const greet = /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you)\b/.test(s);
+  const hasQuestion = /[?]\s*$/.test(raw);
+  const looksCommand = raw.startsWith('/');
+  return greet && short && !hasQuestion && !looksCommand;
+}
+
+function pickLastTopic(memoryData) {
+  try {
+    const facts = Array.isArray(memoryData && memoryData.persistentMemory) ? memoryData.persistentMemory : [];
+    const last = facts.find(f => String(f && f.key).toLowerCase() === 'last_topic');
+    return (last && last.value) ? String(last.value) : null;
+  } catch (_e) { return null; }
+}
+
+function buildChitchatReply(chatId, memoryData) {
+  const last = pickLastTopic(memoryData);
+  const now = Date.now();
+  const gate = chitchatGate.get(chatId) || { ts: 0, lastMode: 'full' };
+  const fresh = (now - gate.ts) < CHITCHAT_COOLDOWN_MS;
+
+  if (last && !fresh) {
+    chitchatGate.set(chatId, { ts: now, lastMode: 'full' });
+    return {
+      text: `👋 Hi! Would you like to continue on “${last}”?  \nReply with **yes** to resume or tell me what you need.`,
+      compact: true
+    };
+  }
+
+  chitchatGate.set(chatId, { ts: now, lastMode: 'compact' });
+  return {
+    text: `👋 Hi! What can I help you with today?`,
+    compact: true
+  };
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
 // MAIN COMMAND EXECUTION FUNCTION
 async function executeDualCommand(userMessage, chatId, options) {
   options = options || {};
@@ -2230,6 +2288,37 @@ async function executeDualCommand(userMessage, chatId, options) {
       memoryData = memoryResult.memoryData;
     }
 
+    // 2.5) Chitchat short-circuit (skip GPT-5 on simple greetings; compact reply)
+    if (isGreetingOnly(preprocessed.cleaned)) {
+      const quick = buildChitchatReply(chatId, memoryData);
+
+      const chitchatAnalysis = {
+        shouldSkipGPT5: true,
+        quickResponse: quick.text,
+        completionStatus: { completionType: 'chitchat', confidence: 0.99 },
+        gpt5Model: (CONFIG && CONFIG.MODELS && CONFIG.MODELS.NANO) ? CONFIG.MODELS.NANO : 'gpt-5-nano',
+        complexity: { complexity: 'low' },
+        priority: 'chitchat',
+        reasoning_effort: 'low',
+        verbosity: 'low',
+        // style hints for telegramSplitter
+        displayStyle: 'compact',
+        banner: 'none'
+      };
+
+      const result = createCompletionResponse(chitchatAnalysis, memoryContext, memoryData, startTime, chatId);
+      // augment style hints for splitter (it will ignore if unsupported)
+      result.sendToTelegram = createTelegramSender(
+        chatId,
+        chitchatAnalysis.quickResponse,
+        chitchatAnalysis,
+        { completionDetected: true, modelUsed: chitchatAnalysis.gpt5Model, displayStyle: 'compact', banner: 'none' },
+        Date.now() - startTime,
+        memoryContext.length > 0
+      );
+      return result;
+    }
+
     // 3) Analyze query for optimal GPT-5 model selection
     const queryAnalysis = analyzeQuery(
       preprocessed.cleaned,
@@ -2241,6 +2330,9 @@ async function executeDualCommand(userMessage, chatId, options) {
     // 3.1) Handle completion detection FIRST
     if (queryAnalysis.shouldSkipGPT5) {
       console.log('Completion detected: ' + queryAnalysis.completionStatus.completionType);
+      // add compact style for completion detections
+      queryAnalysis.displayStyle = 'compact';
+      queryAnalysis.banner = 'none';
       return createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime, chatId);
     }
 
@@ -2402,8 +2494,8 @@ async function executeDualCommand(userMessage, chatId, options) {
   }
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
 // HELPER FUNCTIONS
-
 function createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime, chatId) {
   const responseTime = Date.now() - startTime;
 
@@ -2414,6 +2506,12 @@ function createCompletionResponse(queryAnalysis, memoryContext, memoryData, star
      CONFIG &&
      CONFIG.MODELS &&
      CONFIG.MODELS.MINI) ? CONFIG.MODELS.MINI : 'gpt-5-mini';
+
+  // compact style hints if caller set them
+  const styleHints = {
+    displayStyle: queryAnalysis.displayStyle || 'compact',
+    banner: queryAnalysis.banner || 'none'
+  };
 
   return {
     response: queryAnalysis.quickResponse,
@@ -2460,7 +2558,7 @@ function createCompletionResponse(queryAnalysis, memoryContext, memoryData, star
       chatId,
       queryAnalysis.quickResponse,
       queryAnalysis,
-      { completionDetected: true, modelUsed: modelMini },
+      { completionDetected: true, modelUsed: modelMini, ...styleHints },
       responseTime,
       memoryContext.length > 0
     )
@@ -2564,6 +2662,10 @@ function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, respo
           completionDetected: !!(gpt5Result && gpt5Result.completionDetected)
         };
 
+        // pass optional style hints for compact/no-banner layouts
+        if (gpt5Result && gpt5Result.displayStyle) meta.displayStyle = gpt5Result.displayStyle;
+        if (gpt5Result && gpt5Result.banner) meta.banner = gpt5Result.banner;
+
         if (typeof sendTelegramMessage === 'function') {
           const result = await sendTelegramMessage(bot, chatId, String(response || ''), meta);
           if (result && (result.enhanced || result.fallback || result.success)) {
@@ -2641,6 +2743,7 @@ function createErrorTelegramSender(chatId, errorResponse, originalError) {
   };
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
 // EXPORTS for Part 4
 module.exports = {
   executeDualCommand,
@@ -2649,7 +2752,8 @@ module.exports = {
   getCostTier,
   createTelegramSender,
   createErrorTelegramSender,
-  calculateEstimatedCost
+  calculateEstimatedCost,
+  handleInlineQuery // exported so index.js can import and wire it
 };
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 5/6
