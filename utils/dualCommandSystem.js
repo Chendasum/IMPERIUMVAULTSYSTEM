@@ -485,8 +485,7 @@ module.exports = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 (function attachCambodiaStack() {
-  'use strict';
-
+  
   // Reuse the lazy loader from earlier in this file (or define a small local one)
   function _lazy(name, candidates, stubFactory) {
     for (let i = 0; i < candidates.length; i++) {
@@ -2193,8 +2192,6 @@ module.exports = {
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 4/6
 // MAIN COMMAND EXECUTION ENGINE
-
-'use strict';
 
 // MAIN COMMAND EXECUTION FUNCTION
 async function executeDualCommand(userMessage, chatId, options) {
@@ -4137,9 +4134,12 @@ console.log('🌏 Context: Cambodia timezone, global market awareness, memory in
 console.log('✅ Ready for production deployment with comprehensive error handling');
 
 // ───────────────────────────────────────────────────────────────────────────────
-// MAIN MODULE EXPORTS (single export block)
+// MAIN MODULE EXPORTS (merged — preserves earlier attached exports)
+// ───────────────────────────────────────────────────────────────────────────────
 
-module.exports = {
+const __prev = (module.exports && typeof module.exports === 'object') ? module.exports : {};
+
+Object.assign(__prev, {
   // CORE FUNCTIONS
   executeDualCommand,
   executeEnhancedGPT5Command,
@@ -4153,6 +4153,9 @@ module.exports = {
   quickFullCommand,
   quickChatCommand,
 
+  // 🔗 Alias to keep index.js working (/ultimate uses this)
+  quickUltimateCommand: quickFullCommand,
+
   // SYSTEM ANALYSIS & RECOMMENDATIONS
   getGPT5ModelRecommendation,
   getGPT5CostEstimate,
@@ -4161,7 +4164,7 @@ module.exports = {
   // SYSTEM MONITORING & HEALTH
   getSystemAnalytics,
   checkSystemHealth,
-  checkGPT5OnlySystemHealth, // Legacy compatibility
+  checkGPT5OnlySystemHealth, // legacy name kept
   performGPT5HealthCheck,
   performFullSystemDiagnostics,
   testMemoryIntegration,
@@ -4179,19 +4182,16 @@ module.exports = {
   executeDirectGPT5Analysis,
   saveConversationEmergency,
 
-  // NEW memory write helpers (so callers can use directly if they want)
+  // Memory write helpers (so callers can trigger them too)
   maybeSaveMemory,
   upsertPersistentFact,
   persistConversationTurn,
 
   // SYSTEM STATE ACCESS
-  getSystemState: () => ({ ...systemState }), // Return copy for safety
+  getSystemState: () => ({ ...systemState }),
   getConfig: () => ({ ...CONFIG }),
 
-  // LEGACY COMPATIBILITY
-  ...legacyCompatibility,
-
-  // DIRECT ACCESS TO SUBSYSTEMS (for advanced usage)
+  // DIRECT ACCESS TO SUBSYSTEMS
   openaiClient,
   memory,
   database,
@@ -4200,11 +4200,20 @@ module.exports = {
   // CONSTANTS
   MODELS: CONFIG.MODELS,
   REASONING_LEVELS: CONFIG.REASONING_LEVELS,
-  VERBOSITY_LEVELS: CONFIG.VERBOSITY_LEVELS
-};
+  VERBOSITY_LEVELS: CONFIG.VERBOSITY_LEVELS,
+
+  // (Optional) expose Part 4 helpers so index.js or others can reuse them
+  // Comment these 3 lines out if Part 4 isn’t present in your build:
+  createTelegramSender,
+  createErrorTelegramSender,
+  calculateEstimatedCost
+});
+
+// finalize
+module.exports = __prev;
 
 console.log('🚀 All systems ready - Secure GPT-5 Command System operational');
 console.log('📋 Main functions: executeDualCommand, executeEnhancedGPT5Command');
-console.log('⚙️ Quick functions: quickNanoCommand, quickMiniCommand, quickFullCommand');
+console.log('⚙️ Quick functions: quickNanoCommand, quickMiniCommand, quickFullCommand (alias: quickUltimateCommand)');
 console.log('🔍 Analysis: getGPT5ModelRecommendation, getSystemAnalytics');
 console.log('💾 Compatibility: Legacy function names preserved for existing code');
