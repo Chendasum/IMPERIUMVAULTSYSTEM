@@ -1,10 +1,14 @@
 // utils/multimodal.js - GPT-5 Multimodal: Vision, Documents, Voice/Audio (2025-08)
 // FIXED VERSION - Compatible with smart telegramSplitter.js
 
+'use strict';
+
 const fs = require('fs').promises;
 const fsc = require('fs');
 const path = require('path');
+const os = require('os');
 const crypto = require('crypto');
+const axios = require('axios');
 
 // ───────────────────────────────────────────────────────────────────────────────
 // Optional parsers (load if installed; instruct if not)
@@ -38,6 +42,8 @@ try {
   telegramSplitter = null;
 }
 
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+
 // ───────────────────────────────────────────────────────────────────────────────
 // Minimal conversation memory (local, capped)
 const conversationMemory = new Map();
@@ -65,9 +71,9 @@ const MULTIMODAL_CONFIG = {
   MAX_FILE_SIZE: 20 * 1024 * 1024, // 20MB
   SUPPORTED_IMAGE_TYPES: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
   SUPPORTED_DOCUMENT_TYPES: ['pdf', 'txt', 'doc', 'docx', 'md', 'csv', 'xlsx', 'pptx'],
-  SUPPORTED_AUDIO_TYPES: ['mp3', 'wav', 'm4a', 'ogg'],
+  SUPPORTED_AUDIO_TYPES: ['mp3', 'wav', 'm4a', 'ogg', 'oga', 'mp4', 'webm', 'mpga', 'mpeg', 'flac'],
   SUPPORTED_VIDEO_TYPES: ['mp4', 'mov', 'avi', 'webm'],
-  TEMP_DIR: './temp_multimodal',
+  TEMP_DIR: path.join(os.tmpdir(), 'imperium_multimodal'),
   CLEANUP_INTERVAL: 300000,          // 5 minutes
   DOCUMENT_CONTEXT_TIMEOUT: 1800000, // 30 minutes
 
@@ -91,50 +97,60 @@ async function ensureTempDir() {
 }
 
 // Generate temp filename
-function generateTempFilename(originalName, type) {
-  const timestamp = Date.now();
-  const randomId = crypto.randomBytes(8).toString('hex');
-  const ext = path.extname(originalName);
-  const extension = ext && ext.length > 1 ? ext : `.${type}`;
-  return `${type}_${timestamp}_${randomId}${extension}`;
+function generateTempFilename(originalName, kindFallback) {
+  const ts = Date.now();
+  const rnd = crypto.randomBytes(8).toString('hex');
+  const ext = path.extname(originalName || '').toLowerCase() || `.${kindFallback}`;
+  const safeExt = ext.startsWith('.') ? ext : `.${ext}`;
+  return `${kindFallback}_${ts}_${rnd}${safeExt}`;
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// Telegram file download (robust)
-async function downloadTelegramFile(bot, fileId, filename) {
+// Telegram file download (robust, correct for node-telegram-bot-api)
+async function downloadTelegramFile(bot, fileId, finalFilenameGuess) {
+  if (!BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN missing');
+  await ensureTempDir();
+
+  // 1) Ask Telegram for file path
+  const fileInfo = await bot.getFile(fileId);
+  if (!fileInfo || !fileInfo.file_path) {
+    throw new Error('Unable to get file path from Telegram');
+  }
+
+  // 2) Build download URL and fetch bytes
+  const url = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileInfo.file_path}`;
+  const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 30000 });
+  const buffer = Buffer.from(res.data);
+
+  if (buffer.length === 0) throw new Error('Downloaded file is empty');
+
+  // 3) Decide local filename & save
+  const ext = path.extname(fileInfo.file_path || '').toLowerCase();
+  const filename =
+    finalFilenameGuess && path.extname(finalFilenameGuess)
+      ? finalFilenameGuess
+      : generateTempFilename(fileInfo.file_path, (ext || '.bin').replace('.', ''));
+
+  const outPath = path.join(MULTIMODAL_CONFIG.TEMP_DIR, filename);
+  await fs.writeFile(outPath, buffer);
+
+  // 4) Size check
+  const stats = await fs.stat(outPath);
+  if (stats.size > MULTIMODAL_CONFIG.MAX_FILE_SIZE) {
+    await fs.unlink(outPath).catch(() => {});
+    throw new Error(`File too large: ${Math.round(stats.size / 1024 / 1024)}MB (max: 20MB)`);
+  }
+
+  return { path: outPath, size: stats.size, ext: ext.replace('.', ''), file_path: fileInfo.file_path };
+}
+
+// Cleanup temp file
+async function cleanupTempFile(filePath) {
   try {
-    await ensureTempDir();
-
-    const fileInfo = await bot.getFile(fileId);
-    if (!fileInfo || !fileInfo.file_path) {
-      throw new Error('Unable to get file path from Telegram');
-    }
-
-    const filePath = path.join(MULTIMODAL_CONFIG.TEMP_DIR, filename);
-
-    if (typeof bot.downloadFile === 'function') {
-      const buffer = await bot.downloadFile(fileId, MULTIMODAL_CONFIG.TEMP_DIR);
-      await fs.writeFile(filePath, buffer);
-    } else {
-      // Stream fallback
-      const fileStream = bot.getFileStream(fileId);
-      const writeStream = fsc.createWriteStream(filePath);
-      await new Promise((resolve, reject) => {
-        fileStream.pipe(writeStream);
-        writeStream.on('finish', resolve);
-        writeStream.on('error', reject);
-        fileStream.on('error', reject);
-        setTimeout(() => reject(new Error('Download timeout')), 30000);
-      });
-    }
-
-    const stats = await fs.stat(filePath);
-    if (stats.size === 0) throw new Error('Downloaded file is empty');
-
-    return filePath;
+    await fs.unlink(filePath);
+    console.log('Cleaned up temp file:', filePath);
   } catch (error) {
-    console.error('File download error:', error.message);
-    throw new Error(`Failed to download file: ${error.message}`);
+    console.warn('Cleanup failed for:', filePath, error.message);
   }
 }
 
@@ -144,8 +160,8 @@ function storeDocumentContext(chatId, fileName, fileType, extractedText, analysi
   const context = {
     fileName,
     fileType,
-    extractedText: extractedText.substring(0, 10000), // store a safe slice
-    analysis,
+    extractedText: String(extractedText || '').substring(0, 10000), // store a safe slice
+    analysis: String(analysis || ''),
     timestamp: Date.now()
   };
   documentContexts.set(chatId, context);
@@ -166,55 +182,34 @@ function getDocumentContext(chatId) {
   return null;
 }
 
-// Cleanup temp file
-async function cleanupTempFile(filePath) {
-  try {
-    await fs.unlink(filePath);
-    console.log('Cleaned up temp file:', filePath);
-  } catch (error) {
-    console.warn('Cleanup failed for:', filePath, error.message);
-  }
-}
-
 // ───────────────────────────────────────────────────────────────────────────────
 // SMART TELEGRAM DELIVERY - FIXED VERSION
 // ───────────────────────────────────────────────────────────────────────────────
 
 async function sendToTelegram(bot, chatId, analysis, metadata = {}) {
   try {
-    if (telegramSplitter) {
-      // Use the correct function from your telegramSplitter.js
-      const { sendTelegramMessage } = telegramSplitter;
-      
-      if (sendTelegramMessage) {
-        const result = await sendTelegramMessage(bot, chatId, analysis, metadata);
-        return result.success;
-      }
-      
-      // Fallback to setupTelegramHandler approach
-      const { setupTelegramHandler } = telegramSplitter;
-      if (setupTelegramHandler) {
-        const handler = setupTelegramHandler(bot);
-        const result = await handler.send(analysis, chatId, { metadata });
-        return result.success;
-      }
+    if (!bot || !chatId) return false;
+
+    if (telegramSplitter && typeof telegramSplitter.sendTelegramMessage === 'function') {
+      const meta = {
+        ...metadata,
+        model: metadata?.model || 'gpt-5-mini',
+        enhanced: true
+      };
+      const result = await telegramSplitter.sendTelegramMessage(bot, chatId, analysis, meta);
+      return !!(result && result.success !== false);
     }
-    
-    // Basic fallback - direct bot.sendMessage
+
+    // Basic fallback
     await bot.sendMessage(chatId, analysis);
     console.log('Basic telegram delivery successful');
     return true;
-    
   } catch (error) {
     console.error('Telegram delivery failed:', error.message);
-    
-    // Final fallback
     try {
       await bot.sendMessage(chatId, analysis);
-      console.log('Final fallback delivery successful');
       return true;
-    } catch (finalError) {
-      console.error('All delivery methods failed:', finalError.message);
+    } catch {
       return false;
     }
   }
@@ -222,6 +217,13 @@ async function sendToTelegram(bot, chatId, analysis, metadata = {}) {
 
 async function sendErrorToTelegram(bot, chatId, errorMessage) {
   try {
+    if (telegramSplitter?.sendTelegramMessage) {
+      await telegramSplitter.sendTelegramMessage(bot, chatId, errorMessage, {
+        model: 'error-handler',
+        error: true
+      });
+      return true;
+    }
     await bot.sendMessage(chatId, errorMessage);
     return true;
   } catch (error) {
@@ -235,7 +237,7 @@ async function sendErrorToTelegram(bot, chatId, errorMessage) {
 // ───────────────────────────────────────────────────────────────────────────────
 
 async function analyzeImage(bot, fileId, prompt, chatId) {
-  let tempFilePath = null;
+  let temp = null;
   const startedAt = Date.now();
 
   try {
@@ -244,29 +246,34 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
     }
 
     console.log('Starting GPT-4o Vision image analysis...');
-    const filename = generateTempFilename('image.jpg', 'img');
-    tempFilePath = await downloadTelegramFile(bot, fileId, filename);
+    const guess = generateTempFilename('image.jpg', 'img');
+    const dl = await downloadTelegramFile(bot, fileId, guess);
+    temp = dl.path;
 
-    const imageBuffer = await fs.readFile(tempFilePath);
-    const base64Image = imageBuffer.toString('base64');
-    const imageSizeKB = Math.round(imageBuffer.length / 1024);
+    const ext = (dl.ext || '').replace('.', '').toLowerCase();
+    if (!MULTIMODAL_CONFIG.SUPPORTED_IMAGE_TYPES.includes(ext)) {
+      throw new Error(
+        `Unsupported image format: .${ext}. Please send one of: ${MULTIMODAL_CONFIG.SUPPORTED_IMAGE_TYPES.join(', ')}`
+      );
+    }
+
+    const buf = await fs.readFile(temp);
+    const base64 = buf.toString('base64');
+    const sizeKB = Math.round(buf.length / 1024);
 
     const visionPrompt =
       prompt ||
-      "Analyze this image. Describe key elements, context, composition, notable objects, and provide concise, useful insights.";
+      'Analyze this image. Describe key elements, context, composition, notable objects, and provide concise, useful insights.';
 
-    // Call GPT-4o Vision directly
-    const response = await openaiClient.openai.chat.completions.create({
-      model: "gpt-4o",
+    // Chat Completions with image (data URL supported)
+    const resp = await openaiClient.openai.chat.completions.create({
+      model: 'gpt-4o',
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: [
-            { type: "text", text: visionPrompt },
-            {
-              type: "image_url",
-              image_url: { url: `data:image/jpeg;base64,${base64Image}`, detail: "high" }
-            }
+            { type: 'text', text: visionPrompt },
+            { type: 'image_url', image_url: { url: `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${base64}`, detail: 'high' } }
           ]
         }
       ],
@@ -274,10 +281,10 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
       temperature: 0.7
     });
 
-    const analysis = response.choices?.[0]?.message?.content;
+    const analysis = resp.choices?.[0]?.message?.content;
     if (!analysis) throw new Error('No analysis returned from vision API');
 
-    storeDocumentContext(chatId, filename, 'image', 'Image analysis completed', analysis);
+    storeDocumentContext(chatId, path.basename(temp), ext, 'Image analysis completed', analysis);
 
     await saveConversationEmergency(
       chatId,
@@ -286,17 +293,16 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
       {
         aiUsed: 'GPT-4o-Vision',
         type: 'image_analysis',
-        fileSizeKB: imageSizeKB,
+        fileSizeKB: sizeKB,
         processingMs: Date.now() - startedAt
       }
     );
 
-    // Use the FIXED telegram delivery
-    const success = await sendToTelegram(bot, chatId, analysis, {
+    const ok = await sendToTelegram(bot, chatId, analysis, {
       type: 'image_analysis',
-      fileSizeKB: imageSizeKB,
+      fileSizeKB: sizeKB,
       processingMs: Date.now() - startedAt,
-      aiUsed: 'GPT-4o-Vision'
+      model: 'gpt-4o'
     });
 
     return {
@@ -304,16 +310,16 @@ async function analyzeImage(bot, fileId, prompt, chatId) {
       type: 'image',
       analysis,
       aiUsed: 'GPT-4o-Vision',
-      fileSizeKB: imageSizeKB,
-      telegramDelivered: success
+      fileSizeKB: sizeKB,
+      telegramDelivered: ok
     };
   } catch (error) {
     console.error('Image analysis error:', error.message);
-    const errorMsg = `Image analysis failed: ${error.message}`;
-    await sendErrorToTelegram(bot, chatId, errorMsg);
+    const msg = `Image analysis failed: ${error.message}`;
+    await sendErrorToTelegram(bot, chatId, msg);
     return { success: false, error: error.message, type: 'image' };
   } finally {
-    if (tempFilePath) await cleanupTempFile(tempFilePath);
+    if (temp) await cleanupTempFile(temp);
   }
 }
 
@@ -380,9 +386,8 @@ function splitTextIntoChunks(text, size, overlap) {
   let i = 0;
   while (i < text.length) {
     const end = Math.min(i + size, text.length);
-    const chunk = text.slice(i, end);
-    chunks.push(chunk);
-    i = end - overlap; // step back by overlap
+    chunks.push(text.slice(i, end));
+    i = end - overlap;
     if (i < 0) i = 0;
     if (i >= text.length) break;
   }
@@ -428,7 +433,7 @@ ${summaries.map((s, i) => `\n[Chunk ${i + 1}]\n${s}`).join('\n')}
 // ───────────────────────────────────────────────────────────────────────────────
 
 async function analyzeDocument(bot, document, prompt, chatId) {
-  let tempFilePath = null;
+  let temp = null;
 
   try {
     if (!openaiClient) throw new Error('OpenAI client not available');
@@ -438,35 +443,35 @@ async function analyzeDocument(bot, document, prompt, chatId) {
       throw new Error(`File too large: ${Math.round(document.file_size / 1024 / 1024)}MB (max: 20MB)`);
     }
 
-    const fileExtension = (path.extname(document.file_name) || '').toLowerCase().slice(1);
-    if (!MULTIMODAL_CONFIG.SUPPORTED_DOCUMENT_TYPES.includes(fileExtension)) {
-      throw new Error(`Unsupported document type: ${fileExtension}`);
+    const ext = (path.extname(document.file_name) || '').toLowerCase().slice(1);
+    if (!MULTIMODAL_CONFIG.SUPPORTED_DOCUMENT_TYPES.includes(ext)) {
+      throw new Error(`Unsupported document type: ${ext}`);
     }
 
-    const filename = generateTempFilename(document.file_name, 'doc');
-    tempFilePath = await downloadTelegramFile(bot, document.file_id, filename);
+    const guess = generateTempFilename(document.file_name, 'doc');
+    const dl = await downloadTelegramFile(bot, document.file_id, guess);
+    temp = dl.path;
 
-    let documentText = await extractTextFromFile(tempFilePath, fileExtension);
-    if (!documentText || !documentText.trim()) {
+    let text = await extractTextFromFile(temp, ext);
+    if (!text || !text.trim()) {
       throw new Error('No extractable text found in document');
     }
 
-    const originalTextLength = documentText.length;
+    const originalTextLength = text.length;
 
-    // Decide: direct vs chunked
     let finalAnalysis = '';
-    if (documentText.length <= MULTIMODAL_CONFIG.DOC_MAX_CHARS_DIRECT) {
+    if (text.length <= MULTIMODAL_CONFIG.DOC_MAX_CHARS_DIRECT) {
       const truncatedNotice =
-        documentText.length > MULTIMODAL_CONFIG.DOC_MAX_CHARS_DIRECT
+        text.length > MULTIMODAL_CONFIG.DOC_MAX_CHARS_DIRECT
           ? '\n\nNote: Large file - content truncated for analysis.'
           : '';
 
       const analysisPrompt =
 `${prompt || 'Analyze this document and provide a structured summary with key findings, important data, risks, metrics, and actionable insights.'}
 
-DOCUMENT: ${document.file_name} (${fileExtension.toUpperCase()})
+DOCUMENT: ${document.file_name} (${ext.toUpperCase()})
 --- BEGIN DOCUMENT TEXT ---
-${documentText.slice(0, MULTIMODAL_CONFIG.DOC_MAX_CHARS_DIRECT)}
+${text.slice(0, MULTIMODAL_CONFIG.DOC_MAX_CHARS_DIRECT)}
 --- END DOCUMENT TEXT ---${truncatedNotice}`;
 
       finalAnalysis = await openaiClient.getGPT5Analysis(analysisPrompt, {
@@ -476,57 +481,55 @@ ${documentText.slice(0, MULTIMODAL_CONFIG.DOC_MAX_CHARS_DIRECT)}
         verbosity: 'medium'
       });
     } else {
-      // Chunking path
       const chunks = splitTextIntoChunks(
-        documentText,
+        text,
         MULTIMODAL_CONFIG.DOC_CHUNK_SIZE,
         MULTIMODAL_CONFIG.DOC_CHUNK_OVERLAP
       );
       const summaries = [];
       for (let i = 0; i < chunks.length; i++) {
-        const s = await summarizeChunk(document.file_name, fileExtension, chunks[i], i, chunks.length);
+        const s = await summarizeChunk(document.file_name, ext, chunks[i], i, chunks.length);
         summaries.push(s);
       }
-      finalAnalysis = await mergeChunkSummaries(document.file_name, fileExtension, summaries);
+      finalAnalysis = await mergeChunkSummaries(document.file_name, ext, summaries);
     }
 
-    storeDocumentContext(chatId, document.file_name, fileExtension, documentText, finalAnalysis);
+    storeDocumentContext(chatId, document.file_name, ext, text, finalAnalysis);
 
     await saveConversationEmergency(
       chatId,
       `Document uploaded: ${document.file_name}`,
-      `DOCUMENT ANALYSIS:\n\n${finalAnalysis}\n\n--- ORIGINAL TEXT (sample) ---\n${documentText.substring(0, 2000)}${documentText.length > 2000 ? '...' : ''}`,
+      `DOCUMENT ANALYSIS:\n\n${finalAnalysis}\n\n--- ORIGINAL TEXT (sample) ---\n${text.substring(0, 2000)}${text.length > 2000 ? '...' : ''}`,
       {
         aiUsed: 'GPT-5-Document',
         type: 'document_analysis',
         fileName: document.file_name,
-        fileType: fileExtension,
+        fileType: ext,
         fileSizeKB: Math.round(document.file_size / 1024),
         originalTextLength
       }
     );
 
-    const enhancedAnalysis =
-      `Document: ${document.file_name} (${fileExtension.toUpperCase()}, ${Math.round(document.file_size / 1024)}KB)\n\n` +
+    const enhanced =
+      `Document: ${document.file_name} (${ext.toUpperCase()}, ${Math.round(document.file_size / 1024)}KB)\n\n` +
       `${finalAnalysis}\n\nYou can now ask follow-up questions about this document.`;
 
-    // Use the FIXED telegram delivery
-    const success = await sendToTelegram(bot, chatId, enhancedAnalysis, {
+    const ok = await sendToTelegram(bot, chatId, enhanced, {
       type: 'document_analysis',
       fileName: document.file_name,
       fileSizeKB: Math.round(document.file_size / 1024),
-      fileType: fileExtension,
-      aiUsed: 'GPT-5-Document'
+      fileType: ext,
+      model: 'gpt-5-mini'
     });
 
     return {
       success: true,
       type: 'document',
-      analysis: enhancedAnalysis,
+      analysis: enhanced,
       aiUsed: 'GPT-5-Document',
       fileName: document.file_name,
-      fileType: fileExtension,
-      telegramDelivered: success
+      fileType: ext,
+      telegramDelivered: ok
     };
   } catch (error) {
     console.error('Document analysis error:', error.message);
@@ -534,7 +537,7 @@ ${documentText.slice(0, MULTIMODAL_CONFIG.DOC_MAX_CHARS_DIRECT)}
     await sendErrorToTelegram(bot, chatId, errorMsg);
     return { success: false, error: error.message, type: 'document' };
   } finally {
-    if (tempFilePath) await cleanupTempFile(tempFilePath);
+    if (temp) await cleanupTempFile(temp);
   }
 }
 
@@ -546,25 +549,27 @@ async function transcribeAudioFromFile(filePath) {
   if (!openaiClient || !openaiClient.openai) {
     throw new Error('OpenAI client not available for transcription');
   }
+  // Whisper supports: flac, m4a, mp3, mp4, mpeg, mpga, oga, ogg, wav, webm
+  const stream = fsc.createReadStream(filePath);
   const transcription = await openaiClient.openai.audio.transcriptions.create({
-    file: fsc.createReadStream(filePath),
-    model: 'whisper-1',
-    language: 'en'
+    file: stream,
+    model: 'whisper-1'
   });
   return transcription?.text || '';
 }
 
 async function analyzeVoice(bot, voice, prompt, chatId) {
-  let tempFilePath = null;
+  let temp = null;
 
   try {
     if (!openaiClient) throw new Error('OpenAI client not available');
     console.log('Starting voice transcription and analysis...');
 
-    const filename = generateTempFilename('voice.ogg', 'ogg');
-    tempFilePath = await downloadTelegramFile(bot, voice.file_id, filename);
+    const guess = generateTempFilename('voice.oga', 'voice');
+    const dl = await downloadTelegramFile(bot, voice.file_id, guess);
+    temp = dl.path;
 
-    const transcribedText = await transcribeAudioFromFile(tempFilePath);
+    const transcribedText = await transcribeAudioFromFile(temp);
     if (!transcribedText) throw new Error('No transcription text returned');
 
     const analysisPrompt =
@@ -581,7 +586,7 @@ Transcribed voice message:
     });
 
     const fullResponse =
-`Voice Transcription (${voice.duration}s):
+`Voice Transcription (${voice.duration || 0}s):
 "${transcribedText}"
 
 Analysis:
@@ -596,17 +601,16 @@ ${analysis}`;
       {
         aiUsed: 'Whisper + GPT-5-Mini',
         type: 'voice_analysis',
-        duration: voice.duration,
+        duration: voice.duration || 0,
         transcriptionLength: transcribedText.length
       }
     );
 
-    // Use the FIXED telegram delivery
-    const success = await sendToTelegram(bot, chatId, fullResponse, {
+    const ok = await sendToTelegram(bot, chatId, fullResponse, {
       type: 'voice_analysis',
-      duration: voice.duration,
+      duration: voice.duration || 0,
       transcriptionLength: transcribedText.length,
-      aiUsed: 'Whisper + GPT-5-Mini'
+      model: 'gpt-5-mini'
     });
 
     return {
@@ -615,8 +619,8 @@ ${analysis}`;
       analysis: fullResponse,
       transcription: transcribedText,
       aiUsed: 'Whisper + GPT-5-Mini',
-      duration: voice.duration,
-      telegramDelivered: success
+      duration: voice.duration || 0,
+      telegramDelivered: ok
     };
   } catch (error) {
     console.error('Voice analysis error:', error.message);
@@ -624,19 +628,21 @@ ${analysis}`;
       `Voice message received (${voice?.duration ?? 0}s). Transcription temporarily unavailable. ` +
       `Please send text for full analysis.\n\nError: ${error.message}`;
 
-    await sendToTelegram(bot, chatId, fallbackMessage, { 
-      type: 'voice_fallback', 
-      duration: voice?.duration ?? 0, 
-      error: error.message 
+    await sendToTelegram(bot, chatId, fallbackMessage, {
+      type: 'voice_fallback',
+      duration: voice?.duration ?? 0,
+      error: error.message,
+      model: 'error-handler'
     });
 
     return { success: false, error: error.message, type: 'voice' };
   } finally {
-    if (tempFilePath) await cleanupTempFile(tempFilePath);
+    if (temp) await cleanupTempFile(temp);
   }
 }
 
 async function analyzeAudio(bot, audio, prompt, chatId) {
+  // Audio objects in Telegram have file_id and may have file_name; treat like voice
   return await analyzeVoice(bot, audio, prompt, chatId);
 }
 
@@ -648,7 +654,7 @@ async function analyzeVideo(bot, video, prompt, chatId) {
   try {
     console.log('Video analysis requested...');
     const analysis =
-      "Video analysis capabilities are being developed. For now, please describe the video content in text and I can analyze based on your description.";
+      "🎥 Video analysis is coming soon. For now, describe the video in text and I'll analyze based on your description.";
 
     storeDocumentContext(chatId, `video_${Date.now()}`, 'video', 'Video analysis requested', analysis);
 
@@ -659,11 +665,10 @@ async function analyzeVideo(bot, video, prompt, chatId) {
       { aiUsed: 'video-placeholder', type: 'video_analysis', duration: video?.duration ?? 0 }
     );
 
-    // Use the FIXED telegram delivery
-    const success = await sendToTelegram(bot, chatId, analysis, { 
-      type: 'video_analysis', 
-      duration: video?.duration ?? 0, 
-      aiUsed: 'video-placeholder' 
+    const ok = await sendToTelegram(bot, chatId, analysis, {
+      type: 'video_analysis',
+      duration: video?.duration ?? 0,
+      model: 'gpt-5-mini'
     });
 
     return {
@@ -672,7 +677,7 @@ async function analyzeVideo(bot, video, prompt, chatId) {
       analysis,
       aiUsed: 'video-placeholder',
       duration: video?.duration ?? 0,
-      telegramDelivered: success
+      telegramDelivered: ok
     };
   } catch (error) {
     return { success: false, error: error.message, type: 'video' };
@@ -734,9 +739,9 @@ function getMultimodalStatus() {
     },
     models_used: {
       vision: 'GPT-4o Vision',
-      documents: 'GPT-5 (Mini/Primary w/ chunking)',
+      documents: 'GPT-5 (Mini/Full with chunking)',
       voice: 'Whisper + GPT-5 Mini',
-      transcription: 'Whisper-1'
+      transcription: 'whisper-1'
     },
     limitations: [
       !pdfParse ? 'Install pdf-parse for PDF support: npm i pdf-parse' : null,
@@ -752,8 +757,6 @@ function getMultimodalStatus() {
   };
 }
 
-// ───────────────────────────────────────────────────────────────────────────────
-// Periodic cleanup of temp files
 // ───────────────────────────────────────────────────────────────────────────────
 setInterval(async () => {
   try {
@@ -785,8 +788,8 @@ setInterval(async () => {
 
 console.log('Multimodal module loaded - FIXED VERSION');
 console.log('- GPT-4o Vision for image analysis');
-console.log('- GPT-5 Mini/Primary for document analysis (+ chunking)');
-console.log('- Whisper + GPT-5 Mini for voice analysis');
+console.log('- GPT-5 Mini/Full for document analysis (+ chunking)');
+console.log('- Whisper + GPT-5 Mini for voice/audio analysis');
 console.log('- Compatible with smart telegramSplitter.js');
 console.log('- Built-in conversation memory');
 ensureTempDir();
@@ -803,23 +806,23 @@ module.exports = {
   analyzeAudio,
   analyzeVideo,
   analyzeVideoNote,
-  
+
   // Status and management
   getMultimodalStatus,
   getContextForFollowUp,
   getDocumentContext,
   storeDocumentContext,
-  
+
   // Utilities
   downloadTelegramFile,
   cleanupTempFile,
   generateTempFilename,
   saveConversationEmergency,
-  
+
   // Telegram delivery functions - FIXED
   sendToTelegram,
   sendErrorToTelegram,
-  
+
   // Configuration
   MULTIMODAL_CONFIG
 };
