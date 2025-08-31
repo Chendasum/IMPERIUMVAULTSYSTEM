@@ -1,4 +1,4 @@
-// utils/telegramSplitter.js - Perfect 10/10 Production-Grade Message Handler
+// utils/telegramSplitter.js - FIXED VERSION - Markdown Safe
 'use strict';
 const crypto = require('crypto');
 
@@ -17,12 +17,12 @@ const CONFIG = {
     // Formatting preferences
     AUTO_EMOJI: true,
     SMART_SPACING: true,
-    ENHANCED_MARKDOWN: true,
+    ENHANCED_MARKDOWN: false, // DISABLED to prevent parsing errors
     VISUAL_SEPARATORS: true,
     MAX_LINE_LENGTH: 80
 };
 
-// Enhanced Telegram Message Formatter & Splitter with Auto-Emoji and Smart Formatting
+// Enhanced Telegram Message Formatter & Splitter with SAFE Markdown
 class TelegramFormatter {
     constructor(customConfig = {}) {
         this.config = { ...CONFIG, ...customConfig };
@@ -44,21 +44,56 @@ class TelegramFormatter {
             averageDelay: this.config.DELAY_MS,
             lastSuccessTime: Date.now()
         };
+    }
+    
+    // SAFE Markdown escaping function
+    escapeMarkdown(text) {
+        if (typeof text !== 'string') return '';
         
-        // Keywords that trigger specific emojis (reduced set)
-        this.keywordEmojis = {
-            // Technical terms
-            'gpt-5': 'GPT-5',
-            'gpt5': 'GPT-5',
-            'ai': 'AI',
-            'error': 'Error',
-            'success': 'Success',
-            'working': 'Working',
-            'failed': 'Failed',
-            'loading': 'Loading',
-            'complete': 'Complete',
-            'processing': 'Processing'
-        };
+        // Escape all Telegram markdown special characters
+        return text
+            .replace(/\\/g, '\\\\')
+            .replace(/\*/g, '\\*')
+            .replace(/_/g, '\\_')
+            .replace(/\[/g, '\\[')
+            .replace(/\]/g, '\\]')
+            .replace(/\(/g, '\\(')
+            .replace(/\)/g, '\\)')
+            .replace(/~/g, '\\~')
+            .replace(/`/g, '\\`')
+            .replace(/>/g, '\\>')
+            .replace(/#/g, '\\#')
+            .replace(/\+/g, '\\+')
+            .replace(/-/g, '\\-')
+            .replace(/=/g, '\\=')
+            .replace(/\|/g, '\\|')
+            .replace(/\{/g, '\\{')
+            .replace(/\}/g, '\\}')
+            .replace(/\./g, '\\.')
+            .replace(/!/g, '\\!');
+    }
+    
+    // SAFE text cleaning - removes markdown instead of converting
+    cleanMarkdown(text) {
+        return text
+            // Remove all markdown formatting safely
+            .replace(/\*\*(.*?)\*\*/g, '$1')  // Remove bold
+            .replace(/\*(.*?)\*/g, '$1')      // Remove italic
+            .replace(/_(.*?)_/g, '$1')        // Remove underline
+            .replace(/~~(.*?)~~/g, '$1')      // Remove strikethrough
+            .replace(/`(.*?)`/g, '$1')        // Remove inline code
+            .replace(/```[\s\S]*?```/g, (match) => {
+                // Keep code blocks but remove markdown
+                return match.replace(/```/g, '');
+            })
+            // Clean up any remaining markdown artifacts
+            .replace(/^\s*#+\s*/gm, '')       // Remove headers
+            .replace(/^\s*>\s*/gm, '')        // Remove blockquotes
+            .replace(/^\s*[-*+]\s*/gm, '• ')  // Convert lists to bullets
+            .replace(/^\s*\d+\.\s*/gm, (match) => {
+                // Keep numbered lists
+                return match.replace(/^\s*(\d+)\.\s*/, '$1. ');
+            });
     }
     
     // Detect model from response or metadata
@@ -101,34 +136,34 @@ class TelegramFormatter {
         return { model: 'gpt-5-mini', source: 'default', confidence: 'medium' };
     }
     
-    // CLEAN Enhanced message formatting with simple model detection and emojis
+    // SAFE Enhanced message formatting - NO MARKDOWN MODE
     formatMessageWithModel(response, metadata = {}) {
         const modelInfo = this.detectModel(response, metadata);
         
-        // Simple model names with distinctive emojis
+        // Simple model names with emojis (NO MARKDOWN)
         const modelDisplay = {
             'gpt-5': '🚀 GPT-5',
             'gpt-5-mini': '⚡ GPT-5 Mini',
             'gpt-5-nano': '💨 GPT-5 Nano',
             'gpt-5-chat-latest': '💬 GPT-5 Chat',
-            'gpt-4o': '🔄 GPT-4o',
-            'gpt-4o-fallback': '🔄 GPT-4o Fallback',
+            'gpt-4o': '🔥 GPT-4o',
+            'gpt-4o-fallback': '🔥 GPT-4o Fallback',
             'cached-response': '💾 Cached Response'
         };
         
         const cleanModelName = modelDisplay[modelInfo.model] || '🤖 AI Assistant';
         
-        // Simple clean header - model emoji and name
-        let header = `**${cleanModelName}**\n\n`;
+        // SAFE header - NO MARKDOWN, just plain text with emojis
+        let header = `${cleanModelName}\n${'─'.repeat(20)}\n\n`;
         
-        // Clean response text (remove existing model tags)
+        // Clean response text (remove existing model tags and markdown)
         let cleanResponse = response
             .replace(/^\[.*?\]\s*/gm, '')
             .replace(/^GPT-\d+.*?:\s*/gm, '')
             .trim();
         
-        // Apply basic formatting
-        const formatted = this.formatMessage(`${header}${cleanResponse}`);
+        // Apply SAFE formatting (no markdown)
+        const formatted = this.formatMessageSafe(`${header}${cleanResponse}`);
         
         return {
             formatted,
@@ -137,45 +172,43 @@ class TelegramFormatter {
         };
     }
     
-    // Main formatting function (simplified)
-    formatMessage(text, options = {}) {
+    // SAFE formatting function - NO MARKDOWN PARSING
+    formatMessageSafe(text, options = {}) {
         if (!text || typeof text !== 'string') return '';
         
         const config = {
-            addEmojis: false, // Disabled for clean look
+            addEmojis: false,
             improveSpacing: this.config.SMART_SPACING,
-            formatMarkdown: this.config.ENHANCED_MARKDOWN,
+            formatMarkdown: false, // ALWAYS FALSE FOR SAFETY
             addBulletPoints: true,
-            enhanceHeaders: false, // Disabled for clean look
-            addSeparators: false, // Disabled for clean look
+            enhanceHeaders: false,
+            addSeparators: false,
             maxLineLength: this.config.MAX_LINE_LENGTH,
             ...options
         };
         
         let formatted = text;
         
-        // Step 1: Clean and normalize text
+        // Step 1: Clean markdown safely
+        formatted = this.cleanMarkdown(formatted);
+        
+        // Step 2: Normalize text safely
         formatted = this.normalizeText(formatted);
         
-        // Step 2: Improve spacing and structure
+        // Step 3: Improve spacing safely
         if (config.improveSpacing) {
-            formatted = this.improveSpacing(formatted);
+            formatted = this.improveSpacingSafe(formatted);
         }
         
-        // Step 3: Format markdown for Telegram
-        if (config.formatMarkdown) {
-            formatted = this.formatMarkdown(formatted);
-        }
-        
-        // Step 4: Add bullet points and lists
+        // Step 4: Add bullet points safely
         if (config.addBulletPoints) {
-            formatted = this.enhanceLists(formatted);
+            formatted = this.enhanceListsSafe(formatted);
         }
         
         return formatted.trim();
     }
     
-    // Enhanced message splitting and delivery
+    // Enhanced message splitting and delivery with SAFE MODE
     async splitAndSendMessage(text, bot, chatId, options = {}) {
         const startTime = Date.now();
         
@@ -190,7 +223,7 @@ class TelegramFormatter {
                 }
             }
             
-            // Format message with model detection
+            // Format message with model detection - SAFE MODE
             const result = this.formatMessageWithModel(text, options.metadata || {});
             const chunks = this.splitMessage(result.formatted);
             
@@ -213,9 +246,9 @@ class TelegramFormatter {
                             console.log(`Retry attempt ${attempts}/${this.config.MAX_RETRIES} for chunk ${i + 1}`);
                         }
                         
-                        // Send message
+                        // Send message with NO MARKDOWN PARSING
                         const messageResult = await this.sendMessageWithRetry(bot, chatId, chunk, {
-                            parse_mode: 'Markdown',
+                            // NO parse_mode to avoid markdown parsing errors
                             disable_web_page_preview: true,
                             ...options.telegramOptions
                         });
@@ -238,14 +271,14 @@ class TelegramFormatter {
                             currentDelay = Math.max(currentDelay * 0.9, this.config.DELAY_MS);
                         }
                         
-                        console.log(`Chunk ${i + 1}/${chunks.length} sent (${chunk.length} chars)`);
+                        console.log(`✅ Chunk ${i + 1}/${chunks.length} sent successfully (${chunk.length} chars)`);
                         
                     } catch (error) {
-                        console.error(`Failed to send chunk ${i + 1}, attempt ${attempts}:`, error.message);
+                        console.error(`❌ Failed to send chunk ${i + 1}, attempt ${attempts}:`, error.message);
                         
                         if (attempts < this.config.MAX_RETRIES) {
                             const retryDelay = this.config.RETRY_DELAY_MS * Math.pow(2, attempts - 1);
-                            console.log(`Retrying in ${retryDelay}ms...`);
+                            console.log(`⏳ Retrying in ${retryDelay}ms...`);
                             await this.sleep(retryDelay);
                         } else {
                             results.push({
@@ -261,7 +294,7 @@ class TelegramFormatter {
                             if (this.circuitBreaker.failures >= 3) {
                                 this.circuitBreaker.isOpen = true;
                                 this.circuitBreaker.lastFailure = Date.now();
-                                console.error('Circuit breaker opened due to repeated failures');
+                                console.error('🔴 Circuit breaker opened due to repeated failures');
                             }
                         }
                     }
@@ -277,7 +310,7 @@ class TelegramFormatter {
             const successCount = results.filter(r => r.success).length;
             const failureCount = results.filter(r => !r.success).length;
             
-            console.log(`Delivery complete: ${successCount}/${chunks.length} sent, ${failureCount} failed, ${executionTime}ms`);
+            console.log(`📊 Delivery complete: ${successCount}/${chunks.length} sent, ${failureCount} failed, ${executionTime}ms`);
             
             // Update metrics
             this.metrics.averageDelay = (this.metrics.averageDelay + currentDelay) / 2;
@@ -295,7 +328,7 @@ class TelegramFormatter {
             };
             
         } catch (error) {
-            console.error('Critical error in message delivery:', error);
+            console.error('💥 Critical error in message delivery:', error);
             this.metrics.totalFailed++;
             
             return {
@@ -328,6 +361,8 @@ class TelegramFormatter {
             if (error.code === 429) {
                 const retryAfter = error.parameters?.retry_after || 1;
                 throw new Error(`Rate limited. Retry after ${retryAfter}s`);
+            } else if (error.code === 400 && error.description?.includes("can't parse entities")) {
+                throw new Error(`Markdown parsing error: ${error.description}`);
             } else if (error.code === 400) {
                 throw new Error(`Bad request: ${error.description || 'Invalid message format'}`);
             } else if (error.code === 403) {
@@ -377,14 +412,14 @@ class TelegramFormatter {
         
         return chunks.map((chunk, index, array) => {
             if (array.length > 1) {
-                const partInfo = `\n\nPart ${index + 1}/${array.length}`;
+                const partInfo = `\n\n📄 Part ${index + 1}/${array.length}`;
                 return chunk + partInfo;
             }
             return chunk;
         });
     }
     
-    // Utility functions
+    // SAFE utility functions
     async sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -393,7 +428,7 @@ class TelegramFormatter {
         this.circuitBreaker.isOpen = false;
         this.circuitBreaker.failures = 0;
         this.circuitBreaker.lastFailure = null;
-        console.log('Circuit breaker manually reset');
+        console.log('🔄 Circuit breaker manually reset');
     }
     
     getMetrics() {
@@ -412,7 +447,7 @@ class TelegramFormatter {
         };
     }
     
-    // Text processing methods (simplified)
+    // SAFE text processing methods
     normalizeText(text) {
         return text
             .replace(/\r\n/g, '\n')
@@ -423,23 +458,15 @@ class TelegramFormatter {
             .replace(/[ \t]+\n/g, '\n');
     }
     
-    improveSpacing(text) {
+    improveSpacingSafe(text) {
         return text
             .replace(/\.([A-Z])/g, '. $1')
             .replace(/:([^\s:])/g, ': $1')
             .replace(/^([•\-\*])\s*/gm, '$1 ')
-            .replace(/(```[\s\S]*?```)/g, '\n$1\n')
             .replace(/([.!?])\n([A-Z])/g, '$1\n\n$2');
     }
     
-    formatMarkdown(text) {
-        return text
-            .replace(/\*\*(.*?)\*\*/g, '*$1*')
-            .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '_$1_')
-            .replace(/~~([^~]+)~~/g, '~$1~');
-    }
-    
-    enhanceLists(text) {
+    enhanceListsSafe(text) {
         let result = text;
         
         result = result
@@ -500,17 +527,17 @@ class TelegramFormatter {
     }
 }
 
-// Production-grade message handler
+// Production-grade message handler with SAFE MODE
 class TelegramMessageHandler {
     constructor(bot, defaultOptions = {}) {
         this.bot = bot;
         this.formatter = new TelegramFormatter(defaultOptions.config);
         this.defaultOptions = defaultOptions;
         
-        console.log('Enhanced Telegram message handler initialized');
+        console.log('🛡️  Enhanced Telegram message handler initialized (SAFE MODE)');
     }
     
-    // Main send function with enhanced formatting and model detection
+    // Main send function with SAFE formatting
     async sendFormattedMessage(text, chatId, options = {}) {
         const messageOptions = { ...this.defaultOptions, ...options };
         
@@ -518,16 +545,16 @@ class TelegramMessageHandler {
             const result = await this.formatter.splitAndSendMessage(text, this.bot, chatId, messageOptions);
             
             if (result.success) {
-                console.log(`Enhanced delivery successful: ${result.sentChunks}/${result.totalChunks} chunks sent`);
+                console.log(`✅ Enhanced delivery successful: ${result.sentChunks}/${result.totalChunks} chunks sent`);
                 return result;
             } else {
-                console.log(`Enhanced delivery failed, attempting basic fallback...`);
+                console.log(`⚠️  Enhanced delivery failed, attempting basic fallback...`);
                 return await this.basicFallback(text, chatId, options);
             }
             
         } catch (error) {
-            console.error('Enhanced delivery failed:', error.message);
-            console.log('Attempting basic fallback...');
+            console.error('❌ Enhanced delivery failed:', error.message);
+            console.log('🔄 Attempting basic fallback...');
             return await this.basicFallback(text, chatId, options);
         }
     }
@@ -535,8 +562,10 @@ class TelegramMessageHandler {
     // Basic fallback for when enhanced delivery fails
     async basicFallback(text, chatId, options = {}) {
         try {
-            await this.bot.sendMessage(chatId, text);
-            console.log('Basic fallback: Success');
+            // Clean text of any markdown before basic send
+            const cleanText = this.formatter.cleanMarkdown(text);
+            await this.bot.sendMessage(chatId, cleanText);
+            console.log('✅ Basic fallback: Success');
             return {
                 success: true,
                 enhanced: false,
@@ -546,7 +575,7 @@ class TelegramMessageHandler {
                 failedChunks: 0
             };
         } catch (fallbackError) {
-            console.error('Basic fallback also failed:', fallbackError.message);
+            console.error('❌ Basic fallback also failed:', fallbackError.message);
             return {
                 success: false,
                 enhanced: false,
@@ -559,56 +588,58 @@ class TelegramMessageHandler {
         }
     }
     
-    // Format different types of messages
+    // SAFE formatting functions
     formatGPTResponse(response, metadata = {}) {
-        return this.formatter.formatMessage(response);
+        return this.formatter.formatMessageSafe(response);
     }
     
     formatSystemStatus(status) {
         const title = `System Status Report`;
-        let statusText = `**${title}**\n${new Date().toLocaleString()}\n\n`;
+        let statusText = `${title}\n${'═'.repeat(30)}\n${new Date().toLocaleString()}\n\n`;
         
         // GPT Models Status
-        statusText += `**AI Models**\n`;
-        statusText += `• GPT-5: ${status.gpt5Available ? 'Online' : 'Offline'}\n`;
-        statusText += `• GPT-5 Mini: ${status.gpt5MiniAvailable ? 'Online' : 'Offline'}\n`;
-        statusText += `• GPT-5 Nano: ${status.gpt5NanoAvailable ? 'Online' : 'Offline'}\n`;
-        statusText += `• Fallback: ${status.fallbackWorking ? 'Ready' : 'Unavailable'}\n\n`;
+        statusText += `AI Models:\n`;
+        statusText += `• GPT-5: ${status.gpt5Available ? '🟢 Online' : '🔴 Offline'}\n`;
+        statusText += `• GPT-5 Mini: ${status.gpt5MiniAvailable ? '🟢 Online' : '🔴 Offline'}\n`;
+        statusText += `• GPT-5 Nano: ${status.gpt5NanoAvailable ? '🟢 Online' : '🔴 Offline'}\n`;
+        statusText += `• Fallback: ${status.fallbackWorking ? '🟡 Ready' : '🔴 Unavailable'}\n\n`;
         
         // Performance Metrics
         if (status.metrics) {
-            statusText += `**Performance**\n`;
+            statusText += `Performance:\n`;
             statusText += `• Success Rate: ${status.metrics.successRate}%\n`;
             statusText += `• Total Sent: ${status.metrics.totalSent}\n`;
             statusText += `• Total Failed: ${status.metrics.totalFailed}\n\n`;
         }
         
         // Circuit Breaker
-        statusText += `**Circuit Breaker**: ${status.circuitBreakerState || 'CLOSED'}\n`;
+        const cbState = status.circuitBreakerState || 'CLOSED';
+        const cbEmoji = cbState === 'OPEN' ? '🔴' : '🟢';
+        statusText += `Circuit Breaker: ${cbEmoji} ${cbState}\n`;
         
         // Current Model
         if (status.currentModel) {
-            statusText += `**Active Model**: ${status.currentModel}`;
+            statusText += `Active Model: ${status.currentModel}`;
         }
         
-        return this.formatter.formatMessage(statusText);
+        return this.formatter.formatMessageSafe(statusText);
     }
     
     formatError(error, context = '') {
         const title = `Error Report`;
-        const contextInfo = context ? `\n**Context:** ${context}` : '';
-        const errorInfo = `\n**Error:** ${error.message || error}`;
-        const timestamp = `\n**Time:** ${new Date().toLocaleString()}`;
+        const contextInfo = context ? `\nContext: ${context}` : '';
+        const errorInfo = `\nError: ${error.message || error}`;
+        const timestamp = `\nTime: ${new Date().toLocaleString()}`;
         
-        return this.formatter.formatMessage(`**${title}**${contextInfo}${errorInfo}${timestamp}`);
+        return this.formatter.formatMessageSafe(`🚨 ${title}${contextInfo}${errorInfo}${timestamp}`);
     }
     
     formatSuccess(message, details = {}) {
         const title = `Success`;
         const detailsText = Object.keys(details).length > 0 ? 
-            `\n\n**Details:**\n${Object.entries(details).map(([k,v]) => `• ${k}: ${v}`).join('\n')}` : '';
+            `\n\nDetails:\n${Object.entries(details).map(([k,v]) => `• ${k}: ${v}`).join('\n')}` : '';
         
-        return this.formatter.formatMessage(`**${title}**\n\n${message}${detailsText}`);
+        return this.formatter.formatMessageSafe(`✅ ${title}\n\n${message}${detailsText}`);
     }
     
     // Get system metrics
@@ -622,31 +653,33 @@ class TelegramMessageHandler {
     }
 }
 
-// Simple helper functions for easy integration
+// SAFE helper functions for easy integration
 async function sendTelegramMessage(bot, chatId, gptResponse, metadata = {}) {
     try {
         const handler = new TelegramMessageHandler(bot);
         const result = await handler.sendFormattedMessage(gptResponse, chatId, { metadata });
         
         if (result.success && result.enhanced) {
-            console.log(`Enhanced Telegram delivery: ${result.totalChunks} chunks, model: ${result.modelInfo?.model || 'detected'}`);
+            console.log(`✅ Enhanced Telegram delivery: ${result.totalChunks} chunks, model: ${result.modelInfo?.model || 'detected'}`);
             return { success: true, enhanced: true, chunks: result.totalChunks, model: result.modelInfo?.model };
         } else if (result.success && result.fallback) {
-            console.log('Telegram splitter not available, used basic send');
+            console.log('⚠️  Telegram splitter not available, used basic send');
             return { success: true, enhanced: false, fallback: true };
         } else {
             throw new Error(result.error || 'Unknown delivery error');
         }
     } catch (error) {
-        console.error('Telegram delivery failed:', error.message);
+        console.error('❌ Telegram delivery failed:', error.message);
         
-        // Final fallback attempt
+        // Final fallback attempt with cleaned text
         try {
-            await bot.sendMessage(chatId, gptResponse);
-            console.log('Final fallback: Success');
+            const formatter = new TelegramFormatter();
+            const cleanText = formatter.cleanMarkdown(gptResponse);
+            await bot.sendMessage(chatId, cleanText);
+            console.log('✅ Final fallback: Success');
             return { success: true, enhanced: false, fallback: true };
         } catch (finalError) {
-            console.error('All delivery methods failed:', finalError.message);
+            console.error('💥 All delivery methods failed:', finalError.message);
             return { success: false, error: finalError.message };
         }
     }
@@ -704,4 +737,4 @@ module.exports = {
     CONFIG
 };
 
-console.log('Clean Telegram Splitter v2.0 - Simple headers, smart delivery, full functionality');
+console.log('🛡️  SAFE Telegram Splitter v3.0 - Markdown-safe, production-ready, zero parsing errors');
