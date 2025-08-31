@@ -1,63 +1,112 @@
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 1/6
 // Clean routing: index.js → dualCommandSystem.js → openaiClient.js → telegramSplitter.js
-// SECURE: Removed operational execution, focused on intelligent GPT-5 routing
-// PRESERVED: All analysis functions and architecture maintained
+// ALIGNED: Direct integration with new clean telegramSplitter.js
+// SIMPLIFIED: Removed complex adapter logic, direct function imports
 
 'use strict';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TELEGRAM INTEGRATION (utils/dualCommandSystem.js)
+// CLEAN TELEGRAM INTEGRATION - ALIGNED WITH NEW SPLITTER
 // ─────────────────────────────────────────────────────────────────────────────
-const path = require('path');
+let telegramSplitter = null;
 
-let telegramSplitter;
 try {
-  // ✅ correct path (same folder as this file)
+  // Import the new clean telegram splitter functions
   const splitter = require('./telegramSplitter');
-
-  // Prefer the legacy adapter if available; otherwise adapt on the fly
-  if (splitter && splitter.legacyAdapter) {
-    telegramSplitter = splitter.legacyAdapter;
-  } else if (splitter && typeof splitter.setupTelegramHandler === 'function') {
-    const make = (model) => (bot, chatId, response, meta) =>
-      splitter
-        .setupTelegramHandler(bot)
-        .sendGPTResponse(
-          String(response),
-          Object.assign({ model: model }, meta || {}),
-          chatId
-        );
-
+  
+  if (splitter && typeof splitter.sendTelegramMessage === 'function') {
+    // Create simple, clean integration object
     telegramSplitter = {
-      sendGPT5:         make('gpt-5'),
-      sendGPT5Mini:     make('gpt-5-mini'),
-      sendGPT5Nano:     make('gpt-5-nano'),
-      sendGPT5Chat:     make('gpt-5-chat-latest'),
-      sendGPTResponse:  (bot, chatId, response, meta) =>
-        splitter.setupTelegramHandler(bot).sendGPTResponse(String(response), meta || {}, chatId),
-      sendAlert:        (bot, chatId, errorResponse, title) =>
-        splitter.setupTelegramHandler(bot).sendError(
-          (errorResponse instanceof Error) ? errorResponse : new Error(String(errorResponse)),
-          title || 'System Error',
-          chatId
-        )
+      // Main delivery function
+      sendMessage: splitter.sendTelegramMessage,
+      
+      // Setup handler for advanced features
+      setupHandler: splitter.setupTelegramHandler,
+      
+      // Model-specific helpers (using the clean sendTelegramMessage)
+      sendGPT5: async (bot, chatId, response, metadata = {}) => {
+        return await splitter.sendTelegramMessage(bot, chatId, response, {
+          ...metadata,
+          model: 'gpt-5'
+        });
+      },
+      
+      sendGPT5Mini: async (bot, chatId, response, metadata = {}) => {
+        return await splitter.sendTelegramMessage(bot, chatId, response, {
+          ...metadata,
+          model: 'gpt-5-mini'
+        });
+      },
+      
+      sendGPT5Nano: async (bot, chatId, response, metadata = {}) => {
+        return await splitter.sendTelegramMessage(bot, chatId, response, {
+          ...metadata,
+          model: 'gpt-5-nano'
+        });
+      },
+      
+      sendGPT5Chat: async (bot, chatId, response, metadata = {}) => {
+        return await splitter.sendTelegramMessage(bot, chatId, response, {
+          ...metadata,
+          model: 'gpt-5-chat-latest'
+        });
+      },
+      
+      // Generic response sender
+      sendGPTResponse: async (bot, chatId, response, metadata = {}) => {
+        return await splitter.sendTelegramMessage(bot, chatId, response, metadata);
+      },
+      
+      // Error handler
+      sendAlert: async (bot, chatId, errorMessage, title = 'System Error') => {
+        const errorText = errorMessage instanceof Error ? errorMessage.message : String(errorMessage);
+        return await splitter.sendTelegramMessage(bot, chatId, `**${title}**\n\n${errorText}`, {
+          model: 'error-handler',
+          error: true
+        });
+      }
     };
+    
+    console.log('Clean telegram splitter integration loaded successfully');
+    
   } else {
-    throw new Error('Invalid telegramSplitter export');
+    throw new Error('sendTelegramMessage function not found in telegramSplitter');
   }
-
-  console.log('Telegram integration loaded from', path.join(__dirname, 'telegramSplitter'));
+  
 } catch (error) {
-  console.warn('Telegram splitter import failed:', error.message);
-  // Safe no-op stubs to keep the app running
+  console.warn('Telegram splitter integration failed:', error.message);
+  console.log('Using safe fallback telegram handlers...');
+  
+  // Safe fallback stubs - won't crash the system
   telegramSplitter = {
-    sendGPT5:         async () => false,
-    sendGPT5Mini:     async () => false,
-    sendGPT5Nano:     async () => false,
-    sendGPT5Chat:     async () => false,
-    sendGPTResponse:  async () => false,
-    sendAnalysis:     async () => false,
-    sendAlert:        async () => false
+    sendMessage: async (bot, chatId, response) => {
+      if (bot && bot.sendMessage && chatId) {
+        try {
+          await bot.sendMessage(chatId, response);
+          return { success: true, enhanced: false, fallback: true };
+        } catch (e) {
+          console.error('Fallback telegram send failed:', e.message);
+          return { success: false, error: e.message };
+        }
+      }
+      return { success: false, error: 'No bot or chatId provided' };
+    },
+    
+    setupHandler: () => ({
+      send: telegramSplitter.sendMessage,
+      sendGPTResponse: telegramSplitter.sendMessage,
+      sendError: telegramSplitter.sendMessage
+    }),
+    
+    sendGPT5: async (bot, chatId, response) => telegramSplitter.sendMessage(bot, chatId, response),
+    sendGPT5Mini: async (bot, chatId, response) => telegramSplitter.sendMessage(bot, chatId, response),
+    sendGPT5Nano: async (bot, chatId, response) => telegramSplitter.sendMessage(bot, chatId, response),
+    sendGPT5Chat: async (bot, chatId, response) => telegramSplitter.sendMessage(bot, chatId, response),
+    sendGPTResponse: async (bot, chatId, response) => telegramSplitter.sendMessage(bot, chatId, response),
+    sendAlert: async (bot, chatId, errorMessage, title) => {
+      const errorText = `**${title || 'Error'}**\n\n${errorMessage}`;
+      return telegramSplitter.sendMessage(bot, chatId, errorText);
+    }
   };
 }
 
@@ -117,7 +166,7 @@ const database = lazyLoad(
 // ─────────────────────────────────────────────────────────────────────────────
 const systemState = {
   mode: 'SECURE_GPT5',
-  version: '7.0-SECURE',
+  version: '7.1-CLEAN',
   startTime: Date.now(),
   requestCount: 0,
   successCount: 0,
@@ -156,7 +205,14 @@ const systemState = {
   // Health monitoring
   lastHealthCheck: null,
   healthStatus: 'unknown',
-  availableModels: []
+  availableModels: [],
+  
+  // Telegram integration status
+  telegramIntegration: {
+    loaded: telegramSplitter !== null,
+    enhanced: telegramSplitter && typeof telegramSplitter.sendMessage === 'function',
+    fallback: false
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -274,14 +330,12 @@ function getCurrentGlobalDateTime() {
         time: `${newYorkTime.getHours().toString().padStart(2, '0')}:${newYorkTime.getMinutes().toString().padStart(2, '0')}`,
         hour: newYorkTime.getHours(),
         timezone: 'EST/EDT (UTC-5/-4)',
-        // 9:00–16:00 local NY, on Cambodia business days (simple heuristic)
         isMarketHours: isCambodiaBusinessDay && newYorkTime.getHours() >= 9 && newYorkTime.getHours() <= 16
       },
       london: {
         time: `${londonTime.getHours().toString().padStart(2, '0')}:${londonTime.getMinutes().toString().padStart(2, '0')}`,
         hour: londonTime.getHours(),
         timezone: 'GMT/BST (UTC+0/+1)',
-        // 8:00–16:00 local London, on Cambodia business days (simple heuristic)
         isMarketHours: isCambodiaBusinessDay && londonTime.getHours() >= 8 && londonTime.getHours() <= 16
       },
       utc: now.toISOString()
@@ -339,7 +393,6 @@ function calculateCostEstimate(model, inputTokens, outputTokens) {
   };
 
   const modelCosts = costs[model] || costs['gpt-5-mini'];
-  // assume prices per 1,000,000 tokens; adjust here if your pricing differs
   const inputCost = (inputTokens / 1e6) * modelCosts.input;
   const outputCost = (outputTokens / 1e6) * modelCosts.output;
 
@@ -380,16 +433,24 @@ function resetSystemStats() {
   console.log('System statistics reset completed');
 }
 
-// AUTO-RESET STATS DAILY
+// Auto-reset stats daily
 setInterval(resetSystemStats, CONFIG.PERFORMANCE.STATS_RESET_INTERVAL);
 
+// Update telegram integration status
+systemState.telegramIntegration = {
+  loaded: telegramSplitter !== null,
+  enhanced: telegramSplitter && typeof telegramSplitter.sendMessage === 'function',
+  version: 'clean-v2.0'
+};
+
 // STARTUP MESSAGES
-console.log('🎯 Secure GPT-5 Command System v7.0 - PART 1/6 loaded');
-console.log('⚡ Core setup: Imports, state management, utilities');
-console.log('🔒 Security: Operational execution removed, analysis-only mode');
-console.log('📊 Features: Performance tracking, cost estimation, health monitoring');
-console.log('🌏 Cambodia timezone support with global market awareness');
-console.log('✅ Ready for intelligent GPT-5 model selection and routing');
+console.log('Clean GPT-5 Command System v7.1 - PART 1/6 loaded');
+console.log('Telegram Integration: ' + (systemState.telegramIntegration.enhanced ? 'Enhanced' : 'Fallback'));
+console.log('Core setup: Imports, state management, utilities');
+console.log('Security: Operational execution removed, analysis-only mode');
+console.log('Features: Performance tracking, cost estimation, health monitoring');
+console.log('Cambodia timezone support with global market awareness');
+console.log('Ready for intelligent GPT-5 model selection and routing');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EXPORTS
