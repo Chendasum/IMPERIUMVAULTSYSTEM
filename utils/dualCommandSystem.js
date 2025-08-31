@@ -2193,14 +2193,16 @@ module.exports = {
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 4/6
 // MAIN COMMAND EXECUTION ENGINE
-// This part contains the core executeDualCommand function and result processing
+
+'use strict';
 
 // MAIN COMMAND EXECUTION FUNCTION
-async function executeDualCommand(userMessage, chatId, options = {}) {
+async function executeDualCommand(userMessage, chatId, options) {
+  options = options || {};
   const startTime = Date.now();
 
   try {
-    console.log(`Executing secure GPT-5 command for chat ${chatId}`);
+    console.log('Executing secure GPT-5 command for chat ' + chatId);
     console.log('Message preview:', String(userMessage).substring(0, 100));
 
     // 1) Preprocess the query
@@ -2210,13 +2212,14 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
     }
 
     // 2) Build memory context (only for non-test conversations)
+    const lower = String(userMessage).toLowerCase();
     const isSystemTest =
-      String(userMessage).toLowerCase().includes('test memory') ||
-      String(userMessage).toLowerCase().includes('integration test') ||
+      lower.indexOf('test memory') >= 0 ||
+      lower.indexOf('integration test') >= 0 ||
       options.forceMemoryTest === true;
 
-    let memoryContext = options.memoryContext || '';
-    let memoryData = {
+    var memoryContext = options.memoryContext || '';
+    var memoryData = {
       conversationHistory: options.conversationHistory || [],
       persistentMemory: options.persistentMemory || []
     };
@@ -2234,35 +2237,35 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
     const queryAnalysis = analyzeQuery(
       preprocessed.cleaned,
       options.messageType || 'text',
-      options.hasMedia || false,
+      options.hasMedia === true,
       memoryContext
     );
 
-    // 3.1) 🔁 Handle completion detection FIRST (no model required)
+    // 3.1) Handle completion detection FIRST
     if (queryAnalysis.shouldSkipGPT5) {
-      console.log(`Completion detected: ${queryAnalysis.completionStatus.completionType}`);
+      console.log('Completion detected: ' + queryAnalysis.completionStatus.completionType);
       return createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime, chatId);
     }
 
-    // 4) Validate the analysis (after completion short-circuit)
+    // 4) Validate the analysis
     const validation = validateQueryAnalysis(queryAnalysis);
     if (!validation.isValid) {
       console.error('Query analysis validation failed:', validation.errors);
       return createErrorResponse(
-        `Analysis validation failed: ${validation.errors.join(', ')}`,
+        'Analysis validation failed: ' + validation.errors.join(', '),
         startTime,
         chatId
       );
     }
-    if (validation.warnings.length > 0) {
+    if (validation.warnings && validation.warnings.length > 0) {
       console.warn('Query analysis warnings:', validation.warnings);
     }
 
     // 5) Override model if forced
-    if (options.forceModel && options.forceModel.includes('gpt-5')) {
+    if (options.forceModel && String(options.forceModel).indexOf('gpt-5') === 0) {
       queryAnalysis.gpt5Model = options.forceModel;
-      queryAnalysis.reason = `Forced to use ${options.forceModel}`;
-      console.log(`Model override: Using ${options.forceModel}`);
+      queryAnalysis.reason = 'Forced to use ' + options.forceModel;
+      console.log('Model override: Using ' + options.forceModel);
     }
 
     console.log('Query analysis complete:', {
@@ -2273,7 +2276,7 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
       verbosity: queryAnalysis.verbosity,
       confidence: queryAnalysis.confidence,
       memoryImportant: queryAnalysis.memoryImportant,
-      estimatedCost: queryAnalysis.estimatedCost?.totalCost
+      estimatedCost: queryAnalysis.estimatedCost && queryAnalysis.estimatedCost.totalCost
     });
 
     // 6) Execute through GPT-5 system
@@ -2298,13 +2301,13 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
       return createErrorResponse(gpt5Error.message, startTime, chatId, {
         originalQuery: userMessage,
         analysisAttempted: true,
-        queryAnalysis
+        queryAnalysis: queryAnalysis
       });
     }
 
     // 7) Process the response
     const processedResponse = processResponse(gpt5Result.response, queryAnalysis, {
-      chatId,
+      chatId: chatId,
       processingTime: gpt5Result.processingTime,
       memoryUsed: gpt5Result.memoryUsed
     });
@@ -2324,13 +2327,13 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
       // Query analysis results
       queryType: queryAnalysis.type,
       priority: queryAnalysis.priority,
-      complexity: queryAnalysis.complexity?.complexity || 'medium',
+      complexity: (queryAnalysis.complexity && queryAnalysis.complexity.complexity) || 'medium',
       reasoning: queryAnalysis.reason,
       confidence: gpt5Result.confidence || queryAnalysis.confidence,
 
       // Processing information
       processingTime: gpt5Result.processingTime,
-      totalResponseTime,
+      totalResponseTime: totalResponseTime,
       tokensUsed: gpt5Result.tokensUsed,
 
       // GPT-5 specific parameters
@@ -2354,13 +2357,13 @@ async function executeDualCommand(userMessage, chatId, options = {}) {
       // Cost and performance
       costTier: getCostTier(queryAnalysis.gpt5Model),
       costEstimate: queryAnalysis.estimatedCost,
-      fallbackUsed: gpt5Result.fallbackUsed || false,
-      costSaved: gpt5Result.costSaved || false,
+      fallbackUsed: !!gpt5Result.fallbackUsed,
+      costSaved: !!gpt5Result.costSaved,
 
       // Classification and analytics
-      powerMode: `GPT5_${queryAnalysis.priority.toUpperCase()}`,
+      powerMode: 'GPT5_' + String(queryAnalysis.priority || '').toUpperCase(),
       analytics: {
-        queryComplexity: queryAnalysis.complexity?.complexity || 'medium',
+        queryComplexity: (queryAnalysis.complexity && queryAnalysis.complexity.complexity) || 'medium',
         domainClassification: queryAnalysis.type,
         priorityLevel: queryAnalysis.priority,
         modelOptimization: 'GPT-5 smart selection',
@@ -2409,6 +2412,12 @@ function createCompletionResponse(queryAnalysis, memoryContext, memoryData, star
 
   updateSystemStats('completion_detection', true, responseTime, 'completion', 'none');
 
+  const modelMini =
+    (typeof CONFIG !== 'undefined' &&
+     CONFIG &&
+     CONFIG.MODELS &&
+     CONFIG.MODELS.MINI) ? CONFIG.MODELS.MINI : 'gpt-5-mini';
+
   return {
     response: queryAnalysis.quickResponse,
     success: true,
@@ -2417,7 +2426,7 @@ function createCompletionResponse(queryAnalysis, memoryContext, memoryData, star
     aiUsed: 'completion-detection',
     queryType: 'completion',
     complexity: 'low',
-    reasoning: `Completion detected - ${queryAnalysis.completionStatus.completionType}`,
+    reasoning: 'Completion detected - ' + queryAnalysis.completionStatus.completionType,
     priority: 'completion',
     confidence: queryAnalysis.completionStatus.confidence,
 
@@ -2449,25 +2458,26 @@ function createCompletionResponse(queryAnalysis, memoryContext, memoryData, star
     costTier: 'free',
     timestamp: new Date().toISOString(),
 
-    // Telegram integration (✅ pass the real chatId)
+    // Telegram integration (pass real chatId)
     sendToTelegram: createTelegramSender(
       chatId,
       queryAnalysis.quickResponse,
       queryAnalysis,
-      { completionDetected: true, modelUsed: CONFIG?.MODELS?.MINI },
+      { completionDetected: true, modelUsed: modelMini },
       responseTime,
       memoryContext.length > 0
     )
   };
 }
 
-function createErrorResponse(errorMessage, startTime, chatId, metadata = {}) {
+function createErrorResponse(errorMessage, startTime, chatId, metadata) {
+  metadata = metadata || {};
   const responseTime = Date.now() - startTime;
 
   updateSystemStats('error', false, responseTime, 'error', 'none');
 
   const errorResponse =
-    `I apologize, but I encountered a technical issue: ${errorMessage}\n\n` +
+    'I apologize, but I encountered a technical issue: ' + errorMessage + '\n\n' +
     'Please try:\n• A simpler question\n• Waiting a moment and trying again\n• Checking your connection';
 
   return {
@@ -2504,7 +2514,7 @@ function createErrorResponse(errorMessage, startTime, chatId, metadata = {}) {
     },
 
     // Debug information
-    metadata,
+    metadata: metadata,
 
     // Telegram integration
     sendToTelegram: createErrorTelegramSender(chatId, errorResponse, errorMessage)
@@ -2512,148 +2522,129 @@ function createErrorResponse(errorMessage, startTime, chatId, metadata = {}) {
 }
 
 function getCostTier(model) {
+  if (!model) return 'standard';
   switch (model) {
-    case CONFIG.MODELS.NANO:
-      return 'economy';
-    case CONFIG.MODELS.MINI:
-      return 'standard';
+    case CONFIG.MODELS.NANO: return 'economy';
+    case CONFIG.MODELS.MINI: return 'standard';
     case CONFIG.MODELS.FULL:
-    case CONFIG.MODELS.CHAT:
-      return 'premium';
-    default:
-      return 'unknown';
+    case CONFIG.MODELS.CHAT: return 'premium';
+    default: return 'standard';
   }
 }
 
-// REPLACE these functions in your dualCommandSystem.js with these updated versions:
-
+// Enhanced Telegram sender (uses clean telegramSplitter)
 function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, responseTime, contextUsed) {
-  return async (bot, title = null) => {
+  return async function send(bot, title) {
     try {
       if (!bot || !chatId) {
-        console.warn(`Delivery skipped: bot or chatId missing (chatId=${chatId})`);
+        console.warn('Delivery skipped: bot or chatId missing (chatId=' + chatId + ')');
         return false;
       }
 
-      // Use the new enhanced telegram splitter
+      // Try enhanced splitter first
       try {
-        const { sendTelegramMessage } = require('./telegramSplitter');
-        
-        // Determine model used
-        const modelUsed = gpt5Result?.modelUsed || queryAnalysis?.gpt5Model || 'gpt-5-mini';
-        
-        // Prepare comprehensive metadata for model detection and display
-        const metadata = {
+        const splitter = require('./telegramSplitter');
+        const sendTelegramMessage = splitter && splitter.sendTelegramMessage;
+
+        const modelUsed =
+          (gpt5Result && gpt5Result.modelUsed) ||
+          (queryAnalysis && queryAnalysis.gpt5Model) ||
+          (CONFIG && CONFIG.MODELS && CONFIG.MODELS.MINI) || 'gpt-5-mini';
+
+        const meta = {
+          title: title || (gpt5Result && gpt5Result.completionDetected ? 'Task Completion Acknowledged' : 'GPT-5 Analysis'),
           model: modelUsed,
           executionTime: responseTime,
           costTier: getCostTier(modelUsed),
-          tokens: gpt5Result?.tokensUsed || 'estimated',
-          cost: gpt5Result?.cost || calculateEstimatedCost(modelUsed, response.length),
-          complexity: queryAnalysis?.complexity?.complexity || 'medium',
-          confidence: gpt5Result?.confidence || queryAnalysis?.confidence || 0.75,
-          reasoning: queryAnalysis?.reasoning_effort,
-          verbosity: queryAnalysis?.verbosity,
-          contextUsed,
-          fallbackUsed: gpt5Result?.fallbackUsed || false,
-          completionDetected: gpt5Result?.completionDetected || false
+          tokens: (gpt5Result && gpt5Result.tokensUsed) || 'estimated',
+          cost: (gpt5Result && gpt5Result.cost) || calculateEstimatedCost(modelUsed, String(response || '').length),
+          complexity: (queryAnalysis && queryAnalysis.complexity && queryAnalysis.complexity.complexity) || 'medium',
+          confidence: (gpt5Result && gpt5Result.confidence) || (queryAnalysis && queryAnalysis.confidence) || 0.75,
+          reasoning: queryAnalysis && queryAnalysis.reasoning_effort,
+          verbosity: queryAnalysis && queryAnalysis.verbosity,
+          contextUsed: !!contextUsed,
+          fallbackUsed: !!(gpt5Result && gpt5Result.fallbackUsed),
+          completionDetected: !!(gpt5Result && gpt5Result.completionDetected)
         };
-        
-        console.log(`Using enhanced Telegram delivery for model: ${modelUsed}`);
-        
-        // Use enhanced delivery with full model detection
-        const result = await sendTelegramMessage(bot, chatId, response, metadata);
-        
-        if (result.enhanced) {
-          console.log(`Enhanced delivery: ${result.chunks} chunks sent, model: ${result.model || modelUsed}`);
-          return true;
-        } else if (result.fallback) {
-          console.log('Enhanced delivery failed, used basic fallback');
-          return true;
-        } else {
-          console.log('Enhanced delivery completely failed');
-          return false;
+
+        if (typeof sendTelegramMessage === 'function') {
+          const result = await sendTelegramMessage(bot, chatId, String(response || ''), meta);
+          if (result && (result.enhanced || result.fallback || result.success)) {
+            return true;
+          }
         }
-        
       } catch (enhancedError) {
         console.error('Enhanced telegram delivery failed:', enhancedError.message);
-        console.log('Falling back to basic telegram send...');
-        
-        // Fallback to basic send
-        if (bot && bot.sendMessage && chatId) {
-          await bot.sendMessage(chatId, response);
-          console.log('Basic fallback: Success');
-          return true;
-        }
-        
-        return false;
       }
 
-    } catch (generalError) {
-      console.error('All telegram delivery methods failed:', generalError.message);
-      return false;
-    }
-  };
-}
-
-// Helper function to calculate estimated cost
-function calculateEstimatedCost(model, responseLength) {
-  const estimatedTokens = Math.ceil(responseLength / 3.5); // Rough token estimation
-  const costPerMillion = {
-    'gpt-5-nano': 0.40,
-    'gpt-5-mini': 2.00,
-    'gpt-5': 10.00,
-    'gpt-5-chat-latest': 10.00
-  };
-  
-  const rate = costPerMillion[model] || costPerMillion['gpt-5-mini'];
-  return ((estimatedTokens * rate) / 1000000).toFixed(6);
-}
-
-// Updated error telegram sender
-function createErrorTelegramSender(chatId, errorResponse, originalError) {
-  return async (bot) => {
-    try {
-      if (!bot || !chatId) {
-        console.warn(`Error delivery skipped: bot or chatId missing (chatId=${chatId})`);
-        return false;
-      }
-
-      // Try enhanced delivery first
-      try {
-        const { sendTelegramMessage } = require('./telegramSplitter');
-        
-        const result = await sendTelegramMessage(bot, chatId, errorResponse, {
-          model: 'error-handler',
-          costTier: 'free',
-          error: true,
-          originalError: originalError
-        });
-        
-        if (result.success) {
-          console.log('Enhanced error delivery successful');
-          return true;
-        }
-        
-      } catch (enhancedError) {
-        console.log('Enhanced error delivery failed, using basic fallback');
-      }
-      
       // Basic fallback
-      if (bot && bot.sendMessage) {
-        await bot.sendMessage(chatId, errorResponse);
-        console.log('Basic error delivery: Success');
+      if (bot && typeof bot.sendMessage === 'function') {
+        await bot.sendMessage(chatId, String(response || ''));
         return true;
       }
-
       return false;
-    } catch (telegramError) {
-      console.error('Error telegram delivery failed:', telegramError.message);
+
+    } catch (generalError) {
+      console.error('All telegram delivery methods failed:', generalError && generalError.message ? generalError.message : generalError);
       return false;
     }
   };
 }
 
-// Update your module.exports to include the new helper function:
+// Rough cost estimate (no pricing dependency)
+function calculateEstimatedCost(model, responseLength) {
+  const estimatedTokens = Math.ceil((Number(responseLength) || 0) / 3.5);
+  const rate = (model === 'gpt-5' || model === 'gpt-5-chat-latest') ? 10.00 :
+               (model === 'gpt-5-mini') ? 2.00 :
+               (model === 'gpt-5-nano') ? 0.40 : 2.00;
+  const dollars = (estimatedTokens * rate) / 1000000;
+  return dollars.toFixed(6);
+}
+
+// Error telegram sender
+function createErrorTelegramSender(chatId, errorResponse, originalError) {
+  return async function send(bot) {
+    try {
+      if (!bot || !chatId) {
+        console.warn('Error delivery skipped: bot or chatId missing (chatId=' + chatId + ')');
+        return false;
+      }
+
+      // Enhanced first
+      try {
+        const splitter = require('./telegramSplitter');
+        const sendTelegramMessage = splitter && splitter.sendTelegramMessage;
+
+        if (typeof sendTelegramMessage === 'function') {
+          const result = await sendTelegramMessage(bot, chatId, String(errorResponse || ''), {
+            model: 'error-handler',
+            costTier: 'free',
+            error: true,
+            originalError: originalError
+          });
+          if (result && result.success !== false) {
+            return true;
+          }
+        }
+      } catch (_e) {
+        // ignore and fallback
+      }
+
+      // Basic fallback
+      if (bot && typeof bot.sendMessage === 'function') {
+        await bot.sendMessage(chatId, String(errorResponse || ''));
+        return true;
+      }
+      return false;
+
+    } catch (telegramError) {
+      console.error('Error telegram delivery failed:', telegramError && telegramError.message ? telegramError.message : telegramError);
+      return false;
+    }
+  };
+}
+
+// EXPORTS for Part 4
 module.exports = {
   executeDualCommand,
   createCompletionResponse,
@@ -2661,7 +2652,7 @@ module.exports = {
   getCostTier,
   createTelegramSender,
   createErrorTelegramSender,
-  calculateEstimatedCost  // Add this new function
+  calculateEstimatedCost
 };
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 5/6
