@@ -593,7 +593,6 @@ async function buildMemoryContext(chatId, contextLevel = 'full') {
 // ════════════════════════════════════════════════════════════════════════════
 // SMART MEMORY SAVING (PREVENTS SAVING TRIVIAL GREETINGS)
 // ════════════════════════════════════════════════════════════════════════════
-
 async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, metadata = {}) {
   try {
     if (!chatId) return { saved: false, reason: 'no_chatid' };
@@ -601,14 +600,23 @@ async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, me
     const safeUserMessage = safeString(userMessage);
     const safeResponse = safeString(response);
     
+    // ADD THESE DEBUG LOGS:
+    console.log(`[DEBUG-SAVE] ═══════════════════════════════════════`);
+    console.log(`[DEBUG-SAVE] Attempting to save memory for chatId: ${chatId}`);
+    console.log(`[DEBUG-SAVE] Message type: ${messageType}`);
+    console.log(`[DEBUG-SAVE] User message: "${safeUserMessage.substring(0, 50)}..."`);
+    console.log(`[DEBUG-SAVE] Response length: ${safeResponse.length} chars`);
+    console.log(`[DEBUG-SAVE] Metadata:`, metadata);
+    
     // Don't save trivial interactions (prevents database clutter)
     if (safeUserMessage.length < 3 && safeResponse.length < 50) {
+      console.log(`[DEBUG-SAVE] ❌ Skipping: trivial interaction`);
       return { saved: false, reason: 'trivial' };
     }
     
     // Don't save simple greetings
     if (messageType === MESSAGE_TYPES.SIMPLE_GREETING && safeResponse.length < 200) {
-      console.log('[Memory] Skipping save for simple greeting');
+      console.log('[DEBUG-SAVE] ❌ Skipping save for simple greeting');
       return { saved: false, reason: 'simple_greeting' };
     }
     
@@ -621,33 +629,58 @@ async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, me
     
     const safeChatId = safeString(chatId);
     
+    console.log(`[DEBUG-SAVE] ✅ Passed filters, attempting database save...`);
+    
     // Try database save (preserves your PostgreSQL integration)
     if (database && typeof database.saveConversation === 'function') {
-      await database.saveConversation(safeChatId, safeUserMessage, normalizedResponse, {
-        ...metadata,
-        messageType: safeString(messageType),
-        timestamp: new Date().toISOString()
-      });
-      console.log('[Memory] Saved to database');
-      return { saved: true, method: 'database' };
+      console.log(`[DEBUG-SAVE] 📝 Database function exists, saving...`);
+      
+      try {
+        await database.saveConversation(safeChatId, safeUserMessage, normalizedResponse, {
+          ...metadata,
+          messageType: safeString(messageType),
+          timestamp: new Date().toISOString()
+        });
+        console.log('[DEBUG-SAVE] ✅ SUCCESS: Saved to database!');
+        return { saved: true, method: 'database' };
+      } catch (dbError) {
+        console.log(`[DEBUG-SAVE] ❌ Database save ERROR: ${dbError.message}`);
+        // Continue to try memory module
+      }
+    } else {
+      console.log(`[DEBUG-SAVE] ❌ Database function not available!`);
+      console.log(`[DEBUG-SAVE] Database exists: ${!!database}`);
+      console.log(`[DEBUG-SAVE] SaveConversation function: ${typeof database?.saveConversation}`);
     }
     
     // Try memory module save
     if (memory && typeof memory.saveToMemory === 'function') {
-      await memory.saveToMemory(safeChatId, {
-        type: 'conversation',
-        user: safeUserMessage,
-        assistant: normalizedResponse,
-        messageType: safeString(messageType),
-        timestamp: new Date().toISOString()
-      });
-      console.log('[Memory] Saved to memory module');
-      return { saved: true, method: 'memory' };
+      console.log(`[DEBUG-SAVE] 💾 Trying memory module save...`);
+      
+      try {
+        await memory.saveToMemory(safeChatId, {
+          type: 'conversation',
+          user: safeUserMessage,
+          assistant: normalizedResponse,
+          messageType: safeString(messageType),
+          timestamp: new Date().toISOString()
+        });
+        console.log('[DEBUG-SAVE] ✅ SUCCESS: Saved to memory module!');
+        return { saved: true, method: 'memory' };
+      } catch (memError) {
+        console.log(`[DEBUG-SAVE] ❌ Memory module save ERROR: ${memError.message}`);
+      }
+    } else {
+      console.log(`[DEBUG-SAVE] ❌ Memory module not available!`);
+      console.log(`[DEBUG-SAVE] Memory exists: ${!!memory}`);
+      console.log(`[DEBUG-SAVE] SaveToMemory function: ${typeof memory?.saveToMemory}`);
     }
     
+    console.log(`[DEBUG-SAVE] ❌ FINAL RESULT: No storage methods worked`);
     return { saved: false, reason: 'no_storage' };
     
   } catch (error) {
+    console.log(`[DEBUG-SAVE] ❌ CRITICAL ERROR: ${error.message}`);
     console.warn('[Memory] Save failed:', error.message);
     return { saved: false, reason: 'error', error: error.message };
   }
