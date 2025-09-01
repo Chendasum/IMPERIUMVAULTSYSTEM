@@ -1467,19 +1467,73 @@ async function saveToMemory(chatId, conversationData) {
     
     console.log('[Memory] Conversation saved to database');
     
-    // ✨ NEW: Extract and save facts automatically
-    const extractedFacts = await extractAndSaveFactsFromConversation(chatId, userMessage, assistantResponse);
+    // 🎯 AUTOMATIC FACT EXTRACTION
+    await extractFactsFromConversation(chatId, userMessage);
     
     return { 
       saved: true, 
-      method: 'database',
-      factsExtracted: extractedFacts.length,
-      facts: extractedFacts
+      method: 'database'
     };
     
   } catch (error) {
     console.error('[Memory] Save to memory error:', error.message);
     return { saved: false, reason: 'error', error: error.message };
+  }
+}
+
+// 🎯 ADD THIS NEW FUNCTION TO memory.js
+async function extractFactsFromConversation(chatId, userMessage) {
+  try {
+    const text = asText(userMessage).toLowerCase();
+    
+    // Extract confirmed name (high priority)
+    if (text.includes('my name is') || text.includes('confirmed name')) {
+      const nameMatch = userMessage.match(/my (?:confirmed )?name is ([^.,\n!?]+)/i);
+      if (nameMatch && nameMatch[1]) {
+        const name = nameMatch[1].trim();
+        if (name.length > 1 && name.length < 50) {
+          // Clear old conflicting names first
+          await clearOldFacts(chatId, 'name');
+          // Save new confirmed name
+          await addPersistentMemoryDB(chatId, `CONFIRMED NAME: ${name}`, 'high');
+          console.log(`[FACT-EXTRACT] ✅ Saved confirmed name: ${name}`);
+          return;
+        }
+      }
+    }
+    
+    // Extract business/work
+    if (text.includes('work at') || text.includes('my business') || text.includes('my company')) {
+      const businessMatch = userMessage.match(/(?:work at|my business is|my company is) ([^.,\n!?]+)/i);
+      if (businessMatch && businessMatch[1]) {
+        const business = businessMatch[1].trim();
+        await addPersistentMemoryDB(chatId, `BUSINESS: ${business}`, 'high');
+        console.log(`[FACT-EXTRACT] ✅ Saved business: ${business}`);
+      }
+    }
+    
+  } catch (error) {
+    console.error('[FACT-EXTRACT] Error:', error.message);
+  }
+}
+
+// 🎯 HELPER FUNCTION TO CLEAR OLD CONFLICTING FACTS
+async function clearOldFacts(chatId, factType) {
+  try {
+    const { pool } = require('./database');
+    
+    if (factType === 'name') {
+      // Mark old name entries as low importance
+      await pool.query(
+        `UPDATE persistent_memories 
+         SET importance = 'low' 
+         WHERE chat_id = $1 AND (fact ILIKE '%name%' OR fact ILIKE '%called%')`,
+        [chatId]
+      );
+      console.log(`[CLEANUP] Marked old name facts as low importance`);
+    }
+  } catch (error) {
+    console.error('[CLEANUP] Error:', error.message);
   }
 }
 
