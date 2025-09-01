@@ -125,6 +125,7 @@ const systemState = {
 function safeString(value) {
   if (value === null || value === undefined) return '';
   if (typeof value === 'string') return value;
+  if (typeof value === 'object' && value.toString) return value.toString();
   return String(value);
 }
 
