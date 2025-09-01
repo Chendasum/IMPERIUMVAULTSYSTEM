@@ -3615,25 +3615,6 @@ module.exports = {
 // COMPLETE REWRITE - Direct bypass system eliminates 15+ second delays for simple messages
 // Architecture: Simple messages → Direct OpenAI → Immediate response (bypass ALL memory systems)
 
-// Load required modules with error handling
-const multimodal = require('./multimodal');
-
-let openaiClient;
-try {
-  openaiClient = require('./openaiClient');
-  console.log('✅ openaiClient loaded for direct bypass');
-} catch (error) {
-  console.warn('⚠️ openaiClient not available - direct bypass disabled');
-}
-
-let telegramSplitter;
-try {
-  telegramSplitter = require('./telegramSplitter');
-  console.log('✅ telegramSplitter loaded for optimized delivery');
-} catch (error) {
-  console.warn('⚠️ telegramSplitter not available - using basic telegram delivery');
-}
-
 // ───────────────────────────────────────────────────────────────────────────────
 // DIRECT BYPASS FUNCTIONS - ELIMINATE 15+ SECOND DELAYS
 // ───────────────────────────────────────────────────────────────────────────────
