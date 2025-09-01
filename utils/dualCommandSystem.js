@@ -3613,13 +3613,13 @@ module.exports = {
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 6/6 (FINAL)
 // MAIN EXPORTS, UTILITY FUNCTIONS & COMPATIBILITY LAYER + MULTIMODAL INTEGRATION
-// FIXED VERSION - Smart memory control to prevent verbose responses for simple messages
+// This part combines all previous parts and provides the complete API with media handling
 
 // Add multimodal support
 const multimodal = require('./multimodal');
 
 // ───────────────────────────────────────────────────────────────────────────────
-// TELEGRAM MESSAGE HANDLER - MULTIMODAL ROUTING SYSTEM WITH SMART MESSAGE CLASSIFICATION
+// TELEGRAM MESSAGE HANDLER - MULTIMODAL ROUTING SYSTEM
 // ───────────────────────────────────────────────────────────────────────────────
 
 async function handleTelegramMessage(message, bot) {
@@ -3631,47 +3631,7 @@ async function handleTelegramMessage(message, bot) {
   console.log(`DualCommandSystem: Processing message from ${chatId}: "${userMessage.substring(0, 50)}..."`);
 
   try {
-    // ───────────────────────────────────────────────────────────────────────────
-    // SMART MESSAGE CLASSIFICATION - PREVENT VERBOSE RESPONSES FOR SIMPLE MESSAGES
-    // ───────────────────────────────────────────────────────────────────────────
-    
-    const messageLength = userMessage.trim().length;
-    const isSimpleGreeting = /^(hi|hello|hey|thanks|ok|yes|no|good|great|sure|gm|morning|afternoon|evening)$/i.test(userMessage.trim());
-    const isSimpleQuestion = messageLength < 25 && !userMessage.includes('analyze') && !userMessage.includes('explain') && !userMessage.includes('help');
-    const isSimpleCommand = /^(\/start|\/help|\/status)$/.test(userMessage.trim());
-
-    // Handle simple greetings with minimal processing
-    if (isSimpleGreeting) {
-      console.log('Simple greeting detected - using nano without memory');
-      return await executeEnhancedGPT5Command(userMessage, chatId, bot, {
-        forceModel: 'gpt-5-nano',
-        max_completion_tokens: 50,
-        reasoning_effort: 'minimal',
-        verbosity: 'low',
-        saveToMemory: false,    // Don't save simple greetings
-        contextAware: false,    // Don't load memory for greetings
-        title: 'Quick Response'
-      });
-    }
-
-    // Handle simple questions with minimal memory
-    if (isSimpleQuestion) {
-      console.log('Simple question detected - using mini with minimal memory');
-      return await executeEnhancedGPT5Command(userMessage, chatId, bot, {
-        forceModel: 'gpt-5-mini',
-        max_completion_tokens: 200,
-        reasoning_effort: 'minimal',
-        verbosity: 'low',
-        contextAware: 'minimal',  // Load only recent context
-        saveToMemory: 'minimal',  // Save but don't over-contextualize
-        title: 'Quick Answer'
-      });
-    }
-
-    // ───────────────────────────────────────────────────────────────────────────
-    // MULTIMODAL DETECTION AND ROUTING
-    // ───────────────────────────────────────────────────────────────────────────
-    
+    // Multimodal content detection
     const hasPhoto = !!message.photo;
     const hasDocument = !!message.document;
     const hasVoice = !!message.voice;
@@ -3681,7 +3641,7 @@ async function handleTelegramMessage(message, bot) {
 
     const isMultimodal = hasPhoto || hasDocument || hasVoice || hasAudio || hasVideo || hasVideoNote;
 
-    // Process multimodal content
+    // Process multimodal content first
     if (isMultimodal) {
       console.log('Multimodal content detected:', {
         photo: hasPhoto,
@@ -3784,10 +3744,7 @@ async function handleTelegramMessage(message, bot) {
       }
     }
 
-    // ───────────────────────────────────────────────────────────────────────────
-    // DOCUMENT FOLLOW-UP QUESTIONS
-    // ───────────────────────────────────────────────────────────────────────────
-    
+    // Check for document follow-up questions
     if (userMessage && !userMessage.startsWith('/')) {
       try {
         const documentContext = multimodal.getContextForFollowUp(chatId, userMessage);
@@ -3805,8 +3762,7 @@ async function handleTelegramMessage(message, bot) {
               forceModel: 'gpt-5-mini',
               max_completion_tokens: 3000,
               reasoning_effort: 'medium',
-              verbosity: 'medium',
-              saveToMemory: 'minimal'  // Don't over-save follow-ups
+              verbosity: 'medium'
             }
           );
         }
@@ -3821,21 +3777,8 @@ async function handleTelegramMessage(message, bot) {
       return;
     }
 
-    // ───────────────────────────────────────────────────────────────────────────
-    // REGULAR TEXT PROCESSING WITH SMART MEMORY CONTROL
-    // ───────────────────────────────────────────────────────────────────────────
-    
-    console.log('Routing to executeEnhancedGPT5Command with smart memory control');
-    
-    // Determine memory level based on message complexity
-    let memoryLevel = 'full';
-    let saveLevel = true;
-    
-    if (messageLength < 50 && !userMessage.includes('context') && !userMessage.includes('remember')) {
-      memoryLevel = 'minimal';
-      saveLevel = 'minimal';
-      console.log('Short message - using minimal memory');
-    }
+    // Route to existing GPT-5 text processing
+    console.log('Routing to executeEnhancedGPT5Command');
     
     return await executeEnhancedGPT5Command(
       userMessage,
@@ -3845,9 +3788,7 @@ async function handleTelegramMessage(message, bot) {
         messageType: 'telegram_webhook',
         hasMedia: isMultimodal,
         messageId: messageId,
-        processingStartTime: startTime,
-        contextAware: memoryLevel,    // Control memory loading
-        saveToMemory: saveLevel       // Control memory saving
+        processingStartTime: startTime
       }
     );
 
@@ -3862,6 +3803,22 @@ async function handleTelegramMessage(message, bot) {
       );
     } catch (telegramError) {
       console.error('Failed to send error message:', telegramError.message);
+    }
+
+    // Log error if logger is available
+    try {
+      if (typeof logError === 'function') {
+        await logError({
+          chatId,
+          userMessage,
+          error: error.message,
+          processingTime,
+          component: 'handleTelegramMessage',
+          hasMedia: isMultimodal
+        });
+      }
+    } catch (logError) {
+      console.warn('Error logging failed:', logError.message);
     }
   }
 }
@@ -3887,7 +3844,7 @@ async function handleInlineQuery(inlineQuery, bot) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// MEMORY WRITE HELPERS - SMART VERSION WITH FILTERING
+// MEMORY WRITE HELPERS (Part 6) — safe, compact, and TTL-based
 // ───────────────────────────────────────────────────────────────────────────────
 
 // TTL presets (ms)
@@ -3908,17 +3865,18 @@ function normalizeAssistantText(text) {
     .slice(0, 8000);               // sanity cap
 }
 
-// Smart topic picker - FILTERS OUT SIMPLE MESSAGES
+// Heuristic topic picker (skip trivial greetings)
 function inferTopic(userMessage) {
   if (!userMessage) return 'general';
   const raw = String(userMessage).trim();
   const s = raw.toLowerCase();
 
-  // Don't memorize simple greetings/responses as topics
-  const isGreeting = /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you|thanks|ok|yes|no|sure)\b/.test(s) && raw.split(/\s+/).length <= 6;
-  const isSimpleResponse = /^(ok|yes|no|sure|maybe|idk|lol|haha|cool|nice|good|great)$/i.test(s);
+  // Don’t memorize “hello/hi/how are you” as a topic
+  const isGreeting =
+    /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you)\b/.test(s) &&
+    raw.split(/\s+/).length <= 6;
 
-  if (isGreeting || isSimpleResponse) return 'chitchat'; // Won't be saved as important topic
+  if (isGreeting) return 'chitchat';
 
   if (s.includes('error') || s.includes('bug')) return 'troubleshooting';
   if (s.includes('report') || s.includes('analysis')) return 'analysis';
@@ -3928,18 +3886,11 @@ function inferTopic(userMessage) {
   return raw.slice(0, 60).trim();
 }
 
-// Upsert a fact into persistent memory - SMART FILTERING
+// Upsert a tiny fact into persistent memory (prefer memory module, fallback DB)
 async function upsertPersistentFact(chatId, key, value, opts = {}) {
   const ttlMs = typeof opts.ttlMs === 'number' ? opts.ttlMs : TTL.FACT;
   try {
     if (!chatId || !key) return false;
-
-    // Skip saving trivial facts
-    const valueStr = String(value).toLowerCase();
-    if (valueStr.includes('chitchat') || valueStr.length < 3) {
-      console.log('Skipping trivial fact save:', key, valueStr.substring(0, 50));
-      return false;
-    }
 
     if (typeof memory?.saveToMemory === 'function') {
       await memory.saveToMemory(chatId, {
@@ -3968,24 +3919,14 @@ async function upsertPersistentFact(chatId, key, value, opts = {}) {
   }
 }
 
-// Save conversation turn - SMART FILTERING
+// Save the full conversation turn (user + assistant) to DB for context rebuilds
 async function persistConversationTurn(chatId, userMessage, assistantResponse, meta = {}) {
   try {
     if (!chatId) return false;
-    
-    // Don't save trivial conversations to reduce database noise
-    const userMsg = String(userMessage || '').trim();
-    const isTrivia = /^(hi|hello|hey|thanks|ok|yes|no|good|great)$/i.test(userMsg);
-    
-    if (isTrivia && assistantResponse.length < 100) {
-      console.log('Skipping trivial conversation save');
-      return false;
-    }
-
     const assistant = normalizeAssistantText(assistantResponse);
 
     if (typeof database?.saveConversation === 'function') {
-      await database.saveConversation(chatId, userMsg, assistant, {
+      await database.saveConversation(chatId, String(userMessage || ''), assistant, {
         ...meta,
         savedAt: new Date().toISOString()
       });
@@ -3998,23 +3939,11 @@ async function persistConversationTurn(chatId, userMessage, assistantResponse, m
   }
 }
 
-// Smart memory saver - CONTROLS WHAT GETS SAVED
+// High-level memory writer called after successful responses
 async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnalysis, gpt5Result) {
   if (!chatId) return { saved: false };
 
-  // Check if this is worth saving to memory
-  const userMsg = String(userMessage || '').trim();
-  const responseLength = String(processedResponse || '').length;
-  
-  // Skip saving trivial interactions
-  const isTrivia = /^(hi|hello|hey|thanks|ok|yes|no|good|great|sure)$/i.test(userMsg) && responseLength < 200;
-  
-  if (isTrivia) {
-    console.log('Skipping memory save for trivial interaction');
-    return { saved: false, reason: 'trivial' };
-  }
-
-  // 1) Persist the turn only if meaningful
+  // 1) Persist the turn
   const turnSaved = await persistConversationTurn(chatId, userMessage, processedResponse, {
     modelUsed: gpt5Result?.modelUsed || queryAnalysis?.gpt5Model,
     priority: queryAnalysis?.priority,
@@ -4036,83 +3965,55 @@ async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnal
     );
   }
 
-  // 3) Save topic breadcrumb only if not chitchat
+  // 3) Leave a tiny breadcrumb for topic — skip if it was trivial chitchat
   const topic = inferTopic(userMessage);
   if (topic !== 'chitchat') {
     await upsertPersistentFact(chatId, 'last_topic', topic, { ttlMs: TTL.LAST_TOPIC });
   }
 
-  // 4) Capture "next action" only from substantial responses
-  if (responseLength > 200) {
-    const nextMatch = String(processedResponse || '').match(
-      /(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?)[^\n]*$/im
-    );
-    if (nextMatch) {
-      await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
-        ttlMs: TTL.FACT
-      });
-    }
+  // 4) Heuristic: capture “next action” / “next steps” / “todo” line if present
+  // Matches lines that start with "next", "next steps", "todo", or "action"
+  const nextMatch = String(processedResponse || '').match(
+    /(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?)[^\n]*$/im
+  );
+  if (nextMatch) {
+    await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
+      ttlMs: TTL.FACT
+    });
   }
 
   return { saved: turnSaved };
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// ENHANCED UTILITY FUNCTIONS WITH MEMORY CONTROL
-// ───────────────────────────────────────────────────────────────────────────────
+// ENHANCED UTILITY FUNCTIONS
 
 async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
   try {
-    console.log('Executing enhanced GPT-5 command with smart memory control...');
+    console.log('Executing enhanced GPT-5 command with auto-delivery...');
     const startTime = Date.now();
 
-    // Apply memory control based on options
-    let modifiedOptions = { ...options };
-    
-    if (options.contextAware === false) {
-      console.log('Memory loading disabled for this request');
-      modifiedOptions.skipMemoryLoad = true;
-    } else if (options.contextAware === 'minimal') {
-      console.log('Minimal memory loading for this request');
-      modifiedOptions.memoryLimit = 1000; // Load only recent context
-    }
-
     // Execute the core command
-    const result = await executeDualCommand(userMessage, chatId, modifiedOptions);
+    const result = await executeDualCommand(userMessage, chatId, options);
 
-    // Smart memory persistence
+    // Persist memory write-backs after success
     try {
       if (result?.success && options.saveToMemory !== false) {
-        if (options.saveToMemory === 'minimal') {
-          console.log('Minimal memory save mode');
-          // Only save if the response was substantial
-          if (result.response && result.response.length > 100) {
-            await maybeSaveMemory(
-              chatId,
-              userMessage,
-              result.response,
-              { type: result.queryType, priority: 'low' },
-              { modelUsed: result.modelUsed, processingTime: result.processingTime }
-            );
-          }
-        } else {
-          // Full memory save
-          await maybeSaveMemory(
-            chatId,
-            userMessage,
-            result.response,
-            {
-              type: result.queryType,
-              priority: result.priority,
-              gpt5Model: result.modelUsed,
-              complexity: { complexity: result.complexity },
-              completionStatus: result.completionDetected
-                ? { isComplete: true, completionType: result.completionType || 'direct' }
-                : { isComplete: false }
-            },
-            { modelUsed: result.modelUsed, processingTime: result.processingTime }
-          );
-        }
+        await maybeSaveMemory(
+          chatId,
+          userMessage,
+          result.response,
+          {
+            type: result.queryType,
+            priority: result.priority,
+            gpt5Model: result.modelUsed,
+            complexity: { complexity: result.complexity },
+            completionStatus: result.completionDetected
+              ? { isComplete: true, completionType: result.completionType || 'direct' }
+              : { isComplete: false }
+          },
+          { modelUsed: result.modelUsed, processingTime: result.processingTime }
+        );
       }
     } catch (persistErr) {
       console.warn('Memory persist warning (enhanced):', persistErr.message);
@@ -4147,7 +4048,11 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
     if (bot) {
       try {
         const errorMsg = `Analysis failed: ${error.message}. Please try a simpler request.`;
-        await bot.sendMessage(chatId, errorMsg);
+        if (telegramSplitter?.sendAlert) {
+          await telegramSplitter.sendAlert(bot, chatId, errorMsg, 'System Error');
+        } else if (bot.sendMessage) {
+          await bot.sendMessage(chatId, errorMsg);
+        }
       } catch (notificationError) {
         console.error('Error notification failed:', notificationError.message);
       }
@@ -4166,7 +4071,6 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
 
 // ───────────────────────────────────────────────────────────────────────────────
 // QUICK COMMAND FUNCTIONS
-// ───────────────────────────────────────────────────────────────────────────────
 
 async function quickGPT5Command(message, chatId, bot = null, model = 'auto') {
   const options = {
@@ -4182,48 +4086,20 @@ async function quickGPT5Command(message, chatId, bot = null, model = 'auto') {
 }
 
 async function quickNanoCommand(message, chatId, bot = null) {
-  return await executeEnhancedGPT5Command(message, chatId, bot, {
-    forceModel: 'gpt-5-nano',
-    max_completion_tokens: 1000,
-    reasoning_effort: 'minimal',
-    verbosity: 'low',
-    saveToMemory: 'minimal',
-    title: 'GPT-5 Nano'
-  });
+  return await quickGPT5Command(message, chatId, bot, 'gpt-5-nano');
 }
-
 async function quickMiniCommand(message, chatId, bot = null) {
-  return await executeEnhancedGPT5Command(message, chatId, bot, {
-    forceModel: 'gpt-5-mini',
-    max_completion_tokens: 3000,
-    reasoning_effort: 'medium',
-    verbosity: 'medium',
-    title: 'GPT-5 Mini'
-  });
+  return await quickGPT5Command(message, chatId, bot, 'gpt-5-mini');
 }
-
 async function quickFullCommand(message, chatId, bot = null) {
-  return await executeEnhancedGPT5Command(message, chatId, bot, {
-    forceModel: 'gpt-5',
-    max_completion_tokens: 8000,
-    reasoning_effort: 'high',
-    verbosity: 'high',
-    title: 'GPT-5 Full'
-  });
+  return await quickGPT5Command(message, chatId, bot, 'gpt-5');
 }
-
 async function quickChatCommand(message, chatId, bot = null) {
-  return await executeEnhancedGPT5Command(message, chatId, bot, {
-    forceModel: 'gpt-5-chat-latest',
-    max_tokens: 3000,
-    temperature: 0.7,
-    title: 'GPT-5 Chat'
-  });
+  return await quickGPT5Command(message, chatId, bot, 'gpt-5-chat-latest');
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
 // GPT-5 MODEL RECOMMENDATION SYSTEM
-// ───────────────────────────────────────────────────────────────────────────────
 
 function getGPT5ModelRecommendation(query) {
   const analysis = analyzeQuery(query);
@@ -4295,7 +4171,6 @@ function generateModelAlternatives(analysis) {
 
 // ───────────────────────────────────────────────────────────────────────────────
 // COST ESTIMATION SYSTEM
-// ───────────────────────────────────────────────────────────────────────────────
 
 function getGPT5CostEstimate(query, estimatedTokens = 1000) {
   const analysis = analyzeQuery(query);
@@ -4350,7 +4225,7 @@ function getGPT5CostEstimate(query, estimatedTokens = 1000) {
 
 // ───────────────────────────────────────────────────────────────────────────────
 // PERFORMANCE METRICS SNAPSHOT
-// ───────────────────────────────────────────────────────────────────────────────
+
 function getGPT5PerformanceMetrics() {
   const analytics = getSystemAnalytics();
 
@@ -4360,32 +4235,28 @@ function getGPT5PerformanceMetrics() {
     modelsAvailable: Object.values(CONFIG.MODELS),
     features: [
       'Intelligent model selection',
-      'Smart memory control (prevents verbose responses)',
       'Completion detection (cost savings)',
-      'Memory integration with filtering',
+      'Memory integration',
       'Multi-tier fallback system',
       'Performance monitoring',
       'Cost optimization',
       'Cambodia timezone support',
       'Multimodal processing (Images, Documents, Voice, Video)'
     ],
-    
     performance: {
       uptime: analytics.uptime.formatted,
       totalRequests: analytics.requests.total,
       successRate: `${analytics.requests.successRate}%`,
       avgResponseTime: `${analytics.performance.averageResponseTime}ms`,
-      completionDetectionSavings: `${analytics.requests.completionDetected} requests`,
-      memoryOptimization: 'Smart filtering active'
+      completionDetectionSavings: `${analytics.requests.completionDetected} requests`
     },
     optimization: {
       smartRouting: 'Active',
       costOptimization: 'Active',
       completionDetection: 'Active',
-      memoryIntegration: 'PostgreSQL-backed with smart filtering',
+      memoryIntegration: 'PostgreSQL-backed',
       fallbackSystem: 'Multi-tier GPT-5',
-      multimodalProcessing: 'Active',
-      verboseResponsePrevention: 'Active'
+      multimodalProcessing: 'Active'
     },
     capabilities: {
       speed: 'GPT-5 Nano (50ms average)',
@@ -4397,21 +4268,15 @@ function getGPT5PerformanceMetrics() {
       documents: 'GPT-5 Document Analysis (2-10s)',
       voice: 'Whisper + GPT-5 (3-8s average)'
     },
-    memoryControl: {
-      greetingHandling: 'Bypass memory system',
-      simpleQuestions: 'Minimal memory load',
-      complexQueries: 'Full memory context',
-      trivialFiltering: 'Active'
-    },
-    estimatedSavings: '70-80% vs always using GPT-5 Full + completion detection + memory optimization',
-    architecture: 'Secure, analysis-only + multimodal + smart memory',
+    estimatedSavings:
+      '70-80% vs always using GPT-5 Full + completion detection savings',
+    architecture: 'Secure, analysis-only + multimodal capabilities',
     security: 'Production-ready, no system command execution'
   };
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
 // MULTIMODAL STATUS AND MANAGEMENT
-// ───────────────────────────────────────────────────────────────────────────────
 
 function getMultimodalStatus() {
   try {
@@ -4432,7 +4297,6 @@ function getMultimodalStatus() {
 
 // ───────────────────────────────────────────────────────────────────────────────
 // EMERGENCY FALLBACK FUNCTIONS
-// ───────────────────────────────────────────────────────────────────────────────
 
 async function saveConversationEmergency(chatId, userMessage, response, metadata = {}) {
   try {
@@ -4483,7 +4347,6 @@ async function executeDirectGPT5Analysis(prompt, model = 'gpt-5-mini') {
 
 // ───────────────────────────────────────────────────────────────────────────────
 // SYSTEM HEALTH AND DIAGNOSTICS
-// ───────────────────────────────────────────────────────────────────────────────
 
 async function performFullSystemDiagnostics() {
   console.log('Running comprehensive system diagnostics...');
@@ -4524,7 +4387,6 @@ async function performFullSystemDiagnostics() {
 
 // ───────────────────────────────────────────────────────────────────────────────
 // COMPATIBILITY LAYER FOR LEGACY CODE
-// ───────────────────────────────────────────────────────────────────────────────
 
 const legacyCompatibility = {
   // Legacy function names
@@ -4544,77 +4406,16 @@ const legacyCompatibility = {
   executeSystemOperation: async () => 'System operations disabled for security'
 };
 
-// ───────────────────────────────────────────────────────────────────────────────
-// MEMORY CONTEXT BUILDER WITH SMART LOADING
-// ───────────────────────────────────────────────────────────────────────────────
-
-async function buildSmartMemoryContext(chatId, contextLevel = 'full') {
-  try {
-    if (contextLevel === false || contextLevel === 'none') {
-      console.log('Memory context disabled');
-      return '';
-    }
-
-    let contextLimit = 5000; // Default full context
-    let messageLimit = 20;   // Default message count
-
-    if (contextLevel === 'minimal') {
-      contextLimit = 1000;
-      messageLimit = 3;
-      console.log('Loading minimal memory context');
-    } else if (contextLevel === 'reduced') {
-      contextLimit = 2500;
-      messageLimit = 10;
-      console.log('Loading reduced memory context');
-    }
-
-    // Load recent conversations from PostgreSQL with limits
-    if (typeof database?.getRecentConversations === 'function') {
-      const recentConversations = await database.getRecentConversations(chatId, messageLimit);
-      
-      if (recentConversations && recentConversations.length > 0) {
-        let context = 'Recent conversation context:\n';
-        let totalLength = 0;
-        
-        for (const conv of recentConversations) {
-          const convText = `User: ${conv.user_message}\nAssistant: ${conv.assistant_response}\n\n`;
-          if (totalLength + convText.length > contextLimit) break;
-          context += convText;
-          totalLength += convText.length;
-        }
-        
-        return context.slice(0, contextLimit);
-      }
-    }
-
-    // Fallback to memory module if available
-    if (typeof memory?.getMemoryContext === 'function') {
-      return await memory.getMemoryContext(chatId, { limit: contextLimit });
-    }
-
-    return '';
-  } catch (error) {
-    console.warn('Memory context building failed:', error.message);
-    return '';
-  }
-}
-
-// ───────────────────────────────────────────────────────────────────────────────
-// SYSTEM STARTUP AND CONFIGURATION
-// ───────────────────────────────────────────────────────────────────────────────
-
-console.log('Secure GPT-5 Command System v7.2 - COMPLETE (6/6 parts + multimodal + smart memory)');
+console.log('Secure GPT-5 Command System v7.1 - COMPLETE (6/6 parts + multimodal loaded)');
 console.log('Security: All operational execution removed - analysis-only mode');
-console.log('Features: Smart model selection, intelligent memory control, completion detection');
-console.log('Memory: PostgreSQL-backed with smart filtering to prevent verbose responses');
+console.log('Features: Smart model selection, completion detection, cost optimization');
 console.log('Multimodal: Images (GPT-4o Vision), Documents (GPT-5), Voice (Whisper+GPT-5), Video (planned)');
-console.log('Optimization: Greeting bypass, minimal context loading, trivial filtering');
 console.log('Monitoring: Performance analytics, health checks, cost tracking');
-console.log('Context: Cambodia timezone, global market awareness, filtered memory integration');
-console.log('Ready for production deployment with comprehensive error handling and response control');
+console.log('Context: Cambodia timezone, global market awareness, memory integration');
+console.log('Ready for production deployment with comprehensive error handling');
 
 // ───────────────────────────────────────────────────────────────────────────────
-// MAIN MODULE EXPORTS - COMPLETE AND SAFE VERSION
+// MAIN MODULE EXPORTS - FIXED AND SAFE VERSION
 // ───────────────────────────────────────────────────────────────────────────────
 
 // Preserve any existing exports first
@@ -4644,20 +4445,16 @@ const newExports = {
   getGPT5PerformanceMetrics,
   getMultimodalStatus,
   
-  // MEMORY HELPERS (defined in this part) - SMART VERSION
+  // MEMORY HELPERS (defined in this part)
   maybeSaveMemory,
   upsertPersistentFact,
   persistConversationTurn,
   saveConversationEmergency,
-  buildSmartMemoryContext,
   
   // UTILITY FUNCTIONS (defined in this part)  
   executeGPT5WithContext,
   executeDirectGPT5Analysis,
   performFullSystemDiagnostics,
-  
-  // LEGACY COMPATIBILITY
-  ...legacyCompatibility,
   
   // DIRECT ACCESS TO SUBSYSTEMS (if they exist)
   ...(typeof multimodal !== 'undefined' && { multimodal }),
@@ -4682,40 +4479,8 @@ module.exports = {
   ...newExports       // New exports from this part
 };
 
-// ───────────────────────────────────────────────────────────────────────────────
-// FINAL SYSTEM STATUS AND LOGGING
-// ───────────────────────────────────────────────────────────────────────────────
-
-console.log('DualCommandSystem Part 6 loaded - Multimodal + Smart Memory Control ready');
+console.log('DualCommandSystem Part 6 loaded - Multimodal + Telegram handlers ready');
 console.log('Available handlers:', Object.keys(module.exports).filter(key => key.startsWith('handle')));
 console.log('Available quick commands:', Object.keys(module.exports).filter(key => key.startsWith('quick')));
-console.log('Memory optimization:', 'Smart filtering to prevent verbose responses');
-console.log('Greeting handling:', 'Bypass memory system for simple messages');
 console.log('Multimodal support:', typeof module.exports.multimodal !== 'undefined' ? 'enabled' : 'checking...');
-console.log('All systems integrated and operational with intelligent response control');
-
-// ───────────────────────────────────────────────────────────────────────────────
-// CRITICAL FIX VALIDATION
-// ───────────────────────────────────────────────────────────────────────────────
-
-// Validate that the memory control functions are properly implemented
-if (typeof buildSmartMemoryContext === 'function') {
-  console.log('✓ Smart memory context builder available');
-} else {
-  console.warn('⚠ Smart memory context builder missing');
-}
-
-// Validate message classification is working
-const testClassification = (msg) => {
-  const isSimple = /^(hi|hello|hey|thanks|ok|yes|no|good|great|sure|gm)$/i.test(msg.trim());
-  return isSimple ? 'simple' : 'complex';
-};
-
-console.log('Message classification test:', {
-  'hello': testClassification('hello'),
-  'how are you': testClassification('how are you'),
-  'analyze market trends': testClassification('analyze market trends')
-});
-
-console.log('✓ Part 6 complete with memory optimization fixes');
-console.log('This should resolve verbose responses for simple messages like "hello"');
+console.log('All systems integrated and operational');
