@@ -29,6 +29,24 @@ console.log(`   Max Context: ${MEMORY_CONFIG.MAX_CONTEXT_LENGTH} chars`);
 console.log(`   Max Conversations: ${MEMORY_CONFIG.MAX_CONVERSATIONS}`);
 console.log(`   Max Memories: ${MEMORY_CONFIG.MAX_MEMORIES}`);
 
+// ADD THIS SECTION HERE:
+// -----------------------------------------------------------------------------
+// 🧪 DATABASE CONNECTION TEST
+// -----------------------------------------------------------------------------
+async function testDatabaseConnection() {
+  try {
+    console.log('[DB-TEST] Testing database connection...');
+    const testResult = await getConversationHistoryDB('test', 1);
+    console.log(`[DB-TEST] ✅ Database connected, got ${Array.isArray(testResult) ? testResult.length : 0} results`);
+    return true;
+  } catch (error) {
+    console.log(`[DB-TEST] ❌ Database connection failed: ${error.message}`);
+    return false;
+  }
+}
+
+// Call the test immediately
+testDatabaseConnection();
 // -----------------------------------------------------------------------------
 // 🔧 SAFETY HELPERS — normalize any input to text to avoid .toLowerCase/.substring errors
 // -----------------------------------------------------------------------------
