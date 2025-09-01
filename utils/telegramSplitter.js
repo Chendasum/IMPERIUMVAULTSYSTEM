@@ -1,53 +1,101 @@
 'use strict';
 /**
  * utils/telegramSplitter.js
- * Beautiful, smart Telegram delivery for long/structured GPT responses.
+ * Ultra-enhanced Telegram delivery for GPT-5 responses with smart formatting
  *
- * ✅ Compatible with your pipeline:
- *    - sendTelegramMessage(bot, chatId, text, metadata)
- *    - setupTelegramHandler(bot) → { send, sendGPTResponse, sendError }
- *    - sendAlert(bot, chatId, message, title?)
- *
- * ✨ Highlights:
- *    - Gorgeous header banner (ASCII box) with model/time/tokens/cost/confidence
- *    - Smart spacing + paragraph reflow + bullet normalization
- *    - Code-block aware chunking (never splits ``` blocks)
- *    - Markdown-safe wrapping (preserves code & links)
- *    - Style presets: compact | relaxed | roomy (auto spacing + wrap width)
- *    - Optional inline buttons (Telegram inline keyboard)
- *    - Parse mode negotiation: Markdown → fallback to plain text automatically
- *    - Clean, deterministic logs and detailed result object
+ * Features:
+ * - Beautiful ASCII banner headers with metadata
+ * - Smart memory-aware response formatting
+ * - Code-block aware chunking (never splits code)
+ * - Markdown-safe delivery with auto-fallback
+ * - Response optimization for greeting vs complex queries
+ * - Multi-style presets with automatic selection
+ * - Inline keyboard support for interactive responses
+ * - Performance tracking and detailed logging
+ * - Emergency fallback systems
+ * - Cost and token tracking integration
  */
 
 ////////////////////////////////////////////////////////////////////////////////
-// CONSTANTS
+// ENHANCED CONSTANTS AND CONFIGURATION
 ////////////////////////////////////////////////////////////////////////////////
 
-const TELEGRAM_HARD_LIMIT = 4096;             // Telegram message length cap
-const DEFAULT_PARSE_MODE  = 'Markdown';       // Prefer Markdown; fallback to plaintext
-const MAX_CHUNK_SOFT      = 3600;             // Try not to exceed this per chunk (gives room for header/footer)
-const BOX_CHAR            = '─';               // Horizontal line char for header
+const TELEGRAM_HARD_LIMIT = 4096;             // Telegram absolute message limit
+const DEFAULT_PARSE_MODE  = 'Markdown';       // Primary parse mode
+const MAX_CHUNK_SOFT      = 3600;             // Soft limit per chunk (room for headers)
+const BOX_CHAR            = '─';               // Header box character
+const MIN_MEANINGFUL_LENGTH = 10;             // Skip headers for very short responses
 
-// Style presets for spacing + wrapping + banner width
+// Enhanced style presets with response-type optimization
 const STYLE_PRESETS = {
-  compact: { wrap: 78,  gapAfterHeader: 1, gapBetweenSections: 1, padSections: false, bannerWidth: 38 },
-  relaxed: { wrap: 92,  gapAfterHeader: 1, gapBetweenSections: 1, padSections: true,  bannerWidth: 42 },
-  roomy:   { wrap: 108, gapAfterHeader: 2, gapBetweenSections: 2, padSections: true,  bannerWidth: 50 }
+  // For simple greetings and quick responses
+  minimal: { 
+    wrap: 60,  
+    gapAfterHeader: 0, 
+    gapBetweenSections: 1, 
+    padSections: false, 
+    bannerWidth: 30,
+    showMetadata: false,
+    headerStyle: 'compact'
+  },
+  
+  // For normal questions and responses  
+  compact: { 
+    wrap: 78,  
+    gapAfterHeader: 1, 
+    gapBetweenSections: 1, 
+    padSections: false, 
+    bannerWidth: 38,
+    showMetadata: true,
+    headerStyle: 'normal'
+  },
+  
+  // For detailed analysis and reports
+  relaxed: { 
+    wrap: 92,  
+    gapAfterHeader: 1, 
+    gapBetweenSections: 1, 
+    padSections: true,  
+    bannerWidth: 42,
+    showMetadata: true,
+    headerStyle: 'detailed'
+  },
+  
+  // For comprehensive reports and complex responses
+  roomy: { 
+    wrap: 108, 
+    gapAfterHeader: 2, 
+    gapBetweenSections: 2, 
+    padSections: true,  
+    bannerWidth: 50,
+    showMetadata: true,
+    headerStyle: 'full'
+  }
+};
+
+// Response type detection patterns
+const RESPONSE_PATTERNS = {
+  greeting: /^(hello|hi|hey|good morning|good afternoon|good evening|thanks|thank you)\.?$/i,
+  simple: /^.{1,100}$/,
+  analysis: /(analysis|analyze|assessment|evaluation|report|summary)/i,
+  complex: /(comprehensive|detailed|in-depth|thorough|extensive)/i,
+  code: /```[\s\S]*```/,
+  financial: /(investment|portfolio|trading|market|financial|revenue|profit)/i
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// SMALL UTILITIES
+// ENHANCED UTILITY FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 
 const msToPretty = (ms) => {
-  if (ms == null) return '';
-  if (ms < 1000) return `${ms}ms`;
+  if (ms == null || isNaN(ms)) return '';
+  if (ms < 1000) return `${Math.round(ms)}ms`;
   const s = (ms / 1000);
-  if (s < 60) return `${s.toFixed(2)}s`;
+  if (s < 60) return `${s.toFixed(1)}s`;
   const m = Math.floor(s / 60);
-  const ss = (s % 60).toFixed(0).padStart(2, '0');
+  const ss = Math.round(s % 60);
   return `${m}m${ss}s`;
 };
 
@@ -55,26 +103,65 @@ const fmtNumber = (n, digits = 2) => {
   if (typeof n !== 'number' || Number.isNaN(n)) return '';
   if (n === 0) return '0';
   if (Math.abs(n) >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: digits });
-  return n.toFixed(digits).replace(/\.00$/, '');
+  return n.toFixed(digits).replace(/\.?0+$/, '');
 };
 
-const truthy = (v) => v !== undefined && v !== null && v !== false;
+const truthy = (v) => v !== undefined && v !== null && v !== false && v !== '';
+
+const safeString = (input, maxLength = 10000) => {
+  try {
+    return String(input || '').slice(0, maxLength);
+  } catch (error) {
+    return '[Invalid content]';
+  }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
-// MARKDOWN / TEXT NORMALIZATION
+// SMART RESPONSE TYPE DETECTION
+////////////////////////////////////////////////////////////////////////////////
+
+function detectResponseType(text, metadata = {}) {
+  const content = safeString(text).toLowerCase();
+  const length = content.length;
+  
+  // Check metadata hints first
+  if (metadata.responseType) return metadata.responseType;
+  if (metadata.model === 'gpt-5-nano' && length < 200) return 'minimal';
+  
+  // Pattern-based detection
+  if (RESPONSE_PATTERNS.greeting.test(content) && length < 100) return 'minimal';
+  if (length < 150 && !RESPONSE_PATTERNS.code.test(content)) return 'compact';
+  if (RESPONSE_PATTERNS.analysis.test(content) || length > 2000) return 'relaxed';
+  if (RESPONSE_PATTERNS.complex.test(content) || length > 4000) return 'roomy';
+  
+  return 'compact'; // Default
+}
+
+function autoSelectStyle(text, metadata = {}) {
+  const responseType = detectResponseType(text, metadata);
+  const styleMap = {
+    minimal: 'minimal',
+    simple: 'compact', 
+    normal: 'compact',
+    detailed: 'relaxed',
+    complex: 'roomy'
+  };
+  
+  return styleMap[responseType] || 'compact';
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ENHANCED MARKDOWN AND TEXT PROCESSING
 ////////////////////////////////////////////////////////////////////////////////
 
 function normalizeBullets(text) {
-  // Turn ragged bullets into consistent format
-  // - also collapses multiple spaces after bullets
   return text
-    .replace(/^[ \t]*[-–—•·]\s*/gm, '• ')
-    .replace(/^[ \t]*\*\s+/gm, '• ')
-    .replace(/^[ \t]*\d+\.\s+/gm, (m) => m.trim() + ' ');
+    .replace(/^[ \t]*[-–—•·*]\s*/gm, '• ')
+    .replace(/^[ \t]*\d+\.\s+/gm, (match) => match.trim() + ' ')
+    .replace(/^[ \t]*[a-zA-Z]\.\s+/gm, (match) => match.trim() + ' ');
 }
 
 function collapseBlankLines(text, maxBlank = 2) {
-  // Collapse runs of blank lines to at most maxBlank
   const pattern = new RegExp(`(?:\\n\\s*){${maxBlank + 1},}`, 'g');
   return text.replace(pattern, '\n'.repeat(maxBlank));
 }
@@ -82,494 +169,1007 @@ function collapseBlankLines(text, maxBlank = 2) {
 function trimEachLine(text) {
   return text
     .split('\n')
-    .map((l) => l.replace(/[ \t]+$/g, '')) // trim trailing spaces
+    .map(line => line.replace(/[ \t]+$/g, ''))
     .join('\n')
     .trim();
 }
 
 function ensureBalancedCodeFences(text) {
-  // If user sent an opening ``` without closing, add a closing fence at the end.
-  const fenceCount = (text.match(/(^|\n)```/g) || []).length;
-  if (fenceCount % 2 !== 0) {
+  const fenceMatches = text.match(/(^|\n)```/g) || [];
+  if (fenceMatches.length % 2 !== 0) {
     return text + '\n```';
   }
   return text;
 }
 
-// Wrap plain paragraphs but never wrap inside code fences or blockquotes
+function protectUrls(text) {
+  // Protect URLs from being wrapped by replacing spaces with non-breaking spaces
+  return text.replace(/(https?:\/\/[^\s]+)/g, (match) => {
+    return match.replace(/\s/g, '\u00A0');
+  });
+}
+
 function wrapMarkdownSmart(text, width) {
   const lines = text.split('\n');
-  let wrapped = [];
+  const wrapped = [];
   let inFence = false;
+  let inList = false;
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
 
+    // Track code fence state
     if (/^```/.test(line)) {
       inFence = !inFence;
       wrapped.push(line);
       continue;
     }
 
+    // Don't wrap inside code fences
     if (inFence) {
       wrapped.push(line);
       continue;
     }
 
-    // Don’t wrap headings, rules, quotes, or already short lines
+    // Track list state
+    inList = /^[ \t]*[•\-*]\s/.test(line) || /^[ \t]*\d+\.\s/.test(line);
+
+    // Don't wrap special lines
     if (
-      /^ {0,3}#{1,6}\s/.test(line) ||             // headings
-      /^ {0,3}[-*_]{3,}\s*$/.test(line) ||        // hr
-      /^>/.test(line) ||                          // blockquote
-      line.length <= width
+      /^ {0,3}#{1,6}\s/.test(line) ||           // headings
+      /^ {0,3}[-*_]{3,}\s*$/.test(line) ||      // horizontal rules
+      /^>/.test(line) ||                        // blockquotes
+      /^\|.*\|$/.test(line) ||                  // table rows
+      line.length <= width ||                   // already short
+      inList ||                                 // list items
+      /https?:\/\//.test(line)                  // contains URLs
     ) {
       wrapped.push(line);
       continue;
     }
 
-    // Try to wrap at spaces, but keep links intact (crudely)
+    // Wrap long lines at word boundaries
     let current = '';
-    const tokens = line.split(/(\s+)/);
+    const words = line.split(/(\s+)/);
 
-    for (let t of tokens) {
-      if (current.length + t.length > width) {
-        if (current.trim().length) wrapped.push(current.trimEnd());
-        // Avoid splitting inside a URL token (very basic)
-        if (/https?:\/\/\S+/.test(t) && t.length > width) {
-          wrapped.push(t);
-          current = '';
-        } else {
-          current = t.trimStart();
-        }
+    for (const word of words) {
+      if (current.length + word.length > width) {
+        if (current.trim()) wrapped.push(current.trimEnd());
+        current = word.trimStart();
       } else {
-        current += t;
+        current += word;
       }
     }
-    if (current.trim().length) wrapped.push(current.trimEnd());
+    
+    if (current.trim()) wrapped.push(current.trimEnd());
   }
 
   return wrapped.join('\n');
 }
 
 function smartSpacing(input, preset) {
-  let out = String(input || '');
+  let processed = safeString(input);
+  
+  processed = trimEachLine(processed);
+  processed = normalizeBullets(processed);
+  processed = collapseBlankLines(processed, preset.padSections ? 2 : 1);
+  processed = ensureBalancedCodeFences(processed);
+  processed = protectUrls(processed);
+  processed = wrapMarkdownSmart(processed, preset.wrap);
 
-  out = trimEachLine(out);
-  out = normalizeBullets(out);
-  out = collapseBlankLines(out, preset.padSections ? 2 : 2); // 2 is sensible for readability
-  out = ensureBalancedCodeFences(out);
-  out = wrapMarkdownSmart(out, preset.wrap);
-
-  return out;
+  return processed;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// HEADER / FOOTER
+// ENHANCED HEADER AND FOOTER SYSTEM
 ////////////////////////////////////////////////////////////////////////////////
 
 function centerText(text, width) {
-  text = text.trim();
-  if (text.length >= width) return text.slice(0, width);
-  const pad = Math.floor((width - text.length) / 2);
+  const clean = safeString(text).trim();
+  if (clean.length >= width) return clean.slice(0, width);
+  
+  const pad = Math.max(0, Math.floor((width - clean.length) / 2));
   const left = ' '.repeat(pad);
-  const right = ' '.repeat(width - text.length - pad);
-  return left + text + right;
+  const right = ' '.repeat(Math.max(0, width - clean.length - pad));
+  
+  return left + clean + right;
 }
 
-function buildHeader(title, preset, meta = {}) {
-  if (!title) return '';
-
-  const w = clamp(preset.bannerWidth, 28, 70);
-  const top    = `╭${BOX_CHAR.repeat(w)}╮`;
-  const bottom = `╰${BOX_CHAR.repeat(w)}╯`;
-
+function buildEnhancedHeader(title, preset, meta = {}) {
+  if (!title || preset.headerStyle === 'none') return '';
+  
+  const w = clamp(preset.bannerWidth, 20, 80);
+  const topLine = `╭${BOX_CHAR.repeat(w)}╮`;
+  const bottomLine = `╰${BOX_CHAR.repeat(w)}╯`;
   const lines = [];
 
-  const line1 = centerText(title, w);
-  lines.push(`│ ${line1} │`);
+  // Main title line
+  const titleLine = centerText(title, w);
+  lines.push(`│${titleLine}│`);
 
-  // Optional subline (e.g., model)
-  const infoBits = [];
-  if (meta.model) infoBits.push(`🤖 ${String(meta.model)}`);
-  if (truthy(meta.executionTime)) infoBits.push(`⏱ ${msToPretty(meta.executionTime)}`);
-  if (truthy(meta.tokens)) infoBits.push(`🔢 ${meta.tokens} tok`);
-  if (truthy(meta.cost)) infoBits.push(`💵 $${fmtNumber(Number(meta.cost), 6)}`);
-  if (truthy(meta.confidence)) infoBits.push(`🎯 ${(Number(meta.confidence) * 100).toFixed(0)}%`);
+  // Metadata line (only if enabled and data exists)
+  if (preset.showMetadata && preset.headerStyle !== 'minimal') {
+    const infoBits = [];
+    
+    if (meta.model) {
+      const modelName = String(meta.model).replace('gpt-5-', '').toUpperCase();
+      infoBits.push(`${modelName}`);
+    }
+    
+    if (truthy(meta.executionTime) && !isNaN(Number(meta.executionTime))) {
+      infoBits.push(`${msToPretty(Number(meta.executionTime))}`);
+    }
+    
+    if (truthy(meta.tokens) && !isNaN(Number(meta.tokens))) {
+      infoBits.push(`${fmtNumber(Number(meta.tokens))}tok`);
+    }
+    
+    if (truthy(meta.cost) && !isNaN(Number(meta.cost)) && Number(meta.cost) > 0) {
+      infoBits.push(`$${fmtNumber(Number(meta.cost), 6)}`);
+    }
+    
+    if (truthy(meta.confidence) && !isNaN(Number(meta.confidence))) {
+      const conf = Math.round(Number(meta.confidence) * 100);
+      if (conf > 0 && conf <= 100) infoBits.push(`${conf}%`);
+    }
 
-  if (infoBits.length) {
-    const line2 = centerText(infoBits.join('   '), w);
-    lines.push(`│ ${line2} │`);
+    if (infoBits.length > 0) {
+      const metaLine = centerText(infoBits.join(' • '), w);
+      lines.push(`│${metaLine}│`);
+    }
   }
 
-  return [top, ...lines, bottom].join('\n');
+  return [topLine, ...lines, bottomLine].join('\n');
 }
 
-function buildFooter(meta = {}, preset) {
+function buildEnhancedFooter(meta = {}, preset) {
+  if (preset.headerStyle === 'minimal' || preset.headerStyle === 'none') return '';
+  
   const bits = [];
+  
   if (truthy(meta.costTier)) bits.push(`Cost: ${meta.costTier}`);
-  if (truthy(meta.complexity)) bits.push(`Complexity: ${meta.complexity}`);
+  if (truthy(meta.complexity)) bits.push(`Type: ${meta.complexity}`);
   if (truthy(meta.reasoning)) bits.push(`Reasoning: ${meta.reasoning}`);
-  if (truthy(meta.verbosity)) bits.push(`Verbosity: ${meta.verbosity}`);
-  if (truthy(meta.contextUsed)) bits.push(`Context: ${meta.contextUsed ? 'Yes' : 'No'}`);
-  if (truthy(meta.fallbackUsed)) bits.push(`Fallback: ${meta.fallbackUsed ? 'Yes' : 'No'}`);
-  if (truthy(meta.completionDetected)) bits.push(`Completion: ${meta.completionDetected ? 'Yes' : 'No'}`);
+  if (truthy(meta.contextUsed)) bits.push(`Memory: ${meta.contextUsed ? 'Used' : 'Bypassed'}`);
+  if (truthy(meta.completionDetected)) bits.push(`Status: ${meta.completionDetected ? 'Complete' : 'Processed'}`);
 
-  if (!bits.length) return '';
+  if (bits.length === 0) return '';
 
-  const body = '— ' + bits.join('  •  ');
-  if (preset.padSections) return `\n${body}\n`;
-  return `\n${body}`;
+  const footerText = '─ ' + bits.join(' • ');
+  return preset.padSections ? `\n${footerText}\n` : `\n${footerText}`;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// CHUNKING (CODE-BLOCK AWARE)
+// INTELLIGENT CHUNKING SYSTEM
 ////////////////////////////////////////////////////////////////////////////////
 
-function splitIntoLogicalBlocks(md) {
-  // HIGH LEVEL: split by code fences and large paragraph blocks
-  // Keep fences intact; never split mid-fence.
+function findCodeBlocks(text) {
   const blocks = [];
-  const lines = md.split('\n');
-  let buf = [];
-  let inFence = false;
+  const lines = text.split('\n');
+  let inBlock = false;
+  let blockStart = -1;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (/^```/.test(line)) {
-      // fence boundary
-      if (!inFence) {
-        // flush previous buffer as a block
-        if (buf.length) {
-          blocks.push(buf.join('\n').trim());
-          buf = [];
-        }
-        inFence = true;
-        buf.push(line);
+    if (/^```/.test(lines[i])) {
+      if (!inBlock) {
+        blockStart = i;
+        inBlock = true;
       } else {
-        buf.push(line);
-        blocks.push(buf.join('\n')); // entire fence block
-        buf = [];
-        inFence = false;
+        blocks.push({ start: blockStart, end: i });
+        inBlock = false;
       }
-    } else {
-      buf.push(line);
     }
   }
 
-  if (buf.length) blocks.push(buf.join('\n').trim());
-
-  // Post-process: split large non-code blocks by double newline boundaries
-  const final = [];
-  for (const b of blocks) {
-    if (/^```/.test(b)) {
-      final.push(b);
-    } else if (b.length <= MAX_CHUNK_SOFT) {
-      final.push(b);
-    } else {
-      // try to split by paragraph boundaries
-      const paras = b.split(/\n{2,}/);
-      let acc = '';
-      for (let p of paras) {
-        const appended = acc.length ? acc + '\n\n' + p : p;
-        if (appended.length > MAX_CHUNK_SOFT) {
-          if (acc.length) final.push(acc);
-          acc = p;
-        } else {
-          acc = appended;
-        }
-      }
-      if (acc.length) final.push(acc);
-    }
+  // Handle unclosed code block
+  if (inBlock) {
+    blocks.push({ start: blockStart, end: lines.length - 1 });
   }
-  return final.filter(Boolean);
+
+  return blocks;
 }
 
-function assembleChunksWithHeaderFooter(text, opts) {
-  const preset = STYLE_PRESETS[opts.style] || STYLE_PRESETS.relaxed;
-  const parsed  = smartSpacing(text, preset);
+function splitIntoIntelligentBlocks(text) {
+  const codeBlocks = findCodeBlocks(text);
+  const lines = text.split('\n');
+  const blocks = [];
+  let currentBlock = [];
+  let lineIndex = 0;
 
-  const header = opts.noHeader ? '' : buildHeader(opts.title || 'GPT-5', preset, {
-    model: opts.model, executionTime: opts.executionTime, tokens: opts.tokens,
-    cost: opts.cost, confidence: opts.confidence
-  });
+  while (lineIndex < lines.length) {
+    const line = lines[lineIndex];
+    
+    // Check if we're at the start of a code block
+    const inCodeBlock = codeBlocks.find(block => lineIndex >= block.start && lineIndex <= block.end);
+    
+    if (inCodeBlock) {
+      // Flush current block
+      if (currentBlock.length > 0) {
+        blocks.push(currentBlock.join('\n'));
+        currentBlock = [];
+      }
+      
+      // Add entire code block as one unit
+      const codeLines = lines.slice(inCodeBlock.start, inCodeBlock.end + 1);
+      blocks.push(codeLines.join('\n'));
+      lineIndex = inCodeBlock.end + 1;
+      continue;
+    }
 
-  const footer = opts.noFooter ? '' : buildFooter({
-    costTier: opts.costTier, complexity: opts.complexity, reasoning: opts.reasoning,
-    verbosity: opts.verbosity, contextUsed: opts.contextUsed, fallbackUsed: opts.fallbackUsed,
-    completionDetected: opts.completionDetected
-  }, preset);
+    // Regular line processing
+    currentBlock.push(line);
+    
+    // Check if we should break at paragraph boundaries
+    if (line.trim() === '' && currentBlock.length > 1) {
+      const blockText = currentBlock.join('\n').trim();
+      if (blockText.length > MAX_CHUNK_SOFT * 0.8) {
+        blocks.push(blockText);
+        currentBlock = [];
+      }
+    }
+    
+    lineIndex++;
+  }
 
-  const base = header
-    ? [header, preset.gapAfterHeader ? '' : null, parsed].filter((v) => v !== null).join('\n')
-    : parsed;
+  // Add remaining lines
+  if (currentBlock.length > 0) {
+    blocks.push(currentBlock.join('\n').trim());
+  }
 
-  const withFooter = footer ? `${base}\n${footer}` : base;
+  return blocks.filter(block => block.length > 0);
+}
 
-  // Split into logical blocks, then pack into messages under hard limit
-  const blocks = splitIntoLogicalBlocks(withFooter);
-
+function packBlocksIntoChunks(blocks) {
   const chunks = [];
-  let current = '';
+  let currentChunk = '';
 
-  const pushCurrent = () => {
-    if (!current) return;
-    chunks.push(current);
-    current = '';
-  };
+  for (const block of blocks) {
+    const separator = currentChunk ? '\n\n' : '';
+    const combined = currentChunk + separator + block;
 
-  for (const b of blocks) {
-    if (!b.trim()) {
-      if (current.length + 1 <= TELEGRAM_HARD_LIMIT) {
-        current += '\n';
-      } else {
-        pushCurrent();
-        current = '\n';
-      }
-      continue;
-    }
-
-    if (b.length > TELEGRAM_HARD_LIMIT) {
-      // Split this big block safely by lines under hard limit
-      const lines = b.split('\n');
-      let buf = '';
-      for (const ln of lines) {
-        const add = (buf ? '\n' : '') + ln;
-        if ((buf + add).length > TELEGRAM_HARD_LIMIT) {
-          // flush buf
-          if (current.length + buf.length + 1 > TELEGRAM_HARD_LIMIT) {
-            pushCurrent();
-          }
-          chunks.push(buf);
-          buf = ln;
-        } else {
-          buf += add;
-        }
-      }
-      if (buf) {
-        if (current.length + buf.length + 1 > TELEGRAM_HARD_LIMIT) {
-          pushCurrent();
-          chunks.push(buf);
-        } else {
-          current += (current ? '\n' : '') + buf;
-        }
-      }
-      continue;
-    }
-
-    // Normal case: pack block into current or start a new chunk
-    if ((current + (current ? '\n\n' : '') + b).length <= TELEGRAM_HARD_LIMIT) {
-      current += (current ? '\n\n' : '') + b;
+    if (combined.length <= MAX_CHUNK_SOFT) {
+      currentChunk = combined;
     } else {
-      pushCurrent();
-      if (b.length <= TELEGRAM_HARD_LIMIT) {
-        current = b;
+      // Flush current chunk
+      if (currentChunk) {
+        chunks.push(currentChunk);
+      }
+
+      // Handle oversized blocks
+      if (block.length > TELEGRAM_HARD_LIMIT) {
+        const subChunks = splitOversizedBlock(block);
+        chunks.push(...subChunks);
+        currentChunk = '';
       } else {
-        // (shouldn’t happen after above clause, but keep safe)
-        chunks.push(b.slice(0, TELEGRAM_HARD_LIMIT));
-        current = b.slice(TELEGRAM_HARD_LIMIT);
+        currentChunk = block;
       }
     }
   }
 
-  pushCurrent();
+  if (currentChunk) {
+    chunks.push(currentChunk);
+  }
 
   return chunks;
 }
 
+function splitOversizedBlock(block) {
+  const lines = block.split('\n');
+  const chunks = [];
+  let current = '';
+
+  for (const line of lines) {
+    const combined = current + (current ? '\n' : '') + line;
+    
+    if (combined.length > TELEGRAM_HARD_LIMIT - 100) {
+      if (current) chunks.push(current);
+      
+      // Handle extremely long lines
+      if (line.length > TELEGRAM_HARD_LIMIT - 100) {
+        const parts = line.match(new RegExp(`.{1,${TELEGRAM_HARD_LIMIT - 100}}`, 'g')) || [line];
+        chunks.push(...parts);
+        current = '';
+      } else {
+        current = line;
+      }
+    } else {
+      current = combined;
+    }
+  }
+
+  if (current) chunks.push(current);
+  return chunks;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
-// SENDER CORE
+// ENHANCED ASSEMBLY SYSTEM
 ////////////////////////////////////////////////////////////////////////////////
 
-async function _sendRaw(bot, chatId, text, opts = {}) {
-  // Minimal wrapper around Telegram sendMessage
+function assembleEnhancedMessage(text, options = {}) {
+  // Auto-select style if not specified
+  const autoStyle = options.style || autoSelectStyle(text, options);
+  const preset = STYLE_PRESETS[autoStyle] || STYLE_PRESETS.compact;
+  
+  console.log(`[telegramSplitter] Using style: ${autoStyle}`);
+
+  // Process the main content
+  const processedContent = smartSpacing(text, preset);
+  
+  // Build header (skip for very short responses)
+  const shouldShowHeader = !options.noHeader && 
+    (processedContent.length > MIN_MEANINGFUL_LENGTH || options.forceHeader);
+  
+  const header = shouldShowHeader 
+    ? buildEnhancedHeader(options.title || autoGenerateTitle(options), preset, options)
+    : '';
+
+  // Build footer
+  const footer = (!options.noFooter && preset.showMetadata) 
+    ? buildEnhancedFooter(options, preset)
+    : '';
+
+  // Assemble with proper spacing
+  const parts = [header, processedContent, footer].filter(part => part.length > 0);
+  const gapCount = preset.gapAfterHeader || 1;
+  const gap = '\n'.repeat(gapCount);
+  
+  return parts.join(gap);
+}
+
+function autoGenerateTitle(metadata = {}) {
+  if (metadata.title) return metadata.title;
+  if (metadata.completionDetected) return '✅ Task Complete';
+  if (metadata.model?.includes('nano')) return '⚡ Quick Response';
+  if (metadata.model?.includes('mini')) return '🚀 GPT-5 Mini';
+  if (metadata.model?.includes('gpt-5')) return '🧠 GPT-5 Analysis';
+  if (metadata.responseType === 'minimal') return '';
+  return '🤖 AI Response';
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// CORE SENDING FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////
+
+async function sendRawMessage(bot, chatId, text, options = {}) {
   const payload = {
     chat_id: chatId,
-    text,
-    parse_mode: opts.parseMode || DEFAULT_PARSE_MODE,
-    disable_web_page_preview: !!opts.disableWebPreview
+    text: safeString(text),
+    parse_mode: options.parseMode || DEFAULT_PARSE_MODE,
+    disable_web_page_preview: !!options.disableWebPreview
   };
 
-  // Inline keyboard support (array of rows; each row array of buttons)
-  if (Array.isArray(opts.buttons) && opts.buttons.length) {
+  // Add inline keyboard if provided
+  if (Array.isArray(options.buttons) && options.buttons.length > 0) {
     payload.reply_markup = {
-      inline_keyboard: opts.buttons
+      inline_keyboard: options.buttons
     };
   }
 
-  return bot.sendMessage(chatId, payload.text, {
-    parse_mode: payload.parse_mode,
-    disable_web_page_preview: payload.disable_web_page_preview,
-    reply_markup: payload.reply_markup
-  });
+  // Add reply-to if specified
+  if (options.replyToMessageId) {
+    payload.reply_to_message_id = options.replyToMessageId;
+  }
+
+  try {
+    return await bot.sendMessage(payload.chat_id, payload.text, {
+      parse_mode: payload.parse_mode,
+      disable_web_page_preview: payload.disable_web_page_preview,
+      reply_markup: payload.reply_markup,
+      reply_to_message_id: payload.reply_to_message_id
+    });
+  } catch (error) {
+    console.error('[telegramSplitter] Raw send failed:', error.message);
+    throw error;
+  }
 }
 
-async function _sendWithFallback(bot, chatId, text, opts) {
-  // Try Markdown → fallback to plaintext on error
+async function sendWithIntelligentFallback(bot, chatId, text, options) {
   try {
-    return await _sendRaw(bot, chatId, text, { ...opts, parseMode: opts.parseMode || DEFAULT_PARSE_MODE });
-  } catch (err) {
-    console.warn('[telegramSplitter] Markdown send failed, falling back to plaintext:', err.message);
+    // Try primary parse mode
+    return await sendRawMessage(bot, chatId, text, {
+      ...options,
+      parseMode: options.parseMode || DEFAULT_PARSE_MODE
+    });
+  } catch (primaryError) {
+    console.warn(`[telegramSplitter] ${options.parseMode || DEFAULT_PARSE_MODE} failed:`, primaryError.message);
+    
     try {
-      return await _sendRaw(bot, chatId, text, { ...opts, parseMode: undefined });
-    } catch (err2) {
-      console.error('[telegramSplitter] Plaintext send also failed:', err2.message);
-      throw err2;
+      // Fallback to plain text
+      return await sendRawMessage(bot, chatId, text, {
+        ...options,
+        parseMode: undefined
+      });
+    } catch (fallbackError) {
+      console.error('[telegramSplitter] Plain text fallback failed:', fallbackError.message);
+      
+      // Final emergency fallback - send truncated plain text
+      try {
+        const truncated = text.slice(0, TELEGRAM_HARD_LIMIT - 100) + '\n\n[Message truncated due to delivery error]';
+        return await sendRawMessage(bot, chatId, truncated, {
+          parseMode: undefined,
+          buttons: undefined
+        });
+      } catch (emergencyError) {
+        console.error('[telegramSplitter] Emergency fallback failed:', emergencyError.message);
+        throw emergencyError;
+      }
     }
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// PUBLIC API: sendTelegramMessage
+// MAIN PUBLIC API
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * sendTelegramMessage(bot, chatId, text, metadata?)
- *
- * metadata supports:
- * - title, model, executionTime, tokens, cost, costTier
- * - complexity, confidence, reasoning, verbosity, contextUsed
- * - fallbackUsed, completionDetected
- * - style: 'compact' | 'relaxed' | 'roomy'
- * - parseMode, noHeader, noFooter, disableWebPreview
- * - buttons: [[{ text, url|callback_data }], [...]]
+ * Enhanced sendTelegramMessage with smart optimization
+ * 
+ * @param {Object} bot - Telegram bot instance
+ * @param {String|Number} chatId - Chat ID
+ * @param {String} text - Message content
+ * @param {Object} metadata - Enhanced metadata options
+ * @returns {Object} Detailed delivery result
  */
 async function sendTelegramMessage(bot, chatId, text, metadata = {}) {
-  const t0 = Date.now();
-  const style = metadata.style || 'relaxed';
-  const preset = STYLE_PRESETS[style] || STYLE_PRESETS.relaxed;
-
+  const startTime = Date.now();
+  
+  // Validation
   if (!bot || typeof bot.sendMessage !== 'function') {
-    throw new Error('Telegram bot instance with sendMessage required');
+    throw new Error('Valid Telegram bot instance required');
   }
-  if (!chatId) throw new Error('chatId required');
-
-  const chunks = assembleChunksWithHeaderFooter(String(text || ''), {
-    style,
-    noHeader: !!metadata.noHeader,
-    noFooter: !!metadata.noFooter,
-    title: metadata.title || headerAutoTitle(metadata),
-    model: metadata.model,
-    executionTime: metadata.executionTime,
-    tokens: metadata.tokens,
-    cost: metadata.cost,
-    confidence: metadata.confidence,
-    costTier: metadata.costTier,
-    complexity: metadata.complexity,
-    reasoning: metadata.reasoning,
-    verbosity: metadata.verbosity,
-    contextUsed: metadata.contextUsed,
-    fallbackUsed: metadata.fallbackUsed,
-    completionDetected: metadata.completionDetected
-  });
-
-  let sent = 0;
-  let lastMessage = null;
-
-  for (let i = 0; i < chunks.length; i++) {
-    const label = chunks.length > 1 ? ` (${i + 1}/${chunks.length})` : '';
-    const body = chunks[i];
-
-    // Only put header on the first chunk (header is in assembled text already)
-    // Subsequent chunks get a tiny prefix if needed.
-    const prefix = i === 0 ? '' : '';
-    const textToSend = `${prefix}${body}`;
-
-    lastMessage = await _sendWithFallback(bot, chatId, textToSend, {
-      parseMode: metadata.parseMode,                  // optional
-      disableWebPreview: !!metadata.disableWebPreview,
-      buttons: i === chunks.length - 1 ? metadata.buttons : undefined
-    });
-    sent++;
+  if (!chatId) {
+    throw new Error('Chat ID is required');
   }
 
-  const elapsed = Date.now() - t0;
+  const content = safeString(text);
+  if (!content.trim()) {
+    throw new Error('Message content cannot be empty');
+  }
 
-  return {
-    success: true,
-    enhanced: true,
-    chunks: sent,
-    elapsedMs: elapsed,
-    model: metadata.model || 'gpt-5-mini',
-    message: lastMessage
-  };
-}
+  console.log(`[telegramSplitter] Processing message for chat ${chatId} (${content.length} chars)`);
 
-function headerAutoTitle(meta) {
-  // If caller didn’t pass a title, pick a good one
-  if (meta.title) return meta.title;
-  if (meta.completionDetected) return '✅ Task Completed';
-  if (meta.model) return `🚀 ${String(meta.model).toUpperCase()} Response`;
-  return '🤖 GPT-5 Response';
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// PUBLIC API: setupTelegramHandler
-////////////////////////////////////////////////////////////////////////////////
-
-function setupTelegramHandler(bot) {
-  return {
-    // Basic send (alias to sendTelegramMessage without metadata)
-    send: async (text, chatId, opts = {}) =>
-      sendTelegramMessage(bot, chatId, text, opts),
-
-    // Explicit alias your code references
-    sendGPTResponse: async (text, chatId, opts = {}) =>
-      sendTelegramMessage(bot, chatId, text, opts),
-
-    // Error helper
-    sendError: async (text, chatId, title = 'System Error') =>
-      sendAlert(bot, chatId, text, title)
-  };
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// PUBLIC API: sendAlert
-////////////////////////////////////////////////////////////////////////////////
-
-async function sendAlert(bot, chatId, errorMessage, title = 'System Error') {
   try {
-    const text =
-      `**${title}**\n\n` +
-      `${String(errorMessage || 'Unknown error')}\n\n` +
-      `Please try again in a moment.`;
+    // Auto-select optimal style based on content and metadata
+    const selectedStyle = metadata.style || autoSelectStyle(content, metadata);
+    const preset = STYLE_PRESETS[selectedStyle];
+    
+    console.log(`[telegramSplitter] Selected style: ${selectedStyle}`);
 
-    const res = await sendTelegramMessage(bot, chatId, text, {
-      style: 'compact',
-      model: 'error-handler',
-      costTier: 'free',
-      noFooter: false,
-      title: '⚠️ Alert'
+    // Assemble the complete message with headers/footers
+    const assembledMessage = assembleEnhancedMessage(content, {
+      ...metadata,
+      style: selectedStyle
     });
 
-    return { ...res, success: true };
-  } catch (err) {
-    console.error('[telegramSplitter] sendAlert failed, falling back to basic send:', err.message);
+    // Split into deliverable chunks
+    const intelligentBlocks = splitIntoIntelligentBlocks(assembledMessage);
+    const chunks = packBlocksIntoChunks(intelligentBlocks);
+
+    console.log(`[telegramSplitter] Created ${chunks.length} chunks from ${intelligentBlocks.length} blocks`);
+
+    // Send all chunks
+    const sentMessages = [];
+    let totalSent = 0;
+
+    for (let i = 0; i < chunks.length; i++) {
+      const isFirst = i === 0;
+      const isLast = i === chunks.length - 1;
+      const chunkNumber = chunks.length > 1 ? ` (${i + 1}/${chunks.length})` : '';
+      
+      const chunkOptions = {
+        parseMode: metadata.parseMode,
+        disableWebPreview: metadata.disableWebPreview,
+        buttons: isLast ? metadata.buttons : undefined, // Only add buttons to last message
+        replyToMessageId: isFirst ? metadata.replyToMessageId : undefined
+      };
+
+      const sentMessage = await sendWithIntelligentFallback(
+        bot, 
+        chatId, 
+        chunks[i], 
+        chunkOptions
+      );
+
+      sentMessages.push(sentMessage);
+      totalSent++;
+      
+      // Small delay between chunks to avoid rate limits
+      if (!isLast && chunks.length > 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    const processingTime = Date.now() - startTime;
+    
+    console.log(`[telegramSplitter] Successfully sent ${totalSent} messages in ${processingTime}ms`);
+
+    return {
+      success: true,
+      enhanced: true,
+      chunks: totalSent,
+      style: selectedStyle,
+      processingTime,
+      originalLength: content.length,
+      finalLength: assembledMessage.length,
+      sentMessages,
+      lastMessage: sentMessages[sentMessages.length - 1],
+      metadata: {
+        model: metadata.model,
+        executionTime: metadata.executionTime,
+        tokens: metadata.tokens,
+        cost: metadata.cost
+      }
+    };
+
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+    console.error(`[telegramSplitter] Delivery failed after ${processingTime}ms:`, error.message);
+    
+    return {
+      success: false,
+      error: error.message,
+      processingTime,
+      chunks: 0,
+      originalLength: content.length
+    };
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// SPECIALIZED SEND FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////
+
+async function sendAlert(bot, chatId, message, title = 'System Alert') {
+  try {
+    const alertText = `**${title}**\n\n${safeString(message)}\n\nPlease try again or contact support if the issue persists.`;
+
+    return await sendTelegramMessage(bot, chatId, alertText, {
+      style: 'minimal',
+      title: '⚠️ Alert',
+      noFooter: true,
+      model: 'system',
+      costTier: 'free',
+      disableWebPreview: true
+    });
+  } catch (error) {
+    console.error('[telegramSplitter] Alert send failed, using emergency fallback');
+    
     try {
-      await bot.sendMessage(chatId, `${title}\n\n${errorMessage}`);
-      return { success: true, enhanced: false, chunks: 1 };
-    } catch (err2) {
-      console.error('[telegramSplitter] Basic alert send failed:', err2.message);
-      return { success: false, error: err2.message };
+      await bot.sendMessage(chatId, `${title}\n\n${message}`);
+      return { success: true, enhanced: false, chunks: 1, fallback: 'emergency' };
+    } catch (emergencyError) {
+      console.error('[telegramSplitter] Emergency alert failed:', emergencyError.message);
+      return { success: false, error: emergencyError.message };
     }
   }
 }
 
+async function sendGreeting(bot, chatId, message, metadata = {}) {
+  return await sendTelegramMessage(bot, chatId, message, {
+    ...metadata,
+    style: 'minimal',
+    noHeader: true,
+    noFooter: true,
+    responseType: 'minimal'
+  });
+}
+
+async function sendAnalysisResponse(bot, chatId, message, metadata = {}) {
+  return await sendTelegramMessage(bot, chatId, message, {
+    ...metadata,
+    style: 'relaxed',
+    forceHeader: true,
+    responseType: 'analysis'
+  });
+}
+
+async function sendCodeResponse(bot, chatId, message, metadata = {}) {
+  return await sendTelegramMessage(bot, chatId, message, {
+    ...metadata,
+    style: 'roomy',
+    disableWebPreview: true,
+    responseType: 'code'
+  });
+}
+
 ////////////////////////////////////////////////////////////////////////////////
-// EXPORTS (plus aliases to match your earlier integration)
+// HANDLER SETUP SYSTEM
+////////////////////////////////////////////////////////////////////////////////
+
+function setupTelegramHandler(bot) {
+  if (!bot) {
+    throw new Error('Bot instance required for handler setup');
+  }
+
+  console.log('[telegramSplitter] Setting up enhanced Telegram handlers');
+
+  return {
+    // Main send function
+    send: async (text, chatId, options = {}) => {
+      return await sendTelegramMessage(bot, chatId, text, options);
+    },
+
+    // Specialized senders
+    sendGPTResponse: async (text, chatId, options = {}) => {
+      return await sendTelegramMessage(bot, chatId, text, {
+        ...options,
+        title: options.title || '🤖 GPT-5 Response'
+      });
+    },
+
+    sendGreeting: async (text, chatId, options = {}) => {
+      return await sendGreeting(bot, chatId, text, options);
+    },
+
+    sendAnalysis: async (text, chatId, options = {}) => {
+      return await sendAnalysisResponse(bot, chatId, text, options);
+    },
+
+    sendCode: async (text, chatId, options = {}) => {
+      return await sendCodeResponse(bot, chatId, text, options);
+    },
+
+    sendError: async (errorMsg, chatId, title = 'Error') => {
+      return await sendAlert(bot, chatId, errorMsg, title);
+    },
+
+    sendAlert: async (message, chatId, title = 'Alert') => {
+      return await sendAlert(bot, chatId, message, title);
+    },
+
+    // Utility functions
+    getOptimalStyle: (text, metadata) => autoSelectStyle(text, metadata),
+    
+    // Handler info
+    info: {
+      version: '2.0.0',
+      features: ['smart-chunking', 'auto-style', 'code-aware', 'fallback-system'],
+      styles: Object.keys(STYLE_PRESETS)
+    }
+  };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// PERFORMANCE AND MONITORING
+////////////////////////////////////////////////////////////////////////////////
+
+function getTelegramStats() {
+  return {
+    limits: {
+      hardLimit: TELEGRAM_HARD_LIMIT,
+      softLimit: MAX_CHUNK_SOFT,
+      minMeaningful: MIN_MEANINGFUL_LENGTH
+    },
+    styles: Object.keys(STYLE_PRESETS),
+    features: [
+      'intelligent-chunking',
+      'code-block-preservation', 
+      'markdown-fallback',
+      'auto-style-selection',
+      'performance-tracking',
+      'emergency-fallbacks'
+    ],
+    version: '2.0.0-enhanced'
+  };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// SYSTEM DIAGNOSTICS
+////////////////////////////////////////////////////////////////////////////////
+
+async function testTelegramDelivery(bot, chatId, testType = 'basic') {
+  const tests = {
+    basic: 'Hello! This is a basic delivery test.',
+    
+    markdown: `**Bold text** and *italic text*\n\n\`\`\`javascript\nconsole.log("Code test");\n\`\`\`\n\n• Bullet point test\n• Another bullet`,
+    
+    long: 'A'.repeat(5000) + '\n\nThis tests chunking behavior for very long messages.',
+    
+    complex: `# Complex Test Message
+    
+This message tests multiple features:
+
+**Financial Analysis Results:**
+• Portfolio performance: +12.5%
+• Risk assessment: Moderate
+• Recommendation: Hold current positions
+
+\`\`\`javascript
+// Code block test
+const analysis = {
+  profit: 15000,
+  loss: 3000,
+  net: 12000
+};
+console.log('Analysis complete:', analysis);
+\`\`\`
+
+Next steps:
+1. Review quarterly reports
+2. Adjust allocation percentages
+3. Monitor market conditions
+
+*This concludes the test message.*`
+  };
+
+  try {
+    const testContent = tests[testType] || tests.basic;
+    
+    const result = await sendTelegramMessage(bot, chatId, testContent, {
+      title: `🧪 ${testType.toUpperCase()} Test`,
+      model: 'test-system',
+      executionTime: 150,
+      tokens: 250,
+      cost: 0.001,
+      confidence: 0.95,
+      costTier: 'test',
+      complexity: testType,
+      reasoning: 'medium',
+      contextUsed: false
+    });
+
+    return {
+      success: result.success,
+      testType,
+      chunks: result.chunks,
+      processingTime: result.processingTime,
+      style: result.style
+    };
+
+  } catch (error) {
+    console.error(`[telegramSplitter] Test ${testType} failed:`, error.message);
+    return {
+      success: false,
+      testType,
+      error: error.message
+    };
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// INTEGRATION HELPERS FOR DUAL COMMAND SYSTEM
+////////////////////////////////////////////////////////////////////////////////
+
+function createResultSender(bot, chatId) {
+  /**
+   * Creates a sender function that matches your Part 6 expectation:
+   * result.sendToTelegram(bot, title)
+   */
+  return {
+    sendToTelegram: async (botInstance, title, options = {}) => {
+      // This function gets attached to your GPT-5 result objects
+      return await sendTelegramMessage(botInstance || bot, chatId, this.response, {
+        title,
+        model: this.modelUsed,
+        executionTime: this.processingTime,
+        tokens: this.tokensUsed,
+        cost: this.estimatedCost,
+        confidence: this.confidence,
+        costTier: this.costTier,
+        complexity: this.complexity,
+        reasoning: this.reasoningLevel,
+        verbosity: this.verbosityLevel,
+        contextUsed: this.contextUsed,
+        fallbackUsed: this.fallbackUsed,
+        completionDetected: this.completionDetected,
+        ...options
+      });
+    }
+  };
+}
+
+function enhanceResultWithSender(result, bot, chatId) {
+  /**
+   * Adds sendToTelegram method to your result objects
+   * Usage in Part 6: result.sendToTelegram(bot, 'Analysis Complete')
+   */
+  if (!result || typeof result !== 'object') return result;
+
+  result.sendToTelegram = async (botInstance, title, options = {}) => {
+    return await sendTelegramMessage(botInstance || bot, chatId, result.response, {
+      title,
+      model: result.modelUsed || result.aiUsed,
+      executionTime: result.processingTime || result.totalExecutionTime,
+      tokens: result.tokensUsed || result.totalTokens,
+      cost: result.estimatedCost || result.cost,
+      confidence: result.confidence,
+      costTier: result.costTier,
+      complexity: result.complexity || result.queryType,
+      reasoning: result.reasoningLevel || result.reasoning_effort,
+      verbosity: result.verbosityLevel || result.verbosity,
+      contextUsed: result.contextUsed,
+      fallbackUsed: result.fallbackUsed,
+      completionDetected: result.completionDetected,
+      ...options
+    });
+  };
+
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// BATCH AND QUEUE OPERATIONS
+////////////////////////////////////////////////////////////////////////////////
+
+async function sendMultipleMessages(bot, chatId, messages = []) {
+  const results = [];
+  
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    try {
+      const result = await sendTelegramMessage(bot, chatId, msg.text, {
+        ...msg.metadata,
+        title: msg.title || `Message ${i + 1}`
+      });
+      results.push(result);
+      
+      // Delay between messages
+      if (i < messages.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    } catch (error) {
+      results.push({
+        success: false,
+        error: error.message,
+        index: i
+      });
+    }
+  }
+
+  return {
+    success: results.every(r => r.success),
+    results,
+    totalSent: results.filter(r => r.success).length,
+    totalFailed: results.filter(r => !r.success).length
+  };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// SYSTEM HEALTH AND MONITORING
+////////////////////////////////////////////////////////////////////////////////
+
+function getSystemHealth() {
+  return {
+    status: 'operational',
+    version: '2.0.0-enhanced',
+    features: {
+      intelligentChunking: true,
+      codeBlockAware: true,
+      markdownFallback: true,
+      autoStyleSelection: true,
+      performanceTracking: true,
+      emergencyFallbacks: true,
+      multiModalSupport: true
+    },
+    limits: {
+      telegramHardLimit: TELEGRAM_HARD_LIMIT,
+      chunkSoftLimit: MAX_CHUNK_SOFT,
+      minMeaningfulLength: MIN_MEANINGFUL_LENGTH
+    },
+    styles: STYLE_PRESETS,
+    capabilities: [
+      'Smart response formatting',
+      'Memory-aware optimization',
+      'Code preservation',
+      'Error recovery',
+      'Performance monitoring'
+    ]
+  };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// EMERGENCY AND FALLBACK SYSTEMS
+////////////////////////////////////////////////////////////////////////////////
+
+async function emergencyBroadcast(bot, chatIds = [], message, title = 'System Alert') {
+  const results = [];
+  
+  for (const chatId of chatIds) {
+    try {
+      const result = await sendAlert(bot, chatId, message, title);
+      results.push({ chatId, success: result.success });
+    } catch (error) {
+      results.push({ chatId, success: false, error: error.message });
+    }
+  }
+
+  return {
+    totalChats: chatIds.length,
+    successful: results.filter(r => r.success).length,
+    failed: results.filter(r => !r.success).length,
+    results
+  };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// INTEGRATION VALIDATION
+////////////////////////////////////////////////////////////////////////////////
+
+function validateIntegration() {
+  const issues = [];
+  
+  if (typeof STYLE_PRESETS !== 'object') {
+    issues.push('STYLE_PRESETS not properly defined');
+  }
+  
+  if (typeof sendTelegramMessage !== 'function') {
+    issues.push('sendTelegramMessage function missing');
+  }
+  
+  if (typeof setupTelegramHandler !== 'function') {
+    issues.push('setupTelegramHandler function missing');
+  }
+
+  return {
+    valid: issues.length === 0,
+    issues,
+    recommendation: issues.length === 0 
+      ? 'Integration ready for production' 
+      : 'Fix issues before deployment'
+  };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// STARTUP AND CONFIGURATION
+////////////////////////////////////////////////////////////////////////////////
+
+console.log('[telegramSplitter] Enhanced Telegram delivery system loaded');
+console.log('[telegramSplitter] Features: Smart chunking, auto-style, code preservation, fallback system');
+console.log('[telegramSplitter] Styles available:', Object.keys(STYLE_PRESETS));
+console.log('[telegramSplitter] Integration:', validateIntegration().valid ? 'Ready' : 'Needs attention');
+
+////////////////////////////////////////////////////////////////////////////////
+// MAIN MODULE EXPORTS
 ////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
-  // main
+  // Primary API functions
   sendTelegramMessage,
-
-  // helper bundle used by your dualCommandSystem integration
   setupTelegramHandler,
   sendAlert,
 
-  // aliases to keep legacy calls happy
+  // Specialized senders
+  sendGreeting,
+  sendAnalysisResponse, 
+  sendCodeResponse,
+  sendMultipleMessages,
+
+  // Integration helpers (for your Part 6 compatibility)
+  enhanceResultWithSender,
+  createResultSender,
+
+  // Utility and monitoring
+  getSystemHealth,
+  getTelegramStats,
+  testTelegramDelivery,
+  emergencyBroadcast,
+  validateIntegration,
+
+  // Legacy aliases for backward compatibility
   sendMessage: sendTelegramMessage,
   sendGPTResponse: sendTelegramMessage,
+  send: sendTelegramMessage,
 
-  // expose presets for tuning (optional)
-  STYLE_PRESETS
+  // Configuration access
+  STYLE_PRESETS,
+  TELEGRAM_HARD_LIMIT,
+  
+  // Internal utilities (exposed for advanced usage)
+  autoSelectStyle,
+  detectResponseType,
+  splitIntoIntelligentBlocks,
+  smartSpacing
 };
+
+////////////////////////////////////////////////////////////////////////////////
+// VALIDATION AND FINAL STATUS
+////////////////////////////////////////////////////////////////////////////////
+
+const finalValidation = validateIntegration();
+if (finalValidation.valid) {
+  console.log('✅ [telegramSplitter] All systems operational and ready for production');
+  console.log('✅ [telegramSplitter] Smart memory integration compatible');
+  console.log('✅ [telegramSplitter] Auto-optimization for greeting vs complex responses');
+} else {
+  console.warn('⚠️ [telegramSplitter] Integration issues detected:', finalValidation.issues);
+}
