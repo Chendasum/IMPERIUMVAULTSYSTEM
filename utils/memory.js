@@ -1355,6 +1355,94 @@ async function testMemorySystem(chatId) {
   }
 }
 
+/** Extract and save important facts automatically */
+async function extractAndSaveFactsFromConversation(chatId, userMessage, aiResponse) {
+  try {
+    console.log(`[FACT-EXTRACT] Analyzing conversation for facts...`);
+    
+    const userText = asText(userMessage);
+    const facts = [];
+    
+    // Extract name
+    const namePatterns = [
+      /my name is ([^.,\n!?]+)/i,
+      /i'm ([^.,\n!?]+)/i,
+      /call me ([^.,\n!?]+)/i,
+      /i am ([^.,\n!?]+)/i
+    ];
+    
+    for (const pattern of namePatterns) {
+      const match = userText.match(pattern);
+      if (match && match[1]) {
+        const name = match[1].trim();
+        if (name.length > 1 && name.length < 50) {
+          await addPersistentMemoryDB(chatId, `User's name: ${name}`, 'high');
+          console.log(`[FACT-EXTRACT] ✅ Saved name: ${name}`);
+          facts.push(`name: ${name}`);
+        }
+      }
+    }
+    
+    // Extract business/work
+    const businessPatterns = [
+      /i work (at|for|in) ([^.,\n!?]+)/i,
+      /my business is ([^.,\n!?]+)/i,
+      /my company is ([^.,\n!?]+)/i,
+      /i run ([^.,\n!?]+)/i,
+      /i own ([^.,\n!?]+)/i,
+      /my job is ([^.,\n!?]+)/i
+    ];
+    
+    for (const pattern of businessPatterns) {
+      const match = userText.match(pattern);
+      if (match && match[1]) {
+        const business = match[match.length - 1].trim(); // Get last capture group
+        if (business.length > 2 && business.length < 100) {
+          await addPersistentMemoryDB(chatId, `User's business/work: ${business}`, 'high');
+          console.log(`[FACT-EXTRACT] ✅ Saved business: ${business}`);
+          facts.push(`business: ${business}`);
+        }
+      }
+    }
+    
+    // Extract preferences
+    const preferencePatterns = [
+      /i prefer ([^.,\n!?]+)/i,
+      /i like ([^.,\n!?]+)/i,
+      /my favorite ([^.,\n!?]+)/i
+    ];
+    
+    for (const pattern of preferencePatterns) {
+      const match = userText.match(pattern);
+      if (match && match[1]) {
+        const preference = match[0].trim();
+        await addPersistentMemoryDB(chatId, `User preference: ${preference}`, 'medium');
+        console.log(`[FACT-EXTRACT] ✅ Saved preference: ${preference}`);
+        facts.push(`preference: ${preference}`);
+      }
+    }
+    
+    // Extract important statements
+    if (userText.includes('remember') || userText.includes('important')) {
+      await addPersistentMemoryDB(chatId, `Important: ${userText}`, 'high');
+      console.log(`[FACT-EXTRACT] ✅ Saved important statement`);
+      facts.push('important statement');
+    }
+    
+    if (facts.length > 0) {
+      console.log(`[FACT-EXTRACT] ✅ Extracted ${facts.length} facts: ${facts.join(', ')}`);
+    } else {
+      console.log(`[FACT-EXTRACT] No facts found in this conversation`);
+    }
+    
+    return facts;
+    
+  } catch (error) {
+    console.error('[FACT-EXTRACT] Error:', error.message);
+    return [];
+  }
+}
+
 /** Save conversation to memory and extract facts */
 async function saveToMemory(chatId, conversationData) {
   try {
@@ -1368,7 +1456,9 @@ async function saveToMemory(chatId, conversationData) {
       return { saved: false, reason: 'incomplete_data' };
     }
     
-    // Use your existing database import at the top of the file
+    // Save to database using your existing database function
+    const { saveConversationDB } = require('./database');
+    
     await saveConversationDB(chatId, userMessage, assistantResponse, {
       messageType: conversationData.messageType || 'text',
       timestamp: conversationData.timestamp || new Date().toISOString(),
@@ -1377,10 +1467,15 @@ async function saveToMemory(chatId, conversationData) {
     
     console.log('[Memory] Conversation saved to database');
     
-    // Extract and save facts automatically
-    await extractAndSaveFacts(chatId, userMessage, assistantResponse);
+    // ✨ NEW: Extract and save facts automatically
+    const extractedFacts = await extractAndSaveFactsFromConversation(chatId, userMessage, assistantResponse);
     
-    return { saved: true, method: 'database' };
+    return { 
+      saved: true, 
+      method: 'database',
+      factsExtracted: extractedFacts.length,
+      facts: extractedFacts
+    };
     
   } catch (error) {
     console.error('[Memory] Save to memory error:', error.message);
@@ -1394,6 +1489,7 @@ module.exports = {
   // Main memory functions
   buildConversationContext,
   saveToMemory, 
+  extractAndSaveFactsFromConversation,
   extractAndSaveFacts,
   
   // Analytics functions
