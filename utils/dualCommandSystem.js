@@ -1434,6 +1434,53 @@ function getMultimodalStatus() {
   }
 }
 
+// Ensure handleTelegramMessage is properly defined and exported
+if (typeof handleTelegramMessage === 'undefined') {
+  console.error('CRITICAL: handleTelegramMessage not defined, creating fallback...');
+  
+  // Emergency fallback handler
+  async function handleTelegramMessage(message, bot) {
+    const startTime = Date.now();
+    const chatId = message.chat.id;
+    const userMessage = message.text || '';
+    
+    console.log(`[Telegram-Fallback] Processing: "${userMessage.substring(0, 50)}..."`);
+    
+    try {
+      // Use executeEnhancedGPT5Command if available, otherwise basic response
+      if (typeof executeEnhancedGPT5Command === 'function') {
+        return await executeEnhancedGPT5Command(userMessage, chatId, bot, {
+          messageType: 'telegram_webhook',
+          title: 'GPT-5 Response'
+        });
+      } else {
+        // Ultra-basic fallback
+        await bot.sendMessage(chatId, 'System is initializing. Please try again in a moment.');
+        return { success: false, error: 'System not ready' };
+      }
+    } catch (error) {
+      console.error('[Telegram-Fallback] Error:', error.message);
+      try {
+        await bot.sendMessage(chatId, `Error: ${error.message}`);
+      } catch (sendError) {
+        console.error('[Telegram-Fallback] Send failed:', sendError.message);
+      }
+      return { success: false, error: error.message };
+    }
+  }
+  
+  // Export the fallback
+  module.exports.handleTelegramMessage = handleTelegramMessage;
+  console.log('Emergency handleTelegramMessage fallback created');
+}
+
+// Validation check
+console.log('Export validation:', {
+  handleTelegramMessage: typeof module.exports.handleTelegramMessage,
+  executeEnhancedGPT5Command: typeof module.exports.executeEnhancedGPT5Command,
+  quickGPT5Command: typeof module.exports.quickGPT5Command
+});
+
 // ════════════════════════════════════════════════════════════════════════════════════════════════════
 // MAIN MODULE EXPORTS
 // ════════════════════════════════════════════════════════════════════════════════════════════════════
