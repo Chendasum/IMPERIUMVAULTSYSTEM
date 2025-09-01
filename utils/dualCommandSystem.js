@@ -3612,14 +3612,140 @@ module.exports = {
 };
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 6/6 (FINAL)
-// MAIN EXPORTS, UTILITY FUNCTIONS & COMPATIBILITY LAYER + MULTIMODAL INTEGRATION
-// FIXED VERSION - Smart memory control to prevent verbose responses for simple messages
+// COMPLETE MEMORY BYPASS VERSION - Eliminates 15+ second delays for simple messages
+// Direct routing: Simple messages bypass ALL memory/database operations
 
 // Add multimodal support
 const multimodal = require('./multimodal');
 
+// Load openaiClient for direct bypass
+let openaiClient;
+try {
+  openaiClient = require('./openaiClient');
+  console.log('✅ openaiClient loaded for direct bypass functionality');
+} catch (error) {
+  console.warn('⚠️ openaiClient not available - direct bypass disabled');
+}
+
+// Load telegramSplitter for direct delivery
+let telegramSplitter;
+try {
+  telegramSplitter = require('./telegramSplitter');
+  console.log('✅ telegramSplitter loaded for direct delivery');
+} catch (error) {
+  console.warn('⚠️ telegramSplitter not available - using basic telegram delivery');
+}
+
 // ───────────────────────────────────────────────────────────────────────────────
-// TELEGRAM MESSAGE HANDLER - MULTIMODAL ROUTING SYSTEM WITH SMART MESSAGE CLASSIFICATION
+// DIRECT BYPASS SYSTEM - ELIMINATES ALL DELAYS FOR SIMPLE MESSAGES
+// ───────────────────────────────────────────────────────────────────────────────
+
+async function handleSimpleGreetingDirect(userMessage, chatId, bot, startTime) {
+  try {
+    console.log('[DIRECT-BYPASS] Processing simple greeting without any memory operations');
+    
+    if (!openaiClient) {
+      // Fallback to basic response if openaiClient not available
+      await bot.sendMessage(chatId, 'Hello!');
+      const processingTime = Date.now() - startTime;
+      console.log(`[DIRECT-BYPASS] Fallback response sent in ${processingTime}ms`);
+      return { success: true, bypassed: true, fallback: true, processingTime };
+    }
+
+    // Direct OpenAI call - bypasses ALL memory systems
+    const quickResponse = await openaiClient.getQuickNanoResponse(userMessage, {
+      max_output_tokens: 50,
+      reasoning_effort: 'minimal',
+      verbosity: 'low',
+      skipCache: false,
+      temperature: 0.7
+    });
+
+    // Direct telegram delivery - bypass telegramSplitter complexity for speed
+    if (telegramSplitter && telegramSplitter.sendGreeting) {
+      await telegramSplitter.sendGreeting(bot, chatId, quickResponse, {
+        model: 'gpt-5-nano',
+        executionTime: Date.now() - startTime,
+        responseType: 'greeting'
+      });
+    } else {
+      await bot.sendMessage(chatId, quickResponse);
+    }
+
+    const processingTime = Date.now() - startTime;
+    console.log(`[DIRECT-BYPASS] Complete greeting response in ${processingTime}ms`);
+    
+    return { 
+      success: true, 
+      bypassed: true, 
+      processingTime,
+      response: quickResponse,
+      modelUsed: 'gpt-5-nano'
+    };
+
+  } catch (bypassError) {
+    console.error('[DIRECT-BYPASS] Error:', bypassError.message);
+    
+    // Emergency fallback - basic response
+    try {
+      await bot.sendMessage(chatId, 'Hello! 👋');
+      const processingTime = Date.now() - startTime;
+      console.log(`[DIRECT-BYPASS] Emergency fallback sent in ${processingTime}ms`);
+      return { success: true, bypassed: true, emergency: true, processingTime };
+    } catch (emergencyError) {
+      console.error('[DIRECT-BYPASS] Emergency fallback failed:', emergencyError.message);
+      throw emergencyError;
+    }
+  }
+}
+
+async function handleSimpleQuestionDirect(userMessage, chatId, bot, startTime) {
+  try {
+    console.log('[DIRECT-QUICK] Processing simple question with minimal operations');
+    
+    if (!openaiClient) {
+      throw new Error('openaiClient required for direct processing');
+    }
+
+    // Quick OpenAI call with minimal context
+    const quickResponse = await openaiClient.getQuickMiniResponse(userMessage, {
+      max_output_tokens: 200,
+      reasoning_effort: 'minimal',
+      verbosity: 'low',
+      skipCache: false
+    });
+
+    // Direct delivery with minimal formatting
+    if (telegramSplitter) {
+      await telegramSplitter.sendTelegramMessage(bot, chatId, quickResponse, {
+        style: 'compact',
+        model: 'gpt-5-mini',
+        executionTime: Date.now() - startTime,
+        noFooter: true
+      });
+    } else {
+      await bot.sendMessage(chatId, quickResponse);
+    }
+
+    const processingTime = Date.now() - startTime;
+    console.log(`[DIRECT-QUICK] Simple question answered in ${processingTime}ms`);
+    
+    return { 
+      success: true, 
+      quickProcessed: true, 
+      processingTime,
+      response: quickResponse,
+      modelUsed: 'gpt-5-mini'
+    };
+
+  } catch (quickError) {
+    console.error('[DIRECT-QUICK] Error:', quickError.message);
+    throw quickError; // Let it fall through to regular processing
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// ENHANCED TELEGRAM MESSAGE HANDLER WITH COMPLETE BYPASS SYSTEM
 // ───────────────────────────────────────────────────────────────────────────────
 
 async function handleTelegramMessage(message, bot) {
@@ -3628,44 +3754,47 @@ async function handleTelegramMessage(message, bot) {
   const userMessage = message.text || '';
   const messageId = message.message_id;
 
-  console.log(`DualCommandSystem: Processing message from ${chatId}: "${userMessage.substring(0, 50)}..."`);
+  // Enhanced debug logging
+  console.log(`[HANDLER-START] Message from ${chatId}: "${userMessage}" (${userMessage.length} chars)`);
 
   try {
     // ───────────────────────────────────────────────────────────────────────────
-    // SMART MESSAGE CLASSIFICATION - PREVENT VERBOSE RESPONSES FOR SIMPLE MESSAGES
+    // COMPLETE DIRECT BYPASS FOR SIMPLE MESSAGES - NO MEMORY OPERATIONS
     // ───────────────────────────────────────────────────────────────────────────
     
     const messageLength = userMessage.trim().length;
-    const isSimpleGreeting = /^(hi|hello|hey|thanks|ok|yes|no|good|great|sure|gm|morning|afternoon|evening)$/i.test(userMessage.trim());
-    const isSimpleQuestion = messageLength < 25 && !userMessage.includes('analyze') && !userMessage.includes('explain') && !userMessage.includes('help');
-    const isSimpleCommand = /^(\/start|\/help|\/status)$/.test(userMessage.trim());
+    const cleanMessage = userMessage.trim().toLowerCase();
+    
+    // Enhanced greeting detection
+    const isSimpleGreeting = /^(hi|hello|hey|thanks|thank you|ok|okay|yes|no|good|great|sure|gm|morning|afternoon|evening|bye|goodbye)$/i.test(userMessage.trim());
+    
+    // Enhanced simple question detection
+    const isSimpleQuestion = messageLength > 0 && 
+                             messageLength < 30 && 
+                             !userMessage.includes('analyze') && 
+                             !userMessage.includes('explain') && 
+                             !userMessage.includes('help') &&
+                             !userMessage.includes('context') &&
+                             !userMessage.includes('remember') &&
+                             !userMessage.startsWith('/');
 
-    // Handle simple greetings with minimal processing
+    console.log(`[CLASSIFICATION] Greeting: ${isSimpleGreeting}, Simple: ${isSimpleQuestion}, Length: ${messageLength}`);
+
+    // COMPLETE BYPASS - Simple greetings skip ALL systems
     if (isSimpleGreeting) {
-      console.log('Simple greeting detected - using nano without memory');
-      return await executeEnhancedGPT5Command(userMessage, chatId, bot, {
-        forceModel: 'gpt-5-nano',
-        max_completion_tokens: 50,
-        reasoning_effort: 'minimal',
-        verbosity: 'low',
-        saveToMemory: false,    // Don't save simple greetings
-        contextAware: false,    // Don't load memory for greetings
-        title: 'Quick Response'
-      });
+      console.log('[BYPASS-GREETING] Executing complete bypass - no memory, no database, no complex routing');
+      return await handleSimpleGreetingDirect(userMessage, chatId, bot, startTime);
     }
 
-    // Handle simple questions with minimal memory
+    // QUICK PROCESSING - Simple questions use minimal resources
     if (isSimpleQuestion) {
-      console.log('Simple question detected - using mini with minimal memory');
-      return await executeEnhancedGPT5Command(userMessage, chatId, bot, {
-        forceModel: 'gpt-5-mini',
-        max_completion_tokens: 200,
-        reasoning_effort: 'minimal',
-        verbosity: 'low',
-        contextAware: 'minimal',  // Load only recent context
-        saveToMemory: 'minimal',  // Save but don't over-contextualize
-        title: 'Quick Answer'
-      });
+      console.log('[BYPASS-QUICK] Executing quick processing with minimal resources');
+      try {
+        return await handleSimpleQuestionDirect(userMessage, chatId, bot, startTime);
+      } catch (quickError) {
+        console.log('[BYPASS-QUICK] Failed, falling back to standard processing');
+        // Continue to standard processing below
+      }
     }
 
     // ───────────────────────────────────────────────────────────────────────────
@@ -3683,7 +3812,7 @@ async function handleTelegramMessage(message, bot) {
 
     // Process multimodal content
     if (isMultimodal) {
-      console.log('Multimodal content detected:', {
+      console.log('[MULTIMODAL] Content detected:', {
         photo: hasPhoto,
         document: hasDocument,
         voice: hasVoice,
@@ -3697,7 +3826,7 @@ async function handleTelegramMessage(message, bot) {
 
         if (hasPhoto) {
           const photo = message.photo[message.photo.length - 1];
-          console.log('Processing image with GPT-4o Vision');
+          console.log('[MULTIMODAL] Processing image with GPT-4o Vision');
           result = await multimodal.analyzeImage(
             bot, 
             photo.file_id, 
@@ -3706,7 +3835,7 @@ async function handleTelegramMessage(message, bot) {
           );
         }
         else if (hasDocument) {
-          console.log(`Processing document: ${message.document.file_name} (${Math.round(message.document.file_size / 1024)}KB)`);
+          console.log(`[MULTIMODAL] Processing document: ${message.document.file_name} (${Math.round(message.document.file_size / 1024)}KB)`);
           result = await multimodal.analyzeDocument(
             bot,
             message.document,
@@ -3715,7 +3844,7 @@ async function handleTelegramMessage(message, bot) {
           );
         }
         else if (hasVoice) {
-          console.log(`Processing voice message (${message.voice.duration}s)`);
+          console.log(`[MULTIMODAL] Processing voice message (${message.voice.duration}s)`);
           result = await multimodal.analyzeVoice(
             bot,
             message.voice,
@@ -3724,7 +3853,7 @@ async function handleTelegramMessage(message, bot) {
           );
         }
         else if (hasAudio) {
-          console.log(`Processing audio file: ${message.audio.file_name || 'audio'}`);
+          console.log(`[MULTIMODAL] Processing audio file: ${message.audio.file_name || 'audio'}`);
           result = await multimodal.analyzeAudio(
             bot,
             message.audio,
@@ -3733,7 +3862,7 @@ async function handleTelegramMessage(message, bot) {
           );
         }
         else if (hasVideo) {
-          console.log(`Processing video: ${message.video.file_name || 'video'}`);
+          console.log(`[MULTIMODAL] Processing video: ${message.video.file_name || 'video'}`);
           result = await multimodal.analyzeVideo(
             bot,
             message.video,
@@ -3742,7 +3871,7 @@ async function handleTelegramMessage(message, bot) {
           );
         }
         else if (hasVideoNote) {
-          console.log(`Processing video note (${message.video_note.duration || 'unknown'}s)`);
+          console.log(`[MULTIMODAL] Processing video note (${message.video_note.duration || 'unknown'}s)`);
           result = await multimodal.analyzeVideoNote(
             bot,
             message.video_note,
@@ -3753,13 +3882,13 @@ async function handleTelegramMessage(message, bot) {
 
         if (result && result.success) {
           const processingTime = Date.now() - startTime;
-          console.log('Multimodal analysis successful:', {
+          console.log('[MULTIMODAL] Analysis successful:', {
             type: result.type,
             aiUsed: result.aiUsed,
             processingTime: `${processingTime}ms`
           });
           
-          // Save multimodal interaction to memory
+          // Save multimodal interaction to memory (these are important)
           await maybeSaveMemory(
             chatId,
             `[${result.type.toUpperCase()}] ${userMessage || 'Media uploaded'}`,
@@ -3770,11 +3899,11 @@ async function handleTelegramMessage(message, bot) {
           
           return result;
         } else {
-          console.log('Multimodal processing failed, falling back to text processing');
+          console.log('[MULTIMODAL] Processing failed, falling back to text processing');
         }
 
       } catch (multimodalError) {
-        console.error('Multimodal processing error:', multimodalError.message);
+        console.error('[MULTIMODAL] Error:', multimodalError.message);
         
         await bot.sendMessage(
           chatId,
@@ -3792,7 +3921,7 @@ async function handleTelegramMessage(message, bot) {
       try {
         const documentContext = multimodal.getContextForFollowUp(chatId, userMessage);
         if (documentContext) {
-          console.log('Document context found - processing follow-up question');
+          console.log('[DOCUMENT-FOLLOWUP] Context found - processing follow-up question');
           
           return await executeEnhancedGPT5Command(
             documentContext, 
@@ -3806,35 +3935,42 @@ async function handleTelegramMessage(message, bot) {
               max_completion_tokens: 3000,
               reasoning_effort: 'medium',
               verbosity: 'medium',
-              saveToMemory: 'minimal'  // Don't over-save follow-ups
+              saveToMemory: 'minimal'
             }
           );
         }
       } catch (contextError) {
-        console.log('No document context available, proceeding with normal processing');
+        console.log('[DOCUMENT-FOLLOWUP] No context available, proceeding with normal processing');
       }
     }
 
     // Skip empty messages
     if (!userMessage.trim() && !isMultimodal) {
-      console.log('Empty message received, skipping');
+      console.log('[HANDLER] Empty message received, skipping');
       return;
     }
 
     // ───────────────────────────────────────────────────────────────────────────
-    // REGULAR TEXT PROCESSING WITH SMART MEMORY CONTROL
+    // STANDARD PROCESSING WITH MEMORY CONTROL (FOR COMPLEX MESSAGES)
     // ───────────────────────────────────────────────────────────────────────────
     
-    console.log('Routing to executeEnhancedGPT5Command with smart memory control');
+    console.log('[HANDLER] Routing to enhanced GPT-5 command with memory control');
     
-    // Determine memory level based on message complexity
+    // Determine memory and processing level
     let memoryLevel = 'full';
     let saveLevel = true;
+    let modelSelection = 'auto';
     
-    if (messageLength < 50 && !userMessage.includes('context') && !userMessage.includes('remember')) {
+    if (messageLength < 50 && !userMessage.includes('context') && !userMessage.includes('remember') && !userMessage.includes('analyze')) {
       memoryLevel = 'minimal';
       saveLevel = 'minimal';
-      console.log('Short message - using minimal memory');
+      modelSelection = 'gpt-5-mini';
+      console.log('[HANDLER] Short message detected - using minimal memory and mini model');
+    } else if (messageLength > 500 || userMessage.includes('analyze') || userMessage.includes('comprehensive')) {
+      memoryLevel = 'full';
+      saveLevel = true;
+      modelSelection = 'gpt-5';
+      console.log('[HANDLER] Complex message detected - using full memory and primary model');
     }
     
     return await executeEnhancedGPT5Command(
@@ -3846,14 +3982,16 @@ async function handleTelegramMessage(message, bot) {
         hasMedia: isMultimodal,
         messageId: messageId,
         processingStartTime: startTime,
-        contextAware: memoryLevel,    // Control memory loading
-        saveToMemory: saveLevel       // Control memory saving
+        contextAware: memoryLevel,
+        saveToMemory: saveLevel,
+        forceModel: modelSelection !== 'auto' ? modelSelection : undefined,
+        title: memoryLevel === 'minimal' ? 'Quick Response' : 'Analysis'
       }
     );
 
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    console.error('Message processing error:', error.message);
+    console.error(`[HANDLER] Error after ${processingTime}ms:`, error.message);
 
     try {
       await bot.sendMessage(
@@ -3861,87 +3999,103 @@ async function handleTelegramMessage(message, bot) {
         `System error: ${error.message}\n\nPlease try again or use /health to check system status.`
       );
     } catch (telegramError) {
-      console.error('Failed to send error message:', telegramError.message);
+      console.error('[HANDLER] Failed to send error message:', telegramError.message);
     }
+    
+    return { success: false, error: error.message, processingTime };
   }
 }
 
-// Callback query handler
+// ───────────────────────────────────────────────────────────────────────────────
+// CALLBACK AND INLINE HANDLERS
+// ───────────────────────────────────────────────────────────────────────────────
+
 async function handleCallbackQuery(callbackQuery, bot) {
   try {
     await bot.answerCallbackQuery(callbackQuery.id);
-    console.log('Callback query handled');
+    console.log('[CALLBACK] Query handled successfully');
   } catch (error) {
-    console.error('Callback query error:', error.message);
+    console.error('[CALLBACK] Error:', error.message);
   }
 }
 
-// Inline query handler  
 async function handleInlineQuery(inlineQuery, bot) {
   try {
     await bot.answerInlineQuery(inlineQuery.id, [], { cache_time: 1 });
-    console.log('Inline query handled');
+    console.log('[INLINE] Query handled successfully');
   } catch (error) {
-    console.error('Inline query error:', error.message);
+    console.error('[INLINE] Error:', error.message);
   }
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// MEMORY WRITE HELPERS - SMART VERSION WITH FILTERING
+// MEMORY SYSTEM - SMART FILTERING AND TTL MANAGEMENT
 // ───────────────────────────────────────────────────────────────────────────────
 
-// TTL presets (ms)
 const TTL = {
   FACT: 7 * 24 * 60 * 60 * 1000,           // 7 days
-  LAST_COMPLETION: 14 * 24 * 60 * 60 * 1000,// 14 days
+  LAST_COMPLETION: 14 * 24 * 60 * 60 * 1000, // 14 days
   LAST_TOPIC: 48 * 60 * 60 * 1000           // 48 hours
 };
 
-// Compact assistant text before saving
 function normalizeAssistantText(text) {
   if (!text) return '';
-  return String(text)
-    .replace(/^(Assistant:|AI:|GPT-?5?:)\s*/i, '')
-    .replace(/\s+\n/g, '\n')       // trim extra spaces before newlines
-    .replace(/\n{3,}/g, '\n\n')    // collapse >2 blank lines
-    .trim()
-    .slice(0, 8000);               // sanity cap
+  try {
+    return String(text)
+      .replace(/^(Assistant:|AI:|GPT-?5?:)\s*/i, '')
+      .replace(/\s+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+      .slice(0, 8000);
+  } catch (error) {
+    return String(text).slice(0, 8000);
+  }
 }
 
-// Smart topic picker - FILTERS OUT SIMPLE MESSAGES
 function inferTopic(userMessage) {
   if (!userMessage) return 'general';
-  const raw = String(userMessage).trim();
-  const s = raw.toLowerCase();
+  
+  try {
+    const raw = String(userMessage).trim();
+    const s = raw.toLowerCase();
 
-  // Don't memorize simple greetings/responses as topics
-  const isGreeting = /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you|thanks|ok|yes|no|sure)\b/.test(s) && raw.split(/\s+/).length <= 6;
-  const isSimpleResponse = /^(ok|yes|no|sure|maybe|idk|lol|haha|cool|nice|good|great)$/i.test(s);
+    // Filter out trivial interactions
+    const isGreeting = /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you|thanks|ok|yes|no|sure)\b/.test(s) && 
+                      raw.split(/\s+/).length <= 6;
+    const isSimpleResponse = /^(ok|yes|no|sure|maybe|idk|lol|haha|cool|nice|good|great)$/i.test(s);
 
-  if (isGreeting || isSimpleResponse) return 'chitchat'; // Won't be saved as important topic
+    if (isGreeting || isSimpleResponse) return 'chitchat';
 
-  if (s.includes('error') || s.includes('bug')) return 'troubleshooting';
-  if (s.includes('report') || s.includes('analysis')) return 'analysis';
-  if (s.includes('deploy') || s.includes('production')) return 'deployment';
-  if (s.includes('memory') || s.includes('context')) return 'memory';
-  if (raw.length < 30) return raw;
-  return raw.slice(0, 60).trim();
+    // Categorize meaningful topics
+    if (s.includes('error') || s.includes('bug') || s.includes('issue')) return 'troubleshooting';
+    if (s.includes('report') || s.includes('analysis') || s.includes('summary')) return 'analysis';
+    if (s.includes('deploy') || s.includes('production') || s.includes('release')) return 'deployment';
+    if (s.includes('memory') || s.includes('context') || s.includes('remember')) return 'memory';
+    if (s.includes('finance') || s.includes('trading') || s.includes('investment')) return 'finance';
+    if (s.includes('cambodia') || s.includes('business') || s.includes('market')) return 'business';
+    
+    if (raw.length < 30) return raw;
+    return raw.slice(0, 60).trim();
+  } catch (error) {
+    return 'general';
+  }
 }
 
-// Upsert a fact into persistent memory - SMART FILTERING
 async function upsertPersistentFact(chatId, key, value, opts = {}) {
   const ttlMs = typeof opts.ttlMs === 'number' ? opts.ttlMs : TTL.FACT;
+  
   try {
     if (!chatId || !key) return false;
 
     // Skip saving trivial facts
     const valueStr = String(value).toLowerCase();
     if (valueStr.includes('chitchat') || valueStr.length < 3) {
-      console.log('Skipping trivial fact save:', key, valueStr.substring(0, 50));
+      console.log('[MEMORY] Skipping trivial fact save:', key);
       return false;
     }
 
-    if (typeof memory?.saveToMemory === 'function') {
+    // Try memory module first
+    if (typeof memory !== 'undefined' && memory && typeof memory.saveToMemory === 'function') {
       await memory.saveToMemory(chatId, {
         type: 'fact',
         key,
@@ -3952,7 +4106,8 @@ async function upsertPersistentFact(chatId, key, value, opts = {}) {
       return true;
     }
 
-    if (typeof database?.saveConversation === 'function') {
+    // Fallback to database
+    if (typeof database !== 'undefined' && database && typeof database.saveConversation === 'function') {
       await database.saveConversation(chatId, `[FACT:${key}]`, String(value), {
         kind: 'fact',
         key,
@@ -3961,131 +4116,151 @@ async function upsertPersistentFact(chatId, key, value, opts = {}) {
       return true;
     }
 
+    console.warn('[MEMORY] No memory storage available');
     return false;
   } catch (err) {
-    console.warn('upsertPersistentFact failed:', err.message);
+    console.warn('[MEMORY] upsertPersistentFact failed:', err.message);
     return false;
   }
 }
 
-// Save conversation turn - SMART FILTERING
 async function persistConversationTurn(chatId, userMessage, assistantResponse, meta = {}) {
   try {
     if (!chatId) return false;
     
-    // Don't save trivial conversations to reduce database noise
     const userMsg = String(userMessage || '').trim();
-    const isTrivia = /^(hi|hello|hey|thanks|ok|yes|no|good|great)$/i.test(userMsg);
+    const responseLength = String(assistantResponse || '').length;
     
-    if (isTrivia && assistantResponse.length < 100) {
-      console.log('Skipping trivial conversation save');
+    // Don't save trivial conversations
+    const isTrivia = /^(hi|hello|hey|thanks|ok|yes|no|good|great|sure)$/i.test(userMsg) && 
+                     responseLength < 100;
+    
+    if (isTrivia) {
+      console.log('[MEMORY] Skipping trivial conversation save');
       return false;
     }
 
-    const assistant = normalizeAssistantText(assistantResponse);
+    const normalizedResponse = normalizeAssistantText(assistantResponse);
 
-    if (typeof database?.saveConversation === 'function') {
-      await database.saveConversation(chatId, userMsg, assistant, {
+    if (typeof database !== 'undefined' && database && typeof database.saveConversation === 'function') {
+      await database.saveConversation(chatId, userMsg, normalizedResponse, {
         ...meta,
         savedAt: new Date().toISOString()
       });
+      console.log('[MEMORY] Conversation turn saved');
       return true;
     }
+    
+    console.warn('[MEMORY] No database available for conversation save');
     return false;
   } catch (err) {
-    console.warn('persistConversationTurn failed:', err.message);
+    console.warn('[MEMORY] persistConversationTurn failed:', err.message);
     return false;
   }
 }
 
-// Smart memory saver - CONTROLS WHAT GETS SAVED
 async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnalysis, gpt5Result) {
   if (!chatId) return { saved: false };
 
-  // Check if this is worth saving to memory
-  const userMsg = String(userMessage || '').trim();
-  const responseLength = String(processedResponse || '').length;
-  
-  // Skip saving trivial interactions
-  const isTrivia = /^(hi|hello|hey|thanks|ok|yes|no|good|great|sure)$/i.test(userMsg) && responseLength < 200;
-  
-  if (isTrivia) {
-    console.log('Skipping memory save for trivial interaction');
-    return { saved: false, reason: 'trivial' };
-  }
-
-  // 1) Persist the turn only if meaningful
-  const turnSaved = await persistConversationTurn(chatId, userMessage, processedResponse, {
-    modelUsed: gpt5Result?.modelUsed || queryAnalysis?.gpt5Model,
-    priority: queryAnalysis?.priority,
-    complexity: queryAnalysis?.complexity?.complexity || 'unknown',
-    processingTime: gpt5Result?.processingTime
-  });
-
-  // 2) Mark completion if detected
-  if (
-    queryAnalysis?.completionStatus?.isFrustrated ||
-    queryAnalysis?.completionStatus?.isComplete ||
-    gpt5Result?.completionDetected
-  ) {
-    await upsertPersistentFact(
-      chatId,
-      'last_completion',
-      `Completed at ${new Date().toISOString()} — type: ${queryAnalysis?.completionStatus?.completionType || 'direct'}`,
-      { ttlMs: TTL.LAST_COMPLETION }
-    );
-  }
-
-  // 3) Save topic breadcrumb only if not chitchat
-  const topic = inferTopic(userMessage);
-  if (topic !== 'chitchat') {
-    await upsertPersistentFact(chatId, 'last_topic', topic, { ttlMs: TTL.LAST_TOPIC });
-  }
-
-  // 4) Capture "next action" only from substantial responses
-  if (responseLength > 200) {
-    const nextMatch = String(processedResponse || '').match(
-      /(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?)[^\n]*$/im
-    );
-    if (nextMatch) {
-      await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
-        ttlMs: TTL.FACT
-      });
+  try {
+    const userMsg = String(userMessage || '').trim();
+    const responseLength = String(processedResponse || '').length;
+    
+    // Skip saving trivial interactions completely
+    const isTrivia = /^(hi|hello|hey|thanks|ok|yes|no|good|great|sure)$/i.test(userMsg) && 
+                     responseLength < 200;
+    
+    if (isTrivia) {
+      console.log('[MEMORY] Skipping memory save for trivial interaction');
+      return { saved: false, reason: 'trivial' };
     }
-  }
 
-  return { saved: turnSaved };
+    // Save meaningful conversation turn
+    const turnSaved = await persistConversationTurn(chatId, userMessage, processedResponse, {
+      modelUsed: gpt5Result?.modelUsed || queryAnalysis?.gpt5Model,
+      priority: queryAnalysis?.priority,
+      complexity: queryAnalysis?.complexity?.complexity || 'unknown',
+      processingTime: gpt5Result?.processingTime
+    });
+
+    // Save completion status if detected
+    if (
+      queryAnalysis?.completionStatus?.isFrustrated ||
+      queryAnalysis?.completionStatus?.isComplete ||
+      gpt5Result?.completionDetected
+    ) {
+      await upsertPersistentFact(
+        chatId,
+        'last_completion',
+        `Completed at ${new Date().toISOString()} — type: ${queryAnalysis?.completionStatus?.completionType || 'direct'}`,
+        { ttlMs: TTL.LAST_COMPLETION }
+      );
+    }
+
+    // Save topic only if meaningful
+    const topic = inferTopic(userMessage);
+    if (topic !== 'chitchat') {
+      await upsertPersistentFact(chatId, 'last_topic', topic, { ttlMs: TTL.LAST_TOPIC });
+    }
+
+    // Capture next actions from substantial responses
+    if (responseLength > 200) {
+      const nextMatch = String(processedResponse || '').match(
+        /(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?|recommendation)[^\n]*$/im
+      );
+      if (nextMatch) {
+        await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
+          ttlMs: TTL.FACT
+        });
+      }
+    }
+
+    return { saved: turnSaved };
+  } catch (memoryError) {
+    console.error('[MEMORY] maybeSaveMemory error:', memoryError.message);
+    return { saved: false, error: memoryError.message };
+  }
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
-// ENHANCED UTILITY FUNCTIONS WITH MEMORY CONTROL
+// ENHANCED UTILITY FUNCTIONS WITH STRICT MEMORY CONTROL
 // ───────────────────────────────────────────────────────────────────────────────
 
 async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
+  const enhancedStartTime = Date.now();
+  
   try {
-    console.log('Executing enhanced GPT-5 command with smart memory control...');
-    const startTime = Date.now();
+    console.log('[ENHANCED-CMD] Starting with smart memory control');
+    console.log('[ENHANCED-CMD] Options:', {
+      contextAware: options.contextAware,
+      saveToMemory: options.saveToMemory,
+      forceModel: options.forceModel
+    });
 
-    // Apply memory control based on options
+    // Create modified options for executeDualCommand
     let modifiedOptions = { ...options };
     
     if (options.contextAware === false) {
-      console.log('Memory loading disabled for this request');
+      console.log('[ENHANCED-CMD] Memory loading COMPLETELY DISABLED');
       modifiedOptions.skipMemoryLoad = true;
+      modifiedOptions.skipMemoryContext = true;
+      modifiedOptions.bypassDatabase = true;
     } else if (options.contextAware === 'minimal') {
-      console.log('Minimal memory loading for this request');
-      modifiedOptions.memoryLimit = 1000; // Load only recent context
+      console.log('[ENHANCED-CMD] Minimal memory loading enabled');
+      modifiedOptions.memoryLimit = 1000;
+      modifiedOptions.contextLimit = 3;
     }
 
-    // Execute the core command
+    // Execute core command with strict memory control
     const result = await executeDualCommand(userMessage, chatId, modifiedOptions);
 
-    // Smart memory persistence
-    try {
-      if (result?.success && options.saveToMemory !== false) {
-        if (options.saveToMemory === 'minimal') {
-          console.log('Minimal memory save mode');
-          // Only save if the response was substantial
+    // Enhanced memory persistence control
+    if (result?.success && options.saveToMemory !== false) {
+      try {
+        if (options.saveToMemory === false) {
+          console.log('[ENHANCED-CMD] Memory saving disabled - skipping');
+        } else if (options.saveToMemory === 'minimal') {
+          console.log('[ENHANCED-CMD] Minimal memory save mode');
           if (result.response && result.response.length > 100) {
             await maybeSaveMemory(
               chatId,
@@ -4096,7 +4271,7 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
             );
           }
         } else {
-          // Full memory save
+          console.log('[ENHANCED-CMD] Full memory save mode');
           await maybeSaveMemory(
             chatId,
             userMessage,
@@ -4113,43 +4288,63 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
             { modelUsed: result.modelUsed, processingTime: result.processingTime }
           );
         }
+      } catch (persistErr) {
+        console.warn('[ENHANCED-CMD] Memory persist warning:', persistErr.message);
       }
-    } catch (persistErr) {
-      console.warn('Memory persist warning (enhanced):', persistErr.message);
     }
 
-    // Automatic Telegram delivery if bot provided
+    // Enhanced Telegram delivery with proper result handling
     if (bot && result.success && result.response) {
       try {
-        const title =
-          options.title ||
-          (result.completionDetected ? 'Task Completion' : 'GPT-5 Analysis');
+        const title = options.title || (result.completionDetected ? 'Task Complete' : 'Response');
 
-        const deliverySuccess = await result.sendToTelegram(bot, title);
-        result.telegramDelivered = deliverySuccess;
+        // Add sendToTelegram method if it doesn't exist
+        if (!result.sendToTelegram) {
+          result.sendToTelegram = async (botInstance, deliveryTitle) => {
+            if (telegramSplitter && telegramSplitter.sendTelegramMessage) {
+              return await telegramSplitter.sendTelegramMessage(botInstance, chatId, result.response, {
+                title: deliveryTitle,
+                model: result.modelUsed,
+                executionTime: result.processingTime,
+                tokens: result.tokensUsed,
+                cost: result.estimatedCost
+              });
+            } else {
+              await botInstance.sendMessage(chatId, result.response);
+              return { success: true, enhanced: false };
+            }
+          };
+        }
+
+        const deliveryResult = await result.sendToTelegram(bot, title);
+        result.telegramDelivered = deliveryResult.success;
         result.autoDelivery = true;
 
-        console.log(`Auto-delivery: ${deliverySuccess ? 'Success' : 'Failed'}`);
+        console.log(`[ENHANCED-CMD] Auto-delivery: ${deliveryResult.success ? 'Success' : 'Failed'}`);
       } catch (telegramError) {
-        console.warn('Auto-delivery failed:', telegramError.message);
+        console.warn('[ENHANCED-CMD] Auto-delivery failed:', telegramError.message);
         result.telegramDelivered = false;
         result.deliveryError = telegramError.message;
       }
     }
 
     result.enhancedExecution = true;
-    result.totalExecutionTime = Date.now() - startTime;
+    result.totalExecutionTime = Date.now() - enhancedStartTime;
+    
+    console.log(`[ENHANCED-CMD] Complete execution in ${result.totalExecutionTime}ms`);
     return result;
-  } catch (error) {
-    console.error('Enhanced GPT-5 command error:', error.message);
 
-    // Emergency fallback with bot notification
+  } catch (error) {
+    const processingTime = Date.now() - enhancedStartTime;
+    console.error(`[ENHANCED-CMD] Error after ${processingTime}ms:`, error.message);
+
+    // Emergency fallback
     if (bot) {
       try {
         const errorMsg = `Analysis failed: ${error.message}. Please try a simpler request.`;
         await bot.sendMessage(chatId, errorMsg);
       } catch (notificationError) {
-        console.error('Error notification failed:', notificationError.message);
+        console.error('[ENHANCED-CMD] Error notification failed:', notificationError.message);
       }
     }
 
@@ -4159,7 +4354,8 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       error: error.message,
       aiUsed: 'error-fallback',
       enhancedExecution: false,
-      telegramDelivered: !!bot
+      telegramDelivered: !!bot,
+      processingTime
     };
   }
 }
