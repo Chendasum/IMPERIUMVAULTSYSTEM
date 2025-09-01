@@ -1543,7 +1543,9 @@ async function clearOldFacts(chatId, factType) {
 module.exports = {
   // Main memory functions
   buildConversationContext,
-  saveToMemory, 
+  saveToMemory,
+  extractFactsFromConversation,  // Add this
+  clearOldFacts,                 // Add this
   extractAndSaveFactsFromConversation,
   extractAndSaveFacts,
   
