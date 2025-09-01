@@ -1337,14 +1337,47 @@ async function testMemorySystem(chatId) {
   }
 }
 
+/** Save conversation to memory and extract facts */
+async function saveToMemory(chatId, conversationData) {
+  try {
+    console.log(`[Memory] Saving conversation to memory for user: ${chatId}`);
+    
+    const userMessage = asText(conversationData.user || conversationData.userMessage || '');
+    const assistantResponse = asText(conversationData.assistant || conversationData.assistantResponse || '');
+    
+    if (!userMessage || !assistantResponse) {
+      console.log('[Memory] Incomplete conversation data, skipping save');
+      return { saved: false, reason: 'incomplete_data' };
+    }
+    
+    // Use your existing database import at the top of the file
+    await saveConversationDB(chatId, userMessage, assistantResponse, {
+      messageType: conversationData.messageType || 'text',
+      timestamp: conversationData.timestamp || new Date().toISOString(),
+      model: conversationData.model || 'gpt-5'
+    });
+    
+    console.log('[Memory] Conversation saved to database');
+    
+    // Extract and save facts automatically
+    await extractAndSaveFacts(chatId, userMessage, assistantResponse);
+    
+    return { saved: true, method: 'database' };
+    
+  } catch (error) {
+    console.error('[Memory] Save to memory error:', error.message);
+    return { saved: false, reason: 'error', error: error.message };
+  }
+}
 // -----------------------------------------------------------------------------
 // 🎯 EXPORT ALL FUNCTIONS
 // -----------------------------------------------------------------------------
 module.exports = {
   // Main memory functions
   buildConversationContext,
+  saveToMemory, 
   extractAndSaveFacts,
-
+  
   // Analytics functions
   inferEnhancedRiskTolerance,
   getConversationIntelligenceAnalytics,
