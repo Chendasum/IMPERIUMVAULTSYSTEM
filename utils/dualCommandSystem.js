@@ -3612,298 +3612,50 @@ module.exports = {
 };
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 6/6 (FINAL)
-// MAIN EXPORTS, UTILITY FUNCTIONS & COMPATIBILITY LAYER + MULTIMODAL INTEGRATION
-// This part combines all previous parts and provides the complete API with media handling
-
-// Add multimodal support
-const multimodal = require('./multimodal');
+// MAIN EXPORTS, UTILITY FUNCTIONS & COMPATIBILITY LAYER
+// This part combines all previous parts and provides the complete API
 
 // ───────────────────────────────────────────────────────────────────────────────
-// TELEGRAM MESSAGE HANDLER - MULTIMODAL ROUTING SYSTEM
-// ───────────────────────────────────────────────────────────────────────────────
+// MEMORY WRITE HELPERS (so Part 3 can read useful context next turn)
 
-async function handleTelegramMessage(message, bot) {
-  const startTime = Date.now();
-  const chatId = message.chat.id;
-  const userMessage = message.text || '';
-  const messageId = message.message_id;
-
-  console.log(`DualCommandSystem: Processing message from ${chatId}: "${userMessage.substring(0, 50)}..."`);
-
-  try {
-    // Multimodal content detection
-    const hasPhoto = !!message.photo;
-    const hasDocument = !!message.document;
-    const hasVoice = !!message.voice;
-    const hasAudio = !!message.audio;
-    const hasVideo = !!message.video;
-    const hasVideoNote = !!message.video_note;
-
-    const isMultimodal = hasPhoto || hasDocument || hasVoice || hasAudio || hasVideo || hasVideoNote;
-
-    // Process multimodal content first
-    if (isMultimodal) {
-      console.log('Multimodal content detected:', {
-        photo: hasPhoto,
-        document: hasDocument,
-        voice: hasVoice,
-        audio: hasAudio,
-        video: hasVideo,
-        video_note: hasVideoNote
-      });
-
-      try {
-        let result;
-
-        if (hasPhoto) {
-          const photo = message.photo[message.photo.length - 1];
-          console.log('Processing image with GPT-4o Vision');
-          result = await multimodal.analyzeImage(
-            bot, 
-            photo.file_id, 
-            userMessage || 'Analyze this image in detail', 
-            chatId
-          );
-        }
-        else if (hasDocument) {
-          console.log(`Processing document: ${message.document.file_name} (${Math.round(message.document.file_size / 1024)}KB)`);
-          result = await multimodal.analyzeDocument(
-            bot,
-            message.document,
-            userMessage || 'Analyze this document and provide insights',
-            chatId
-          );
-        }
-        else if (hasVoice) {
-          console.log(`Processing voice message (${message.voice.duration}s)`);
-          result = await multimodal.analyzeVoice(
-            bot,
-            message.voice,
-            userMessage || 'Transcribe and analyze this voice message',
-            chatId
-          );
-        }
-        else if (hasAudio) {
-          console.log(`Processing audio file: ${message.audio.file_name || 'audio'}`);
-          result = await multimodal.analyzeAudio(
-            bot,
-            message.audio,
-            userMessage || 'Transcribe and analyze this audio',
-            chatId
-          );
-        }
-        else if (hasVideo) {
-          console.log(`Processing video: ${message.video.file_name || 'video'}`);
-          result = await multimodal.analyzeVideo(
-            bot,
-            message.video,
-            userMessage || 'Analyze this video',
-            chatId
-          );
-        }
-        else if (hasVideoNote) {
-          console.log(`Processing video note (${message.video_note.duration || 'unknown'}s)`);
-          result = await multimodal.analyzeVideoNote(
-            bot,
-            message.video_note,
-            userMessage || 'Analyze this video note',
-            chatId
-          );
-        }
-
-        if (result && result.success) {
-          const processingTime = Date.now() - startTime;
-          console.log('Multimodal analysis successful:', {
-            type: result.type,
-            aiUsed: result.aiUsed,
-            processingTime: `${processingTime}ms`
-          });
-          
-          // Save multimodal interaction to memory
-          await maybeSaveMemory(
-            chatId,
-            `[${result.type.toUpperCase()}] ${userMessage || 'Media uploaded'}`,
-            result.analysis || 'Multimodal processing completed',
-            { type: 'multimodal', mediaType: result.type },
-            { modelUsed: result.aiUsed, processingTime }
-          );
-          
-          return result;
-        } else {
-          console.log('Multimodal processing failed, falling back to text processing');
-        }
-
-      } catch (multimodalError) {
-        console.error('Multimodal processing error:', multimodalError.message);
-        
-        await bot.sendMessage(
-          chatId,
-          `Media processing failed: ${multimodalError.message}\n\nTry adding a text description with your media, or check that the file format and size are supported.`
-        );
-        return;
-      }
-    }
-
-    // Check for document follow-up questions
-    if (userMessage && !userMessage.startsWith('/')) {
-      try {
-        const documentContext = multimodal.getContextForFollowUp(chatId, userMessage);
-        if (documentContext) {
-          console.log('Document context found - processing follow-up question');
-          
-          return await executeEnhancedGPT5Command(
-            documentContext, 
-            chatId, 
-            bot, 
-            {
-              title: 'Document Follow-up',
-              messageType: 'document_followup',
-              originalMessage: userMessage,
-              forceModel: 'gpt-5-mini',
-              max_completion_tokens: 3000,
-              reasoning_effort: 'medium',
-              verbosity: 'medium'
-            }
-          );
-        }
-      } catch (contextError) {
-        console.log('No document context available, proceeding with normal processing');
-      }
-    }
-
-    // Skip empty messages
-    if (!userMessage.trim() && !isMultimodal) {
-      console.log('Empty message received, skipping');
-      return;
-    }
-
-    // Route to existing GPT-5 text processing
-    console.log('Routing to executeEnhancedGPT5Command');
-    
-    return await executeEnhancedGPT5Command(
-      userMessage,
-      chatId,
-      bot,
-      {
-        messageType: 'telegram_webhook',
-        hasMedia: isMultimodal,
-        messageId: messageId,
-        processingStartTime: startTime
-      }
-    );
-
-  } catch (error) {
-    const processingTime = Date.now() - startTime;
-    console.error('Message processing error:', error.message);
-
-    try {
-      await bot.sendMessage(
-        chatId,
-        `System error: ${error.message}\n\nPlease try again or use /health to check system status.`
-      );
-    } catch (telegramError) {
-      console.error('Failed to send error message:', telegramError.message);
-    }
-
-    // Log error if logger is available
-    try {
-      if (typeof logError === 'function') {
-        await logError({
-          chatId,
-          userMessage,
-          error: error.message,
-          processingTime,
-          component: 'handleTelegramMessage',
-          hasMedia: isMultimodal
-        });
-      }
-    } catch (logError) {
-      console.warn('Error logging failed:', logError.message);
-    }
-  }
-}
-
-// Callback query handler
-async function handleCallbackQuery(callbackQuery, bot) {
-  try {
-    await bot.answerCallbackQuery(callbackQuery.id);
-    console.log('Callback query handled');
-  } catch (error) {
-    console.error('Callback query error:', error.message);
-  }
-}
-
-// Inline query handler  
-async function handleInlineQuery(inlineQuery, bot) {
-  try {
-    await bot.answerInlineQuery(inlineQuery.id, [], { cache_time: 1 });
-    console.log('Inline query handled');
-  } catch (error) {
-    console.error('Inline query error:', error.message);
-  }
-}
-
-// ───────────────────────────────────────────────────────────────────────────────
-// MEMORY WRITE HELPERS (Part 6) — safe, compact, and TTL-based
-// ───────────────────────────────────────────────────────────────────────────────
-
-// TTL presets (ms)
-const TTL = {
-  FACT: 7 * 24 * 60 * 60 * 1000,           // 7 days
-  LAST_COMPLETION: 14 * 24 * 60 * 60 * 1000,// 14 days
-  LAST_TOPIC: 48 * 60 * 60 * 1000           // 48 hours
-};
-
-// Compact assistant text before saving
+// Normalize assistant text before saving
 function normalizeAssistantText(text) {
   if (!text) return '';
   return String(text)
     .replace(/^(Assistant:|AI:|GPT-?5?:)\s*/i, '')
-    .replace(/\s+\n/g, '\n')       // trim extra spaces before newlines
-    .replace(/\n{3,}/g, '\n\n')    // collapse >2 blank lines
     .trim()
-    .slice(0, 8000);               // sanity cap
+    .slice(0, 8000); // sanity cap
 }
 
-// Heuristic topic picker (skip trivial greetings)
+// Try to infer a short topic from the user message
 function inferTopic(userMessage) {
   if (!userMessage) return 'general';
-  const raw = String(userMessage).trim();
-  const s = raw.toLowerCase();
-
-  // Don’t memorize “hello/hi/how are you” as a topic
-  const isGreeting =
-    /^(hi|hello|hey|yo|sup|gm|good\s+(morning|afternoon|evening)|how\s+are\s+you)\b/.test(s) &&
-    raw.split(/\s+/).length <= 6;
-
-  if (isGreeting) return 'chitchat';
-
+  const s = String(userMessage).toLowerCase();
   if (s.includes('error') || s.includes('bug')) return 'troubleshooting';
   if (s.includes('report') || s.includes('analysis')) return 'analysis';
   if (s.includes('deploy') || s.includes('production')) return 'deployment';
   if (s.includes('memory') || s.includes('context')) return 'memory';
-  if (raw.length < 30) return raw;
-  return raw.slice(0, 60).trim();
+  if (s.length < 30) return userMessage.trim();
+  return userMessage.slice(0, 60).trim();
 }
 
-// Upsert a tiny fact into persistent memory (prefer memory module, fallback DB)
-async function upsertPersistentFact(chatId, key, value, opts = {}) {
-  const ttlMs = typeof opts.ttlMs === 'number' ? opts.ttlMs : TTL.FACT;
+// Upsert a fact into persistent memory (via memory module if present; else DB)
+async function upsertPersistentFact(chatId, key, value, { ttlMs = 7 * 24 * 60 * 60 * 1000 } = {}) {
   try {
     if (!chatId || !key) return false;
 
-    if (typeof memory?.saveToMemory === 'function') {
+    if (memory && typeof memory.saveToMemory === 'function') {
       await memory.saveToMemory(chatId, {
         type: 'fact',
         key,
-        value: String(value),
+        value,
         createdAt: new Date().toISOString(),
         expiresAt: ttlMs ? new Date(Date.now() + ttlMs).toISOString() : null
       });
       return true;
     }
 
-    if (typeof database?.saveConversation === 'function') {
+    if (database && typeof database.saveConversation === 'function') {
       await database.saveConversation(chatId, `[FACT:${key}]`, String(value), {
         kind: 'fact',
         key,
@@ -3919,14 +3671,14 @@ async function upsertPersistentFact(chatId, key, value, opts = {}) {
   }
 }
 
-// Save the full conversation turn (user + assistant) to DB for context rebuilds
+// Save the full conversation turn (user + assistant) to DB
 async function persistConversationTurn(chatId, userMessage, assistantResponse, meta = {}) {
   try {
     if (!chatId) return false;
     const assistant = normalizeAssistantText(assistantResponse);
 
-    if (typeof database?.saveConversation === 'function') {
-      await database.saveConversation(chatId, String(userMessage || ''), assistant, {
+    if (database && typeof database.saveConversation === 'function') {
+      await database.saveConversation(chatId, userMessage, assistant, {
         ...meta,
         savedAt: new Date().toISOString()
       });
@@ -3939,11 +3691,11 @@ async function persistConversationTurn(chatId, userMessage, assistantResponse, m
   }
 }
 
-// High-level memory writer called after successful responses
+// High-level “remember” entry point used after each successful command
 async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnalysis, gpt5Result) {
   if (!chatId) return { saved: false };
 
-  // 1) Persist the turn
+  // 1) persist the turn so Part 3 can rebuild context
   const turnSaved = await persistConversationTurn(chatId, userMessage, processedResponse, {
     modelUsed: gpt5Result?.modelUsed || queryAnalysis?.gpt5Model,
     priority: queryAnalysis?.priority,
@@ -3951,7 +3703,7 @@ async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnal
     processingTime: gpt5Result?.processingTime
   });
 
-  // 2) Mark completion if detected
+  // 2) mark completion if detected
   if (
     queryAnalysis?.completionStatus?.isFrustrated ||
     queryAnalysis?.completionStatus?.isComplete ||
@@ -3961,24 +3713,18 @@ async function maybeSaveMemory(chatId, userMessage, processedResponse, queryAnal
       chatId,
       'last_completion',
       `Completed at ${new Date().toISOString()} — type: ${queryAnalysis?.completionStatus?.completionType || 'direct'}`,
-      { ttlMs: TTL.LAST_COMPLETION }
+      { ttlMs: 14 * 24 * 60 * 60 * 1000 }
     );
   }
 
-  // 3) Leave a tiny breadcrumb for topic — skip if it was trivial chitchat
-  const topic = inferTopic(userMessage);
-  if (topic !== 'chitchat') {
-    await upsertPersistentFact(chatId, 'last_topic', topic, { ttlMs: TTL.LAST_TOPIC });
-  }
+  // 3) remember a tiny topic breadcrumb
+  await upsertPersistentFact(chatId, 'last_topic', inferTopic(userMessage), { ttlMs: 48 * 60 * 60 * 1000 });
 
-  // 4) Heuristic: capture “next action” / “next steps” / “todo” line if present
-  // Matches lines that start with "next", "next steps", "todo", or "action"
-  const nextMatch = String(processedResponse || '').match(
-    /(?:^|\n)\s*(?:next\s*steps?|todo|action(?:s)?)[^\n]*$/im
-  );
+  // 4) heuristic: capture a “next action” line if present
+  const nextMatch = String(processedResponse || '').match(/(?:^|\n)(?:next|todo|action)\b.*$/im);
   if (nextMatch) {
     await upsertPersistentFact(chatId, 'next_action', nextMatch[0].slice(0, 200), {
-      ttlMs: TTL.FACT
+      ttlMs: 7 * 24 * 60 * 60 * 1000
     });
   }
 
@@ -3996,7 +3742,7 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
     // Execute the core command
     const result = await executeDualCommand(userMessage, chatId, options);
 
-    // Persist memory write-backs after success
+    // 🔁 Persist memory write-backs after success
     try {
       if (result?.success && options.saveToMemory !== false) {
         await maybeSaveMemory(
@@ -4230,7 +3976,7 @@ function getGPT5PerformanceMetrics() {
   const analytics = getSystemAnalytics();
 
   return {
-    systemMode: 'Secure GPT-5 Smart Selection System + Multimodal',
+    systemMode: 'Secure GPT-5 Smart Selection System',
     version: systemState.version,
     modelsAvailable: Object.values(CONFIG.MODELS),
     features: [
@@ -4240,8 +3986,7 @@ function getGPT5PerformanceMetrics() {
       'Multi-tier fallback system',
       'Performance monitoring',
       'Cost optimization',
-      'Cambodia timezone support',
-      'Multimodal processing (Images, Documents, Voice, Video)'
+      'Cambodia timezone support'
     ],
     performance: {
       uptime: analytics.uptime.formatted,
@@ -4255,44 +4000,20 @@ function getGPT5PerformanceMetrics() {
       costOptimization: 'Active',
       completionDetection: 'Active',
       memoryIntegration: 'PostgreSQL-backed',
-      fallbackSystem: 'Multi-tier GPT-5',
-      multimodalProcessing: 'Active'
+      fallbackSystem: 'Multi-tier GPT-5'
     },
     capabilities: {
       speed: 'GPT-5 Nano (50ms average)',
       balanced: 'GPT-5 Mini (200ms average)',
       complex: 'GPT-5 Full (500ms average)',
       chat: 'GPT-5 Chat (300ms average)',
-      completion: 'Instant (0ms - no processing)',
-      vision: 'GPT-4o Vision (1-3s average)',
-      documents: 'GPT-5 Document Analysis (2-10s)',
-      voice: 'Whisper + GPT-5 (3-8s average)'
+      completion: 'Instant (0ms - no processing)'
     },
     estimatedSavings:
       '70-80% vs always using GPT-5 Full + completion detection savings',
-    architecture: 'Secure, analysis-only + multimodal capabilities',
+    architecture: 'Secure, analysis-only (operational execution removed)',
     security: 'Production-ready, no system command execution'
   };
-}
-
-// ───────────────────────────────────────────────────────────────────────────────
-// MULTIMODAL STATUS AND MANAGEMENT
-
-function getMultimodalStatus() {
-  try {
-    return multimodal.getMultimodalStatus();
-  } catch (error) {
-    return {
-      available: false,
-      error: error.message,
-      capabilities: {
-        image_analysis: false,
-        voice_transcription: false,
-        document_processing: false,
-        video_analysis: false
-      }
-    };
-  }
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -4323,7 +4044,7 @@ async function executeGPT5WithContext(prompt, chatId, options = {}) {
   });
 }
 
-// Direct analysis with correct token params per API
+// ✅ Direct analysis with correct token params per API
 async function executeDirectGPT5Analysis(prompt, model = 'gpt-5-mini') {
   try {
     const analysisOptions = { model, max_completion_tokens: 4000 };
@@ -4362,7 +4083,6 @@ async function performFullSystemDiagnostics() {
     diagnostics.memoryTest = await testMemoryIntegration('diagnostic_test');
     diagnostics.analytics = getSystemAnalytics();
     diagnostics.gpt5Health = await performGPT5HealthCheck();
-    diagnostics.multimodalStatus = getMultimodalStatus();
     diagnostics.config = {
       models: Object.values(CONFIG.MODELS),
       reasoningLevels: CONFIG.REASONING_LEVELS,
@@ -4406,81 +4126,94 @@ const legacyCompatibility = {
   executeSystemOperation: async () => 'System operations disabled for security'
 };
 
-console.log('Secure GPT-5 Command System v7.1 - COMPLETE (6/6 parts + multimodal loaded)');
-console.log('Security: All operational execution removed - analysis-only mode');
-console.log('Features: Smart model selection, completion detection, cost optimization');
-console.log('Multimodal: Images (GPT-4o Vision), Documents (GPT-5), Voice (Whisper+GPT-5), Video (planned)');
-console.log('Monitoring: Performance analytics, health checks, cost tracking');
-console.log('Context: Cambodia timezone, global market awareness, memory integration');
-console.log('Ready for production deployment with comprehensive error handling');
+console.log('🎯 Secure GPT-5 Command System v7.0 - COMPLETE (6/6 parts loaded)');
+console.log('🔒 Security: All operational execution removed - analysis-only mode');
+console.log('⚡ Features: Smart model selection, completion detection, cost optimization');
+console.log('📊 Monitoring: Performance analytics, health checks, cost tracking');
+console.log('🌏 Context: Cambodia timezone, global market awareness, memory integration');
+console.log('✅ Ready for production deployment with comprehensive error handling');
 
 // ───────────────────────────────────────────────────────────────────────────────
-// MAIN MODULE EXPORTS - FIXED AND SAFE VERSION
+// MAIN MODULE EXPORTS (merged — preserves earlier attached exports)
 // ───────────────────────────────────────────────────────────────────────────────
 
-// Preserve any existing exports first
 const __prev = (module.exports && typeof module.exports === 'object') ? module.exports : {};
 
-// Create the new exports object by merging existing and new exports
-const newExports = {
-  // TELEGRAM HANDLERS - NEW (required for clean index.js)
-  handleTelegramMessage,
-  handleCallbackQuery,
-  handleInlineQuery,
-  
-  // ENHANCED UTILITY FUNCTIONS (defined in this part)
+Object.assign(__prev, {
+  // CORE FUNCTIONS
+  executeDualCommand,
   executeEnhancedGPT5Command,
-  
-  // QUICK COMMAND FUNCTIONS (defined in this part)
+  analyzeQuery,
+  detectCompletionStatus,
+
+  // QUICK COMMAND FUNCTIONS
   quickGPT5Command,
   quickNanoCommand,
   quickMiniCommand,
   quickFullCommand,
   quickChatCommand,
-  quickUltimateCommand: quickFullCommand, // Alias
-  
-  // SYSTEM FUNCTIONS (defined in this part)
+
+  // 🔗 Alias to keep index.js working (/ultimate uses this)
+  quickUltimateCommand: quickFullCommand,
+
+  // SYSTEM ANALYSIS & RECOMMENDATIONS
   getGPT5ModelRecommendation,
   getGPT5CostEstimate,
   getGPT5PerformanceMetrics,
-  getMultimodalStatus,
-  
-  // MEMORY HELPERS (defined in this part)
+
+  // SYSTEM MONITORING & HEALTH
+  getSystemAnalytics,
+  checkSystemHealth,
+  checkGPT5OnlySystemHealth, // legacy name kept
+  performGPT5HealthCheck,
+  performFullSystemDiagnostics,
+  testMemoryIntegration,
+
+  // UTILITY FUNCTIONS
+  getCurrentCambodiaDateTime,
+  getCurrentGlobalDateTime,
+  getMarketIntelligence,
+  getGlobalMarketStatus,
+  resetSystemStats,
+
+  // CONTEXT AND MEMORY
+  buildMemoryContext,
+  executeGPT5WithContext,
+  executeDirectGPT5Analysis,
+  saveConversationEmergency,
+
+  // Memory write helpers (so callers can trigger them too)
   maybeSaveMemory,
   upsertPersistentFact,
   persistConversationTurn,
-  saveConversationEmergency,
-  
-  // UTILITY FUNCTIONS (defined in this part)  
-  executeGPT5WithContext,
-  executeDirectGPT5Analysis,
-  performFullSystemDiagnostics,
-  
-  // DIRECT ACCESS TO SUBSYSTEMS (if they exist)
-  ...(typeof multimodal !== 'undefined' && { multimodal }),
-  ...(typeof openaiClient !== 'undefined' && { openaiClient }),
-  ...(typeof memory !== 'undefined' && { memory }),
-  ...(typeof database !== 'undefined' && { database }),
-  ...(typeof telegramSplitter !== 'undefined' && { telegramSplitter }),
-  
-  // CONSTANTS (if they exist)
-  ...(typeof CONFIG !== 'undefined' && CONFIG.MODELS && { MODELS: CONFIG.MODELS }),
-  ...(typeof CONFIG !== 'undefined' && CONFIG.REASONING_LEVELS && { REASONING_LEVELS: CONFIG.REASONING_LEVELS }),
-  ...(typeof CONFIG !== 'undefined' && CONFIG.VERBOSITY_LEVELS && { VERBOSITY_LEVELS: CONFIG.VERBOSITY_LEVELS }),
-  
-  // SYSTEM STATE ACCESS (if they exist)
-  ...(typeof systemState !== 'undefined' && { getSystemState: () => ({ ...systemState }) }),
-  ...(typeof CONFIG !== 'undefined' && { getConfig: () => ({ ...CONFIG }) })
-};
 
-// Merge with existing exports (from other parts) and set as module.exports
-module.exports = {
-  ...(__prev || {}),  // Existing exports from other parts
-  ...newExports       // New exports from this part
-};
+  // SYSTEM STATE ACCESS
+  getSystemState: () => ({ ...systemState }),
+  getConfig: () => ({ ...CONFIG }),
 
-console.log('DualCommandSystem Part 6 loaded - Multimodal + Telegram handlers ready');
-console.log('Available handlers:', Object.keys(module.exports).filter(key => key.startsWith('handle')));
-console.log('Available quick commands:', Object.keys(module.exports).filter(key => key.startsWith('quick')));
-console.log('Multimodal support:', typeof module.exports.multimodal !== 'undefined' ? 'enabled' : 'checking...');
-console.log('All systems integrated and operational');
+  // DIRECT ACCESS TO SUBSYSTEMS
+  openaiClient,
+  memory,
+  database,
+  telegramSplitter,
+
+  // CONSTANTS
+  MODELS: CONFIG.MODELS,
+  REASONING_LEVELS: CONFIG.REASONING_LEVELS,
+  VERBOSITY_LEVELS: CONFIG.VERBOSITY_LEVELS,
+
+  // (Optional) expose Part 4 helpers so index.js or others can reuse them
+  // Comment these 3 lines out if Part 4 isn’t present in your build:
+  createTelegramSender,
+  createErrorTelegramSender,
+  calculateEstimatedCost
+});
+
+// finalize
+module.exports = __prev;
+
+console.log('🚀 All systems ready - Secure GPT-5 Command System operational');
+console.log('📋 Main functions: executeDualCommand, executeEnhancedGPT5Command');
+console.log('⚙️ Quick functions: quickNanoCommand, quickMiniCommand, quickFullCommand (alias: quickUltimateCommand)');
+console.log('🔍 Analysis: getGPT5ModelRecommendation, getSystemAnalytics');
+console.log('💾 Compatibility: Legacy function names preserved for existing code');
