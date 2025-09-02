@@ -188,12 +188,23 @@ function classifyMessage(userMessage, hasMedia = false) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// COMPLETION DETECTION (YOUR EXISTING SYSTEM)
+// COMPLETION DETECTION (ENHANCED - FIXES LARGE TEXT ISSUE)
 // ════════════════════════════════════════════════════════════════════════════
-
 function detectCompletionStatus(message, memoryContext = '') {
   const messageText = safeLowerCase(message);
   const contextText = safeLowerCase(memoryContext);
+  
+  // 🎯 NEW: Skip completion detection for long messages (likely content updates)
+  if (messageText.length > 200) {
+    console.log('[COMPLETION] Skipping detection for long message (likely content)');
+    return {
+      isComplete: false,
+      isFrustrated: false,
+      shouldSkipGPT5: false,
+      completionType: 'none',
+      confidence: 0
+    };
+  }
   
   const directCompletionPatterns = [
     /done ready|already built|it works?|working now|system ready/i,
@@ -221,6 +232,7 @@ function detectCompletionStatus(message, memoryContext = '') {
   };
 }
 
+// Keep your generateCompletionResponse function exactly the same
 function generateCompletionResponse(completionStatus) {
   const responses = {
     direct: ["Got it! System confirmed as ready. What's your next command?", "Perfect! Since it's working, what's the next task?"],
@@ -233,13 +245,12 @@ function generateCompletionResponse(completionStatus) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// QUERY ANALYSIS & GPT-5 MODEL SELECTION (YOUR EXISTING LOGIC)
+// QUERY ANALYSIS & GPT-5 MODEL SELECTION (ENHANCED FOR LARGE TEXT)
 // ════════════════════════════════════════════════════════════════════════════
-
 function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memoryContext = null) {
   const message = safeLowerCase(userMessage);
   
-  // Check completion detection first
+  // Check completion detection first (now enhanced to skip for long messages)
   const completionStatus = detectCompletionStatus(userMessage, memoryContext || '');
   if (completionStatus.shouldSkipGPT5) {
     updateSystemStats('completion_detection', true, 0, 'completion', 'none');
@@ -252,11 +263,15 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     };
   }
   
-  // Model selection patterns
+  // 🎯 NEW: Enhanced patterns for large text analysis
   const speedPatterns = /urgent|immediate|now|asap|quick|fast|^(hello|hi|hey)$/i;
   const complexPatterns = /(strategy|analyze|comprehensive|detailed|thorough)/i;
   const mathCodingPatterns = /(calculate|compute|code|coding|program|mathematical)/i;
   const healthPatterns = /(health|medical|diagnosis|treatment|symptoms)/i;
+  
+  // 🎯 NEW: Detect large text that needs full processing
+  const isLargeText = userMessage.length > 500;
+  const hasBusinessContent = /(business|project|plan|cash flow|investor|revenue|strategy)/i.test(message);
   
   // Default model selection
   let gpt5Config = {
@@ -267,7 +282,18 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
     priority: 'standard'
   };
   
-  if (speedPatterns.test(message)) {
+  // 🎯 ENHANCED: Handle large text with full GPT-5 model
+  if (isLargeText || hasBusinessContent) {
+    console.log('[ANALYSIS] Large text or business content detected - using full GPT-5');
+    gpt5Config = {
+      model: CONFIG.MODELS.FULL,
+      reasoning_effort: 'high',
+      verbosity: 'high',
+      max_completion_tokens: CONFIG.TOKEN_LIMITS.FULL_MAX,
+      priority: 'large_content'
+    };
+  }
+  else if (speedPatterns.test(message)) {
     gpt5Config = {
       model: CONFIG.MODELS.NANO,
       reasoning_effort: 'minimal',
@@ -308,10 +334,7 @@ function analyzeQuery(userMessage, messageType = 'text', hasMedia = false, memor
   };
 }
 
-console.log('PIECE 3 LOADED: Message classification and query analysis ready');
-
-// PIECE 4: GPT-5 EXECUTION ENGINE
-// Copy-paste this after Piece 3
+console.log('PIECE 3 LOADED: Enhanced query analysis with large text handling ready');
 
 // ════════════════════════════════════════════════════════════════════════════
 // CAMBODIA DATETIME UTILITY (YOUR EXISTING SYSTEM)
