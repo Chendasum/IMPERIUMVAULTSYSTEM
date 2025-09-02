@@ -29,24 +29,6 @@ console.log(`   Max Context: ${MEMORY_CONFIG.MAX_CONTEXT_LENGTH} chars`);
 console.log(`   Max Conversations: ${MEMORY_CONFIG.MAX_CONVERSATIONS}`);
 console.log(`   Max Memories: ${MEMORY_CONFIG.MAX_MEMORIES}`);
 
-// ADD THIS SECTION HERE:
-// -----------------------------------------------------------------------------
-// 🧪 DATABASE CONNECTION TEST
-// -----------------------------------------------------------------------------
-async function testDatabaseConnection() {
-  try {
-    console.log('[DB-TEST] Testing database connection...');
-    const testResult = await getConversationHistoryDB('test', 1);
-    console.log(`[DB-TEST] ✅ Database connected, got ${Array.isArray(testResult) ? testResult.length : 0} results`);
-    return true;
-  } catch (error) {
-    console.log(`[DB-TEST] ❌ Database connection failed: ${error.message}`);
-    return false;
-  }
-}
-
-// Call the test immediately
-testDatabaseConnection();
 // -----------------------------------------------------------------------------
 // 🔧 SAFETY HELPERS — normalize any input to text to avoid .toLowerCase/.substring errors
 // -----------------------------------------------------------------------------
@@ -802,73 +784,190 @@ function detectConversationPatterns(conversations, memories) {
 // 🚀 MAIN MEMORY FUNCTIONS
 // -----------------------------------------------------------------------------
 
-/** Build simple, reliable conversation context */
+/** Build comprehensive conversation context with PostgreSQL data */
 async function buildConversationContext(chatId, currentMessage = "") {
   try {
-    console.log(`🧠 Building simple context for user ${chatId}`);
+    console.log(`🧠 Building enhanced strategic context for user ${chatId}`);
 
+    // Normalize current message immediately
     const currentMsgText = asText(currentMessage);
 
-    // Simple, fast data fetch (only what's needed)
-    const [conversations, memories] = await Promise.allSettled([
-      getConversationHistoryDB(chatId, 3), // Only 3 recent conversations
-      getPersistentMemoryDB(chatId)
+    // Fetch data from PostgreSQL
+    const [conversations, memories, userProfile] = await Promise.allSettled([
+      getConversationHistoryDB(chatId, MEMORY_CONFIG.MAX_CONVERSATIONS),
+      getPersistentMemoryDB(chatId),
+      getUserProfileDB(chatId)
     ]);
 
+    // Process fetched data
     const conversationData = conversations.status === "fulfilled" ? conversations.value || [] : [];
     const memoryData = memories.status === "fulfilled" ? memories.value || [] : [];
+    const profileData = userProfile.status === "fulfilled" ? userProfile.value || null : null;
 
-    console.log(`📊 Retrieved: ${conversationData.length} conversations, ${memoryData.length} memories`);
+    console.log(`🔍 Retrieved ${conversationData.length} conversations for ${chatId}`);
+    console.log(`🧠 Retrieved ${memoryData.length} persistent memories for ${chatId}`);
 
-    // Build simple, focused context
+    // Generate advanced analytics
+    let riskTolerance, analytics, patterns;
+
+    try {
+      riskTolerance = inferEnhancedRiskTolerance(conversationData, memoryData);
+    } catch (riskError) {
+      console.error("Enhanced strategic profile error:", riskError.message);
+      riskTolerance = { level: "moderate", score: 50, confidence: 0.1 };
+    }
+
+    try {
+      analytics = getConversationIntelligenceAnalytics(conversationData, memoryData);
+    } catch (analyticsError) {
+      console.error("Get conversation intelligence analytics error:", analyticsError.message);
+      analytics = { strategicFocus: "general", communicationStyle: "balanced", confidenceLevel: 0.1 };
+    }
+
+    try {
+      patterns = detectConversationPatterns(conversationData, memoryData);
+    } catch (patternError) {
+      console.error("Pattern detection error:", patternError.message);
+      patterns = { behaviorPatterns: [], preferencePatterns: [] };
+    }
+
+    // Build context string
     const contextParts = [];
-    let totalLength = 0;
-    const MAX_CONTEXT = 2000; // Much smaller limit
 
-    // 1. Most Important Facts Only (high importance)
-    const importantMemories = memoryData
-      .filter(mem => mem.importance === 'high')
-      .slice(0, 5); // Only top 5
+    // 1. User Profile Summary
+    if (profileData) {
+      const firstSeen = profileData.first_seen ? new Date(profileData.first_seen).toLocaleDateString() : "unknown";
+      const convCount = profileData.conversation_count ?? "?";
+      contextParts.push(
+        `USER PROFILE: Member since ${firstSeen}, ${convCount} total conversations`
+      );
+    }
 
-    if (importantMemories.length > 0) {
-      contextParts.push("IMPORTANT FACTS:");
-      importantMemories.forEach((memory, index) => {
-        const fact = `${index + 1}. ${memory.fact}`;
-        if (totalLength + fact.length < MAX_CONTEXT * 0.6) {
-          contextParts.push(fact);
-          totalLength += fact.length;
+    // 2. Strategic Intelligence Summary
+    contextParts.push(
+      `STRATEGIC INTELLIGENCE SUMMARY:
+• Communication Style: ${analytics.communicationStyle}
+• Strategic Focus: ${analytics.strategicFocus}
+• Risk Tolerance: ${riskTolerance.level} (${Number(riskTolerance.score || 0).toFixed(0)}/100)
+• Engagement Level: ${Number(analytics.engagementScore || 0).toFixed(1)}/10
+• Data Quality: ${analytics.dataQuality}
+• Confidence: ${Number((analytics.confidenceLevel || 0) * 100).toFixed(0)}%`
+    );
+
+    // 3. Persistent Memories (prioritized by importance and relevance)
+    if (memoryData.length > 0) {
+      const sortedMemories = memoryData
+        .map((memory) => ({
+          ...memory,
+          relevance: calculateRelevance(
+            memory.timestamp,
+            memory.importance,
+            currentMsgText,
+            memory.fact
+          )
+        }))
+        .sort((a, b) => b.relevance - a.relevance)
+        .slice(0, MEMORY_CONFIG.MAX_MEMORIES);
+
+      if (sortedMemories.length > 0) {
+        contextParts.push("PERSISTENT MEMORIES (Important Facts):");
+        sortedMemories.forEach((memory, index) => {
+          const importance = memory.importance ? `[${String(memory.importance).toUpperCase()}] ` : "";
+          contextParts.push(`${index + 1}. ${importance}${memory.fact}`);
+        });
+      }
+    }
+
+    // 4. Recent Conversation History
+    if (conversationData.length > 0) {
+      contextParts.push("RECENT CONVERSATION HISTORY:");
+      const recentConversations = conversationData.slice(0, MEMORY_CONFIG.MAX_CONVERSATIONS);
+
+      recentConversations.forEach((conv, index) => {
+        const t = new Date(conv.timestamp);
+        const timeAgo = isNaN(t) ? null : daysBetween(new Date(), t);
+        const timeLabel =
+          timeAgo === null
+            ? "Unknown time"
+            : timeAgo === 0
+            ? "Today"
+            : timeAgo === 1
+            ? "Yesterday"
+            : `${timeAgo.toFixed(0)} days ago`;
+
+        const userMsg = asText(conv.user_message || "");
+        const aiMsg = asText(conv.gpt_response || "");
+
+        if (userMsg) {
+          contextParts.push(
+            `${index + 1}. User (${timeLabel}): "${excerptSafe(userMsg, 150)}${
+              userMsg.length > 150 ? "..." : ""
+            }"`
+          );
+        }
+        if (aiMsg && index < 3) {
+          // Include AI responses for first few for context
+          contextParts.push(
+            `   AI Response: "${excerptSafe(aiMsg, 100)}${aiMsg.length > 100 ? "..." : ""}"`
+          );
         }
       });
     }
 
-    // 2. Recent Conversation (only if space allows)
-    if (conversationData.length > 0 && totalLength < MAX_CONTEXT * 0.7) {
-      contextParts.push("\nRECENT CHAT:");
-      
-      const lastConv = conversationData[conversationData.length - 1];
-      if (lastConv) {
-        const userMsg = asText(lastConv.user_message || '');
-        if (userMsg.length > 0) {
-          const recentText = `Last: "${userMsg.substring(0, 100)}${userMsg.length > 100 ? '...' : ''}"`;
-          if (totalLength + recentText.length < MAX_CONTEXT) {
-            contextParts.push(recentText);
-            totalLength += recentText.length;
-          }
-        }
-      }
+    // 5. Behavior Patterns
+    if (patterns.behaviorPatterns && patterns.behaviorPatterns.length > 0) {
+      contextParts.push("BEHAVIORAL PATTERNS:");
+      patterns.behaviorPatterns.slice(0, 3).forEach((pattern, index) => {
+        contextParts.push(`${index + 1}. ${pattern}`);
+      });
     }
 
-    // Build final context
-    const finalContext = contextParts.length > 0 ? contextParts.join('\n') : `Context for user ${chatId}`;
-    
-    console.log(`✅ Simple context built: ${finalContext.length} characters`);
-    return finalContext.length > MAX_CONTEXT ? finalContext.substring(0, MAX_CONTEXT) + '...' : finalContext;
+    // 6. Preferences
+    if (patterns.preferencePatterns && patterns.preferencePatterns.length > 0) {
+      contextParts.push("USER PREFERENCES:");
+      patterns.preferencePatterns.slice(0, 3).forEach((pref, index) => {
+        contextParts.push(`${index + 1}. ${pref.preference}`);
+      });
+    }
 
+    // 7. Recommendations
+    if (analytics.recommendations && analytics.recommendations.length > 0) {
+      contextParts.push("AI RECOMMENDATIONS:");
+      analytics.recommendations.slice(0, 2).forEach((rec, index) => {
+        contextParts.push(`${index + 1}. ${rec}`);
+      });
+    }
+
+    // Combine all context parts
+    const fullContext = contextParts.join("\n\n");
+
+    // Ensure context doesn't exceed maximum length
+    const finalContext =
+      fullContext.length > MEMORY_CONFIG.MAX_CONTEXT_LENGTH
+        ? fullContext.substring(0, MEMORY_CONFIG.MAX_CONTEXT_LENGTH) +
+          "\n\n[Context truncated for optimal processing]"
+        : fullContext;
+
+    console.log(
+      `✅ Enhanced strategic database context built: ${finalContext.length} characters`
+    );
+    console.log(
+      `📊 Memory components: ${memoryData.length} persistent + ${conversationData.length} recent + ${
+        patterns.behaviorPatterns?.length || 0
+      } patterns`
+    );
+
+    return finalContext;
   } catch (error) {
-    console.error("❌ Build context error:", error.message);
-    
-    // Ultra-safe fallback
-    return `Basic context for user ${chatId}`;
+    console.error("❌ Build conversation context error:", error.message);
+
+    // Fallback context (safe)
+    const cm = asText(currentMessage);
+    const fallbackContext = `BASIC CONTEXT: Error building enhanced context (${error.message}). 
+Using minimal context for user ${chatId}.
+Current message: "${excerptSafe(cm, 100)}${cm.length > 100 ? "..." : ""}"`;
+
+    return fallbackContext;
   }
 }
 
@@ -1238,255 +1337,14 @@ async function testMemorySystem(chatId) {
   }
 }
 
-/** Extract and save important facts automatically */
-async function extractAndSaveFactsFromConversation(chatId, userMessage, aiResponse) {
-  try {
-    console.log(`[FACT-EXTRACT] Analyzing conversation for facts...`);
-    
-    const userText = asText(userMessage);
-    const facts = [];
-    
-    // Extract name
-    const namePatterns = [
-      /my name is ([^.,\n!?]+)/i,
-      /i'm ([^.,\n!?]+)/i,
-      /call me ([^.,\n!?]+)/i,
-      /i am ([^.,\n!?]+)/i
-    ];
-    
-    for (const pattern of namePatterns) {
-      const match = userText.match(pattern);
-      if (match && match[1]) {
-        const name = match[1].trim();
-        if (name.length > 1 && name.length < 50) {
-          await addPersistentMemoryDB(chatId, `User's name: ${name}`, 'high');
-          console.log(`[FACT-EXTRACT] ✅ Saved name: ${name}`);
-          facts.push(`name: ${name}`);
-        }
-      }
-    }
-    
-    // Extract business/work
-    const businessPatterns = [
-      /i work (at|for|in) ([^.,\n!?]+)/i,
-      /my business is ([^.,\n!?]+)/i,
-      /my company is ([^.,\n!?]+)/i,
-      /i run ([^.,\n!?]+)/i,
-      /i own ([^.,\n!?]+)/i,
-      /my job is ([^.,\n!?]+)/i
-    ];
-    
-    for (const pattern of businessPatterns) {
-      const match = userText.match(pattern);
-      if (match && match[1]) {
-        const business = match[match.length - 1].trim(); // Get last capture group
-        if (business.length > 2 && business.length < 100) {
-          await addPersistentMemoryDB(chatId, `User's business/work: ${business}`, 'high');
-          console.log(`[FACT-EXTRACT] ✅ Saved business: ${business}`);
-          facts.push(`business: ${business}`);
-        }
-      }
-    }
-    
-    // Extract preferences
-    const preferencePatterns = [
-      /i prefer ([^.,\n!?]+)/i,
-      /i like ([^.,\n!?]+)/i,
-      /my favorite ([^.,\n!?]+)/i
-    ];
-    
-    for (const pattern of preferencePatterns) {
-      const match = userText.match(pattern);
-      if (match && match[1]) {
-        const preference = match[0].trim();
-        await addPersistentMemoryDB(chatId, `User preference: ${preference}`, 'medium');
-        console.log(`[FACT-EXTRACT] ✅ Saved preference: ${preference}`);
-        facts.push(`preference: ${preference}`);
-      }
-    }
-    
-    // Extract important statements
-    if (userText.includes('remember') || userText.includes('important')) {
-      await addPersistentMemoryDB(chatId, `Important: ${userText}`, 'high');
-      console.log(`[FACT-EXTRACT] ✅ Saved important statement`);
-      facts.push('important statement');
-    }
-    
-    if (facts.length > 0) {
-      console.log(`[FACT-EXTRACT] ✅ Extracted ${facts.length} facts: ${facts.join(', ')}`);
-    } else {
-      console.log(`[FACT-EXTRACT] No facts found in this conversation`);
-    }
-    
-    return facts;
-    
-  } catch (error) {
-    console.error('[FACT-EXTRACT] Error:', error.message);
-    return [];
-  }
-}
-
-/** Save conversation to memory and extract facts */
-async function saveToMemory(chatId, conversationData) {
-  try {
-    console.log(`[Memory] Saving conversation to memory for user: ${chatId}`);
-    
-    const userMessage = asText(conversationData.user || conversationData.userMessage || '');
-    const assistantResponse = asText(conversationData.assistant || conversationData.assistantResponse || '');
-    
-    if (!userMessage || !assistantResponse) {
-      console.log('[Memory] Incomplete conversation data, skipping save');
-      return { saved: false, reason: 'incomplete_data' };
-    }
-    
-    // Save to database using your existing database function
-    const { saveConversationDB } = require('./database');
-    
-    await saveConversationDB(chatId, userMessage, assistantResponse, {
-      messageType: conversationData.messageType || 'text',
-      timestamp: conversationData.timestamp || new Date().toISOString(),
-      model: conversationData.model || 'gpt-5'
-    });
-    
-    console.log('[Memory] Conversation saved to database');
-    
-    // 🎯 AUTOMATIC FACT EXTRACTION
-    await extractFactsFromConversation(chatId, userMessage);
-    
-    return { 
-      saved: true, 
-      method: 'database'
-    };
-    
-  } catch (error) {
-    console.error('[Memory] Save to memory error:', error.message);
-    return { saved: false, reason: 'error', error: error.message };
-  }
-}
-
-// 🎯 ADD THIS NEW FUNCTION TO memory.js
-async function extractFactsFromConversation(chatId, userMessage) {
-  try {
-    const text = asText(userMessage).toLowerCase();
-    
-    // Extract confirmed name (high priority)
-    if (text.includes('my name is') || text.includes('confirmed name')) {
-      const nameMatch = userMessage.match(/my (?:confirmed )?name is ([^.,\n!?]+)/i);
-      if (nameMatch && nameMatch[1]) {
-        const name = nameMatch[1].trim();
-        if (name.length > 1 && name.length < 50) {
-          // Clear old conflicting names first
-          await clearOldFacts(chatId, 'name');
-          // Save new confirmed name
-          await addPersistentMemoryDB(chatId, `CONFIRMED NAME: ${name}`, 'high');
-          console.log(`[FACT-EXTRACT] ✅ Saved confirmed name: ${name}`);
-          return;
-        }
-      }
-    }
-    
-    // Extract business/work
-    if (text.includes('work at') || text.includes('my business') || text.includes('my company')) {
-      const businessMatch = userMessage.match(/(?:work at|my business is|my company is) ([^.,\n!?]+)/i);
-      if (businessMatch && businessMatch[1]) {
-        const business = businessMatch[1].trim();
-        await addPersistentMemoryDB(chatId, `BUSINESS: ${business}`, 'high');
-        console.log(`[FACT-EXTRACT] ✅ Saved business: ${business}`);
-      }
-    }
-    
-  } catch (error) {
-    console.error('[FACT-EXTRACT] Error:', error.message);
-  }
-}
-
-// 🎯 HELPER FUNCTION TO CLEAR OLD CONFLICTING FACTS
-async function clearOldFacts(chatId, factType) {
-  try {
-    const { pool } = require('./database');
-    
-    if (factType === 'name') {
-      // Mark old name entries as low importance
-      await pool.query(
-        `UPDATE persistent_memories 
-         SET importance = 'low' 
-         WHERE chat_id = $1 AND (fact ILIKE '%name%' OR fact ILIKE '%called%')`,
-        [chatId]
-      );
-      console.log(`[CLEANUP] Marked old name facts as low importance`);
-    }
-  } catch (error) {
-    console.error('[CLEANUP] Error:', error.message);
-  }
-}
-
-/** Clean up old memories to prevent overload */
-async function cleanupMemories(chatId) {
-  try {
-    const { pool } = require('./database');
-    
-    // Keep only important memories and recent ones
-    await pool.query(`
-      DELETE FROM persistent_memories 
-      WHERE chat_id = $1 
-      AND importance = 'low' 
-      AND timestamp < NOW() - INTERVAL '7 days'
-    `, [chatId]);
-    
-    // Limit total memories per user
-    await pool.query(`
-      DELETE FROM persistent_memories 
-      WHERE chat_id = $1 AND id NOT IN (
-        SELECT id FROM persistent_memories 
-        WHERE chat_id = $1 
-        ORDER BY 
-          CASE importance 
-            WHEN 'high' THEN 3
-            WHEN 'medium' THEN 2 
-            WHEN 'low' THEN 1 
-          END DESC,
-          timestamp DESC 
-        LIMIT 20
-      )
-    `, [chatId]);
-    
-    console.log(`🧹 Memory cleanup completed for ${chatId}`);
-    return true;
-  } catch (error) {
-    console.error('Memory cleanup error:', error.message);
-    return false;
-  }
-}
-
-/** Compatibility function for dualCommandSystem calls */
-async function buildMemoryContext(chatId, options = {}) {
-  try {
-    // Handle different call patterns from dualCommandSystem
-    const message = typeof options === 'string' ? options : '';
-    const limit = options.limit || 5;
-    const maxMessages = options.maxMessages || 5;
-    
-    console.log(`[COMPAT] Building memory context - limit: ${limit}, maxMessages: ${maxMessages}`);
-    
-    return await buildConversationContext(chatId, message);
-  } catch (error) {
-    console.error('[COMPAT] Memory context error:', error.message);
-    return `Memory context unavailable for ${chatId}`;
-  }
-}
 // -----------------------------------------------------------------------------
 // 🎯 EXPORT ALL FUNCTIONS
 // -----------------------------------------------------------------------------
 module.exports = {
   // Main memory functions
   buildConversationContext,
-  saveToMemory,
-  buildMemoryContext,
-  extractFactsFromConversation,  // Add this
-  clearOldFacts,                 // Add this
-  extractAndSaveFactsFromConversation,
   extractAndSaveFacts,
-  
+
   // Analytics functions
   inferEnhancedRiskTolerance,
   getConversationIntelligenceAnalytics,
@@ -1495,7 +1353,6 @@ module.exports = {
   // Utility functions
   asText,
   lowerSafe,
-  cleanupMemories,
   excerptSafe,
   safeDivision,
   daysBetween,
