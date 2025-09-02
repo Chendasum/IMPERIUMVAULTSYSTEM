@@ -371,7 +371,7 @@ function getCurrentCambodiaDateTime() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// GPT-5 EXECUTION WITH FALLBACK SYSTEM
+// GPT-5 EXECUTION WITH ENHANCED LARGE TEXT HANDLING
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeThroughGPT5System(userMessage, queryAnalysis, context = null, chatId = null) {
@@ -380,6 +380,7 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
   try {
     const safeMessage = safeString(userMessage);
     console.log(`[GPT-5] Executing: ${queryAnalysis.gpt5Model} (${queryAnalysis.reasoning_effort || 'none'} reasoning)`);
+    console.log(`[GPT-5] Message length: ${safeMessage.length} chars, Priority: ${queryAnalysis.priority}`);
     
     // Handle datetime queries without AI (cost saving)
     if (queryAnalysis.priority === 'speed' && /^(what time|what's the time|current time)/i.test(safeMessage)) {
@@ -398,20 +399,42 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
     // Build enhanced message with context
     let enhancedMessage = safeMessage;
     
-    // Add Cambodia time context for non-speed queries
-    if (queryAnalysis.priority !== 'speed' && queryAnalysis.priority !== 'chat') {
+    // 🎯 ENHANCED: Smart context handling for large text
+    const isLargeContent = queryAnalysis.priority === 'large_content' || safeMessage.length > 500;
+    
+    if (!isLargeContent && queryAnalysis.priority !== 'speed' && queryAnalysis.priority !== 'chat') {
+      // Add Cambodia time context for normal queries
       const cambodiaTime = getCurrentCambodiaDateTime();
       enhancedMessage = `Current time: ${cambodiaTime.date}, ${cambodiaTime.time} Cambodia (${cambodiaTime.timezone})\nBusiness hours: ${cambodiaTime.isBusinessHours ? 'Yes' : 'No'}\n\n${safeMessage}`;
     }
     
-    // Add memory context if available
+    // 🎯 ENHANCED: Smart memory context for large content
     if (context && safeString(context).length > 0) {
       const safeContext = safeString(context);
-      const maxContextLength = Math.min(safeContext.length, 5000);
-      enhancedMessage += `\n\nCONTEXT:\n${safeSubstring(safeContext, 0, maxContextLength)}`;
+      
+      if (isLargeContent) {
+        // For large content, use minimal context (only most important facts)
+        const maxContextLength = Math.min(safeContext.length, 1000);
+        const contextLines = safeContext.split('\n');
+        const importantLines = contextLines.filter(line => 
+          line.includes('CONFIRMED NAME:') || 
+          line.includes('[HIGH]') || 
+          line.includes('BUSINESS:')
+        );
+        
+        if (importantLines.length > 0) {
+          enhancedMessage += `\n\nIMPORTANT CONTEXT:\n${importantLines.slice(0, 3).join('\n')}`;
+        }
+        console.log('[GPT-5] Using minimal context for large content');
+      } else {
+        // For normal content, use full context
+        const maxContextLength = Math.min(safeContext.length, 5000);
+        enhancedMessage += `\n\nCONTEXT:\n${safeSubstring(safeContext, 0, maxContextLength)}`;
+        console.log('[GPT-5] Using full context for normal content');
+      }
     }
     
-    // Build options for API call
+    // 🎯 ENHANCED: Better options for large content
     const options = { model: queryAnalysis.gpt5Model };
     
     if (queryAnalysis.gpt5Model === CONFIG.MODELS.CHAT) {
@@ -422,8 +445,17 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
       // Responses API uses max_completion_tokens  
       if (queryAnalysis.reasoning_effort) options.reasoning_effort = queryAnalysis.reasoning_effort;
       if (queryAnalysis.verbosity) options.verbosity = queryAnalysis.verbosity;
-      if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+      if (queryAnalysis.max_completion_tokens) {
+        // Increase token limit for large content
+        const tokenLimit = isLargeContent ? 
+          Math.min(16000, queryAnalysis.max_completion_tokens * 1.5) : 
+          queryAnalysis.max_completion_tokens;
+        options.max_completion_tokens = tokenLimit;
+      }
     }
+    
+    console.log(`[GPT-5] Enhanced message length: ${enhancedMessage.length} chars`);
+    console.log(`[GPT-5] Token limit: ${options.max_completion_tokens || options.max_tokens || 'default'}`);
     
     // Execute GPT-5 API call
     const result = await openaiClient.getGPT5Analysis(enhancedMessage, options);
@@ -443,7 +475,8 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
       reasoning_effort: queryAnalysis.reasoning_effort,
       verbosity: queryAnalysis.verbosity,
       memoryUsed: !!context,
-      success: true
+      success: true,
+      isLargeContent: isLargeContent
     };
     
   } catch (error) {
@@ -526,7 +559,7 @@ console.log('PIECE 4 LOADED: GPT-5 execution engine with fallback system ready')
 // Copy-paste this after Piece 4
 
 // ════════════════════════════════════════════════════════════════════════════
-// SMART MEMORY CONTEXT BUILDER (FIXES YOUR TYPE ERRORS)
+// SMART MEMORY CONTEXT BUILDER (FIXED FUNCTION SIGNATURE)
 // ════════════════════════════════════════════════════════════════════════════
 
 async function buildMemoryContext(chatId, contextLevel = 'full') {
@@ -555,23 +588,24 @@ async function buildMemoryContext(chatId, contextLevel = 'full') {
         console.log('[Memory] Loading full context');
     }
     
-    // Try memory module first
+    // 🎯 FIXED: Call memory module with correct signature
     if (memory && typeof memory.buildConversationContext === 'function') {
       try {
-        const context = await memory.buildConversationContext(safeChatId, { 
-          limit: contextLimit, 
-          maxMessages: messageLimit 
-        });
+        // Call with just chatId and empty message (correct signature)
+        const context = await memory.buildConversationContext(safeChatId, '');
         if (context && safeString(context).length > 0) {
           console.log(`[Memory] Context loaded: ${context.length} chars via memory module`);
-          return safeSubstring(context, 0, contextLimit);
+          // Truncate to contextLevel limit
+          return context.length > contextLimit ? 
+            context.substring(0, contextLimit) + '\n[Context truncated]' : 
+            context;
         }
       } catch (memoryError) {
         console.warn('[Memory] Module error:', memoryError.message);
       }
     }
     
-    // Fallback to database (preserves your PostgreSQL connection)
+    // 🎯 ENHANCED: Fallback with better error handling
     if (database && typeof database.getConversationHistoryDB === 'function') {
       try {
         const history = await database.getConversationHistoryDB(safeChatId, messageLimit);
@@ -579,16 +613,23 @@ async function buildMemoryContext(chatId, contextLevel = 'full') {
           let context = 'Recent conversation:\n';
           let totalLength = context.length;
           
-          for (const conv of history) {
+          // Process only the most recent conversations
+          const recentHistory = history.slice(-messageLimit);
+          
+          for (const conv of recentHistory) {
             if (!conv || typeof conv !== 'object') continue;
             
-            // Type-safe extraction (fixes your errors)
+            // Type-safe extraction
             const userMsg = safeString(conv.user_message || conv.userMessage || '');
-            const assistantMsg = safeString(conv.assistant_response || conv.assistantResponse || '');
+            const assistantMsg = safeString(conv.gpt_response || conv.assistant_response || conv.assistantResponse || '');
             
             if (userMsg.length === 0) continue;
             
-            const convText = `User: ${safeSubstring(userMsg, 0, 200)}\nAssistant: ${safeSubstring(assistantMsg, 0, 300)}\n\n`;
+            // Smart truncation based on context level
+            const userTrunc = contextLevel === 'minimal' ? 100 : 200;
+            const assistantTrunc = contextLevel === 'minimal' ? 150 : 300;
+            
+            const convText = `User: ${safeSubstring(userMsg, 0, userTrunc)}${userMsg.length > userTrunc ? '...' : ''}\nAssistant: ${safeSubstring(assistantMsg, 0, assistantTrunc)}${assistantMsg.length > assistantTrunc ? '...' : ''}\n\n`;
             
             if (totalLength + convText.length > contextLimit) break;
             
@@ -596,7 +637,7 @@ async function buildMemoryContext(chatId, contextLevel = 'full') {
             totalLength += convText.length;
           }
           
-          console.log(`[Memory] Context built: ${context.length} chars via database (${history.length} records)`);
+          console.log(`[Memory] Context built: ${context.length} chars via database (${recentHistory.length} records)`);
           return safeSubstring(context, 0, contextLimit);
         }
       } catch (dbError) {
@@ -604,12 +645,12 @@ async function buildMemoryContext(chatId, contextLevel = 'full') {
       }
     }
     
-    console.log('[Memory] No context available');
-    return '';
+    console.log('[Memory] No context available - returning minimal context');
+    return `Context for user ${safeChatId}`;
     
   } catch (error) {
     console.error('[Memory] Context building failed:', error.message);
-    return '';
+    return `Basic context for user ${chatId}`;
   }
 }
 
