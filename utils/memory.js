@@ -1,37 +1,42 @@
-// utils/memory.js - Complete Memory System with PostgreSQL Integration (Hardened)
-// -----------------------------------------------------------------------------
+// utils/memory.js — Complete Memory System with PostgreSQL Integration (Hardened)
+"use strict";
 require("dotenv").config();
 
-// Import database functions
-const {
-  getConversationHistoryDB,
-  getPersistentMemoryDB,
-  addPersistentMemoryDB,
-  getUserProfileDB,
-  saveConversationDB, // (unused here but kept for compatibility)
-  connectionStats
-} = require("./database");
+/* -------------------------------------------------------------------------- */
+/* DB ADAPTER (feature-detect functions to keep compatibility)                */
+/* -------------------------------------------------------------------------- */
 
-// 🧠 ENHANCED MEMORY SYSTEM CONFIGURATION
+let db = {};
+try { db = require("./database"); } catch { db = {}; }
+
+const getConversationHistoryDB = db.getConversationHistoryDB || (async () => []);
+const getPersistentMemoryDB   = db.getPersistentMemoryDB   || (async () => []);
+const addPersistentMemoryDB   = db.addPersistentMemoryDB   || (async () => {});
+const getUserProfileDB        = db.getUserProfileDB        || (async () => null);
+const saveConversationDB      = db.saveConversationDB      || (async () => {});
+const connectionStats         = db.connectionStats         || {};
+const pgPool                  = db.pool && typeof db.pool.query === "function" ? db.pool : null;
+
+/* -------------------------------------------------------------------------- */
+/* CONFIG                                                                     */
+/* -------------------------------------------------------------------------- */
+
 const MEMORY_CONFIG = {
-  MAX_CONTEXT_LENGTH: 8000, // Maximum context for GPT-5
-  MAX_CONVERSATIONS: 10, // Recent conversations to include
-  MAX_MEMORIES: 15, // Persistent memories to include
-  MIN_IMPORTANCE_THRESHOLD: 0.3, // Minimum importance to include
-  CONTEXT_DECAY_DAYS: 30, // Days before context becomes less relevant
-  MEMORY_WEIGHT_MULTIPLIER: 2.0, // Weight persistent memories higher
-  CONVERSATION_WEIGHT: 1.0, // Weight for recent conversations
-  PATTERN_DETECTION_MIN: 3 // Minimum occurrences to detect pattern
+  MAX_CONTEXT_LENGTH: 8000,      // chars
+  MAX_CONVERSATIONS: 10,         // recent convos included
+  MAX_MEMORIES: 15,              // persistent memories included
+  CONTEXT_DECAY_DAYS: 30,        // recency decay
+  MEMORY_WEIGHT_MULTIPLIER: 2.0, // persistent > convo
+  PATTERN_DETECTION_MIN: 3,      // min occurrences for a pattern
 };
 
-console.log("🧠 Enhanced Memory System with PostgreSQL Integration loaded");
-console.log(`   Max Context: ${MEMORY_CONFIG.MAX_CONTEXT_LENGTH} chars`);
-console.log(`   Max Conversations: ${MEMORY_CONFIG.MAX_CONVERSATIONS}`);
-console.log(`   Max Memories: ${MEMORY_CONFIG.MAX_MEMORIES}`);
+console.log("🧠 Memory module loaded with PostgreSQL integration");
+console.log(`   Context cap: ${MEMORY_CONFIG.MAX_CONTEXT_LENGTH} chars`);
 
-// -----------------------------------------------------------------------------
-// 🔧 SAFETY HELPERS — normalize any input to text to avoid .toLowerCase/.substring errors
-// -----------------------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/* SAFE TEXT HELPERS (avoid .toLowerCase/.substring crashes)                  */
+/* -------------------------------------------------------------------------- */
+
 function asText(m) {
   if (m == null) return "";
   const t = typeof m;
@@ -41,1371 +46,639 @@ function asText(m) {
   if (t === "object") {
     if (typeof m.content === "string") return m.content;
     if (Array.isArray(m.content)) {
-      return m.content
-        .map((c) =>
-          typeof c === "string"
-            ? c
-            : typeof c?.text === "string"
-            ? c.text
-            : typeof c?.content === "string"
-            ? c.content
-            : ""
-        )
-        .join(" ");
+      return m.content.map(c => typeof c === "string" ? c :
+        typeof c?.text === "string" ? c.text :
+        typeof c?.content === "string" ? c.content : "").join(" ");
     }
-    if (typeof m.text === "string") return m.text; // Telegram-style
-    if (typeof m.caption === "string") return m.caption; // media captions
-    if (typeof m.message === "object") return asText(m.message); // nested envelope
-    try {
-      return JSON.stringify(m);
-    } catch {
-      return "";
-    }
+    if (typeof m.text === "string") return m.text;
+    if (typeof m.caption === "string") return m.caption;
+    if (typeof m.message === "object") return asText(m.message);
+    try { return JSON.stringify(m); } catch { return ""; }
   }
   return "";
 }
-function lowerSafe(m) {
-  return asText(m).toLowerCase();
-}
-function excerptSafe(m, n = 300) {
-  const s = asText(m);
-  return s.substring(0, n);
-}
+const lowerSafe   = (m) => asText(m).toLowerCase();
+const excerptSafe = (m, n = 300) => asText(m).substring(0, n);
 
-// -----------------------------------------------------------------------------
-// 🔧 UTILITY FUNCTIONS
-// -----------------------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/* MATH/DATE UTILS                                                            */
+/* -------------------------------------------------------------------------- */
 
-/** Safe division to prevent division by zero errors */
-function safeDivision(numerator, denominator, defaultValue = 0) {
-  if (denominator === 0 || isNaN(denominator) || !isFinite(denominator)) {
-    return defaultValue;
-  }
-  const result = numerator / denominator;
-  return isNaN(result) || !isFinite(result) ? defaultValue : result;
+function safeDivision(n, d, def = 0) {
+  if (!isFinite(n) || !isFinite(d) || d === 0) return def;
+  const r = n / d;
+  return !isFinite(r) ? def : r;
 }
 
-/** Calculate days between two dates */
-function daysBetween(date1, date2) {
-  const oneDay = 24 * 60 * 60 * 1000;
-  return Math.abs((new Date(date1) - new Date(date2)) / oneDay);
+function daysBetween(a, b) {
+  const ms = 24 * 60 * 60 * 1000;
+  return Math.abs((new Date(a) - new Date(b)) / ms);
 }
 
-/** Calculate relevance score based on recency, importance, and topical overlap */
-function calculateRelevance(
-  timestamp,
-  importance = "medium",
-  currentMessage = "",
-  memoryText = ""
-) {
-  const daysOld = daysBetween(new Date(), new Date(timestamp));
+/**
+ * Relevance = decay(recency) * importance * topical_boost
+ */
+function calculateRelevance(timestamp, importance = "medium", currentMessage = "", memoryText = "") {
+  const daysOld     = daysBetween(new Date(), new Date(timestamp));
   const decayFactor = Math.max(0.1, 1 - daysOld / MEMORY_CONFIG.CONTEXT_DECAY_DAYS);
 
-  const importanceScores = { high: 1.0, medium: 0.7, low: 0.4 };
-  const importanceScore = importanceScores[importance] || 0.5;
+  const weight = { high: 1.0, medium: 0.7, low: 0.4 }[importance] ?? 0.5;
 
-  // Boost relevance if current message relates to this memory text
-  let contextBoost = 1.0;
+  let boost = 1.0;
   const msg = lowerSafe(currentMessage);
   const mem = typeof memoryText === "string" ? memoryText.toLowerCase() : "";
-
   if (msg && mem) {
     const msgWords = msg.split(/\s+/);
-    const memSet = new Set(mem.split(/\s+/).filter((w) => w.length > 3));
-    const commonCount = msgWords.filter((w) => w.length > 3 && memSet.has(w)).length;
-    // Cap boost to avoid runaway
-    contextBoost = 1.0 + Math.min(1.0, commonCount * 0.2);
+    const memSet   = new Set(mem.split(/\s+/).filter(w => w.length > 3));
+    const common   = msgWords.filter(w => w.length > 3 && memSet.has(w)).length;
+    boost = 1.0 + Math.min(1.0, common * 0.2);  // cap
   }
-
-  return decayFactor * importanceScore * contextBoost;
+  return decayFactor * weight * boost;
 }
 
-// -----------------------------------------------------------------------------
-// 🔍 ADVANCED ANALYTICS FUNCTIONS
-// -----------------------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/* ANALYTICS                                                                  */
+/* -------------------------------------------------------------------------- */
 
-/** Infer user's risk tolerance from conversations and memories */
 function inferEnhancedRiskTolerance(conversations, memories) {
   try {
-    console.log("🔍 Inferring risk tolerance from user data...");
-
-    // Default risk tolerance
-    let riskTolerance = {
-      level: "moderate",
-      score: 50,
-      confidence: 0.3,
-      indicators: [],
-      evidence: []
+    let risk = { level: "moderate", score: 50, confidence: 0.3, indicators: [], evidence: [] };
+    const dict = {
+      aggressive: { keywords: ["aggressive","high risk","maximum returns","speculative","volatile","leverage","options","futures","crypto","startup"], weight: 3 },
+      moderate:   { keywords: ["balanced","moderate","diversified","stable","long term","index fund","etf","mixed portfolio"], weight: 2 },
+      conservative:{keywords:["safe","conservative","low risk","capital preservation","bonds","savings","secure","guaranteed","pension"], weight: 1 }
     };
+    let A=0,M=0,C=0,S=0;
 
-    // Risk indicators from keywords
-    const riskKeywords = {
-      aggressive: {
-        keywords: [
-          "aggressive",
-          "high risk",
-          "maximum returns",
-          "speculative",
-          "volatile",
-          "leverage",
-          "options",
-          "futures",
-          "crypto",
-          "startup"
-        ],
-        weight: 3
-      },
-      moderate: {
-        keywords: [
-          "balanced",
-          "moderate",
-          "diversified",
-          "stable",
-          "long term",
-          "index fund",
-          "etf",
-          "mixed portfolio"
-        ],
-        weight: 2
-      },
-      conservative: {
-        keywords: [
-          "safe",
-          "conservative",
-          "low risk",
-          "capital preservation",
-          "bonds",
-          "savings",
-          "secure",
-          "guaranteed",
-          "pension"
-        ]
-      }
-    };
-
-    let aggressiveScore = 0;
-    let moderateScore = 0;
-    let conservativeScore = 0;
-    let totalSignals = 0;
-
-    // Analyze conversations
-    if (conversations && conversations.length > 0) {
-      conversations.forEach((conv) => {
-        const userText = lowerSafe(conv?.user_message || "");
-        const aiText = lowerSafe(conv?.gpt_response || "");
-        const fullText = `${userText} ${aiText}`.trim();
-
-        // Check for risk keywords
-        Object.keys(riskKeywords).forEach((riskLevel) => {
-          const config = riskKeywords[riskLevel];
-          const weight = config.weight || 1;
-
-          config.keywords.forEach((keyword) => {
-            if (fullText.includes(keyword)) {
-              switch (riskLevel) {
-                case "aggressive":
-                  aggressiveScore += weight;
-                  riskTolerance.evidence.push(
-                    `Aggressive: "${keyword}" in conversation`
-                  );
-                  break;
-                case "moderate":
-                  moderateScore += weight;
-                  riskTolerance.evidence.push(
-                    `Moderate: "${keyword}" in conversation`
-                  );
-                  break;
-                case "conservative":
-                  conservativeScore += weight;
-                  riskTolerance.evidence.push(
-                    `Conservative: "${keyword}" in conversation`
-                  );
-                  break;
-              }
-              totalSignals++;
-            }
-          });
-        });
-      });
-    }
-
-    // Analyze persistent memories (weighted higher)
-    if (memories && memories.length > 0) {
-      memories.forEach((memory) => {
-        const memoryText = lowerSafe(memory?.fact || "");
-        const memoryWeight = MEMORY_CONFIG.MEMORY_WEIGHT_MULTIPLIER;
-
-        // Direct risk tolerance statements
-        if (memoryText.includes("risk tolerance") || memoryText.includes("investment style")) {
-          if (memoryText.includes("aggressive") || memoryText.includes("high risk")) {
-            aggressiveScore += 3 * memoryWeight;
-            riskTolerance.evidence.push(`Memory: Direct high risk preference`);
-            totalSignals += 2;
-          } else if (memoryText.includes("conservative") || memoryText.includes("low risk")) {
-            conservativeScore += 3 * memoryWeight;
-            riskTolerance.evidence.push(`Memory: Direct conservative preference`);
-            totalSignals += 2;
-          } else {
-            moderateScore += 2 * memoryWeight;
-            riskTolerance.evidence.push(`Memory: Direct moderate preference`);
-            totalSignals += 2;
+    (conversations||[]).forEach(conv=>{
+      const txt = `${lowerSafe(conv.user_message)} ${lowerSafe(conv.gpt_response)}`;
+      for (const [lvl,{keywords,weight}] of Object.entries(dict)) {
+        keywords.forEach(k=>{
+          if (txt.includes(k)) {
+            if (lvl==="aggressive") A+=weight;
+            else if (lvl==="moderate") M+=weight;
+            else C+=weight;
+            risk.evidence.push(`${lvl}: "${k}"`);
+            S++;
           }
-        }
-
-        // Check for general risk keywords in memories
-        Object.keys(riskKeywords).forEach((riskLevel) => {
-          const config = riskKeywords[riskLevel];
-          const weight = (config.weight || 1) * memoryWeight;
-
-          config.keywords.forEach((keyword) => {
-            if (memoryText.includes(keyword)) {
-              switch (riskLevel) {
-                case "aggressive":
-                  aggressiveScore += weight;
-                  break;
-                case "moderate":
-                  moderateScore += weight;
-                  break;
-                case "conservative":
-                  conservativeScore += weight;
-                  break;
-              }
-              totalSignals++;
-            }
-          });
         });
-      });
-    }
-
-    // Determine risk tolerance based on scores
-    if (totalSignals > 0) {
-      const maxScore = Math.max(aggressiveScore, moderateScore, conservativeScore);
-
-      if (maxScore === aggressiveScore && aggressiveScore > 0) {
-        riskTolerance.level = "aggressive";
-        riskTolerance.score = Math.min(95, 70 + aggressiveScore * 3);
-        riskTolerance.confidence = Math.min(0.9, 0.4 + totalSignals * 0.05);
-        riskTolerance.indicators = [
-          "High risk tolerance detected",
-          "Prefers growth over stability"
-        ];
-      } else if (maxScore === conservativeScore && conservativeScore > 0) {
-        riskTolerance.level = "conservative";
-        riskTolerance.score = Math.max(5, 30 - conservativeScore * 3);
-        riskTolerance.confidence = Math.min(0.9, 0.4 + totalSignals * 0.05);
-        riskTolerance.indicators = [
-          "Low risk tolerance detected",
-          "Prefers stability over growth"
-        ];
-      } else {
-        riskTolerance.level = "moderate";
-        riskTolerance.score = 40 + Math.min(20, moderateScore * 2) + Math.random() * 10;
-        riskTolerance.confidence = Math.min(0.8, 0.3 + totalSignals * 0.04);
-        riskTolerance.indicators = ["Balanced risk tolerance", "Seeks growth with stability"];
       }
+    });
+
+    (memories||[]).forEach(m=>{
+      const text = lowerSafe(m.fact||"");
+      const W = MEMORY_CONFIG.MEMORY_WEIGHT_MULTIPLIER;
+      if (text.includes("risk tolerance") || text.includes("investment style")) {
+        if (text.includes("aggressive") || text.includes("high risk")) { A += 3*W; S += 2; }
+        else if (text.includes("conservative") || text.includes("low risk")) { C += 3*W; S += 2; }
+        else { M += 2*W; S += 2; }
+      }
+      for (const [lvl,{keywords,weight}] of Object.entries(dict)) {
+        keywords.forEach(k=>{
+          if (text.includes(k)) {
+            if (lvl==="aggressive") A+=weight*W;
+            else if (lvl==="moderate") M+=weight*W;
+            else C+=weight*W;
+            S++;
+          }
+        });
+      }
+    });
+
+    if (S>0) {
+      const max = Math.max(A,M,C);
+      if (max===A && A>0)  { risk.level="aggressive";   risk.score=Math.min(95,70+A*3); risk.confidence=Math.min(0.9,0.4+S*0.05); risk.indicators=["High risk tolerance","Prefers growth over stability"]; }
+      else if (max===C&&C>0){ risk.level="conservative"; risk.score=Math.max(5,30-C*3);  risk.confidence=Math.min(0.9,0.4+S*0.05); risk.indicators=["Low risk tolerance","Prefers stability over growth"]; }
+      else                  { risk.level="moderate";     risk.score=40+Math.min(20,M*2)+Math.random()*10; risk.confidence=Math.min(0.8,0.3+S*0.04); risk.indicators=["Balanced risk tolerance"]; }
     }
-
-    // Add signal strength indicators
-    riskTolerance.indicators.push(`Analyzed ${totalSignals} risk signals`);
-    riskTolerance.indicators.push(
-      `Confidence: ${(riskTolerance.confidence * 100).toFixed(0)}%`
-    );
-
-    console.log(
-      `✅ Risk tolerance inferred: ${riskTolerance.level} (score: ${riskTolerance.score.toFixed(
-        0
-      )}, confidence: ${riskTolerance.confidence.toFixed(2)})`
-    );
-
-    return riskTolerance;
-  } catch (error) {
-    console.error("❌ Risk tolerance inference error:", error.message);
-    return {
-      level: "moderate",
-      score: 50,
-      confidence: 0.1,
-      indicators: ["Error in risk analysis"],
-      evidence: [],
-      error: error.message
-    };
+    risk.indicators.push(`Analyzed ${S} signals`);
+    return risk;
+  } catch (e) {
+    console.error("Risk tolerance error:", e.message);
+    return { level:"moderate", score:50, confidence:0.1, indicators:["Error"], evidence:[], error:e.message };
   }
 }
 
-/** Generate conversation intelligence analytics */
 function getConversationIntelligenceAnalytics(conversations, memories) {
   try {
-    console.log("📊 Generating conversation intelligence analytics...");
-
     const analytics = {
-      conversationFrequency: 0,
-      avgResponseLength: 0,
-      avgUserMessageLength: 0,
-      topicDiversity: 0,
-      engagementScore: 0,
-      memoryRetention: 0,
-      strategicFocus: "general",
-      communicationStyle: "balanced",
-      confidenceLevel: 0.3,
-      timeSpan: 0,
-      totalInteractions: 0,
-      recommendations: [],
-      dataQuality: "limited"
+      conversationFrequency:0, avgResponseLength:0, avgUserMessageLength:0,
+      topicDiversity:0, engagementScore:0, memoryRetention:0,
+      strategicFocus:"general", communicationStyle:"balanced",
+      confidenceLevel:0.3, timeSpan:0, totalInteractions:0,
+      recommendations:[], dataQuality:"limited"
     };
 
-    // Conversation frequency analysis
-    if (conversations && conversations.length > 0) {
+    if (conversations?.length) {
       analytics.totalInteractions = conversations.length;
-
-      // Calculate time span and frequency
-      const timestamps = conversations
-        .map((conv) => new Date(conv.timestamp))
-        .filter((d) => !isNaN(d))
-        .sort((a, b) => a - b);
-
-      if (timestamps.length > 1) {
-        const firstConv = timestamps[0];
-        const lastConv = timestamps[timestamps.length - 1];
-        const daysDiff = Math.max(1, daysBetween(firstConv, lastConv));
-        analytics.timeSpan = daysDiff;
-        analytics.conversationFrequency = safeDivision(conversations.length, daysDiff, 0);
+      const ts = conversations.map(c=>new Date(c.timestamp)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
+      if (ts.length>1) {
+        const days = Math.max(1, daysBetween(ts[0], ts[ts.length-1]));
+        analytics.timeSpan = days;
+        analytics.conversationFrequency = safeDivision(conversations.length, days, 0);
       }
+      const respLens = conversations.map(c=>asText(c.gpt_response).length);
+      const userLens = conversations.map(c=>asText(c.user_message).length);
+      analytics.avgResponseLength   = safeDivision(respLens.reduce((s,n)=>s+n,0), respLens.length, 0);
+      analytics.avgUserMessageLength= safeDivision(userLens.reduce((s,n)=>s+n,0), userLens.length, 0);
 
-      // Response length analysis
-      const responseLengths = conversations.map((conv) => (conv.gpt_response || "").length);
-      const userMessageLengths = conversations.map((conv) => (conv.user_message || "").length);
-
-      analytics.avgResponseLength = safeDivision(
-        responseLengths.reduce((sum, length) => sum + length, 0),
-        responseLengths.length,
-        0
-      );
-
-      analytics.avgUserMessageLength = safeDivision(
-        userMessageLengths.reduce((sum, length) => sum + length, 0),
-        userMessageLengths.length,
-        0
-      );
-
-      // Topic diversity analysis
-      const allWords = new Set();
       const topicWords = new Set();
-
-      conversations.forEach((conv) => {
-        const userWords = lowerSafe(conv.user_message || "").match(/\b\w{4,}\b/g) || [];
-        userWords.forEach((word) => {
-          allWords.add(word);
-          // Filter for meaningful topic words
-          if (
-            ![
-              "this",
-              "that",
-              "with",
-              "from",
-              "they",
-              "have",
-              "been",
-              "were",
-              "what",
-              "when",
-              "where",
-              "which",
-              "could",
-              "would",
-              "should"
-            ].includes(word)
-          ) {
-            topicWords.add(word);
-          }
-        });
+      (conversations||[]).forEach(c=>{
+        (lowerSafe(c.user_message).match(/\b\w{4,}\b/g)||[])
+          .filter(w=>!["this","that","with","from","they","have","been","were","what","when","where","which","could","would","should"].includes(w))
+          .forEach(w=>topicWords.add(w));
       });
+      analytics.topicDiversity = Math.min(10, topicWords.size/10);
 
-      analytics.topicDiversity = Math.min(10, topicWords.size / 10); // Scale to 0-10
-
-      // Engagement score calculation
-      const engagementFactors = [
-        Math.min(2, analytics.avgUserMessageLength / 50), // Message depth
-        Math.min(2, analytics.conversationFrequency * 5), // Frequency
-        Math.min(2, analytics.topicDiversity), // Topic variety
-        Math.min(2, conversations.length / 10), // Total conversations
-        Math.min(2, topicWords.size / 20) // Vocabulary richness
+      const factors = [
+        Math.min(2, analytics.avgUserMessageLength/50),
+        Math.min(2, analytics.conversationFrequency*5),
+        Math.min(2, analytics.topicDiversity),
+        Math.min(2, conversations.length/10),
+        Math.min(2, topicWords.size/20),
       ];
-
-      analytics.engagementScore = Math.min(
-        10,
-        engagementFactors.reduce((sum, factor) => sum + factor, 0)
-      );
+      analytics.engagementScore = Math.min(10, factors.reduce((s,f)=>s+f,0));
     }
 
-    // Memory retention analysis
-    if (memories && memories.length > 0) {
-      const importanceWeights = { high: 3, medium: 2, low: 1 };
-      const totalWeight = memories.reduce((sum, memory) => {
-        return sum + (importanceWeights[memory.importance] || 1);
-      }, 0);
-
-      const avgWeight = safeDivision(totalWeight, memories.length, 0);
-      analytics.memoryRetention = Math.min(10, avgWeight * 2 + memories.length * 0.3);
+    if (memories?.length) {
+      const w = { high:3, medium:2, low:1 };
+      const totalW = memories.reduce((s,m)=>s+(w[m.importance]||1),0);
+      const avgW = safeDivision(totalW, memories.length, 0);
+      analytics.memoryRetention = Math.min(10, avgW*2 + memories.length*0.3);
     }
 
-    // Strategic focus analysis
-    const strategicKeywords = {
-      financial: [
-        "investment",
-        "portfolio",
-        "trading",
-        "market",
-        "financial",
-        "fund",
-        "money",
-        "profit",
-        "return",
-        "yield",
-        "risk"
-      ],
-      technology: [
-        "ai",
-        "tech",
-        "software",
-        "digital",
-        "automation",
-        "algorithm",
-        "programming",
-        "system",
-        "data"
-      ],
-      business: [
-        "business",
-        "strategy",
-        "analysis",
-        "planning",
-        "growth",
-        "management",
-        "company",
-        "revenue",
-        "operations"
-      ],
-      personal: [
-        "personal",
-        "life",
-        "productivity",
-        "goals",
-        "habits",
-        "wellness",
-        "health",
-        "family",
-        "relationships"
-      ],
-      learning: [
-        "learn",
-        "education",
-        "study",
-        "knowledge",
-        "skill",
-        "training",
-        "course",
-        "tutorial",
-        "research"
-      ]
+    const sk = {
+      financial:["investment","portfolio","trading","market","financial","fund","money","profit","return","yield","risk"],
+      technology:["ai","tech","software","digital","automation","algorithm","programming","system","data"],
+      business:["business","strategy","analysis","planning","growth","management","company","revenue","operations"],
+      personal:["personal","life","productivity","goals","habits","wellness","health","family","relationships"],
+      learning:["learn","education","study","knowledge","skill","training","course","tutorial","research"],
     };
-
-    let focusScores = {
-      financial: 0,
-      technology: 0,
-      business: 0,
-      personal: 0,
-      learning: 0,
-      general: 0
-    };
-
-    // Analyze conversations for strategic focus
-    [...(conversations || []), ...(memories || [])].forEach((item) => {
-      const text = lowerSafe(item.user_message || item.gpt_response || item.fact || "");
-      let hasStrategicKeywords = false;
-
-      Object.keys(strategicKeywords).forEach((category) => {
-        strategicKeywords[category].forEach((keyword) => {
-          if (text.includes(keyword)) {
-            focusScores[category]++;
-            hasStrategicKeywords = true;
-          }
-        });
-      });
-
-      if (!hasStrategicKeywords && text.length > 20) {
-        focusScores.general++;
+    const focus = {financial:0,technology:0,business:0,personal:0,learning:0,general:0};
+    [...(conversations||[]), ...(memories||[])].forEach(it=>{
+      const txt = lowerSafe(it.user_message||it.gpt_response||it.fact||"");
+      let hit = false;
+      for (const [cat,words] of Object.entries(sk)) {
+        words.forEach(k=>{ if (txt.includes(k)) { focus[cat]++; hit=true; }});
       }
+      if (!hit && txt.length>20) focus.general++;
     });
+    analytics.strategicFocus = Object.keys(focus).reduce((a,b)=>focus[a]>focus[b]?a:b);
 
-    // Find primary strategic focus
-    analytics.strategicFocus = Object.keys(focusScores).reduce((a, b) =>
-      focusScores[a] > focusScores[b] ? a : b
+    if (conversations?.length) {
+      const qm = safeDivision(conversations.reduce((s,c)=>s+((asText(c.user_message).match(/\?/g)||[]).length),0), conversations.length, 0);
+      const em = safeDivision(conversations.reduce((s,c)=>s+((asText(c.user_message).match(/!/g)||[]).length),0), conversations.length, 0);
+      const cmd = safeDivision(conversations.filter(c=>asText(c.user_message).startsWith("/")).length, conversations.length, 0);
+      analytics.communicationStyle =
+        cmd>0.3 ? "command-oriented" :
+        qm>1.5 ? "inquisitive" :
+        em>0.5 ? "enthusiastic" :
+        analytics.avgUserMessageLength>150 ? "detailed" :
+        analytics.avgUserMessageLength<30 ? "concise" : "balanced";
+    }
+
+    const points = (conversations?.length||0) + (memories?.length||0);
+    analytics.dataQuality = points>=20 ? "excellent" : points>=10 ? "good" : points>=5 ? "fair" : "limited";
+    analytics.confidenceLevel = Math.min(0.95,
+      0.1 + (conversations?.length||0)*0.03 + (memories?.length||0)*0.05 +
+      analytics.topicDiversity*0.02 + (analytics.timeSpan>0 ? Math.min(0.2, analytics.timeSpan*0.01) : 0)
     );
 
-    // Communication style analysis
-    if (conversations && conversations.length > 0) {
-      const avgQuestionMarks = safeDivision(
-        conversations.reduce(
-          (sum, conv) => sum + ((conv.user_message || "").match(/\?/g) || []).length,
-          0
-        ),
-        conversations.length,
-        0
-      );
-
-      const avgExclamationMarks = safeDivision(
-        conversations.reduce(
-          (sum, conv) => sum + ((conv.user_message || "").match(/!/g) || []).length,
-          0
-        ),
-        conversations.length,
-        0
-      );
-
-      const commandCount = conversations.filter((conv) =>
-        (conv.user_message || "").startsWith("/")
-      ).length;
-
-      const commandRatio = safeDivision(commandCount, conversations.length, 0);
-
-      if (commandRatio > 0.3) {
-        analytics.communicationStyle = "command-oriented";
-      } else if (avgQuestionMarks > 1.5) {
-        analytics.communicationStyle = "inquisitive";
-      } else if (avgExclamationMarks > 0.5) {
-        analytics.communicationStyle = "enthusiastic";
-      } else if (analytics.avgUserMessageLength > 150) {
-        analytics.communicationStyle = "detailed";
-      } else if (analytics.avgUserMessageLength < 30) {
-        analytics.communicationStyle = "concise";
-      } else {
-        analytics.communicationStyle = "balanced";
-      }
-    }
-
-    // Data quality assessment
-    const totalDataPoints = (conversations?.length || 0) + (memories?.length || 0);
-    if (totalDataPoints >= 20) {
-      analytics.dataQuality = "excellent";
-    } else if (totalDataPoints >= 10) {
-      analytics.dataQuality = "good";
-    } else if (totalDataPoints >= 5) {
-      analytics.dataQuality = "fair";
-    } else {
-      analytics.dataQuality = "limited";
-    }
-
-    // Confidence level based on data availability and quality
-    analytics.confidenceLevel = Math.min(
-      0.95,
-      0.1 +
-        (conversations?.length || 0) * 0.03 +
-        (memories?.length || 0) * 0.05 +
-        analytics.topicDiversity * 0.02 +
-        (analytics.timeSpan > 0 ? Math.min(0.2, analytics.timeSpan * 0.01) : 0)
-    );
-
-    // Personalized recommendations
-    if (analytics.conversationFrequency < 0.2) {
-      analytics.recommendations.push(
-        "Consider more frequent interactions to improve AI personalization"
-      );
-    }
-    if (analytics.memoryRetention < 3) {
-      analytics.recommendations.push(
-        "Share preferences and important information to enhance memory retention"
-      );
-    }
-    if (analytics.topicDiversity < 2) {
-      analytics.recommendations.push("Explore diverse topics to unlock more AI capabilities");
-    }
-    if (analytics.engagementScore > 7) {
-      analytics.recommendations.push(
-        "Excellent engagement level - AI partnership is highly effective"
-      );
-    }
-    if (analytics.dataQuality === "limited") {
-      analytics.recommendations.push("Build conversation history for more personalized responses");
-    }
-    if (analytics.strategicFocus !== "general") {
-      analytics.recommendations.push(
-        `Strong ${analytics.strategicFocus} focus detected - leveraging specialized capabilities`
-      );
-    }
-
-    console.log(
-      `✅ Intelligence analytics completed: ${analytics.strategicFocus} focus, ${analytics.communicationStyle} style, ${analytics.dataQuality} data quality`
-    );
+    if (analytics.conversationFrequency < 0.2) analytics.recommendations.push("Increase interaction frequency for better personalization");
+    if (analytics.memoryRetention       < 3)   analytics.recommendations.push("Share preferences/important info to enhance memory retention");
+    if (analytics.topicDiversity        < 2)   analytics.recommendations.push("Explore more topics to unlock additional capabilities");
 
     return analytics;
-  } catch (error) {
-    console.error("❌ Conversation intelligence analytics error:", error.message);
-    return {
-      conversationFrequency: 0,
-      avgResponseLength: 0,
-      avgUserMessageLength: 0,
-      topicDiversity: 0,
-      engagementScore: 0,
-      memoryRetention: 0,
-      strategicFocus: "general",
-      communicationStyle: "balanced",
-      confidenceLevel: 0.1,
-      timeSpan: 0,
-      totalInteractions: 0,
-      recommendations: ["Analytics error - limited insights available"],
-      dataQuality: "error",
-      error: error.message
-    };
+  } catch (e) {
+    console.error("Analytics error:", e.message);
+    return { conversationFrequency:0, avgResponseLength:0, avgUserMessageLength:0, topicDiversity:0, engagementScore:0, memoryRetention:0, strategicFocus:"general", communicationStyle:"balanced", confidenceLevel:0.1, timeSpan:0, totalInteractions:0, recommendations:["Analytics error"], dataQuality:"error", error:e.message };
   }
 }
 
-/** Detect conversation patterns and user preferences */
 function detectConversationPatterns(conversations, memories) {
   try {
-    console.log("🔍 Detecting conversation patterns...");
+    const patterns = { timePatterns:{}, topicPatterns:{}, lengthPatterns:{}, questionPatterns:[], preferencePatterns:[], behaviorPatterns:[] };
+    if (!conversations?.length) return patterns;
 
-    const patterns = {
-      timePatterns: {},
-      topicPatterns: {},
-      lengthPatterns: {},
-      questionPatterns: [],
-      preferencePatterns: [],
-      behaviorPatterns: []
-    };
-
-    if (!conversations || conversations.length === 0) {
-      return patterns;
-    }
-
-    // Time pattern analysis
-    conversations.forEach((conv) => {
-      const date = new Date(conv.timestamp);
-      const hour = isNaN(date) ? 0 : date.getHours();
-      const timeSlot =
-        hour < 6 ? "early_morning" : hour < 12 ? "morning" : hour < 18 ? "afternoon" : hour < 22 ? "evening" : "night";
-
-      patterns.timePatterns[timeSlot] = (patterns.timePatterns[timeSlot] || 0) + 1;
+    conversations.forEach(c=>{
+      const d = new Date(c.timestamp); const h = isNaN(d)?0:d.getHours();
+      const slot = h<6?"early_morning":h<12?"morning":h<18?"afternoon":h<22?"evening":"night";
+      patterns.timePatterns[slot] = (patterns.timePatterns[slot]||0)+1;
     });
 
-    // Topic clustering
-    const topicWords = {};
-    conversations.forEach((conv) => {
-      const words = lowerSafe(conv.user_message || "").match(/\b\w{4,}\b/g) || [];
-      words.forEach((word) => {
-        if (!["this", "that", "with", "from", "they", "have", "been", "were"].includes(word)) {
-          topicWords[word] = (topicWords[word] || 0) + 1;
-        }
+    const wordsMap = {};
+    conversations.forEach(c=>{
+      (lowerSafe(c.user_message).match(/\b\w{4,}\b/g)||[]).forEach(w=>{
+        if (!["this","that","with","from","they","have","been","were"].includes(w))
+          wordsMap[w]=(wordsMap[w]||0)+1;
       });
     });
-
-    // Find most common topics
-    const sortedTopics = Object.entries(topicWords)
-      .filter(([word, count]) => count >= MEMORY_CONFIG.PATTERN_DETECTION_MIN)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10);
-
-    patterns.topicPatterns = Object.fromEntries(sortedTopics);
-
-    // Length patterns
-    const messageLengths = conversations.map((conv) => (conv.user_message || "").length || 0);
-    patterns.lengthPatterns = {
-      avg: safeDivision(messageLengths.reduce((sum, len) => sum + len, 0), messageLengths.length, 0),
-      short: messageLengths.filter((len) => len < 50).length,
-      medium: messageLengths.filter((len) => len >= 50 && len < 200).length,
-      long: messageLengths.filter((len) => len >= 200).length
-    };
-
-    // Question patterns
-    const questionTypes = conversations
-      .filter((conv) => (conv.user_message || "").includes("?"))
-      .map((conv) => {
-        const msg = lowerSafe(conv.user_message || "");
-        if (msg.startsWith("what")) return "what";
-        if (msg.startsWith("how")) return "how";
-        if (msg.startsWith("why")) return "why";
-        if (msg.startsWith("when")) return "when";
-        if (msg.startsWith("where")) return "where";
-        return "other";
-      });
-
-    const questionCounts = {};
-    questionTypes.forEach((type) => {
-      questionCounts[type] = (questionCounts[type] || 0) + 1;
-    });
-
-    patterns.questionPatterns = Object.entries(questionCounts)
-      .filter(([, count]) => count >= 2)
-      .map(([type, count]) => ({ type, count, frequency: safeDivision(count, conversations.length, 0) }));
-
-    // Preference detection from memories
-    if (memories && memories.length > 0) {
-      memories.forEach((memory) => {
-        const fact = lowerSafe(memory?.fact || "");
-        if (fact.includes("prefer") || fact.includes("like") || fact.includes("favorite")) {
-          patterns.preferencePatterns.push({
-            preference: memory.fact,
-            importance: memory.importance,
-            timestamp: memory.timestamp
-          });
-        }
-      });
-    }
-
-    // Behavior pattern inference (guard against undefined)
-    if ((patterns.timePatterns.morning || 0) > (patterns.timePatterns.evening || 0)) {
-      patterns.behaviorPatterns.push("Morning person - more active in early hours");
-    }
-    if ((patterns.lengthPatterns.long || 0) > (patterns.lengthPatterns.short || 0)) {
-      patterns.behaviorPatterns.push("Detailed communicator - prefers comprehensive discussions");
-    }
-    if (patterns.questionPatterns.some((p) => p.type === "how" && p.frequency > 0.3)) {
-      patterns.behaviorPatterns.push("Process-oriented - frequently asks how-to questions");
-    }
-
-    console.log(
-      `✅ Pattern detection completed: ${patterns.behaviorPatterns.length} behavior patterns identified`
+    patterns.topicPatterns = Object.fromEntries(
+      Object.entries(wordsMap).filter(([w,c])=>c>=MEMORY_CONFIG.PATTERN_DETECTION_MIN)
+      .sort((a,b)=>b[1]-a[1]).slice(0,10)
     );
+
+    const lens = conversations.map(c=>asText(c.user_message).length||0);
+    patterns.lengthPatterns = {
+      avg: safeDivision(lens.reduce((s,n)=>s+n,0), lens.length, 0),
+      short: lens.filter(l=>l<50).length,
+      medium: lens.filter(l=>l>=50 && l<200).length,
+      long: lens.filter(l=>l>=200).length,
+    };
+
+    const qTypes = conversations.filter(c=>asText(c.user_message).includes("?")).map(c=>{
+      const m = lowerSafe(c.user_message);
+      if (m.startsWith("what")) return "what";
+      if (m.startsWith("how"))  return "how";
+      if (m.startsWith("why"))  return "why";
+      if (m.startsWith("when")) return "when";
+      if (m.startsWith("where"))return "where";
+      return "other";
+    });
+    const qCount = {}; qTypes.forEach(t=>qCount[t]=(qCount[t]||0)+1);
+    patterns.questionPatterns = Object.entries(qCount).filter(([,n])=>n>=2)
+      .map(([type,count])=>({type,count,frequency:safeDivision(count,conversations.length,0)}));
+
+    (memories||[]).forEach(m=>{
+      const fact = lowerSafe(m.fact||"");
+      if (/(prefer|like|favorite)/.test(fact)) {
+        patterns.preferencePatterns.push({ preference:m.fact, importance:m.importance, timestamp:m.timestamp });
+      }
+    });
+
+    if ((patterns.timePatterns.morning||0)>(patterns.timePatterns.evening||0)) patterns.behaviorPatterns.push("Morning person - more active early");
+    if ((patterns.lengthPatterns.long||0)>(patterns.lengthPatterns.short||0))  patterns.behaviorPatterns.push("Detailed communicator");
+    if (patterns.questionPatterns.some(p=>p.type==="how" && p.frequency>0.3)) patterns.behaviorPatterns.push("Process-oriented");
 
     return patterns;
-  } catch (error) {
-    console.error("❌ Pattern detection error:", error.message);
-    return {
-      timePatterns: {},
-      topicPatterns: {},
-      lengthPatterns: {},
-      questionPatterns: [],
-      preferencePatterns: [],
-      behaviorPatterns: [],
-      error: error.message
-    };
+  } catch (e) {
+    console.error("Pattern detection error:", e.message);
+    return { timePatterns:{}, topicPatterns:{}, lengthPatterns:{}, questionPatterns:[], preferencePatterns:[], behaviorPatterns:[], error:e.message };
   }
 }
 
-// -----------------------------------------------------------------------------
-// 🚀 MAIN MEMORY FUNCTIONS
-// -----------------------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/* CONTEXT BUILDER                                                            */
+/* -------------------------------------------------------------------------- */
 
-/** Build comprehensive conversation context with PostgreSQL data */
 async function buildConversationContext(chatId, currentMessage = "") {
   try {
-    console.log(`🧠 Building enhanced strategic context for user ${chatId}`);
-
-    // Normalize current message immediately
     const currentMsgText = asText(currentMessage);
 
-    // Fetch data from PostgreSQL
-    const [conversations, memories, userProfile] = await Promise.allSettled([
+    // fetch DB data in parallel
+    const [convosP, memsP, profileP] = await Promise.allSettled([
       getConversationHistoryDB(chatId, MEMORY_CONFIG.MAX_CONVERSATIONS),
       getPersistentMemoryDB(chatId),
-      getUserProfileDB(chatId)
+      getUserProfileDB(chatId),
     ]);
 
-    // Process fetched data
-    const conversationData = conversations.status === "fulfilled" ? conversations.value || [] : [];
-    const memoryData = memories.status === "fulfilled" ? memories.value || [] : [];
-    const profileData = userProfile.status === "fulfilled" ? userProfile.value || null : null;
+    const conversations = convosP.status==="fulfilled" ? (convosP.value||[]) : [];
+    const memories      = memsP.status ==="fulfilled" ? (memsP.value ||[]) : [];
+    const profile       = profileP.status==="fulfilled" ? profileP.value    : null;
 
-    console.log(`🔍 Retrieved ${conversationData.length} conversations for ${chatId}`);
-    console.log(`🧠 Retrieved ${memoryData.length} persistent memories for ${chatId}`);
+    // analytics (safe)
+    const risk      = inferEnhancedRiskTolerance(conversations, memories);
+    const analytics = getConversationIntelligenceAnalytics(conversations, memories);
+    const patterns  = detectConversationPatterns(conversations, memories);
 
-    // Generate advanced analytics
-    let riskTolerance, analytics, patterns;
+    const parts = [];
 
-    try {
-      riskTolerance = inferEnhancedRiskTolerance(conversationData, memoryData);
-    } catch (riskError) {
-      console.error("Enhanced strategic profile error:", riskError.message);
-      riskTolerance = { level: "moderate", score: 50, confidence: 0.1 };
+    // 1) profile
+    if (profile) {
+      const firstSeen = profile.first_seen ? new Date(profile.first_seen).toLocaleDateString() : "unknown";
+      const cnt = profile.conversation_count ?? "?";
+      parts.push(`USER PROFILE: Member since ${firstSeen}, ${cnt} total conversations`);
     }
 
-    try {
-      analytics = getConversationIntelligenceAnalytics(conversationData, memoryData);
-    } catch (analyticsError) {
-      console.error("Get conversation intelligence analytics error:", analyticsError.message);
-      analytics = { strategicFocus: "general", communicationStyle: "balanced", confidenceLevel: 0.1 };
-    }
-
-    try {
-      patterns = detectConversationPatterns(conversationData, memoryData);
-    } catch (patternError) {
-      console.error("Pattern detection error:", patternError.message);
-      patterns = { behaviorPatterns: [], preferencePatterns: [] };
-    }
-
-    // Build context string
-    const contextParts = [];
-
-    // 1. User Profile Summary
-    if (profileData) {
-      const firstSeen = profileData.first_seen ? new Date(profileData.first_seen).toLocaleDateString() : "unknown";
-      const convCount = profileData.conversation_count ?? "?";
-      contextParts.push(
-        `USER PROFILE: Member since ${firstSeen}, ${convCount} total conversations`
-      );
-    }
-
-    // 2. Strategic Intelligence Summary
-    contextParts.push(
-      `STRATEGIC INTELLIGENCE SUMMARY:
+    // 2) intelligence summary
+    parts.push(
+`STRATEGIC INTELLIGENCE SUMMARY:
 • Communication Style: ${analytics.communicationStyle}
 • Strategic Focus: ${analytics.strategicFocus}
-• Risk Tolerance: ${riskTolerance.level} (${Number(riskTolerance.score || 0).toFixed(0)}/100)
-• Engagement Level: ${Number(analytics.engagementScore || 0).toFixed(1)}/10
+• Risk Tolerance: ${risk.level} (${Number(risk.score||0).toFixed(0)}/100)
+• Engagement Level: ${Number(analytics.engagementScore||0).toFixed(1)}/10
 • Data Quality: ${analytics.dataQuality}
-• Confidence: ${Number((analytics.confidenceLevel || 0) * 100).toFixed(0)}%`
+• Confidence: ${Number((analytics.confidenceLevel||0)*100).toFixed(0)}%`
     );
 
-    // 3. Persistent Memories (prioritized by importance and relevance)
-    if (memoryData.length > 0) {
-      const sortedMemories = memoryData
-        .map((memory) => ({
-          ...memory,
-          relevance: calculateRelevance(
-            memory.timestamp,
-            memory.importance,
-            currentMsgText,
-            memory.fact
-          )
-        }))
-        .sort((a, b) => b.relevance - a.relevance)
-        .slice(0, MEMORY_CONFIG.MAX_MEMORIES);
-
-      if (sortedMemories.length > 0) {
-        contextParts.push("PERSISTENT MEMORIES (Important Facts):");
-        sortedMemories.forEach((memory, index) => {
-          const importance = memory.importance ? `[${String(memory.importance).toUpperCase()}] ` : "";
-          contextParts.push(`${index + 1}. ${importance}${memory.fact}`);
-        });
-      }
-    }
-
-    // 4. Recent Conversation History
-    if (conversationData.length > 0) {
-      contextParts.push("RECENT CONVERSATION HISTORY:");
-      const recentConversations = conversationData.slice(0, MEMORY_CONFIG.MAX_CONVERSATIONS);
-
-      recentConversations.forEach((conv, index) => {
-        const t = new Date(conv.timestamp);
-        const timeAgo = isNaN(t) ? null : daysBetween(new Date(), t);
-        const timeLabel =
-          timeAgo === null
-            ? "Unknown time"
-            : timeAgo === 0
-            ? "Today"
-            : timeAgo === 1
-            ? "Yesterday"
-            : `${timeAgo.toFixed(0)} days ago`;
-
-        const userMsg = asText(conv.user_message || "");
-        const aiMsg = asText(conv.gpt_response || "");
-
-        if (userMsg) {
-          contextParts.push(
-            `${index + 1}. User (${timeLabel}): "${excerptSafe(userMsg, 150)}${
-              userMsg.length > 150 ? "..." : ""
-            }"`
-          );
-        }
-        if (aiMsg && index < 3) {
-          // Include AI responses for first few for context
-          contextParts.push(
-            `   AI Response: "${excerptSafe(aiMsg, 100)}${aiMsg.length > 100 ? "..." : ""}"`
-          );
-        }
-      });
-    }
-
-    // 5. Behavior Patterns
-    if (patterns.behaviorPatterns && patterns.behaviorPatterns.length > 0) {
-      contextParts.push("BEHAVIORAL PATTERNS:");
-      patterns.behaviorPatterns.slice(0, 3).forEach((pattern, index) => {
-        contextParts.push(`${index + 1}. ${pattern}`);
-      });
-    }
-
-    // 6. Preferences
-    if (patterns.preferencePatterns && patterns.preferencePatterns.length > 0) {
-      contextParts.push("USER PREFERENCES:");
-      patterns.preferencePatterns.slice(0, 3).forEach((pref, index) => {
-        contextParts.push(`${index + 1}. ${pref.preference}`);
-      });
-    }
-
-    // 7. Recommendations
-    if (analytics.recommendations && analytics.recommendations.length > 0) {
-      contextParts.push("AI RECOMMENDATIONS:");
-      analytics.recommendations.slice(0, 2).forEach((rec, index) => {
-        contextParts.push(`${index + 1}. ${rec}`);
-      });
-    }
-
-    // Combine all context parts
-    const fullContext = contextParts.join("\n\n");
-
-    // Ensure context doesn't exceed maximum length
-    const finalContext =
-      fullContext.length > MEMORY_CONFIG.MAX_CONTEXT_LENGTH
-        ? fullContext.substring(0, MEMORY_CONFIG.MAX_CONTEXT_LENGTH) +
-          "\n\n[Context truncated for optimal processing]"
-        : fullContext;
-
-    console.log(
-      `✅ Enhanced strategic database context built: ${finalContext.length} characters`
-    );
-    console.log(
-      `📊 Memory components: ${memoryData.length} persistent + ${conversationData.length} recent + ${
-        patterns.behaviorPatterns?.length || 0
-      } patterns`
+    // 3) persistent memories — identity pinned + relevance-mixed
+    const identity = (memories||[]).filter(m =>
+      /(^|\s)(user'?s name:|confirmed name:)/i.test(String(m.fact||""))
     );
 
-    return finalContext;
-  } catch (error) {
-    console.error("❌ Build conversation context error:", error.message);
+    const scored = (memories||[])
+      .filter(m => !identity.includes(m))
+      .map(m => ({ ...m, relevance: calculateRelevance(m.timestamp, m.importance, currentMsgText, m.fact) }))
+      .sort((a,b)=>b.relevance - a.relevance);
 
-    // Fallback context (safe)
+    // keep identity + top others
+    const finalMemories = [...identity, ...scored].slice(0, MEMORY_CONFIG.MAX_MEMORIES);
+
+    if (finalMemories.length) {
+      parts.push("PERSISTENT MEMORIES (Important Facts):");
+      finalMemories.forEach((m,i)=>{
+        const tag = m.importance ? `[${String(m.importance).toUpperCase()}] ` : "";
+        parts.push(`${i+1}. ${tag}${m.fact}`);
+      });
+    }
+
+    // 4) recent conversation (compact)
+    if (conversations.length) {
+      parts.push("RECENT CONVERSATION HISTORY:");
+      const recent = conversations.slice(0, MEMORY_CONFIG.MAX_CONVERSATIONS);
+      recent.forEach((c,i)=>{
+        const t = new Date(c.timestamp);
+        const ago = isNaN(t) ? null : daysBetween(new Date(), t);
+        const label = ago==null ? "Unknown" : ago===0 ? "Today" : ago===1 ? "Yesterday" : `${ago.toFixed(0)} days ago`;
+        const u = asText(c.user_message||"");
+        const a = asText(c.gpt_response||"");
+        if (u) parts.push(`${i+1}. User (${label}): "${excerptSafe(u,150)}${u.length>150?"...":""}"`);
+        if (a && i<3) parts.push(`   AI: "${excerptSafe(a,100)}${a.length>100?"...":""}"`);
+      });
+    }
+
+    // 5) patterns
+    if (patterns.behaviorPatterns?.length) {
+      parts.push("BEHAVIORAL PATTERNS:");
+      patterns.behaviorPatterns.slice(0,3).forEach((p,i)=>parts.push(`${i+1}. ${p}`));
+    }
+
+    if (patterns.preferencePatterns?.length) {
+      parts.push("USER PREFERENCES:");
+      patterns.preferencePatterns.slice(0,3).forEach((p,i)=>parts.push(`${i+1}. ${p.preference}`));
+    }
+
+    if (analytics.recommendations?.length) {
+      parts.push("AI RECOMMENDATIONS:");
+      analytics.recommendations.slice(0,2).forEach((p,i)=>parts.push(`${i+1}. ${p}`));
+    }
+
+    // join + trim
+    const joined = parts.join("\n\n");
+    const final  = joined.length > MEMORY_CONFIG.MAX_CONTEXT_LENGTH
+      ? joined.substring(0, MEMORY_CONFIG.MAX_CONTEXT_LENGTH) + "\n\n[Context truncated]"
+      : joined;
+
+    console.log(`✅ Context built (${final.length} chars) — ${memories.length} memories, ${conversations.length} convos`);
+    return final;
+
+  } catch (e) {
+    console.error("Build context error:", e.message);
     const cm = asText(currentMessage);
-    const fallbackContext = `BASIC CONTEXT: Error building enhanced context (${error.message}). 
-Using minimal context for user ${chatId}.
-Current message: "${excerptSafe(cm, 100)}${cm.length > 100 ? "..." : ""}"`;
-
-    return fallbackContext;
+    return `BASIC CONTEXT (fallback): error building context (${e.message})\nCurrent message: "${excerptSafe(cm,100)}${cm.length>100?"...":""}"`;
   }
 }
 
-/** Extract and save important facts from conversation */
-async function extractAndSaveFacts(chatId, userMessage, aiResponse) {
-  try {
-    console.log("🧠 Extracting facts from conversation...");
+/* -------------------------------------------------------------------------- */
+/* FACT EXTRACTION                                                            */
+/* -------------------------------------------------------------------------- */
 
-    let extractedFacts = 0;
-    const facts = [];
-
-    // Extract from user message
-    const userFacts = extractFactsFromText(asText(userMessage), "user");
-    facts.push(...userFacts);
-
-    // Extract from AI response
-    const aiFacts = extractFactsFromText(asText(aiResponse), "ai");
-    facts.push(...aiFacts);
-
-    // Save unique facts to database
-    for (const fact of facts) {
-      try {
-        await addPersistentMemoryDB(chatId, fact.text, fact.importance);
-        extractedFacts++;
-        console.log(`✅ Saved fact: ${excerptSafe(fact.text, 50)}...`);
-      } catch (saveError) {
-        console.log(`⚠️ Could not save fact: ${saveError.message}`);
-      }
-    }
-
-    return {
-      extractedFacts: extractedFacts,
-      totalFacts: facts.length,
-      success: extractedFacts > 0
-    };
-  } catch (error) {
-    console.error("❌ Extract and save facts error:", error.message);
-    return {
-      extractedFacts: 0,
-      totalFacts: 0,
-      success: false,
-      error: error.message
-    };
-  }
-}
-
-/** Extract facts from text using pattern matching */
 function extractFactsFromText(text, source = "unknown") {
   const facts = [];
   if (!text || typeof text !== "string") return facts;
 
-  const lowerText = text.toLowerCase();
+  const lower = text.toLowerCase();
 
-  // Name extraction
-  const namePatterns = [/my name is ([^.,\n!?]+)/i, /i'm ([^.,\n!?]+)/i, /call me ([^.,\n!?]+)/i];
-
-  namePatterns.forEach((pattern) => {
-    const match = text.match(pattern);
-    if (match && match[1]) {
-      facts.push({
-        text: `User's name: ${match[1].trim()}`,
-        importance: "high",
-        type: "identity",
-        source: source
-      });
-    }
+  // names
+  [/my name is ([^.,\n!?]+)/i, /i'm ([^.,\n!?]+)/i, /call me ([^.,\n!?]+)/i].forEach(rx=>{
+    const m = text.match(rx);
+    if (m?.[1]) facts.push({ text:`User's name: ${m[1].trim()}`, importance:"high", type:"identity", source });
   });
 
-  // Preference extraction
-  const preferencePatterns = [
-    /i prefer ([^.,\n!?]+)/i,
-    /i like ([^.,\n!?]+)/i,
-    /my favorite ([^.,\n!?]+)/i,
-    /i usually ([^.,\n!?]+)/i,
-    /i always ([^.,\n!?]+)/i,
-    /i never ([^.,\n!?]+)/i
-  ];
-
-  preferencePatterns.forEach((pattern) => {
-    const match = text.match(pattern);
-    if (match && match[1]) {
-      facts.push({
-        text: `User preference: ${match[0]}`,
-        importance: "medium",
-        type: "preference",
-        source: source
-      });
-    }
+  // preferences
+  [/i prefer ([^.,\n!?]+)/i, /i like ([^.,\n!?]+)/i, /my favorite ([^.,\n!?]+)/i, /i usually ([^.,\n!?]+)/i, /i always ([^.,\n!?]+)/i, /i never ([^.,\n!?]+)/i]
+  .forEach(rx=>{
+    const m = text.match(rx);
+    if (m?.[1]) facts.push({ text:`User preference: ${m[0]}`, importance:"medium", type:"preference", source });
   });
 
-  // Goal extraction
-  const goalPatterns = [
-    /my goal is ([^.,\n!?]+)/i,
-    /i want to ([^.,\n!?]+)/i,
-    /i'm trying to ([^.,\n!?]+)/i,
-    /i plan to ([^.,\n!?]+)/i
-  ];
-
-  goalPatterns.forEach((pattern) => {
-    const match = text.match(pattern);
-    if (match && match[1]) {
-      facts.push({
-        text: `User goal: ${match[0]}`,
-        importance: "medium",
-        type: "goal",
-        source: source
-      });
-    }
+  // goals
+  [/my goal is ([^.,\n!?]+)/i, /i want to ([^.,\n!?]+)/i, /i'm trying to ([^.,\n!?]+)/i, /i plan to ([^.,\n!?]+)/i]
+  .forEach(rx=>{
+    const m = text.match(rx);
+    if (m?.[1]) facts.push({ text:`User goal: ${m[0]}`, importance:"medium", type:"goal", source });
   });
 
-  // Important statement extraction
-  if (lowerText.includes("important") || lowerText.includes("remember")) {
-    facts.push({
-      text: `Important statement: ${text.substring(0, 200)}`,
-      importance: "high",
-      type: "important",
-      source: source
-    });
+  // important marker
+  if (lower.includes("important") || lower.includes("remember")) {
+    facts.push({ text:`Important statement: ${text.substring(0,200)}`, importance:"high", type:"important", source });
   }
 
-  // Financial/investment extraction
-  const financialPatterns = [
-    /risk tolerance.*is ([^.,\n!?]+)/i,
-    /investment.*style.*is ([^.,\n!?]+)/i,
-    /portfolio.*allocation ([^.,\n!?]+)/i
-  ];
-
-  financialPatterns.forEach((pattern) => {
-    const match = text.match(pattern);
-    if (match) {
-      facts.push({
-        text: `Financial preference: ${match[0]}`,
-        importance: "high",
-        type: "financial",
-        source: source
-      });
-    }
+  // financial
+  [/risk tolerance.*is ([^.,\n!?]+)/i, /investment.*style.*is ([^.,\n!?]+)/i, /portfolio.*allocation ([^.,\n!?]+)/i]
+  .forEach(rx=>{
+    const m = text.match(rx);
+    if (m) facts.push({ text:`Financial preference: ${m[0]}`, importance:"high", type:"financial", source });
   });
 
   return facts;
 }
 
-/** Get memory statistics for a user */
+async function extractAndSaveFacts(chatId, userMessage, aiResponse) {
+  try {
+    const facts = [
+      ...extractFactsFromText(asText(userMessage), "user"),
+      ...extractFactsFromText(asText(aiResponse), "ai"),
+    ];
+    let saved = 0;
+    for (const f of facts) {
+      try { await addPersistentMemoryDB(chatId, f.text, f.importance); saved++; }
+      catch (e) { console.warn("Fact save skipped:", e.message); }
+    }
+    return { extractedFacts:saved, totalFacts:facts.length, success:saved>0 };
+  } catch (e) {
+    console.error("extractAndSaveFacts error:", e.message);
+    return { extractedFacts:0, totalFacts:0, success:false, error:e.message };
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* STATS & CLEANUP                                                            */
+/* -------------------------------------------------------------------------- */
+
 async function getMemoryStats(chatId) {
   try {
-    console.log(`📊 Getting memory statistics for user ${chatId}`);
-
-    const [conversations, memories] = await Promise.allSettled([
-      getConversationHistoryDB(chatId, 100), // Get more for stats
-      getPersistentMemoryDB(chatId)
+    const [cP, mP] = await Promise.allSettled([
+      getConversationHistoryDB(chatId, 100),
+      getPersistentMemoryDB(chatId),
     ]);
+    const conv = cP.status==="fulfilled" ? (cP.value||[]) : [];
+    const mem  = mP.status==="fulfilled" ? (mP.value||[]) : [];
 
-    const conversationData = conversations.status === "fulfilled" ? conversations.value || [] : [];
-    const memoryData = memories.status === "fulfilled" ? memories.value || [] : [];
+    const timestamps = conv.map(c=>new Date(c.timestamp)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
+    const totalLen   = conv.reduce((s,c)=> s + asText(c.user_message).length + asText(c.gpt_response).length, 0);
 
-    const stats = {
+    const byImp = { high:0, medium:0, low:0 };
+    mem.forEach(m=>{ byImp[m.importance||"medium"] = (byImp[m.importance||"medium"]||0)+1; });
+
+    const memTs = mem.map(m=>new Date(m.timestamp)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
+
+    return {
       conversations: {
-        total: conversationData.length,
-        dateRange: null,
-        avgLength: 0,
-        totalWords: 0
+        total: conv.length,
+        dateRange: timestamps.length? { first:timestamps[0].toISOString(), last:timestamps[timestamps.length-1].toISOString(), span:daysBetween(timestamps[0], timestamps[timestamps.length-1]) } : null,
+        avgLength: safeDivision(totalLen, conv.length, 0),
+        totalWords: Math.round(totalLen/5),
       },
       memories: {
-        total: memoryData.length,
-        byImportance: { high: 0, medium: 0, low: 0 },
-        oldestMemory: null,
-        newestMemory: null
+        total: mem.length,
+        byImportance: byImp,
+        oldestMemory: memTs[0]?.toISOString() || null,
+        newestMemory: memTs[memTs.length-1]?.toISOString() || null,
       },
-      analytics: null,
+      analytics: getConversationIntelligenceAnalytics(conv, mem),
       databaseHealth: {
-        connected: connectionStats?.connectionHealth === "connected",
-        lastQuery: connectionStats?.lastQuery || null,
-        totalQueries: connectionStats?.totalQueries || 0
+        connected: connectionStats?.connectionHealth === "connected" || !!pgPool,
+        lastQuery:  connectionStats?.lastQuery || null,
+        totalQueries: connectionStats?.totalQueries || 0,
       }
     };
-
-    // Conversation statistics
-    if (conversationData.length > 0) {
-      const timestamps = conversationData
-        .map((conv) => new Date(conv.timestamp))
-        .filter((d) => !isNaN(d))
-        .sort((a, b) => a - b);
-
-      if (timestamps.length > 0) {
-        stats.conversations.dateRange = {
-          first: timestamps[0].toISOString(),
-          last: timestamps[timestamps.length - 1].toISOString(),
-          span: daysBetween(timestamps[0], timestamps[timestamps.length - 1])
-        };
-      }
-
-      const totalLength = conversationData.reduce(
-        (sum, conv) =>
-          sum + (asText(conv.user_message).length || 0) + (asText(conv.gpt_response).length || 0),
-        0
-      );
-      stats.conversations.avgLength = safeDivision(totalLength, conversationData.length, 0);
-      stats.conversations.totalWords = Math.round(totalLength / 5); // Rough word estimate
-    }
-
-    // Memory statistics
-    if (memoryData.length > 0) {
-      memoryData.forEach((memory) => {
-        const importance = memory.importance || "medium";
-        stats.memories.byImportance[importance] = (stats.memories.byImportance[importance] || 0) + 1;
-      });
-
-      const memoryTimestamps = memoryData
-        .map((mem) => new Date(mem.timestamp))
-        .filter((d) => !isNaN(d))
-        .sort((a, b) => a - b);
-
-      if (memoryTimestamps.length > 0) {
-        stats.memories.oldestMemory = memoryTimestamps[0].toISOString();
-        stats.memories.newestMemory = memoryTimestamps[memoryTimestamps.length - 1].toISOString();
-      }
-    }
-
-    // Generate analytics
-    stats.analytics = getConversationIntelligenceAnalytics(conversationData, memoryData);
-
-    console.log(
-      `✅ Memory stats generated: ${stats.conversations.total} conversations, ${stats.memories.total} memories`
-    );
-
-    return stats;
-  } catch (error) {
-    console.error("❌ Get memory stats error:", error.message);
-    return {
-      conversations: { total: 0, error: error.message },
-      memories: { total: 0, error: error.message },
-      analytics: null,
-      databaseHealth: { connected: false, error: error.message }
-    };
+  } catch (e) {
+    console.error("getMemoryStats error:", e.message);
+    return { conversations:{ total:0, error:e.message }, memories:{ total:0, error:e.message }, analytics:null, databaseHealth:{ connected:!!pgPool, error:e.message } };
   }
 }
 
-/** Clean old or irrelevant memories */
-async function cleanupMemories(chatId, options = {}) {
+/**
+ * Cleanup with PostgreSQL:
+ * - Protect identity/prefs (promote to high)
+ * - Drop old 'low' items past retention
+ * - Cap per-user memory count with priority
+ */
+async function cleanupMemories(chatId, {
+  lowRetentionDays = 90,
+  cap = 200,
+  dryRun = false
+} = {}) {
   try {
-    console.log(`🧹 Cleaning up memories for user ${chatId}`);
-
-    const maxAge = options.maxAge || 365; // days
-    const minImportance = options.minImportance || "low"; // (not yet used for deletion filter)
-    const dryRun = options.dryRun || false;
-
-    const memories = await getPersistentMemoryDB(chatId);
-    const cutoffDate = new Date(Date.now() - maxAge * 24 * 60 * 60 * 1000);
-
-    const memoriesToRemove = memories.filter((memory) => {
-      const memoryDate = new Date(memory.timestamp);
-      const isOld = memoryDate < cutoffDate;
-      const isLowImportance = (memory.importance || "low") === "low";
-      return isOld && isLowImportance;
-    });
-
-    if (dryRun) {
-      console.log(`🔍 Dry run: Would remove ${memoriesToRemove.length} memories`);
-      return {
-        memoriesToRemove: memoriesToRemove.length,
-        dryRun: true,
-        success: true
-      };
+    if (!pgPool) {
+      console.warn("cleanupMemories: no pg pool; returning dry-run counts");
+      const mems = await getPersistentMemoryDB(chatId);
+      const cutoff = new Date(Date.now() - lowRetentionDays*24*60*60*1000);
+      const toRemove = mems.filter(m => (m.importance||"low")==="low" && new Date(m.timestamp) < cutoff)
+        .filter(m => !/(user'?s name:|confirmed name:|user preference:)/i.test(String(m.fact||"")));
+      return { dryRun:true, candidates:toRemove.length, success:true };
     }
 
-    // Note: Actual deletion would require a database function
-    // This is a placeholder for the cleanup logic
-    console.log(`✅ Memory cleanup completed: ${memoriesToRemove.length} candidates identified`);
+    // promote protected facts
+    await pgPool.query(`
+      UPDATE persistent_memories
+      SET importance = 'high'
+      WHERE chat_id = $1
+        AND (fact ILIKE '%user''s name:%' OR fact ILIKE '%confirmed name:%' OR fact ILIKE '%user preference:%')
+    `, [chatId]);
 
-    return {
-      memoriesToRemove: memoriesToRemove.length,
-      dryRun: false,
-      success: true
-    };
-  } catch (error) {
-    console.error("❌ Cleanup memories error:", error.message);
-    return {
-      memoriesToRemove: 0,
-      dryRun: false,
-      success: false,
-      error: error.message
-    };
+    if (!dryRun) {
+      // delete ancient low-importance (except protected)
+      await pgPool.query(`
+        DELETE FROM persistent_memories
+        WHERE chat_id = $1
+          AND importance = 'low'
+          AND timestamp < NOW() - INTERVAL '${lowRetentionDays} days'
+          AND fact NOT ILIKE '%user''s name:%'
+          AND fact NOT ILIKE '%confirmed name:%'
+          AND fact NOT ILIKE '%user preference:%'
+      `, [chatId]);
+
+      // cap total rows per user by priority and recency
+      await pgPool.query(`
+        DELETE FROM persistent_memories
+        WHERE chat_id = $1
+          AND id NOT IN (
+            SELECT id FROM persistent_memories
+            WHERE chat_id = $1
+            ORDER BY 
+              CASE 
+                WHEN fact ILIKE '%user''s name:%' OR fact ILIKE '%confirmed name:%' OR fact ILIKE '%user preference:%' THEN 4
+                WHEN importance='high' THEN 3
+                WHEN importance='medium' THEN 2
+                ELSE 1
+              END DESC,
+              timestamp DESC
+            LIMIT $2
+          )
+      `, [chatId, cap]);
+    }
+
+    console.log(`🧹 Memory cleanup done for ${chatId} (cap=${cap}, retention=${lowRetentionDays}d, dryRun=${dryRun})`);
+    return { dryRun, success:true };
+  } catch (e) {
+    console.error("cleanupMemories error:", e.message);
+    return { dryRun, success:false, error:e.message };
   }
 }
 
-/** Test memory system functionality */
+/* -------------------------------------------------------------------------- */
+/* DIAGNOSTICS                                                                */
+/* -------------------------------------------------------------------------- */
+
 async function testMemorySystem(chatId) {
   try {
-    console.log(`🧪 Testing memory system for user ${chatId}`);
+    const out = { databaseConnection:false, conversationRetrieval:false, memoryRetrieval:false, contextBuilding:false, factExtraction:false, analytics:false, overallHealth:false };
 
-    const testResults = {
-      databaseConnection: false,
-      conversationRetrieval: false,
-      memoryRetrieval: false,
-      contextBuilding: false,
-      factExtraction: false,
-      analytics: false,
-      overallHealth: false
-    };
+    try { await getConversationHistoryDB(chatId,1); out.databaseConnection = true; out.conversationRetrieval = true; } catch {}
+    try { await getPersistentMemoryDB(chatId);       out.memoryRetrieval = true; } catch {}
+    try { const ctx = await buildConversationContext(chatId,"test"); out.contextBuilding = typeof ctx==="string" && ctx.length>0; } catch {}
+    try { const fx  = await extractAndSaveFacts(chatId,"My name is Test User","Ok Test"); out.factExtraction = fx.success!==false; } catch {}
+    try { const an  = getConversationIntelligenceAnalytics([],[]); out.analytics = !!an; } catch {}
 
-    // Test database connection
-    try {
-      const testConversations = await getConversationHistoryDB(chatId, 1);
-      testResults.databaseConnection = true;
-      testResults.conversationRetrieval = Array.isArray(testConversations);
-    } catch (error) {
-      console.log(`❌ Database connection test failed: ${error.message}`);
-    }
-
-    // Test memory retrieval
-    try {
-      const testMemories = await getPersistentMemoryDB(chatId);
-      testResults.memoryRetrieval = Array.isArray(testMemories);
-    } catch (error) {
-      console.log(`❌ Memory retrieval test failed: ${error.message}`);
-    }
-
-    // Test context building
-    try {
-      const testContext = await buildConversationContext(chatId, "test message");
-      testResults.contextBuilding = typeof testContext === "string" && testContext.length > 0;
-    } catch (error) {
-      console.log(`❌ Context building test failed: ${error.message}`);
-    }
-
-    // Test fact extraction
-    try {
-      const extractResult = await extractAndSaveFacts(
-        chatId,
-        "My name is Test User",
-        "Nice to meet you, Test User!"
-      );
-      testResults.factExtraction = extractResult.success !== false;
-    } catch (error) {
-      console.log(`❌ Fact extraction test failed: ${error.message}`);
-    }
-
-    // Test analytics
-    try {
-      const analytics = getConversationIntelligenceAnalytics([], []);
-      testResults.analytics = analytics && typeof analytics === "object";
-    } catch (error) {
-      console.log(`❌ Analytics test failed: ${error.message}`);
-    }
-
-    // Calculate overall health
-    const successCount = Object.values(testResults).filter(Boolean).length;
-    testResults.overallHealth = successCount >= 4; // At least 4 out of 6 tests should pass
-
-    console.log(`✅ Memory system test completed: ${successCount}/6 tests passed`);
-
-    return {
-      results: testResults,
-      score: `${successCount}/6`,
-      percentage: Math.round((successCount / 6) * 100),
-      status: testResults.overallHealth ? "HEALTHY" : "NEEDS_ATTENTION"
-    };
-  } catch (error) {
-    console.error("❌ Test memory system error:", error.message);
-    return {
-      results: { overallHealth: false },
-      score: "0/6",
-      percentage: 0,
-      status: "ERROR",
-      error: error.message
-    };
+    const ok = Object.values(out).filter(Boolean).length;
+    out.overallHealth = ok >= 4;
+    return { results: out, score:`${ok}/6`, percentage: Math.round(ok/6*100), status: out.overallHealth ? "HEALTHY" : "NEEDS_ATTENTION" };
+  } catch (e) {
+    return { results:{ overallHealth:false }, score:"0/6", percentage:0, status:"ERROR", error:e.message };
   }
 }
 
-// -----------------------------------------------------------------------------
-// 🎯 EXPORT ALL FUNCTIONS
-// -----------------------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/* EXPORTS                                                                    */
+/* -------------------------------------------------------------------------- */
+
 module.exports = {
-  // Main memory functions
+  // main
   buildConversationContext,
   extractAndSaveFacts,
 
-  // Analytics functions
+  // analytics
   inferEnhancedRiskTolerance,
   getConversationIntelligenceAnalytics,
   detectConversationPatterns,
 
-  // Utility functions
-  asText,
-  lowerSafe,
-  excerptSafe,
-  safeDivision,
-  daysBetween,
-  calculateRelevance,
-  extractFactsFromText,
+  // utils
+  asText, lowerSafe, excerptSafe, safeDivision, daysBetween, calculateRelevance, extractFactsFromText,
 
-  // Management functions
+  // management
   getMemoryStats,
   cleanupMemories,
   testMemorySystem,
 
-  // Configuration
+  // config
   MEMORY_CONFIG,
 
-  // Legacy compatibility
-  buildMemoryContext: buildConversationContext, // Alias for backward compatibility
+  // legacy aliases
+  buildMemoryContext: buildConversationContext,
   getMemoryAnalytics: getConversationIntelligenceAnalytics,
 
-  // Enhanced functions for GPT-5 integration
-  buildEnhancedContext: async (chatId, message, options = {}) => {
+  // GPT-5 helper
+  buildEnhancedContext: async (chatId, message, options={}) => {
     const context = await buildConversationContext(chatId, asText(message));
-    return {
-      context: context,
-      length: context.length,
-      memoryAvailable: context.length > 100,
-      optimizedForGPT5: true,
-      options: options
-    };
+    return { context, length: context.length, memoryAvailable: context.length>100, optimizedForGPT5:true, options };
   },
 
-  // Memory health check
+  // health
   checkMemoryHealth: async (chatId) => {
     try {
       const stats = await getMemoryStats(chatId);
       const health = {
         connected: stats.databaseHealth.connected,
-        hasConversations: stats.conversations.total > 0,
-        hasMemories: stats.memories.total > 0,
+        hasConversations: stats.conversations.total>0,
+        hasMemories: stats.memories.total>0,
         dataQuality: stats.analytics?.dataQuality || "unknown",
-        overallHealth:
-          stats.databaseHealth.connected &&
-          (stats.conversations.total > 0 || stats.memories.total > 0)
+        overallHealth: stats.databaseHealth.connected && (stats.conversations.total>0 || stats.memories.total>0)
       };
       return health;
-    } catch (error) {
-      return {
-        connected: false,
-        hasConversations: false,
-        hasMemories: false,
-        dataQuality: "error",
-        overallHealth: false,
-        error: error.message
-      };
+    } catch (e) {
+      return { connected:false, hasConversations:false, hasMemories:false, dataQuality:"error", overallHealth:false, error:e.message };
     }
   }
 };
