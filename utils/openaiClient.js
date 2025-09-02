@@ -1,7 +1,7 @@
-// utils/openaiClient.js — GPT-5 Client (Production, Ultra-Compat, Context-Safe Cache)
+// utils/openaiClient.js — GPT-5 Client (Production, Ultra-Compat, NO FALLBACK)
 // Compatibility: no optional chaining, no nullish coalescing, no arrow functions,
 // no destructuring, no template literals, no spread syntax. ASCII-only.
-// Public API unchanged:
+// Public API:
 //   getGPT5Analysis(prompt, opts)
 //   getQuickNanoResponse(prompt, opts)
 //   getQuickMiniResponse(prompt, opts)
@@ -25,12 +25,6 @@ if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is not set");
 }
 
-// ---------- Env knobs ----------
-var ENV_REJECT_ON_ERROR = String(process.env.OPENAI_REJECT_ON_ERROR || "").toLowerCase() === "true";
-var ENV_DUMP_PROMPT = String(process.env.OPENAI_DUMP_PROMPT || "").trim() === "1";
-var ENV_CACHE_TTL_MS = Number(process.env.OPENAI_CACHE_TTL_MS || 3600000);
-var ENV_CACHE_MAX = Number(process.env.OPENAI_CACHE_MAX || 1000);
-
 // ---------- Utils ----------
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function str(x) { return x === undefined || x === null ? "" : String(x); }
@@ -46,12 +40,6 @@ function g(obj, path, d) {
     return (cur === undefined || cur === null) ? d : cur;
   } catch (e) { return d; }
 }
-function clamp(n, min, max) {
-  n = Number(n); if (isNaN(n)) n = min;
-  if (n < min) n = min; if (n > max) n = max;
-  return n;
-}
-function head(s, n) { s = str(s); return s.length <= n ? s : s.slice(0, n) + "..."; }
 
 // ---------- Metrics ----------
 function GPT5Metrics() {
@@ -108,23 +96,16 @@ GPT5Metrics.prototype.getStats = function () {
 };
 GPT5Metrics.prototype.reset = function () { this.stats = new GPT5Metrics().stats; };
 
-// ---------- Cache (context-aware) ----------
+// ---------- Cache ----------
 function GPT5Cache(maxSize, ttl) {
   this.cache = new Map();
   this.maxSize = Number(maxSize || 1000);
   this.ttl = Number(ttl || 3600000);
 }
-GPT5Cache.prototype.generateKey = function (prompt, options, contextHash) {
+GPT5Cache.prototype.generateKey = function (prompt, options) {
   var clean = {};
-  if (options) {
-    for (var k in options) {
-      if (k !== "skipCache" && Object.prototype.hasOwnProperty.call(options, k)) {
-        clean[k] = options[k];
-      }
-    }
-  }
-  var base = str(prompt) + JSON.stringify(clean) + "|" + str(contextHash || "");
-  return crypto.createHash("sha256").update(base).digest("hex");
+  if (options) { for (var k in options) if (k !== "skipCache" && Object.prototype.hasOwnProperty.call(options, k)) clean[k] = options[k]; }
+  return crypto.createHash("sha256").update(str(prompt) + JSON.stringify(clean)).digest("hex");
 };
 GPT5Cache.prototype.get = function (key) {
   var it = this.cache.get(key);
@@ -173,7 +154,7 @@ CircuitBreaker.prototype.getState = function () { return this.state; };
 
 // ---------- Client ----------
 var metrics = new GPT5Metrics();
-var cache = new GPT5Cache(ENV_CACHE_MAX, ENV_CACHE_TTL_MS);
+var cache = new GPT5Cache(process.env.OPENAI_CACHE_MAX, process.env.OPENAI_CACHE_TTL_MS);
 var circuitBreaker = new CircuitBreaker(process.env.OPENAI_CB_FAILS, process.env.OPENAI_CB_COOLDOWN_MS);
 
 var openai = new OpenAI({
@@ -181,8 +162,8 @@ var openai = new OpenAI({
   timeout: Number(process.env.OPENAI_TIMEOUT_MS || 180000),
   maxRetries: Number(process.env.OPENAI_SDK_MAX_RETRIES || 2),
   defaultHeaders: {
-    "User-Agent": "IMPERIUM-VAULT-GPT5/3.1.0",
-    "X-Client-Version": "3.1.0",
+    "User-Agent": "IMPERIUM-VAULT-GPT5/3.0.0",
+    "X-Client-Version": "3.0.0",
     "X-Environment": process.env.NODE_ENV || "development"
   }
 });
@@ -215,6 +196,7 @@ var GPT5_CONFIG = {
     COMPLEXITY_KEYWORDS: ["analyze", "compare", "evaluate", "research", "complex", "detailed", "comprehensive"]
   },
 
+  // Short prompts go to chat model to avoid Responses availability hiccups
   SHORT_CHAT_THRESHOLD: Number(process.env.FORCE_CHAT_BELOW_CHARS || 64)
 };
 function capFor(model) {
@@ -225,7 +207,6 @@ function capFor(model) {
 // ---------- Model Selection ----------
 function selectOptimalModel(prompt, options) {
   options = options || {};
-  if (options.forceModel) return options.forceModel;
   if (options.model) return options.model;
 
   var text = str(prompt);
@@ -271,70 +252,16 @@ function logApiCall(model, apiType, inputTokens, outputTokens, ms, success, erro
   return cost;
 }
 
-// ---------- Context awareness (NEW) ----------
-function extractContextSliceForHash(text) {
-  try {
-    text = str(text);
-    var marks = [
-      "IMPORTANT CONTEXT:",
-      "CONTEXT:",
-      "PERSISTENT MEMORIES (Important Facts):",
-      "USER PROFILE:",
-      "STRATEGIC INTELLIGENCE SUMMARY:"
-    ];
-    var i, pos = -1, m = "";
-    for (i = 0; i < marks.length; i++) {
-      var idx = text.indexOf(marks[i]);
-      if (idx >= 0 && (pos === -1 || idx < pos)) { pos = idx; m = marks[i]; }
-    }
-    if (pos === -1) return ""; // no context markers; return empty => cache key won't get context salt
-
-    // Take up to ~8k chars from the first marker (enough to capture memory changes)
-    var slice = text.slice(pos, pos + 8000);
-    // Normalize whitespace to reduce churn
-    slice = slice.replace(/\s+/g, " ").trim();
-    return slice;
-  } catch (e) { return ""; }
-}
-function contextHash(text) {
-  var slice = extractContextSliceForHash(text);
-  if (!slice) return "";
-  return crypto.createHash("sha256").update(slice).digest("hex").slice(0, 16);
-}
-function looksLikeLowContextFallback(text) {
-  var s = str(text);
-  return s.indexOf("Context for user ") >= 0 || s.indexOf("Basic context for user ") >= 0;
-}
-
-// ---------- Extraction (hardened) ----------
+// ---------- Extraction ----------
 function safeExtractResponseText(completion, apiType) {
   try {
     if (apiType === "responses") {
-      var t1 = g(completion, "output_text", null);
-      if (typeof t1 === "string" && t1.trim()) return t1.trim();
-
-      // modern content array with explicit types
-      var contentArr = g(completion, "output.0.content", null) || g(completion, "content", null);
-      if (contentArr && contentArr.length) {
-        var buf = "";
-        for (var i = 0; i < contentArr.length; i++) {
-          var p = contentArr[i] || {};
-          var typ = p.type || "";
-          if (typ === "output_text" && typeof p.text === "string") buf += p.text;
-          else if (typ === "text" && typeof p.text === "string") buf += p.text;
-          else if (typeof p === "string") buf += p;
-          else {
-            var maybe = g(p, "text.value", null);
-            if (typeof maybe === "string") buf += maybe;
-          }
-        }
-        if (buf && buf.trim()) return buf.trim();
-      }
-
-      // chat-like fallback fields that some SDK versions include
+      var outputText = g(completion, "output_text", null);
+      if (typeof outputText === "string") return outputText.trim() || "[Empty response]";
+      var maybe = g(completion, "output.0.content.0.text.value", null);
+      if (typeof maybe === "string") return maybe.trim();
       var chatLike = g(completion, "choices.0.message.content", null);
       if (chatLike) return String(chatLike).trim();
-
       return "[Unknown response structure]";
     } else {
       var msg = g(completion, "choices.0.message.content", null);
@@ -347,24 +274,19 @@ function safeExtractResponseText(completion, apiType) {
 function buildResponsesRequest(model, input, options) {
   options = options || {};
   var req = { model: model, input: str(input) };
-
-  // do not pass chat-only knobs to Responses
-  // (temperature is okay; top_p/frequency/presence removed intentionally)
-
-  if (typeof options.temperature === "number") req.temperature = options.temperature;
-
   var effort = options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING;
   if (effort === "low" || effort === "medium" || effort === "high") req.reasoning = { effort: effort };
-
   var asked = options.max_output_tokens || options.max_completion_tokens || 8000;
-  req.max_output_tokens = clamp(asked, 16, capFor(model));
+  req.max_output_tokens = Math.max(16, Math.min(asked, capFor(model)));
+  // NOTE: Sampling controls like temperature/top_p/penalties are NOT supported on GPT-5 Responses.
+  // Do not set them here to avoid 400: Unsupported parameter errors.
   return req;
 }
 function buildChatRequest(model, messages, options) {
   options = options || {};
   var req = { model: model, messages: messages };
   var asked = options.max_tokens || options.max_completion_tokens || 8000;
-  req.max_tokens = clamp(asked, 1, capFor(model));
+  req.max_tokens = Math.max(1, Math.min(asked, capFor(model)));
   if (typeof options.temperature === "number") req.temperature = options.temperature;
   if (typeof options.top_p === "number") req.top_p = options.top_p;
   if (typeof options.frequency_penalty === "number") req.frequency_penalty = options.frequency_penalty;
@@ -417,62 +339,35 @@ function getGPT5Analysis(prompt, options) {
     return attempt();
   }
 
-  return new Promise(function (resolve, reject) {
-    var rejectOrResolve = function (msg) {
-      if (ENV_REJECT_ON_ERROR) return reject(new Error(msg));
-      return resolve("Service error. Details: " + msg + "\nBreaker: " + circuitBreaker.getState());
-    };
-
+  return new Promise(function (resolve) {
     try {
-      if (!prompt || typeof prompt !== "string") return rejectOrResolve("Invalid prompt: must be non-empty string");
+      if (!prompt || typeof prompt !== "string") throw new Error("Invalid prompt: must be non-empty string");
       var text = str(prompt);
       if (text.length > GPT5_CONFIG.MAX_PROMPT_LENGTH) text = text.slice(0, GPT5_CONFIG.MAX_PROMPT_LENGTH) + "\n... (truncated)";
 
-      // NEW: context-aware cache key
-      var ctxHash = contextHash(text);
-
-      // NEW: avoid caching low-context fallback prompts
-      var skipCacheNow = Boolean(options.skipCache) || looksLikeLowContextFallback(text);
-
-      if (!skipCacheNow) {
-        var key = cache.generateKey(text, options, ctxHash);
-        var cached = cache.get(key);
+      if (!options.skipCache) {
+        var key = cache.generateKey(text, options); var cached = cache.get(key);
         if (cached) return resolve("[CACHED] " + cached);
-      } else {
-        if (looksLikeLowContextFallback(text)) {
-          console.log("[GPT5-CACHE] Bypass cache because prompt looks like minimal/fallback context.");
-        }
       }
 
       selectedModel = selectOptimalModel(text, options);
       var useResponses = selectedModel.indexOf("gpt-5") >= 0 && selectedModel !== GPT5_CONFIG.CHAT_MODEL;
       apiUsed = useResponses ? "responses" : "chat";
 
-      // visibility
-      console.log("[GPT5-SELECT] model=" + selectedModel + " api=" + (useResponses ? "responses" : "chat"));
-
-      if (ENV_DUMP_PROMPT) {
-        console.log("[GPT5-PROMPT-HEAD] " + head(text, 400));
-      }
-
       inputTokens = Math.ceil(text.length / 3.5);
 
       circuitBreaker.execute(function () {
         if (useResponses) {
           var req = buildResponsesRequest(selectedModel, text, {
-            reasoning_effort: options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING,
-            max_output_tokens: options.max_output_tokens || options.max_completion_tokens || 8000,
-            temperature: typeof options.temperature === "number" ? options.temperature : GPT5_CONFIG.DEFAULT_TEMPERATURE
-          });
+          reasoning_effort: options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING,
+          max_output_tokens: options.max_output_tokens || options.max_completion_tokens || 8000
+        });
           return withBackoff(function () { return openai.responses.create(req); });
         } else {
           var messages = [{ role: "user", content: text }];
           var chatReq = buildChatRequest(selectedModel, messages, {
             max_tokens: options.max_tokens || options.max_completion_tokens || 8000,
-            temperature: typeof options.temperature === "number" ? options.temperature : GPT5_CONFIG.DEFAULT_TEMPERATURE,
-            top_p: options.top_p,
-            frequency_penalty: options.frequency_penalty,
-            presence_penalty: options.presence_penalty
+            temperature: typeof options.temperature === "number" ? options.temperature : GPT5_CONFIG.DEFAULT_TEMPERATURE
           });
           return withBackoff(function () { return openai.chat.completions.create(chatReq); });
         }
@@ -487,10 +382,8 @@ function getGPT5Analysis(prompt, options) {
         var ms = Date.now() - start; var cost = logApiCall(selectedModel, apiUsed, inputTokens, outputTokens, ms, true);
         metrics.recordCall(selectedModel, true, inputTokens + outputTokens, cost, ms);
 
-        // cache only if not bypassed and output looks normal
-        if (!skipCacheNow && out.length > 10 && out[0] !== "[") {
-          var k2 = cache.generateKey(text, options, ctxHash);
-          cache.set(k2, out);
+        if (!options.skipCache && out.length > 10 && out[0] !== "[") {
+          var k2 = cache.generateKey(text, options); cache.set(k2, out);
         }
         resolve(out);
       }).catch(function (err) {
@@ -499,10 +392,11 @@ function getGPT5Analysis(prompt, options) {
         var merged = provider ? (err.message + " | Provider: " + provider) : (err && err.message ? err.message : String(err));
         logApiCall(selectedModel, apiUsed, inputTokens, outputTokens, ms2, false, merged);
         metrics.recordCall(selectedModel, false, 0, 0, ms2, merged);
-        rejectOrResolve(merged);
+        // NO FALLBACK: return error to caller
+        resolve("Service error. Details: " + merged + "\nBreaker: " + circuitBreaker.getState());
       });
     } catch (outer) {
-      rejectOrResolve(outer && outer.message ? outer.message : String(outer));
+      resolve("Service error. Details: " + (outer && outer.message ? outer.message : String(outer)));
     }
   });
 }
@@ -536,22 +430,13 @@ function getChatWithMemory(messages, memory, options) {
     return attempt();
   }
 
-  return new Promise(function (resolve, reject) {
-    var rejectOrResolve = function (msg) {
-      if (ENV_REJECT_ON_ERROR) return reject(new Error(msg));
-      return resolve("Service error (chat-with-memory). Details: " + msg);
-    };
+  return new Promise(function (resolve) {
     try {
-      var key = null, cached = null;
       if (!options.skipCache) {
-        // include memory hash in cache key
-        var textish = JSON.stringify(msgs);
-        var ctxHash = contextHash(textish);
-        key = cache.generateKey(textish, options, ctxHash);
-        cached = cache.get(key);
+        var key = cache.generateKey(JSON.stringify(msgs), options);
+        var cached = cache.get(key);
         if (cached) return resolve("[CACHED] " + cached);
       }
-
       inputTokens = Math.ceil(JSON.stringify(msgs).length / 3.5);
       var chatReq = buildChatRequest(model, msgs, {
         max_tokens: options.max_tokens || options.max_completion_tokens || 800,
@@ -574,7 +459,7 @@ function getChatWithMemory(messages, memory, options) {
         metrics.recordCall(model, true, inputTokens + outputTokens, cost, ms);
 
         if (!options.skipCache && out.length > 10 && out[0] !== "[") {
-          cache.set(key, out);
+          var key2 = cache.generateKey(JSON.stringify(msgs), options); cache.set(key2, out);
         }
         resolve(out);
       }).catch(function (err) {
@@ -582,10 +467,10 @@ function getChatWithMemory(messages, memory, options) {
         var emsg = err && err.message ? err.message : String(err);
         logApiCall(model, apiUsed, inputTokens, outputTokens, ms2, false, emsg);
         metrics.recordCall(model, false, 0, 0, ms2, emsg);
-        rejectOrResolve(emsg);
+        resolve("Service error (chat-with-memory). Details: " + emsg);
       });
     } catch (outer) {
-      rejectOrResolve(outer && outer.message ? outer.message : String(outer));
+      resolve("Service error (chat-with-memory). Details: " + (outer && outer.message ? outer.message : String(outer)));
     }
   });
 }
@@ -645,12 +530,10 @@ function checkGPT5SystemHealth() {
 
       try {
         var m1 = selectOptimalModel("hi", { reasoning_effort: "low" });
-        var big = new Array(3000).join("A");
-        var m2 = selectOptimalModel(big, { reasoning_effort: "low" });
+        var m2 = selectOptimalModel(new Array(3000).join("A"), { reasoning_effort: "low" });
         var m3 = selectOptimalModel("analyze and compare strategic options with detailed evaluation", { reasoning_effort: "high" });
         var distinct = {}; distinct[m1] = 1; distinct[m2] = 1; distinct[m3] = 1; var keys = Object.keys(distinct);
         health.smartModelSelection = keys.length >= 2 && (process.env.SMART_MODEL_SELECT !== "false");
-        health.modelSamples = { short: m1, long: m2, complex: m3 };
       } catch (e) { health.errors.push("SmartSelect: " + e.message); }
 
       if (Number(health.metrics.successRate) < 95) health.recommendations.push("Success rate below 95% - check API key and quotas");
