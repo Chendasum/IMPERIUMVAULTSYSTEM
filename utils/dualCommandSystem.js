@@ -265,7 +265,7 @@ function detectCompletionStatus(message, memoryContext = '') {
   
   const hasDirectCompletion = directCompletionPatterns.some(pattern => pattern.test(messageText));
   const hasFrustration = frustrationPatterns.some(pattern => pattern.test(messageText));
-  const hasContextCompletion = contextCompletionPatterns.some(pattern => pattern.test(contextText);
+  const hasContextCompletion = contextCompletionPatterns.some(pattern => pattern.test(contextText));
   
   // 🚨 ADDITIONAL SAFETY CHECK - DON'T TRIGGER ON QUESTIONS
   const isQuestion = messageText.includes('what') || 
