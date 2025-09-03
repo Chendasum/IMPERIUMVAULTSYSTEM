@@ -145,6 +145,138 @@ async function initializeDatabase() {
 }
 
 /**
+ * 🔧 FIX POSTGRESQL COLLATION VERSION MISMATCH
+ * Add this function to your database.js file
+ */
+async function fixCollationVersionMismatch() {
+    try {
+        console.log('[DB-COLLATION] Checking and fixing collation version mismatch...');
+        
+        // First, check if we have the mismatch issue
+        const versionCheck = await pool.query(`
+            SELECT datname, datcollversion 
+            FROM pg_database 
+            WHERE datname = current_database()
+        `);
+        
+        console.log('[DB-COLLATION] Current database collation info:', versionCheck.rows[0]);
+        
+        // Fix the collation version mismatch
+        await pool.query('ALTER DATABASE railway REFRESH COLLATION VERSION');
+        
+        console.log('✅ [DB-COLLATION] Collation version refreshed successfully');
+        return true;
+        
+    } catch (error) {
+        // This error is expected if there's no mismatch or insufficient permissions
+        console.log(`[DB-COLLATION] ⚠️ Collation refresh result: ${error.message}`);
+        
+        // If it's just a permission issue or already fixed, that's okay
+        if (error.message.includes('permission') || error.message.includes('does not exist')) {
+            console.log('[DB-COLLATION] ℹ️ Collation refresh not needed or handled by Railway');
+            return true;
+        }
+        
+        return false;
+    }
+}
+
+// Add this to your initializeDatabase function, right after the schema creation
+// Replace your existing initializeDatabase function with this updated version:
+
+async function initializeDatabase() {
+    try {
+        console.log('🚀 Initializing Core Database Schema...');
+        
+        // First, try to fix collation version mismatch
+        await fixCollationVersionMismatch();
+        
+        await pool.query(`
+            -- Core conversation storage
+            CREATE TABLE IF NOT EXISTS conversations (
+                id SERIAL PRIMARY KEY,
+                chat_id VARCHAR(50) NOT NULL,
+                user_message TEXT NOT NULL,
+                gpt_response TEXT NOT NULL,
+                message_type VARCHAR(20) DEFAULT 'text',
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                context_data JSONB,
+                response_time_ms INTEGER
+            );
+            
+            -- User profiles
+            CREATE TABLE IF NOT EXISTS user_profiles (
+                chat_id VARCHAR(50) PRIMARY KEY,
+                conversation_count INTEGER DEFAULT 0,
+                first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                preferences JSONB DEFAULT '{}'
+            );
+            
+            -- Persistent memories
+            CREATE TABLE IF NOT EXISTS persistent_memories (
+                id SERIAL PRIMARY KEY,
+                chat_id VARCHAR(50) NOT NULL,
+                fact TEXT NOT NULL,
+                importance VARCHAR(10) DEFAULT 'medium',
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                access_count INTEGER DEFAULT 0,
+                fact_hash VARCHAR(64)
+            );
+            
+            -- Training documents
+            CREATE TABLE IF NOT EXISTS training_documents (
+                id SERIAL PRIMARY KEY,
+                chat_id VARCHAR(50) NOT NULL,
+                file_name VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                document_type VARCHAR(50) DEFAULT 'general',
+                upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                word_count INTEGER,
+                summary TEXT
+            );
+            
+            -- System metrics
+            CREATE TABLE IF NOT EXISTS system_metrics (
+                id SERIAL PRIMARY KEY,
+                metric_date DATE DEFAULT CURRENT_DATE,
+                total_users INTEGER DEFAULT 0,
+                active_users INTEGER DEFAULT 0,
+                total_queries INTEGER DEFAULT 0,
+                avg_response_time DECIMAL(8,2) DEFAULT 0,
+                error_rate DECIMAL(5,4) DEFAULT 0,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        
+        // Create indexes for performance
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_conversations_chat_id_time ON conversations(chat_id, timestamp DESC);
+            CREATE INDEX IF NOT EXISTS idx_memories_chat_id ON persistent_memories(chat_id);
+            CREATE INDEX IF NOT EXISTS idx_memories_hash ON persistent_memories(fact_hash);
+            CREATE INDEX IF NOT EXISTS idx_training_chat_id ON training_documents(chat_id);
+        `);
+        
+        console.log('✅ Core Database schema initialized successfully');
+        
+        // Initialize today's metrics
+        await initializeSystemMetrics();
+        
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Database initialization error:', error);
+        connectionStats.lastError = error.message;
+        connectionStats.connectionHealth = 'INIT_ERROR';
+        return false;
+    }
+}
+
+// Also add the fixCollationVersionMismatch function to your module.exports:
+// Add this line to the module.exports object:
+// fixCollationVersionMismatch,
+
+/**
  * 📊 INITIALIZE SYSTEM METRICS
  */
 async function initializeSystemMetrics() {
