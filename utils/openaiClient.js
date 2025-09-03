@@ -207,11 +207,6 @@ function capFor(model) {
 // ---------- Model Selection ----------
 function selectOptimalModel(prompt, options) {
   options = options || {};
-
-  // NEW: honor forceModel first (used by dualCommandSystem)
-  if (options.forceModel) return options.forceModel;
-
-  // Existing: explicit model next
   if (options.model) return options.model;
 
   var text = str(prompt);
@@ -279,20 +274,12 @@ function safeExtractResponseText(completion, apiType) {
 function buildResponsesRequest(model, input, options) {
   options = options || {};
   var req = { model: model, input: str(input) };
-
-  // NEW: guard - do not propagate chat-only knobs into Responses
-  if (options.temperature !== undefined ||
-      options.top_p !== undefined ||
-      options.frequency_penalty !== undefined ||
-      options.presence_penalty !== undefined) {
-    // intentionally ignored to avoid 400s on Responses API
-  }
-
   var effort = options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING;
   if (effort === "low" || effort === "medium" || effort === "high") req.reasoning = { effort: effort };
-
   var asked = options.max_output_tokens || options.max_completion_tokens || 8000;
   req.max_output_tokens = Math.max(16, Math.min(asked, capFor(model)));
+  // NOTE: Sampling controls like temperature/top_p/penalties are NOT supported on GPT-5 Responses.
+  // Do not set them here to avoid 400: Unsupported parameter errors.
   return req;
 }
 function buildChatRequest(model, messages, options) {
@@ -367,17 +354,14 @@ function getGPT5Analysis(prompt, options) {
       var useResponses = selectedModel.indexOf("gpt-5") >= 0 && selectedModel !== GPT5_CONFIG.CHAT_MODEL;
       apiUsed = useResponses ? "responses" : "chat";
 
-      // NEW: log chosen model + api for visibility
-      console.log("[GPT5-SELECT] model=" + selectedModel + " api=" + (useResponses ? "responses" : "chat"));
-
       inputTokens = Math.ceil(text.length / 3.5);
 
       circuitBreaker.execute(function () {
         if (useResponses) {
           var req = buildResponsesRequest(selectedModel, text, {
-            reasoning_effort: options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING,
-            max_output_tokens: options.max_output_tokens || options.max_completion_tokens || 8000
-          });
+          reasoning_effort: options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING,
+          max_output_tokens: options.max_output_tokens || options.max_completion_tokens || 8000
+        });
           return withBackoff(function () { return openai.responses.create(req); });
         } else {
           var messages = [{ role: "user", content: text }];
@@ -550,7 +534,6 @@ function checkGPT5SystemHealth() {
         var m3 = selectOptimalModel("analyze and compare strategic options with detailed evaluation", { reasoning_effort: "high" });
         var distinct = {}; distinct[m1] = 1; distinct[m2] = 1; distinct[m3] = 1; var keys = Object.keys(distinct);
         health.smartModelSelection = keys.length >= 2 && (process.env.SMART_MODEL_SELECT !== "false");
-        health.modelSamples = { short: m1, long: m2, complex: m3 }; // NEW: expose samples
       } catch (e) { health.errors.push("SmartSelect: " + e.message); }
 
       if (Number(health.metrics.successRate) < 95) health.recommendations.push("Success rate below 95% - check API key and quotas");
