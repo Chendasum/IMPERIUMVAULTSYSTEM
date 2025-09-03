@@ -62,8 +62,9 @@ function getModelName(metadata) {
   if (model.includes('gpt-5-nano')) return 'gpt-5-nano';
   if (model.includes('gpt-5-mini')) return 'gpt-5-mini';
   if (model.includes('gpt-5') || model.includes('GPT-5')) return 'gpt-5';
-  if (model.includes('completion')) return 'gpt-5';
+  if (model.includes('completion')) return 'completion';
   if (model.includes('error')) return 'system';
+  if (model.includes('professional')) return 'gpt-5';
   return model.toLowerCase();
 }
 
