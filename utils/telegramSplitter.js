@@ -113,35 +113,44 @@ function cleanText(text) {
 function findSafeBreakpoint(text, maxLength) {
   if (text.length <= maxLength) return text.length;
   
-  // Look for good breaking points near the limit
-  const searchStart = Math.max(0, maxLength - 200);
+  // Look for good breaking points near the limit with better logic
+  const searchStart = Math.max(0, maxLength - 300); // Larger search area
   const searchText = text.substring(searchStart, maxLength);
   
-  // Prefer breaking at paragraph boundaries
-  const paragraphBreak = searchText.lastIndexOf('\n\n');
-  if (paragraphBreak !== -1) {
-    return searchStart + paragraphBreak + 2;
+  // Priority 1: Break at section boundaries (double newlines)
+  const sectionBreak = searchText.lastIndexOf('\n\n');
+  if (sectionBreak !== -1) {
+    return searchStart + sectionBreak + 2;
   }
   
-  // Fall back to sentence boundaries
+  // Priority 2: Break at paragraph or list end
+  const listEnd = searchText.lastIndexOf('\n• ');
+  if (listEnd !== -1) {
+    const nextNewline = text.indexOf('\n', searchStart + listEnd + 1);
+    if (nextNewline !== -1 && nextNewline < maxLength) {
+      return nextNewline + 1;
+    }
+  }
+  
+  // Priority 3: Break at sentence boundaries
   const sentenceBreak = searchText.lastIndexOf('. ');
   if (sentenceBreak !== -1) {
     return searchStart + sentenceBreak + 2;
   }
   
-  // Fall back to any newline
+  // Priority 4: Break at any newline
   const lineBreak = searchText.lastIndexOf('\n');
   if (lineBreak !== -1) {
     return searchStart + lineBreak + 1;
   }
   
-  // Last resort: word boundary
+  // Priority 5: Word boundary
   const wordBreak = searchText.lastIndexOf(' ');
   if (wordBreak !== -1) {
     return searchStart + wordBreak + 1;
   }
   
-  // Hard break if no good options
+  // Last resort: hard break
   return maxLength;
 }
 
