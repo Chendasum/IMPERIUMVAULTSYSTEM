@@ -2189,272 +2189,18 @@ module.exports = {
   processResponse,
   performGPT5HealthCheck
 };
-// utils/dualCommandSystem.js - PART 4/6: PROFESSIONAL EXECUTION ENGINE
-// Enhanced with professional formatting, robust error handling, and memory integration
-// ════════════════════════════════════════════════════════════════════════════
 
-console.log('Loading Part 4/6: Professional Execution Engine...');
+// utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 4/6
+// MAIN COMMAND EXECUTION ENGINE
 
-// ════════════════════════════════════════════════════════════════════════════
-// PROFESSIONAL FORMATTING SYSTEM
-// ════════════════════════════════════════════════════════════════════════════
-
-const PROFESSIONAL_FORMATTING_PROMPT = `
-FORMATTING INSTRUCTIONS - Apply to ALL responses:
-
-**Professional Structure:**
-• Use clear, executive-style headers with **bold formatting**
-• Organize information hierarchically with proper spacing
-• Use strategic bullet points (▫️) for key information
-• Apply appropriate context-aware formatting
-
-**Content Enhancement:**
-• Bold important terms, numbers, and key concepts
-• Use \`code formatting\` for technical terms, APIs, amounts
-• Structure complex information in organized sections
-• Maintain professional business tone throughout
-
-**Visual Presentation:**
-• Ensure proper spacing between sections
-• Use numbered lists (1️⃣ 2️⃣ 3️⃣) for sequences
-• Apply consistent formatting for similar content types
-• End with clear conclusions when appropriate
-
-**Quality Standards:**
-• Executive-level presentation
-• Scannable format with clear hierarchy
-• Professional context-appropriate formatting
-• Clean, consistent formatting throughout
-`;
-
-function detectQueryType(userMessage) {
-  const message = safeString(userMessage).toLowerCase();
-  
-  // Business strategy patterns
-  if (/(strategy|business|market|competition|analysis|opportunity|capital|structur)/i.test(message)) {
-    return 'business';
-  }
-  
-  // Financial patterns  
-  if (/(financial|money|investment|portfolio|profit|revenue|cost|budget|lending|credit)/i.test(message)) {
-    return 'financial';
-  }
-  
-  // Technical patterns
-  if (/(code|api|system|technical|implementation|development|database|integration)/i.test(message)) {
-    return 'technical';
-  }
-  
-  // Complex analysis patterns
-  if (/(comprehensive|detailed|analyze|evaluate|assess|thorough|deep|complete)/i.test(message)) {
-    return 'complex';
-  }
-  
-  return 'standard';
-}
-
-function buildProfessionalPrompt(userMessage, context, queryType) {
-  let basePrompt = '';
-  
-  // Add context if available
-  if (context && safeString(context).length > 0) {
-    basePrompt += `CONTEXT:\n${safeString(context).substring(0, 4000)}\n\n`;
-  }
-  
-  // Add user message
-  basePrompt += `USER REQUEST:\n${safeString(userMessage)}\n\n`;
-  
-  // Add formatting instructions based on query type
-  switch (queryType) {
-    case 'business':
-      basePrompt += `${PROFESSIONAL_FORMATTING_PROMPT}\n\n**BUSINESS FOCUS:** Structure as professional business communication with clear value propositions and actionable insights.\n\n`;
-      break;
-      
-    case 'financial':
-      basePrompt += `${PROFESSIONAL_FORMATTING_PROMPT}\n\n**FINANCIAL ANALYSIS:** Structure as professional financial report with clear metrics, analysis, and recommendations.\n\n`;
-      break;
-      
-    case 'technical':
-      basePrompt += `${PROFESSIONAL_FORMATTING_PROMPT}\n\n**TECHNICAL PRECISION:** Present technical information clearly with proper code formatting and structured explanations.\n\n`;
-      break;
-      
-    case 'complex':
-      basePrompt += `${PROFESSIONAL_FORMATTING_PROMPT}\n\n**ANALYSIS DEPTH:** Provide comprehensive, executive-level analysis with detailed insights and strategic recommendations.\n\n`;
-      break;
-      
-    default:
-      basePrompt += `${PROFESSIONAL_FORMATTING_PROMPT}\n\n**PROFESSIONAL RESPONSE:** Provide well-structured, professional response with clear formatting and appropriate business tone.\n\n`;
-  }
-  
-  basePrompt += `RESPOND WITH PROFESSIONAL FORMATTING:`;
-  
-  return basePrompt;
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// SAFE STRING UTILITIES (PREVENT TYPE ERRORS)
-// ════════════════════════════════════════════════════════════════════════════
-
-function safeString(value) {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object') {
-    try {
-      return JSON.stringify(value);
-    } catch (error) {
-      return String(value);
-    }
-  }
-  return String(value);
-}
-
-function safeLowerCase(text) {
-  return safeString(text).toLowerCase();
-}
-
-function safeSubstring(text, start, end) {
-  const str = safeString(text);
-  return str.substring(start || 0, end || str.length);
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// QUERY PREPROCESSING
-// ════════════════════════════════════════════════════════════════════════════
-
-function preprocessQuery(userMessage, options) {
-  options = options || {};
-  
-  const cleaned = safeString(userMessage)
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/[ \t]+$/gm, '')
-    .trim();
-  
-  const isEmpty = cleaned.length < 2;
-  const isTooLong = cleaned.length > 32000;
-  
-  return {
-    original: userMessage,
-    cleaned: isTooLong ? cleaned.substring(0, 32000) + '...[truncated]' : cleaned,
-    isEmpty: isEmpty,
-    isTruncated: isTooLong,
-    length: cleaned.length,
-    wordCount: cleaned.split(/\s+/).length
-  };
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// QUERY ANALYSIS VALIDATION
-// ════════════════════════════════════════════════════════════════════════════
-
-function validateQueryAnalysis(queryAnalysis) {
-  const errors = [];
-  const warnings = [];
-  
-  if (!queryAnalysis) {
-    errors.push('Query analysis is null or undefined');
-    return { isValid: false, errors, warnings };
-  }
-  
-  if (!queryAnalysis.gpt5Model) {
-    errors.push('No GPT-5 model selected');
-  }
-  
-  if (!queryAnalysis.type) {
-    warnings.push('Query type not specified');
-  }
-  
-  if (!queryAnalysis.priority) {
-    warnings.push('Priority level not set');
-  }
-  
-  if (typeof queryAnalysis.confidence !== 'number' || queryAnalysis.confidence < 0 || queryAnalysis.confidence > 1) {
-    warnings.push('Invalid confidence value');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors,
-    warnings
-  };
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// RESPONSE PROCESSING
-// ════════════════════════════════════════════════════════════════════════════
-
-function processResponse(response, queryAnalysis, metadata) {
-  metadata = metadata || {};
-  
-  let processed = safeString(response)
-    .replace(/^(Assistant:|AI:|GPT-?5?:)\s*/i, '')
-    .replace(/\s+\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-  
-  // Add professional footer if needed
-  if (metadata.addFooter && processed.length > 100) {
-    const footerElements = [];
-    
-    if (queryAnalysis && queryAnalysis.gpt5Model) {
-      footerElements.push(`Model: ${queryAnalysis.gpt5Model}`);
-    }
-    
-    if (metadata.processingTime) {
-      footerElements.push(`Processing: ${metadata.processingTime}ms`);
-    }
-    
-    if (footerElements.length > 0) {
-      processed += `\n\n---\n*${footerElements.join(' • ')}*`;
-    }
-  }
-  
-  return processed;
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// CAMBODIA TIMEZONE UTILITY
-// ════════════════════════════════════════════════════════════════════════════
-
-function getCurrentCambodiaDateTime() {
-  try {
-    const now = new Date();
-    const cambodiaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' }));
-    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    
-    return {
-      date: `${days[cambodiaTime.getDay()]}, ${months[cambodiaTime.getMonth()]} ${cambodiaTime.getDate()}, ${cambodiaTime.getFullYear()}`,
-      time: `${cambodiaTime.getHours().toString().padStart(2, '0')}:${cambodiaTime.getMinutes().toString().padStart(2, '0')}`,
-      hour: cambodiaTime.getHours(),
-      isWeekend: cambodiaTime.getDay() === 0 || cambodiaTime.getDay() === 6,
-      isBusinessHours: cambodiaTime.getDay() !== 0 && cambodiaTime.getDay() !== 6 && 
-                       cambodiaTime.getHours() >= 8 && cambodiaTime.getHours() <= 17,
-      timezone: 'ICT (UTC+7)'
-    };
-  } catch (error) {
-    const fallback = new Date();
-    return {
-      date: fallback.toDateString(),
-      time: fallback.toTimeString().slice(0, 5),
-      hour: fallback.getHours(),
-      timezone: 'UTC'
-    };
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// MAIN EXECUTION FUNCTION
-// ════════════════════════════════════════════════════════════════════════════
-
+// MAIN COMMAND EXECUTION FUNCTION
 async function executeDualCommand(userMessage, chatId, options) {
   options = options || {};
   const startTime = Date.now();
 
   try {
-    console.log(`[ExecutionEngine] Processing command for chat ${chatId}`);
-    console.log(`[ExecutionEngine] Message preview: ${safeSubstring(userMessage, 0, 100)}...`);
+    console.log('Executing secure GPT-5 command for chat ' + chatId);
+    console.log('Message preview:', String(userMessage).substring(0, 100));
 
     // 1) Preprocess the query
     const preprocessed = preprocessQuery(userMessage, options);
@@ -2462,42 +2208,29 @@ async function executeDualCommand(userMessage, chatId, options) {
       return createErrorResponse('Message too short or empty', startTime, chatId);
     }
 
-    console.log(`[ExecutionEngine] Preprocessed: ${preprocessed.length} chars, ${preprocessed.wordCount} words`);
-
     // 2) Build memory context (only for non-test conversations)
-    const lower = safeLowerCase(userMessage);
-    const isSystemTest = 
-      lower.includes('test memory') ||
-      lower.includes('integration test') ||
+    const lower = String(userMessage).toLowerCase();
+    const isSystemTest =
+      lower.indexOf('test memory') >= 0 ||
+      lower.indexOf('integration test') >= 0 ||
       options.forceMemoryTest === true;
 
-    let memoryContext = options.memoryContext || '';
-    let memoryData = {
+    var memoryContext = options.memoryContext || '';
+    var memoryData = {
       conversationHistory: options.conversationHistory || [],
       persistentMemory: options.persistentMemory || []
     };
 
     if (!isSystemTest && !memoryContext && !options.conversationHistory && !options.persistentMemory) {
-      console.log('[ExecutionEngine] Building memory context...');
-      try {
-        // Use the fixed buildMemoryContext from your system
-        memoryContext = await buildMemoryContext(chatId, options.contextLevel || 'full');
-        console.log(`[ExecutionEngine] Memory context loaded: ${memoryContext.length} chars`);
-      } catch (memoryError) {
-        console.warn(`[ExecutionEngine] Memory context failed: ${memoryError.message}`);
-        memoryContext = '';
-      }
+      console.log('Building memory context for normal conversation...');
+      const memoryResult = await buildMemoryContext(chatId, {
+        forceDatabaseFallback: options.forceDatabaseFallback
+      });
+      memoryContext = memoryResult.context;
+      memoryData = memoryResult.memoryData;
     }
 
-    // 3) Detect query type for professional formatting
-    const queryType = detectQueryType(preprocessed.cleaned);
-    console.log(`[ExecutionEngine] Query type detected: ${queryType}`);
-
-    // 4) Build professional prompt
-    const professionalPrompt = buildProfessionalPrompt(preprocessed.cleaned, memoryContext, queryType);
-    console.log(`[ExecutionEngine] Professional prompt built: ${professionalPrompt.length} chars`);
-
-    // 5) Analyze query for optimal GPT-5 model selection
+    // 3) Analyze query for optimal GPT-5 model selection
     const queryAnalysis = analyzeQuery(
       preprocessed.cleaned,
       options.messageType || 'text',
@@ -2505,95 +2238,80 @@ async function executeDualCommand(userMessage, chatId, options) {
       memoryContext
     );
 
-    // 5.1) Handle completion detection FIRST
+    // 3.1) Handle completion detection FIRST
     if (queryAnalysis.shouldSkipGPT5) {
-      console.log(`[ExecutionEngine] Completion detected: ${queryAnalysis.completionStatus.completionType}`);
-      return createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime, chatId, queryType);
+      console.log('Completion detected: ' + queryAnalysis.completionStatus.completionType);
+      return createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime, chatId);
     }
 
-    // 6) Validate the analysis
+    // 4) Validate the analysis
     const validation = validateQueryAnalysis(queryAnalysis);
     if (!validation.isValid) {
-      console.error('[ExecutionEngine] Query analysis validation failed:', validation.errors);
+      console.error('Query analysis validation failed:', validation.errors);
       return createErrorResponse(
-        `Analysis validation failed: ${validation.errors.join(', ')}`,
+        'Analysis validation failed: ' + validation.errors.join(', '),
         startTime,
         chatId
       );
     }
-    
     if (validation.warnings && validation.warnings.length > 0) {
-      console.warn('[ExecutionEngine] Query analysis warnings:', validation.warnings);
+      console.warn('Query analysis warnings:', validation.warnings);
     }
 
-    // 7) Override model if forced
-    if (options.forceModel && safeString(options.forceModel).includes('gpt-5')) {
+    // 5) Override model if forced
+    if (options.forceModel && String(options.forceModel).indexOf('gpt-5') === 0) {
       queryAnalysis.gpt5Model = options.forceModel;
-      queryAnalysis.reason = `Forced to use ${options.forceModel}`;
-      console.log(`[ExecutionEngine] Model override: Using ${options.forceModel}`);
+      queryAnalysis.reason = 'Forced to use ' + options.forceModel;
+      console.log('Model override: Using ' + options.forceModel);
     }
 
-    console.log('[ExecutionEngine] Query analysis complete:', {
+    console.log('Query analysis complete:', {
       type: queryAnalysis.type,
       priority: queryAnalysis.priority,
       model: queryAnalysis.gpt5Model,
       reasoning: queryAnalysis.reasoning_effort,
       verbosity: queryAnalysis.verbosity,
       confidence: queryAnalysis.confidence,
-      queryType: queryType
+      memoryImportant: queryAnalysis.memoryImportant,
+      estimatedCost: queryAnalysis.estimatedCost && queryAnalysis.estimatedCost.totalCost
     });
 
-    // 8) Execute through GPT-5 system with professional prompt
+    // 6) Execute through GPT-5 system
     let gpt5Result;
     try {
       gpt5Result = await executeThroughGPT5System(
-        professionalPrompt,  // Use professional prompt instead of raw message
+        preprocessed.cleaned,
         queryAnalysis,
-        '', // No additional context needed since it's in the prompt
+        memoryContext,
+        memoryData,
         chatId
       );
 
-      console.log('[ExecutionEngine] GPT-5 execution successful:', {
+      console.log('GPT-5 execution successful:', {
         aiUsed: gpt5Result.aiUsed,
         processingTime: gpt5Result.processingTime,
         tokensUsed: gpt5Result.tokensUsed,
         memoryUsed: gpt5Result.memoryUsed
       });
     } catch (gpt5Error) {
-      console.error('[ExecutionEngine] GPT-5 system failed:', gpt5Error.message);
+      console.error('GPT-5 system failed:', gpt5Error.message);
       return createErrorResponse(gpt5Error.message, startTime, chatId, {
         originalQuery: userMessage,
         analysisAttempted: true,
-        queryAnalysis: queryAnalysis,
-        queryType: queryType
+        queryAnalysis: queryAnalysis
       });
     }
 
-    // 9) Process the response with professional formatting
+    // 7) Process the response
     const processedResponse = processResponse(gpt5Result.response, queryAnalysis, {
       chatId: chatId,
       processingTime: gpt5Result.processingTime,
-      memoryUsed: gpt5Result.memoryUsed,
-      addFooter: false // Headers handle this
+      memoryUsed: gpt5Result.memoryUsed
     });
 
     const totalResponseTime = Date.now() - startTime;
 
-    // 10) Save to memory if successful
-    if (options.saveToMemory !== false && gpt5Result.success) {
-      try {
-        await saveMemoryIfNeeded(chatId, preprocessed.cleaned, processedResponse, 'professional_response', {
-          modelUsed: gpt5Result.modelUsed,
-          processingTime: gpt5Result.processingTime,
-          queryType: queryType,
-          professionalFormatting: true
-        });
-      } catch (saveError) {
-        console.warn(`[ExecutionEngine] Memory save failed: ${saveError.message}`);
-      }
-    }
-
-    // 11) Build comprehensive result object
+    // 8) Build comprehensive result object
     const result = {
       response: processedResponse,
       success: true,
@@ -2605,9 +2323,8 @@ async function executeDualCommand(userMessage, chatId, options) {
 
       // Query analysis results
       queryType: queryAnalysis.type,
-      detectedQueryType: queryType,
       priority: queryAnalysis.priority,
-      complexity: queryAnalysis.complexity || 'medium',
+      complexity: (queryAnalysis.complexity && queryAnalysis.complexity.complexity) || 'medium',
       reasoning: queryAnalysis.reason,
       confidence: gpt5Result.confidence || queryAnalysis.confidence,
 
@@ -2628,21 +2345,30 @@ async function executeDualCommand(userMessage, chatId, options) {
         contextLength: memoryContext.length,
         conversationRecords: memoryData.conversationHistory.length,
         persistentMemories: memoryData.persistentMemory.length,
+        memoryImportant: queryAnalysis.memoryImportant,
         memoryUsed: memoryContext.length > 0,
-        postgresqlConnected: memoryContext.length > 0
+        postgresqlConnected:
+          memoryData.conversationHistory.length > 0 || memoryData.persistentMemory.length > 0
       },
-
-      // Professional formatting
-      professionalFormatting: true,
-      formattingSystem: 'claude-4-sonnet-style',
 
       // Cost and performance
       costTier: getCostTier(queryAnalysis.gpt5Model),
+      costEstimate: queryAnalysis.estimatedCost,
       fallbackUsed: !!gpt5Result.fallbackUsed,
       costSaved: !!gpt5Result.costSaved,
 
+      // Classification and analytics
+      powerMode: 'GPT5_' + String(queryAnalysis.priority || '').toUpperCase(),
+      analytics: {
+        queryComplexity: (queryAnalysis.complexity && queryAnalysis.complexity.complexity) || 'medium',
+        domainClassification: queryAnalysis.type,
+        priorityLevel: queryAnalysis.priority,
+        modelOptimization: 'GPT-5 smart selection',
+        costOptimized: true,
+        performanceOptimized: true
+      },
+
       // System information
-      powerMode: `GPT5_${safeString(queryAnalysis.priority || '').toUpperCase()}_PROFESSIONAL`,
       timestamp: new Date().toISOString(),
       cambodiaTime: getCurrentCambodiaDateTime(),
 
@@ -2653,23 +2379,22 @@ async function executeDualCommand(userMessage, chatId, options) {
         queryAnalysis,
         gpt5Result,
         totalResponseTime,
-        memoryContext.length > 0,
-        queryType
+        memoryContext.length > 0
       )
     };
 
-    console.log('[ExecutionEngine] Professional command execution complete:', {
+    console.log('Command execution complete:', {
       success: true,
       aiUsed: result.aiUsed,
       processingTime: result.processingTime,
-      queryType: queryType,
-      professionalFormatting: true
+      tokensUsed: result.tokensUsed,
+      memoryUsed: result.memoryUsed,
+      costTier: result.costTier
     });
 
     return result;
-    
   } catch (error) {
-    console.error('[ExecutionEngine] Command execution error:', error.message);
+    console.error('Command execution error:', error.message);
     return createErrorResponse(error.message, startTime, chatId, {
       originalMessage: userMessage,
       stack: error.stack
@@ -2677,28 +2402,28 @@ async function executeDualCommand(userMessage, chatId, options) {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
-// ════════════════════════════════════════════════════════════════════════════
 
-function createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime, chatId, queryType) {
+function createCompletionResponse(queryAnalysis, memoryContext, memoryData, startTime, chatId) {
   const responseTime = Date.now() - startTime;
-
-  // Professional completion response
-  const professionalCompletionResponse = `✅ **Task Status Update:**\n\n${queryAnalysis.quickResponse}\n\n🎯 **Ready for next directive.**`;
 
   updateSystemStats('completion_detection', true, responseTime, 'completion', 'none');
 
+  const modelMini =
+    (typeof CONFIG !== 'undefined' &&
+     CONFIG &&
+     CONFIG.MODELS &&
+     CONFIG.MODELS.MINI) ? CONFIG.MODELS.MINI : 'gpt-5-mini';
+
   return {
-    response: professionalCompletionResponse,
+    response: queryAnalysis.quickResponse,
     success: true,
 
     // Completion detection information
-    aiUsed: 'completion-detection-professional',
+    aiUsed: 'completion-detection',
     queryType: 'completion',
-    detectedQueryType: queryType,
     complexity: 'low',
-    reasoning: `Completion detected - ${queryAnalysis.completionStatus.completionType}`,
+    reasoning: 'Completion detected - ' + queryAnalysis.completionStatus.completionType,
     priority: 'completion',
     confidence: queryAnalysis.completionStatus.confidence,
 
@@ -2712,32 +2437,32 @@ function createCompletionResponse(queryAnalysis, memoryContext, memoryData, star
     completionType: queryAnalysis.completionStatus.completionType,
     skippedGPT5: true,
     costSaved: true,
-    professionalFormatting: true,
 
     // Memory information
     memoryData: {
       contextLength: memoryContext.length,
       conversationRecords: memoryData.conversationHistory.length,
       persistentMemories: memoryData.persistentMemory.length,
+      memoryImportant: false,
       memoryUsed: memoryContext.length > 0,
-      postgresqlConnected: memoryContext.length > 0
+      postgresqlConnected:
+        memoryData.conversationHistory.length > 0 || memoryData.persistentMemory.length > 0
     },
 
     // System information
     gpt5System: false,
-    powerMode: 'COMPLETION_DETECTION_PROFESSIONAL',
+    powerMode: 'COMPLETION_DETECTION',
     costTier: 'free',
     timestamp: new Date().toISOString(),
 
-    // Telegram integration
+    // Telegram integration (pass real chatId)
     sendToTelegram: createTelegramSender(
       chatId,
-      professionalCompletionResponse,
+      queryAnalysis.quickResponse,
       queryAnalysis,
-      { completionDetected: true, modelUsed: 'completion-system' },
+      { completionDetected: true, modelUsed: modelMini },
       responseTime,
-      memoryContext.length > 0,
-      queryType
+      memoryContext.length > 0
     )
   };
 }
@@ -2748,21 +2473,21 @@ function createErrorResponse(errorMessage, startTime, chatId, metadata) {
 
   updateSystemStats('error', false, responseTime, 'error', 'none');
 
-  // Professional error response
-  const professionalErrorResponse = `⚠️ **System Status Alert:**\n\n**Issue:** ${errorMessage}\n\n**Recommendation:** Please try again with a simplified request.\n\n**System:** Ready for retry.`;
+  const errorResponse =
+    'I apologize, but I encountered a technical issue: ' + errorMessage + '\n\n' +
+    'Please try:\n• A simpler question\n• Waiting a moment and trying again\n• Checking your connection';
 
   return {
-    response: professionalErrorResponse,
+    response: errorResponse,
     success: false,
     error: errorMessage,
 
     // Error information
-    aiUsed: 'professional-error-handler',
+    aiUsed: 'error-handler',
     queryType: 'error',
     complexity: 'low',
     reasoning: 'System error occurred',
     confidence: 0.0,
-    professionalFormatting: true,
 
     // Processing information
     processingTime: responseTime,
@@ -2771,7 +2496,7 @@ function createErrorResponse(errorMessage, startTime, chatId, metadata) {
 
     // System information
     gpt5System: false,
-    powerMode: 'ERROR_PROFESSIONAL',
+    powerMode: 'ERROR',
     costTier: 'free',
     timestamp: new Date().toISOString(),
 
@@ -2780,6 +2505,7 @@ function createErrorResponse(errorMessage, startTime, chatId, metadata) {
       contextLength: 0,
       conversationRecords: 0,
       persistentMemories: 0,
+      memoryImportant: false,
       memoryUsed: false,
       postgresqlConnected: false
     },
@@ -2788,178 +2514,143 @@ function createErrorResponse(errorMessage, startTime, chatId, metadata) {
     metadata: metadata,
 
     // Telegram integration
-    sendToTelegram: createErrorTelegramSender(chatId, professionalErrorResponse, errorMessage)
+    sendToTelegram: createErrorTelegramSender(chatId, errorResponse, errorMessage)
   };
 }
 
 function getCostTier(model) {
   if (!model) return 'standard';
-  
-  const modelStr = safeString(model).toLowerCase();
-  if (modelStr.includes('nano')) return 'economy';
-  if (modelStr.includes('mini')) return 'standard';
-  if (modelStr.includes('gpt-5') || modelStr.includes('chat')) return 'premium';
-  return 'standard';
+  switch (model) {
+    case CONFIG.MODELS.NANO: return 'economy';
+    case CONFIG.MODELS.MINI: return 'standard';
+    case CONFIG.MODELS.FULL:
+    case CONFIG.MODELS.CHAT: return 'premium';
+    default: return 'standard';
+  }
 }
 
-// Enhanced Telegram sender with professional formatting support
-function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, responseTime, contextUsed, queryType) {
+// Enhanced Telegram sender (uses clean telegramSplitter)
+function createTelegramSender(chatId, response, queryAnalysis, gpt5Result, responseTime, contextUsed) {
   return async function send(bot, title) {
     try {
       if (!bot || !chatId) {
-        console.warn(`[TelegramSender] Delivery skipped: bot or chatId missing (chatId=${chatId})`);
+        console.warn('Delivery skipped: bot or chatId missing (chatId=' + chatId + ')');
         return false;
       }
 
       // Try enhanced splitter first
       try {
-        const telegramSplitter = require('./telegramSplitter');
-        
-        if (telegramSplitter && typeof telegramSplitter.sendTelegramMessage === 'function') {
-          const modelUsed = 
-            (gpt5Result && gpt5Result.modelUsed) ||
-            (queryAnalysis && queryAnalysis.gpt5Model) ||
-            'gpt-5-mini';
+        const splitter = require('./telegramSplitter');
+        const sendTelegramMessage = splitter && splitter.sendTelegramMessage;
 
-          const meta = {
-            title: title || (gpt5Result && gpt5Result.completionDetected ? 'Task Completion' : 'Professional Analysis'),
-            model: modelUsed,
-            executionTime: responseTime,
-            costTier: getCostTier(modelUsed),
-            tokens: (gpt5Result && gpt5Result.tokensUsed) || 'estimated',
-            complexity: queryType || 'standard',
-            confidence: (gpt5Result && gpt5Result.confidence) || (queryAnalysis && queryAnalysis.confidence) || 0.75,
-            reasoning: queryAnalysis && queryAnalysis.reasoning_effort,
-            verbosity: queryAnalysis && queryAnalysis.verbosity,
-            contextUsed: !!contextUsed,
-            fallbackUsed: !!(gpt5Result && gpt5Result.fallbackUsed),
-            completionDetected: !!(gpt5Result && gpt5Result.completionDetected),
-            professionalFormatting: true,
-            aiUsed: (gpt5Result && gpt5Result.aiUsed) || 'gpt-5'
-          };
+        const modelUsed =
+          (gpt5Result && gpt5Result.modelUsed) ||
+          (queryAnalysis && queryAnalysis.gpt5Model) ||
+          (CONFIG && CONFIG.MODELS && CONFIG.MODELS.MINI) || 'gpt-5-mini';
 
-          const result = await telegramSplitter.sendTelegramMessage(bot, chatId, safeString(response), meta);
+        const meta = {
+          title: title || (gpt5Result && gpt5Result.completionDetected ? 'Task Completion Acknowledged' : 'GPT-5 Analysis'),
+          model: modelUsed,
+          executionTime: responseTime,
+          costTier: getCostTier(modelUsed),
+          tokens: (gpt5Result && gpt5Result.tokensUsed) || 'estimated',
+          cost: (gpt5Result && gpt5Result.cost) || calculateEstimatedCost(modelUsed, String(response || '').length),
+          complexity: (queryAnalysis && queryAnalysis.complexity && queryAnalysis.complexity.complexity) || 'medium',
+          confidence: (gpt5Result && gpt5Result.confidence) || (queryAnalysis && queryAnalysis.confidence) || 0.75,
+          reasoning: queryAnalysis && queryAnalysis.reasoning_effort,
+          verbosity: queryAnalysis && queryAnalysis.verbosity,
+          contextUsed: !!contextUsed,
+          fallbackUsed: !!(gpt5Result && gpt5Result.fallbackUsed),
+          completionDetected: !!(gpt5Result && gpt5Result.completionDetected)
+        };
+
+        if (typeof sendTelegramMessage === 'function') {
+          const result = await sendTelegramMessage(bot, chatId, String(response || ''), meta);
           if (result && (result.enhanced || result.fallback || result.success)) {
-            console.log(`[TelegramSender] Enhanced delivery successful: ${result.chunks || 1} chunks sent`);
             return true;
           }
         }
       } catch (enhancedError) {
-        console.error(`[TelegramSender] Enhanced telegram delivery failed: ${enhancedError.message}`);
+        console.error('Enhanced telegram delivery failed:', enhancedError.message);
       }
 
       // Basic fallback
       if (bot && typeof bot.sendMessage === 'function') {
-        await bot.sendMessage(chatId, safeString(response));
-        console.log(`[TelegramSender] Basic delivery successful`);
+        await bot.sendMessage(chatId, String(response || ''));
         return true;
       }
-      
       return false;
 
     } catch (generalError) {
-      console.error(`[TelegramSender] All telegram delivery methods failed: ${generalError.message}`);
+      console.error('All telegram delivery methods failed:', generalError && generalError.message ? generalError.message : generalError);
       return false;
     }
   };
 }
 
-// Error telegram sender with professional formatting
+// Rough cost estimate (no pricing dependency)
+function calculateEstimatedCost(model, responseLength) {
+  const estimatedTokens = Math.ceil((Number(responseLength) || 0) / 3.5);
+  const rate = (model === 'gpt-5' || model === 'gpt-5-chat-latest') ? 10.00 :
+               (model === 'gpt-5-mini') ? 2.00 :
+               (model === 'gpt-5-nano') ? 0.40 : 2.00;
+  const dollars = (estimatedTokens * rate) / 1000000;
+  return dollars.toFixed(6);
+}
+
+// Error telegram sender
 function createErrorTelegramSender(chatId, errorResponse, originalError) {
   return async function send(bot) {
     try {
       if (!bot || !chatId) {
-        console.warn(`[ErrorSender] Error delivery skipped: bot or chatId missing (chatId=${chatId})`);
+        console.warn('Error delivery skipped: bot or chatId missing (chatId=' + chatId + ')');
         return false;
       }
 
-      // Enhanced error delivery
+      // Enhanced first
       try {
-        const telegramSplitter = require('./telegramSplitter');
-        
-        if (telegramSplitter && typeof telegramSplitter.sendTelegramMessage === 'function') {
-          const result = await telegramSplitter.sendTelegramMessage(bot, chatId, safeString(errorResponse), {
-            title: 'System Alert',
+        const splitter = require('./telegramSplitter');
+        const sendTelegramMessage = splitter && splitter.sendTelegramMessage;
+
+        if (typeof sendTelegramMessage === 'function') {
+          const result = await sendTelegramMessage(bot, chatId, String(errorResponse || ''), {
             model: 'error-handler',
             costTier: 'free',
             error: true,
-            originalError: originalError,
-            professionalFormatting: true,
-            aiUsed: 'error-system'
+            originalError: originalError
           });
           if (result && result.success !== false) {
             return true;
           }
         }
-      } catch (enhancedError) {
-        console.error(`[ErrorSender] Enhanced error delivery failed: ${enhancedError.message}`);
+      } catch (_e) {
+        // ignore and fallback
       }
 
-      // Basic error fallback
+      // Basic fallback
       if (bot && typeof bot.sendMessage === 'function') {
-        await bot.sendMessage(chatId, safeString(errorResponse));
+        await bot.sendMessage(chatId, String(errorResponse || ''));
         return true;
       }
-      
       return false;
 
     } catch (telegramError) {
-      console.error(`[ErrorSender] Error telegram delivery failed: ${telegramError.message}`);
+      console.error('Error telegram delivery failed:', telegramError && telegramError.message ? telegramError.message : telegramError);
       return false;
     }
   };
 }
 
-// Rough cost estimate for display purposes
-function calculateEstimatedCost(model, responseLength) {
-  const estimatedTokens = Math.ceil((Number(responseLength) || 0) / 3.5);
-  const rate = safeString(model).includes('gpt-5') ? 10.00 :
-               safeString(model).includes('mini') ? 2.00 :
-               safeString(model).includes('nano') ? 0.40 : 2.00;
-  const dollars = (estimatedTokens * rate) / 1000000;
-  return dollars.toFixed(6);
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// EXPORTS
-// ════════════════════════════════════════════════════════════════════════════
-
+// EXPORTS for Part 4
 module.exports = {
-  // Main execution function
   executeDualCommand,
-  
-  // Professional formatting system
-  buildProfessionalPrompt,
-  detectQueryType,
-  PROFESSIONAL_FORMATTING_PROMPT,
-  
-  // Helper functions
   createCompletionResponse,
   createErrorResponse,
   getCostTier,
   createTelegramSender,
   createErrorTelegramSender,
-  calculateEstimatedCost,
-  
-  // Utilities
-  preprocessQuery,
-  validateQueryAnalysis,
-  processResponse,
-  getCurrentCambodiaDateTime,
-  
-  // Safe string utilities
-  safeString,
-  safeLowerCase,
-  safeSubstring
+  calculateEstimatedCost
 };
-
-console.log('✅ Part 4/6: Professional Execution Engine loaded successfully');
-console.log('   • Professional formatting system integrated');
-console.log('   • Query type detection active');
-console.log('   • Enhanced Telegram delivery with metadata');
-console.log('   • Robust error handling with professional responses');
-console.log('   • Memory integration with professional prompts');
-console.log('');
 
 // utils/dualCommandSystem.js - SECURE GPT-5 COMMAND SYSTEM - PART 5/6
 // SYSTEM MONITORING, ANALYTICS & HEALTH MANAGEMENT
