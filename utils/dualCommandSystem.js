@@ -503,12 +503,17 @@ console.log('PIECE 4 LOADED: GPT-5 execution engine with fallback system ready')
 // Copy-paste this after Piece 4
 
 // ════════════════════════════════════════════════════════════════════════════
-// SMART MEMORY CONTEXT BUILDER (FIXES YOUR TYPE ERRORS)
+// FIXED MEMORY INTEGRATION - Add this to your dualCommandSystem.js
+// Replace the existing buildMemoryContext function with this corrected version
 // ════════════════════════════════════════════════════════════════════════════
 
+// 🔧 CORRECTED MEMORY CONTEXT BUILDER - FIXES THE INTEGRATION GAP
 async function buildMemoryContext(chatId, contextLevel = 'full') {
   try {
+    console.log(`[Memory-Fix] Building context for ${chatId}, level: ${contextLevel}`);
+    
     if (!chatId || contextLevel === false || contextLevel === 'none') {
+      console.log('[Memory-Fix] No chatId or context disabled');
       return '';
     }
     
@@ -519,96 +524,153 @@ async function buildMemoryContext(chatId, contextLevel = 'full') {
       case 'minimal':
         contextLimit = 1000;
         messageLimit = 3;
-        console.log('[Memory] Loading minimal context');
         break;
       case 'reduced':
         contextLimit = 2500;
         messageLimit = 10;
-        console.log('[Memory] Loading reduced context');
         break;
       default:
         contextLimit = 5000;
         messageLimit = 20;
-        console.log('[Memory] Loading full context');
     }
     
-    // Try memory module first
+    console.log(`[Memory-Fix] Limits: ${contextLimit} chars, ${messageLimit} messages`);
+    
+    // 🎯 TRY MEMORY MODULE FIRST (CORRECTED FUNCTION NAME)
     if (memory && typeof memory.buildConversationContext === 'function') {
       try {
+        console.log('[Memory-Fix] Trying memory.buildConversationContext...');
         const context = await memory.buildConversationContext(safeChatId, { 
           limit: contextLimit, 
           maxMessages: messageLimit 
         });
+        
         if (context && safeString(context).length > 0) {
-          console.log(`[Memory] Context loaded: ${context.length} chars via memory module`);
+          console.log(`[Memory-Fix] ✅ SUCCESS via memory module: ${context.length} chars`);
           return safeSubstring(context, 0, contextLimit);
+        } else {
+          console.log('[Memory-Fix] ⚠️ Memory module returned empty context');
         }
       } catch (memoryError) {
-        console.warn('[Memory] Module error:', memoryError.message);
+        console.error('[Memory-Fix] ❌ Memory module error:', memoryError.message);
       }
+    } else {
+      console.log('[Memory-Fix] ⚠️ Memory module not available or missing buildConversationContext');
     }
     
-    // Fallback to database (preserves your PostgreSQL connection)
+    // 🎯 FALLBACK TO DATABASE DIRECT (BYPASS MEMORY MODULE)
     if (database && typeof database.getConversationHistoryDB === 'function') {
       try {
+        console.log('[Memory-Fix] Trying direct database fallback...');
         const history = await database.getConversationHistoryDB(safeChatId, messageLimit);
+        
         if (Array.isArray(history) && history.length > 0) {
-          let context = 'Recent conversation:\n';
+          console.log(`[Memory-Fix] Got ${history.length} conversation records from database`);
+          
+          let context = 'CONVERSATION MEMORY:\n';
           let totalLength = context.length;
           
-          for (const conv of history) {
-            if (!conv || typeof conv !== 'object') continue;
+          for (const conv of history.slice(-messageLimit)) {
+            if (!conv || typeof conv !== 'object') {
+              console.log('[Memory-Fix] Skipping invalid conversation record');
+              continue;
+            }
             
-            // Type-safe extraction (fixes your errors)
+            // 🔧 SAFE EXTRACTION (FIXES TYPE ERRORS)
             const userMsg = safeString(conv.user_message || conv.userMessage || '');
-            const assistantMsg = safeString(conv.assistant_response || conv.assistantResponse || '');
+            const gptResponse = safeString(conv.gpt_response || conv.assistantResponse || conv.assistant_response || '');
             
-            if (userMsg.length === 0) continue;
+            if (userMsg.length === 0) {
+              console.log('[Memory-Fix] Skipping empty user message');
+              continue;
+            }
             
-            const convText = `User: ${safeSubstring(userMsg, 0, 200)}\nAssistant: ${safeSubstring(assistantMsg, 0, 300)}\n\n`;
+            const userPart = `User: ${safeSubstring(userMsg, 0, 150)}`;
+            const assistantPart = gptResponse.length > 0 ? `\nAssistant: ${safeSubstring(gptResponse, 0, 200)}` : '';
+            const convText = `${userPart}${assistantPart}\n\n`;
             
-            if (totalLength + convText.length > contextLimit) break;
+            if (totalLength + convText.length > contextLimit) {
+              console.log(`[Memory-Fix] Context limit reached at ${totalLength} chars`);
+              break;
+            }
             
             context += convText;
             totalLength += convText.length;
           }
           
-          console.log(`[Memory] Context built: ${context.length} chars via database (${history.length} records)`);
-          return safeSubstring(context, 0, contextLimit);
+          if (totalLength > 20) { // Has actual content beyond header
+            console.log(`[Memory-Fix] ✅ SUCCESS via database: ${context.length} chars from ${history.length} records`);
+            return safeSubstring(context, 0, contextLimit);
+          } else {
+            console.log('[Memory-Fix] ⚠️ Database returned no usable content');
+          }
+        } else {
+          console.log('[Memory-Fix] ⚠️ No conversation history found in database');
         }
       } catch (dbError) {
-        console.warn('[Memory] Database error:', dbError.message);
+        console.error('[Memory-Fix] ❌ Database error:', dbError.message);
+      }
+    } else {
+      console.log('[Memory-Fix] ⚠️ Database not available or missing getConversationHistoryDB');
+    }
+    
+    // 🎯 LAST RESORT - TRY PERSISTENT MEMORIES
+    if (database && typeof database.getPersistentMemoryDB === 'function') {
+      try {
+        console.log('[Memory-Fix] Trying persistent memories as last resort...');
+        const memories = await database.getPersistentMemoryDB(safeChatId);
+        
+        if (Array.isArray(memories) && memories.length > 0) {
+          let context = 'USER MEMORIES:\n';
+          
+          for (const memory of memories.slice(0, 5)) {
+            const fact = safeString(memory.fact || '');
+            if (fact.length > 0) {
+              context += `• ${safeSubstring(fact, 0, 100)}\n`;
+            }
+          }
+          
+          if (context.length > 20) {
+            console.log(`[Memory-Fix] ✅ SUCCESS via memories: ${context.length} chars from ${memories.length} memories`);
+            return context;
+          }
+        }
+      } catch (memoryDbError) {
+        console.error('[Memory-Fix] ❌ Persistent memory error:', memoryDbError.message);
       }
     }
     
-    console.log('[Memory] No context available');
+    console.log('[Memory-Fix] ❌ ALL METHODS FAILED - No context available');
     return '';
     
   } catch (error) {
-    console.error('[Memory] Context building failed:', error.message);
+    console.error('[Memory-Fix] ❌ CRITICAL buildMemoryContext error:', error.message);
     return '';
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// SMART MEMORY SAVING (PREVENTS SAVING TRIVIAL GREETINGS)
-// ════════════════════════════════════════════════════════════════════════════
-
+// 🔧 CORRECTED MEMORY SAVING - FIXES THE SAVE INTEGRATION
 async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, metadata = {}) {
   try {
-    if (!chatId) return { saved: false, reason: 'no_chatid' };
+    console.log(`[Memory-Fix] Attempting to save memory for ${chatId}`);
+    
+    if (!chatId) {
+      console.log('[Memory-Fix] No chatId provided');
+      return { saved: false, reason: 'no_chatid' };
+    }
     
     const safeUserMessage = safeString(userMessage);
     const safeResponse = safeString(response);
     
-    // Don't save trivial interactions (prevents database clutter)
+    // Don't save trivial interactions
     if (safeUserMessage.length < 3 && safeResponse.length < 50) {
+      console.log('[Memory-Fix] Skipping trivial interaction');
       return { saved: false, reason: 'trivial' };
     }
     
     // Don't save simple greetings
     if (messageType === MESSAGE_TYPES.SIMPLE_GREETING && safeResponse.length < 200) {
-      console.log('[Memory] Skipping save for simple greeting');
+      console.log('[Memory-Fix] Skipping simple greeting');
       return { saved: false, reason: 'simple_greeting' };
     }
     
@@ -621,41 +683,125 @@ async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, me
     
     const safeChatId = safeString(chatId);
     
-    // Try database save (preserves your PostgreSQL integration)
+    // 🎯 TRY DATABASE SAVE FIRST (MORE RELIABLE)
+    if (database && typeof database.saveConversationDB === 'function') {
+      try {
+        console.log('[Memory-Fix] Trying database.saveConversationDB...');
+        
+        const result = await database.saveConversationDB(safeChatId, safeUserMessage, normalizedResponse, {
+          ...metadata,
+          messageType: safeString(messageType),
+          timestamp: new Date().toISOString()
+        });
+        
+        if (result !== false) {
+          console.log('[Memory-Fix] ✅ SUCCESS: Saved to database via saveConversationDB');
+          return { saved: true, method: 'database-primary' };
+        } else {
+          console.log('[Memory-Fix] ⚠️ saveConversationDB returned false');
+        }
+      } catch (dbError) {
+        console.error('[Memory-Fix] ❌ saveConversationDB error:', dbError.message);
+      }
+    }
+    
+    // 🎯 TRY ALTERNATIVE DATABASE SAVE FUNCTION
     if (database && typeof database.saveConversation === 'function') {
-      await database.saveConversation(safeChatId, safeUserMessage, normalizedResponse, {
-        ...metadata,
-        messageType: safeString(messageType),
-        timestamp: new Date().toISOString()
-      });
-      console.log('[Memory] Saved to database');
-      return { saved: true, method: 'database' };
+      try {
+        console.log('[Memory-Fix] Trying database.saveConversation...');
+        
+        await database.saveConversation(safeChatId, safeUserMessage, normalizedResponse, {
+          ...metadata,
+          messageType: safeString(messageType),
+          timestamp: new Date().toISOString()
+        });
+        
+        console.log('[Memory-Fix] ✅ SUCCESS: Saved to database via saveConversation');
+        return { saved: true, method: 'database-alternative' };
+      } catch (dbError) {
+        console.error('[Memory-Fix] ❌ saveConversation error:', dbError.message);
+      }
     }
     
-    // Try memory module save
+    // 🎯 TRY MEMORY MODULE SAVE (FALLBACK)
     if (memory && typeof memory.saveToMemory === 'function') {
-      await memory.saveToMemory(safeChatId, {
-        type: 'conversation',
-        user: safeUserMessage,
-        assistant: normalizedResponse,
-        messageType: safeString(messageType),
-        timestamp: new Date().toISOString()
-      });
-      console.log('[Memory] Saved to memory module');
-      return { saved: true, method: 'memory' };
+      try {
+        console.log('[Memory-Fix] Trying memory.saveToMemory...');
+        
+        const memResult = await memory.saveToMemory(safeChatId, {
+          type: 'conversation',
+          user: safeUserMessage,
+          assistant: normalizedResponse,
+          messageType: safeString(messageType),
+          timestamp: new Date().toISOString()
+        });
+        
+        if (memResult && memResult.saved !== false) {
+          console.log('[Memory-Fix] ✅ SUCCESS: Saved via memory module');
+          return { saved: true, method: 'memory-module' };
+        } else {
+          console.log(`[Memory-Fix] ⚠️ Memory module returned: ${JSON.stringify(memResult)}`);
+        }
+      } catch (memError) {
+        console.error('[Memory-Fix] ❌ memory.saveToMemory error:', memError.message);
+      }
     }
     
-    return { saved: false, reason: 'no_storage' };
+    console.log('[Memory-Fix] ❌ ALL SAVE METHODS FAILED');
+    return { saved: false, reason: 'all_methods_failed' };
     
   } catch (error) {
-    console.warn('[Memory] Save failed:', error.message);
-    return { saved: false, reason: 'error', error: error.message };
+    console.error('[Memory-Fix] ❌ CRITICAL saveMemoryIfNeeded error:', error.message);
+    return { saved: false, reason: 'critical_error', error: error.message };
   }
 }
 
-console.log('PIECE 5 LOADED: Memory management with PostgreSQL integration ready');
-// PIECE 6: TELEGRAM HANDLERS
-// Copy-paste this after Piece 5
+// 🎯 ADD THIS TEST FUNCTION FOR DEBUGGING
+async function testMemoryIntegration(chatId) {
+  console.log(`\n[Memory-Test] 🧪 TESTING MEMORY INTEGRATION FOR ${chatId}`);
+  console.log('═══════════════════════════════════════════════════════════');
+  
+  // Test 1: Context Building
+  console.log('[Memory-Test] Test 1: Context Building...');
+  try {
+    const context = await buildMemoryContext(chatId, 'full');
+    console.log(`[Memory-Test] ✅ Context: ${context.length} chars`);
+    if (context.length > 0) {
+      console.log(`[Memory-Test] Preview: ${context.substring(0, 100)}...`);
+    }
+  } catch (contextError) {
+    console.log(`[Memory-Test] ❌ Context failed: ${contextError.message}`);
+  }
+  
+  // Test 2: Memory Saving
+  console.log('[Memory-Test] Test 2: Memory Saving...');
+  try {
+    const saveResult = await saveMemoryIfNeeded(
+      chatId, 
+      'TEST: Integration test message', 
+      'TEST: Integration test response',
+      'test',
+      { test: true }
+    );
+    console.log(`[Memory-Test] Save result:`, saveResult);
+  } catch (saveError) {
+    console.log(`[Memory-Test] ❌ Save failed: ${saveError.message}`);
+  }
+  
+  // Test 3: Database Direct
+  console.log('[Memory-Test] Test 3: Database Direct...');
+  if (database && database.getConversationHistoryDB) {
+    try {
+      const history = await database.getConversationHistoryDB(chatId, 3);
+      console.log(`[Memory-Test] ✅ Database: ${Array.isArray(history) ? history.length : 'invalid'} records`);
+    } catch (dbError) {
+      console.log(`[Memory-Test] ❌ Database failed: ${dbError.message}`);
+    }
+  }
+  
+  console.log('═══════════════════════════════════════════════════════════');
+  console.log('[Memory-Test] 🏁 MEMORY INTEGRATION TEST COMPLETE\n');
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // MAIN TELEGRAM MESSAGE HANDLER (CONNECTS TO YOUR INDEX.JS)
@@ -1369,6 +1515,7 @@ module.exports = {
   // Main Telegram handlers (connects to your index.js)
   handleTelegramMessage,
   handleCallbackQuery,
+  testMemoryIntegration,
   handleInlineQuery,
   
   // Enhanced command execution
