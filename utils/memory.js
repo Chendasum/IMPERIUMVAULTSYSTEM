@@ -29,15 +29,34 @@ console.log(`   Max Context: ${MEMORY_CONFIG.MAX_CONTEXT_LENGTH} chars`);
 console.log(`   Max Conversations: ${MEMORY_CONFIG.MAX_CONVERSATIONS}`);
 console.log(`   Max Memories: ${MEMORY_CONFIG.MAX_MEMORIES}`);
 
-// ADD THIS SECTION HERE:
 // -----------------------------------------------------------------------------
-// 🧪 DATABASE CONNECTION TEST
+// 🧪 ENHANCED DATABASE CONNECTION TEST WITH COLLATION FIX
 // -----------------------------------------------------------------------------
 async function testDatabaseConnection() {
   try {
     console.log('[DB-TEST] Testing database connection...');
+    
+    // 🔧 ATTEMPT COLLATION FIX (addresses your Railway PostgreSQL issue)
+    try {
+      const { pool } = require('./database');
+      await pool.query('ALTER DATABASE railway REFRESH COLLATION VERSION');
+      console.log('[DB-TEST] ✅ Collation version refreshed successfully');
+    } catch (collationError) {
+      // Expected if already fixed or insufficient permissions
+      if (!collationError.message.includes('permission') && 
+          !collationError.message.includes('does not exist')) {
+        console.log(`[DB-TEST] ⚠️ Collation refresh: ${collationError.message}`);
+      }
+    }
+    
+    // Test actual database functionality
     const testResult = await getConversationHistoryDB('test', 1);
     console.log(`[DB-TEST] ✅ Database connected, got ${Array.isArray(testResult) ? testResult.length : 0} results`);
+    
+    // Additional health checks
+    const connectionHealth = connectionStats?.connectionHealth || 'UNKNOWN';
+    console.log(`[DB-TEST] Connection health: ${connectionHealth}`);
+    
     return true;
   } catch (error) {
     console.log(`[DB-TEST] ❌ Database connection failed: ${error.message}`);
