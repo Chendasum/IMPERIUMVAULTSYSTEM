@@ -243,29 +243,67 @@ function detectCompletionStatus(message, memoryContext = '') {
   const messageText = safeLowerCase(message);
   const contextText = safeLowerCase(memoryContext);
   
+  // 🎯 MUCH MORE SPECIFIC PATTERNS (prevents false positives)
   const directCompletionPatterns = [
-    /done ready|already built|it works?|working now|system ready/i,
-    /deployment complete|built already|finished already/i,
-    /stop asking|told you already|we discussed this/i,
-    /no need|don't need|unnecessary|redundant/i
+    /^(done|finished|complete|ready|working now|system ready|it works|already built)$/i,
+    /^(stop asking|no need|don't need|unnecessary|redundant)$/i,
+    /^(yes correct|that's right|exactly right|perfect)$/i  // Only exact matches
   ];
   
+  // 🎯 VERY SPECIFIC FRUSTRATION PATTERNS  
   const frustrationPatterns = [
-    /again.*asking|keep.*asking|always.*ask/i,
-    /told.*you.*already|mentioned.*before/i,
-    /why.*again|same.*thing.*again/i
+    /why do you keep asking|stop asking me|told you already|we discussed this already/i,
+    /i already said|mentioned before|explained already/i
+  ];
+  
+  // 🎯 REQUIRE VERY SPECIFIC CONTEXT COMPLETION
+  const contextCompletionPatterns = [
+    /system.*is.*built.*and.*ready/i,
+    /deployment.*is.*complete.*and.*working/i,
+    /everything.*is.*working.*properly/i
   ];
   
   const hasDirectCompletion = directCompletionPatterns.some(pattern => pattern.test(messageText));
   const hasFrustration = frustrationPatterns.some(pattern => pattern.test(messageText));
-  const hasContextCompletion = /system.*built|deployment.*complete/i.test(contextText);
+  const hasContextCompletion = contextCompletionPatterns.some(pattern => pattern.test(contextText);
+  
+  // 🚨 ADDITIONAL SAFETY CHECK - DON'T TRIGGER ON QUESTIONS
+  const isQuestion = messageText.includes('what') || 
+                    messageText.includes('how') || 
+                    messageText.includes('when') || 
+                    messageText.includes('where') || 
+                    messageText.includes('why') ||
+                    messageText.includes('?');
+  
+  // 🚨 DON'T TRIGGER ON BUSINESS QUESTIONS
+  const isBusinessQuestion = messageText.includes('identity') ||
+                            messageText.includes('strategy') ||
+                            messageText.includes('business') ||
+                            messageText.includes('analysis') ||
+                            messageText.includes('explain') ||
+                            messageText.includes('describe');
+  
+  const shouldSkip = hasDirectCompletion || hasFrustration || hasContextCompletion;
+  
+  // 🎯 OVERRIDE: Never skip if it's clearly a question
+  const finalShouldSkip = shouldSkip && !isQuestion && !isBusinessQuestion;
   
   return {
     isComplete: hasDirectCompletion || hasContextCompletion,
     isFrustrated: hasFrustration,
-    shouldSkipGPT5: hasDirectCompletion || hasFrustration,
+    shouldSkipGPT5: finalShouldSkip,  // ← This is the key fix
     completionType: hasDirectCompletion ? 'direct' : hasFrustration ? 'frustration' : 'context',
-    confidence: hasDirectCompletion ? 0.9 : hasFrustration ? 0.8 : 0.7
+    confidence: hasDirectCompletion ? 0.9 : hasFrustration ? 0.8 : 0.7,
+    debugInfo: {
+      originalMessage: message,
+      isQuestion: isQuestion,
+      isBusinessQuestion: isBusinessQuestion,
+      triggeredPatterns: {
+        direct: hasDirectCompletion,
+        frustration: hasFrustration,
+        context: hasContextCompletion
+      }
+    }
   };
 }
 
