@@ -1,575 +1,445 @@
+// utils/telegramSplitter.js - CLEAN & RELIABLE VERSION
+// ════════════════════════════════════════════════════════════════════════════
+// 🔧 SIMPLIFIED: Removed complex formatting, focused on reliability
+// 🔧 FIXED: Memory integration compatible, no more crashes
+// 🔧 CLEAN: Simple message splitting with beautiful headers
+// ════════════════════════════════════════════════════════════════════════════
+
 'use strict';
-/**
- * utils/telegramSplitter.js
- * Beautiful, smart Telegram delivery for long/structured GPT responses.
- *
- * ✅ Compatible with your pipeline:
- *    - sendTelegramMessage(bot, chatId, text, metadata)
- *    - setupTelegramHandler(bot) → { send, sendGPTResponse, sendError }
- *    - sendAlert(bot, chatId, message, title?)
- *
- * ✨ Highlights:
- *    - Gorgeous header banner (ASCII box) with model/time/tokens/cost/confidence
- *    - Smart spacing + paragraph reflow + bullet normalization
- *    - Code-block aware chunking (never splits ``` blocks)
- *    - Markdown-safe wrapping (preserves code & links)
- *    - Style presets: compact | relaxed | roomy (auto spacing + wrap width)
- *    - Optional inline buttons (Telegram inline keyboard)
- *    - Parse mode negotiation: Markdown → fallback to plain text automatically
- *    - Clean, deterministic logs and detailed result object
- */
 
-////////////////////////////////////////////////////////////////////////////////
-// CONSTANTS
-////////////////////////////////////////////////////////////////////////////////
+console.log('📱 Loading CLEAN Telegram Splitter...');
 
-const TELEGRAM_HARD_LIMIT = 4096;             // Telegram message length cap
-const DEFAULT_PARSE_MODE  = 'Markdown';       // Prefer Markdown; fallback to plaintext
-const MAX_CHUNK_SOFT      = 3600;             // Try not to exceed this per chunk (gives room for header/footer)
-const BOX_CHAR            = '─';               // Horizontal line char for header
+// ═══════════════════════════════════════════════════════════════════════════
+// CONSTANTS & CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Style presets for spacing + wrapping + banner width
-const STYLE_PRESETS = {
-  compact: { wrap: 78,  gapAfterHeader: 1, gapBetweenSections: 1, padSections: false, bannerWidth: 38 },
-  relaxed: { wrap: 92,  gapAfterHeader: 1, gapBetweenSections: 1, padSections: true,  bannerWidth: 42 },
-  roomy:   { wrap: 108, gapAfterHeader: 2, gapBetweenSections: 2, padSections: true,  bannerWidth: 50 }
+const TELEGRAM_LIMIT = 4096;           // Telegram's hard message limit
+const SAFE_CHUNK_SIZE = 3800;          // Leave room for headers/formatting
+const MAX_CHUNKS = 10;                 // Prevent spam (max 10 messages per response)
+
+// Simple, clean header styles
+const HEADERS = {
+  gpt5: {
+    top: '╭──────────────────────────────────────────╮',
+    title: '│             🚀 GPT-5 Response             │',
+    model: '│                 🤖 {MODEL}                 │',
+    bottom: '╰──────────────────────────────────────────╯'
+  },
+  completion: {
+    top: '╭──────────────────────────────────────────╮',
+    title: '│              Task Completion               │',
+    model: '│                  🤖 {MODEL}                  │',
+    bottom: '╰──────────────────────────────────────────╯'
+  },
+  error: {
+    top: '╭──────────────────────────────────────────╮',
+    title: '│              ⚠️ System Error               │',
+    model: '│                 🤖 {MODEL}                 │',
+    bottom: '╰──────────────────────────────────────────╯'
+  },
+  simple: {
+    top: '╭──────────────────────────────────────────╮',
+    title: '│                Response                    │',
+    model: '│                 🤖 {MODEL}                 │',
+    bottom: '╰──────────────────────────────────────────╯'
+  }
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// SMALL UTILITIES
-////////////////////////////////////////////////////////////////////////////////
+// ═══════════════════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
 
-const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-
-const msToPretty = (ms) => {
-  if (ms == null) return '';
-  if (ms < 1000) return `${ms}ms`;
-  const s = (ms / 1000);
-  if (s < 60) return `${s.toFixed(2)}s`;
-  const m = Math.floor(s / 60);
-  const ss = (s % 60).toFixed(0).padStart(2, '0');
-  return `${m}m${ss}s`;
-};
-
-const fmtNumber = (n, digits = 2) => {
-  if (typeof n !== 'number' || Number.isNaN(n)) return '';
-  if (n === 0) return '0';
-  if (Math.abs(n) >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: digits });
-  return n.toFixed(digits).replace(/\.00$/, '');
-};
-
-const truthy = (v) => v !== undefined && v !== null && v !== false;
-
-////////////////////////////////////////////////////////////////////////////////
-// MARKDOWN / TEXT NORMALIZATION
-////////////////////////////////////////////////////////////////////////////////
-
-function normalizeBullets(text) {
-  // Turn ragged bullets into consistent format
-  // - also collapses multiple spaces after bullets
-  return text
-    .replace(/^[ \t]*[-–—•·]\s*/gm, '• ')
-    .replace(/^[ \t]*\*\s+/gm, '• ')
-    .replace(/^[ \t]*\d+\.\s+/gm, (m) => m.trim() + ' ');
+function safeString(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  return String(value);
 }
 
-function collapseBlankLines(text, maxBlank = 2) {
-  // Collapse runs of blank lines to at most maxBlank
-  const pattern = new RegExp(`(?:\\n\\s*){${maxBlank + 1},}`, 'g');
-  return text.replace(pattern, '\n'.repeat(maxBlank));
+function getModelName(metadata) {
+  const model = safeString(metadata.model || metadata.modelUsed || metadata.aiUsed || 'gpt-5');
+  
+  // Clean up model names for display
+  if (model.includes('gpt-5-nano')) return 'gpt-5-nano';
+  if (model.includes('gpt-5-mini')) return 'gpt-5-mini';
+  if (model.includes('gpt-5') || model.includes('GPT-5')) return 'gpt-5';
+  if (model.includes('completion')) return 'gpt-5';
+  if (model.includes('error')) return 'system';
+  return model.toLowerCase();
 }
 
-function trimEachLine(text) {
-  return text
-    .split('\n')
-    .map((l) => l.replace(/[ \t]+$/g, '')) // trim trailing spaces
-    .join('\n')
-    .trim();
-}
-
-function ensureBalancedCodeFences(text) {
-  // If user sent an opening ``` without closing, add a closing fence at the end.
-  const fenceCount = (text.match(/(^|\n)```/g) || []).length;
-  if (fenceCount % 2 !== 0) {
-    return text + '\n```';
+function getHeaderType(metadata) {
+  if (metadata.completionDetected || metadata.aiUsed === 'completion-detection') {
+    return 'completion';
   }
-  return text;
-}
-
-// Wrap plain paragraphs but never wrap inside code fences or blockquotes
-function wrapMarkdownSmart(text, width) {
-  const lines = text.split('\n');
-  let wrapped = [];
-  let inFence = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
-
-    if (/^```/.test(line)) {
-      inFence = !inFence;
-      wrapped.push(line);
-      continue;
-    }
-
-    if (inFence) {
-      wrapped.push(line);
-      continue;
-    }
-
-    // Don’t wrap headings, rules, quotes, or already short lines
-    if (
-      /^ {0,3}#{1,6}\s/.test(line) ||             // headings
-      /^ {0,3}[-*_]{3,}\s*$/.test(line) ||        // hr
-      /^>/.test(line) ||                          // blockquote
-      line.length <= width
-    ) {
-      wrapped.push(line);
-      continue;
-    }
-
-    // Try to wrap at spaces, but keep links intact (crudely)
-    let current = '';
-    const tokens = line.split(/(\s+)/);
-
-    for (let t of tokens) {
-      if (current.length + t.length > width) {
-        if (current.trim().length) wrapped.push(current.trimEnd());
-        // Avoid splitting inside a URL token (very basic)
-        if (/https?:\/\/\S+/.test(t) && t.length > width) {
-          wrapped.push(t);
-          current = '';
-        } else {
-          current = t.trimStart();
-        }
-      } else {
-        current += t;
-      }
-    }
-    if (current.trim().length) wrapped.push(current.trimEnd());
+  if (metadata.error || metadata.aiUsed === 'error-fallback') {
+    return 'error';
   }
-
-  return wrapped.join('\n');
-}
-
-function smartSpacing(input, preset) {
-  let out = String(input || '');
-
-  out = trimEachLine(out);
-  out = normalizeBullets(out);
-  out = collapseBlankLines(out, preset.padSections ? 2 : 2); // 2 is sensible for readability
-  out = ensureBalancedCodeFences(out);
-  out = wrapMarkdownSmart(out, preset.wrap);
-
-  return out;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// HEADER / FOOTER
-////////////////////////////////////////////////////////////////////////////////
-
-function centerText(text, width) {
-  text = text.trim();
-  if (text.length >= width) return text.slice(0, width);
-  const pad = Math.floor((width - text.length) / 2);
-  const left = ' '.repeat(pad);
-  const right = ' '.repeat(width - text.length - pad);
-  return left + text + right;
-}
-
-function buildHeader(title, preset, meta = {}) {
-  if (!title) return '';
-
-  const w = clamp(preset.bannerWidth, 28, 70);
-  const top    = `╭${BOX_CHAR.repeat(w)}╮`;
-  const bottom = `╰${BOX_CHAR.repeat(w)}╯`;
-
-  const lines = [];
-
-  const line1 = centerText(title, w);
-  lines.push(`│ ${line1} │`);
-
-  // Optional subline (e.g., model)
-  const infoBits = [];
-  if (meta.model) infoBits.push(`🤖 ${String(meta.model)}`);
-  if (truthy(meta.executionTime)) infoBits.push(`⏱ ${msToPretty(meta.executionTime)}`);
-  if (truthy(meta.tokens)) infoBits.push(`🔢 ${meta.tokens} tok`);
-  if (truthy(meta.cost)) infoBits.push(`💵 $${fmtNumber(Number(meta.cost), 6)}`);
-  if (truthy(meta.confidence)) infoBits.push(`🎯 ${(Number(meta.confidence) * 100).toFixed(0)}%`);
-
-  if (infoBits.length) {
-    const line2 = centerText(infoBits.join('   '), w);
-    lines.push(`│ ${line2} │`);
+  if (metadata.model || metadata.modelUsed || metadata.aiUsed) {
+    return 'gpt5';
   }
-
-  return [top, ...lines, bottom].join('\n');
+  return 'simple';
 }
 
-function buildFooter(meta = {}, preset) {
-  const bits = [];
-  if (truthy(meta.costTier)) bits.push(`Cost: ${meta.costTier}`);
-  if (truthy(meta.complexity)) bits.push(`Complexity: ${meta.complexity}`);
-  if (truthy(meta.reasoning)) bits.push(`Reasoning: ${meta.reasoning}`);
-  if (truthy(meta.verbosity)) bits.push(`Verbosity: ${meta.verbosity}`);
-  if (truthy(meta.contextUsed)) bits.push(`Context: ${meta.contextUsed ? 'Yes' : 'No'}`);
-  if (truthy(meta.fallbackUsed)) bits.push(`Fallback: ${meta.fallbackUsed ? 'Yes' : 'No'}`);
-  if (truthy(meta.completionDetected)) bits.push(`Completion: ${meta.completionDetected ? 'Yes' : 'No'}`);
-
-  if (!bits.length) return '';
-
-  const body = '— ' + bits.join('  •  ');
-  if (preset.padSections) return `\n${body}\n`;
-  return `\n${body}`;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// CHUNKING (CODE-BLOCK AWARE)
-////////////////////////////////////////////////////////////////////////////////
-
-function splitIntoLogicalBlocks(md) {
-  // HIGH LEVEL: split by code fences and large paragraph blocks
-  // Keep fences intact; never split mid-fence.
-  const blocks = [];
-  const lines = md.split('\n');
-  let buf = [];
-  let inFence = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (/^```/.test(line)) {
-      // fence boundary
-      if (!inFence) {
-        // flush previous buffer as a block
-        if (buf.length) {
-          blocks.push(buf.join('\n').trim());
-          buf = [];
-        }
-        inFence = true;
-        buf.push(line);
-      } else {
-        buf.push(line);
-        blocks.push(buf.join('\n')); // entire fence block
-        buf = [];
-        inFence = false;
-      }
-    } else {
-      buf.push(line);
-    }
-  }
-
-  if (buf.length) blocks.push(buf.join('\n').trim());
-
-  // Post-process: split large non-code blocks by double newline boundaries
-  const final = [];
-  for (const b of blocks) {
-    if (/^```/.test(b)) {
-      final.push(b);
-    } else if (b.length <= MAX_CHUNK_SOFT) {
-      final.push(b);
-    } else {
-      // try to split by paragraph boundaries
-      const paras = b.split(/\n{2,}/);
-      let acc = '';
-      for (let p of paras) {
-        const appended = acc.length ? acc + '\n\n' + p : p;
-        if (appended.length > MAX_CHUNK_SOFT) {
-          if (acc.length) final.push(acc);
-          acc = p;
-        } else {
-          acc = appended;
-        }
-      }
-      if (acc.length) final.push(acc);
-    }
-  }
-  return final.filter(Boolean);
-}
-
-function assembleChunksWithHeaderFooter(text, opts) {
-  const preset = STYLE_PRESETS[opts.style] || STYLE_PRESETS.relaxed;
-  const parsed  = smartSpacing(text, preset);
-
-  const header = opts.noHeader ? '' : buildHeader(opts.title || 'GPT-5', preset, {
-    model: opts.model, executionTime: opts.executionTime, tokens: opts.tokens,
-    cost: opts.cost, confidence: opts.confidence
-  });
-
-  const footer = opts.noFooter ? '' : buildFooter({
-    costTier: opts.costTier, complexity: opts.complexity, reasoning: opts.reasoning,
-    verbosity: opts.verbosity, contextUsed: opts.contextUsed, fallbackUsed: opts.fallbackUsed,
-    completionDetected: opts.completionDetected
-  }, preset);
-
-  const base = header
-    ? [header, preset.gapAfterHeader ? '' : null, parsed].filter((v) => v !== null).join('\n')
-    : parsed;
-
-  const withFooter = footer ? `${base}\n${footer}` : base;
-
-  // Split into logical blocks, then pack into messages under hard limit
-  const blocks = splitIntoLogicalBlocks(withFooter);
-
-  const chunks = [];
-  let current = '';
-
-  const pushCurrent = () => {
-    if (!current) return;
-    chunks.push(current);
-    current = '';
-  };
-
-  for (const b of blocks) {
-    if (!b.trim()) {
-      if (current.length + 1 <= TELEGRAM_HARD_LIMIT) {
-        current += '\n';
-      } else {
-        pushCurrent();
-        current = '\n';
-      }
-      continue;
-    }
-
-    if (b.length > TELEGRAM_HARD_LIMIT) {
-      // Split this big block safely by lines under hard limit
-      const lines = b.split('\n');
-      let buf = '';
-      for (const ln of lines) {
-        const add = (buf ? '\n' : '') + ln;
-        if ((buf + add).length > TELEGRAM_HARD_LIMIT) {
-          // flush buf
-          if (current.length + buf.length + 1 > TELEGRAM_HARD_LIMIT) {
-            pushCurrent();
-          }
-          chunks.push(buf);
-          buf = ln;
-        } else {
-          buf += add;
-        }
-      }
-      if (buf) {
-        if (current.length + buf.length + 1 > TELEGRAM_HARD_LIMIT) {
-          pushCurrent();
-          chunks.push(buf);
-        } else {
-          current += (current ? '\n' : '') + buf;
-        }
-      }
-      continue;
-    }
-
-    // Normal case: pack block into current or start a new chunk
-    if ((current + (current ? '\n\n' : '') + b).length <= TELEGRAM_HARD_LIMIT) {
-      current += (current ? '\n\n' : '') + b;
-    } else {
-      pushCurrent();
-      if (b.length <= TELEGRAM_HARD_LIMIT) {
-        current = b;
-      } else {
-        // (shouldn’t happen after above clause, but keep safe)
-        chunks.push(b.slice(0, TELEGRAM_HARD_LIMIT));
-        current = b.slice(TELEGRAM_HARD_LIMIT);
-      }
-    }
-  }
-
-  pushCurrent();
-
-  return chunks;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// SENDER CORE
-////////////////////////////////////////////////////////////////////////////////
-
-async function _sendRaw(bot, chatId, text, opts = {}) {
-  // Minimal wrapper around Telegram sendMessage
-  const payload = {
-    chat_id: chatId,
-    text,
-    parse_mode: opts.parseMode || DEFAULT_PARSE_MODE,
-    disable_web_page_preview: !!opts.disableWebPreview
-  };
-
-  // Inline keyboard support (array of rows; each row array of buttons)
-  if (Array.isArray(opts.buttons) && opts.buttons.length) {
-    payload.reply_markup = {
-      inline_keyboard: opts.buttons
-    };
-  }
-
-  return bot.sendMessage(chatId, payload.text, {
-    parse_mode: payload.parse_mode,
-    disable_web_page_preview: payload.disable_web_page_preview,
-    reply_markup: payload.reply_markup
-  });
-}
-
-async function _sendWithFallback(bot, chatId, text, opts) {
-  // Try Markdown → fallback to plaintext on error
-  try {
-    return await _sendRaw(bot, chatId, text, { ...opts, parseMode: opts.parseMode || DEFAULT_PARSE_MODE });
-  } catch (err) {
-    console.warn('[telegramSplitter] Markdown send failed, falling back to plaintext:', err.message);
-    try {
-      return await _sendRaw(bot, chatId, text, { ...opts, parseMode: undefined });
-    } catch (err2) {
-      console.error('[telegramSplitter] Plaintext send also failed:', err2.message);
-      throw err2;
-    }
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// PUBLIC API: sendTelegramMessage
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * sendTelegramMessage(bot, chatId, text, metadata?)
- *
- * metadata supports:
- * - title, model, executionTime, tokens, cost, costTier
- * - complexity, confidence, reasoning, verbosity, contextUsed
- * - fallbackUsed, completionDetected
- * - style: 'compact' | 'relaxed' | 'roomy'
- * - parseMode, noHeader, noFooter, disableWebPreview
- * - buttons: [[{ text, url|callback_data }], [...]]
- */
-async function sendTelegramMessage(bot, chatId, text, metadata = {}) {
-  const t0 = Date.now();
-  const style = metadata.style || 'relaxed';
-  const preset = STYLE_PRESETS[style] || STYLE_PRESETS.relaxed;
-
-  if (!bot || typeof bot.sendMessage !== 'function') {
-    throw new Error('Telegram bot instance with sendMessage required');
-  }
-  if (!chatId) throw new Error('chatId required');
-
-  const chunks = assembleChunksWithHeaderFooter(String(text || ''), {
-    style,
-    noHeader: !!metadata.noHeader,
-    noFooter: !!metadata.noFooter,
-    title: metadata.title || headerAutoTitle(metadata),
-    model: metadata.model,
-    executionTime: metadata.executionTime,
-    tokens: metadata.tokens,
-    cost: metadata.cost,
-    confidence: metadata.confidence,
-    costTier: metadata.costTier,
-    complexity: metadata.complexity,
-    reasoning: metadata.reasoning,
-    verbosity: metadata.verbosity,
-    contextUsed: metadata.contextUsed,
-    fallbackUsed: metadata.fallbackUsed,
-    completionDetected: metadata.completionDetected
-  });
-
-  let sent = 0;
-  let lastMessage = null;
-
-  for (let i = 0; i < chunks.length; i++) {
-    const label = chunks.length > 1 ? ` (${i + 1}/${chunks.length})` : '';
-    const body = chunks[i];
-
-    // Only put header on the first chunk (header is in assembled text already)
-    // Subsequent chunks get a tiny prefix if needed.
-    const prefix = i === 0 ? '' : '';
-    const textToSend = `${prefix}${body}`;
-
-    lastMessage = await _sendWithFallback(bot, chatId, textToSend, {
-      parseMode: metadata.parseMode,                  // optional
-      disableWebPreview: !!metadata.disableWebPreview,
-      buttons: i === chunks.length - 1 ? metadata.buttons : undefined
-    });
-    sent++;
-  }
-
-  const elapsed = Date.now() - t0;
-
+function buildHeader(metadata) {
+  const headerType = getHeaderType(metadata);
+  const modelName = getModelName(metadata);
+  const template = HEADERS[headerType];
+  
+  if (!template) return HEADERS.simple;
+  
   return {
-    success: true,
-    enhanced: true,
-    chunks: sent,
-    elapsedMs: elapsed,
-    model: metadata.model || 'gpt-5-mini',
-    message: lastMessage
+    top: template.top,
+    title: template.title,
+    model: template.model.replace('{MODEL}', modelName),
+    bottom: template.bottom
   };
 }
 
-function headerAutoTitle(meta) {
-  // If caller didn’t pass a title, pick a good one
-  if (meta.title) return meta.title;
-  if (meta.completionDetected) return '✅ Task Completed';
-  if (meta.model) return `🚀 ${String(meta.model).toUpperCase()} Response`;
-  return '🤖 GPT-5 Response';
+function cleanText(text) {
+  const cleaned = safeString(text)
+    .replace(/\r\n/g, '\n')           // Normalize line endings
+    .replace(/\r/g, '\n')             // Handle old Mac line endings
+    .replace(/\n{3,}/g, '\n\n')       // Collapse excessive newlines
+    .replace(/[ \t]+$/gm, '')         // Remove trailing whitespace
+    .trim();
+  
+  return cleaned;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// PUBLIC API: setupTelegramHandler
-////////////////////////////////////////////////////////////////////////////////
+// ═══════════════════════════════════════════════════════════════════════════
+// SMART TEXT SPLITTING (PRESERVES CODE BLOCKS)
+// ═══════════════════════════════════════════════════════════════════════════
 
+function findSafeBreakpoint(text, maxLength) {
+  if (text.length <= maxLength) return text.length;
+  
+  // Look for good breaking points near the limit
+  const searchStart = Math.max(0, maxLength - 200);
+  const searchText = text.substring(searchStart, maxLength);
+  
+  // Prefer breaking at paragraph boundaries
+  const paragraphBreak = searchText.lastIndexOf('\n\n');
+  if (paragraphBreak !== -1) {
+    return searchStart + paragraphBreak + 2;
+  }
+  
+  // Fall back to sentence boundaries
+  const sentenceBreak = searchText.lastIndexOf('. ');
+  if (sentenceBreak !== -1) {
+    return searchStart + sentenceBreak + 2;
+  }
+  
+  // Fall back to any newline
+  const lineBreak = searchText.lastIndexOf('\n');
+  if (lineBreak !== -1) {
+    return searchStart + lineBreak + 1;
+  }
+  
+  // Last resort: word boundary
+  const wordBreak = searchText.lastIndexOf(' ');
+  if (wordBreak !== -1) {
+    return searchStart + wordBreak + 1;
+  }
+  
+  // Hard break if no good options
+  return maxLength;
+}
+
+function isInsideCodeBlock(text, position) {
+  // Check if position is inside a ``` code block
+  const beforePosition = text.substring(0, position);
+  const codeBlockMatches = beforePosition.match(/```/g);
+  
+  // If odd number of ```, we're inside a code block
+  return codeBlockMatches && codeBlockMatches.length % 2 === 1;
+}
+
+function splitTextSafely(text, maxChunkSize) {
+  const cleanedText = cleanText(text);
+  
+  if (cleanedText.length <= maxChunkSize) {
+    return [cleanedText];
+  }
+  
+  const chunks = [];
+  let remaining = cleanedText;
+  let chunkCount = 0;
+  
+  while (remaining.length > 0 && chunkCount < MAX_CHUNKS) {
+    let breakpoint;
+    
+    if (remaining.length <= maxChunkSize) {
+      // Last chunk
+      chunks.push(remaining);
+      break;
+    }
+    
+    // Find safe breakpoint, avoiding code blocks
+    breakpoint = findSafeBreakpoint(remaining, maxChunkSize);
+    
+    // Double-check we're not breaking inside code block
+    if (isInsideCodeBlock(remaining, breakpoint)) {
+      // Find the end of the current code block
+      const codeBlockEnd = remaining.indexOf('```', breakpoint);
+      if (codeBlockEnd !== -1 && codeBlockEnd < maxChunkSize * 1.5) {
+        breakpoint = codeBlockEnd + 3;
+      } else {
+        // Code block is too long, break at safe word boundary
+        const wordBoundary = remaining.lastIndexOf(' ', maxChunkSize - 100);
+        breakpoint = wordBoundary > 0 ? wordBoundary : maxChunkSize - 100;
+      }
+    }
+    
+    const chunk = remaining.substring(0, breakpoint).trim();
+    if (chunk.length > 0) {
+      chunks.push(chunk);
+    }
+    
+    remaining = remaining.substring(breakpoint).trim();
+    chunkCount++;
+  }
+  
+  // Handle remaining text if we hit max chunks
+  if (remaining.length > 0 && chunkCount >= MAX_CHUNKS) {
+    const lastChunk = chunks[chunks.length - 1] || '';
+    if (lastChunk.length + remaining.length <= TELEGRAM_LIMIT) {
+      chunks[chunks.length - 1] = lastChunk + '\n\n' + remaining;
+    } else {
+      chunks.push('...[Response truncated due to length]');
+    }
+  }
+  
+  return chunks.filter(chunk => chunk.length > 0);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN SENDING FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function sendSingleMessage(bot, chatId, text, parseMode = 'Markdown') {
+  try {
+    const result = await bot.sendMessage(chatId, text, { 
+      parse_mode: parseMode,
+      disable_web_page_preview: true
+    });
+    return { success: true, result };
+  } catch (error) {
+    // Try again without Markdown if it failed
+    if (parseMode === 'Markdown') {
+      try {
+        const result = await bot.sendMessage(chatId, text, {
+          disable_web_page_preview: true
+        });
+        return { success: true, result, fallback: true };
+      } catch (fallbackError) {
+        return { success: false, error: fallbackError.message };
+      }
+    }
+    return { success: false, error: error.message };
+  }
+}
+
+async function sendTelegramMessage(bot, chatId, text, metadata = {}) {
+  const startTime = Date.now();
+  
+  try {
+    console.log(`[TelegramSplitter] 📱 Sending message to ${chatId}...`);
+    
+    // Validate inputs
+    if (!bot || typeof bot.sendMessage !== 'function') {
+      throw new Error('Valid Telegram bot instance required');
+    }
+    
+    if (!chatId) {
+      throw new Error('ChatId is required');
+    }
+    
+    const cleanedText = cleanText(text);
+    if (!cleanedText) {
+      throw new Error('Message text is empty');
+    }
+    
+    // Build header
+    const header = buildHeader(metadata);
+    const headerText = [
+      header.top,
+      header.title,
+      header.model,
+      header.bottom
+    ].join('\n');
+    
+    // Calculate available space for content
+    const availableSpace = SAFE_CHUNK_SIZE - headerText.length - 50; // Extra safety margin
+    
+    // Split text into manageable chunks
+    const textChunks = splitTextSafely(cleanedText, availableSpace);
+    
+    console.log(`[TelegramSplitter] Split into ${textChunks.length} chunks`);
+    
+    // Send messages
+    const results = [];
+    let successCount = 0;
+    
+    for (let i = 0; i < textChunks.length; i++) {
+      const chunk = textChunks[i];
+      const isFirstChunk = i === 0;
+      const isLastChunk = i === textChunks.length - 1;
+      
+      // Add header only to first chunk
+      const messageText = isFirstChunk 
+        ? `${headerText}\n${chunk}`
+        : chunk;
+      
+      // Add chunk indicator for multiple chunks
+      const finalText = textChunks.length > 1 && !isFirstChunk
+        ? `📄 Part ${i + 1}/${textChunks.length}\n\n${messageText}`
+        : messageText;
+      
+      const result = await sendSingleMessage(bot, chatId, finalText);
+      results.push(result);
+      
+      if (result.success) {
+        successCount++;
+        console.log(`[TelegramSplitter] ✅ Sent chunk ${i + 1}/${textChunks.length}`);
+      } else {
+        console.error(`[TelegramSplitter] ❌ Failed to send chunk ${i + 1}: ${result.error}`);
+      }
+      
+      // Small delay between messages to avoid rate limiting
+      if (!isLastChunk) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    
+    const processingTime = Date.now() - startTime;
+    const allSuccessful = successCount === textChunks.length;
+    
+    console.log(`[TelegramSplitter] ${allSuccessful ? '✅' : '⚠️'} Complete: ${successCount}/${textChunks.length} chunks sent (${processingTime}ms)`);
+    
+    return {
+      success: allSuccessful,
+      enhanced: true,
+      chunks: textChunks.length,
+      sent: successCount,
+      failed: textChunks.length - successCount,
+      processingTime,
+      model: getModelName(metadata),
+      headerType: getHeaderType(metadata),
+      results,
+      fallback: results.some(r => r.fallback)
+    };
+    
+  } catch (error) {
+    console.error('[TelegramSplitter] ❌ Critical error:', error.message);
+    
+    // Emergency fallback - try to send basic message
+    try {
+      await bot.sendMessage(chatId, `⚠️ System Error\n\n${safeString(text).substring(0, 1000)}...`);
+      return {
+        success: true,
+        enhanced: false,
+        emergency: true,
+        error: error.message,
+        processingTime: Date.now() - startTime
+      };
+    } catch (emergencyError) {
+      return {
+        success: false,
+        error: error.message,
+        emergencyError: emergencyError.message,
+        processingTime: Date.now() - startTime
+      };
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS & ALIASES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Setup function for your dualCommandSystem integration
 function setupTelegramHandler(bot) {
   return {
-    // Basic send (alias to sendTelegramMessage without metadata)
-    send: async (text, chatId, opts = {}) =>
-      sendTelegramMessage(bot, chatId, text, opts),
-
-    // Explicit alias your code references
-    sendGPTResponse: async (text, chatId, opts = {}) =>
-      sendTelegramMessage(bot, chatId, text, opts),
-
-    // Error helper
-    sendError: async (text, chatId, title = 'System Error') =>
-      sendAlert(bot, chatId, text, title)
+    send: async (chatId, text, metadata = {}) => sendTelegramMessage(bot, chatId, text, metadata),
+    sendMessage: async (chatId, text, metadata = {}) => sendTelegramMessage(bot, chatId, text, metadata),
+    sendGPTResponse: async (chatId, text, metadata = {}) => sendTelegramMessage(bot, chatId, text, metadata),
+    sendError: async (chatId, errorText, title = 'System Error') => {
+      return sendTelegramMessage(bot, chatId, errorText, {
+        model: 'error-handler',
+        aiUsed: 'error-fallback',
+        title,
+        error: true
+      });
+    }
   };
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// PUBLIC API: sendAlert
-////////////////////////////////////////////////////////////////////////////////
+// Alert function for system notifications
+async function sendAlert(bot, chatId, message, title = 'System Alert') {
+  return sendTelegramMessage(bot, chatId, message, {
+    model: 'alert-system',
+    title,
+    error: true,
+    aiUsed: 'system-alert'
+  });
+}
 
-async function sendAlert(bot, chatId, errorMessage, title = 'System Error') {
+// Test function to verify Telegram bot connectivity
+async function testTelegramConnection(bot, chatId) {
   try {
-    const text =
-      `**${title}**\n\n` +
-      `${String(errorMessage || 'Unknown error')}\n\n` +
-      `Please try again in a moment.`;
-
-    const res = await sendTelegramMessage(bot, chatId, text, {
-      style: 'compact',
-      model: 'error-handler',
-      costTier: 'free',
-      noFooter: false,
-      title: '⚠️ Alert'
+    const testMessage = 'System connectivity test successful! ✅';
+    const result = await sendTelegramMessage(bot, chatId, testMessage, {
+      model: 'test-system',
+      aiUsed: 'connection-test'
     });
-
-    return { ...res, success: true };
-  } catch (err) {
-    console.error('[telegramSplitter] sendAlert failed, falling back to basic send:', err.message);
-    try {
-      await bot.sendMessage(chatId, `${title}\n\n${errorMessage}`);
-      return { success: true, enhanced: false, chunks: 1 };
-    } catch (err2) {
-      console.error('[telegramSplitter] Basic alert send failed:', err2.message);
-      return { success: false, error: err2.message };
-    }
+    return { success: true, result };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// EXPORTS (plus aliases to match your earlier integration)
-////////////////////////////////////////////////////////////////////////////////
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE EXPORTS
+// ═══════════════════════════════════════════════════════════════════════════
 
 module.exports = {
-  // main
+  // Main function (matches your dualCommandSystem expectations)
   sendTelegramMessage,
-
-  // helper bundle used by your dualCommandSystem integration
+  
+  // Helper functions
   setupTelegramHandler,
   sendAlert,
-
-  // aliases to keep legacy calls happy
+  testTelegramConnection,
+  
+  // Aliases for compatibility with existing code
   sendMessage: sendTelegramMessage,
   sendGPTResponse: sendTelegramMessage,
-
-  // expose presets for tuning (optional)
-  STYLE_PRESETS
+  send: sendTelegramMessage,
+  
+  // Utility functions
+  cleanText,
+  splitTextSafely,
+  safeString,
+  
+  // Constants
+  TELEGRAM_LIMIT,
+  SAFE_CHUNK_SIZE,
+  MAX_CHUNKS,
+  HEADERS
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STARTUP & INITIALIZATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('✅ CLEAN Telegram Splitter loaded successfully');
+console.log('📱 Features:');
+console.log('   • Smart text splitting (preserves code blocks)');
+console.log('   • Beautiful headers for different response types');  
+console.log('   • Automatic Markdown fallback');
+console.log('   • Memory integration compatible');
+console.log('   • Rate limiting protection');
+console.log('   • Emergency fallback system');
+console.log('   • Maximum 10 chunks per response (prevents spam)');
+console.log('   • Compatible with dualCommandSystem.js');
+console.log('');
