@@ -1,16 +1,18 @@
-// utils/telegramSplitter.js — CLEAN + PRO EMOJI EDITION (v2.3.0)
+// utils/telegramSplitter.js — PRO CLEAN + EMOJI + MDV2 SAFE (v2.4.0)
 // ───────────────────────────────────────────────────────────────────────────
-// Improvements:
-// • MarkdownV2-safe rendering with code-aware escaping
-// • Auto core-emoji & section label styling (LAW, STRATEGY, ACTION, DRILL, LOG)
-// • Smart bullet normalization and spacing
-// • Header banners + compact Part N/M for follow-ups
-// • Robust chunking that respects code blocks and sentence boundaries
+// Features:
+// • MarkdownV2-safe escaping that PRESERVES intended *bold* / _italic_
+// • Auto core-emoji + label styling (LAW, STRATEGY, ACTION, DRILL, LOG, …)
+// • Optional breathing space for dense paragraphs (env toggle)
+// • Bullet normalization, tidy spacing, sentence-aware chunking
+// • Code-block aware: never escapes or splits inside ```fences``` or `inline`
+// • Header banner + compact "📄 Part N/M" follow-ups
+// • Exponential retry + emergency fallback
 // ───────────────────────────────────────────────────────────────────────────
 
 'use strict';
 
-console.log('📱 Loading Telegram Splitter • Pro Emoji v2.3.0');
+console.log('📱 Loading Telegram Splitter • Pro v2.4.0');
 
 const CONFIG = {
   TELEGRAM_LIMIT: 4096,
@@ -20,11 +22,12 @@ const CONFIG = {
   MAX_RETRIES: parseInt(process.env.TELEGRAM_MAX_RETRIES) || 3,
   RETRY_DELAY: parseInt(process.env.TELEGRAM_RETRY_DELAY) || 900,
   ENABLE_COMPRESSION: process.env.TELEGRAM_COMPRESS === 'true',
+  ENABLE_BREATHING_SPACE: process.env.TELEGRAM_READABLE === 'true', // 👈 add spacing if true
   DEBUG_MODE: process.env.TELEGRAM_DEBUG === 'true',
   PARSE_MODE: (process.env.TELEGRAM_PARSE_MODE || 'MarkdownV2')
 };
 
-// Visual headers (box-drawing kept)
+// Visual headers
 const HEADERS = {
   gpt5: {
     top:    '╭──────────────────────────────────────────╮',
@@ -78,62 +81,93 @@ const CORE_EMOJI = [
   { key: 'OATH', emoji: '🗝️' }
 ];
 
+// ───────────────────────────────────────────────────────────────────────────
+// Utility: safe stringify
 function safeString(v) {
   if (v === null || v === undefined) return '';
   if (typeof v === 'string') return v;
   try { return JSON.stringify(v, null, 2); } catch { return String(v); }
 }
 
-// MarkdownV2 requires escaping many characters. We split around code blocks and
-// only escape outside of code so content remains readable & safe.
+// ───────────────────────────────────────────────────────────────────────────
+// MarkdownV2 escaping while PRESERVING intended *bold* / _italic_ outside code
+
+// Escape set (Telegram MDV2): _ * [ ] ( ) ~ ` > # + - = | { } . !
 function escapeMarkdownV2Segment(s) {
-  // per Telegram spec: _ * [ ] ( ) ~ ` > # + - = | { } . !
   return s.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
 }
+
+// Protect / restore markers so escaping doesn't kill our formatting
+function protectFormatting(text) {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '«B2»$1«B2»')
+    .replace(/\*([^*]+)\*/g,     '«B1»$1«B1»')
+    .replace(/__([^_]+)__/g,     '«I2»$1«I2»')
+    .replace(/_([^_]+)_/g,       '«I1»$1«I1»');
+}
+function restoreFormatting(text) {
+  return text
+    .replace(/«B2»([^«]+)«B2»/g, '*$1*')  // Telegram uses * for bold
+    .replace(/«B1»([^«]+)«B1»/g, '*$1*')
+    .replace(/«I2»([^«]+)«I2»/g, '_$1_')
+    .replace(/«I1»([^«]+)«I1»/g, '_$1_');
+}
+
+// Split into text/code segments (triple fences or single backticks)
 function splitCodeBlocks(text) {
-  const blocks = [];
-  let i = 0, start = 0, inTriple = false, inInline = false;
+  const parts = [];
+  let i = 0, start = 0;
   while (i < text.length) {
-    if (!inInline && text.slice(i, i+3) === '```') {
-      if (!inTriple) {
-        if (i > start) blocks.push({ type: 'text', value: text.slice(start, i) });
-        const end = text.indexOf('```', i+3);
-        if (end === -1) { // unclosed
-          blocks.push({ type: 'code', value: text.slice(i) });
-          return blocks;
-        }
-        blocks.push({ type: 'code', value: text.slice(i, end+3) });
-        i = end + 3; start = i; inTriple = false;
-        continue;
-      }
+    if (text.slice(i, i+3) === '```') {
+      if (i > start) parts.push({ type: 'text', value: text.slice(start, i) });
+      const end = text.indexOf('```', i+3);
+      if (end === -1) { parts.push({ type: 'code', value: text.slice(i) }); return parts; }
+      parts.push({ type: 'code', value: text.slice(i, end+3) });
+      i = end + 3; start = i; continue;
     }
-    if (!inTriple && text[i] === '`') {
-      // toggle inline: treat as code span until next backtick
+    if (text[i] === '`') {
+      if (i > start) parts.push({ type: 'text', value: text.slice(start, i) });
       const end = text.indexOf('`', i+1);
-      if (end === -1) { break; }
-      if (i > start) blocks.push({ type: 'text', value: text.slice(start, i) });
-      blocks.push({ type: 'code', value: text.slice(i, end+1) });
+      if (end === -1) { parts.push({ type: 'text', value: text.slice(i) }); return parts; }
+      parts.push({ type: 'code', value: text.slice(i, end+1) });
       i = end + 1; start = i; continue;
     }
     i++;
   }
-  if (start < text.length) blocks.push({ type: 'text', value: text.slice(start) });
-  return blocks;
+  if (start < text.length) parts.push({ type: 'text', value: text.slice(start) });
+  return parts;
 }
+
 function escapeMarkdownV2(text) {
-  return splitCodeBlocks(text).map(b => {
-    if (b.type === 'code') return b.value; // leave code intact
-    return escapeMarkdownV2Segment(b.value);
+  return splitCodeBlocks(text).map(seg => {
+    if (seg.type === 'code') return seg.value;
+    const protectedSeg = protectFormatting(seg.value);
+    const escaped = escapeMarkdownV2Segment(protectedSeg);
+    return restoreFormatting(escaped);
   }).join('');
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Optional readability pass for dense paragraphs
+function addBreathingSpace(s) {
+  if (!CONFIG.ENABLE_BREATHING_SPACE) return s;
+  return s
+    // ensure blank line before a bullet block
+    .replace(/([^\n])\n(• )/g, '$1\n\n$2')
+    // break long sentences: add newline after period/exc/quest followed by uppercase/(
+    .replace(/([.!?])\s+(?=[A-Z(])/g, '$1\n')
+    // normalize multiple blank lines outside code (handled later too)
+    ;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Compression outside code blocks
 function compressText(text) {
   if (!CONFIG.ENABLE_COMPRESSION) return text;
   return text
-    // preserve code blocks by splitting, compress outside
     .split(/(```[\s\S]*?```)/g)
     .map((seg, idx) => {
-      if (idx % 2 === 1) return seg; // code block
+      if (idx % 2 === 1) return seg; // code untouched
       return seg
         .replace(/\r/g, '')
         .replace(/[ \t]+\n/g, '\n')
@@ -144,9 +178,10 @@ function compressText(text) {
     .join('');
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Code boundary detection
 function detectCodeBlocks(text) {
   const blocks = [];
-  let pos = 0;
   const re = /```[\s\S]*?```|`[^`]*`/g;
   let m;
   while ((m = re.exec(text)) !== null) {
@@ -158,6 +193,8 @@ function isInsideCodeBlock(text, idx) {
   return detectCodeBlocks(text).some(b => idx >= b.start && idx < b.end);
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Breakpoint selection for chunking
 function findOptimalBreakpoint(text, max) {
   if (text.length <= max) return text.length;
   const searchStart = Math.max(0, max - 400);
@@ -198,7 +235,8 @@ function findOptimalBreakpoint(text, max) {
   return max - 10;
 }
 
-// Section label → emoji + bold label (outside code)
+// ───────────────────────────────────────────────────────────────────────────
+// Emoji + label injection (outside code)
 const CORE_LABEL_RE = new RegExp(
   `^\\s*(?:${CORE_EMOJI.map(e => e.key).join('|')})(?:\\s*[:：\\-→])`,
   'i'
@@ -207,11 +245,11 @@ function injectCoreEmojisAndLabels(text) {
   return text
     .split(/(```[\s\S]*?```)/g)
     .map((seg, idx) => {
-      if (idx % 2 === 1) return seg; // keep code
+      if (idx % 2 === 1) return seg; // code
       return seg.split('\n').map(line => {
-        // normalize bullets
+        // Normalize bullets
         line = line.replace(/^(\s*)[-*•]\s+/, '$1• ');
-        // emphasize & emoji for core labels
+        // Core label emphasis
         if (CORE_LABEL_RE.test(line)) {
           const label = line.split(/[:：\-→]/)[0].trim().toUpperCase();
           const rule = CORE_EMOJI.find(e => label.startsWith(e.key));
@@ -222,7 +260,7 @@ function injectCoreEmojisAndLabels(text) {
             );
           }
         }
-        // light heuristic: turn "Result:" / "Purpose:" etc bold without emoji map
+        // Bold common sections
         line = line.replace(/^(\s*)(Result|Purpose|Metrics|Notes)(\s*[:：\-→]\s*)/i, '$1*$2*$3');
         return line;
       }).join('\n');
@@ -230,17 +268,18 @@ function injectCoreEmojisAndLabels(text) {
     .join('');
 }
 
-// Model → name + emoji
+// ───────────────────────────────────────────────────────────────────────────
+// Header building
 function getModelInfo(meta = {}) {
   const model = (meta.model || meta.modelUsed || meta.aiUsed || 'gpt-5') + '';
   const map = {
     'gpt-5-nano': { name: 'GPT-5 Nano', emoji: '⚡' },
     'gpt-5-mini': { name: 'GPT-5 Mini', emoji: '🔥' },
     'gpt-5-chat': { name: 'GPT-5 Chat', emoji: '💬' },
-    'gpt-5': { name: 'GPT-5', emoji: '🚀' },
-    'gpt-4o': { name: 'GPT-4o', emoji: '👁️' },
-    'whisper': { name: 'Whisper', emoji: '🎵' },
-    'vision': { name: 'Vision', emoji: '👀' }
+    'gpt-5':      { name: 'GPT-5',      emoji: '🚀' },
+    'gpt-4o':     { name: 'GPT-4o',     emoji: '👁️' },
+    'whisper':    { name: 'Whisper',    emoji: '🎵' },
+    'vision':     { name: 'Vision',     emoji: '👀' }
   };
   const key = Object.keys(map).find(k => model.toLowerCase().includes(k)) || 'gpt-5';
   return { name: map[key].name, emoji: map[key].emoji };
@@ -256,7 +295,7 @@ function ts() {
   return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 function center(text, width = 42) {
-  const len = [...text].length; // handle emoji width better
+  const len = [...text].length;
   const pad = Math.max(0, Math.floor((width - len) / 2));
   return ' '.repeat(pad) + text + ' '.repeat(Math.max(0, width - len - pad));
 }
@@ -287,6 +326,8 @@ function buildHeader(meta, chunkInfo = {}) {
     .join('\n');
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Chunker
 class TextSplitter {
   constructor(opts = {}) {
     this.opts = {
@@ -297,6 +338,7 @@ class TextSplitter {
   }
   async split(text, onProgress) {
     let t = safeString(text).trim();
+    if (CONFIG.ENABLE_BREATHING_SPACE) t = addBreathingSpace(t);
     if (this.opts.enableCompression) t = compressText(t);
     if (!t) return [];
 
@@ -328,6 +370,8 @@ class TextSplitter {
   }
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Sender with retries
 class MessageSender {
   constructor(bot) { this.bot = bot; }
   async sendWithRetry(chatId, text, options = {}, maxRetries = CONFIG.MAX_RETRIES) {
@@ -342,7 +386,7 @@ class MessageSender {
         return { success: true, result: res, attempts: attempt };
       } catch (err) {
         lastErr = err;
-        // Fallback: drop parse mode if MarkdownV2 still complains
+        // First retry: drop parse_mode (Telegram sometimes picky)
         if (attempt === 1 && (options.parse_mode || CONFIG.PARSE_MODE).toLowerCase().includes('markdown')) {
           try {
             const res = await this.bot.sendMessage(chatId, text, { disable_web_page_preview: true });
@@ -359,14 +403,8 @@ class MessageSender {
   }
 }
 
-function decorateContent(raw) {
-  let s = injectCoreEmojisAndLabels(raw);
-  // Subtle typography outside code (no quotes flip to avoid escaping pain)
-  // Ensure blank line after headers like "##"
-  s = s.replace(/(^|\n)(#+\s[^\n]+)/g, '$1$2\n');
-  return s;
-}
-
+// ───────────────────────────────────────────────────────────────────────────
+// Main send
 async function sendTelegramMessage(bot, chatId, text, metadata = {}) {
   const start = Date.now();
   try {
@@ -382,11 +420,13 @@ async function sendTelegramMessage(bot, chatId, text, metadata = {}) {
       enableCompression: CONFIG.ENABLE_COMPRESSION
     });
 
-    // First pass: decorate (emoji + bold labels, bullets), respecting code
-    const decorated = decorateContent(raw);
+    // 1) Decorate (emoji + bold labels, bullets), respecting code
+    const decorated = injectCoreEmojisAndLabels(raw);
 
-    // Split into chunks before escaping; then escape each for MarkdownV2
+    // 2) Split before escaping
     const chunks = await splitter.split(decorated);
+
+    // 3) Header + sender
     const chunkInfo = { total: chunks.length };
     const header = buildHeader(metadata, chunkInfo);
     const sender = new MessageSender(bot);
@@ -399,20 +439,20 @@ async function sendTelegramMessage(bot, chatId, text, metadata = {}) {
       const isFirst = i === 0;
       const isLast = i === chunks.length - 1;
 
-      // Build message: header for first, compact part header for next
+      // Compose
       let composed = isFirst
         ? `${header}\n\n${body}`
         : `📄 *Part ${i + 1}/${chunks.length}*\n\n${body}`;
 
-      // Escape outside code for MarkdownV2
+      // Escape outside code for MarkdownV2 (with bold/italic preservation)
       composed = composed
         .split(/(```[\s\S]*?```)/g)
         .map((seg, idx) => (idx % 2 === 1 ? seg : escapeMarkdownV2(seg)))
         .join('');
 
-      // Keep within Telegram hard limit
+      // Length guard
       if (composed.length > CONFIG.TELEGRAM_LIMIT) {
-        const reserve = 60;
+        const reserve = 80;
         composed = composed.slice(0, CONFIG.TELEGRAM_LIMIT - reserve) + '\\n\\n…\\[truncated\\]';
       }
 
@@ -431,7 +471,7 @@ async function sendTelegramMessage(bot, chatId, text, metadata = {}) {
     return {
       success: successCount === chunks.length,
       enhanced: true,
-      version: '2.3.0',
+      version: '2.4.0',
       chunks: chunks.length,
       sent: successCount,
       failed: chunks.length - successCount,
@@ -457,12 +497,15 @@ async function sendTelegramMessage(bot, chatId, text, metadata = {}) {
   }
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Factory
 function createTelegramHandler(bot, options = {}) {
   const cfg = { ...CONFIG, ...options };
   return {
     send: (chatId, text, meta = {}) => sendTelegramMessage(bot, chatId, text, meta),
     sendMessage: (chatId, text, meta = {}) => sendTelegramMessage(bot, chatId, text, meta),
     sendGPTResponse: (chatId, text, meta = {}) => sendTelegramMessage(bot, chatId, text, meta),
+
     sendError: (chatId, errText, opt = {}) =>
       sendTelegramMessage(bot, chatId, errText, {
         model: 'error-handler',
@@ -471,6 +514,7 @@ function createTelegramHandler(bot, options = {}) {
         errorCode: opt.code || '500',
         ...opt
       }),
+
     sendSuccess: (chatId, okText, opt = {}) =>
       sendTelegramMessage(bot, chatId, okText, {
         model: 'completion-handler',
@@ -478,6 +522,7 @@ function createTelegramHandler(bot, options = {}) {
         title: opt.title || 'Task Complete',
         ...opt
       }),
+
     sendMultimodal: (chatId, analysis, opt = {}) =>
       sendTelegramMessage(bot, chatId, analysis, {
         model: opt.model || 'gpt-4o-vision',
@@ -486,11 +531,14 @@ function createTelegramHandler(bot, options = {}) {
         title: opt.title || 'Multimodal Analysis',
         ...opt
       }),
+
     getConfig: () => ({ ...cfg }),
     updateConfig: (ncfg) => Object.assign(cfg, ncfg)
   };
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Exports
 module.exports = {
   // main
   sendTelegramMessage,
@@ -507,7 +555,7 @@ module.exports = {
   CONFIG,
   HEADERS,
   CORE_EMOJI,
-  VERSION: '2.3.0'
+  VERSION: '2.4.0'
 };
 
 // Boot log
