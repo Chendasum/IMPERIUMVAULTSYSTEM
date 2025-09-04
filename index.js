@@ -58,7 +58,7 @@ memory = {
   buildConversationContext: async () => '',
   saveToMemory: async () => ({ saved: false, reason: 'disabled' })
 };
-console.log('Memory module bypassed - using fallback');
+console.log('✅ Memory module bypassed - using fallback');
 openaiClient = safeRequire('./utils/openaiClient', 'openaiClient.js');
 
 // Critical dependency check
