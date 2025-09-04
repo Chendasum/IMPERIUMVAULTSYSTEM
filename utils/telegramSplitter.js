@@ -4,7 +4,7 @@
 // • MarkdownV2-safe escaping that PRESERVES intended *bold* / _italic_
 // • Auto core-emoji + label styling (LAW, STRATEGY, ACTION, DRILL, LOG, …)
 // • Optional breathing space for dense paragraphs (env toggle)
-// • Bullet normalization, tidy spacing, sentence-aware chunking
+// • Bullet normalization, tidy spacing, sentence-aware chunking 
 // • Code-block aware: never escapes or splits inside ```fences``` or `inline`
 // • Header banner + compact "📄 Part N/M" follow-ups
 // • Exponential retry + emergency fallback
