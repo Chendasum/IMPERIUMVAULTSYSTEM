@@ -54,11 +54,7 @@ function safeRequire(modulePath, moduleName) {
 // Load core modules
 DualCommandSystem = safeRequire('./utils/dualCommandSystem', 'dualCommandSystem.js');
 database = safeRequire('./utils/database', 'database.js');
-memory = {
-  buildConversationContext: async () => '',
-  saveToMemory: async () => ({ saved: false, reason: 'disabled' })
-};
-console.log('✅ Memory module bypassed - using fallback');
+memory = safeRequire('./utils/memory', 'memory.js');
 openaiClient = safeRequire('./utils/openaiClient', 'openaiClient.js');
 
 // Critical dependency check
