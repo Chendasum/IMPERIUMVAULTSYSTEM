@@ -1,564 +1,968 @@
-// utils/telegramSplitter.js — PRO CLEAN + EMOJI + MDV2 SAFE (v2.4.0)
-// ───────────────────────────────────────────────────────────────────────────
+// utils/telegramSplitter.js — PROFESSIONAL CLEAN FORMATTING v3.0.0
+// ═══════════════════════════════════════════════════════════════════════════
 // Features:
-// • MarkdownV2-safe escaping that PRESERVES intended *bold* / _italic_
-// • Auto core-emoji + label styling (LAW, STRATEGY, ACTION, DRILL, LOG, …)
-// • Optional breathing space for dense paragraphs (env toggle)
-// • Bullet normalization, tidy spacing, sentence-aware chunking 
-// • Code-block aware: never escapes or splits inside ```fences``` or `inline`
-// • Header banner + compact "📄 Part N/M" follow-ups
-// • Exponential retry + emergency fallback
-// ───────────────────────────────────────────────────────────────────────────
+// • Professional typography with smart spacing and clean layouts
+// • Auto-formatting: sections, lists, code blocks, quotes
+// • Clean headers with modern design and proper hierarchy
+// • Smart text enhancement: emphasis, highlights, structure
+// • Professional bullet points and numbered lists
+// • Code syntax highlighting and proper formatting
+// • Clean paragraph spacing and readability optimization
+// • Auto-detection of content types (analysis, code, lists, etc.)
+// ═══════════════════════════════════════════════════════════════════════════
 
 'use strict';
 
-console.log('📱 Loading Telegram Splitter • Pro v2.4.0');
+console.log('✨ Loading Professional Telegram Splitter v3.0.0');
 
 const CONFIG = {
   TELEGRAM_LIMIT: 4096,
   SAFE_CHUNK_SIZE: parseInt(process.env.TELEGRAM_CHUNK_SIZE) || 3800,
-  MAX_CHUNKS: parseInt(process.env.MAX_TELEGRAM_CHUNKS) || 15,
-  RATE_LIMIT_DELAY: parseInt(process.env.TELEGRAM_DELAY_MS) || 120,
+  MAX_CHUNKS: parseInt(process.env.MAX_TELEGRAM_CHUNKS) || 20,
+  RATE_LIMIT_DELAY: parseInt(process.env.TELEGRAM_DELAY_MS) || 150,
   MAX_RETRIES: parseInt(process.env.TELEGRAM_MAX_RETRIES) || 3,
-  RETRY_DELAY: parseInt(process.env.TELEGRAM_RETRY_DELAY) || 900,
-  ENABLE_COMPRESSION: process.env.TELEGRAM_COMPRESS === 'true',
-  ENABLE_BREATHING_SPACE: process.env.TELEGRAM_READABLE === 'true', // 👈 add spacing if true
+  RETRY_DELAY: parseInt(process.env.TELEGRAM_RETRY_DELAY) || 1000,
+  
+  // Professional formatting toggles
+  ENABLE_SMART_FORMATTING: process.env.TELEGRAM_SMART_FORMAT !== 'false',
+  ENABLE_CLEAN_SPACING: process.env.TELEGRAM_CLEAN_SPACE !== 'false',
+  ENABLE_PROFESSIONAL_HEADERS: process.env.TELEGRAM_PRO_HEADERS !== 'false',
+  ENABLE_AUTO_EMPHASIS: process.env.TELEGRAM_AUTO_EMPHASIS !== 'false',
+  ENABLE_SMART_BULLETS: process.env.TELEGRAM_SMART_BULLETS !== 'false',
+  
   DEBUG_MODE: process.env.TELEGRAM_DEBUG === 'true',
-  PARSE_MODE: (process.env.TELEGRAM_PARSE_MODE || 'MarkdownV2')
+  PARSE_MODE: process.env.TELEGRAM_PARSE_MODE || 'MarkdownV2'
 };
 
-// Visual headers
-const HEADERS = {
+// Professional header designs
+const PROFESSIONAL_HEADERS = {
   gpt5: {
-    top:    '╭──────────────────────────────────────────╮',
-    title:  '│                🚀 GPT-5 Reply               │',
-    model:  '│                  🤖 {MODEL}                 │',
-    meta:   '│          {TIMESTAMP} • {CHUNKS} part(s)      │',
-    bottom: '╰──────────────────────────────────────────╯'
+    template: `
+┌─────────────────────────────────────────┐
+│  {ICON} {MODEL} Response                    │
+│                                         │
+│  📅 {TIME}     📊 {PARTS} part(s)         │
+└─────────────────────────────────────────┘`,
+    icon: '🚀'
   },
-  completion: {
-    top:    '╭──────────────────────────────────────────╮',
-    title:  '│                ✅ Task Complete             │',
-    model:  '│                  🤖 {MODEL}                 │',
-    meta:   '│              {TIMESTAMP} • {TIME}           │',
-    bottom: '╰──────────────────────────────────────────╯'
+  
+  analysis: {
+    template: `
+╔═══════════════════════════════════════════╗
+║  📊 ANALYSIS REPORT                        ║
+║                                           ║
+║  🤖 {MODEL}  •  📅 {TIME}                  ║
+║  📄 {PARTS} section(s)  •  ⚡ {SPEED}      ║
+╚═══════════════════════════════════════════╝`,
+    icon: '📊'
   },
+  
+  code: {
+    template: `
+╭─────────────────────────────────────────╮
+│  💻 CODE & TECHNICAL SOLUTION            │
+│                                         │
+│  🔧 {MODEL}  •  📅 {TIME}                │
+│  📋 {PARTS} block(s)                     │
+╰─────────────────────────────────────────╯`,
+    icon: '💻'
+  },
+  
   error: {
-    top:    '╭──────────────────────────────────────────╮',
-    title:  '│                ⚠️ System Alert              │',
-    model:  '│                  🔧 {MODEL}                 │',
-    meta:   '│        {TIMESTAMP} • Error {CODE}           │',
-    bottom: '╰──────────────────────────────────────────╯'
+    template: `
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  ⚠️ SYSTEM ALERT                         ┃
+┃                                         ┃
+┃  🔧 Error Handler  •  📅 {TIME}          ┃
+┃  🚨 Code: {ERROR_CODE}                   ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`,
+    icon: '⚠️'
   },
-  multimodal: {
-    top:    '╭──────────────────────────────────────────╮',
-    title:  '│               🎥 Multimodal AI              │',
-    model:  '│                👀 {MODEL} Vision            │',
-    meta:   '│     {TIMESTAMP} • {TYPE} Analysis           │',
-    bottom: '╰──────────────────────────────────────────╯'
+  
+  success: {
+    template: `
+╔═══════════════════════════════════════════╗
+║  ✅ TASK COMPLETED SUCCESSFULLY           ║
+║                                           ║
+║  🎯 {MODEL}  •  📅 {TIME}                  ║
+║  ⚡ Processed in {SPEED}                   ║
+╚═══════════════════════════════════════════╝`,
+    icon: '✅'
   },
-  simple: {
-    top:    '╭──────────────────────────────────────────╮',
-    title:  '│                   💬 Reply                  │',
-    model:  '│                  🤖 {MODEL}                 │',
-    meta:   '│                  {TIMESTAMP}                │',
-    bottom: '╰──────────────────────────────────────────╯'
+  
+  minimal: {
+    template: `
+• • • • • • • • • • • • • • • • • • • • • • •
+  {ICON} {MODEL} Response
+  📅 {TIME}  |  📄 {PARTS} part(s)
+• • • • • • • • • • • • • • • • • • • • • • •`,
+    icon: '💬'
   }
 };
 
-// Core emoji rules for Vault/Codex style
-const CORE_EMOJI = [
-  { key: 'LAW', emoji: '⚖️' },
-  { key: 'STRATEGY', emoji: '🧠' },
-  { key: 'ACTION', emoji: '🎯' },
-  { key: 'DRILL', emoji: '🥋' },
-  { key: 'LOG', emoji: '📓' },
-  { key: 'RISK', emoji: '🛡️' },
-  { key: 'CAPITAL', emoji: '🏦' },
-  { key: 'RESULT', emoji: '🏁' },
-  { key: 'PURPOSE', emoji: '🔥' },
-  { key: 'METRICS', emoji: '📊' },
-  { key: 'OATH', emoji: '🗝️' }
+// Professional content type detection
+const CONTENT_PATTERNS = {
+  analysis: /(?:analyz|evaluat|assess|examin|review|insight|finding|conclusion)/i,
+  code: /(?:```|function|class|import|export|console\.|\.js|\.py|\.html|code)/i,
+  list: /(?:^\s*[-*•]\s|^\s*\d+\.\s)/m,
+  steps: /(?:step\s+\d|phase\s+\d|stage\s+\d)/i,
+  technical: /(?:API|HTTP|JSON|SQL|database|server|client|endpoint)/i,
+  business: /(?:strategy|market|revenue|profit|business|financial|ROI)/i,
+  error: /(?:error|fail|problem|issue|bug|exception)/i,
+  success: /(?:success|complet|finish|done|achiev|accomplish)/i
+};
+
+// Smart emphasis patterns
+const EMPHASIS_PATTERNS = [
+  { pattern: /\b(IMPORTANT|CRITICAL|WARNING|NOTE|TIP|REMEMBER)\b/gi, format: '*{text}*' },
+  { pattern: /\b(SUCCESS|COMPLETED|ACHIEVED|SOLVED)\b/gi, format: '✅ *{text}*' },
+  { pattern: /\b(ERROR|FAILED|PROBLEM|ISSUE)\b/gi, format: '❌ *{text}*' },
+  { pattern: /\b(TODO|FIXME|HACK|BUG)\b/gi, format: '🔧 *{text}*' },
+  { pattern: /\b(PERFORMANCE|OPTIMIZATION|SPEED)\b/gi, format: '⚡ *{text}*' },
+  { pattern: /\b(SECURITY|PRIVACY|CONFIDENTIAL)\b/gi, format: '🔒 *{text}*' }
 ];
 
-// ───────────────────────────────────────────────────────────────────────────
-// Utility: safe stringify
-function safeString(v) {
-  if (v === null || v === undefined) return '';
-  if (typeof v === 'string') return v;
-  try { return JSON.stringify(v, null, 2); } catch { return String(v); }
-}
+// Professional bullet styles
+const BULLET_STYLES = {
+  primary: '▪️',
+  secondary: '▫️', 
+  highlight: '🔹',
+  action: '👉',
+  check: '✅',
+  cross: '❌',
+  arrow: '➤',
+  star: '⭐',
+  point: '•'
+};
 
-// ───────────────────────────────────────────────────────────────────────────
-// MarkdownV2 escaping while PRESERVING intended *bold* / _italic_ outside code
+// ═══════════════════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Escape set (Telegram MDV2): _ * [ ] ( ) ~ ` > # + - = | { } . !
-function escapeMarkdownV2Segment(s) {
-  return s.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
-}
-
-// Protect / restore markers so escaping doesn't kill our formatting
-function protectFormatting(text) {
-  return text
-    .replace(/\*\*([^*]+)\*\*/g, '«B2»$1«B2»')
-    .replace(/\*([^*]+)\*/g,     '«B1»$1«B1»')
-    .replace(/__([^_]+)__/g,     '«I2»$1«I2»')
-    .replace(/_([^_]+)_/g,       '«I1»$1«I1»');
-}
-function restoreFormatting(text) {
-  return text
-    .replace(/«B2»([^«]+)«B2»/g, '*$1*')  // Telegram uses * for bold
-    .replace(/«B1»([^«]+)«B1»/g, '*$1*')
-    .replace(/«I2»([^«]+)«I2»/g, '_$1_')
-    .replace(/«I1»([^«]+)«I1»/g, '_$1_');
-}
-
-// Split into text/code segments (triple fences or single backticks)
-function splitCodeBlocks(text) {
-  const parts = [];
-  let i = 0, start = 0;
-  while (i < text.length) {
-    if (text.slice(i, i+3) === '```') {
-      if (i > start) parts.push({ type: 'text', value: text.slice(start, i) });
-      const end = text.indexOf('```', i+3);
-      if (end === -1) { parts.push({ type: 'code', value: text.slice(i) }); return parts; }
-      parts.push({ type: 'code', value: text.slice(i, end+3) });
-      i = end + 3; start = i; continue;
-    }
-    if (text[i] === '`') {
-      if (i > start) parts.push({ type: 'text', value: text.slice(start, i) });
-      const end = text.indexOf('`', i+1);
-      if (end === -1) { parts.push({ type: 'text', value: text.slice(i) }); return parts; }
-      parts.push({ type: 'code', value: text.slice(i, end+1) });
-      i = end + 1; start = i; continue;
-    }
-    i++;
+function safeString(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
   }
-  if (start < text.length) parts.push({ type: 'text', value: text.slice(start) });
-  return parts;
 }
+
+function getCurrentTime() {
+  return new Date().toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function detectContentType(text) {
+  const content = text.toLowerCase();
+  
+  for (const [type, pattern] of Object.entries(CONTENT_PATTERNS)) {
+    if (pattern.test(content)) {
+      return type;
+    }
+  }
+  
+  return 'general';
+}
+
+function getModelInfo(metadata = {}) {
+  const model = String(metadata.model || metadata.modelUsed || metadata.aiUsed || 'gpt-5').toLowerCase();
+  
+  const modelMap = {
+    'gpt-5': { name: 'GPT-5', emoji: '🚀', type: 'gpt5' },
+    'gpt-5-nano': { name: 'GPT-5 Nano', emoji: '⚡', type: 'gpt5' },
+    'gpt-5-mini': { name: 'GPT-5 Mini', emoji: '🔥', type: 'gpt5' },
+    'gpt-4o': { name: 'GPT-4o', emoji: '👁️', type: 'gpt5' },
+    'whisper': { name: 'Whisper AI', emoji: '🎵', type: 'code' },
+    'vision': { name: 'Vision AI', emoji: '👀', type: 'analysis' }
+  };
+  
+  for (const [key, info] of Object.entries(modelMap)) {
+    if (model.includes(key)) {
+      return info;
+    }
+  }
+  
+  return { name: 'AI Assistant', emoji: '🤖', type: 'general' };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MARKDOWN V2 ESCAPING (SAFE & PRESERVES FORMATTING)
+// ═══════════════════════════════════════════════════════════════════════════
 
 function escapeMarkdownV2(text) {
-  return splitCodeBlocks(text).map(seg => {
-    if (seg.type === 'code') return seg.value;
-    const protectedSeg = protectFormatting(seg.value);
-    const escaped = escapeMarkdownV2Segment(protectedSeg);
-    return restoreFormatting(escaped);
+  // Characters that need escaping in MarkdownV2
+  const specialChars = /([_*\[\]()~`>#+\-=|{}.!\\])/g;
+  
+  // Split into code blocks and text sections
+  const sections = text.split(/(```[\s\S]*?```|`[^`]*`)/);
+  
+  return sections.map((section, index) => {
+    // Don't escape code blocks (odd indices)
+    if (index % 2 === 1) {
+      return section;
+    }
+    
+    // Escape text sections but preserve our formatting
+    return section
+      .replace(/\*\*([^*]+)\*\*/g, '«BOLD»$1«/BOLD»')  // Protect bold
+      .replace(/\*([^*]+)\*/g, '«ITALIC»$1«/ITALIC»')   // Protect italic
+      .replace(/_([^_]+)_/g, '«UNDER»$1«/UNDER»')       // Protect underline
+      .replace(specialChars, '\\$1')                     // Escape special chars
+      .replace(/«BOLD»([^«]+)«\/BOLD»/g, '*$1*')        // Restore bold
+      .replace(/«ITALIC»([^«]+)«\/ITALIC»/g, '_$1_')    // Restore italic
+      .replace(/«UNDER»([^«]+)«\/UNDER»/g, '__$1__');   // Restore underline
   }).join('');
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// Optional readability pass for dense paragraphs
-function addBreathingSpace(s) {
-  if (!CONFIG.ENABLE_BREATHING_SPACE) return s;
-  return s
-    // ensure blank line before a bullet block
-    .replace(/([^\n])\n(• )/g, '$1\n\n$2')
-    // break long sentences: add newline after period/exc/quest followed by uppercase/(
-    .replace(/([.!?])\s+(?=[A-Z(])/g, '$1\n')
-    // normalize multiple blank lines outside code (handled later too)
-    ;
+// ═══════════════════════════════════════════════════════════════════════════
+// PROFESSIONAL TEXT FORMATTING
+// ═══════════════════════════════════════════════════════════════════════════
+
+function formatProfessionalText(text) {
+  if (!CONFIG.ENABLE_SMART_FORMATTING) return text;
+  
+  let formatted = text;
+  
+  // 1. Clean up spacing and normalize
+  formatted = formatted
+    .replace(/\r\n/g, '\n')                    // Normalize line endings
+    .replace(/[ \t]+$/gm, '')                  // Remove trailing spaces
+    .replace(/\n{3,}/g, '\n\n')               // Max 2 consecutive newlines
+    .replace(/[ \t]{2,}/g, ' ')               // Normalize multiple spaces
+    .trim();
+  
+  // 2. Format headers and sections
+  formatted = formatHeaders(formatted);
+  
+  // 3. Format lists and bullets
+  formatted = formatLists(formatted);
+  
+  // 4. Add emphasis to important terms
+  formatted = addSmartEmphasis(formatted);
+  
+  // 5. Format code blocks professionally
+  formatted = formatCodeBlocks(formatted);
+  
+  // 6. Add proper spacing
+  formatted = addProfessionalSpacing(formatted);
+  
+  return formatted;
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// Compression outside code blocks
-function compressText(text) {
-  if (!CONFIG.ENABLE_COMPRESSION) return text;
+function formatHeaders(text) {
   return text
-    .split(/(```[\s\S]*?```)/g)
-    .map((seg, idx) => {
-      if (idx % 2 === 1) return seg; // code untouched
-      return seg
-        .replace(/\r/g, '')
-        .replace(/[ \t]+\n/g, '\n')
-        .replace(/\n{3,}/g, '\n\n')
-        .replace(/[ \t]{3,}/g, '  ')
-        .trim();
+    // Format main headers
+    .replace(/^(#{1,3})\s*(.+)$/gm, (match, hashes, title) => {
+      const level = hashes.length;
+      if (level === 1) return `\n*📋 ${title.toUpperCase()}*\n${'─'.repeat(30)}\n`;
+      if (level === 2) return `\n*🔹 ${title}*\n`;
+      return `\n*${title}*\n`;
     })
-    .join('');
+    // Format section dividers
+    .replace(/^[-=]{3,}$/gm, '─'.repeat(35))
+    // Format subsection headers
+    .replace(/^([A-Z][A-Z\s]{5,}):?\s*$/gm, '*📌 $1*\n');
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// Code boundary detection
-function detectCodeBlocks(text) {
-  const blocks = [];
-  const re = /```[\s\S]*?```|`[^`]*`/g;
-  let m;
-  while ((m = re.exec(text)) !== null) {
-    blocks.push({ start: m.index, end: m.index + m[0].length });
-  }
-  return blocks;
-}
-function isInsideCodeBlock(text, idx) {
-  return detectCodeBlocks(text).some(b => idx >= b.start && idx < b.end);
-}
-
-// ───────────────────────────────────────────────────────────────────────────
-// Breakpoint selection for chunking
-function findOptimalBreakpoint(text, max) {
-  if (text.length <= max) return text.length;
-  const searchStart = Math.max(0, max - 400);
-  const searchEnd = Math.min(text.length, max);
-  const scope = text.slice(searchStart, searchEnd);
-
-  // 1) Paragraph break
-  let i = scope.lastIndexOf('\n\n');
-  if (i !== -1) {
-    const pos = searchStart + i + 2;
-    if (!isInsideCodeBlock(text, pos)) return pos;
-  }
-  // 2) Code fence boundary
-  const codeUpToEnd = text.slice(0, searchEnd);
-  const re = /```[\s\S]*?```/g;
-  let m, lastEnd = -1;
-  while ((m = re.exec(codeUpToEnd)) !== null) lastEnd = m.index + m[0].length;
-  if (lastEnd !== -1 && lastEnd >= searchStart) return lastEnd;
-
-  // 3) Sentence endings
-  for (const token of ['. ', '! ', '? ', '.\n', '!\n', '?\n']) {
-    i = scope.lastIndexOf(token);
-    if (i !== -1) {
-      const pos = searchStart + i + token.length;
-      if (!isInsideCodeBlock(text, pos)) return pos;
-    }
-  }
-  // 4) Line break
-  i = scope.lastIndexOf('\n');
-  if (i !== -1) {
-    const pos = searchStart + i + 1;
-    if (!isInsideCodeBlock(text, pos)) return pos;
-  }
-  // 5) Space
-  i = scope.lastIndexOf(' ');
-  if (i !== -1) return searchStart + i + 1;
-
-  return max - 10;
-}
-
-// ───────────────────────────────────────────────────────────────────────────
-// Emoji + label injection (outside code)
-const CORE_LABEL_RE = new RegExp(
-  `^\\s*(?:${CORE_EMOJI.map(e => e.key).join('|')})(?:\\s*[:：\\-→])`,
-  'i'
-);
-function injectCoreEmojisAndLabels(text) {
+function formatLists(text) {
+  if (!CONFIG.ENABLE_SMART_BULLETS) return text;
+  
   return text
-    .split(/(```[\s\S]*?```)/g)
-    .map((seg, idx) => {
-      if (idx % 2 === 1) return seg; // code
-      return seg.split('\n').map(line => {
-        // Normalize bullets
-        line = line.replace(/^(\s*)[-*•]\s+/, '$1• ');
-        // Core label emphasis
-        if (CORE_LABEL_RE.test(line)) {
-          const label = line.split(/[:：\-→]/)[0].trim().toUpperCase();
-          const rule = CORE_EMOJI.find(e => label.startsWith(e.key));
-          if (rule) {
-            return line.replace(
-              /^(\s*)([A-Za-z]+)(\s*[:：\-→]\s*)/i,
-              (_, p, k, sep) => `${p}${rule.emoji} *${k.toUpperCase()}*${sep}`
-            );
-          }
-        }
-        // Bold common sections
-        line = line.replace(/^(\s*)(Result|Purpose|Metrics|Notes)(\s*[:：\-→]\s*)/i, '$1*$2*$3');
-        return line;
-      }).join('\n');
+    // Format numbered lists
+    .replace(/^\s*(\d+)[\.\)]\s+(.+)$/gm, (match, num, content) => {
+      const emoji = num === '1' ? '🥇' : num === '2' ? '🥈' : num === '3' ? '🥉' : '📍';
+      return `${emoji} *${num}.* ${content}`;
     })
-    .join('');
+    // Format bullet points with smart bullets
+    .replace(/^\s*[-*•]\s+(.+)$/gm, (match, content) => {
+      // Detect content type for appropriate bullet
+      if (/^(step|phase|stage)/i.test(content)) return `👉 ${content}`;
+      if (/^(result|outcome|conclusion)/i.test(content)) return `📊 ${content}`;
+      if (/^(important|critical|key)/i.test(content)) return `⚡ ${content}`;
+      if (/^(note|tip|remember)/i.test(content)) return `💡 ${content}`;
+      if (/^(warning|caution|alert)/i.test(content)) return `⚠️ ${content}`;
+      if (/^(success|completed|done)/i.test(content)) return `✅ ${content}`;
+      if (/^(error|failed|problem)/i.test(content)) return `❌ ${content}`;
+      return `▪️ ${content}`;
+    })
+    // Format sub-bullets
+    .replace(/^\s{2,}[-*•]\s+(.+)$/gm, '   ▫️ $1');
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// Header building
-function getModelInfo(meta = {}) {
-  const model = (meta.model || meta.modelUsed || meta.aiUsed || 'gpt-5') + '';
-  const map = {
-    'gpt-5-nano': { name: 'GPT-5 Nano', emoji: '⚡' },
-    'gpt-5-mini': { name: 'GPT-5 Mini', emoji: '🔥' },
-    'gpt-5-chat': { name: 'GPT-5 Chat', emoji: '💬' },
-    'gpt-5':      { name: 'GPT-5',      emoji: '🚀' },
-    'gpt-4o':     { name: 'GPT-4o',     emoji: '👁️' },
-    'whisper':    { name: 'Whisper',    emoji: '🎵' },
-    'vision':     { name: 'Vision',     emoji: '👀' }
-  };
-  const key = Object.keys(map).find(k => model.toLowerCase().includes(k)) || 'gpt-5';
-  return { name: map[key].name, emoji: map[key].emoji };
-}
-function headerType(meta = {}) {
-  if (meta.multimodal || meta.vision || meta.image) return 'multimodal';
-  if (meta.completionDetected) return 'completion';
-  if (meta.error) return 'error';
-  if (meta.model || meta.modelUsed || meta.aiUsed) return 'gpt5';
-  return 'simple';
-}
-function ts() {
-  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-}
-function center(text, width = 42) {
-  const len = [...text].length;
-  const pad = Math.max(0, Math.floor((width - len) / 2));
-  return ' '.repeat(pad) + text + ' '.repeat(Math.max(0, width - len - pad));
-}
-function buildHeader(meta, chunkInfo = {}) {
-  const type = headerType(meta);
-  const mi = getModelInfo(meta);
-  const tpl = HEADERS[type] || HEADERS.simple;
-  const rep = {
-    MODEL: mi.name,
-    TIMESTAMP: ts(),
-    CHUNKS: chunkInfo.total || 1,
-    TIME: meta.processingTime || 'fast',
-    CODE: meta.errorCode || '500',
-    TYPE: meta.analysisType || 'Content'
-  };
-  const process = line => {
-    let s = line;
-    for (const [k, v] of Object.entries(rep)) s = s.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
-    if (s.includes('│') && !/^[│╭╰─]+$/.test(s)) {
-      const inner = s.replace(/^│\s*/, '').replace(/\s*│$/, '');
-      return `│${center(inner)}│`;
-    }
-    return s;
-  };
-  return [tpl.top, tpl.title, tpl.model, tpl.meta ? process(tpl.meta) : null, tpl.bottom]
-    .filter(Boolean)
-    .map(process)
-    .join('\n');
+function addSmartEmphasis(text) {
+  if (!CONFIG.ENABLE_AUTO_EMPHASIS) return text;
+  
+  let emphasized = text;
+  
+  // Apply emphasis patterns
+  EMPHASIS_PATTERNS.forEach(({ pattern, format }) => {
+    emphasized = emphasized.replace(pattern, (match) => {
+      return format.replace('{text}', match);
+    });
+  });
+  
+  // Emphasize technical terms
+  emphasized = emphasized
+    .replace(/\b([A-Z]{2,})\b/g, '*$1*')                    // Acronyms
+    .replace(/\b(\d+(?:\.\d+)?%)\b/g, '*$1*')              // Percentages
+    .replace(/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/g, '*$$1*')   // Money
+    .replace(/\b(\d+(?:,\d{3})*)\b/g, (match) => {         // Large numbers
+      const num = parseInt(match.replace(/,/g, ''));
+      return num >= 1000 ? `*${match}*` : match;
+    });
+  
+  return emphasized;
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// Chunker
-class TextSplitter {
-  constructor(opts = {}) {
-    this.opts = {
-      maxChunkSize: opts.maxChunkSize || CONFIG.SAFE_CHUNK_SIZE,
-      maxChunks: opts.maxChunks || CONFIG.MAX_CHUNKS,
-      enableCompression: opts.enableCompression !== false
-    };
+function formatCodeBlocks(text) {
+  return text
+    // Add language labels to code blocks
+    .replace(/```(\w+)?\n/g, (match, lang) => {
+      const language = lang || 'code';
+      return `💻 *${language.toUpperCase()} CODE:*\n\`\`\`${lang || ''}\n`;
+    })
+    // Format inline code
+    .replace(/`([^`]+)`/g, '`*$1*`')
+    // Add spacing around code blocks
+    .replace(/(^|\n)(```[\s\S]*?```)/g, '$1\n$2\n');
+}
+
+function addProfessionalSpacing(text) {
+  if (!CONFIG.ENABLE_CLEAN_SPACING) return text;
+  
+  return text
+    // Add spacing before headers
+    .replace(/\n(\*📋[^*]+\*)/g, '\n\n$1')
+    // Add spacing after sections
+    .replace(/(\*📋[^*]+\*\n─+)/g, '$1\n')
+    // Add spacing around lists
+    .replace(/\n([▪️▫️👉📊⚡💡⚠️✅❌🥇🥈🥉📍])/g, '\n\n$1')
+    // Add spacing around code blocks
+    .replace(/\n(```)/g, '\n\n$1')
+    .replace(/(```)\n/g, '$1\n\n')
+    // Clean up excessive spacing
+    .replace(/\n{4,}/g, '\n\n\n')
+    .trim();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROFESSIONAL HEADER GENERATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+function buildProfessionalHeader(metadata = {}, chunkInfo = {}) {
+  if (!CONFIG.ENABLE_PROFESSIONAL_HEADERS) {
+    return `🤖 *AI Response* • ${getCurrentTime()}`;
   }
-  async split(text, onProgress) {
-    let t = safeString(text).trim();
-    if (CONFIG.ENABLE_BREATHING_SPACE) t = addBreathingSpace(t);
-    if (this.opts.enableCompression) t = compressText(t);
-    if (!t) return [];
+  
+  const modelInfo = getModelInfo(metadata);
+  const contentType = detectContentType(metadata.originalText || '');
+  
+  // Determine header type
+  let headerType = 'minimal';
+  if (metadata.error) headerType = 'error';
+  else if (metadata.success || metadata.completionDetected) headerType = 'success';
+  else if (contentType === 'code') headerType = 'code';
+  else if (contentType === 'analysis') headerType = 'analysis';
+  else if (modelInfo.type === 'gpt5') headerType = 'gpt5';
+  
+  const template = PROFESSIONAL_HEADERS[headerType] || PROFESSIONAL_HEADERS.minimal;
+  
+  // Build replacement values
+  const replacements = {
+    ICON: template.icon,
+    MODEL: modelInfo.name,
+    TIME: getCurrentTime(),
+    PARTS: chunkInfo.total || 1,
+    SPEED: metadata.processingTime ? `${metadata.processingTime}ms` : 'fast',
+    ERROR_CODE: metadata.errorCode || '500'
+  };
+  
+  // Replace placeholders
+  let header = template.template;
+  Object.entries(replacements).forEach(([key, value]) => {
+    header = header.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+  });
+  
+  return header.trim();
+}
 
-    const chunks = [];
-    let rem = t;
-    let n = 0;
-    const est = Math.ceil(t.length / this.opts.maxChunkSize);
+// ═══════════════════════════════════════════════════════════════════════════
+// INTELLIGENT TEXT CHUNKING
+// ═══════════════════════════════════════════════════════════════════════════
 
-    while (rem.length > 0 && n < this.opts.maxChunks) {
-      if (onProgress && n % 2 === 0) onProgress(n, est, chunks.length);
-      if (rem.length <= this.opts.maxChunkSize) { chunks.push(rem.trim()); break; }
-      const bp = findOptimalBreakpoint(rem, this.opts.maxChunkSize);
-      const chunk = rem.slice(0, bp).trim();
-      if (chunk) chunks.push(chunk);
-      rem = rem.slice(bp).trim();
-      n++;
-      if (n % 5 === 0) await new Promise(r => setImmediate(r));
-    }
-
-    if (rem.length > 0 && n >= this.opts.maxChunks) {
-      const last = chunks[chunks.length - 1] || '';
-      if ((last.length + rem.length) <= CONFIG.TELEGRAM_LIMIT * 1.05) {
-        chunks[chunks.length - 1] = last + '\n\n' + rem;
-      } else {
-        chunks.push('\n\n…[response truncated: content too long]');
+function findOptimalBreakpoint(text, maxSize) {
+  if (text.length <= maxSize) return text.length;
+  
+  const searchStart = Math.max(0, maxSize - 500);
+  const searchScope = text.slice(searchStart, maxSize);
+  
+  // Priority order for breakpoints
+  const breakpoints = [
+    { pattern: /\n\n(?=\*📋)/g, priority: 10 },      // Before headers
+    { pattern: /\n\n(?=```)/g, priority: 9 },        // Before code blocks
+    { pattern: /```\n\n/g, priority: 8 },            // After code blocks
+    { pattern: /\n\n(?=[▪️▫️👉📊])/g, priority: 7 }, // Before lists
+    { pattern: /\n\n/g, priority: 6 },               // Paragraph breaks
+    { pattern: /\.\s+/g, priority: 5 },              // Sentence endings
+    { pattern: /;\s+/g, priority: 4 },               // Semicolons
+    { pattern: /,\s+/g, priority: 3 },               // Commas
+    { pattern: /\n/g, priority: 2 },                 // Line breaks
+    { pattern: /\s+/g, priority: 1 }                 // Any whitespace
+  ];
+  
+  let bestBreakpoint = maxSize - 50; // Default fallback
+  let bestPriority = 0;
+  
+  breakpoints.forEach(({ pattern, priority }) => {
+    let match;
+    const regex = new RegExp(pattern.source, pattern.flags);
+    
+    while ((match = regex.exec(searchScope)) !== null) {
+      const position = searchStart + match.index + match[0].length;
+      
+      if (position <= maxSize && priority > bestPriority) {
+        bestBreakpoint = position;
+        bestPriority = priority;
       }
     }
-    return chunks.filter(Boolean);
+  });
+  
+  return bestBreakpoint;
+}
+
+class ProfessionalTextSplitter {
+  constructor(options = {}) {
+    this.maxChunkSize = options.maxChunkSize || CONFIG.SAFE_CHUNK_SIZE;
+    this.maxChunks = options.maxChunks || CONFIG.MAX_CHUNKS;
+    this.preserveFormatting = options.preserveFormatting !== false;
+  }
+  
+  async split(text, metadata = {}) {
+    let processedText = safeString(text).trim();
+    
+    if (!processedText) return [];
+    
+    // Apply professional formatting
+    if (this.preserveFormatting) {
+      processedText = formatProfessionalText(processedText);
+      metadata.originalText = text; // Store for content type detection
+    }
+    
+    const chunks = [];
+    let remaining = processedText;
+    let chunkIndex = 0;
+    
+    while (remaining.length > 0 && chunkIndex < this.maxChunks) {
+      if (remaining.length <= this.maxChunkSize) {
+        chunks.push(remaining.trim());
+        break;
+      }
+      
+      const breakpoint = findOptimalBreakpoint(remaining, this.maxChunkSize);
+      const chunk = remaining.slice(0, breakpoint).trim();
+      
+      if (chunk) {
+        chunks.push(chunk);
+      }
+      
+      remaining = remaining.slice(breakpoint).trim();
+      chunkIndex++;
+      
+      // Prevent blocking the event loop
+      if (chunkIndex % 3 === 0) {
+        await new Promise(resolve => setImmediate(resolve));
+      }
+    }
+    
+    // Handle overflow
+    if (remaining.length > 0 && chunkIndex >= this.maxChunks) {
+      const lastChunk = chunks[chunks.length - 1] || '';
+      if (lastChunk.length + remaining.length <= CONFIG.TELEGRAM_LIMIT) {
+        chunks[chunks.length - 1] = lastChunk + '\n\n' + remaining;
+      } else {
+        chunks.push('\n\n*📋 CONTENT TRUNCATED*\n_Response too long - showing first ' + this.maxChunks + ' sections_');
+      }
+    }
+    
+    return chunks.filter(chunk => chunk.trim().length > 0);
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// Sender with retries
-class MessageSender {
-  constructor(bot) { this.bot = bot; }
-  async sendWithRetry(chatId, text, options = {}, maxRetries = CONFIG.MAX_RETRIES) {
-    let lastErr = null;
+// ═══════════════════════════════════════════════════════════════════════════
+// PROFESSIONAL MESSAGE SENDER
+// ═══════════════════════════════════════════════════════════════════════════
+
+class ProfessionalMessageSender {
+  constructor(bot) {
+    this.bot = bot;
+    this.retryCount = 0;
+  }
+  
+  async sendWithRetry(chatId, text, options = {}) {
+    const maxRetries = CONFIG.MAX_RETRIES;
+    let lastError = null;
+    
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const res = await this.bot.sendMessage(chatId, text, {
-          parse_mode: options.parse_mode || CONFIG.PARSE_MODE,
+        // Prepare send options
+        const sendOptions = {
+          parse_mode: CONFIG.PARSE_MODE,
           disable_web_page_preview: true,
           ...options
-        });
-        return { success: true, result: res, attempts: attempt };
-      } catch (err) {
-        lastErr = err;
-        // First retry: drop parse_mode (Telegram sometimes picky)
-        if (attempt === 1 && (options.parse_mode || CONFIG.PARSE_MODE).toLowerCase().includes('markdown')) {
+        };
+        
+        const result = await this.bot.sendMessage(chatId, text, sendOptions);
+        
+        return {
+          success: true,
+          result,
+          attempts: attempt,
+          fallbackUsed: false
+        };
+        
+      } catch (error) {
+        lastError = error;
+        console.log(`⚠️ [TELEGRAM] Send attempt ${attempt}/${maxRetries} failed:`, error.message);
+        
+        // Try fallback without markdown on first retry
+        if (attempt === 1 && CONFIG.PARSE_MODE.includes('Markdown')) {
           try {
-            const res = await this.bot.sendMessage(chatId, text, { disable_web_page_preview: true });
-            return { success: true, result: res, fallback: true, attempts: attempt };
-          } catch { /* continue */ }
+            const fallbackResult = await this.bot.sendMessage(chatId, text, {
+              disable_web_page_preview: true
+            });
+            
+            return {
+              success: true,
+              result: fallbackResult,
+              attempts: attempt,
+              fallbackUsed: true
+            };
+          } catch (fallbackError) {
+            console.log(`⚠️ [TELEGRAM] Fallback also failed:`, fallbackError.message);
+          }
         }
+        
+        // Wait before retry (exponential backoff)
         if (attempt < maxRetries) {
           const delay = CONFIG.RETRY_DELAY * Math.pow(2, attempt - 1);
-          await new Promise(r => setTimeout(r, delay));
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
-    return { success: false, error: lastErr ? lastErr.message : 'Unknown error', attempts: maxRetries };
+    
+    return {
+      success: false,
+      error: lastError?.message || 'Unknown error',
+      attempts: maxRetries,
+      fallbackUsed: false
+    };
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// Main send
-async function sendTelegramMessage(bot, chatId, text, metadata = {}) {
-  const start = Date.now();
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN PROFESSIONAL SEND FUNCTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function sendProfessionalTelegramMessage(bot, chatId, text, metadata = {}) {
+  const startTime = Date.now();
+  
   try {
-    if (!bot || typeof bot.sendMessage !== 'function') throw new Error('Invalid Telegram bot instance');
-    if (!chatId) throw new Error('Chat ID required');
-
-    const raw = safeString(text).trim();
-    if (!raw) throw new Error('Empty message content');
-
-    const splitter = new TextSplitter({
-      maxChunkSize: CONFIG.SAFE_CHUNK_SIZE - 220,
+    // Validate inputs
+    if (!bot || typeof bot.sendMessage !== 'function') {
+      throw new Error('Invalid Telegram bot instance');
+    }
+    if (!chatId) {
+      throw new Error('Chat ID is required');
+    }
+    
+    const rawText = safeString(text).trim();
+    if (!rawText) {
+      throw new Error('Message content is empty');
+    }
+    
+    console.log(`📱 [TELEGRAM] Sending professional message to ${chatId}`);
+    console.log(`📏 [TELEGRAM] Content length: ${rawText.length} characters`);
+    
+    // Initialize splitter and sender
+    const splitter = new ProfessionalTextSplitter({
+      maxChunkSize: CONFIG.SAFE_CHUNK_SIZE - 300, // Reserve space for headers
       maxChunks: CONFIG.MAX_CHUNKS,
-      enableCompression: CONFIG.ENABLE_COMPRESSION
+      preserveFormatting: true
     });
-
-    // 1) Decorate (emoji + bold labels, bullets), respecting code
-    const decorated = injectCoreEmojisAndLabels(raw);
-
-    // 2) Split before escaping
-    const chunks = await splitter.split(decorated);
-
-    // 3) Header + sender
-    const chunkInfo = { total: chunks.length };
-    const header = buildHeader(metadata, chunkInfo);
-    const sender = new MessageSender(bot);
-
+    
+    const sender = new ProfessionalMessageSender(bot);
+    
+    // Split text into professional chunks
+    const chunks = await splitter.split(rawText, metadata);
+    
+    console.log(`📊 [TELEGRAM] Split into ${chunks.length} professional chunks`);
+    
+    // Prepare chunk info for header
+    const chunkInfo = {
+      total: chunks.length,
+      current: 0
+    };
+    
     const results = [];
     let successCount = 0;
-
+    let totalRetries = 0;
+    
+    // Send each chunk
     for (let i = 0; i < chunks.length; i++) {
-      const body = chunks[i];
+      const chunk = chunks[i];
       const isFirst = i === 0;
       const isLast = i === chunks.length - 1;
-
-      // Compose
-      let composed = isFirst
-        ? `${header}\n\n${body}`
-        : `📄 *Part ${i + 1}/${chunks.length}*\n\n${body}`;
-
-      // Escape outside code for MarkdownV2 (with bold/italic preservation)
-      composed = composed
-        .split(/(```[\s\S]*?```)/g)
-        .map((seg, idx) => (idx % 2 === 1 ? seg : escapeMarkdownV2(seg)))
-        .join('');
-
-      // Length guard
-      if (composed.length > CONFIG.TELEGRAM_LIMIT) {
-        const reserve = 80;
-        composed = composed.slice(0, CONFIG.TELEGRAM_LIMIT - reserve) + '\\n\\n…\\[truncated\\]';
+      
+      chunkInfo.current = i + 1;
+      
+      // Compose message
+      let message;
+      if (isFirst) {
+        // First chunk gets the professional header
+        const header = buildProfessionalHeader(metadata, chunkInfo);
+        message = `${header}\n\n${chunk}`;
+      } else {
+        // Continuation chunks get clean part headers
+        message = `📄 *Part ${i + 1} of ${chunks.length}*\n\n${chunk}`;
       }
-
-      const r = await sender.sendWithRetry(chatId, composed, { parse_mode: 'MarkdownV2' });
-      results.push(r);
-      if (r.success) successCount++;
-
+      
+      // Apply MarkdownV2 escaping
+      const escapedMessage = escapeMarkdownV2(message);
+      
+      // Length safety check
+      if (escapedMessage.length > CONFIG.TELEGRAM_LIMIT) {
+        const truncated = escapedMessage.slice(0, CONFIG.TELEGRAM_LIMIT - 100) + 
+                         '\n\n*📋 MESSAGE TRUNCATED*\n_Content too long for single message_';
+        message = truncated;
+      } else {
+        message = escapedMessage;
+      }
+      
+      // Send with retry logic
+      const result = await sender.sendWithRetry(chatId, message);
+      results.push(result);
+      
+      if (result.success) {
+        successCount++;
+      }
+      
+      totalRetries += (result.attempts - 1);
+      
+      // Rate limiting between messages
       if (!isLast && CONFIG.RATE_LIMIT_DELAY > 0) {
-        await new Promise(res => setTimeout(res, CONFIG.RATE_LIMIT_DELAY));
+        await new Promise(resolve => setTimeout(resolve, CONFIG.RATE_LIMIT_DELAY));
       }
     }
-
-    const processingTime = Date.now() - start;
-    const mi = getModelInfo(metadata);
-
+    
+    const processingTime = Date.now() - startTime;
+    const modelInfo = getModelInfo(metadata);
+    
+    console.log(`✅ [TELEGRAM] Professional send completed: ${successCount}/${chunks.length} chunks sent (${processingTime}ms)`);
+    
     return {
       success: successCount === chunks.length,
       enhanced: true,
-      version: '2.4.0',
+      professional: true,
+      version: '3.0.0',
+      
+      // Statistics
       chunks: chunks.length,
       sent: successCount,
       failed: chunks.length - successCount,
       processingTime,
-      model: mi.name,
-      headerType: headerType(metadata),
-      originalLength: raw.length,
-      processedLength: decorated.length,
+      
+      // Details
+      model: modelInfo.name,
+      originalLength: rawText.length,
+      totalRetries,
+      fallbackUsed: results.some(r => r.fallbackUsed),
+      
+      // Results
       results,
-      fallbackUsed: results.some(r => r.fallback),
-      retryCount: results.reduce((s, r) => s + ((r.attempts || 1) - 1), 0)
+      
+      // Formatting info
+      formattingApplied: CONFIG.ENABLE_SMART_FORMATTING,
+      headerType: detectContentType(rawText),
+      spacingOptimized: CONFIG.ENABLE_CLEAN_SPACING
     };
-
+    
   } catch (error) {
-    const processingTime = Date.now() - start;
+    const processingTime = Date.now() - startTime;
+    
+    console.error(`❌ [TELEGRAM] Professional send failed:`, error.message);
+    
+    // Emergency fallback - send simple version
     try {
-      const emergency = `⚠️ System Recovery\\n\\n${escapeMarkdownV2(safeString(text).slice(0, 800))}\\n\\n…`;
-      await bot.sendMessage(chatId, emergency, { parse_mode: 'MarkdownV2', disable_web_page_preview: true });
-      return { success: true, enhanced: false, emergency: true, error: error.message, processingTime };
-    } catch (e2) {
-      return { success: false, enhanced: false, error: error.message, emergencyError: e2.message, processingTime };
+      const emergencyText = `⚠️ *System Recovery Mode*\n\n${safeString(text).slice(0, 3000)}\n\n_Original formatting failed - showing simplified version_`;
+      const escapedEmergency = escapeMarkdownV2(emergencyText);
+      
+      await bot.sendMessage(chatId, escapedEmergency, {
+        parse_mode: 'MarkdownV2',
+        disable_web_page_preview: true
+      });
+      
+      return {
+        success: true,
+        enhanced: false,
+        professional: false,
+        emergency: true,
+        error: error.message,
+        processingTime
+      };
+      
+    } catch (emergencyError) {
+      console.error(`❌ [TELEGRAM] Emergency fallback also failed:`, emergencyError.message);
+      
+      return {
+        success: false,
+        enhanced: false,
+        professional: false,
+        error: error.message,
+        emergencyError: emergencyError.message,
+        processingTime
+      };
     }
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// Factory
-function createTelegramHandler(bot, options = {}) {
-  const cfg = { ...CONFIG, ...options };
+// ═══════════════════════════════════════════════════════════════════════════
+// PROFESSIONAL HANDLER FACTORY
+// ═══════════════════════════════════════════════════════════════════════════
+
+function createProfessionalTelegramHandler(bot, options = {}) {
+  const config = { ...CONFIG, ...options };
+  
+  console.log(`🏭 [TELEGRAM] Created professional handler with config:`, {
+    smartFormatting: config.ENABLE_SMART_FORMATTING,
+    cleanSpacing: config.ENABLE_CLEAN_SPACING,
+    professionalHeaders: config.ENABLE_PROFESSIONAL_HEADERS,
+    autoEmphasis: config.ENABLE_AUTO_EMPHASIS,
+    smartBullets: config.ENABLE_SMART_BULLETS
+  });
+  
   return {
-    send: (chatId, text, meta = {}) => sendTelegramMessage(bot, chatId, text, meta),
-    sendMessage: (chatId, text, meta = {}) => sendTelegramMessage(bot, chatId, text, meta),
-    sendGPTResponse: (chatId, text, meta = {}) => sendTelegramMessage(bot, chatId, text, meta),
-
-    sendError: (chatId, errText, opt = {}) =>
-      sendTelegramMessage(bot, chatId, errText, {
-        model: 'error-handler',
+    // Main send functions
+    send: (chatId, text, metadata = {}) => 
+      sendProfessionalTelegramMessage(bot, chatId, text, metadata),
+    
+    sendMessage: (chatId, text, metadata = {}) => 
+      sendProfessionalTelegramMessage(bot, chatId, text, metadata),
+    
+    sendGPTResponse: (chatId, text, metadata = {}) => 
+      sendProfessionalTelegramMessage(bot, chatId, text, { 
+        ...metadata, 
+        model: metadata.model || 'gpt-5' 
+      }),
+    
+    // Specialized send functions
+    sendAnalysis: (chatId, analysisText, metadata = {}) => 
+      sendProfessionalTelegramMessage(bot, chatId, analysisText, {
+        ...metadata,
+        contentType: 'analysis',
+        model: metadata.model || 'gpt-5'
+      }),
+    
+    sendCode: (chatId, codeText, metadata = {}) => 
+      sendProfessionalTelegramMessage(bot, chatId, codeText, {
+        ...metadata,
+        contentType: 'code',
+        model: metadata.model || 'gpt-5'
+      }),
+    
+    sendError: (chatId, errorText, metadata = {}) => 
+      sendProfessionalTelegramMessage(bot, chatId, errorText, {
+        ...metadata,
         error: true,
-        title: opt.title || 'System Error',
-        errorCode: opt.code || '500',
-        ...opt
+        errorCode: metadata.errorCode || '500',
+        model: 'Error Handler'
       }),
-
-    sendSuccess: (chatId, okText, opt = {}) =>
-      sendTelegramMessage(bot, chatId, okText, {
-        model: 'completion-handler',
+    
+    sendSuccess: (chatId, successText, metadata = {}) => 
+      sendProfessionalTelegramMessage(bot, chatId, successText, {
+        ...metadata,
+        success: true,
         completionDetected: true,
-        title: opt.title || 'Task Complete',
-        ...opt
+        model: metadata.model || 'Task Manager'
       }),
-
-    sendMultimodal: (chatId, analysis, opt = {}) =>
-      sendTelegramMessage(bot, chatId, analysis, {
-        model: opt.model || 'gpt-4o-vision',
-        multimodal: true,
-        analysisType: opt.type || 'Analysis',
-        title: opt.title || 'Multimodal Analysis',
-        ...opt
+    
+    sendList: (chatId, listText, metadata = {}) => 
+      sendProfessionalTelegramMessage(bot, chatId, listText, {
+        ...metadata,
+        contentType: 'list',
+        model: metadata.model || 'gpt-5'
       }),
+    
+    sendSteps: (chatId, stepsText, metadata = {}) => 
+      sendProfessionalTelegramMessage(bot, chatId, stepsText, {
+        ...metadata,
+        contentType: 'steps',
+        model: metadata.model || 'gpt-5'
+      }),
+    
+    // Utility functions
+    formatText: (text) => formatProfessionalText(text),
+    
+    getConfig: () => ({ ...config }),
+    
+    updateConfig: (newConfig) => {
+      Object.assign(config, newConfig);
+      console.log(`🔧 [TELEGRAM] Config updated:`, newConfig);
+    },
+    
+    // Test functions
+    testFormatting: (text) => {
+      console.log('📝 [TELEGRAM] Testing formatting...');
+      console.log('Original:', text);
+      const formatted = formatProfessionalText(text);
+      console.log('Formatted:', formatted);
+      return formatted;
+    },
+    
+    testSend: async (chatId) => {
+      const testMessage = `
+# Professional Formatting Test
 
-    getConfig: () => ({ ...cfg }),
-    updateConfig: (ncfg) => Object.assign(cfg, ncfg)
+This is a **comprehensive test** of the professional formatting system.
+
+## Features Demonstrated:
+
+• Smart bullet points with appropriate emojis
+• **Bold text** and *italic text* formatting  
+• Proper spacing and typography
+• Code blocks with syntax highlighting:
+
+\`\`\`javascript
+function example() {
+  console.log("Professional formatting!");
+}
+\`\`\`
+
+### Important Information:
+CRITICAL: This is an important notice
+SUCCESS: Everything is working properly
+ERROR: No errors detected
+
+1. First numbered item
+2. Second numbered item  
+3. Third numbered item
+
+Result: Professional formatting is working perfectly!
+      `;
+      
+      return await sendProfessionalTelegramMessage(bot, chatId, testMessage, {
+        model: 'Formatting Tester',
+        test: true
+      });
+    }
   };
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// Exports
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPATIBILITY FUNCTIONS (For existing code)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Legacy function names for backward compatibility
+async function sendTelegramMessage(bot, chatId, text, metadata = {}) {
+  return await sendProfessionalTelegramMessage(bot, chatId, text, metadata);
+}
+
+function createTelegramHandler(bot, options = {}) {
+  return createProfessionalTelegramHandler(bot, options);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE EXPORTS
+// ═══════════════════════════════════════════════════════════════════════════
+
 module.exports = {
-  // main
-  sendTelegramMessage,
-  createTelegramHandler,
-  // classes
-  TextSplitter,
-  MessageSender,
-  // utils
+  // Main functions
+  sendProfessionalTelegramMessage,
+  sendTelegramMessage, // Legacy compatibility
+  
+  // Handler factories
+  createProfessionalTelegramHandler,
+  createTelegramHandler, // Legacy compatibility
+  
+  // Classes
+  ProfessionalTextSplitter,
+  ProfessionalMessageSender,
+  
+  // Formatting functions
+  formatProfessionalText,
+  formatHeaders,
+  formatLists,
+  formatCodeBlocks,
+  addSmartEmphasis,
+  addProfessionalSpacing,
+  
+  // Utility functions
   safeString,
   escapeMarkdownV2,
-  compressText,
-  injectCoreEmojisAndLabels,
-  // constants
+  detectContentType,
+  getModelInfo,
+  buildProfessionalHeader,
+  findOptimalBreakpoint,
+  
+  // Constants
   CONFIG,
-  HEADERS,
-  CORE_EMOJI,
-  VERSION: '2.4.0'
+  PROFESSIONAL_HEADERS,
+  CONTENT_PATTERNS,
+  EMPHASIS_PATTERNS,
+  BULLET_STYLES,
+  
+  // Version info
+  VERSION: '3.0.0',
+  FEATURES: [
+    'Professional Typography',
+    'Smart Spacing',
+    'Auto Emphasis', 
+    'Clean Headers',
+    'Smart Bullets',
+    'Code Formatting',
+    'Content Detection',
+    'Retry Logic'
+  ]
 };
 
-// Boot log
-if (CONFIG.DEBUG_MODE) {
-  console.log('⚙️ TELEGRAM SPLITTER CONFIG', JSON.stringify(CONFIG, null, 2));
-}
+// ═══════════════════════════════════════════════════════════════════════════
+// STARTUP AND CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('');
+console.log('✨ ═══════════════════════════════════════════════════════════════');
+console.log('   PROFESSIONAL TELEGRAM SPLITTER v3.0.0 LOADED');
+console.log('   ═══════════════════════════════════════════════════════════════');
+console.log('');
+console.log('🎨 PROFESSIONAL FEATURES:');
+console.log(`   📝 Smart Formatting: ${CONFIG.ENABLE_SMART_FORMATTING ? 'Enabled' : 'Disabled'}`);
+console.log(`   📐 Clean Spacing: ${CONFIG.ENABLE_CLEAN_SPACING ? 'Enabled' : 'Disabled'}`);
+console.log(`   🎯 Professional Headers: ${CONFIG.ENABLE_PROFESSIONAL_HEADERS ? 'Enabled' : 'Disabled'}`);
+console.log(`   ⚡ Auto Emphasis: ${CONFIG.ENABLE_AUTO_EMPHASIS ? 'Enabled' : 'Disabled'}`);
+console.log(`   🔸 Smart Bullets: ${CONFIG.ENABLE_SMART_BULLETS ? 'Enabled' : 'Disabled'}`);
+console.log('');
+console.log('📊 CONFIGURATION:');
+console.log(`   📏 Max Chunk Size: ${CONFIG.SAFE_CHUNK_SIZE} chars`);
+console.log(`   📄 Max Chunks: ${CONFIG.MAX_CHUNKS}`);
+console.log(`   ⏱️ Rate Limit Delay: ${CONFIG.RATE_LIMIT_DELAY}ms`);
+console.log(`   🔁 Max Retries: ${CONFIG.MAX_RETRIES}`);
+console.log(`   📤 Parse Mode: ${CONFIG.PARSE_MODE}`);
+console.log('');
+console.log('🚀 IMPROVEMENTS:');
+console.log('   • Professional typography with smart spacing');
+console.log('   • Auto-detection of content types (code, analysis, lists)');
+console.log('   • Smart emphasis for important terms and numbers');
+console.log('   • Clean bullet points with contextual emojis');
+console.log('   • Professional headers with modern design');
+console.log('   • Enhanced code block formatting');
+console.log('   • Intelligent text chunking at optimal breakpoints');
+console.log('   • Comprehensive error handling and fallbacks');
+console.log('');
+console.log('✅ READY FOR PROFESSIONAL MESSAGE DELIVERY');
+console.log('🎯 Your messages will now look clean, professional, and engaging!');
+console.log('✨ ═══════════════════════════════════════════════════════════════');
+console.log('');
