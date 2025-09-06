@@ -430,8 +430,9 @@ function getCurrentCambodiaDateTime() {
   }
 }
 
-// 🔧 CORRECTED buildMemoryContext function
-// Replace the existing function in your dualCommandSystem.js
+// ════════════════════════════════════════════════════════════════════════════
+// SMART MEMORY CONTEXT BUILDER (FIXES YOUR TYPE ERRORS)
+// ════════════════════════════════════════════════════════════════════════════
 
 async function buildMemoryContext(chatId, contextLevel = 'full') {
   try {
@@ -535,9 +536,9 @@ async function buildMemoryContext(chatId, contextLevel = 'full') {
   }
 }
 
-// 🔧 CORRECTED saveMemoryIfNeeded function
-// Replace the existing function in your dualCommandSystem.js
-
+// ════════════════════════════════════════════════════════════════════════════
+// SMART MEMORY SAVING (PREVENTS SAVING TRIVIAL GREETINGS)
+// ════════════════════════════════════════════════════════════════════════════
 async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, metadata = {}) {
   try {
     console.log(`[Memory-Fix] 💾 Attempting to save memory for ${chatId}`);
