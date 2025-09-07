@@ -353,17 +353,17 @@ telegramSplitter = {
   
   quickFormat: (text) => telegramSplitter.formatMessage(text),
   
-  sendGPT5: async (bot, chatId, response) => {
-    return await telegramSplitter.sendMessage(bot, chatId, response);
-  },
-  
-  // ✅ SPEED UTILITIES
-  getSystemInfo: () => ({
-    mode: 'speed-optimized-fallback',
-    maxParts: 2,
-    features: ['Fast delivery', 'Smart 2-part splitting', 'Tiny chunk prevention'],
-    optimization: 'maximum-speed'
-  })
+sendGPT5: async (bot, chatId, response) => {
+  return await telegramSplitter.sendMessage(bot, chatId, response);
+},
+
+// ✅ SPEED UTILITIES
+getSystemInfo: () => ({
+  mode: 'speed-optimized-fallback',
+  maxParts: 2,
+  features: ['Fast delivery', 'Smart 2-part splitting', 'Tiny chunk prevention'],
+  optimization: 'maximum-speed'
+})
 };
 
 console.log('[Import] ⚡ Using SPEED-OPTIMIZED fallback (max 2 parts, fast delivery)');
