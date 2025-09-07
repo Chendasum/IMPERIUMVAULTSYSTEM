@@ -452,10 +452,11 @@ function buildResponsesRequest(model, input, options) {
     input: safeString(input)
   };
   
-  // Add GPT-5 specific parameters
+  // Add GPT-5 specific parameters with correct structure
   const reasoning = options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING;
   if (GPT5_CONFIG.REASONING_EFFORTS.includes(reasoning)) {
-    request.reasoning_effort = reasoning;
+    // Correct parameter structure for Responses API
+    request.reasoning = { effort: reasoning };
   }
   
   const verbosity = options.verbosity || GPT5_CONFIG.DEFAULT_VERBOSITY;
