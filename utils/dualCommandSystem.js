@@ -64,25 +64,53 @@ const multimodal = safeRequire('./multimodal', {
   analyzeImage: async () => ({ success: false, error: 'Not available' }),
   getMultimodalStatus: () => ({ available: false })
 });
-
-// ✅ FIXED: Enhanced Telegram splitter with correct function names
+// ✅ GPT-5 INTELLIGENCE ENHANCED Telegram splitter
 let telegramSplitter = null;
 try {
   const splitter = require('./telegramSplitter');
   
-  // Try the rewritten splitter functions first
+  // Try the GPT-5 intelligence splitter first
   if (splitter && typeof splitter.sendFormattedMessage === 'function') {
     telegramSplitter = {
       sendMessage: splitter.sendFormattedMessage,
       sendFormattedMessage: splitter.sendFormattedMessage,
       formatMessage: splitter.formatMessage,
       quickFormat: splitter.quickFormat,
-      businessFormat: splitter.businessFormat,
-      technicalFormat: splitter.technicalFormat,
+      
+      // ✅ NEW: GPT-5 Intelligence Methods
+      intelligentFormat: splitter.intelligentFormat,
+      adaptiveFormat: splitter.adaptiveFormat,
+      initialize: splitter.initialize,
+      
+      // Legacy compatibility
+      businessFormat: splitter.businessFormat || splitter.formatMessage,
+      technicalFormat: splitter.technicalFormat || splitter.formatMessage,
+      
       sendGPT5: (bot, chatId, response, meta = {}) => 
-        splitter.sendFormattedMessage(bot, chatId, response, { ...meta, model: 'gpt-5' })
+        splitter.sendFormattedMessage(bot, chatId, response, { 
+          ...meta, 
+          model: 'gpt-5',
+          useGPT5Intelligence: true,
+          enhanceWithGPT5: true 
+        })
     };
-    console.log('[Import] ✅ Telegram splitter loaded with rewritten functions');
+    
+    console.log('[Import] ✅ GPT-5 Intelligence Telegram splitter loaded');
+    
+    // ✅ NEW: Initialize GPT-5 Intelligence
+    if (openaiClient && splitter.initialize) {
+      splitter.initialize(openaiClient)
+        .then(() => {
+          console.log('🧠 GPT-5 Intelligence activated for message formatting!');
+          console.log('🎯 Features: AI analysis, smart enhancement, intelligent splitting');
+        })
+        .catch(error => {
+          console.warn('⚠️ GPT-5 Intelligence initialization failed:', error.message);
+          console.log('📋 Falling back to standard formatting');
+        });
+    } else {
+      console.log('📋 GPT-5 Intelligence available but not initialized (openaiClient missing)');
+    }
   }
   // Try legacy function names
   else if (splitter && typeof splitter.splitTelegramMessage === 'function') {
@@ -95,6 +123,7 @@ try {
         return { success: true, method: 'legacy' };
       },
       formatMessage: splitter.splitTelegramMessage,
+      quickFormat: (text) => splitter.splitTelegramMessage(text, 4000, false),
       sendGPT5: async (bot, chatId, response, meta = {}) => {
         const parts = splitter.splitTelegramMessage(response, 4000, true);
         for (const part of parts) {
@@ -111,6 +140,7 @@ try {
 } catch (error) {
   console.warn('[Import] ❌ Telegram splitter failed:', error.message);
 }
+
 
 // ✅ FIXED: Enhanced fallback telegram with proper message splitting
 if (!telegramSplitter) {
@@ -1177,7 +1207,7 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
   }
 }
 
-// FIXED: Helper function for telegram delivery
+// ✅ UPDATED: Helper function for GPT-5 intelligent telegram delivery
 async function deliverToTelegram(bot, chatId, response, title) {
   try {
     if (!bot || !chatId) return false;
@@ -1186,173 +1216,120 @@ async function deliverToTelegram(bot, chatId, response, title) {
     const safeChatId = safeString(chatId);
     const safeTitle = safeString(title);
     
-    console.log(`[Delivery] 📤 Delivering ${safeResponse.length} chars`);
+    console.log(`[Delivery] 🧠 Attempting GPT-5 intelligent delivery: ${safeResponse.length} chars`);
     
-    // ✅ FIXED: Try rewritten telegramSplitter with correct function name
-    if (telegramSplitter) {
+    // ✅ Method 1: Try GPT-5 Intelligence (NEW!)
+    if (telegramSplitter && typeof telegramSplitter.sendFormattedMessage === 'function') {
       try {
-        // Method 1: sendFormattedMessage (from rewritten splitter)
-        if (typeof telegramSplitter.sendFormattedMessage === 'function') {
-          console.log('[Delivery] Using sendFormattedMessage');
-          const result = await telegramSplitter.sendFormattedMessage(bot, safeChatId, safeResponse, {
-            includeHeaders: true,
-            enhanceMessage: true
-          });
-          if (result && Array.isArray(result) && result.length > 0) {
-            console.log(`[Delivery] ✅ Success: ${result.length} parts sent`);
-            return true;
-          }
-        }
+        console.log('[Delivery] 🎯 Using GPT-5 Intelligence mode');
+        const result = await telegramSplitter.sendFormattedMessage(bot, safeChatId, safeResponse, {
+          useGPT5Intelligence: true,
+          enhanceWithGPT5: true,
+          title: safeTitle
+        });
         
-        // Method 2: formatMessage + manual send
-        if (typeof telegramSplitter.formatMessage === 'function') {
-          console.log('[Delivery] Using formatMessage');
-          const parts = telegramSplitter.formatMessage(safeResponse, {
-            includeHeaders: true,
-            enhanceMessage: true
-          });
-          
-          for (let i = 0; i < parts.length; i++) {
-            await bot.sendMessage(safeChatId, parts[i]);
-            if (i < parts.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 800));
-            }
-          }
-          console.log(`[Delivery] ✅ Success: ${parts.length} parts sent`);
+        if (result && result.length > 0) {
+          console.log(`[Delivery] ✅ GPT-5 Intelligence success: ${result.length} parts delivered`);
           return true;
         }
-        
-        // Method 3: Legacy sendMessage (if exists)
-        if (typeof telegramSplitter.sendMessage === 'function') {
-          const result = await telegramSplitter.sendMessage(bot, safeChatId, safeResponse, {
-            title: safeTitle,
-            model: 'gpt-5'
-          });
-          if (result && (result.success || result.enhanced || result.fallback)) {
-            console.log('[Delivery] ✅ Success via legacy sendMessage');
-            return true;
-          }
-        }
-        
-      } catch (splitterError) {
-        console.warn('[Delivery] ⚠️ Splitter failed:', splitterError.message);
+      } catch (intelligenceError) {
+        console.warn('[Delivery] ⚠️ GPT-5 Intelligence failed:', intelligenceError.message);
       }
     }
     
-    // ✅ FIXED: Smart fallback with proper message splitting
-    console.log('[Delivery] 🔄 Using smart fallback');
+    // ✅ Method 2: Try Intelligent Format without send wrapper
+    if (telegramSplitter && typeof telegramSplitter.intelligentFormat === 'function') {
+      try {
+        console.log('[Delivery] 🎯 Using intelligentFormat');
+        const parts = await telegramSplitter.intelligentFormat(safeResponse);
+        
+        for (let i = 0; i < parts.length; i++) {
+          await bot.sendMessage(safeChatId, parts[i]);
+          if (i < parts.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+        
+        console.log(`[Delivery] ✅ Intelligent format success: ${parts.length} parts`);
+        return true;
+      } catch (formatError) {
+        console.warn('[Delivery] ⚠️ Intelligent format failed:', formatError.message);
+      }
+    }
+    
+    // ✅ Method 3: Try standard formatMessage
+    if (telegramSplitter && typeof telegramSplitter.formatMessage === 'function') {
+      try {
+        console.log('[Delivery] 🎯 Using standard formatMessage');
+        const parts = await telegramSplitter.formatMessage(safeResponse, {
+          includeHeaders: true,
+          enhanceFormatting: true
+        });
+        
+        for (let i = 0; i < parts.length; i++) {
+          await bot.sendMessage(safeChatId, parts[i]);
+          if (i < parts.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
+        }
+        
+        console.log(`[Delivery] ✅ Standard format success: ${parts.length} parts`);
+        return true;
+      } catch (standardError) {
+        console.warn('[Delivery] ⚠️ Standard format failed:', standardError.message);
+      }
+    }
+    
+    // ✅ Method 4: Emergency fallback with smart splitting
+    console.log('[Delivery] 🔄 Using emergency fallback with smart splitting');
     
     const maxLength = 4000;
-    
     if (safeResponse.length <= maxLength) {
-      // Single message
       const header = safeTitle ? `🧠 ${safeTitle}\n\n` : '';
       await bot.sendMessage(safeChatId, header + safeResponse);
-      console.log('[Delivery] ✅ Success: Single message');
+      console.log('[Delivery] ✅ Single message fallback success');
       return true;
     }
     
-    // Multi-part message with smart splitting
+    // Smart multi-part fallback
     const parts = [];
+    const sections = safeResponse.split('\n\n');
     let currentPart = '';
     
-    // Split by double newlines (paragraphs) to preserve structure
-    const sections = safeResponse.split('\n\n');
-    
     for (const section of sections) {
-      const potentialLength = currentPart.length + (currentPart ? 2 : 0) + section.length;
-      
-      if (potentialLength <= maxLength - 150) { // Leave room for headers
+      if (currentPart.length + section.length + 2 <= maxLength - 150) {
         currentPart = currentPart ? `${currentPart}\n\n${section}` : section;
       } else {
-        // Save current part
-        if (currentPart.trim()) {
-          parts.push(currentPart.trim());
-        }
-        
-        // Handle oversized sections
-        if (section.length > maxLength - 150) {
-          // Split by single newlines
-          const lines = section.split('\n');
-          let linePart = '';
-          
-          for (const line of lines) {
-            const lineLength = linePart.length + (linePart ? 1 : 0) + line.length;
-            
-            if (lineLength <= maxLength - 150) {
-              linePart = linePart ? `${linePart}\n${line}` : line;
-            } else {
-              if (linePart.trim()) {
-                parts.push(linePart.trim());
-              }
-              
-              // Handle extremely long lines
-              if (line.length > maxLength - 150) {
-                for (let i = 0; i < line.length; i += maxLength - 150) {
-                  parts.push(line.slice(i, i + maxLength - 150));
-                }
-                linePart = '';
-              } else {
-                linePart = line;
-              }
-            }
-          }
-          
-          currentPart = linePart;
-        } else {
-          currentPart = section;
-        }
+        if (currentPart.trim()) parts.push(currentPart.trim());
+        currentPart = section.length > maxLength - 150 ? 
+          section.slice(0, maxLength - 150) : section;
       }
     }
+    if (currentPart.trim()) parts.push(currentPart.trim());
     
-    // Add final part
-    if (currentPart.trim()) {
-      parts.push(currentPart.trim());
-    }
-    
-    // Ensure we have at least one part
-    if (parts.length === 0) {
-      parts.push(safeResponse.slice(0, maxLength - 150));
-    }
-    
-    // Send all parts with headers
+    // Send parts with headers
     for (let i = 0; i < parts.length; i++) {
-      const partHeader = parts.length > 1 
-        ? `🧠 ${safeTitle || 'GPT-5'} (${i + 1}/${parts.length})\n\n`
-        : (safeTitle ? `🧠 ${safeTitle}\n\n` : '');
+      const header = parts.length > 1 ? 
+        `🧠 ${safeTitle || 'GPT-5'} (${i + 1}/${parts.length})\n\n` : 
+        (safeTitle ? `🧠 ${safeTitle}\n\n` : '');
       
-      const finalMessage = partHeader + parts[i];
-      
-      // Final length check
-      if (finalMessage.length > 4096) {
-        // Emergency splitting
-        for (let j = 0; j < finalMessage.length; j += 4000) {
-          await bot.sendMessage(safeChatId, finalMessage.slice(j, j + 4000));
-          if (j + 4000 < finalMessage.length) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
-      } else {
-        await bot.sendMessage(safeChatId, finalMessage);
-      }
-      
-      // Delay between parts
+      await bot.sendMessage(safeChatId, header + parts[i]);
       if (i < parts.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
     
-    console.log(`[Delivery] ✅ Success: ${parts.length} parts via fallback`);
+    console.log(`[Delivery] ✅ Emergency fallback success: ${parts.length} parts`);
     return true;
     
   } catch (error) {
-    console.error('[Delivery] ❌ All methods failed:', error.message);
+    console.error('[Delivery] ❌ Complete delivery failure:', error.message);
     
-    // Emergency notification
+    // Last resort
     try {
-      await bot.sendMessage(safeString(chatId), '🔧 Response too complex. Please try a simpler request.');
-    } catch (emergencyError) {
-      console.error('[Delivery] ❌ Emergency fallback failed:', emergencyError.message);
+      await bot.sendMessage(safeString(chatId), '🔧 Response processing issue. Please try again.');
+    } catch (lastError) {
+      console.error('[Delivery] ❌ Even last resort failed:', lastError.message);
     }
     
     return false;
