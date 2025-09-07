@@ -931,6 +931,23 @@ module.exports = {
     splitTelegramMessage,
     sendTelegramMessage,
     
+    // 🛡️ DUPLICATE PROTECTION
+    duplicateProtection,
+    getDuplicateStats: () => duplicateProtection.getStats(),
+    clearDuplicateCache: () => {
+        duplicateProtection.responseCache.clear();
+        duplicateProtection.chatHistories.clear();
+        log('🛡️ Duplicate protection cache cleared');
+    },
+    enableDuplicateProtection: () => {
+        CONFIG.DUPLICATE_PROTECTION = true;
+        log('🛡️ Duplicate protection enabled');
+    },
+    disableDuplicateProtection: () => {
+        CONFIG.DUPLICATE_PROTECTION = false;
+        log('🛡️ Duplicate protection disabled');
+    },
+    
     // System utilities
     getSystemInfo,
     test,
