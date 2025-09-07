@@ -1,410 +1,611 @@
-// utils/telegramSplitter.js - Official GPT-5 Powerful Message Formatter
+// utils/telegramSplitter.js - Robust GPT-5 Telegram Message Formatter
 // ═══════════════════════════════════════════════════════════════════════════
-// Showcases real GPT-5 power with official model variants and capabilities
-// Based on OpenAI's August 7, 2025 GPT-5 release specifications
-// ═══════════════════════════════════════════════════════════════════════════
-
-console.log('🚀 Loading Official GPT-5 Powerful Telegram Splitter...');
-
-// ═══════════════════════════════════════════════════════════════════════════
-// OFFICIAL GPT-5 MODEL VARIANTS (Based on OpenAI Release)
+// Production-ready implementation with fail-safe mechanisms
+// Built for OpenAI GPT-5 (Released August 7, 2025)
 // ═══════════════════════════════════════════════════════════════════════════
 
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIGURATION & CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const CONFIG = {
+    TELEGRAM_MAX_LENGTH: 4096,
+    DEFAULT_CHUNK_SIZE: 3800, // Leave room for headers
+    HEADER_SIZE: 250,
+    MIN_CHUNK_SIZE: 100,
+    DELAY_BETWEEN_MESSAGES: 1000,
+    DEBUG_MODE: process.env.NODE_ENV === 'development'
+};
+
+// Official GPT-5 Model Variants (Based on OpenAI API)
 const GPT5_MODELS = {
-    reasoning: {
-        name: 'GPT-5 Reasoning',
+    'gpt-5': {
+        name: 'GPT-5',
         icon: '🧠',
-        description: 'Advanced reasoning and complex problem solving'
+        description: 'Advanced reasoning model',
+        color: '#10B981'
     },
-    turbo: {
-        name: 'GPT-5 Turbo',
-        icon: '⚡',
-        description: 'Fast responses with smart routing'
-    },
-    business: {
-        name: 'GPT-5 Business',
-        icon: '💼',
-        description: 'Optimized for business strategy and analysis'
-    },
-    code: {
-        name: 'GPT-5 Code',
-        icon: '👨‍💻',
-        description: 'State-of-the-art coding and development'
-    },
-    mini: {
+    'gpt-5-mini': {
         name: 'GPT-5 Mini',
         icon: '⚡',
-        description: 'Efficient and cost-effective'
+        description: 'Fast and efficient',
+        color: '#3B82F6'
     },
-    nano: {
+    'gpt-5-nano': {
         name: 'GPT-5 Nano',
         icon: '🔹',
-        description: 'Ultra-fast lightweight responses'
+        description: 'Ultra-lightweight',
+        color: '#8B5CF6'
     }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// DYNAMIC PROFESSIONAL EMOJI SYSTEM
-// ═══════════════════════════════════════════════════════════════════════════
-
-const PROFESSIONAL_EMOJIS = {
-    bullets: ['🔹', '🔸', '◦', '▫️', '•', '⁃', '▸', '▷', '◆'],
-    business: ['💼', '📊', '💰', '📈', '🎯', '⚡', '🚀', '💎', '🏆'],
-    strategy: ['🎯', '📋', '🗺️', '⚙️', '🔄', '📌', '🎲', '⭐'],
-    tech: ['💻', '⚙️', '🔧', '🛠️', '📡', '🔌', '⚡', '🖥️'],
-    finance: ['💰', '📈', '💎', '🏦', '💳', '📊', '💵', '🪙'],
-    priorities: ['🥇', '🥈', '🥉', '⭐', '🏆', '🎯', '🔥', '💎'],
-    numbers: ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'],
-    insights: ['💡', '🔍', '📝', '🧐', '⚖️', '🎭', '🔬', '🧩']
+// Context-based emoji sets
+const EMOJI_SETS = {
+    business: ['💼', '📊', '💰', '📈', '🎯', '🚀', '💎', '🏆'],
+    technical: ['💻', '⚙️', '🔧', '🛠️', '📡', '🔌', '⚡', '🖥️'],
+    academic: ['📚', '🎓', '📝', '🔬', '🧮', '📐', '🔍', '💡'],
+    health: ['🏥', '💊', '🩺', '❤️', '🧬', '⚕️', '🔬', '📋'],
+    general: ['🔹', '🔸', '◦', '▫️', '•', '⁃', '▸', '▷']
 };
 
-let emojiCounter = 0;
-let currentContext = 'bullets';
-
 // ═══════════════════════════════════════════════════════════════════════════
-// INTELLIGENT CONTEXT DETECTION FOR GPT-5 CAPABILITIES
+// LOGGING UTILITY
 // ═══════════════════════════════════════════════════════════════════════════
 
-function detectGPT5Context(text) {
-    if (!text || typeof text !== 'string') return 'general';
-    
-    const textLower = text.toLowerCase();
-    
-    // Financial/Business Context (GPT-5 Business excels here)
-    if (/(?:business|strategy|profit|revenue|investment|lending|money|financial|wealth|market|growth|client|customer|sales|roi|cash|income)/i.test(text)) {
-        return 'business';
-    }
-    
-    // Technical/Coding Context (GPT-5 Code - 74.9% SWE-bench performance)
-    if (/(?:code|programming|software|database|api|system|tech|development|debug|algorithm|function|class|method|variable)/i.test(text)) {
-        return 'tech';
-    }
-    
-    // Complex reasoning tasks (GPT-5 Reasoning model)
-    if (/(?:analyze|reasoning|complex|strategy|problem|solve|plan|step|method|approach|logic|think|consider|evaluate)/i.test(text)) {
-        return 'reasoning';
-    }
-    
-    // Mathematical/Academic (94.6% AIME 2025 performance)
-    if (/(?:math|calculation|formula|equation|statistics|data|research|academic|study|analysis)/i.test(text)) {
-        return 'academic';
-    }
-    
-    return 'general';
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// SMART EMOJI ROTATION WITH ANTI-REPETITION
-// ═══════════════════════════════════════════════════════════════════════════
-
-function getIntelligentEmoji(context = 'bullets') {
-    const emojiPool = PROFESSIONAL_EMOJIS[context] || PROFESSIONAL_EMOJIS.bullets;
-    
-    // Reset counter when context changes
-    if (context !== currentContext) {
-        emojiCounter = 0;
-        currentContext = context;
-    }
-    
-    // Smart rotation with slight randomization to avoid predictable patterns
-    const baseIndex = emojiCounter % emojiPool.length;
-    const variation = Math.floor(Math.random() * Math.min(2, emojiPool.length));
-    const finalIndex = (baseIndex + variation) % emojiPool.length;
-    
-    emojiCounter++;
-    return emojiPool[finalIndex];
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PROFESSIONAL GPT-5 HEADER GENERATION
-// ═══════════════════════════════════════════════════════════════════════════
-
-function createGPT5Header(context, messageLength, partNumber = 1, totalParts = 1) {
-    const timestamp = new Date().toLocaleTimeString('en-US', { 
-        hour12: false, 
-        hour: '2-digit', 
-        minute: '2-digit' 
-    });
-    
-    // Select actual GPT-5 model based on detected context (matching your openaiClient)
-    const modelConfig = GPT5_MODELS[context] || GPT5_MODELS.primary;
-    
-    // Performance indicator based on message complexity
-    let performanceIcon = '📊';
-    if (messageLength > 3000) performanceIcon = '🧮';
-    if (messageLength > 6000) performanceIcon = '📋';
-    
-    // API indicator (matching your openaiClient's dual API approach)
-    const apiIndicator = modelConfig.api === 'responses' ? 'Responses API' : 'Chat API';
-    
-    // Smart model selection indicator
-    let modelNote = '';
-    if (context === 'nano') modelNote = ' • Ultra-Fast';
-    if (context === 'mini') modelNote = ' • Efficient';  
-    if (context === 'primary') modelNote = ' • Advanced Reasoning';
-    if (context === 'chat') modelNote = ' • Conversational';
-    
-    const partInfo = totalParts > 1 ? `${partNumber}/${totalParts}` : `${totalParts}`;
-    
-    return `${modelConfig.icon} ${modelConfig.name.toUpperCase()}
-
-📅 ${timestamp}     🧠 ${apiIndicator}${modelNote}     ${performanceIcon} ${partInfo} part`;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// MESSAGE ENHANCEMENT WITH GPT-5 INTELLIGENCE
-// ═══════════════════════════════════════════════════════════════════════════
-
-function enhanceWithGPT5Intelligence(text, context) {
-    if (!text || typeof text !== 'string') return text;
-    
-    let enhanced = text;
-    
-    // Replace static bullets with intelligent emoji rotation
-    enhanced = enhanced.replace(/▪️/g, () => getIntelligentEmoji(context));
-    
-    // Enhanced numbered lists with professional emojis
-    enhanced = enhanced.replace(/^(\s*)(\d+)[\.\)](\s*)/gm, (match, leadingSpace, number, trailingSpace) => {
-        const num = parseInt(number);
-        if (num <= 10) {
-            return `${leadingSpace}${PROFESSIONAL_EMOJIS.numbers[num - 1]}${trailingSpace}`;
-        }
-        return match;
-    });
-    
-    // Context-specific enhancements showcasing GPT-5 capabilities
-    if (context === 'business') {
-        enhanced = enhanced.replace(/^(Strategy|Strategic|Plan|Planning)(\s*:|\s+)/gm, '🎯 $1$2');
-        enhanced = enhanced.replace(/^(Revenue|Profit|Growth|ROI)(\s*:|\s+)/gm, '💰 $1$2');
-        enhanced = enhanced.replace(/^(Key|Core|Primary|Main|Essential)(\s+)/gm, '🔑 $1$2');
-    }
-    
-    if (context === 'tech') {
-        enhanced = enhanced.replace(/^(Code|Function|Method|Class)(\s*:|\s+)/gm, '💻 $1$2');
-        enhanced = enhanced.replace(/^(Debug|Fix|Error|Bug)(\s*:|\s+)/gm, '🔧 $1$2');
-        enhanced = enhanced.replace(/^(Algorithm|Logic|Structure)(\s*:|\s+)/gm, '⚙️ $1$2');
-    }
-    
-    if (context === 'reasoning') {
-        enhanced = enhanced.replace(/^(Analysis|Reasoning|Logic)(\s*:|\s+)/gm, '🧠 $1$2');
-        enhanced = enhanced.replace(/^(Step|Phase|Stage)(\s+\d+)/gm, '📝 $1$2');
-        enhanced = enhanced.replace(/^(Solution|Answer|Result)(\s*:|\s+)/gm, '💡 $1$2');
-    }
-    
-    // Add intelligence indicators for complex responses
-    if (text.length > 1000) {
-        enhanced = enhanced.replace(/^(In conclusion|Finally|Summary)(\s*:|\s+)/gmi, '🎯 $1$2');
-    }
-    
-    return enhanced;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// POWERFUL GPT-5 MESSAGE SPLITTER
-// ═══════════════════════════════════════════════════════════════════════════
-
-function splitTelegramMessage(text, maxLength = 4000, includeHeader = true) {
-    if (!text || typeof text !== 'string') {
-        return [''];
-    }
-    
-    const context = detectGPT5Context(text);
-    const enhanced = enhanceWithGPT5Intelligence(text, context);
-    
-    // Quick return for short messages without headers
-    if (enhanced.length <= maxLength && !includeHeader) {
-        return [enhanced];
-    }
-    
-    // Calculate space allocation (GPT-5 headers are slightly larger due to capability info)
-    const headerSpace = includeHeader ? 180 : 0;
-    const availableSpace = maxLength - headerSpace;
-    
-    // Advanced message splitting algorithm
-    const parts = [];
-    let currentPart = '';
-    
-    // Primary split: Preserve paragraph structure for readability
-    const sections = enhanced.split('\n\n');
-    
-    for (const section of sections) {
-        const potentialLength = currentPart.length + (currentPart ? 2 : 0) + section.length;
+class Logger {
+    static log(level, message, data = null) {
+        if (!CONFIG.DEBUG_MODE && level === 'debug') return;
         
-        if (potentialLength <= availableSpace) {
-            // Fits in current part
-            currentPart = currentPart ? `${currentPart}\n\n${section}` : section;
-        } else {
-            // Save current part and process section
-            if (currentPart.trim()) {
-                parts.push(currentPart.trim());
-                currentPart = '';
+        const timestamp = new Date().toISOString();
+        const prefix = {
+            error: '❌',
+            warn: '⚠️',
+            info: 'ℹ️',
+            debug: '🔍',
+            success: '✅'
+        }[level] || 'ℹ️';
+        
+        console.log(`${prefix} [${timestamp}] ${message}`);
+        if (data && CONFIG.DEBUG_MODE) {
+            console.log(JSON.stringify(data, null, 2));
+        }
+    }
+    
+    static error(message, error = null) {
+        this.log('error', message, error);
+    }
+    
+    static warn(message, data = null) {
+        this.log('warn', message, data);
+    }
+    
+    static info(message, data = null) {
+        this.log('info', message, data);
+    }
+    
+    static debug(message, data = null) {
+        this.log('debug', message, data);
+    }
+    
+    static success(message, data = null) {
+        this.log('success', message, data);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONTEXT ANALYZER
+// ═══════════════════════════════════════════════════════════════════════════
+
+class ContextAnalyzer {
+    static patterns = {
+        business: /(?:business|strategy|profit|revenue|investment|market|sales|roi|growth|client|customer|financial|wealth)/i,
+        technical: /(?:code|programming|software|database|api|system|tech|development|debug|algorithm|function|class|method)/i,
+        academic: /(?:research|study|analysis|academic|university|paper|thesis|theory|hypothesis|experiment|data|statistics)/i,
+        health: /(?:health|medical|symptom|treatment|diagnosis|medicine|doctor|patient|therapy|clinical|hospital)/i,
+        mathematical: /(?:math|calculation|formula|equation|solve|compute|calculate|number|statistics|probability)/i
+    };
+    
+    static detectContext(text) {
+        if (!text || typeof text !== 'string') {
+            return 'general';
+        }
+        
+        const textLower = text.toLowerCase();
+        
+        // Check each pattern
+        for (const [context, pattern] of Object.entries(this.patterns)) {
+            if (pattern.test(textLower)) {
+                Logger.debug(`Context detected: ${context}`);
+                return context;
+            }
+        }
+        
+        Logger.debug('Context detected: general (default)');
+        return 'general';
+    }
+    
+    static getModelForContext(context) {
+        const modelMap = {
+            business: 'gpt-5',
+            technical: 'gpt-5',
+            academic: 'gpt-5',
+            health: 'gpt-5',
+            mathematical: 'gpt-5',
+            general: 'gpt-5-mini'
+        };
+        
+        return modelMap[context] || 'gpt-5-mini';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MESSAGE ENHANCER
+// ═══════════════════════════════════════════════════════════════════════════
+
+class MessageEnhancer {
+    static emojiIndex = 0;
+    
+    static getNextEmoji(context = 'general') {
+        const emojiSet = EMOJI_SETS[context] || EMOJI_SETS.general;
+        const emoji = emojiSet[this.emojiIndex % emojiSet.length];
+        this.emojiIndex++;
+        return emoji;
+    }
+    
+    static enhanceMessage(text, context) {
+        if (!text || typeof text !== 'string') {
+            return text;
+        }
+        
+        let enhanced = text;
+        
+        try {
+            // Replace bullet points with context-appropriate emojis
+            enhanced = enhanced.replace(/^(\s*)[•▪▫◦-]\s*/gm, (match, indent) => {
+                return `${indent}${this.getNextEmoji(context)} `;
+            });
+            
+            // Enhance numbered lists
+            enhanced = enhanced.replace(/^(\s*)(\d+)[\.\)]\s*/gm, (match, indent, number) => {
+                const num = parseInt(number);
+                if (num <= 10) {
+                    const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+                    return `${indent}${numberEmojis[num - 1]} `;
+                }
+                return match;
+            });
+            
+            // Add context-specific enhancements
+            enhanced = this.addContextSpecificFormatting(enhanced, context);
+            
+            Logger.debug('Message enhanced successfully', { 
+                originalLength: text.length, 
+                enhancedLength: enhanced.length,
+                context 
+            });
+            
+        } catch (error) {
+            Logger.error('Failed to enhance message, using original', error);
+            return text;
+        }
+        
+        return enhanced;
+    }
+    
+    static addContextSpecificFormatting(text, context) {
+        switch (context) {
+            case 'business':
+                text = text.replace(/^(Strategy|Revenue|Growth|Analysis)(\s*:|\s+)/gmi, '🎯 $1$2');
+                break;
+            case 'technical':
+                text = text.replace(/^(Code|Function|Algorithm|Debug)(\s*:|\s+)/gmi, '💻 $1$2');
+                break;
+            case 'academic':
+                text = text.replace(/^(Research|Study|Analysis|Conclusion)(\s*:|\s+)/gmi, '📚 $1$2');
+                break;
+            case 'health':
+                text = text.replace(/^(Symptoms|Treatment|Diagnosis|Recommendation)(\s*:|\s+)/gmi, '🏥 $1$2');
+                break;
+        }
+        return text;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HEADER GENERATOR
+// ═══════════════════════════════════════════════════════════════════════════
+
+class HeaderGenerator {
+    static createHeader(context, model, partNumber = 1, totalParts = 1, messageLength = 0) {
+        try {
+            const timestamp = new Date().toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            const modelInfo = GPT5_MODELS[model] || GPT5_MODELS['gpt-5-mini'];
+            const partInfo = totalParts > 1 ? ` (${partNumber}/${totalParts})` : '';
+            
+            // Performance indicator based on message complexity
+            let performanceIcon = '📊';
+            if (messageLength > 2000) performanceIcon = '🧮';
+            if (messageLength > 4000) performanceIcon = '📋';
+            
+            const header = `${modelInfo.icon} ${modelInfo.name.toUpperCase()}${partInfo}
+📅 ${timestamp} • ${performanceIcon} ${context} • ⚡ Ready
+
+`;
+            
+            Logger.debug('Header created successfully', { 
+                model, 
+                context, 
+                partNumber, 
+                totalParts 
+            });
+            
+            return header;
+            
+        } catch (error) {
+            Logger.error('Failed to create header, using fallback', error);
+            return `🤖 GPT-5 Response ${partNumber}/${totalParts}\n\n`;
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MESSAGE SPLITTER CORE
+// ═══════════════════════════════════════════════════════════════════════════
+
+class MessageSplitter {
+    static splitIntoChunks(text, maxSize, preserveFormatting = true) {
+        if (!text || text.length <= maxSize) {
+            return [text || ''];
+        }
+        
+        const chunks = [];
+        
+        if (preserveFormatting) {
+            // Split by paragraphs first
+            const paragraphs = text.split('\n\n');
+            let currentChunk = '';
+            
+            for (const paragraph of paragraphs) {
+                const potentialLength = currentChunk.length + (currentChunk ? 2 : 0) + paragraph.length;
+                
+                if (potentialLength <= maxSize) {
+                    currentChunk = currentChunk ? `${currentChunk}\n\n${paragraph}` : paragraph;
+                } else {
+                    // Save current chunk if it has content
+                    if (currentChunk.trim()) {
+                        chunks.push(currentChunk.trim());
+                    }
+                    
+                    // Handle oversized paragraphs
+                    if (paragraph.length > maxSize) {
+                        const subChunks = this.splitLargeParagraph(paragraph, maxSize);
+                        chunks.push(...subChunks.slice(0, -1));
+                        currentChunk = subChunks[subChunks.length - 1] || '';
+                    } else {
+                        currentChunk = paragraph;
+                    }
+                }
             }
             
-            // Handle oversized sections with intelligent breaking
-            if (section.length > availableSpace) {
-                const subParts = splitComplexSection(section, availableSpace);
-                parts.push(...subParts.slice(0, -1));
-                currentPart = subParts[subParts.length - 1] || '';
-            } else {
-                currentPart = section;
+            // Add final chunk
+            if (currentChunk.trim()) {
+                chunks.push(currentChunk.trim());
             }
+        } else {
+            // Simple character-based splitting
+            for (let i = 0; i < text.length; i += maxSize) {
+                chunks.push(text.slice(i, i + maxSize));
+            }
+        }
+        
+        return chunks.length > 0 ? chunks : [text];
+    }
+    
+    static splitLargeParagraph(paragraph, maxSize) {
+        const chunks = [];
+        const lines = paragraph.split('\n');
+        let currentChunk = '';
+        
+        for (const line of lines) {
+            const potentialLength = currentChunk.length + (currentChunk ? 1 : 0) + line.length;
+            
+            if (potentialLength <= maxSize) {
+                currentChunk = currentChunk ? `${currentChunk}\n${line}` : line;
+            } else {
+                if (currentChunk.trim()) {
+                    chunks.push(currentChunk.trim());
+                }
+                
+                // Handle extremely long lines
+                if (line.length > maxSize) {
+                    const lineChunks = this.splitLongLine(line, maxSize);
+                    chunks.push(...lineChunks.slice(0, -1));
+                    currentChunk = lineChunks[lineChunks.length - 1] || '';
+                } else {
+                    currentChunk = line;
+                }
+            }
+        }
+        
+        if (currentChunk.trim()) {
+            chunks.push(currentChunk.trim());
+        }
+        
+        return chunks.length > 0 ? chunks : [paragraph];
+    }
+    
+    static splitLongLine(line, maxSize) {
+        const chunks = [];
+        const words = line.split(' ');
+        let currentChunk = '';
+        
+        for (const word of words) {
+            const potentialLength = currentChunk.length + (currentChunk ? 1 : 0) + word.length;
+            
+            if (potentialLength <= maxSize) {
+                currentChunk = currentChunk ? `${currentChunk} ${word}` : word;
+            } else {
+                if (currentChunk.trim()) {
+                    chunks.push(currentChunk.trim());
+                }
+                
+                // Handle extremely long words
+                if (word.length > maxSize) {
+                    for (let i = 0; i < word.length; i += maxSize) {
+                        chunks.push(word.substring(i, i + maxSize));
+                    }
+                    currentChunk = '';
+                } else {
+                    currentChunk = word;
+                }
+            }
+        }
+        
+        if (currentChunk.trim()) {
+            chunks.push(currentChunk.trim());
+        }
+        
+        return chunks.length > 0 ? chunks : [line];
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN TELEGRAM FORMATTER
+// ═══════════════════════════════════════════════════════════════════════════
+
+class TelegramFormatter {
+    static formatMessage(text, options = {}) {
+        const settings = {
+            maxLength: CONFIG.DEFAULT_CHUNK_SIZE,
+            includeHeaders: true,
+            preserveFormatting: true,
+            enhanceMessage: true,
+            ...options
+        };
+        
+        Logger.info('Starting message formatting', { 
+            textLength: text?.length || 0,
+            settings 
+        });
+        
+        try {
+            // Input validation
+            if (!text || typeof text !== 'string') {
+                Logger.warn('Invalid input provided to formatter');
+                return ['⚠️ No response received from GPT-5'];
+            }
+            
+            if (text.trim().length === 0) {
+                Logger.warn('Empty text provided to formatter');
+                return ['📭 Empty response from GPT-5'];
+            }
+            
+            // Analyze context
+            const context = ContextAnalyzer.detectContext(text);
+            const model = ContextAnalyzer.getModelForContext(context);
+            
+            // Enhance message if requested
+            let processedText = text;
+            if (settings.enhanceMessage) {
+                processedText = MessageEnhancer.enhanceMessage(text, context);
+            }
+            
+            // Calculate available space for content
+            const headerSpace = settings.includeHeaders ? CONFIG.HEADER_SIZE : 0;
+            const availableSpace = Math.max(
+                settings.maxLength - headerSpace,
+                CONFIG.MIN_CHUNK_SIZE
+            );
+            
+            // Split message into chunks
+            const chunks = MessageSplitter.splitIntoChunks(
+                processedText, 
+                availableSpace, 
+                settings.preserveFormatting
+            );
+            
+            Logger.success('Message split into chunks', { 
+                chunkCount: chunks.length,
+                context,
+                model 
+            });
+            
+            // Add headers if requested
+            if (settings.includeHeaders) {
+                return chunks.map((chunk, index) => {
+                    const header = HeaderGenerator.createHeader(
+                        context,
+                        model,
+                        index + 1,
+                        chunks.length,
+                        chunk.length
+                    );
+                    return header + chunk;
+                });
+            }
+            
+            return chunks;
+            
+        } catch (error) {
+            Logger.error('Formatting failed, using fallback', error);
+            
+            // Fallback: Simple splitting without formatting
+            const fallbackChunks = MessageSplitter.splitIntoChunks(
+                text, 
+                CONFIG.DEFAULT_CHUNK_SIZE, 
+                false
+            );
+            
+            return fallbackChunks.map((chunk, index) => {
+                return `🤖 GPT-5 (${index + 1}/${fallbackChunks.length})\n\n${chunk}`;
+            });
         }
     }
     
-    // Add final part
-    if (currentPart.trim()) {
-        parts.push(currentPart.trim());
-    }
-    
-    // Ensure at least one part exists
-    if (parts.length === 0) {
-        parts.push(enhanced || 'Empty GPT-5 response');
-    }
-    
-    // Add powerful GPT-5 headers showcasing capabilities
-    if (includeHeader) {
-        return parts.map((part, index) => {
-            const header = createGPT5Header(context, part.length, index + 1, parts.length);
-            return `${header}\n\n${part}`;
+    static quickFormat(text) {
+        return this.formatMessage(text, {
+            includeHeaders: false,
+            enhanceMessage: false
         });
     }
     
-    return parts;
+    static businessFormat(text) {
+        return this.formatMessage(text, {
+            enhanceMessage: true,
+            context: 'business'
+        });
+    }
+    
+    static technicalFormat(text) {
+        return this.formatMessage(text, {
+            enhanceMessage: true,
+            context: 'technical'
+        });
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// INTELLIGENT SECTION SPLITTING
+// TELEGRAM BOT INTEGRATION
 // ═══════════════════════════════════════════════════════════════════════════
 
-function splitComplexSection(section, maxSize) {
-    const parts = [];
-    let current = '';
-    
-    // Split by lines while preserving formatting
-    const lines = section.split('\n');
-    
-    for (const line of lines) {
-        const potentialLength = current.length + (current ? 1 : 0) + line.length;
+class TelegramBotHelper {
+    static async sendFormattedMessage(bot, chatId, text, options = {}) {
+        const settings = {
+            delay: CONFIG.DELAY_BETWEEN_MESSAGES,
+            parseMode: 'HTML',
+            ...options
+        };
         
-        if (potentialLength <= maxSize) {
-            current = current ? `${current}\n${line}` : line;
-        } else {
-            // Save current content
-            if (current.trim()) {
-                parts.push(current.trim());
-            }
+        try {
+            const formattedParts = TelegramFormatter.formatMessage(text, settings);
             
-            // Handle extremely long lines with word-boundary preservation
-            if (line.length > maxSize) {
-                const chunks = intelligentLineChunking(line, maxSize);
-                parts.push(...chunks.slice(0, -1));
-                current = chunks[chunks.length - 1] || '';
-            } else {
-                current = line;
-            }
-        }
-    }
-    
-    if (current.trim()) {
-        parts.push(current.trim());
-    }
-    
-    return parts.length > 0 ? parts : [section];
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// INTELLIGENT LINE CHUNKING
-// ═══════════════════════════════════════════════════════════════════════════
-
-function intelligentLineChunking(line, maxSize) {
-    const chunks = [];
-    let current = '';
-    
-    // Split by word boundaries to maintain readability
-    const words = line.split(' ');
-    
-    for (const word of words) {
-        const potentialLength = current.length + (current ? 1 : 0) + word.length;
-        
-        if (potentialLength <= maxSize) {
-            current = current ? `${current} ${word}` : word;
-        } else {
-            if (current.trim()) {
-                chunks.push(current.trim());
-            }
+            Logger.info(`Sending ${formattedParts.length} message parts to chat ${chatId}`);
             
-            // Handle extremely long individual words
-            if (word.length > maxSize) {
-                for (let i = 0; i < word.length; i += maxSize) {
-                    chunks.push(word.substring(i, i + maxSize));
+            const results = [];
+            
+            for (let i = 0; i < formattedParts.length; i++) {
+                try {
+                    const result = await bot.sendMessage(chatId, formattedParts[i], {
+                        parse_mode: settings.parseMode
+                    });
+                    
+                    results.push(result);
+                    
+                    // Add delay between messages if multiple parts
+                    if (i < formattedParts.length - 1 && settings.delay > 0) {
+                        await new Promise(resolve => setTimeout(resolve, settings.delay));
+                    }
+                    
+                } catch (sendError) {
+                    Logger.error(`Failed to send message part ${i + 1}`, sendError);
+                    
+                    // Retry without formatting as fallback
+                    try {
+                        const result = await bot.sendMessage(chatId, formattedParts[i]);
+                        results.push(result);
+                    } catch (retryError) {
+                        Logger.error(`Failed to send message part ${i + 1} even without formatting`, retryError);
+                    }
                 }
-                current = '';
-            } else {
-                current = word;
+            }
+            
+            Logger.success(`Successfully sent ${results.length}/${formattedParts.length} message parts`);
+            return results;
+            
+        } catch (error) {
+            Logger.error('Failed to send formatted message', error);
+            
+            // Ultimate fallback
+            try {
+                const result = await bot.sendMessage(chatId, text || '❌ Error processing response');
+                return [result];
+            } catch (fallbackError) {
+                Logger.error('Even fallback message failed', fallbackError);
+                throw fallbackError;
             }
         }
     }
-    
-    if (current.trim()) {
-        chunks.push(current.trim());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SYSTEM UTILITIES
+// ═══════════════════════════════════════════════════════════════════════════
+
+class SystemUtils {
+    static getSystemStats() {
+        return {
+            version: '2.0.0',
+            release: 'GPT-5 Official (Aug 7, 2025)',
+            availableModels: Object.keys(GPT5_MODELS),
+            supportedContexts: Object.keys(EMOJI_SETS),
+            config: CONFIG,
+            performance: {
+                'SWE-bench Verified': '74.9%',
+                'AIME 2025': '94.6%',
+                'Hallucination Reduction': '45% vs GPT-4o'
+            }
+        };
     }
     
-    return chunks.length > 0 ? chunks : [line];
-}
+    static reset() {
+        MessageEnhancer.emojiIndex = 0;
+        Logger.info('System reset complete');
+    }
+    
+    static test() {
+        const testText = `GPT-5 Test Response
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SPECIALIZED GPT-5 FORMATTERS
-// ═══════════════════════════════════════════════════════════════════════════
+Business Strategy:
+• Revenue optimization 
+• Market expansion
+• Client acquisition
 
-function formatGPT5Business(text) {
-    return splitTelegramMessage(text, 4000, true);
-}
+Technical Implementation:
+1. Database optimization
+2. API development  
+3. System integration
 
-function formatGPT5Code(text) {
-    return splitTelegramMessage(text, 4000, true);
-}
+This demonstrates GPT-5's advanced reasoning capabilities with 94.6% AIME performance.`;
 
-function formatGPT5Reasoning(text) {
-    return splitTelegramMessage(text, 4000, true);
-}
-
-function formatQuickGPT5(text) {
-    // Quick responses without headers - showcases GPT-5 Turbo speed
-    const enhanced = enhanceWithGPT5Intelligence(text, 'general');
-    return [enhanced];
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// SYSTEM MANAGEMENT AND ANALYTICS
-// ═══════════════════════════════════════════════════════════════════════════
-
-function resetGPT5System() {
-    emojiCounter = 0;
-    currentContext = 'bullets';
-    console.log('🔄 GPT-5 telegram splitter system reset');
-}
-
-function getGPT5SystemStats() {
-    return {
-        version: 'GPT-5 Official Release (Aug 7, 2025)',
-        currentEmojiIndex: emojiCounter,
-        activeContext: currentContext,
-        availableModels: Object.keys(GPT5_MODELS),
-        totalEmojis: Object.values(PROFESSIONAL_EMOJIS).flat().length,
-        benchmarks: {
-            'SWE-bench Verified': '74.9%',
-            'AIME 2025': '94.6%',
-            'Hallucination Reduction': '45% vs GPT-4o'
-        },
-        capabilities: [
-            'Advanced reasoning and problem solving',
-            'State-of-the-art coding performance',
-            'Business strategy optimization',
-            'Mathematical and academic excellence',
-            'Reduced hallucinations',
-            'Unified model with smart routing'
-        ]
-    };
+        Logger.info('Running system test...');
+        const result = TelegramFormatter.formatMessage(testText);
+        
+        console.log('\n=== TEST RESULTS ===');
+        result.forEach((part, index) => {
+            console.log(`\n--- Part ${index + 1} ---`);
+            console.log(part);
+        });
+        console.log('\n=== END TEST ===\n');
+        
+        return result;
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -412,66 +613,43 @@ function getGPT5SystemStats() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 module.exports = {
-    // Primary API
-    splitTelegramMessage,
-    enhanceWithGPT5Intelligence,
+    // Main API
+    formatMessage: TelegramFormatter.formatMessage.bind(TelegramFormatter),
+    sendFormattedMessage: TelegramBotHelper.sendFormattedMessage.bind(TelegramBotHelper),
     
-    // Specialized GPT-5 formatters
-    formatGPT5Business,
-    formatGPT5Code,
-    formatGPT5Reasoning,
-    formatQuickGPT5,
+    // Convenience methods
+    quickFormat: TelegramFormatter.quickFormat.bind(TelegramFormatter),
+    businessFormat: TelegramFormatter.businessFormat.bind(TelegramFormatter),
+    technicalFormat: TelegramFormatter.technicalFormat.bind(TelegramFormatter),
     
-    // Advanced functions
-    detectGPT5Context,
-    createGPT5Header,
+    // Legacy compatibility
+    splitTelegramMessage: TelegramFormatter.formatMessage.bind(TelegramFormatter),
     
-    // System management
-    resetGPT5System,
-    getGPT5SystemStats,
+    // System utilities
+    getSystemStats: SystemUtils.getSystemStats.bind(SystemUtils),
+    reset: SystemUtils.reset.bind(SystemUtils),
+    test: SystemUtils.test.bind(SystemUtils),
     
-    // Direct access to GPT-5 configurations
-    GPT5_MODELS,
-    PROFESSIONAL_EMOJIS
+    // Advanced access
+    TelegramFormatter,
+    TelegramBotHelper,
+    ContextAnalyzer,
+    MessageEnhancer,
+    CONFIG,
+    GPT5_MODELS
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GPT-5 INITIALIZATION SEQUENCE
+// INITIALIZATION
 // ═══════════════════════════════════════════════════════════════════════════
 
-console.log('');
-console.log('🚀 ═══════════════════════════════════════════════════════════════');
-console.log('   OFFICIAL GPT-5 POWERFUL TELEGRAM SPLITTER LOADED');
-console.log('   ═══════════════════════════════════════════════════════════════');
-console.log('');
-console.log('🧠 OFFICIAL GPT-5 CAPABILITIES:');
-console.log('   • GPT-5 Reasoning: Advanced problem solving');
-console.log('   • GPT-5 Code: 74.9% SWE-bench Verified performance');
-console.log('   • GPT-5 Business: Expert strategy and analysis');
-console.log('   • GPT-5 Turbo: Fast responses with smart routing');
-console.log('   • GPT-5 Mini/Nano: Efficient variants available');
-console.log('');
-console.log('📊 BENCHMARK PERFORMANCE:');
-console.log('   • 94.6% on AIME 2025 (mathematics)');
-console.log('   • 74.9% on SWE-bench Verified (coding)');
-console.log('   • 45% reduction in hallucinations vs GPT-4o');
-console.log('   • 88% on Aider Polyglot (coding tasks)');
-console.log('');
-console.log('💼 INTELLIGENT FEATURES:');
-console.log('   🎯 Context-aware model selection');
-console.log('   🔄 Dynamic emoji rotation system');
-console.log('   🧠 Advanced reasoning indicators');
-console.log('   📋 Professional business formatting');
-console.log('   💻 Technical solution optimization');
-console.log('   ⚡ Smart routing for optimal performance');
-console.log('');
-console.log('✅ SHOWCASES YOUR BOT AS:');
-console.log('   • Powered by official OpenAI GPT-5');
-console.log('   • State-of-the-art AI capabilities');
-console.log('   • Professional business intelligence');
-console.log('   • Advanced reasoning and problem solving');
-console.log('   • Expert-level technical solutions');
-console.log('');
-console.log('🏆 OFFICIAL GPT-5 POWERFUL SPLITTER READY');
-console.log('🚀 ═══════════════════════════════════════════════════════════════');
-console.log('');
+Logger.success('GPT-5 Telegram Formatter v2.0 Loaded');
+Logger.info('Ready for production with fail-safe mechanisms');
+
+// Auto-test in development mode
+if (CONFIG.DEBUG_MODE) {
+    setTimeout(() => {
+        Logger.info('Running auto-test in debug mode...');
+        SystemUtils.test();
+    }, 1000);
+}
