@@ -126,41 +126,29 @@ function createGPT5Header(context, messageLength, partNumber = 1, totalParts = 1
         minute: '2-digit' 
     });
     
-    // Select appropriate GPT-5 model variant based on context
-    let modelConfig;
-    switch (context) {
-        case 'business':
-            modelConfig = GPT5_MODELS.business;
-            break;
-        case 'tech':
-            modelConfig = GPT5_MODELS.code;
-            break;
-        case 'reasoning':
-            modelConfig = GPT5_MODELS.reasoning;
-            break;
-        case 'academic':
-            modelConfig = GPT5_MODELS.reasoning;
-            break;
-        default:
-            modelConfig = GPT5_MODELS.turbo;
-    }
+    // Select actual GPT-5 model based on detected context (matching your openaiClient)
+    const modelConfig = GPT5_MODELS[context] || GPT5_MODELS.primary;
     
     // Performance indicator based on message complexity
     let performanceIcon = '📊';
     if (messageLength > 3000) performanceIcon = '🧮';
     if (messageLength > 6000) performanceIcon = '📋';
     
-    // Capability highlight based on official GPT-5 benchmarks
-    let capabilityNote = '';
-    if (context === 'tech') capabilityNote = ' • 74.9% SWE-bench';
-    if (context === 'academic') capabilityNote = ' • 94.6% AIME';
-    if (context === 'business') capabilityNote = ' • Expert Strategy';
+    // API indicator (matching your openaiClient's dual API approach)
+    const apiIndicator = modelConfig.api === 'responses' ? 'Responses API' : 'Chat API';
+    
+    // Smart model selection indicator
+    let modelNote = '';
+    if (context === 'nano') modelNote = ' • Ultra-Fast';
+    if (context === 'mini') modelNote = ' • Efficient';  
+    if (context === 'primary') modelNote = ' • Advanced Reasoning';
+    if (context === 'chat') modelNote = ' • Conversational';
     
     const partInfo = totalParts > 1 ? `${partNumber}/${totalParts}` : `${totalParts}`;
     
     return `${modelConfig.icon} ${modelConfig.name.toUpperCase()}
 
-📅 ${timestamp}     🧠 OpenAI GPT-5${capabilityNote}     ${performanceIcon} ${partInfo} part`;
+📅 ${timestamp}     🧠 ${apiIndicator}${modelNote}     ${performanceIcon} ${partInfo} part`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
