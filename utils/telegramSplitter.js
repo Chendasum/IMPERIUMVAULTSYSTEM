@@ -1,7 +1,7 @@
-// utils/telegramSplitter.js - Robust GPT-5 Telegram Message Formatter
+// utils/telegramSplitter.js - Professional GPT-5 Message Formatter
 // ═══════════════════════════════════════════════════════════════════════════
-// Production-ready implementation with fail-safe mechanisms
-// Built for OpenAI GPT-5 (Released August 7, 2025)
+// Clean, professional formatting inspired by Claude's communication style
+// Minimal emoji usage, excellent readability, smart content enhancement
 // ═══════════════════════════════════════════════════════════════════════════
 
 'use strict';
@@ -12,42 +12,41 @@
 
 const CONFIG = {
     TELEGRAM_MAX_LENGTH: 4096,
-    DEFAULT_CHUNK_SIZE: 3800, // Leave room for headers
-    HEADER_SIZE: 250,
+    DEFAULT_CHUNK_SIZE: 3600, // Conservative limit for safety
+    HEADER_SIZE: 200,
     MIN_CHUNK_SIZE: 100,
-    DELAY_BETWEEN_MESSAGES: 1000,
+    DELAY_BETWEEN_MESSAGES: 1200,
     DEBUG_MODE: process.env.NODE_ENV === 'development'
 };
 
-// Official GPT-5 Model Variants (Based on OpenAI API)
+// GPT-5 Model Configuration
 const GPT5_MODELS = {
     'gpt-5': {
         name: 'GPT-5',
         icon: '🧠',
-        description: 'Advanced reasoning model',
+        description: 'Advanced reasoning',
         color: '#10B981'
     },
     'gpt-5-mini': {
         name: 'GPT-5 Mini',
         icon: '⚡',
-        description: 'Fast and efficient',
+        description: 'Fast & efficient',
         color: '#3B82F6'
     },
     'gpt-5-nano': {
         name: 'GPT-5 Nano',
-        icon: '🔹',
+        icon: '💫',
         description: 'Ultra-lightweight',
         color: '#8B5CF6'
     }
 };
 
-// Context-based emoji sets
-const EMOJI_SETS = {
-    business: ['💼', '📊', '💰', '📈', '🎯', '🚀', '💎', '🏆'],
-    technical: ['💻', '⚙️', '🔧', '🛠️', '📡', '🔌', '⚡', '🖥️'],
-    academic: ['📚', '🎓', '📝', '🔬', '🧮', '📐', '🔍', '💡'],
-    health: ['🏥', '💊', '🩺', '❤️', '🧬', '⚕️', '🔬', '📋'],
-    general: ['🔹', '🔸', '◦', '▫️', '•', '⁃', '▸', '▷']
+// Minimal, professional emoji sets
+const PROFESSIONAL_ELEMENTS = {
+    bullets: ['•', '▪', '▫', '◦'],
+    numbers: ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'],
+    sections: ['📋', '📊', '⚡', '🎯'],
+    status: ['✅', '❌', '⚠️', 'ℹ️']
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -73,153 +72,160 @@ class Logger {
         }
     }
     
-    static error(message, error = null) {
-        this.log('error', message, error);
-    }
-    
-    static warn(message, data = null) {
-        this.log('warn', message, data);
-    }
-    
-    static info(message, data = null) {
-        this.log('info', message, data);
-    }
-    
-    static debug(message, data = null) {
-        this.log('debug', message, data);
-    }
-    
-    static success(message, data = null) {
-        this.log('success', message, data);
-    }
+    static error = (message, error = null) => this.log('error', message, error);
+    static warn = (message, data = null) => this.log('warn', message, data);
+    static info = (message, data = null) => this.log('info', message, data);
+    static debug = (message, data = null) => this.log('debug', message, data);
+    static success = (message, data = null) => this.log('success', message, data);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CONTEXT ANALYZER
+// INTELLIGENT CONTENT ANALYZER
 // ═══════════════════════════════════════════════════════════════════════════
 
-class ContextAnalyzer {
+class ContentAnalyzer {
     static patterns = {
-        business: /(?:business|strategy|profit|revenue|investment|market|sales|roi|growth|client|customer|financial|wealth)/i,
-        technical: /(?:code|programming|software|database|api|system|tech|development|debug|algorithm|function|class|method)/i,
-        academic: /(?:research|study|analysis|academic|university|paper|thesis|theory|hypothesis|experiment|data|statistics)/i,
-        health: /(?:health|medical|symptom|treatment|diagnosis|medicine|doctor|patient|therapy|clinical|hospital)/i,
-        mathematical: /(?:math|calculation|formula|equation|solve|compute|calculate|number|statistics|probability)/i
+        business: /\b(business|strategy|financial|lending|investment|revenue|profit|market|analysis)\b/i,
+        technical: /\b(code|programming|software|database|api|system|technical|development)\b/i,
+        academic: /\b(research|study|analysis|academic|theory|methodology|conclusion)\b/i,
+        conversational: /\b(hello|hi|thanks|please|help|question|wondering)\b/i
     };
     
-    static detectContext(text) {
+    static analyzeContent(text) {
         if (!text || typeof text !== 'string') {
-            return 'general';
+            return { type: 'general', confidence: 0 };
         }
         
         const textLower = text.toLowerCase();
+        const length = text.length;
         
-        // Check each pattern
-        for (const [context, pattern] of Object.entries(this.patterns)) {
-            if (pattern.test(textLower)) {
-                Logger.debug(`Context detected: ${context}`);
-                return context;
+        // Analyze content patterns
+        let bestMatch = { type: 'general', confidence: 0 };
+        
+        for (const [type, pattern] of Object.entries(this.patterns)) {
+            const matches = (textLower.match(pattern) || []).length;
+            const confidence = Math.min(matches * 0.3, 1.0);
+            
+            if (confidence > bestMatch.confidence) {
+                bestMatch = { type, confidence };
             }
         }
         
-        Logger.debug('Context detected: general (default)');
-        return 'general';
+        // Adjust for content length and structure
+        const hasStructure = /\n\n/.test(text) || /^\d+\./.test(text) || /^[-•]/.test(text);
+        const isComplex = length > 500 || hasStructure;
+        
+        return {
+            type: bestMatch.type,
+            confidence: bestMatch.confidence,
+            isComplex,
+            length,
+            hasStructure
+        };
     }
     
-    static getModelForContext(context) {
-        const modelMap = {
-            business: 'gpt-5',
-            technical: 'gpt-5',
-            academic: 'gpt-5',
-            health: 'gpt-5',
-            mathematical: 'gpt-5',
-            general: 'gpt-5-mini'
-        };
+    static selectModel(analysis) {
+        if (analysis.length < 100 && analysis.type === 'conversational') {
+            return 'gpt-5-nano';
+        }
         
-        return modelMap[context] || 'gpt-5-mini';
+        if (analysis.isComplex || analysis.confidence > 0.7) {
+            return 'gpt-5';
+        }
+        
+        return 'gpt-5-mini';
     }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MESSAGE ENHANCER
+// PROFESSIONAL MESSAGE ENHANCER
 // ═══════════════════════════════════════════════════════════════════════════
 
 class MessageEnhancer {
-    static emojiIndex = 0;
-    
-    static getNextEmoji(context = 'general') {
-        const emojiSet = EMOJI_SETS[context] || EMOJI_SETS.general;
-        const emoji = emojiSet[this.emojiIndex % emojiSet.length];
-        this.emojiIndex++;
-        return emoji;
-    }
-    
-    static enhanceMessage(text, context) {
+    static enhanceMessage(text, options = {}) {
         if (!text || typeof text !== 'string') {
             return text;
         }
         
-        let enhanced = text;
-        
         try {
-            // Replace bullet points with context-appropriate emojis
-            enhanced = enhanced.replace(/^(\s*)[•▪▫◦-]\s*/gm, (match, indent) => {
-                return `${indent}${this.getNextEmoji(context)} `;
-            });
+            let enhanced = text;
             
-            // Enhance numbered lists
-            enhanced = enhanced.replace(/^(\s*)(\d+)[\.\)]\s*/gm, (match, indent, number) => {
-                const num = parseInt(number);
-                if (num <= 10) {
-                    const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
-                    return `${indent}${numberEmojis[num - 1]} `;
-                }
-                return match;
-            });
+            // Only enhance if explicitly requested
+            if (options.enhanceFormatting !== false) {
+                enhanced = this.enhanceStructure(enhanced);
+                enhanced = this.enhanceListItems(enhanced);
+                enhanced = this.cleanupSpacing(enhanced);
+            }
             
-            // Add context-specific enhancements
-            enhanced = this.addContextSpecificFormatting(enhanced, context);
-            
-            Logger.debug('Message enhanced successfully', { 
+            Logger.debug('Message enhanced', { 
                 originalLength: text.length, 
-                enhancedLength: enhanced.length,
-                context 
+                enhancedLength: enhanced.length 
             });
+            
+            return enhanced;
             
         } catch (error) {
-            Logger.error('Failed to enhance message, using original', error);
+            Logger.error('Enhancement failed, using original', error);
             return text;
         }
-        
-        return enhanced;
     }
     
-    static addContextSpecificFormatting(text, context) {
-        switch (context) {
-            case 'business':
-                text = text.replace(/^(Strategy|Revenue|Growth|Analysis)(\s*:|\s+)/gmi, '🎯 $1$2');
-                break;
-            case 'technical':
-                text = text.replace(/^(Code|Function|Algorithm|Debug)(\s*:|\s+)/gmi, '💻 $1$2');
-                break;
-            case 'academic':
-                text = text.replace(/^(Research|Study|Analysis|Conclusion)(\s*:|\s+)/gmi, '📚 $1$2');
-                break;
-            case 'health':
-                text = text.replace(/^(Symptoms|Treatment|Diagnosis|Recommendation)(\s*:|\s+)/gmi, '🏥 $1$2');
-                break;
-        }
+    static enhanceStructure(text) {
+        // Clean up excessive spacing
+        text = text.replace(/\n{3,}/g, '\n\n');
+        
+        // Enhance section headers (only obvious ones)
+        text = text.replace(/^([A-Z][A-Za-z\s]{5,30}):$/gm, '**$1**');
+        
         return text;
+    }
+    
+    static enhanceListItems(text) {
+        // Convert numbered lists to emoji numbers (1-10 only)
+        text = text.replace(/^(\s*)(\d+)[\.\)]\s+/gm, (match, indent, number) => {
+            const num = parseInt(number);
+            if (num >= 1 && num <= 10) {
+                return `${indent}${PROFESSIONAL_ELEMENTS.numbers[num - 1]} `;
+            }
+            return match;
+        });
+        
+        // Standardize bullet points (only obvious ones)
+        text = text.replace(/^(\s*)[-•▪▫◦*]\s+/gm, '$1• ');
+        
+        return text;
+    }
+    
+    static cleanupSpacing(text) {
+        // Remove excessive whitespace
+        text = text.replace(/[ \t]+/g, ' ');
+        
+        // Standardize line endings
+        text = text.replace(/\r\n/g, '\n');
+        
+        // Clean up around enhanced elements
+        text = text.replace(/\n\s*\n\s*•/g, '\n\n•');
+        text = text.replace(/\n\s*\n\s*\d+️⃣/g, '\n\n1️⃣');
+        
+        return text.trim();
     }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// HEADER GENERATOR
+// CLEAN HEADER GENERATOR
 // ═══════════════════════════════════════════════════════════════════════════
 
 class HeaderGenerator {
-    static createHeader(context, model, partNumber = 1, totalParts = 1, messageLength = 0) {
+    static createHeader(options = {}) {
         try {
+            const {
+                model = 'gpt-5-mini',
+                partNumber = 1,
+                totalParts = 1,
+                contentType = 'general',
+                messageLength = 0
+            } = options;
+            
             const timestamp = new Date().toLocaleTimeString('en-US', { 
                 hour12: false, 
                 hour: '2-digit', 
@@ -229,141 +235,155 @@ class HeaderGenerator {
             const modelInfo = GPT5_MODELS[model] || GPT5_MODELS['gpt-5-mini'];
             const partInfo = totalParts > 1 ? ` (${partNumber}/${totalParts})` : '';
             
-            // Performance indicator based on message complexity
-            let performanceIcon = '📊';
-            if (messageLength > 2000) performanceIcon = '🧮';
-            if (messageLength > 4000) performanceIcon = '📋';
-            
-            const header = `${modelInfo.icon} ${modelInfo.name.toUpperCase()}${partInfo}
-📅 ${timestamp} • ${performanceIcon} ${context} • ⚡ Ready
+            // Simple, clean header
+            const header = `${modelInfo.icon} ${modelInfo.name}${partInfo}
+📅 ${timestamp} • ${this.getContentIcon(contentType)} ${contentType}
 
 `;
             
-            Logger.debug('Header created successfully', { 
-                model, 
-                context, 
-                partNumber, 
-                totalParts 
-            });
-            
+            Logger.debug('Header created', { model, partNumber, totalParts });
             return header;
             
         } catch (error) {
-            Logger.error('Failed to create header, using fallback', error);
-            return `🤖 GPT-5 Response ${partNumber}/${totalParts}\n\n`;
+            Logger.error('Header creation failed', error);
+            return `🤖 GPT-5 Response\n\n`;
         }
+    }
+    
+    static getContentIcon(contentType) {
+        const icons = {
+            business: '💼',
+            technical: '⚙️',
+            academic: '📚',
+            conversational: '💬',
+            general: '📋'
+        };
+        return icons[contentType] || '📋';
     }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MESSAGE SPLITTER CORE
+// INTELLIGENT MESSAGE SPLITTER
 // ═══════════════════════════════════════════════════════════════════════════
 
 class MessageSplitter {
-    static splitIntoChunks(text, maxSize, preserveFormatting = true) {
+    static splitIntelligently(text, maxSize, options = {}) {
         if (!text || text.length <= maxSize) {
             return [text || ''];
         }
         
-        const chunks = [];
+        Logger.debug('Starting intelligent split', { 
+            textLength: text.length, 
+            maxSize, 
+            options 
+        });
         
-        if (preserveFormatting) {
-            // Split by paragraphs first
-            const paragraphs = text.split('\n\n');
-            let currentChunk = '';
+        // Try different splitting strategies
+        const strategies = [
+            () => this.splitByParagraphs(text, maxSize),
+            () => this.splitByStructure(text, maxSize),
+            () => this.splitBySentences(text, maxSize),
+            () => this.splitByLines(text, maxSize),
+            () => this.splitByCharacters(text, maxSize)
+        ];
+        
+        for (const strategy of strategies) {
+            try {
+                const result = strategy();
+                if (result && Array.isArray(result) && result.length > 0) {
+                    Logger.debug('Split successful', { 
+                        strategy: strategy.name, 
+                        parts: result.length 
+                    });
+                    return result;
+                }
+            } catch (error) {
+                Logger.warn(`Split strategy failed: ${strategy.name}`, error);
+                continue;
+            }
+        }
+        
+        // Emergency fallback
+        return this.splitByCharacters(text, maxSize);
+    }
+    
+    static splitByParagraphs(text, maxSize) {
+        const paragraphs = text.split('\n\n');
+        const chunks = [];
+        let currentChunk = '';
+        
+        for (const paragraph of paragraphs) {
+            const potentialLength = currentChunk.length + (currentChunk ? 2 : 0) + paragraph.length;
             
-            for (const paragraph of paragraphs) {
-                const potentialLength = currentChunk.length + (currentChunk ? 2 : 0) + paragraph.length;
+            if (potentialLength <= maxSize) {
+                currentChunk = currentChunk ? `${currentChunk}\n\n${paragraph}` : paragraph;
+            } else {
+                if (currentChunk.trim()) {
+                    chunks.push(currentChunk.trim());
+                }
                 
-                if (potentialLength <= maxSize) {
-                    currentChunk = currentChunk ? `${currentChunk}\n\n${paragraph}` : paragraph;
+                if (paragraph.length > maxSize) {
+                    const subChunks = this.splitByStructure(paragraph, maxSize);
+                    chunks.push(...subChunks.slice(0, -1));
+                    currentChunk = subChunks[subChunks.length - 1] || '';
                 } else {
-                    // Save current chunk if it has content
-                    if (currentChunk.trim()) {
-                        chunks.push(currentChunk.trim());
-                    }
-                    
-                    // Handle oversized paragraphs
-                    if (paragraph.length > maxSize) {
-                        const subChunks = this.splitLargeParagraph(paragraph, maxSize);
-                        chunks.push(...subChunks.slice(0, -1));
-                        currentChunk = subChunks[subChunks.length - 1] || '';
-                    } else {
-                        currentChunk = paragraph;
-                    }
+                    currentChunk = paragraph;
                 }
             }
-            
-            // Add final chunk
-            if (currentChunk.trim()) {
-                chunks.push(currentChunk.trim());
-            }
-        } else {
-            // Simple character-based splitting
-            for (let i = 0; i < text.length; i += maxSize) {
-                chunks.push(text.slice(i, i + maxSize));
-            }
+        }
+        
+        if (currentChunk.trim()) {
+            chunks.push(currentChunk.trim());
         }
         
         return chunks.length > 0 ? chunks : [text];
     }
     
-    static splitLargeParagraph(paragraph, maxSize) {
-        const chunks = [];
-        const lines = paragraph.split('\n');
-        let currentChunk = '';
-        
-        for (const line of lines) {
-            const potentialLength = currentChunk.length + (currentChunk ? 1 : 0) + line.length;
-            
-            if (potentialLength <= maxSize) {
-                currentChunk = currentChunk ? `${currentChunk}\n${line}` : line;
-            } else {
-                if (currentChunk.trim()) {
-                    chunks.push(currentChunk.trim());
-                }
-                
-                // Handle extremely long lines
-                if (line.length > maxSize) {
-                    const lineChunks = this.splitLongLine(line, maxSize);
-                    chunks.push(...lineChunks.slice(0, -1));
-                    currentChunk = lineChunks[lineChunks.length - 1] || '';
-                } else {
-                    currentChunk = line;
-                }
-            }
-        }
-        
-        if (currentChunk.trim()) {
-            chunks.push(currentChunk.trim());
-        }
-        
-        return chunks.length > 0 ? chunks : [paragraph];
+    static splitByStructure(text, maxSize) {
+        // Look for natural break points: headers, lists, etc.
+        const structureBreaks = text.split(/(?=\n(?:\d+\.|•|-|\*)\s)/);
+        return this.combineToSize(structureBreaks, maxSize);
     }
     
-    static splitLongLine(line, maxSize) {
+    static splitBySentences(text, maxSize) {
+        const sentences = text.split(/(?<=[.!?])\s+/);
+        return this.combineToSize(sentences, maxSize);
+    }
+    
+    static splitByLines(text, maxSize) {
+        const lines = text.split('\n');
+        return this.combineToSize(lines, maxSize, '\n');
+    }
+    
+    static splitByCharacters(text, maxSize) {
         const chunks = [];
-        const words = line.split(' ');
+        for (let i = 0; i < text.length; i += maxSize) {
+            chunks.push(text.slice(i, i + maxSize));
+        }
+        return chunks;
+    }
+    
+    static combineToSize(items, maxSize, separator = '\n\n') {
+        const chunks = [];
         let currentChunk = '';
         
-        for (const word of words) {
-            const potentialLength = currentChunk.length + (currentChunk ? 1 : 0) + word.length;
+        for (const item of items) {
+            const potentialLength = currentChunk.length + 
+                (currentChunk ? separator.length : 0) + item.length;
             
             if (potentialLength <= maxSize) {
-                currentChunk = currentChunk ? `${currentChunk} ${word}` : word;
+                currentChunk = currentChunk ? 
+                    `${currentChunk}${separator}${item}` : item;
             } else {
                 if (currentChunk.trim()) {
                     chunks.push(currentChunk.trim());
                 }
                 
-                // Handle extremely long words
-                if (word.length > maxSize) {
-                    for (let i = 0; i < word.length; i += maxSize) {
-                        chunks.push(word.substring(i, i + maxSize));
-                    }
+                if (item.length > maxSize) {
+                    chunks.push(...this.splitByCharacters(item, maxSize));
                     currentChunk = '';
                 } else {
-                    currentChunk = word;
+                    currentChunk = item;
                 }
             }
         }
@@ -372,12 +392,12 @@ class MessageSplitter {
             chunks.push(currentChunk.trim());
         }
         
-        return chunks.length > 0 ? chunks : [line];
+        return chunks.length > 0 ? chunks : items;
     }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MAIN TELEGRAM FORMATTER
+// MAIN TELEGRAM FORMATTER CLASS
 // ═══════════════════════════════════════════════════════════════════════════
 
 class TelegramFormatter {
@@ -385,12 +405,11 @@ class TelegramFormatter {
         const settings = {
             maxLength: CONFIG.DEFAULT_CHUNK_SIZE,
             includeHeaders: true,
-            preserveFormatting: true,
-            enhanceMessage: true,
+            enhanceFormatting: true,
             ...options
         };
         
-        Logger.info('Starting message formatting', { 
+        Logger.info('Formatting message', { 
             textLength: text?.length || 0,
             settings 
         });
@@ -398,55 +417,50 @@ class TelegramFormatter {
         try {
             // Input validation
             if (!text || typeof text !== 'string') {
-                Logger.warn('Invalid input provided to formatter');
-                return ['⚠️ No response received from GPT-5'];
+                Logger.warn('Invalid input provided');
+                return ['⚠️ No response content available'];
             }
             
             if (text.trim().length === 0) {
-                Logger.warn('Empty text provided to formatter');
-                return ['📭 Empty response from GPT-5'];
+                Logger.warn('Empty text provided');
+                return ['📭 Empty response received'];
             }
             
-            // Analyze context
-            const context = ContextAnalyzer.detectContext(text);
-            const model = ContextAnalyzer.getModelForContext(context);
+            // Analyze content
+            const analysis = ContentAnalyzer.analyzeContent(text);
+            const selectedModel = ContentAnalyzer.selectModel(analysis);
             
-            // Enhance message if requested
-            let processedText = text;
-            if (settings.enhanceMessage) {
-                processedText = MessageEnhancer.enhanceMessage(text, context);
-            }
+            Logger.debug('Content analysis complete', { analysis, selectedModel });
             
-            // Calculate available space for content
+            // Enhance message
+            const enhanced = MessageEnhancer.enhanceMessage(text, settings);
+            
+            // Calculate available space
             const headerSpace = settings.includeHeaders ? CONFIG.HEADER_SIZE : 0;
             const availableSpace = Math.max(
                 settings.maxLength - headerSpace,
                 CONFIG.MIN_CHUNK_SIZE
             );
             
-            // Split message into chunks
-            const chunks = MessageSplitter.splitIntoChunks(
-                processedText, 
-                availableSpace, 
-                settings.preserveFormatting
-            );
+            // Split message intelligently
+            const chunks = MessageSplitter.splitIntelligently(enhanced, availableSpace, settings);
             
-            Logger.success('Message split into chunks', { 
-                chunkCount: chunks.length,
-                context,
-                model 
+            Logger.success('Message formatted successfully', { 
+                chunks: chunks.length,
+                model: selectedModel,
+                contentType: analysis.type
             });
             
             // Add headers if requested
             if (settings.includeHeaders) {
                 return chunks.map((chunk, index) => {
-                    const header = HeaderGenerator.createHeader(
-                        context,
-                        model,
-                        index + 1,
-                        chunks.length,
-                        chunk.length
-                    );
+                    const header = HeaderGenerator.createHeader({
+                        model: selectedModel,
+                        partNumber: index + 1,
+                        totalParts: chunks.length,
+                        contentType: analysis.type,
+                        messageLength: chunk.length
+                    });
                     return header + chunk;
                 });
             }
@@ -454,17 +468,18 @@ class TelegramFormatter {
             return chunks;
             
         } catch (error) {
-            Logger.error('Formatting failed, using fallback', error);
+            Logger.error('Formatting failed completely', error);
             
-            // Fallback: Simple splitting without formatting
-            const fallbackChunks = MessageSplitter.splitIntoChunks(
+            // Emergency fallback
+            const fallbackChunks = MessageSplitter.splitByCharacters(
                 text, 
-                CONFIG.DEFAULT_CHUNK_SIZE, 
-                false
+                CONFIG.DEFAULT_CHUNK_SIZE
             );
             
             return fallbackChunks.map((chunk, index) => {
-                return `🤖 GPT-5 (${index + 1}/${fallbackChunks.length})\n\n${chunk}`;
+                const partInfo = fallbackChunks.length > 1 ? 
+                    ` (${index + 1}/${fallbackChunks.length})` : '';
+                return `🤖 GPT-5${partInfo}\n\n${chunk}`;
             });
         }
     }
@@ -472,21 +487,15 @@ class TelegramFormatter {
     static quickFormat(text) {
         return this.formatMessage(text, {
             includeHeaders: false,
-            enhanceMessage: false
+            enhanceFormatting: false
         });
     }
     
-    static businessFormat(text) {
+    static professionalFormat(text) {
         return this.formatMessage(text, {
-            enhanceMessage: true,
-            context: 'business'
-        });
-    }
-    
-    static technicalFormat(text) {
-        return this.formatMessage(text, {
-            enhanceMessage: true,
-            context: 'technical'
+            includeHeaders: true,
+            enhanceFormatting: true,
+            maxLength: 3800
         });
     }
 }
@@ -499,55 +508,58 @@ class TelegramBotHelper {
     static async sendFormattedMessage(bot, chatId, text, options = {}) {
         const settings = {
             delay: CONFIG.DELAY_BETWEEN_MESSAGES,
-            parseMode: 'HTML',
+            parseMode: null, // Let Telegram handle formatting naturally
             ...options
         };
         
         try {
             const formattedParts = TelegramFormatter.formatMessage(text, settings);
             
-            Logger.info(`Sending ${formattedParts.length} message parts to chat ${chatId}`);
+            Logger.info(`Sending ${formattedParts.length} message parts`, { chatId });
             
             const results = [];
             
             for (let i = 0; i < formattedParts.length; i++) {
                 try {
-                    const result = await bot.sendMessage(chatId, formattedParts[i], {
-                        parse_mode: settings.parseMode
-                    });
+                    const sendOptions = {};
+                    if (settings.parseMode) {
+                        sendOptions.parse_mode = settings.parseMode;
+                    }
                     
+                    const result = await bot.sendMessage(chatId, formattedParts[i], sendOptions);
                     results.push(result);
                     
-                    // Add delay between messages if multiple parts
+                    // Delay between parts
                     if (i < formattedParts.length - 1 && settings.delay > 0) {
                         await new Promise(resolve => setTimeout(resolve, settings.delay));
                     }
                     
                 } catch (sendError) {
-                    Logger.error(`Failed to send message part ${i + 1}`, sendError);
+                    Logger.error(`Failed to send part ${i + 1}`, sendError);
                     
-                    // Retry without formatting as fallback
+                    // Retry without formatting
                     try {
                         const result = await bot.sendMessage(chatId, formattedParts[i]);
                         results.push(result);
                     } catch (retryError) {
-                        Logger.error(`Failed to send message part ${i + 1} even without formatting`, retryError);
+                        Logger.error(`Retry also failed for part ${i + 1}`, retryError);
+                        // Continue with remaining parts
                     }
                 }
             }
             
-            Logger.success(`Successfully sent ${results.length}/${formattedParts.length} message parts`);
+            Logger.success(`Successfully sent ${results.length}/${formattedParts.length} parts`);
             return results;
             
         } catch (error) {
-            Logger.error('Failed to send formatted message', error);
+            Logger.error('Complete send failure', error);
             
             // Ultimate fallback
             try {
-                const result = await bot.sendMessage(chatId, text || '❌ Error processing response');
+                const result = await bot.sendMessage(chatId, text || '❌ Message processing error');
                 return [result];
             } catch (fallbackError) {
-                Logger.error('Even fallback message failed', fallbackError);
+                Logger.error('Even fallback failed', fallbackError);
                 throw fallbackError;
             }
         }
@@ -559,45 +571,48 @@ class TelegramBotHelper {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class SystemUtils {
-    static getSystemStats() {
+    static getSystemInfo() {
         return {
-            version: '2.0.0',
-            release: 'GPT-5 Official (Aug 7, 2025)',
-            availableModels: Object.keys(GPT5_MODELS),
-            supportedContexts: Object.keys(EMOJI_SETS),
-            config: CONFIG,
-            performance: {
-                'SWE-bench Verified': '74.9%',
-                'AIME 2025': '94.6%',
-                'Hallucination Reduction': '45% vs GPT-4o'
-            }
+            version: '3.0.0-professional',
+            release: 'Clean Professional Format',
+            style: 'Claude-inspired communication',
+            features: [
+                'Intelligent content analysis',
+                'Context-aware model selection',
+                'Professional message enhancement',
+                'Smart structure preservation',
+                'Minimal emoji usage',
+                'Clean header generation',
+                'Robust error handling'
+            ],
+            models: Object.keys(GPT5_MODELS),
+            config: CONFIG
         };
     }
     
-    static reset() {
-        MessageEnhancer.emojiIndex = 0;
-        Logger.info('System reset complete');
-    }
-    
     static test() {
-        const testText = `GPT-5 Test Response
+        const testText = `GPT-5 Professional Test Response
 
-Business Strategy:
-• Revenue optimization 
-• Market expansion
-• Client acquisition
+Key Features:
+1. Intelligent content analysis
+2. Clean message formatting
+3. Professional presentation
+4. Smart structure preservation
 
-Technical Implementation:
-1. Database optimization
-2. API development  
-3. System integration
+This demonstrates the new clean, professional formatting style inspired by Claude's communication approach.
 
-This demonstrates GPT-5's advanced reasoning capabilities with 94.6% AIME performance.`;
+Business Analysis:
+• Clear, readable structure
+• Minimal but effective emoji usage
+• Professional headers
+• Excellent readability
+
+The system now provides clean, professional output that's easy to read and understand.`;
 
         Logger.info('Running system test...');
         const result = TelegramFormatter.formatMessage(testText);
         
-        console.log('\n=== TEST RESULTS ===');
+        console.log('\n=== PROFESSIONAL FORMAT TEST ===');
         result.forEach((part, index) => {
             console.log(`\n--- Part ${index + 1} ---`);
             console.log(part);
@@ -606,6 +621,10 @@ This demonstrates GPT-5's advanced reasoning capabilities with 94.6% AIME perfor
         
         return result;
     }
+    
+    static reset() {
+        Logger.info('System reset complete');
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -613,43 +632,49 @@ This demonstrates GPT-5's advanced reasoning capabilities with 94.6% AIME perfor
 // ═══════════════════════════════════════════════════════════════════════════
 
 module.exports = {
-    // Main API
+    // Main API (matches your existing integration)
     formatMessage: TelegramFormatter.formatMessage.bind(TelegramFormatter),
     sendFormattedMessage: TelegramBotHelper.sendFormattedMessage.bind(TelegramBotHelper),
     
     // Convenience methods
     quickFormat: TelegramFormatter.quickFormat.bind(TelegramFormatter),
-    businessFormat: TelegramFormatter.businessFormat.bind(TelegramFormatter),
-    technicalFormat: TelegramFormatter.technicalFormat.bind(TelegramFormatter),
+    professionalFormat: TelegramFormatter.professionalFormat.bind(TelegramFormatter),
     
-    // Legacy compatibility
+    // Legacy compatibility (for existing code)
     splitTelegramMessage: TelegramFormatter.formatMessage.bind(TelegramFormatter),
+    sendTelegramMessage: TelegramBotHelper.sendFormattedMessage.bind(TelegramBotHelper),
     
     // System utilities
-    getSystemStats: SystemUtils.getSystemStats.bind(SystemUtils),
-    reset: SystemUtils.reset.bind(SystemUtils),
+    getSystemInfo: SystemUtils.getSystemInfo.bind(SystemUtils),
     test: SystemUtils.test.bind(SystemUtils),
+    reset: SystemUtils.reset.bind(SystemUtils),
     
     // Advanced access
     TelegramFormatter,
     TelegramBotHelper,
-    ContextAnalyzer,
+    ContentAnalyzer,
     MessageEnhancer,
+    HeaderGenerator,
+    MessageSplitter,
+    
+    // Configuration
     CONFIG,
-    GPT5_MODELS
+    GPT5_MODELS,
+    PROFESSIONAL_ELEMENTS
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // INITIALIZATION
 // ═══════════════════════════════════════════════════════════════════════════
 
-Logger.success('GPT-5 Telegram Formatter v2.0 Loaded');
-Logger.info('Ready for production with fail-safe mechanisms');
+Logger.success('Professional GPT-5 Telegram Formatter v3.0 Loaded');
+Logger.info('Style: Clean, professional, Claude-inspired formatting');
+Logger.info('Features: Smart analysis, minimal emojis, excellent readability');
 
-// Auto-test in development mode
+// Auto-test in development
 if (CONFIG.DEBUG_MODE) {
     setTimeout(() => {
-        Logger.info('Running auto-test in debug mode...');
+        Logger.info('Running development auto-test...');
         SystemUtils.test();
     }, 1000);
 }
