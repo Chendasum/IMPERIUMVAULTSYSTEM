@@ -850,7 +850,34 @@ module.exports = {
   openai,
   
   // Configuration
-  GPT5_CONFIG
+  GPT5_CONFIG,
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BACKWARD COMPATIBILITY ALIASES (For existing bot code)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  // Main function your bot is calling
+  getGPT5Analysis: getGPT5Response,
+  getGPT5AnalysisWithMemory: getGPT5ResponseWithMemory,
+  
+  // Specialized function aliases
+  getQuickNanoResponse: getQuickGPT5Response,
+  getQuickMiniResponse: getEfficientGPT5Response,
+  getDeepAnalysis: getDetailedGPT5Analysis,
+  getChatResponse: getGPT5Response,
+  getChatWithMemory: getGPT5ResponseWithMemory,
+  
+  // Health function aliases
+  testOpenAIConnection: testGPT5Connection,
+  checkGPT5SystemHealth: checkGPT5SystemHealth,
+  
+  // Admin function aliases
+  clearCache: clearGPT5Cache,
+  resetMetrics: resetGPT5Metrics,
+  getSystemStats: getGPT5SystemStats,
+  
+  // Memory helper aliases
+  attachMemoryToMessages: attachMemoryToPrompt
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
