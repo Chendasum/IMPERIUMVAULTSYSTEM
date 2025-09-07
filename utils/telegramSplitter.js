@@ -239,15 +239,15 @@ function createTelegramHeader(options = {}) {
             minute: '2-digit'
         });
         
-        // Build clean, professional header
+        // Build clean, professional header with clear model identification
         let header = '';
         
-        // Model and title line
+        // Enhanced model and title line - ALWAYS shows model clearly
         if (title) {
             if (totalParts > 1) {
-                header += `${modelInfo.icon} **${title}** (${partNumber}/${totalParts})\n`;
+                header += `${modelInfo.icon} **${modelInfo.shortName}** • ${title} (${partNumber}/${totalParts})\n`;
             } else {
-                header += `${modelInfo.icon} **${title}**\n`;
+                header += `${modelInfo.icon} **${modelInfo.shortName}** • ${title}\n`;
             }
         } else {
             if (totalParts > 1) {
@@ -257,15 +257,11 @@ function createTelegramHeader(options = {}) {
             }
         }
         
-        // Clean info line
+        // Clean info line with model style indicator
         const infoItems = [];
         infoItems.push(`🕐 ${timestamp}`);
         
-        if (showTokens && tokens) {
-            infoItems.push(`🔢 ${tokens}T`);
-        }
-        
-        // Style indicator
+        // Always show model style for clarity
         const styleEmojis = {
             'clean': '⚡',
             'structured': '📋',
@@ -277,6 +273,11 @@ function createTelegramHeader(options = {}) {
             infoItems.push(`${styleEmojis[style]} ${style}`);
         }
         
+        // Optional token info (clean presentation)
+        if (showTokens && tokens) {
+            infoItems.push(`🔢 ${tokens}T`);
+        }
+        
         header += infoItems.join(' • ');
         header += '\n\n';
         
@@ -284,7 +285,7 @@ function createTelegramHeader(options = {}) {
         
     } catch (error) {
         log('Header creation failed, using minimal fallback', error);
-        return `${MODELS['gpt-5-mini'].icon} **Response**\n🕐 ${new Date().toLocaleTimeString()}\n\n`;
+        return `${MODELS['gpt-5-mini'].icon} **${MODELS['gpt-5-mini'].name}**\n🕐 ${new Date().toLocaleTimeString()}\n\n`;
     }
 }
 
@@ -838,28 +839,49 @@ The Telegram-optimized formatter provides professional, clean, and perfectly ali
     console.log(`Enhanced: ${enhanced.length} chars`);
     console.log(`Properly formatted: ${enhanced === longLineText ? '✅' : '📝 Enhanced'}`);
     
-    // Test GPT-5 capacity
-    console.log('\n--- GPT-5 CAPACITY TEST ---');
-    const largeText = 'A'.repeat(50000); // 50K chars
-    const capacity = analyzeContentStyle(largeText);
-    console.log(`Large text: ${capacity.length} chars`);
-    console.log(`Estimated tokens: ${capacity.estimatedTokens}`);
-    console.log(`Recommended mode: ${capacity.recommendedMode}`);
-    console.log(`Max parts: ${capacity.maxParts}`);
-    console.log(`Can handle GPT-5 max: ${capacity.estimatedTokens <= CONFIG.GPT5_MAX_TOKENS ? '✅' : '⚠️'}`);
+    // Test GPT-5 maximum capacity
+    console.log('\n--- GPT-5 MAXIMUM CAPACITY TEST ---');
     
-    console.log('\n--- TELEGRAM COMPATIBILITY TEST ---');
-    const compatibility = {
-        maxLength: CONFIG.TELEGRAM_MAX_LENGTH,
-        optimalChunk: CONFIG.OPTIMAL_CHUNK_SIZE,
-        perfectLine: CONFIG.PERFECT_LINE_LENGTH,
-        professionalSpacing: true,
-        mobileOptimized: true,
-        cleanHeaders: true
-    };
+    // Simulate maximum GPT-5 output (125K tokens = ~500K chars)
+    const maxGPT5Response = 'This is a comprehensive GPT-5 analysis. '.repeat(12500); // ~500K chars
+    const maxCapacityAnalysis = analyzeContentStyle(maxGPT5Response);
     
-    Object.entries(compatibility).forEach(([key, value]) => {
-        console.log(`✅ ${key}: ${value}`);
+    console.log(`✅ Maximum GPT-5 response: ${maxCapacityAnalysis.length.toLocaleString()} chars`);
+    console.log(`✅ Estimated tokens: ${maxCapacityAnalysis.estimatedTokens.toLocaleString()}`);
+    console.log(`✅ Recommended mode: ${maxCapacityAnalysis.recommendedMode}`);
+    console.log(`✅ Max parts: ${maxCapacityAnalysis.maxParts}`);
+    console.log(`✅ Chunk size: ${maxCapacityAnalysis.chunkSize}`);
+    console.log(`✅ Within GPT-5 limits: ${maxCapacityAnalysis.estimatedTokens <= CONFIG.GPT5_MAX_TOKENS ? 'YES' : 'NO'}`);
+    
+    // Test the actual formatting
+    const maxFormatted = formatMessage(maxGPT5Response, {
+        model: 'gpt-5',
+        title: 'Maximum Capacity Test',
+        showTokens: true
+    });
+    
+    console.log(`✅ Successfully formatted into: ${maxFormatted.length} parts`);
+    console.log(`✅ Average part size: ${Math.round(maxGPT5Response.length / maxFormatted.length).toLocaleString()} chars`);
+    console.log(`✅ All parts within Telegram limit: ${maxFormatted.every(part => part.length <= CONFIG.TELEGRAM_MAX_LENGTH) ? 'YES' : 'NO'}`);
+    
+    // Show sample of how massive response looks
+    console.log(`✅ Sample header: ${maxFormatted[0].split('\n\n')[0]}`);
+    
+    // Test different GPT-5 model variants with large content
+    console.log('\n--- GPT-5 MODEL VARIANTS TEST ---');
+    const largeResponse = 'Complex business analysis content. '.repeat(1000); // ~35K chars
+    
+    ['gpt-5', 'gpt-5-mini', 'gpt-5-nano'].forEach(model => {
+        const formatted = formatMessage(largeResponse, {
+            model: model,
+            title: 'Large Response Test',
+            showTokens: true
+        });
+        
+        console.log(`${MODELS[model].icon} ${MODELS[model].name}:`);
+        console.log(`  - Parts: ${formatted.length}`);
+        console.log(`  - Header: ${formatted[0].split('\n')[0]}`);
+        console.log(`  - Token estimation: ~${Math.ceil(largeResponse.length / CONFIG.ESTIMATED_CHARS_PER_TOKEN)} tokens`);
     });
     
     console.log('\n=== TEST COMPLETE ===');
