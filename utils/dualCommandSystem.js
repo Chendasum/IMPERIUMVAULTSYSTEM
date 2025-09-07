@@ -112,97 +112,169 @@ try {
       console.log('📋 GPT-5 Intelligence available but not initialized (openaiClient missing)');
     }
   }
-  // Try legacy function names
-  else if (splitter && typeof splitter.splitTelegramMessage === 'function') {
-    telegramSplitter = {
-      sendMessage: async (bot, chatId, response, options = {}) => {
-        const parts = splitter.splitTelegramMessage(response, 4000, true);
-        for (const part of parts) {
-          await bot.sendMessage(chatId, part);
-        }
-        return { success: true, method: 'legacy' };
-      },
-      formatMessage: splitter.splitTelegramMessage,
-      quickFormat: (text) => splitter.splitTelegramMessage(text, 4000, false),
-      sendGPT5: async (bot, chatId, response, meta = {}) => {
-        const parts = splitter.splitTelegramMessage(response, 4000, true);
-        for (const part of parts) {
-          await bot.sendMessage(chatId, part);
-        }
-        return { success: true, method: 'legacy' };
-      }
-    };
-    console.log('[Import] ✅ Telegram splitter loaded with legacy functions');
-  }
-  else {
-    console.warn('[Import] ⚠️ No compatible splitter functions found');
-  }
-} catch (error) {
-  console.warn('[Import] ❌ Telegram splitter failed:', error.message);
-}
-
-
-// ✅ FIXED: Enhanced fallback telegram with proper message splitting
-if (!telegramSplitter) {
+// ✅ UPGRADED: Legacy function names with GPT-5 Intelligence
+else if (splitter && typeof splitter.splitTelegramMessage === 'function') {
   telegramSplitter = {
     sendMessage: async (bot, chatId, response, options = {}) => {
       try {
-        if (!bot || !bot.sendMessage) {
-          return { success: false, error: 'Bot not available' };
-        }
-        
-        const safeResponse = safeString(response);
-        const maxLength = 4000;
-        
-        if (safeResponse.length <= maxLength) {
-          await bot.sendMessage(chatId, safeResponse);
-          return { success: true, fallback: 'simple' };
-        }
-        
-        // ✅ FIXED: Proper message splitting in fallback
-        const parts = [];
-        for (let i = 0; i < safeResponse.length; i += maxLength) {
-          parts.push(safeResponse.slice(i, i + maxLength));
-        }
-        
-        for (let i = 0; i < parts.length; i++) {
-          const header = parts.length > 1 ? `📱 Part ${i + 1}/${parts.length}\n\n` : '';
-          await bot.sendMessage(chatId, header + parts[i]);
+        // ✅ TRY: GPT-5 Intelligence first (if available)
+        if (splitter.intelligentFormat) {
+          const parts = await splitter.intelligentFormat(response);
           
-          if (i < parts.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 800));
+          // Smart combination for tiny trailing parts
+          if (parts.length > 1) {
+            const lastPart = parts[parts.length - 1];
+            const content = lastPart.replace(/^[🧠⚡💫].*?\n\n/s, '');
+            
+            if (content.length < 400) {
+              const secondLast = parts[parts.length - 2];
+              const secondContent = secondLast.replace(/^[🧠⚡💫].*?\n\n/s, '');
+              
+              if (secondContent.length + content.length < 3600) {
+                const header = secondLast.match(/^([🧠⚡💫].*?)\n\n/s);
+                const headerText = header ? header[1].replace(/\(\d+\/\d+\)/, '') + '\n\n' : '';
+                
+                parts[parts.length - 2] = headerText + secondContent + '\n\n' + content;
+                parts.pop();
+                console.log('[Legacy] 🔧 Combined short trailing part with intelligence');
+              }
+            }
+          }
+          
+          for (let i = 0; i < parts.length; i++) {
+            await bot.sendMessage(chatId, parts[i]);
+            if (i < parts.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1200));
+            }
+          }
+          
+          return { success: true, method: 'legacy-intelligent', parts: parts.length };
+        }
+        
+        // ✅ FALLBACK: Standard format with enhancement
+        if (splitter.formatMessage) {
+          const parts = await splitter.formatMessage(response, {
+            includeHeaders: true,
+            enhanceFormatting: true
+          });
+          
+          for (let i = 0; i < parts.length; i++) {
+            await bot.sendMessage(chatId, parts[i]);
+            if (i < parts.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+          
+          return { success: true, method: 'legacy-enhanced', parts: parts.length };
+        }
+        
+        // ✅ LEGACY: Original splitting with optimization
+        const parts = splitter.splitTelegramMessage(response, 4000, true);
+        
+        // Smart combination even in legacy mode
+        if (parts.length > 1) {
+          const lastPart = parts[parts.length - 1];
+          const secondLastPart = parts[parts.length - 2];
+          
+          // Extract content (remove any headers)
+          const lastContent = lastPart.replace(/^[🧠⚡💫].*?\n\n/s, '');
+          const secondLastContent = secondLastPart.replace(/^[🧠⚡💫].*?\n\n/s, '');
+          
+          if (lastContent.length < 350 && 
+              secondLastContent.length + lastContent.length < 3800) {
+            
+            parts[parts.length - 2] = secondLastContent + '\n\n' + lastContent;
+            parts.pop();
+            console.log('[Legacy] 🔧 Combined short trailing part in legacy mode');
           }
         }
         
-        return { success: true, fallback: 'chunked', parts: parts.length };
+        for (let i = 0; i < parts.length; i++) {
+          const header = parts.length > 1 ? `🧠 GPT-5 (${i + 1}/${parts.length})\n\n` : '';
+          await bot.sendMessage(chatId, header + parts[i]);
+          
+          if (i < parts.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+        
+        return { success: true, method: 'legacy-optimized', parts: parts.length };
+        
       } catch (error) {
-        console.error('[Telegram-Fallback] Error:', error.message);
-        return { success: false, error: error.message };
+        console.error('[Legacy] ❌ All methods failed:', error.message);
+        
+        // Emergency: Send as single message
+        try {
+          await bot.sendMessage(chatId, `🧠 GPT-5\n\n${response}`);
+          return { success: true, method: 'emergency' };
+        } catch (emergencyError) {
+          return { success: false, error: emergencyError.message };
+        }
       }
     },
     
-    sendFormattedMessage: async (bot, chatId, response, options = {}) => {
-      return telegramSplitter.sendMessage(bot, chatId, response, options);
-    },
-    
-    formatMessage: (text, options = {}) => {
-      const maxLength = options.maxLength || 4000;
-      if (!text || text.length <= maxLength) return [text || ''];
-      
-      const parts = [];
-      for (let i = 0; i < text.length; i += maxLength) {
-        parts.push(text.slice(i, i + maxLength));
+    formatMessage: async (text, options = {}) => {
+      try {
+        // Try intelligent format first
+        if (splitter.intelligentFormat) {
+          return await splitter.intelligentFormat(text);
+        }
+        
+        // Try standard format
+        if (splitter.formatMessage) {
+          return await splitter.formatMessage(text, options);
+        }
+        
+        // Legacy fallback
+        return splitter.splitTelegramMessage(text, options.maxLength || 4000, options.includeHeaders !== false);
+      } catch (error) {
+        console.warn('[Legacy] formatMessage error:', error.message);
+        return splitter.splitTelegramMessage(text, 4000, true);
       }
-      return parts;
     },
     
-    sendGPT5: async (bot, chatId, response) => {
-      return telegramSplitter.sendMessage(bot, chatId, response);
+    quickFormat: async (text) => {
+      try {
+        // Try quick format if available
+        if (splitter.quickFormat) {
+          return await splitter.quickFormat(text);
+        }
+        
+        // Legacy quick format
+        return splitter.splitTelegramMessage(text, 4000, false);
+      } catch (error) {
+        console.warn('[Legacy] quickFormat error:', error.message);
+        return splitter.splitTelegramMessage(text, 4000, false);
+      }
+    },
+    
+    // ✅ NEW: Intelligence methods (if available)
+    intelligentFormat: splitter.intelligentFormat ? 
+      async (text) => await splitter.intelligentFormat(text) : 
+      async (text) => splitter.splitTelegramMessage(text, 4000, true),
+    
+    adaptiveFormat: splitter.adaptiveFormat ? 
+      async (text, style = 'auto') => await splitter.adaptiveFormat(text, style) : 
+      async (text) => splitter.splitTelegramMessage(text, 4000, true),
+    
+    sendGPT5: async (bot, chatId, response, meta = {}) => {
+      return await telegramSplitter.sendMessage(bot, chatId, response, {
+        ...meta,
+        useGPT5Intelligence: true,
+        enhanceWithGPT5: true
+      });
     }
   };
-  console.log('[Import] ⚠️ Using enhanced fallback telegram splitter with message splitting');
+  
+  console.log('[Import] ✅ Telegram splitter loaded with UPGRADED legacy functions');
+  console.log('[Import] 🧠 Legacy mode includes GPT-5 intelligence when available');
 }
-
+else {
+  console.warn('[Import] ⚠️ No compatible splitter functions found');
+}
+} catch (error) {
+  console.warn('[Import] ❌ Telegram splitter failed:', error.message);
+}
 // ════════════════════════════════════════════════════════════════════════════
 // ENHANCED CONFIGURATION CONSTANTS
 // ════════════════════════════════════════════════════════════════════════════
