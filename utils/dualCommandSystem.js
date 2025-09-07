@@ -952,6 +952,192 @@ async function routeMessageByType(userMessage, chatId, bot, messageType, startTi
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// ENHANCED GPT-5 COMMAND EXECUTOR (MAIN EXECUTION ENGINE WITH FIXED MEMORY)
+// ════════════════════════════════════════════════════════════════════════════
+
+async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
+  const executionStart = Date.now();
+  
+  try {
+    console.log('[Enhanced] 🎯 Executing GPT-5 command with FIXED memory integration');
+    
+    const safeMessage = safeString(userMessage);
+    const safeChatId = safeString(chatId);
+    
+    if (safeMessage.length === 0) {
+      throw new Error('Empty message provided');
+    }
+    
+    // 🔧 FIXED: Build memory context based on contextAware setting
+    let memoryContext = '';
+    if (options.contextAware !== false && safeChatId !== 'unknown') {
+      try {
+        console.log(`[Enhanced] 🧠 Loading memory context (level: ${options.contextAware || 'full'})`);
+        memoryContext = await buildMemoryContext(safeChatId, options.contextAware);
+        console.log(`[Enhanced] Memory context loaded: ${memoryContext.length} chars`);
+      } catch (contextError) {
+        console.warn('[Enhanced] ⚠️ Memory context failed:', contextError.message);
+      }
+    }
+    
+    // Analyze query for GPT-5 model selection
+    const queryAnalysis = analyzeQuery(safeMessage, options.messageType || 'text', options.hasMedia === true, memoryContext);
+    
+    // Handle completion detection FIRST
+    if (queryAnalysis.shouldSkipGPT5) {
+      const responseTime = Date.now() - executionStart;
+      console.log('[Enhanced] ⚡ Completion detected - skipping GPT-5');
+      return {
+        response: queryAnalysis.quickResponse,
+        success: true,
+        aiUsed: 'completion-detection',
+        queryType: 'completion',
+        completionDetected: true,
+        processingTime: responseTime,
+        tokensUsed: 0,
+        costSaved: true,
+        enhancedExecution: true,
+        totalExecutionTime: responseTime,
+        telegramDelivered: await deliverToTelegram(bot, safeChatId, queryAnalysis.quickResponse, 'Task Completion')
+      };
+    }
+    
+    // Override model if forced
+    if (options.forceModel && safeString(options.forceModel).indexOf('gpt-5') === 0) {
+      queryAnalysis.gpt5Model = options.forceModel;
+      queryAnalysis.reason = `Forced to use ${options.forceModel}`;
+    }
+    
+    console.log(`[Enhanced] Analysis: ${queryAnalysis.type}, Model: ${queryAnalysis.gpt5Model}, Memory: ${memoryContext.length > 0 ? 'Yes' : 'No'}`);
+    
+    // Execute through GPT-5 system
+    let gpt5Result;
+    try {
+      gpt5Result = await executeThroughGPT5System(safeMessage, queryAnalysis, memoryContext, safeChatId);
+    } catch (gpt5Error) {
+      console.error('[Enhanced] ❌ GPT-5 system failed:', gpt5Error.message);
+      throw gpt5Error;
+    }
+    
+    if (!gpt5Result || !gpt5Result.success) {
+      throw new Error(gpt5Result?.error || 'GPT-5 execution failed');
+    }
+    
+    // 🔧 FIXED: Handle memory persistence with enhanced logic
+    if (options.saveToMemory !== false && gpt5Result.success) {
+      try {
+        const messageTypeForSave = classifyMessage(safeMessage);
+        
+        console.log(`[Enhanced] 💾 Saving to memory (mode: ${options.saveToMemory || 'full'})`);
+        
+        if (options.saveToMemory === 'minimal') {
+          // Only save substantial responses
+          if (gpt5Result.response && safeString(gpt5Result.response).length > 150) {
+            const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, {
+              modelUsed: safeString(gpt5Result.modelUsed),
+              processingTime: Number(gpt5Result.processingTime) || 0,
+              minimal: true
+            });
+            console.log(`[Enhanced] Memory save result:`, saveResult);
+          }
+        } else {
+          // Full memory save
+          const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, {
+            modelUsed: safeString(gpt5Result.modelUsed),
+            processingTime: Number(gpt5Result.processingTime) || 0,
+            priority: safeString(queryAnalysis.priority),
+            complexity: safeString(queryAnalysis.type),
+            memoryContextLength: memoryContext.length
+          });
+          console.log(`[Enhanced] Memory save result:`, saveResult);
+        }
+      } catch (memoryError) {
+        console.warn('[Enhanced] ⚠️ Memory save failed:', memoryError.message);
+      }
+    }
+    
+    // Auto-deliver to Telegram if bot provided
+    const telegramDelivered = await deliverToTelegram(bot, safeChatId, gpt5Result.response, options.title || 'GPT-5 Analysis');
+    
+    // Build comprehensive result
+    const result = {
+      response: gpt5Result.response,
+      success: true,
+      aiUsed: gpt5Result.aiUsed,
+      modelUsed: gpt5Result.modelUsed,
+      queryType: queryAnalysis.type,
+      priority: queryAnalysis.priority,
+      confidence: gpt5Result.confidence || queryAnalysis.confidence,
+      processingTime: gpt5Result.processingTime,
+      tokensUsed: gpt5Result.tokensUsed,
+      reasoning_effort: queryAnalysis.reasoning_effort,
+      verbosity: queryAnalysis.verbosity,
+      memoryUsed: gpt5Result.memoryUsed,
+      contextLength: memoryContext.length,
+      fallbackUsed: !!gpt5Result.fallbackUsed,
+      enhancedExecution: true,
+      totalExecutionTime: Date.now() - executionStart,
+      memoryContextUsed: memoryContext.length > 0,
+      safetyChecksApplied: true,
+      telegramDelivered,
+      fixedMemoryIntegration: true // Flag to indicate memory integration is fixed
+    };
+    
+    console.log(`[Enhanced] ✅ Command executed successfully: ${result.modelUsed}, ${result.processingTime}ms, Memory: ${result.contextLength} chars`);
+    return result;
+    
+  } catch (error) {
+    console.error('[Enhanced] ❌ Command execution error:', error.message);
+    
+    // Emergency fallback
+    const errorMsg = `Analysis failed: ${error.message}.\n\nPlease try a simpler request.`;
+    const telegramDelivered = await deliverToTelegram(bot, safeString(chatId), errorMsg, 'System Error');
+    
+    return {
+      success: false,
+      response: 'Technical difficulties encountered. Please try again with a simpler request.',
+      error: error.message,
+      aiUsed: 'error-fallback',
+      enhancedExecution: false,
+      totalExecutionTime: Date.now() - executionStart,
+      telegramDelivered,
+      safetyChecksApplied: true
+    };
+  }
+}
+
+// Helper function for telegram delivery
+async function deliverToTelegram(bot, chatId, response, title) {
+  try {
+    if (!bot || !chatId) return false;
+    
+    // Try enhanced splitter first
+    if (telegramSplitter && typeof telegramSplitter.sendMessage === 'function') {
+      const result = await telegramSplitter.sendMessage(bot, safeString(chatId), safeString(response), {
+        title: safeString(title),
+        model: 'gpt-5'
+      });
+      if (result && (result.success || result.enhanced || result.fallback)) {
+        return true;
+      }
+    }
+    
+    // Basic fallback
+    if (bot && typeof bot.sendMessage === 'function') {
+      await bot.sendMessage(safeString(chatId), safeString(response));
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('[Delivery] ❌ Failed:', error.message);
+    return false;
+  }
+}
+
+console.log('✅ Enhanced GPT-5 command executor with fixed memory integration loaded');
+
+// ════════════════════════════════════════════════════════════════════════════
 // SYSTEM COMMAND HANDLER
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -1461,6 +1647,9 @@ module.exports = {
   handleTelegramMessage,
   handleCallbackQuery,
   handleInlineQuery,
+
+  // Enhanced command execution (FIXED MEMORY)
+  executeEnhancedGPT5Command,
   
   // Quick command functions
   quickGPT5Command,
