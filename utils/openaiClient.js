@@ -476,8 +476,9 @@ function buildChatRequest(model, messages, options) {
     messages: messages
   };
   
+  // Use max_completion_tokens instead of max_tokens for GPT-5
   const maxTokens = options.max_tokens || options.max_completion_tokens || 8000;
-  request.max_tokens = Math.min(maxTokens, GPT5_CONFIG.MAX_OUTPUT_TOKENS);
+  request.max_completion_tokens = Math.min(maxTokens, GPT5_CONFIG.MAX_OUTPUT_TOKENS);
   
   if (typeof options.temperature === "number") request.temperature = options.temperature;
   if (typeof options.top_p === "number") request.top_p = options.top_p;
