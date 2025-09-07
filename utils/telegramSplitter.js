@@ -638,7 +638,8 @@ module.exports = {
     
     // Convenience methods
     quickFormat: TelegramFormatter.quickFormat.bind(TelegramFormatter),
-    professionalFormat: TelegramFormatter.professionalFormat.bind(TelegramFormatter),
+    smartFormat: TelegramFormatter.smartFormat.bind(TelegramFormatter),
+    claudeStyleFormat: TelegramFormatter.claudeStyleFormat.bind(TelegramFormatter),
     
     // Legacy compatibility (for existing code)
     splitTelegramMessage: TelegramFormatter.formatMessage.bind(TelegramFormatter),
