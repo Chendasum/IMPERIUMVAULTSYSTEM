@@ -1,48 +1,52 @@
-// utils/openaiClient.js — GPT-5 Client (Production, Ultra-Compat, NO FALLBACK)
-// Compatibility: no optional chaining, no nullish coalescing, no arrow functions,
-// no destructuring, no template literals, no spread syntax. ASCII-only.
-// Public API:
-//   getGPT5Analysis(prompt, opts)
-//   getQuickNanoResponse(prompt, opts)
-//   getQuickMiniResponse(prompt, opts)
-//   getDeepAnalysis(prompt, opts)
-//   getChatResponse(prompt, opts)
-//   getGPT5AnalysisWithMemory(prompt, memory, opts)
-//   getChatWithMemory(messages, memory, opts)
-//   testOpenAIConnection()
-//   checkGPT5SystemHealth()
-//   clearCache(), resetMetrics(), getSystemStats()
-//   selectOptimalModel(), calculateCost(), buildResponsesRequest(), buildChatRequest(), safeExtractResponseText()
-// Exports: metrics, cache, circuitBreaker, openai, GPT5_CONFIG
+// utils/openaiClient.js - Official GPT-5 Client (Based on OpenAI Documentation)
+// ═══════════════════════════════════════════════════════════════════════════
+// Accurate implementation using real GPT-5 models and official API features
+// Supports both Responses API and Chat Completions API as documented
+// ═══════════════════════════════════════════════════════════════════════════
 
 "use strict";
 require("dotenv").config();
-var OpenAI = require("openai").OpenAI;
-var crypto = require("crypto");
+const OpenAI = require("openai").OpenAI;
+const crypto = require("crypto");
 
-// ---------- Guards ----------
+// Validation
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is not set");
 }
 
-// ---------- Utils ----------
-function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-function str(x) { return x === undefined || x === null ? "" : String(x); }
-// Safe getter without optional chaining
-function g(obj, path, d) {
-  try {
-    var parts = path.split(".");
-    var cur = obj;
-    for (var i = 0; i < parts.length; i++) {
-      if (cur === null || cur === undefined) return d;
-      cur = cur[parts[i]];
-    }
-    return (cur === undefined || cur === null) ? d : cur;
-  } catch (e) { return d; }
+console.log('🧠 Loading Official GPT-5 Client (August 2025 Release)...');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function sleep(ms) { 
+  return new Promise(function (resolve) { setTimeout(resolve, ms); }); 
 }
 
-// ---------- Metrics ----------
-function GPT5Metrics() {
+function safeString(value) { 
+  return value === undefined || value === null ? "" : String(value); 
+}
+
+function safeGet(obj, path, defaultValue) {
+  try {
+    const parts = path.split(".");
+    let current = obj;
+    for (let i = 0; i < parts.length; i++) {
+      if (current === null || current === undefined) return defaultValue;
+      current = current[parts[i]];
+    }
+    return (current === undefined || current === null) ? defaultValue : current;
+  } catch (error) { 
+    return defaultValue; 
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// METRICS SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+
+function MetricsCollector() {
   this.stats = {
     totalCalls: 0,
     successfulCalls: 0,
@@ -51,554 +55,835 @@ function GPT5Metrics() {
     totalCost: 0,
     averageResponseTime: 0,
     modelUsageStats: {},
+    apiUsageStats: { responses: 0, chat: 0 },
     errorTypes: {},
     responseTimes: [],
     lastReset: new Date().toISOString()
   };
   this.startTime = Date.now();
 }
-GPT5Metrics.prototype.recordCall = function (model, success, tokens, cost, responseTime, error) {
-  var s = this.stats;
-  s.totalCalls += 1;
+
+MetricsCollector.prototype.recordCall = function (model, apiType, success, tokens, cost, responseTime, error) {
+  const stats = this.stats;
+  stats.totalCalls += 1;
+  stats.apiUsageStats[apiType] = (stats.apiUsageStats[apiType] || 0) + 1;
+  
   if (success) {
-    s.successfulCalls += 1;
-    s.totalTokensUsed += tokens;
-    s.totalCost += cost;
-    s.responseTimes.push(responseTime);
-    var arr = s.responseTimes;
-    s.averageResponseTime = arr.reduce(function (a, b) { return a + b; }, 0) / arr.length;
-    if (arr.length > 1000) s.responseTimes = arr.slice(-1000);
+    stats.successfulCalls += 1;
+    stats.totalTokensUsed += tokens;
+    stats.totalCost += cost;
+    stats.responseTimes.push(responseTime);
+    
+    const times = stats.responseTimes;
+    stats.averageResponseTime = times.reduce((a, b) => a + b, 0) / times.length;
+    
+    if (times.length > 1000) {
+      stats.responseTimes = times.slice(-1000);
+    }
   } else {
-    s.failedCalls += 1;
-    if (error) s.errorTypes[String(error)] = (s.errorTypes[String(error)] || 0) + 1;
+    stats.failedCalls += 1;
+    if (error) {
+      const errorKey = String(error);
+      stats.errorTypes[errorKey] = (stats.errorTypes[errorKey] || 0) + 1;
+    }
   }
-  if (!s.modelUsageStats[model]) s.modelUsageStats[model] = { calls: 0, tokens: 0, cost: 0 };
-  s.modelUsageStats[model].calls += 1;
-  s.modelUsageStats[model].tokens += tokens;
-  s.modelUsageStats[model].cost += cost;
+  
+  if (!stats.modelUsageStats[model]) {
+    stats.modelUsageStats[model] = { calls: 0, tokens: 0, cost: 0 };
+  }
+  stats.modelUsageStats[model].calls += 1;
+  stats.modelUsageStats[model].tokens += tokens;
+  stats.modelUsageStats[model].cost += cost;
 };
-GPT5Metrics.prototype.getStats = function () {
-  var s = this.stats;
+
+MetricsCollector.prototype.getStats = function () {
+  const stats = this.stats;
   return {
-    totalCalls: s.totalCalls,
-    successfulCalls: s.successfulCalls,
-    failedCalls: s.failedCalls,
-    totalTokensUsed: s.totalTokensUsed,
-    totalCost: s.totalCost,
-    averageResponseTime: s.averageResponseTime,
-    modelUsageStats: s.modelUsageStats,
-    errorTypes: s.errorTypes,
-    lastReset: s.lastReset,
-    responseTimes: s.responseTimes.slice(-10),
+    totalCalls: stats.totalCalls,
+    successfulCalls: stats.successfulCalls,
+    failedCalls: stats.failedCalls,
+    totalTokensUsed: stats.totalTokensUsed,
+    totalCost: parseFloat(stats.totalCost.toFixed(6)),
+    averageResponseTime: Math.round(stats.averageResponseTime),
+    modelUsageStats: stats.modelUsageStats,
+    apiUsageStats: stats.apiUsageStats,
+    errorTypes: stats.errorTypes,
+    lastReset: stats.lastReset,
+    recentResponseTimes: stats.responseTimes.slice(-10),
     uptime: Date.now() - this.startTime,
-    successRate: s.totalCalls > 0 ? ((s.successfulCalls / s.totalCalls) * 100).toFixed(2) : "0.00"
+    successRate: stats.totalCalls > 0 ? ((stats.successfulCalls / stats.totalCalls) * 100).toFixed(2) : "0.00"
   };
 };
-GPT5Metrics.prototype.reset = function () { this.stats = new GPT5Metrics().stats; };
 
-// ---------- Cache ----------
-function GPT5Cache(maxSize, ttl) {
+MetricsCollector.prototype.reset = function () { 
+  this.stats = new MetricsCollector().stats; 
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CACHE SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+
+function ResponseCache(maxSize, ttl) {
   this.cache = new Map();
   this.maxSize = Number(maxSize || 1000);
   this.ttl = Number(ttl || 3600000);
 }
-GPT5Cache.prototype.generateKey = function (prompt, options) {
-  var clean = {};
-  if (options) { for (var k in options) if (k !== "skipCache" && Object.prototype.hasOwnProperty.call(options, k)) clean[k] = options[k]; }
-  return crypto.createHash("sha256").update(str(prompt) + JSON.stringify(clean)).digest("hex");
-};
-GPT5Cache.prototype.get = function (key) {
-  var it = this.cache.get(key);
-  if (!it) return null;
-  if (Date.now() - it.timestamp > this.ttl) { this.cache.delete(key); return null; }
-  it.hits = (it.hits || 0) + 1; return it.data;
-};
-GPT5Cache.prototype.set = function (key, data) {
-  if (this.cache.size >= this.maxSize) this.cache.delete(this.cache.keys().next().value);
-  this.cache.set(key, { data: data, timestamp: Date.now(), hits: 0 });
-};
-GPT5Cache.prototype.clear = function () { this.cache.clear(); };
-GPT5Cache.prototype.getStats = function () {
-  var totalHits = 0, n = 0; var iter = this.cache.values(); var step = iter.next();
-  while (!step.done) { var item = step.value; totalHits += (item.hits || 0); n++; step = iter.next(); }
-  return { size: this.cache.size, maxSize: this.maxSize, hitRate: n > 0 ? (totalHits / n).toFixed(2) : "0.00" };
+
+ResponseCache.prototype.generateKey = function (prompt, options, apiType) {
+  const cleanOptions = {};
+  if (options) {
+    for (const key in options) {
+      if (key !== "skipCache" && Object.prototype.hasOwnProperty.call(options, key)) {
+        cleanOptions[key] = options[key];
+      }
+    }
+  }
+  return crypto.createHash("sha256")
+    .update(safeString(prompt) + JSON.stringify(cleanOptions) + apiType)
+    .digest("hex");
 };
 
-// ---------- Circuit Breaker ----------
-function CircuitBreaker(threshold, timeout) {
-  this.threshold = Number(threshold || 5);
-  this.timeout = Number(timeout || 20000);
+ResponseCache.prototype.get = function (key) {
+  const item = this.cache.get(key);
+  if (!item) return null;
+  
+  if (Date.now() - item.timestamp > this.ttl) {
+    this.cache.delete(key);
+    return null;
+  }
+  
+  item.hits = (item.hits || 0) + 1;
+  return item.data;
+};
+
+ResponseCache.prototype.set = function (key, data) {
+  if (this.cache.size >= this.maxSize) {
+    const firstKey = this.cache.keys().next().value;
+    this.cache.delete(firstKey);
+  }
+  
+  this.cache.set(key, {
+    data: data,
+    timestamp: Date.now(),
+    hits: 0
+  });
+};
+
+ResponseCache.prototype.clear = function () { 
+  this.cache.clear(); 
+};
+
+ResponseCache.prototype.getStats = function () {
+  let totalHits = 0;
+  let itemCount = 0;
+  
+  for (const item of this.cache.values()) {
+    totalHits += (item.hits || 0);
+    itemCount++;
+  }
+  
+  return {
+    size: this.cache.size,
+    maxSize: this.maxSize,
+    hitRate: itemCount > 0 ? (totalHits / itemCount).toFixed(2) : "0.00"
+  };
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CIRCUIT BREAKER
+// ═══════════════════════════════════════════════════════════════════════════
+
+function CircuitBreaker(failureThreshold, timeoutMs) {
+  this.failureThreshold = Number(failureThreshold || 5);
+  this.timeoutMs = Number(timeoutMs || 30000);
   this.failureCount = 0;
   this.lastFailureTime = 0;
   this.state = "CLOSED";
 }
-CircuitBreaker.prototype.execute = function (fn) {
-  var self = this;
+
+CircuitBreaker.prototype.execute = function (operation) {
+  const self = this;
+  
   return new Promise(function (resolve, reject) {
     if (self.state === "OPEN") {
-      if (Date.now() - self.lastFailureTime > self.timeout) {
+      if (Date.now() - self.lastFailureTime > self.timeoutMs) {
         self.state = "HALF_OPEN";
       } else {
         return reject(new Error("Circuit breaker is OPEN"));
       }
     }
+    
     Promise.resolve()
-      .then(fn)
-      .then(function (r) { self.onSuccess(); resolve(r); })
-      .catch(function (e) { self.onFailure(); reject(e); });
+      .then(operation)
+      .then(function (result) {
+        self.onSuccess();
+        resolve(result);
+      })
+      .catch(function (error) {
+        self.onFailure();
+        reject(error);
+      });
   });
 };
-CircuitBreaker.prototype.onSuccess = function () { this.failureCount = 0; this.state = "CLOSED"; };
-CircuitBreaker.prototype.onFailure = function () { this.failureCount++; this.lastFailureTime = Date.now(); if (this.failureCount >= this.threshold) this.state = "OPEN"; };
-CircuitBreaker.prototype.getState = function () { return this.state; };
 
-// ---------- Client ----------
-var metrics = new GPT5Metrics();
-var cache = new GPT5Cache(process.env.OPENAI_CACHE_MAX, process.env.OPENAI_CACHE_TTL_MS);
-var circuitBreaker = new CircuitBreaker(process.env.OPENAI_CB_FAILS, process.env.OPENAI_CB_COOLDOWN_MS);
+CircuitBreaker.prototype.onSuccess = function () {
+  this.failureCount = 0;
+  this.state = "CLOSED";
+};
 
-var openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  timeout: Number(process.env.OPENAI_TIMEOUT_MS || 180000),
-  maxRetries: Number(process.env.OPENAI_SDK_MAX_RETRIES || 2),
-  defaultHeaders: {
-    "User-Agent": "IMPERIUM-VAULT-GPT5/3.0.0",
-    "X-Client-Version": "3.0.0",
-    "X-Environment": process.env.NODE_ENV || "development"
+CircuitBreaker.prototype.onFailure = function () {
+  this.failureCount++;
+  this.lastFailureTime = Date.now();
+  
+  if (this.failureCount >= this.failureThreshold) {
+    this.state = "OPEN";
   }
-});
+};
 
-// ---------- Config ----------
-var GPT5_CONFIG = {
+CircuitBreaker.prototype.getState = function () {
+  return this.state;
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OFFICIAL GPT-5 CONFIGURATION (Based on OpenAI Documentation)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const GPT5_CONFIG = {
+  // Official GPT-5 models (Released August 7, 2025)
   PRIMARY_MODEL: process.env.GPT5_PRIMARY_MODEL || "gpt-5",
   MINI_MODEL: process.env.GPT5_MINI_MODEL || "gpt-5-mini",
   NANO_MODEL: process.env.GPT5_NANO_MODEL || "gpt-5-nano",
-  CHAT_MODEL: process.env.GPT5_CHAT_MODEL || "gpt-5-chat-latest",
-
+  
+  // Context and token limits
   MAX_OUTPUT_TOKENS: 16384,
-  MAX_PROMPT_LENGTH: 180000,
-
-  REASONING_EFFORTS: ["low", "medium", "high"],
+  CONTEXT_WINDOW: 400000, // 400K tokens
+  MAX_PROMPT_LENGTH: 350000,
+  
+  // Official reasoning efforts
+  REASONING_EFFORTS: ["minimal", "low", "medium", "high"],
   DEFAULT_REASONING: "medium",
+  
+  // Official verbosity levels
+  VERBOSITY_LEVELS: ["low", "medium", "high"],
+  DEFAULT_VERBOSITY: "medium",
+  
   DEFAULT_TEMPERATURE: 0.7,
-
-  MODEL_CAPABILITIES: {
-    "gpt-5": { maxTokens: 16384, pricing: { input: 0.01, output: 0.03 } },
-    "gpt-5-mini": { maxTokens: 8192, pricing: { input: 0.005, output: 0.015 } },
-    "gpt-5-nano": { maxTokens: 4096, pricing: { input: 0.003, output: 0.008 } },
-    "gpt-5-chat-latest": { maxTokens: 16384, pricing: { input: 0.01, output: 0.03 } }
+  
+  // Official GPT-5 pricing (from OpenAI documentation)
+  MODEL_PRICING: {
+    "gpt-5": { input: 0.00125, output: 0.01 }, // $1.25/1M input, $10/1M output
+    "gpt-5-mini": { input: 0.00025, output: 0.002 }, // $0.25/1M input, $2/1M output
+    "gpt-5-nano": { input: 0.00005, output: 0.0004 } // $0.05/1M input, $0.40/1M output
   },
-
+  
+  // Smart API selection
+  DUAL_API: {
+    ENABLED: process.env.GPT5_DUAL_API !== "false",
+    RESPONSES_FOR_REASONING: true,
+    CHAT_FOR_SIMPLE: true,
+    CHAT_THRESHOLD: 100 // Short prompts go to chat API
+  },
+  
+  // Smart model selection
   AUTO_SCALE: {
     ENABLED: process.env.SMART_MODEL_SELECT !== "false",
     NANO_MAX_LENGTH: 2000,
     MINI_MAX_LENGTH: 10000,
     COMPLEXITY_KEYWORDS: ["analyze", "compare", "evaluate", "research", "complex", "detailed", "comprehensive"]
-  },
-
-  // Short prompts go to chat model to avoid Responses availability hiccups
-  SHORT_CHAT_THRESHOLD: Number(process.env.FORCE_CHAT_BELOW_CHARS || 64)
+  }
 };
-function capFor(model) {
-  var caps = GPT5_CONFIG.MODEL_CAPABILITIES[model];
-  return caps && caps.maxTokens ? caps.maxTokens : 4096;
-}
 
-// ---------- Model Selection ----------
+// ═══════════════════════════════════════════════════════════════════════════
+// OPENAI CLIENT SETUP
+// ═══════════════════════════════════════════════════════════════════════════
+
+const metrics = new MetricsCollector();
+const cache = new ResponseCache(
+  process.env.OPENAI_CACHE_MAX || 1000,
+  process.env.OPENAI_CACHE_TTL_MS || 3600000
+);
+const circuitBreaker = new CircuitBreaker(
+  process.env.OPENAI_CB_FAILS || 5,
+  process.env.OPENAI_CB_COOLDOWN_MS || 30000
+);
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  timeout: Number(process.env.OPENAI_TIMEOUT_MS || 120000),
+  maxRetries: Number(process.env.OPENAI_SDK_MAX_RETRIES || 2),
+  defaultHeaders: {
+    "User-Agent": "GPT5-IMPERIUM-VAULT/1.0.0",
+    "X-Client-Version": "1.0.0-gpt5",
+    "X-Environment": process.env.NODE_ENV || "development"
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SMART MODEL AND API SELECTION
+// ═══════════════════════════════════════════════════════════════════════════
+
 function selectOptimalModel(prompt, options) {
   options = options || {};
-
-  // NEW: honor forceModel first (used by dualCommandSystem)
-  if (options.forceModel) return options.forceModel;
-
-  // Existing: explicit model next
+  
+  // Honor explicit model selection
   if (options.model) return options.model;
-
-  var text = str(prompt);
-  var len = text.length;
-
-  if (len <= GPT5_CONFIG.SHORT_CHAT_THRESHOLD) return GPT5_CONFIG.CHAT_MODEL;
-  if (!GPT5_CONFIG.AUTO_SCALE.ENABLED) return GPT5_CONFIG.PRIMARY_MODEL;
-
-  var lower = text.toLowerCase();
-  var hasComplex = false;
-  for (var i = 0; i < GPT5_CONFIG.AUTO_SCALE.COMPLEXITY_KEYWORDS.length; i++) {
-    if (lower.indexOf(GPT5_CONFIG.AUTO_SCALE.COMPLEXITY_KEYWORDS[i]) >= 0) { hasComplex = true; break; }
+  
+  const text = safeString(prompt);
+  const length = text.length;
+  
+  if (!GPT5_CONFIG.AUTO_SCALE.ENABLED) {
+    return GPT5_CONFIG.PRIMARY_MODEL;
   }
-  if (len < GPT5_CONFIG.AUTO_SCALE.NANO_MAX_LENGTH && !hasComplex) return GPT5_CONFIG.NANO_MODEL;
-  if (len < GPT5_CONFIG.AUTO_SCALE.MINI_MAX_LENGTH && !hasComplex) return GPT5_CONFIG.MINI_MODEL;
-  if (hasComplex || options.reasoning_effort === "high") return GPT5_CONFIG.PRIMARY_MODEL;
-  return GPT5_CONFIG.MINI_MODEL;
+  
+  // Check for complexity keywords
+  const lowerText = text.toLowerCase();
+  const hasComplexKeywords = GPT5_CONFIG.AUTO_SCALE.COMPLEXITY_KEYWORDS.some(
+    keyword => lowerText.includes(keyword)
+  );
+  
+  // High reasoning effort always gets full GPT-5
+  if (options.reasoning_effort === "high") {
+    return GPT5_CONFIG.PRIMARY_MODEL;
+  }
+  
+  // Model selection based on length and complexity
+  if (length < GPT5_CONFIG.AUTO_SCALE.NANO_MAX_LENGTH && !hasComplexKeywords) {
+    return GPT5_CONFIG.NANO_MODEL;
+  }
+  
+  if (length < GPT5_CONFIG.AUTO_SCALE.MINI_MAX_LENGTH && !hasComplexKeywords) {
+    return GPT5_CONFIG.MINI_MODEL;
+  }
+  
+  return GPT5_CONFIG.PRIMARY_MODEL;
 }
 
-// ---------- Cost + Logs ----------
-function calculateCost(model, inputTokens, outputTokens) {
-  var p = GPT5_CONFIG.MODEL_CAPABILITIES[model];
-  p = p && p.pricing ? p.pricing : null;
-  if (!p) return 0;
-  return (inputTokens * p.input) / 1000 + (outputTokens * p.output) / 1000;
+function selectOptimalAPI(prompt, model, options) {
+  if (!GPT5_CONFIG.DUAL_API.ENABLED) {
+    return "chat"; // Default to chat if dual API disabled
+  }
+  
+  const text = safeString(prompt);
+  const reasoning = options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING;
+  
+  // Short prompts or minimal reasoning go to Chat API
+  if (text.length < GPT5_CONFIG.DUAL_API.CHAT_THRESHOLD || reasoning === "minimal") {
+    return "chat";
+  }
+  
+  // Complex reasoning goes to Responses API
+  if (reasoning === "high" || reasoning === "medium") {
+    return "responses";
+  }
+  
+  return "chat";
 }
-function logApiCall(model, apiType, inputTokens, outputTokens, ms, success, error) {
-  var cost = calculateCost(model, inputTokens, outputTokens);
-  var logData = {
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COST CALCULATION AND LOGGING
+// ═══════════════════════════════════════════════════════════════════════════
+
+function calculateCost(model, inputTokens, outputTokens) {
+  const pricing = GPT5_CONFIG.MODEL_PRICING[model];
+  if (!pricing) return 0;
+  
+  return (inputTokens * pricing.input) + (outputTokens * pricing.output);
+}
+
+function logApiCall(model, apiType, inputTokens, outputTokens, responseTime, success, error) {
+  const cost = calculateCost(model, inputTokens, outputTokens);
+  
+  const logData = {
     timestamp: new Date().toISOString(),
     model: model,
     apiType: apiType,
     inputTokens: inputTokens,
     outputTokens: outputTokens,
     totalTokens: inputTokens + outputTokens,
-    cost: cost.toFixed(6),
-    executionTime: ms,
+    cost: parseFloat(cost.toFixed(8)),
+    responseTime: responseTime,
     success: success,
     error: error ? String(error) : null,
     circuitBreakerState: circuitBreaker.getState()
   };
-  console.log("[GPT5-API] " + JSON.stringify(logData));
+  
+  console.log("[GPT5-API]", JSON.stringify(logData));
   return cost;
 }
 
-// ---------- Extraction ----------
-function safeExtractResponseText(completion, apiType) {
+// ═══════════════════════════════════════════════════════════════════════════
+// RETRY LOGIC WITH EXPONENTIAL BACKOFF
+// ═══════════════════════════════════════════════════════════════════════════
+
+function withExponentialBackoff(operation) {
+  const delays = [500, 1500, 3000];
+  let attemptIndex = 0;
+  
+  function attempt() {
+    return Promise.resolve()
+      .then(operation)
+      .catch(function (error) {
+        const status = safeGet(error, "status", null) || safeGet(error, "response.status", null);
+        const message = safeGet(error, "message", "") || safeGet(error, "response.data.error.message", "");
+        
+        const isRateLimit = status === 429 || /rate.*limit/i.test(message);
+        
+        if (!isRateLimit || attemptIndex >= delays.length) {
+          throw error;
+        }
+        
+        const delay = delays[attemptIndex++];
+        console.log(`[GPT5-RETRY] Waiting ${delay}ms before retry (attempt ${attemptIndex})`);
+        
+        return sleep(delay).then(attempt);
+      });
+  }
+  
+  return attempt();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REQUEST BUILDERS FOR BOTH APIS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function buildResponsesRequest(model, input, options) {
+  const request = {
+    model: model,
+    input: safeString(input)
+  };
+  
+  // Add GPT-5 specific parameters
+  const reasoning = options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING;
+  if (GPT5_CONFIG.REASONING_EFFORTS.includes(reasoning)) {
+    request.reasoning_effort = reasoning;
+  }
+  
+  const verbosity = options.verbosity || GPT5_CONFIG.DEFAULT_VERBOSITY;
+  if (GPT5_CONFIG.VERBOSITY_LEVELS.includes(verbosity)) {
+    request.verbosity = verbosity;
+  }
+  
+  const maxTokens = options.max_output_tokens || options.max_completion_tokens || 8000;
+  request.max_output_tokens = Math.min(maxTokens, GPT5_CONFIG.MAX_OUTPUT_TOKENS);
+  
+  return request;
+}
+
+function buildChatRequest(model, messages, options) {
+  const request = {
+    model: model,
+    messages: messages
+  };
+  
+  const maxTokens = options.max_tokens || options.max_completion_tokens || 8000;
+  request.max_tokens = Math.min(maxTokens, GPT5_CONFIG.MAX_OUTPUT_TOKENS);
+  
+  if (typeof options.temperature === "number") request.temperature = options.temperature;
+  if (typeof options.top_p === "number") request.top_p = options.top_p;
+  if (typeof options.frequency_penalty === "number") request.frequency_penalty = options.frequency_penalty;
+  if (typeof options.presence_penalty === "number") request.presence_penalty = options.presence_penalty;
+  
+  return request;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RESPONSE EXTRACTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+function extractResponseText(completion, apiType) {
   try {
     if (apiType === "responses") {
-      var outputText = g(completion, "output_text", null);
-      if (typeof outputText === "string") return outputText.trim() || "[Empty response]";
-      var maybe = g(completion, "output.0.content.0.text.value", null);
-      if (typeof maybe === "string") return maybe.trim();
-      var chatLike = g(completion, "choices.0.message.content", null);
-      if (chatLike) return String(chatLike).trim();
-      return "[Unknown response structure]";
+      // Extract from Responses API format
+      const content = safeGet(completion, "output_text", null) ||
+                     safeGet(completion, "output.0.content.0.text.value", null) ||
+                     safeGet(completion, "choices.0.message.content", null);
+      return content ? String(content).trim() : "[No content in response]";
     } else {
-      var msg = g(completion, "choices.0.message.content", null);
-      return msg ? String(msg).trim() : "[No message content]";
+      // Extract from Chat Completions API format
+      const content = safeGet(completion, "choices.0.message.content", null);
+      return content ? String(content).trim() : "[No message content]";
     }
-  } catch (e) { return "[Extraction error: " + e.message + "]"; }
-}
-
-// ---------- Builders ----------
-function buildResponsesRequest(model, input, options) {
-  options = options || {};
-  var req = { model: model, input: str(input) };
-
-  // NEW: guard - do not propagate chat-only knobs into Responses
-  if (options.temperature !== undefined ||
-      options.top_p !== undefined ||
-      options.frequency_penalty !== undefined ||
-      options.presence_penalty !== undefined) {
-    // intentionally ignored to avoid 400s on Responses API
+  } catch (error) {
+    return "[Extraction error: " + error.message + "]";
   }
-
-  var effort = options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING;
-  if (effort === "low" || effort === "medium" || effort === "high") req.reasoning = { effort: effort };
-
-  var asked = options.max_output_tokens || options.max_completion_tokens || 8000;
-  req.max_output_tokens = Math.max(16, Math.min(asked, capFor(model)));
-  return req;
 }
-function buildChatRequest(model, messages, options) {
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CORE GPT-5 FUNCTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getGPT5Response(prompt, options) {
   options = options || {};
-  var req = { model: model, messages: messages };
-  var asked = options.max_tokens || options.max_completion_tokens || 8000;
-  req.max_tokens = Math.max(1, Math.min(asked, capFor(model)));
-  if (typeof options.temperature === "number") req.temperature = options.temperature;
-  if (typeof options.top_p === "number") req.top_p = options.top_p;
-  if (typeof options.frequency_penalty === "number") req.frequency_penalty = options.frequency_penalty;
-  if (typeof options.presence_penalty === "number") req.presence_penalty = options.presence_penalty;
-  return req;
+  const startTime = Date.now();
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let selectedModel = "unknown";
+  let selectedAPI = "unknown";
+  
+  return new Promise(function (resolve) {
+    try {
+      // Input validation
+      if (!prompt || typeof prompt !== "string") {
+        throw new Error("Invalid prompt: must be non-empty string");
+      }
+      
+      let text = safeString(prompt);
+      if (text.length > GPT5_CONFIG.MAX_PROMPT_LENGTH) {
+        text = text.slice(0, GPT5_CONFIG.MAX_PROMPT_LENGTH) + "\n... (truncated)";
+      }
+      
+      // Check cache
+      selectedModel = selectOptimalModel(text, options);
+      selectedAPI = selectOptimalAPI(text, selectedModel, options);
+      
+      if (!options.skipCache) {
+        const cacheKey = cache.generateKey(text, options, selectedAPI);
+        const cached = cache.get(cacheKey);
+        if (cached) {
+          console.log(`[GPT5-CACHE] Cache hit for ${selectedModel}/${selectedAPI}`);
+          return resolve("[CACHED] " + cached);
+        }
+      }
+      
+      console.log(`[GPT5-SELECT] Model: ${selectedModel}, API: ${selectedAPI}`);
+      
+      // Estimate input tokens
+      inputTokens = Math.ceil(text.length / 4);
+      
+      // Execute with circuit breaker and retry logic
+      circuitBreaker.execute(function () {
+        return withExponentialBackoff(function () {
+          if (selectedAPI === "responses") {
+            const request = buildResponsesRequest(selectedModel, text, options);
+            return openai.responses.create(request);
+          } else {
+            const messages = [{ role: "user", content: text }];
+            const request = buildChatRequest(selectedModel, messages, options);
+            return openai.chat.completions.create(request);
+          }
+        });
+      }).then(function (completion) {
+        // Extract response
+        const content = extractResponseText(completion, selectedAPI);
+        if (!content || content.startsWith("[No ") || content.startsWith("[Extraction")) {
+          throw new Error("Empty or invalid response");
+        }
+        
+        // Extract usage statistics
+        const usage = safeGet(completion, "usage", {});
+        inputTokens = usage.input_tokens || usage.prompt_tokens || inputTokens;
+        outputTokens = usage.output_tokens || usage.completion_tokens || 0;
+        
+        const responseTime = Date.now() - startTime;
+        const cost = logApiCall(selectedModel, selectedAPI, inputTokens, outputTokens, responseTime, true);
+        metrics.recordCall(selectedModel, selectedAPI, true, inputTokens + outputTokens, cost, responseTime);
+        
+        // Cache successful response
+        if (!options.skipCache && content.length > 10 && !content.startsWith("[CACHED]")) {
+          const cacheKey = cache.generateKey(text, options, selectedAPI);
+          cache.set(cacheKey, content);
+        }
+        
+        resolve(content);
+        
+      }).catch(function (error) {
+        const responseTime = Date.now() - startTime;
+        const errorMessage = safeGet(error, "message", String(error));
+        
+        logApiCall(selectedModel, selectedAPI, inputTokens, outputTokens, responseTime, false, errorMessage);
+        metrics.recordCall(selectedModel, selectedAPI, false, 0, 0, responseTime, errorMessage);
+        
+        resolve(`GPT-5 Error: ${errorMessage}`);
+      });
+      
+    } catch (outerError) {
+      const errorMessage = safeGet(outerError, "message", String(outerError));
+      resolve(`GPT-5 Error: ${errorMessage}`);
+    }
+  });
 }
 
-// ---------- Memory Helpers ----------
+// ═══════════════════════════════════════════════════════════════════════════
+// MEMORY-AWARE FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
 function attachMemoryToPrompt(prompt, memory) {
   memory = memory || {};
-  var sys = memory.systemPreamble ? String(memory.systemPreamble).trim() : "";
-  var recall = Array.isArray(memory.recall) ? memory.recall : [];
-  var header = sys ? "SYSTEM:\n" + sys + "\n\n" : "";
-  var recallText = recall.length ? "MEMORY:\n" + recall.map(function (r) { return "- " + String(r); }).join("\n") + "\n\n" : "";
-  return header + recallText + "USER:\n" + str(prompt);
-}
-function attachMemoryToMessages(messages, memory) {
-  messages = Array.isArray(messages) ? messages : [];
-  memory = memory || {};
-  var sys = memory.systemPreamble ? String(memory.systemPreamble).trim() : "";
-  var recall = Array.isArray(memory.recall) ? memory.recall : [];
-  var blocks = [];
-  if (sys) blocks.push({ role: "system", content: sys });
-  if (recall.length) {
-    blocks.push({ role: "system", content: "Persistent Memory Context (read-only)\n" + recall.map(function (r) { return "- " + String(r); }).join("\n") });
+  const systemMessage = memory.systemPreamble ? String(memory.systemPreamble).trim() : "";
+  const recallItems = Array.isArray(memory.recall) ? memory.recall : [];
+  
+  let enhancedPrompt = "";
+  
+  if (systemMessage) {
+    enhancedPrompt += "SYSTEM CONTEXT:\n" + systemMessage + "\n\n";
   }
-  return blocks.concat(messages);
-}
-
-// ---------- Core ----------
-function getGPT5Analysis(prompt, options) {
-  options = options || {};
-  var start = Date.now();
-  var inputTokens = 0, outputTokens = 0; var selectedModel = "unknown"; var apiUsed = "unknown";
-
-  function withBackoff(fn) {
-    var delays = [250, 750, 1500];
-    var i = 0;
-    function attempt() {
-      return Promise.resolve()
-        .then(fn)
-        .catch(function (e) {
-          var status = e && (e.status || (e.response && e.response.status));
-          var msg = (e && e.response && e.response.data && e.response.data.error && e.response.data.error.message) || (e && e.message) || "";
-          var rate = status === 429 || /rate/i.test(String(msg));
-          if (!rate || i >= delays.length) throw e;
-          var wait = delays[i++]; return sleep(wait).then(attempt);
-        });
-    }
-    return attempt();
-  }
-
-  return new Promise(function (resolve) {
-    try {
-      if (!prompt || typeof prompt !== "string") throw new Error("Invalid prompt: must be non-empty string");
-      var text = str(prompt);
-      if (text.length > GPT5_CONFIG.MAX_PROMPT_LENGTH) text = text.slice(0, GPT5_CONFIG.MAX_PROMPT_LENGTH) + "\n... (truncated)";
-
-      if (!options.skipCache) {
-        var key = cache.generateKey(text, options); var cached = cache.get(key);
-        if (cached) return resolve("[CACHED] " + cached);
-      }
-
-      selectedModel = selectOptimalModel(text, options);
-      var useResponses = selectedModel.indexOf("gpt-5") >= 0 && selectedModel !== GPT5_CONFIG.CHAT_MODEL;
-      apiUsed = useResponses ? "responses" : "chat";
-
-      // NEW: log chosen model + api for visibility
-      console.log("[GPT5-SELECT] model=" + selectedModel + " api=" + (useResponses ? "responses" : "chat"));
-
-      inputTokens = Math.ceil(text.length / 3.5);
-
-      circuitBreaker.execute(function () {
-        if (useResponses) {
-          var req = buildResponsesRequest(selectedModel, text, {
-            reasoning_effort: options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING,
-            max_output_tokens: options.max_output_tokens || options.max_completion_tokens || 8000
-          });
-          return withBackoff(function () { return openai.responses.create(req); });
-        } else {
-          var messages = [{ role: "user", content: text }];
-          var chatReq = buildChatRequest(selectedModel, messages, {
-            max_tokens: options.max_tokens || options.max_completion_tokens || 8000,
-            temperature: typeof options.temperature === "number" ? options.temperature : GPT5_CONFIG.DEFAULT_TEMPERATURE
-          });
-          return withBackoff(function () { return openai.chat.completions.create(chatReq); });
-        }
-      }).then(function (completion) {
-        var usage = g(completion, "usage", {});
-        inputTokens = usage.input_tokens || usage.prompt_tokens || inputTokens;
-        outputTokens = usage.output_tokens || usage.completion_tokens || 0;
-
-        var out = safeExtractResponseText(completion, apiUsed);
-        if (!out || out.length === 0) throw new Error("Empty response");
-
-        var ms = Date.now() - start; var cost = logApiCall(selectedModel, apiUsed, inputTokens, outputTokens, ms, true);
-        metrics.recordCall(selectedModel, true, inputTokens + outputTokens, cost, ms);
-
-        if (!options.skipCache && out.length > 10 && out[0] !== "[") {
-          var k2 = cache.generateKey(text, options); cache.set(k2, out);
-        }
-        resolve(out);
-      }).catch(function (err) {
-        var ms2 = Date.now() - start;
-        var provider = g(err, "response.data.error.message", null);
-        var merged = provider ? (err.message + " | Provider: " + provider) : (err && err.message ? err.message : String(err));
-        logApiCall(selectedModel, apiUsed, inputTokens, outputTokens, ms2, false, merged);
-        metrics.recordCall(selectedModel, false, 0, 0, ms2, merged);
-        // NO FALLBACK: return error to caller
-        resolve("Service error. Details: " + merged + "\nBreaker: " + circuitBreaker.getState());
-      });
-    } catch (outer) {
-      resolve("Service error. Details: " + (outer && outer.message ? outer.message : String(outer)));
-    }
-  });
-}
-
-// ---------- Memory-aware wrappers ----------
-function getGPT5AnalysisWithMemory(prompt, memory, options) {
-  var merged = attachMemoryToPrompt(prompt, memory);
-  return getGPT5Analysis(merged, options || {});
-}
-function getChatWithMemory(messages, memory, options) {
-  options = options || {};
-  var msgs = attachMemoryToMessages(messages, memory);
-  var model = options.model || GPT5_CONFIG.CHAT_MODEL;
-  var start = Date.now();
-  var inputTokens = 0, outputTokens = 0; var apiUsed = "chat";
-
-  function withBackoff(fn) {
-    var delays = [250, 750, 1500];
-    var i = 0;
-    function attempt() {
-      return Promise.resolve()
-        .then(fn)
-        .catch(function (e) {
-          var status = e && (e.status || (e.response && e.response.status));
-          var msg = (e && e.response && e.response.data && e.response.data.error && e.response.data.error.message) || (e && e.message) || "";
-          var rate = status === 429 || /rate/i.test(String(msg));
-          if (!rate || i >= delays.length) throw e;
-          var wait = delays[i++]; return sleep(wait).then(attempt);
-        });
-    }
-    return attempt();
-  }
-
-  return new Promise(function (resolve) {
-    try {
-      if (!options.skipCache) {
-        var key = cache.generateKey(JSON.stringify(msgs), options);
-        var cached = cache.get(key);
-        if (cached) return resolve("[CACHED] " + cached);
-      }
-      inputTokens = Math.ceil(JSON.stringify(msgs).length / 3.5);
-      var chatReq = buildChatRequest(model, msgs, {
-        max_tokens: options.max_tokens || options.max_completion_tokens || 800,
-        temperature: typeof options.temperature === "number" ? options.temperature : GPT5_CONFIG.DEFAULT_TEMPERATURE,
-        top_p: options.top_p,
-        frequency_penalty: options.frequency_penalty,
-        presence_penalty: options.presence_penalty
-      });
-      circuitBreaker.execute(function () {
-        return withBackoff(function () { return openai.chat.completions.create(chatReq); });
-      }).then(function (completion) {
-        var usage = g(completion, "usage", {});
-        inputTokens = usage.input_tokens || usage.prompt_tokens || inputTokens;
-        outputTokens = usage.output_tokens || usage.completion_tokens || 0;
-
-        var out = safeExtractResponseText(completion, apiUsed);
-        if (!out || out.length === 0) throw new Error("Empty response");
-
-        var ms = Date.now() - start; var cost = logApiCall(model, apiUsed, inputTokens, outputTokens, ms, true);
-        metrics.recordCall(model, true, inputTokens + outputTokens, cost, ms);
-
-        if (!options.skipCache && out.length > 10 && out[0] !== "[") {
-          var key2 = cache.generateKey(JSON.stringify(msgs), options); cache.set(key2, out);
-        }
-        resolve(out);
-      }).catch(function (err) {
-        var ms2 = Date.now() - start;
-        var emsg = err && err.message ? err.message : String(err);
-        logApiCall(model, apiUsed, inputTokens, outputTokens, ms2, false, emsg);
-        metrics.recordCall(model, false, 0, 0, ms2, emsg);
-        resolve("Service error (chat-with-memory). Details: " + emsg);
-      });
-    } catch (outer) {
-      resolve("Service error (chat-with-memory). Details: " + (outer && outer.message ? outer.message : String(outer)));
-    }
-  });
-}
-
-// ---------- Quick helpers ----------
-function getQuickNanoResponse(prompt, options) {
-  var opts = options ? options : {};
-  opts = Object.assign({}, opts, { model: GPT5_CONFIG.NANO_MODEL, reasoning_effort: "low", max_output_tokens: 6000 });
-  return getGPT5Analysis(prompt, opts);
-}
-function getQuickMiniResponse(prompt, options) {
-  var opts = options ? options : {};
-  opts = Object.assign({}, opts, { model: GPT5_CONFIG.MINI_MODEL, reasoning_effort: "medium", max_output_tokens: 10000 });
-  return getGPT5Analysis(prompt, opts);
-}
-function getDeepAnalysis(prompt, options) {
-  var opts = options ? options : {};
-  opts = Object.assign({}, opts, { model: GPT5_CONFIG.PRIMARY_MODEL, reasoning_effort: "high", max_output_tokens: 16000 });
-  return getGPT5Analysis(prompt, opts);
-}
-function getChatResponse(prompt, options) {
-  var opts = options ? options : {};
-  opts = Object.assign({}, opts, { model: GPT5_CONFIG.CHAT_MODEL, max_tokens: 12000 });
-  return getGPT5Analysis(prompt, opts);
-}
-
-// ---------- Health / Ops ----------
-function testOpenAIConnection() {
-  return getQuickNanoResponse("GPT-5 READY?", { max_output_tokens: 5, skipCache: true, temperature: 0 })
-    .then(function (ok) {
-      return { success: true, result: ok, model: GPT5_CONFIG.NANO_MODEL, gpt5Available: true, timestamp: new Date().toISOString() };
-    })
-    .catch(function (e) {
-      return { success: false, error: e.message, gpt5Available: false, timestamp: new Date().toISOString() };
+  
+  if (recallItems.length > 0) {
+    enhancedPrompt += "MEMORY CONTEXT:\n";
+    recallItems.forEach(function (item) {
+      enhancedPrompt += "- " + String(item) + "\n";
     });
+    enhancedPrompt += "\n";
+  }
+  
+  enhancedPrompt += "USER REQUEST:\n" + safeString(prompt);
+  
+  return enhancedPrompt;
 }
+
+function getGPT5ResponseWithMemory(prompt, memory, options) {
+  const enhancedPrompt = attachMemoryToPrompt(prompt, memory);
+  return getGPT5Response(enhancedPrompt, options || {});
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SPECIALIZED GPT-5 FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getQuickGPT5Response(prompt, options) {
+  const opts = Object.assign({}, options || {}, {
+    model: GPT5_CONFIG.NANO_MODEL,
+    reasoning_effort: "minimal",
+    verbosity: "low",
+    max_output_tokens: 2000
+  });
+  return getGPT5Response(prompt, opts);
+}
+
+function getDetailedGPT5Analysis(prompt, options) {
+  const opts = Object.assign({}, options || {}, {
+    model: GPT5_CONFIG.PRIMARY_MODEL,
+    reasoning_effort: "high",
+    verbosity: "high",
+    max_output_tokens: 15000
+  });
+  return getGPT5Response(prompt, opts);
+}
+
+function getEfficientGPT5Response(prompt, options) {
+  const opts = Object.assign({}, options || {}, {
+    model: GPT5_CONFIG.MINI_MODEL,
+    reasoning_effort: "medium",
+    verbosity: "medium",
+    max_output_tokens: 8000
+  });
+  return getGPT5Response(prompt, opts);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HEALTH AND TESTING
+// ═══════════════════════════════════════════════════════════════════════════
+
+function testGPT5Connection() {
+  return getQuickGPT5Response("Respond with 'GPT-5 READY' if operational.", {
+    max_output_tokens: 10,
+    skipCache: true,
+    reasoning_effort: "minimal"
+  })
+  .then(function (response) {
+    return {
+      success: true,
+      result: response,
+      model: GPT5_CONFIG.NANO_MODEL,
+      gpt5Available: true,
+      timestamp: new Date().toISOString()
+    };
+  })
+  .catch(function (error) {
+    return {
+      success: false,
+      error: error.message,
+      gpt5Available: false,
+      timestamp: new Date().toISOString()
+    };
+  });
+}
+
 function checkGPT5SystemHealth() {
-  var health = { timestamp: new Date().toISOString(), gpt5Available: false, gpt5MiniAvailable: false, gpt5NanoAvailable: false, gpt5ChatAvailable: false, currentModel: null, circuitBreakerState: circuitBreaker.getState(), metrics: metrics.getStats(), cache: cache.getStats(), errors: [], recommendations: [], smartModelSelection: false };
-
-  function probe(fn, name, model) {
-    return fn("ok", { max_output_tokens: 5, skipCache: true, temperature: 0 })
-      .then(function (r) { if (r && r.indexOf("[Empty") !== 0 && r.indexOf("[No message") !== 0) health[name] = true; })
-      .catch(function (e) { health.errors.push(model + ": " + e.message); });
-  }
-
-  return Promise.resolve()
-    .then(function(){ return probe(getQuickNanoResponse, "gpt5NanoAvailable", GPT5_CONFIG.NANO_MODEL); })
-    .then(function(){ return probe(getQuickMiniResponse, "gpt5MiniAvailable", GPT5_CONFIG.MINI_MODEL); })
-    .then(function(){ return probe(getDeepAnalysis, "gpt5Available", GPT5_CONFIG.PRIMARY_MODEL); })
-    .then(function(){ return probe(getChatResponse, "gpt5ChatAvailable", GPT5_CONFIG.CHAT_MODEL); })
-    .then(function(){
-      if (health.gpt5Available) health.currentModel = GPT5_CONFIG.PRIMARY_MODEL;
-      else if (health.gpt5MiniAvailable) health.currentModel = GPT5_CONFIG.MINI_MODEL;
-      else if (health.gpt5NanoAvailable) health.currentModel = GPT5_CONFIG.NANO_MODEL;
-      else if (health.gpt5ChatAvailable) health.currentModel = GPT5_CONFIG.CHAT_MODEL;
-      health.overallHealth = Boolean(health.currentModel);
-
-      try {
-        var m1 = selectOptimalModel("hi", { reasoning_effort: "low" });
-        var m2 = selectOptimalModel(new Array(3000).join("A"), { reasoning_effort: "low" });
-        var m3 = selectOptimalModel("analyze and compare strategic options with detailed evaluation", { reasoning_effort: "high" });
-        var distinct = {}; distinct[m1] = 1; distinct[m2] = 1; distinct[m3] = 1; var keys = Object.keys(distinct);
-        health.smartModelSelection = keys.length >= 2 && (process.env.SMART_MODEL_SELECT !== "false");
-        health.modelSamples = { short: m1, long: m2, complex: m3 }; // NEW: expose samples
-      } catch (e) { health.errors.push("SmartSelect: " + e.message); }
-
-      if (Number(health.metrics.successRate) < 95) health.recommendations.push("Success rate below 95% - check API key and quotas");
-      if (health.circuitBreakerState === "OPEN") health.recommendations.push("Circuit breaker is OPEN - service degraded");
-      if (health.cache.size === 0) health.recommendations.push("Cache is empty - cold start");
-      if (!GPT5_CONFIG.AUTO_SCALE.ENABLED) health.recommendations.push("Smart Model Selection disabled (SMART_MODEL_SELECT=false)");
-      return health;
+  const health = {
+    timestamp: new Date().toISOString(),
+    gpt5Available: false,
+    gpt5MiniAvailable: false,
+    gpt5NanoAvailable: false,
+    responsesAPIAvailable: false,
+    chatAPIAvailable: false,
+    currentModel: null,
+    circuitBreakerState: circuitBreaker.getState(),
+    metrics: metrics.getStats(),
+    cache: cache.getStats(),
+    errors: [],
+    recommendations: []
+  };
+  
+  function testModel(model, label) {
+    return getGPT5Response("Test", { 
+      model: model, 
+      max_output_tokens: 5, 
+      skipCache: true, 
+      reasoning_effort: "minimal" 
+    })
+    .then(function (response) {
+      if (response && !response.startsWith("GPT-5 Error:")) {
+        health[label] = true;
+      }
+    })
+    .catch(function (error) {
+      health.errors.push(`${model}: ${error.message}`);
     });
+  }
+  
+  return Promise.all([
+    testModel(GPT5_CONFIG.PRIMARY_MODEL, "gpt5Available"),
+    testModel(GPT5_CONFIG.MINI_MODEL, "gpt5MiniAvailable"), 
+    testModel(GPT5_CONFIG.NANO_MODEL, "gpt5NanoAvailable")
+  ]).then(function () {
+    // Determine current best model
+    if (health.gpt5Available) {
+      health.currentModel = GPT5_CONFIG.PRIMARY_MODEL;
+    } else if (health.gpt5MiniAvailable) {
+      health.currentModel = GPT5_CONFIG.MINI_MODEL;
+    } else if (health.gpt5NanoAvailable) {
+      health.currentModel = GPT5_CONFIG.NANO_MODEL;
+    }
+    
+    health.overallHealth = Boolean(health.currentModel);
+    
+    // Test API availability
+    health.responsesAPIAvailable = health.gpt5Available || health.gpt5MiniAvailable;
+    health.chatAPIAvailable = health.gpt5NanoAvailable || health.gpt5MiniAvailable;
+    
+    // Generate recommendations
+    if (Number(health.metrics.successRate) < 95) {
+      health.recommendations.push("Success rate below 95% - check API key and quotas");
+    }
+    
+    if (health.circuitBreakerState === "OPEN") {
+      health.recommendations.push("Circuit breaker is OPEN - service degraded");
+    }
+    
+    if (health.cache.size === 0) {
+      health.recommendations.push("Cache is empty - consider warming up");
+    }
+    
+    if (!GPT5_CONFIG.AUTO_SCALE.ENABLED) {
+      health.recommendations.push("Smart model selection disabled");
+    }
+    
+    if (!GPT5_CONFIG.DUAL_API.ENABLED) {
+      health.recommendations.push("Dual API mode disabled - missing optimization");
+    }
+    
+    return health;
+  });
 }
 
-// ---------- Admin / Stats ----------
-function clearCache() { cache.clear(); return Promise.resolve({ success: true, message: "Cache cleared successfully" }); }
-function resetMetrics() { metrics.reset(); return Promise.resolve({ success: true, message: "Metrics reset successfully" }); }
-function getSystemStats() { return Promise.resolve({ metrics: metrics.getStats(), cache: cache.getStats(), circuitBreaker: { state: circuitBreaker.getState() }, models: GPT5_CONFIG.MODEL_CAPABILITIES, uptime: Date.now() - metrics.startTime }); }
+// ═══════════════════════════════════════════════════════════════════════════
+// ADMIN FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
 
-// ---------- Exports ----------
+function clearGPT5Cache() {
+  cache.clear();
+  return Promise.resolve({ success: true, message: "GPT-5 cache cleared successfully" });
+}
+
+function resetGPT5Metrics() {
+  metrics.reset();
+  return Promise.resolve({ success: true, message: "GPT-5 metrics reset successfully" });
+}
+
+function getGPT5SystemStats() {
+  return Promise.resolve({
+    metrics: metrics.getStats(),
+    cache: cache.getStats(),
+    circuitBreaker: { state: circuitBreaker.getState() },
+    models: GPT5_CONFIG.MODEL_PRICING,
+    configuration: {
+      autoScale: GPT5_CONFIG.AUTO_SCALE.ENABLED,
+      dualAPI: GPT5_CONFIG.DUAL_API.ENABLED,
+      contextWindow: GPT5_CONFIG.CONTEXT_WINDOW,
+      maxOutputTokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS
+    },
+    uptime: Date.now() - metrics.startTime
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULE EXPORTS
+// ═══════════════════════════════════════════════════════════════════════════
+
 module.exports = {
-  // Core
-  getGPT5Analysis,
-  // Quick
-  getQuickNanoResponse,
-  getQuickMiniResponse,
-  getDeepAnalysis,
-  getChatResponse,
-  // Memory-aware
-  getGPT5AnalysisWithMemory,
-  getChatWithMemory,
+  // Core GPT-5 functions
+  getGPT5Response,
+  getGPT5ResponseWithMemory,
+  
+  // Specialized GPT-5 functions
+  getQuickGPT5Response,
+  getDetailedGPT5Analysis,
+  getEfficientGPT5Response,
+  
+  // Memory helpers
   attachMemoryToPrompt,
-  attachMemoryToMessages,
-  // Health & Ops
-  testOpenAIConnection,
+  
+  // Health and testing
+  testGPT5Connection,
   checkGPT5SystemHealth,
-  // Admin
-  clearCache,
-  resetMetrics,
-  getSystemStats,
-  // Utils
+  
+  // Admin functions
+  clearGPT5Cache,
+  resetGPT5Metrics,
+  getGPT5SystemStats,
+  
+  // Utility functions
   selectOptimalModel,
+  selectOptimalAPI,
   calculateCost,
+  
+  // Request builders
   buildResponsesRequest,
   buildChatRequest,
-  safeExtractResponseText,
-  // Components
+  extractResponseText,
+  
+  // Components (for advanced usage)
   metrics,
   cache,
   circuitBreaker,
-  // Client & Config
   openai,
+  
+  // Configuration
   GPT5_CONFIG
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// INITIALIZATION AND STARTUP
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('');
+console.log('🧠 ═══════════════════════════════════════════════════════════════');
+console.log('   OFFICIAL GPT-5 CLIENT LOADED (AUGUST 2025 RELEASE)');
+console.log('   ═══════════════════════════════════════════════════════════════');
+console.log('');
+console.log('✅ OFFICIAL GPT-5 MODELS:');
+console.log(`   🧠 Primary: ${GPT5_CONFIG.PRIMARY_MODEL} ($1.25/$10 per 1M tokens)`);
+console.log(`   ⚡ Mini: ${GPT5_CONFIG.MINI_MODEL} ($0.25/$2 per 1M tokens)`);
+console.log(`   🔹 Nano: ${GPT5_CONFIG.NANO_MODEL} ($0.05/$0.40 per 1M tokens)`);
+console.log('');
+console.log('🚀 OFFICIAL GPT-5 FEATURES:');
+console.log('   • Dual API support (Responses + Chat Completions)');
+console.log('   • Official reasoning_effort: minimal/low/medium/high');
+console.log('   • Official verbosity: low/medium/high');
+console.log('   • 400K token context window');
+console.log('   • Up to 16K output tokens');
+console.log('   • Smart model and API selection');
+console.log('   • Circuit breaker protection');
+console.log('   • Response caching system');
+console.log('   • Comprehensive metrics collection');
+console.log('');
+console.log('📊 PERFORMANCE FEATURES:');
+console.log(`   • Auto-scale: ${GPT5_CONFIG.AUTO_SCALE.ENABLED ? 'ENABLED' : 'DISABLED'}`);
+console.log(`   • Dual API: ${GPT5_CONFIG.DUAL_API.ENABLED ? 'ENABLED' : 'DISABLED'}`);
+console.log(`   • Cache size: ${cache.maxSize} entries`);
+console.log(`   • Circuit breaker: ${circuitBreaker.failureThreshold} failure threshold`);
+console.log('');
+console.log('✅ OFFICIAL GPT-5 CLIENT READY FOR PRODUCTION');
+console.log('🧠 ═══════════════════════════════════════════════════════════════');
+console.log('');
