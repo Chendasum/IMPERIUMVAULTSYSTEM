@@ -112,7 +112,7 @@ try {
       console.log('📋 GPT-5 Intelligence available but not initialized (openaiClient missing)');
     }
   }
-// ✅ UPGRADED: Legacy function names with GPT-5 Intelligence
+  // ✅ UPGRADED: Legacy function names with GPT-5 Intelligence
 else if (splitter && typeof splitter.splitTelegramMessage === 'function') {
   telegramSplitter = {
     sendMessage: async (bot, chatId, response, options = {}) => {
@@ -1613,6 +1613,7 @@ async function deliverToTelegram(bot, chatId, response, title) {
     return false;
   }
 }
+
 // ════════════════════════════════════════════════════════════════════════════
 // SYSTEM COMMAND HANDLER
 // ════════════════════════════════════════════════════════════════════════════
