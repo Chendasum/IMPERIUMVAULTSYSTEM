@@ -431,7 +431,7 @@ function getCurrentCambodiaDateTime() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// SMART MEMORY CONTEXT BUILDER (FIXES YOUR TYPE ERRORS)
+// SMART MEMORY CONTEXT BUILDER (FIXED WITH INCREASED LIMITS)
 // ════════════════════════════════════════════════════════════════════════════
 
 async function buildMemoryContext(chatId, contextLevel = 'full') {
@@ -468,18 +468,20 @@ async function buildMemoryContext(chatId, contextLevel = 'full') {
       console.log('[Memory-Fix] ⚠️ Memory module not available or missing buildConversationContext');
     }
     
-    // 🎯 FIX 2: Fallback to database with proper limits
+    // 🎯 FIX 2: Fallback to database with INCREASED limits for better context retention
     if (database && typeof database.getConversationHistoryDB === 'function') {
       try {
         console.log('[Memory-Fix] Trying direct database fallback...');
         
-        // Set proper message limits based on context level
+        // 🔧 FIXED: INCREASED message limits to capture more context (including numbered lists)
         let messageLimit;
         switch (contextLevel) {
-          case 'minimal': messageLimit = 3; break;
-          case 'reduced': messageLimit = 10; break;
-          default: messageLimit = 20;
+          case 'minimal': messageLimit = 8; break;    // ← INCREASED from 3 to 8
+          case 'reduced': messageLimit = 15; break;   // ← INCREASED from 10 to 15
+          default: messageLimit = 30;                 // ← INCREASED from 20 to 30
         }
+        
+        console.log(`[Memory-Fix] Using message limit: ${messageLimit} for context level: ${contextLevel}`);
         
         const history = await database.getConversationHistoryDB(safeChatId, messageLimit);
         
@@ -488,7 +490,7 @@ async function buildMemoryContext(chatId, contextLevel = 'full') {
           
           let context = 'CONVERSATION MEMORY:\n';
           
-          // Process conversations properly
+          // Process conversations properly with MORE complete content preservation
           for (const conv of history.slice(-messageLimit)) {
             if (!conv || typeof conv !== 'object') continue;
             
@@ -508,19 +510,22 @@ async function buildMemoryContext(chatId, contextLevel = 'full') {
             );
             
             if (userMsg.length > 0) {
-              context += `User: ${userMsg.substring(0, 150)}\n`;
+              // 🔧 FIXED: Preserve MORE content to capture numbered lists and detailed exchanges
+              context += `User: ${userMsg.substring(0, 300)}\n`;  // ← INCREASED from 150 to 300
               if (gptResponse.length > 0) {
-                context += `Assistant: ${gptResponse.substring(0, 200)}\n`;
+                context += `Assistant: ${gptResponse.substring(0, 500)}\n`;  // ← INCREASED from 200 to 500
               }
               context += '\n';
             }
           }
           
           if (context.length > 50) {
-            console.log(`[Memory-Fix] ✅ SUCCESS via database: ${context.length} chars`);
+            console.log(`[Memory-Fix] ✅ SUCCESS via database: ${context.length} chars (${history.length} messages)`);
             updateSystemStats('memory_context_build', true, 0, 'database_direct', 'context');
             return context;
           }
+        } else {
+          console.log('[Memory-Fix] ⚠️ No conversation history found or empty array returned');
         }
       } catch (dbError) {
         console.error('[Memory-Fix] ❌ Database error:', dbError.message);
@@ -537,8 +542,9 @@ async function buildMemoryContext(chatId, contextLevel = 'full') {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// SMART MEMORY SAVING (PREVENTS SAVING TRIVIAL GREETINGS)
+// ENHANCED MEMORY SAVING WITH BETTER CONTENT PRESERVATION
 // ════════════════════════════════════════════════════════════════════════════
+
 async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, metadata = {}) {
   try {
     console.log(`[Memory-Fix] 💾 Attempting to save memory for ${chatId}`);
@@ -551,22 +557,30 @@ async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, me
     const safeUserMessage = safeString(userMessage);
     const safeResponse = safeString(response);
     
-    // Don't save trivial interactions
-    if (safeUserMessage.length < 3 && safeResponse.length < 50) {
-      console.log('[Memory-Fix] Skipping trivial interaction');
+    // 🔧 FIXED: More intelligent trivial interaction detection
+    // Don't skip numbered selections or list responses
+    const isNumberedSelection = /^\d+\.?\s*/.test(safeUserMessage.trim()) || /^\d+$/.test(safeUserMessage.trim());
+    const isListResponse = safeResponse.includes('1.') || safeResponse.includes('1️⃣') || safeResponse.includes('▪️');
+    const isImportantInteraction = isNumberedSelection || isListResponse || safeResponse.length > 200;
+    
+    if (!isImportantInteraction && safeUserMessage.length < 3 && safeResponse.length < 50) {
+      console.log('[Memory-Fix] Skipping trivial interaction (not numbered or list)');
       return { saved: false, reason: 'trivial' };
     }
     
     const safeChatId = safeString(chatId);
     const timestamp = new Date().toISOString();
     
-    // Enhanced metadata
+    // Enhanced metadata with better context tracking
     const enhancedMetadata = {
       ...metadata,
       messageType: safeString(messageType),
       timestamp: timestamp,
-      system_version: 'fixed-integration',
-      save_attempt: Date.now()
+      system_version: 'fixed-integration-v2',
+      save_attempt: Date.now(),
+      isNumberedSelection: isNumberedSelection,
+      isListResponse: isListResponse,
+      contentLength: safeResponse.length
     };
     
     // 🎯 FIX 1: Try memory.saveToMemory with CORRECT format
@@ -648,9 +662,8 @@ async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, me
     return { saved: false, reason: 'critical_error', error: error.message };
   }
 }
-
 // ════════════════════════════════════════════════════════════════════════════
-// GPT-5 EXECUTION WITH FALLBACK SYSTEM
+// GPT-5 EXECUTION WITH FALLBACK SYSTEM (FIXED API PARAMETERS)
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeThroughGPT5System(userMessage, queryAnalysis, context = null, chatId = null) {
@@ -691,19 +704,29 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
       enhancedMessage += `\n\n${safeSubstring(safeContext, 0, maxContextLength)}`;
     }
     
-    // Build options for API call
+    // 🔧 FIXED: Build options with correct GPT-5 API parameter structure
     const options = { model: queryAnalysis.gpt5Model };
     
     if (queryAnalysis.gpt5Model === CONFIG.MODELS.CHAT) {
-      // Chat API uses max_tokens
-      if (queryAnalysis.max_completion_tokens) options.max_tokens = queryAnalysis.max_completion_tokens;
+      // Chat API uses max_completion_tokens (FIXED: was using max_tokens)
+      if (queryAnalysis.max_completion_tokens) {
+        options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+      }
       options.temperature = 0.7;
     } else {
-      // Responses API uses max_completion_tokens  
-      if (queryAnalysis.reasoning_effort) options.reasoning_effort = queryAnalysis.reasoning_effort;
-      if (queryAnalysis.verbosity) options.verbosity = queryAnalysis.verbosity;
-      if (queryAnalysis.max_completion_tokens) options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+      // Responses API uses nested parameter structure (FIXED)
+      if (queryAnalysis.reasoning_effort) {
+        options.reasoning = { effort: queryAnalysis.reasoning_effort };  // ← FIXED: nested structure
+      }
+      if (queryAnalysis.verbosity) {
+        options.text = { verbosity: queryAnalysis.verbosity };  // ← FIXED: nested structure
+      }
+      if (queryAnalysis.max_completion_tokens) {
+        options.max_output_tokens = queryAnalysis.max_completion_tokens;  // ← FIXED: correct parameter name
+      }
     }
+    
+    console.log(`[GPT-5] 📋 API options:`, JSON.stringify(options, null, 2));
     
     // Execute GPT-5 API call
     const result = await openaiClient.getGPT5Analysis(enhancedMessage, options);
@@ -737,7 +760,7 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// FALLBACK SYSTEM (IF PRIMARY MODEL FAILS)
+// FALLBACK SYSTEM WITH FIXED API PARAMETERS
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeGPT5Fallback(userMessage, queryAnalysis, context, originalProcessingTime, originalError) {
@@ -757,21 +780,34 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
   
   for (const fallback of fallbackModels) {
     try {
+      console.log(`[GPT-5] 🔄 Trying fallback: ${fallback.model}`);
+      
+      // 🔧 FIXED: Use correct parameter structure for each model type
       const options = { model: fallback.model };
       
       if (fallback.model === CONFIG.MODELS.CHAT) {
+        // Chat API parameters (FIXED)
         options.temperature = 0.7;
-        options.max_tokens = CONFIG.TOKEN_LIMITS.CHAT_MAX;
+        options.max_completion_tokens = CONFIG.TOKEN_LIMITS.CHAT_MAX;  // ← FIXED: correct parameter
       } else {
-        if (fallback.reasoning) options.reasoning_effort = fallback.reasoning;
-        if (fallback.verbosity) options.verbosity = fallback.verbosity;
-        options.max_completion_tokens = Math.min(6000, CONFIG.TOKEN_LIMITS.MINI_MAX);
+        // Responses API parameters with nested structure (FIXED)
+        if (fallback.reasoning) {
+          options.reasoning = { effort: fallback.reasoning };  // ← FIXED: nested structure
+        }
+        if (fallback.verbosity) {
+          options.text = { verbosity: fallback.verbosity };  // ← FIXED: nested structure
+        }
+        options.max_output_tokens = Math.min(6000, CONFIG.TOKEN_LIMITS.MINI_MAX);  // ← FIXED: correct parameter
       }
+      
+      console.log(`[GPT-5] 📋 Fallback options for ${fallback.model}:`, JSON.stringify(options, null, 2));
       
       const result = await openaiClient.getGPT5Analysis(enhancedMessage, options);
       const totalTime = originalProcessingTime + (Date.now() - fallbackStart);
       
       updateSystemStats('gpt5_fallback', true, totalTime, 'fallback', fallback.model);
+      
+      console.log(`[GPT-5] ✅ Fallback ${fallback.model} succeeded`);
       
       return {
         response: `[Fallback Mode - ${fallback.model}]\n\n${result}`,
@@ -801,7 +837,7 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
   throw new Error(`All GPT-5 models failed. Original: ${originalError?.message}. Please try again with a simpler question.`);
 }
 
-console.log('✅ GPT-5 execution engine loaded');
+console.log('✅ GPT-5 execution engine loaded with fixed API parameters');
 
 // ════════════════════════════════════════════════════════════════════════════
 // MAIN TELEGRAM MESSAGE HANDLER (CONNECTS TO YOUR INDEX.JS)
