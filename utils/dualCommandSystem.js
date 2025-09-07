@@ -65,42 +65,113 @@ const multimodal = safeRequire('./multimodal', {
   getMultimodalStatus: () => ({ available: false })
 });
 
-// Enhanced Telegram splitter with fallback
+// ✅ FIXED: Enhanced Telegram splitter with correct function names
 let telegramSplitter = null;
 try {
   const splitter = require('./telegramSplitter');
-  if (splitter && typeof splitter.sendTelegramMessage === 'function') {
+  
+  // Try the rewritten splitter functions first
+  if (splitter && typeof splitter.sendFormattedMessage === 'function') {
     telegramSplitter = {
-      sendMessage: splitter.sendTelegramMessage,
+      sendMessage: splitter.sendFormattedMessage,
+      sendFormattedMessage: splitter.sendFormattedMessage,
+      formatMessage: splitter.formatMessage,
+      quickFormat: splitter.quickFormat,
+      businessFormat: splitter.businessFormat,
+      technicalFormat: splitter.technicalFormat,
       sendGPT5: (bot, chatId, response, meta = {}) => 
-        splitter.sendTelegramMessage(bot, chatId, response, { ...meta, model: 'gpt-5' })
+        splitter.sendFormattedMessage(bot, chatId, response, { ...meta, model: 'gpt-5' })
     };
-    console.log('[Import] ✅ Telegram splitter loaded');
+    console.log('[Import] ✅ Telegram splitter loaded with rewritten functions');
+  }
+  // Try legacy function names
+  else if (splitter && typeof splitter.splitTelegramMessage === 'function') {
+    telegramSplitter = {
+      sendMessage: async (bot, chatId, response, options = {}) => {
+        const parts = splitter.splitTelegramMessage(response, 4000, true);
+        for (const part of parts) {
+          await bot.sendMessage(chatId, part);
+        }
+        return { success: true, method: 'legacy' };
+      },
+      formatMessage: splitter.splitTelegramMessage,
+      sendGPT5: async (bot, chatId, response, meta = {}) => {
+        const parts = splitter.splitTelegramMessage(response, 4000, true);
+        for (const part of parts) {
+          await bot.sendMessage(chatId, part);
+        }
+        return { success: true, method: 'legacy' };
+      }
+    };
+    console.log('[Import] ✅ Telegram splitter loaded with legacy functions');
+  }
+  else {
+    console.warn('[Import] ⚠️ No compatible splitter functions found');
   }
 } catch (error) {
   console.warn('[Import] ❌ Telegram splitter failed:', error.message);
 }
 
-// Enhanced fallback telegram if needed
+// ✅ FIXED: Enhanced fallback telegram with proper message splitting
 if (!telegramSplitter) {
   telegramSplitter = {
-    sendMessage: async (bot, chatId, response) => {
+    sendMessage: async (bot, chatId, response, options = {}) => {
       try {
-        if (bot && bot.sendMessage) {
-          await bot.sendMessage(chatId, response);
-          return { success: true, fallback: true };
+        if (!bot || !bot.sendMessage) {
+          return { success: false, error: 'Bot not available' };
         }
-        return { success: false };
+        
+        const safeResponse = safeString(response);
+        const maxLength = 4000;
+        
+        if (safeResponse.length <= maxLength) {
+          await bot.sendMessage(chatId, safeResponse);
+          return { success: true, fallback: 'simple' };
+        }
+        
+        // ✅ FIXED: Proper message splitting in fallback
+        const parts = [];
+        for (let i = 0; i < safeResponse.length; i += maxLength) {
+          parts.push(safeResponse.slice(i, i + maxLength));
+        }
+        
+        for (let i = 0; i < parts.length; i++) {
+          const header = parts.length > 1 ? `📱 Part ${i + 1}/${parts.length}\n\n` : '';
+          await bot.sendMessage(chatId, header + parts[i]);
+          
+          if (i < parts.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
+        }
+        
+        return { success: true, fallback: 'chunked', parts: parts.length };
       } catch (error) {
         console.error('[Telegram-Fallback] Error:', error.message);
         return { success: false, error: error.message };
       }
     },
-    sendGPT5: async (bot, chatId, response) => telegramSplitter.sendMessage(bot, chatId, response)
+    
+    sendFormattedMessage: async (bot, chatId, response, options = {}) => {
+      return telegramSplitter.sendMessage(bot, chatId, response, options);
+    },
+    
+    formatMessage: (text, options = {}) => {
+      const maxLength = options.maxLength || 4000;
+      if (!text || text.length <= maxLength) return [text || ''];
+      
+      const parts = [];
+      for (let i = 0; i < text.length; i += maxLength) {
+        parts.push(text.slice(i, i + maxLength));
+      }
+      return parts;
+    },
+    
+    sendGPT5: async (bot, chatId, response) => {
+      return telegramSplitter.sendMessage(bot, chatId, response);
+    }
   };
+  console.log('[Import] ⚠️ Using enhanced fallback telegram splitter with message splitting');
 }
-
-console.log('✅ All imports completed with safety checks');
 
 // ════════════════════════════════════════════════════════════════════════════
 // ENHANCED CONFIGURATION CONSTANTS
@@ -1106,36 +1177,187 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
   }
 }
 
-// Helper function for telegram delivery
+// FIXED: Helper function for telegram delivery
 async function deliverToTelegram(bot, chatId, response, title) {
   try {
     if (!bot || !chatId) return false;
     
-    // Try enhanced splitter first
-    if (telegramSplitter && typeof telegramSplitter.sendMessage === 'function') {
-      const result = await telegramSplitter.sendMessage(bot, safeString(chatId), safeString(response), {
-        title: safeString(title),
-        model: 'gpt-5'
-      });
-      if (result && (result.success || result.enhanced || result.fallback)) {
-        return true;
+    const safeResponse = safeString(response);
+    const safeChatId = safeString(chatId);
+    const safeTitle = safeString(title);
+    
+    console.log(`[Delivery] 📤 Delivering ${safeResponse.length} chars`);
+    
+    // ✅ FIXED: Try rewritten telegramSplitter with correct function name
+    if (telegramSplitter) {
+      try {
+        // Method 1: sendFormattedMessage (from rewritten splitter)
+        if (typeof telegramSplitter.sendFormattedMessage === 'function') {
+          console.log('[Delivery] Using sendFormattedMessage');
+          const result = await telegramSplitter.sendFormattedMessage(bot, safeChatId, safeResponse, {
+            includeHeaders: true,
+            enhanceMessage: true
+          });
+          if (result && Array.isArray(result) && result.length > 0) {
+            console.log(`[Delivery] ✅ Success: ${result.length} parts sent`);
+            return true;
+          }
+        }
+        
+        // Method 2: formatMessage + manual send
+        if (typeof telegramSplitter.formatMessage === 'function') {
+          console.log('[Delivery] Using formatMessage');
+          const parts = telegramSplitter.formatMessage(safeResponse, {
+            includeHeaders: true,
+            enhanceMessage: true
+          });
+          
+          for (let i = 0; i < parts.length; i++) {
+            await bot.sendMessage(safeChatId, parts[i]);
+            if (i < parts.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 800));
+            }
+          }
+          console.log(`[Delivery] ✅ Success: ${parts.length} parts sent`);
+          return true;
+        }
+        
+        // Method 3: Legacy sendMessage (if exists)
+        if (typeof telegramSplitter.sendMessage === 'function') {
+          const result = await telegramSplitter.sendMessage(bot, safeChatId, safeResponse, {
+            title: safeTitle,
+            model: 'gpt-5'
+          });
+          if (result && (result.success || result.enhanced || result.fallback)) {
+            console.log('[Delivery] ✅ Success via legacy sendMessage');
+            return true;
+          }
+        }
+        
+      } catch (splitterError) {
+        console.warn('[Delivery] ⚠️ Splitter failed:', splitterError.message);
       }
     }
     
-    // Basic fallback
-    if (bot && typeof bot.sendMessage === 'function') {
-      await bot.sendMessage(safeString(chatId), safeString(response));
+    // ✅ FIXED: Smart fallback with proper message splitting
+    console.log('[Delivery] 🔄 Using smart fallback');
+    
+    const maxLength = 4000;
+    
+    if (safeResponse.length <= maxLength) {
+      // Single message
+      const header = safeTitle ? `🧠 ${safeTitle}\n\n` : '';
+      await bot.sendMessage(safeChatId, header + safeResponse);
+      console.log('[Delivery] ✅ Success: Single message');
       return true;
     }
     
-    return false;
+    // Multi-part message with smart splitting
+    const parts = [];
+    let currentPart = '';
+    
+    // Split by double newlines (paragraphs) to preserve structure
+    const sections = safeResponse.split('\n\n');
+    
+    for (const section of sections) {
+      const potentialLength = currentPart.length + (currentPart ? 2 : 0) + section.length;
+      
+      if (potentialLength <= maxLength - 150) { // Leave room for headers
+        currentPart = currentPart ? `${currentPart}\n\n${section}` : section;
+      } else {
+        // Save current part
+        if (currentPart.trim()) {
+          parts.push(currentPart.trim());
+        }
+        
+        // Handle oversized sections
+        if (section.length > maxLength - 150) {
+          // Split by single newlines
+          const lines = section.split('\n');
+          let linePart = '';
+          
+          for (const line of lines) {
+            const lineLength = linePart.length + (linePart ? 1 : 0) + line.length;
+            
+            if (lineLength <= maxLength - 150) {
+              linePart = linePart ? `${linePart}\n${line}` : line;
+            } else {
+              if (linePart.trim()) {
+                parts.push(linePart.trim());
+              }
+              
+              // Handle extremely long lines
+              if (line.length > maxLength - 150) {
+                for (let i = 0; i < line.length; i += maxLength - 150) {
+                  parts.push(line.slice(i, i + maxLength - 150));
+                }
+                linePart = '';
+              } else {
+                linePart = line;
+              }
+            }
+          }
+          
+          currentPart = linePart;
+        } else {
+          currentPart = section;
+        }
+      }
+    }
+    
+    // Add final part
+    if (currentPart.trim()) {
+      parts.push(currentPart.trim());
+    }
+    
+    // Ensure we have at least one part
+    if (parts.length === 0) {
+      parts.push(safeResponse.slice(0, maxLength - 150));
+    }
+    
+    // Send all parts with headers
+    for (let i = 0; i < parts.length; i++) {
+      const partHeader = parts.length > 1 
+        ? `🧠 ${safeTitle || 'GPT-5'} (${i + 1}/${parts.length})\n\n`
+        : (safeTitle ? `🧠 ${safeTitle}\n\n` : '');
+      
+      const finalMessage = partHeader + parts[i];
+      
+      // Final length check
+      if (finalMessage.length > 4096) {
+        // Emergency splitting
+        for (let j = 0; j < finalMessage.length; j += 4000) {
+          await bot.sendMessage(safeChatId, finalMessage.slice(j, j + 4000));
+          if (j + 4000 < finalMessage.length) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+      } else {
+        await bot.sendMessage(safeChatId, finalMessage);
+      }
+      
+      // Delay between parts
+      if (i < parts.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    console.log(`[Delivery] ✅ Success: ${parts.length} parts via fallback`);
+    return true;
+    
   } catch (error) {
-    console.error('[Delivery] ❌ Failed:', error.message);
+    console.error('[Delivery] ❌ All methods failed:', error.message);
+    
+    // Emergency notification
+    try {
+      await bot.sendMessage(safeString(chatId), '🔧 Response too complex. Please try a simpler request.');
+    } catch (emergencyError) {
+      console.error('[Delivery] ❌ Emergency fallback failed:', emergencyError.message);
+    }
+    
     return false;
   }
 }
-
-console.log('✅ Enhanced GPT-5 command executor with fixed memory integration loaded');
 
 // ════════════════════════════════════════════════════════════════════════════
 // SYSTEM COMMAND HANDLER
