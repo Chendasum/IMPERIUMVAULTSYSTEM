@@ -2075,9 +2075,50 @@ module.exports = {
   getMultimodalStatus,
   
   // FIXED Memory management (this is the key fix!)
-  buildMemoryContext,        // FIXED: Uses correct function names
-  saveMemoryIfNeeded,       // FIXED: Multiple fallback methods
-  testMemoryIntegration,    // NEW: For debugging memory issues
+  buildMemoryContext,        
+  saveMemoryIfNeeded,       
+  testMemoryIntegration,    
+  
+  // ✅ NEW: GPT-5 Intelligence Telegram Functions
+  intelligentFormat: telegramSplitter?.intelligentFormat,
+  adaptiveFormat: telegramSplitter?.adaptiveFormat,
+  smartFormat: telegramSplitter?.smartFormat,
+  claudeStyleFormat: telegramSplitter?.claudeStyleFormat,
+  
+  // ✅ NEW: Intelligence Management
+  initializeIntelligence: async (openaiClient) => {
+    if (telegramSplitter?.initialize) {
+      try {
+        await telegramSplitter.initialize(openaiClient);
+        console.log('🧠 GPT-5 Intelligence initialized via dualCommandSystem export');
+        return { success: true, message: 'Intelligence activated' };
+      } catch (error) {
+        console.error('❌ Intelligence initialization failed:', error.message);
+        return { success: false, error: error.message };
+      }
+    }
+    return { success: false, error: 'Initialize function not available' };
+  },
+  
+  // ✅ NEW: Intelligence Utilities
+  clearIntelligenceCache: () => {
+    if (telegramSplitter?.clearCache) {
+      telegramSplitter.clearCache();
+      console.log('🧹 Intelligence cache cleared');
+      return true;
+    }
+    return false;
+  },
+  
+  getIntelligenceStats: () => {
+    if (telegramSplitter?.getCacheStats) {
+      return telegramSplitter.getCacheStats();
+    }
+    return { available: false };
+  },
+  
+  // ✅ NEW: Direct Access to Optimized Delivery
+  deliverToTelegramIntelligent: deliverToTelegram,
   
   // Utility functions
   classifyMessage,
