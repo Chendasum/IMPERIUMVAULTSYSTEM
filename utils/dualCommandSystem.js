@@ -1360,7 +1360,7 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
   }
 }
 
-// ✅ OPTIMIZED: GPT-5 Intelligence Telegram Delivery with Smart Chunk Prevention
+// ✅ FIXED: GPT-5 Telegram Delivery Compatible with Version 4
 async function deliverToTelegram(bot, chatId, response, title) {
   try {
     if (!bot || !chatId) {
@@ -1372,164 +1372,121 @@ async function deliverToTelegram(bot, chatId, response, title) {
     const safeChatId = safeString(chatId);
     const safeTitle = safeString(title);
     
-    console.log(`[Delivery] 🧠 Starting GPT-5 intelligent delivery: ${safeResponse.length} chars`);
+    console.log(`[Delivery] 🚀 Starting delivery: ${safeResponse.length} chars`);
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // METHOD 1: GPT-5 Intelligence with Built-in Send (Preferred)
+    // METHOD 1: Version 4 sendFormattedMessage (Primary)
     // ═══════════════════════════════════════════════════════════════════════════
     
     if (telegramSplitter && typeof telegramSplitter.sendFormattedMessage === 'function') {
       try {
-        console.log('[Delivery] 🎯 Attempting GPT-5 Intelligence with built-in send');
+        console.log('[Delivery] 🎯 Attempting Version 4 sendFormattedMessage');
         
         const result = await telegramSplitter.sendFormattedMessage(bot, safeChatId, safeResponse, {
-          useGPT5Intelligence: true,
-          enhanceWithGPT5: true,
           title: safeTitle,
-          delay: 1200,
-          minChunkSize: 600,  // ← Prevent tiny chunks
-          combineShortTrailing: true  // ← Auto-combine short parts
+          includeHeaders: true,
+          enhanceFormatting: true,
+          model: 'gpt-5-mini'
         });
         
-        if (result && Array.isArray(result) && result.length > 0) {
-          console.log(`[Delivery] ✅ GPT-5 Intelligence success: ${result.length} parts delivered`);
+        console.log('[Delivery] 📊 Result received:', typeof result, result);
+        
+        // ✅ FIXED: Handle Version 4 object format
+        if (result && typeof result === 'object' && !Array.isArray(result)) {
+          // Version 4 returns object with success/parts/delivered
+          if (result.success === true || result.delivered > 0 || result.parts > 0) {
+            console.log(`[Delivery] ✅ Version 4 success: ${result.parts || result.delivered || 'unknown'} parts delivered`);
+            return true;
+          }
+          
+          if (result.duplicatePrevented) {
+            console.log('[Delivery] 🛡️ Duplicate prevented by Version 4');
+            return true; // Duplicate prevention is success
+          }
+          
+          console.log('[Delivery] ⚠️ Version 4 returned unsuccessful result:', result);
+        }
+        // ✅ BACKWARD COMPATIBILITY: Handle Version 3 array format
+        else if (result && Array.isArray(result) && result.length > 0) {
+          console.log(`[Delivery] ✅ Version 3 compatibility: ${result.length} parts delivered`);
           return true;
         }
+        else {
+          console.log('[Delivery] ⚠️ Unexpected result format:', typeof result, result);
+        }
         
-        console.log('[Delivery] ⚠️ GPT-5 sendFormattedMessage returned invalid result');
-        
-      } catch (intelligenceError) {
-        console.warn('[Delivery] ⚠️ GPT-5 Intelligence send failed:', intelligenceError.message);
+      } catch (v4Error) {
+        console.warn('[Delivery] ⚠️ Version 4 sendFormattedMessage failed:', v4Error.message);
       }
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // METHOD 2: GPT-5 Intelligence Format + Manual Send with Optimization
+    // METHOD 2: Version 4 formatMessage + Manual Send
     // ═══════════════════════════════════════════════════════════════════════════
     
-    if (telegramSplitter && typeof telegramSplitter.intelligentFormat === 'function') {
+    if (telegramSplitter && typeof telegramSplitter.formatMessage === 'function') {
       try {
-        console.log('[Delivery] 🎯 Using GPT-5 intelligentFormat with optimization');
+        console.log('[Delivery] 🎯 Using Version 4 formatMessage');
         
-        let parts = await telegramSplitter.intelligentFormat(safeResponse);
+        const parts = telegramSplitter.formatMessage(safeResponse, {
+          includeHeaders: true,
+          enhanceFormatting: true,
+          model: 'gpt-5-mini',
+          title: safeTitle
+        });
         
         if (Array.isArray(parts) && parts.length > 0) {
-          console.log(`[Delivery] 📊 Initial split: ${parts.length} parts`);
+          console.log(`[Delivery] 📊 Version 4 formatted: ${parts.length} parts`);
           
-          // ✅ SMART OPTIMIZATION: Prevent tiny trailing parts
-          if (parts.length > 1) {
-            const lastPart = parts[parts.length - 1];
-            const secondLastPart = parts[parts.length - 2];
-            
-            // Extract content without headers for analysis
-            const lastContent = lastPart.replace(/^[🧠⚡💫].*?\n\n/s, '').trim();
-            const secondLastContent = secondLastPart.replace(/^[🧠⚡💫].*?\n\n/s, '').trim();
-            
-            // Combine if last part is too short
-            if (lastContent.length < 500 && 
-                secondLastContent.length + lastContent.length < 3600) {
-              
-              // Extract header from second last part
-              const headerMatch = secondLastPart.match(/^([🧠⚡💫].*?)\n\n/s);
-              const header = headerMatch ? 
-                headerMatch[1].replace(/\(\d+\/\d+\)/, '').trim() + '\n\n' : '';
-              
-              // Combine contents intelligently
-              const combinedContent = secondLastContent + '\n\n' + lastContent;
-              parts[parts.length - 2] = header + combinedContent;
-              parts.pop(); // Remove the last part
-              
-              console.log(`[Delivery] 🔧 Combined short trailing part: ${lastContent.length} chars merged`);
-              console.log(`[Delivery] 📊 Optimized: ${parts.length} parts (was ${parts.length + 1})`);
-            }
-          }
-          
-          // Send optimized parts with intelligent delays
+          // Send all parts
           for (let i = 0; i < parts.length; i++) {
             try {
               await bot.sendMessage(safeChatId, parts[i]);
+              console.log(`[Delivery] ✅ Sent part ${i + 1}/${parts.length}`);
               
-              // Smart delay between parts
+              // Delay between parts
               if (i < parts.length - 1) {
-                const delay = parts.length > 3 ? 1500 : 1000; // Longer delay for many parts
-                await new Promise(resolve => setTimeout(resolve, delay));
+                await new Promise(resolve => setTimeout(resolve, 1000));
               }
               
             } catch (sendError) {
               console.error(`[Delivery] ❌ Failed to send part ${i + 1}:`, sendError.message);
               
-              // Try to send without special characters
+              // Try fallback without special characters
               try {
-                const cleanPart = parts[i].replace(/[^\x00-\x7F]/g, ''); // Remove non-ASCII
+                const cleanPart = parts[i].replace(/[^\x00-\x7F]/g, '');
                 await bot.sendMessage(safeChatId, cleanPart);
-                console.log(`[Delivery] 🔧 Sent part ${i + 1} with character cleanup`);
+                console.log(`[Delivery] 🔧 Sent part ${i + 1} with cleanup`);
               } catch (cleanError) {
-                console.error(`[Delivery] ❌ Part ${i + 1} failed even with cleanup`);
-                throw sendError; // Re-throw to trigger next method
+                console.error(`[Delivery] ❌ Part ${i + 1} failed completely`);
+                // Continue with remaining parts
               }
             }
           }
           
-          console.log(`[Delivery] ✅ GPT-5 intelligent format success: ${parts.length} parts delivered`);
+          console.log(`[Delivery] ✅ Version 4 manual send success: ${parts.length} parts delivered`);
           return true;
         }
-        
-        console.log('[Delivery] ⚠️ intelligentFormat returned invalid parts');
         
       } catch (formatError) {
-        console.warn('[Delivery] ⚠️ GPT-5 intelligent format failed:', formatError.message);
+        console.warn('[Delivery] ⚠️ Version 4 formatMessage failed:', formatError.message);
       }
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // METHOD 3: Standard Format with Enhancement
-    // ═══════════════════════════════════════════════════════════════════════════
-    
-    if (telegramSplitter && typeof telegramSplitter.formatMessage === 'function') {
-      try {
-        console.log('[Delivery] 🎯 Using standard formatMessage with enhancement');
-        
-        const parts = await telegramSplitter.formatMessage(safeResponse, {
-          includeHeaders: true,
-          enhanceFormatting: true,
-          smartEmojis: true,
-          maxLength: 3800,
-          minChunkSize: 600
-        });
-        
-        if (Array.isArray(parts) && parts.length > 0) {
-          for (let i = 0; i < parts.length; i++) {
-            await bot.sendMessage(safeChatId, parts[i]);
-            
-            if (i < parts.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-          }
-          
-          console.log(`[Delivery] ✅ Standard format success: ${parts.length} parts delivered`);
-          return true;
-        }
-        
-      } catch (standardError) {
-        console.warn('[Delivery] ⚠️ Standard format failed:', standardError.message);
-      }
-    }
-    
-    // ═══════════════════════════════════════════════════════════════════════════
-    // METHOD 4: Quick Format (Minimal Processing)
+    // METHOD 3: Quick Format Fallback
     // ═══════════════════════════════════════════════════════════════════════════
     
     if (telegramSplitter && typeof telegramSplitter.quickFormat === 'function') {
       try {
-        console.log('[Delivery] 🎯 Using quickFormat as backup');
+        console.log('[Delivery] 🎯 Using quickFormat fallback');
         
-        const parts = await telegramSplitter.quickFormat(safeResponse);
+        const parts = telegramSplitter.quickFormat(safeResponse);
         
         if (Array.isArray(parts) && parts.length > 0) {
-          // Add minimal headers to quick format
           for (let i = 0; i < parts.length; i++) {
             const header = parts.length > 1 ? 
-              `🧠 GPT-5 (${i + 1}/${parts.length})\n\n` : 
+              `🧠 ${safeTitle || 'GPT-5'} (${i + 1}/${parts.length})\n\n` : 
               (safeTitle ? `🧠 ${safeTitle}\n\n` : '');
             
             await bot.sendMessage(safeChatId, header + parts[i]);
@@ -1549,149 +1506,63 @@ async function deliverToTelegram(bot, chatId, response, title) {
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // METHOD 5: Emergency Fallback with Smart Splitting
+    // METHOD 4: Emergency Fallback (Always Works)
     // ═══════════════════════════════════════════════════════════════════════════
     
-    console.log('[Delivery] 🔄 Using emergency fallback with smart splitting');
+    console.log('[Delivery] 🔄 Using emergency fallback');
     
-    const maxLength = 4000;
-    const headerSpace = 150;
-    const availableSpace = maxLength - headerSpace;
+    // Simple emergency splitting
+    const maxLength = 3800;
     
-    // Handle short messages
-    if (safeResponse.length <= availableSpace) {
+    if (safeResponse.length <= maxLength) {
+      // Single message
       const header = safeTitle ? `🧠 ${safeTitle}\n\n` : '';
       await bot.sendMessage(safeChatId, header + safeResponse);
-      console.log('[Delivery] ✅ Single message emergency success');
+      console.log('[Delivery] ✅ Emergency single message success');
       return true;
     }
     
-    // Smart multi-part emergency splitting
-    const parts = [];
-    let currentPart = '';
+    // Simple 2-part split
+    const midPoint = Math.floor(safeResponse.length / 2);
+    let splitPoint = midPoint;
     
-    // Try to split by paragraphs first
-    const paragraphs = safeResponse.split('\n\n');
-    
-    for (const paragraph of paragraphs) {
-      const potentialLength = currentPart.length + (currentPart ? 2 : 0) + paragraph.length;
-      
-      if (potentialLength <= availableSpace) {
-        currentPart = currentPart ? `${currentPart}\n\n${paragraph}` : paragraph;
-      } else {
-        // Save current part
-        if (currentPart.trim()) {
-          parts.push(currentPart.trim());
-        }
-        
-        // Handle oversized paragraphs
-        if (paragraph.length > availableSpace) {
-          // Split by sentences
-          const sentences = paragraph.split('. ');
-          let sentencePart = '';
-          
-          for (const sentence of sentences) {
-            const sentenceText = sentence.endsWith('.') ? sentence : sentence + '.';
-            const sentenceLength = sentencePart.length + (sentencePart ? 1 : 0) + sentenceText.length;
-            
-            if (sentenceLength <= availableSpace) {
-              sentencePart = sentencePart ? `${sentencePart} ${sentenceText}` : sentenceText;
-            } else {
-              if (sentencePart.trim()) {
-                parts.push(sentencePart.trim());
-              }
-              
-              // Handle extremely long sentences
-              if (sentenceText.length > availableSpace) {
-                for (let i = 0; i < sentenceText.length; i += availableSpace) {
-                  parts.push(sentenceText.slice(i, i + availableSpace));
-                }
-                sentencePart = '';
-              } else {
-                sentencePart = sentenceText;
-              }
-            }
-          }
-          
-          currentPart = sentencePart;
-        } else {
-          currentPart = paragraph;
-        }
+    // Find good break point
+    const breakPoints = ['\n\n', '. ', '\n', ' '];
+    for (const breakChar of breakPoints) {
+      const breakIndex = safeResponse.lastIndexOf(breakChar, midPoint + 200);
+      if (breakIndex > midPoint - 200) {
+        splitPoint = breakIndex + breakChar.length;
+        break;
       }
     }
     
-    // Add final part
-    if (currentPart.trim()) {
-      parts.push(currentPart.trim());
-    }
+    const part1 = safeResponse.slice(0, splitPoint).trim();
+    const part2 = safeResponse.slice(splitPoint).trim();
     
-    // Ensure we have at least one part
-    if (parts.length === 0) {
-      parts.push(safeResponse.slice(0, availableSpace));
-    }
+    // Send 2 parts
+    const header1 = `🧠 ${safeTitle || 'GPT-5'} (1/2)\n\n`;
+    const header2 = `🧠 ${safeTitle || 'GPT-5'} (2/2)\n\n`;
     
-    // ✅ EMERGENCY OPTIMIZATION: Combine short trailing parts
-    if (parts.length > 1) {
-      const lastPart = parts[parts.length - 1];
-      const secondLastPart = parts[parts.length - 2];
-      
-      if (lastPart.length < 400 && 
-          secondLastPart.length + lastPart.length < availableSpace) {
-        
-        parts[parts.length - 2] = secondLastPart + '\n\n' + lastPart;
-        parts.pop();
-        
-        console.log('[Delivery] 🔧 Emergency: Combined short trailing part');
-      }
-    }
+    await bot.sendMessage(safeChatId, header1 + part1);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await bot.sendMessage(safeChatId, header2 + part2);
     
-    // Send emergency parts with headers
-    for (let i = 0; i < parts.length; i++) {
-      const header = parts.length > 1 ? 
-        `🧠 ${safeTitle || 'GPT-5'} (${i + 1}/${parts.length})\n\n` : 
-        (safeTitle ? `🧠 ${safeTitle}\n\n` : '');
-      
-      const finalMessage = header + parts[i];
-      
-      // Final length check
-      if (finalMessage.length > 4096) {
-        // Emergency character splitting
-        for (let j = 0; j < finalMessage.length; j += 4000) {
-          await bot.sendMessage(safeChatId, finalMessage.slice(j, j + 4000));
-          if (j + 4000 < finalMessage.length) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
-      } else {
-        await bot.sendMessage(safeChatId, finalMessage);
-      }
-      
-      // Delay between parts
-      if (i < parts.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1200));
-      }
-    }
-    
-    console.log(`[Delivery] ✅ Emergency fallback success: ${parts.length} parts delivered`);
+    console.log('[Delivery] ✅ Emergency 2-part split success');
     return true;
     
   } catch (error) {
-    console.error('[Delivery] ❌ Complete delivery system failure:', error.message);
-    console.error('[Delivery] ❌ Stack trace:', error.stack);
+    console.error('[Delivery] ❌ Complete delivery failure:', error.message);
     
-    // ═══════════════════════════════════════════════════════════════════════════
-    // LAST RESORT: Basic Error Message
-    // ═══════════════════════════════════════════════════════════════════════════
-    
+    // Last resort error message
     try {
-      const errorMsg = '🔧 Response processing encountered an issue. Please try again with a shorter request.';
+      const errorMsg = '🔧 Response processing encountered an issue. Please try again.';
       await bot.sendMessage(safeString(chatId), errorMsg);
-      console.log('[Delivery] 📤 Error notification sent to user');
+      console.log('[Delivery] 📤 Error notification sent');
+      return false; // Return false for actual failures
     } catch (lastError) {
       console.error('[Delivery] ❌ Even error notification failed:', lastError.message);
+      return false;
     }
-    
-    return false;
   }
 }
 
