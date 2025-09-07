@@ -461,7 +461,8 @@ function buildResponsesRequest(model, input, options) {
   
   const verbosity = options.verbosity || GPT5_CONFIG.DEFAULT_VERBOSITY;
   if (GPT5_CONFIG.VERBOSITY_LEVELS.includes(verbosity)) {
-    request.verbosity = verbosity;
+    // Correct parameter structure for verbosity in Responses API
+    request.text = { verbosity: verbosity };
   }
   
   const maxTokens = options.max_output_tokens || options.max_completion_tokens || 8000;
