@@ -65,87 +65,119 @@ const multimodal = safeRequire('./multimodal', {
   getMultimodalStatus: () => ({ available: false })
 });
 
-// ✅ SPEED OPTIMIZED: Enhanced Telegram splitter with fast chunking
+// ✅ ENHANCED TELEGRAM SPLITTER IMPORT WITH DUPLICATE PROTECTION
 let telegramSplitter = null;
 try {
   const splitter = require('./telegramSplitter');
   
-  // Try the GPT-5 intelligence splitter first
+  // ✅ FIXED: Verify the splitter has core functions before proceeding
   if (splitter && typeof splitter.sendFormattedMessage === 'function') {
     telegramSplitter = {
+      // Core messaging functions (guaranteed to exist)
       sendMessage: splitter.sendFormattedMessage,
       sendFormattedMessage: splitter.sendFormattedMessage,
       formatMessage: splitter.formatMessage,
-      quickFormat: splitter.quickFormat,
+      quickFormat: splitter.quickFormat || splitter.formatMessage,
       
-      // ✅ NEW: GPT-5 Intelligence Methods
-      intelligentFormat: splitter.intelligentFormat,
-      adaptiveFormat: splitter.adaptiveFormat,
-      initialize: splitter.initialize,
+      // ✅ FIXED: Safe access to optional intelligence methods
+      intelligentFormat: splitter.intelligentFormat || splitter.formatMessage,
+      adaptiveFormat: splitter.adaptiveFormat || splitter.formatMessage,
+      initialize: splitter.initialize || (() => Promise.resolve()),
       
-      // Legacy compatibility
-      businessFormat: splitter.businessFormat || splitter.formatMessage,
-      technicalFormat: splitter.technicalFormat || splitter.formatMessage,
+      // ✅ NEW: Duplicate protection access (safely)
+      duplicateProtection: splitter.duplicateProtection || null,
+      getDuplicateStats: splitter.getDuplicateStats || (() => ({ enabled: false })),
+      clearDuplicateCache: splitter.clearDuplicateCache || (() => {}),
+      testDuplicateProtection: splitter.testDuplicateProtection || (() => ({ isDuplicate: false })),
       
-      sendGPT5: (bot, chatId, response, meta = {}) => 
-        splitter.sendFormattedMessage(bot, chatId, response, { 
+      // Legacy compatibility with safe fallbacks
+      businessFormat: splitter.businessFormat || splitter.professionalFormat || splitter.formatMessage,
+      technicalFormat: splitter.technicalFormat || splitter.cleanFormat || splitter.formatMessage,
+      
+      // ✅ OPTIMIZED: GPT-5 sender with duplicate protection
+      sendGPT5: async (bot, chatId, response, meta = {}) => {
+        return await splitter.sendFormattedMessage(bot, chatId, response, { 
           ...meta, 
-          model: 'gpt-5',
-          useGPT5Intelligence: false,  // Disabled for speed
-          enhanceWithGPT5: false       // Disabled for speed
-        })
+          model: 'gpt-5-mini',  // ✅ FIXED: Use mini for speed
+          mode: 'structured',   // ✅ Professional formatting
+          title: meta.title || 'GPT-5 Response'
+        });
+      },
+      
+      // ✅ NEW: Quick response methods
+      sendClean: splitter.sendClean || splitter.sendFormattedMessage,
+      sendProfessional: splitter.sendProfessional || splitter.sendFormattedMessage,
+      
+      // ✅ FIXED: System information
+      getSystemInfo: splitter.getSystemInfo || (() => ({
+        version: 'fallback',
+        features: ['Basic formatting', 'Speed optimized'],
+        duplicateProtection: false
+      }))
     };
     
-    console.log('[Import] ✅ GPT-5 Telegram splitter loaded in SPEED MODE');
+    console.log('[Import] ✅ Enhanced Telegram splitter loaded with duplicate protection');
     
-    // ✅ SPEED OPTIMIZATION: Initialize with performance settings
-    if (openaiClient && splitter.initialize) {
-      splitter.initialize(openaiClient)
+    // ✅ FIXED: Safe initialization with better error handling
+    if (openaiClient && telegramSplitter.initialize) {
+      telegramSplitter.initialize(openaiClient)
         .then(() => {
-          console.log('⚡ GPT-5 Intelligence activated in SPEED MODE!');
+          console.log('⚡ Telegram splitter initialized successfully');
           
-          // ✅ SPEED CONFIGURATION: Optimize for performance
+          // ✅ SAFE: Only configure if CONFIG exists
           if (splitter.CONFIG) {
-            splitter.CONFIG.MIN_CHUNK_SIZE = 1500;        // Larger minimum chunks
-            splitter.CONFIG.DEFAULT_CHUNK_SIZE = 3900;    // Maximum safe size
-            splitter.CONFIG.MAX_PARTS = 2;                // Limit to 2 parts only
-            splitter.CONFIG.FAST_MODE = true;             // Skip heavy processing
+            // Speed optimizations for your Railway deployment
+            splitter.CONFIG.OPTIMAL_CHUNK_SIZE = 3800;
+            splitter.CONFIG.PROFESSIONAL_MAX_PARTS = 3;  // Allow 3 parts max
+            splitter.CONFIG.COMPLEX_MAX_PARTS = 4;       // Limit complex to 4 parts
             
-            console.log('📏 Speed settings: min 1500 chars, max 3900 chars, limit 2 parts');
+            console.log('📏 Optimized for Railway: 3800 chars, max 4 parts');
+          }
+          
+          // ✅ NEW: Test duplicate protection
+          if (telegramSplitter.duplicateProtection) {
+            console.log('🛡️ Duplicate protection active');
+            const stats = telegramSplitter.getDuplicateStats();
+            console.log(`🛡️ Protection enabled: ${stats.enabled}`);
           }
           
         })
         .catch(error => {
-          console.warn('⚠️ GPT-5 Intelligence initialization failed:', error.message);
-          console.log('📋 Using fast standard formatting');
+          console.warn('⚠️ Telegram splitter initialization failed:', error.message);
+          console.log('📋 Using basic formatting mode');
         });
     } else {
-      console.log('📋 Using fast standard formatting - optimal for speed');
+      console.log('📋 Using basic telegram formatting - no initialization needed');
     }
   }
-  // ✅ SPEED OPTIMIZED: Legacy functions with smart chunking
-  else if (splitter && typeof splitter.splitTelegramMessage === 'function') {
+  // ✅ IMPROVED: Better legacy fallback detection
+  else if (splitter && (typeof splitter.splitTelegramMessage === 'function' || typeof splitter.formatMessage === 'function')) {
     telegramSplitter = {
       sendMessage: async (bot, chatId, response, options = {}) => {
         try {
           const safeResponse = safeString(response);
-          const maxLength = 3900; // Near Telegram limit for fewer parts
+          const maxLength = 3800; // Railway-optimized length
           
-          // ✅ SPEED: Single message when possible
+          // Single message when possible
           if (safeResponse.length <= maxLength) {
             const header = options.title ? `⚡ ${options.title}\n\n` : '';
             await bot.sendMessage(chatId, header + safeResponse);
             return { success: true, method: 'speed-single', parts: 1 };
           }
           
-          // ✅ SMART SPLITTING: Force into 2 parts maximum
+          // Smart 2-part splitting
           const midPoint = Math.floor(safeResponse.length / 2);
           let splitPoint = midPoint;
           
-          // Find natural break point near middle
-          for (let i = midPoint - 200; i < midPoint + 200; i++) {
-            if (safeResponse[i] === '\n' && safeResponse[i + 1] === '\n') {
-              splitPoint = i + 2;
+          // Find natural break point
+          const breakPoints = ['\n\n\n', '\n\n', '. ', '\n', ' '];
+          for (const breakChar of breakPoints) {
+            const searchStart = midPoint - 300;
+            const searchEnd = midPoint + 300;
+            const breakIndex = safeResponse.lastIndexOf(breakChar, searchEnd);
+            
+            if (breakIndex > searchStart) {
+              splitPoint = breakIndex + breakChar.length;
               break;
             }
           }
@@ -153,80 +185,105 @@ try {
           const parts = [
             safeResponse.slice(0, splitPoint).trim(),
             safeResponse.slice(splitPoint).trim()
-          ];
+          ].filter(part => part.length > 0);
           
-          // Send with minimal headers
-          for (let i = 0; i < parts.length; i++) {
-            const header = `⚡ GPT-5 Mini (${i + 1}/${parts.length})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 💼 response\n\n`;
+          // Send parts with Railway-optimized headers
+          for (let i = 0; i < Math.min(parts.length, 3); i++) { // Max 3 parts
+            const header = `⚡ GPT-5 Mini (${i + 1}/${Math.min(parts.length, 3)})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 💼 Railway\n\n`;
             await bot.sendMessage(chatId, header + parts[i]);
             
             if (i < parts.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 400)); // Fast delivery
+              await new Promise(resolve => setTimeout(resolve, 500)); // Railway-safe delay
             }
           }
           
-          return { success: true, method: 'speed-optimized', parts: parts.length };
+          return { success: true, method: 'railway-optimized', parts: Math.min(parts.length, 3) };
           
         } catch (error) {
-          console.error('[Legacy] Error:', error.message);
+          console.error('[Legacy-Railway] Error:', error.message);
+          
           // Emergency fallback
-          const parts = splitter.splitTelegramMessage(response, 3900, true);
-          for (let i = 0; i < Math.min(parts.length, 2); i++) { // Limit to 2 parts
-            await bot.sendMessage(chatId, parts[i]);
-            if (i < parts.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 400));
-            }
+          try {
+            const truncated = safeString(response).slice(0, 3700);
+            await bot.sendMessage(chatId, `⚡ GPT-5 Mini\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • ⚠️ Emergency\n\n${truncated}${response.length > 3700 ? '\n\n...(truncated)' : ''}`);
+            return { success: true, method: 'emergency-railway', parts: 1 };
+          } catch (emergencyError) {
+            return { success: false, error: emergencyError.message };
           }
-          return { success: true, method: 'emergency', parts: Math.min(parts.length, 2) };
         }
       },
       
       formatMessage: (text, options = {}) => {
-        const maxLength = options.maxLength || 3900;
+        const maxLength = options.maxLength || 3800;
         const safeText = safeString(text);
         
         if (safeText.length <= maxLength) {
           return [safeText];
         }
         
-        // ✅ SPEED: Force into 2 parts maximum
-        const midPoint = Math.floor(safeText.length / 2);
-        let splitPoint = midPoint;
+        // Railway-optimized splitting (max 3 parts)
+        const parts = [];
+        let remaining = safeText;
         
-        // Quick search for paragraph break
-        for (let i = midPoint - 100; i < midPoint + 100; i++) {
-          if (safeText[i] === '\n' && safeText[i + 1] === '\n') {
-            splitPoint = i + 2;
-            break;
+        while (remaining.length > maxLength && parts.length < 2) {
+          const chunk = remaining.slice(0, maxLength);
+          let splitPoint = maxLength;
+          
+          // Find best break point in last 400 chars
+          for (let i = maxLength - 400; i < maxLength; i++) {
+            if (chunk[i] === '\n' && chunk[i + 1] === '\n') {
+              splitPoint = i + 2;
+              break;
+            }
           }
+          
+          parts.push(remaining.slice(0, splitPoint).trim());
+          remaining = remaining.slice(splitPoint).trim();
         }
         
-        return [
-          safeText.slice(0, splitPoint).trim(),
-          safeText.slice(splitPoint).trim()
-        ].filter(part => part.length > 0);
+        if (remaining.length > 0) {
+          parts.push(remaining);
+        }
+        
+        return parts.slice(0, 3); // Railway limit: max 3 parts
       },
       
-      quickFormat: (text) => telegramSplitter.formatMessage(text, { maxLength: 3900 }),
+      quickFormat: (text) => telegramSplitter.formatMessage(text),
       
       sendFormattedMessage: async (bot, chatId, response, options = {}) => {
         return await telegramSplitter.sendMessage(bot, chatId, response, options);
       },
       
       sendGPT5: async (bot, chatId, response, meta = {}) => {
-        return await telegramSplitter.sendMessage(bot, chatId, response, meta);
-      }
+        return await telegramSplitter.sendMessage(bot, chatId, response, {
+          ...meta,
+          title: 'GPT-5 Railway'
+        });
+      },
+      
+      // Placeholder functions for compatibility
+      duplicateProtection: null,
+      getDuplicateStats: () => ({ enabled: false, railway_optimized: true }),
+      clearDuplicateCache: () => {},
+      
+      getSystemInfo: () => ({
+        mode: 'railway-legacy-optimized',
+        maxParts: 3,
+        features: ['Railway optimized', 'Fast delivery', 'Smart splitting'],
+        duplicateProtection: false
+      })
     };
-    console.log('[Import] ✅ Speed-optimized legacy functions loaded (max 2 parts)');
+    
+    console.log('[Import] ✅ Railway-optimized legacy functions loaded (max 3 parts)');
   }
   else {
-    console.warn('[Import] ⚠️ No compatible splitter functions found');
+    console.warn('[Import] ⚠️ Telegram splitter missing required functions');
   }
 } catch (error) {
-  console.warn('[Import] ❌ Telegram splitter failed:', error.message);
+  console.warn('[Import] ❌ Telegram splitter import failed:', error.message);
 }
 
-// ✅ SPEED OPTIMIZED: Enhanced fallback with smart chunking
+// ✅ ENHANCED FALLBACK with Railway optimization
 if (!telegramSplitter) {
   telegramSplitter = {
     sendMessage: async (bot, chatId, response, options = {}) => {
@@ -236,64 +293,62 @@ if (!telegramSplitter) {
         }
         
         const safeResponse = safeString(response);
-        const maxLength = 3900; // Near Telegram limit
+        const maxLength = 3800; // Railway-safe length
         
-        // ✅ SPEED: Single message optimization
+        // Single message optimization
         if (safeResponse.length <= maxLength) {
-          const header = options.title ? `⚡ ${options.title}\n\n` : '';
+          const header = options.title ? `⚡ ${options.title}\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n` : '';
           await bot.sendMessage(chatId, header + safeResponse);
-          return { success: true, fallback: 'speed-single', parts: 1 };
+          return { success: true, fallback: 'railway-single', parts: 1 };
         }
         
-        // ✅ SMART: Force into exactly 2 parts
-        const parts = [];
+        // Railway-optimized 2-part splitting
         const midPoint = Math.floor(safeResponse.length / 2);
         let splitPoint = midPoint;
         
-        // Find best break point (paragraph, sentence, or middle)
-        const breakPoints = ['\n\n', '. ', '\n', ' '];
-        for (const breakChar of breakPoints) {
-          const searchStart = midPoint - 300;
-          const searchEnd = midPoint + 300;
-          const breakIndex = safeResponse.indexOf(breakChar, searchStart);
-          
-          if (breakIndex > searchStart && breakIndex < searchEnd) {
-            splitPoint = breakIndex + breakChar.length;
+        // Find best break point
+        const breakStrategies = ['\n\n\n', '\n\n', '. ', '! ', '? ', '\n', ', ', ' '];
+        for (const breakChar of breakStrategies) {
+          const candidateIndex = safeResponse.lastIndexOf(breakChar, midPoint + 400);
+          if (candidateIndex > midPoint - 400) {
+            splitPoint = candidateIndex + breakChar.length;
             break;
           }
         }
         
-        parts.push(safeResponse.slice(0, splitPoint).trim());
-        parts.push(safeResponse.slice(splitPoint).trim());
+        const parts = [
+          safeResponse.slice(0, splitPoint).trim(),
+          safeResponse.slice(splitPoint).trim()
+        ].filter(part => part.length > 0);
         
-        // ✅ FINAL CHECK: Combine if second part is too small
-        if (parts[1].length < 300 && parts[0].length + parts[1].length < maxLength - 200) {
+        // Combine tiny parts for Railway efficiency
+        if (parts.length === 2 && parts[1].length < 400 && parts[0].length + parts[1].length < maxLength - 100) {
           const combined = parts[0] + '\n\n' + parts[1];
-          const header = options.title ? `⚡ ${options.title}\n\n` : '';
+          const header = options.title ? `⚡ ${options.title}\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n` : '';
           await bot.sendMessage(chatId, header + combined);
-          return { success: true, fallback: 'speed-combined', parts: 1 };
+          return { success: true, fallback: 'railway-combined', parts: 1 };
         }
         
-        // Send 2 parts with speed headers
+        // Send 2 parts with Railway headers
         for (let i = 0; i < parts.length; i++) {
-          const header = `⚡ GPT-5 Mini (${i + 1}/2)\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 💼 response\n\n`;
+          const header = `⚡ GPT-5 Mini (${i + 1}/${parts.length})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n`;
           await bot.sendMessage(chatId, header + parts[i]);
           
           if (i < parts.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 400)); // Fast delivery
+            await new Promise(resolve => setTimeout(resolve, 600)); // Railway-safe delay
           }
         }
         
-        return { success: true, fallback: 'speed-optimized', parts: parts.length };
+        return { success: true, fallback: 'railway-split', parts: parts.length };
         
       } catch (error) {
-        console.error('[Telegram-Fallback] Error:', error.message);
+        console.error('[Railway-Fallback] Error:', error.message);
         
-        // Emergency: Send as single message with truncation
+        // Emergency Railway fallback
         try {
-          const truncated = safeResponse.slice(0, 3800);
-          await bot.sendMessage(chatId, `⚡ GPT-5 Mini\n\n${truncated}${safeResponse.length > 3800 ? '...' : ''}`);
-          return { success: true, fallback: 'emergency-truncated', parts: 1 };
+          const truncated = safeString(response).slice(0, 3700);
+          await bot.sendMessage(chatId, `⚡ Emergency Response\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n${truncated}${response.length > 3700 ? '\n\n...(response truncated for Railway)' : ''}`);
+          return { success: true, fallback: 'railway-emergency', parts: 1 };
         } catch (emergencyError) {
           return { success: false, error: emergencyError.message };
         }
@@ -305,19 +360,19 @@ if (!telegramSplitter) {
     },
     
     formatMessage: (text, options = {}) => {
-      const maxLength = options.maxLength || 3900;
+      const maxLength = options.maxLength || 3800;
       const safeText = safeString(text);
       
       if (!safeText || safeText.length <= maxLength) {
         return [safeText || ''];
       }
       
-      // ✅ SPEED: Maximum 2 parts always
+      // Railway-optimized: max 2 parts
       const midPoint = Math.floor(safeText.length / 2);
       let splitPoint = midPoint;
       
       // Quick break point search
-      for (let i = midPoint - 200; i < midPoint + 200; i++) {
+      for (let i = midPoint - 300; i < midPoint + 300; i++) {
         if (safeText[i] === '\n' && safeText[i + 1] === '\n') {
           splitPoint = i + 2;
           break;
@@ -329,8 +384,8 @@ if (!telegramSplitter) {
         safeText.slice(splitPoint).trim()
       ].filter(part => part.length > 0);
       
-      // Force combine if second part is tiny
-      if (parts.length === 2 && parts[1].length < 400) {
+      // Railway efficiency: combine small parts
+      if (parts.length === 2 && parts[1].length < 500) {
         return [parts.join('\n\n')];
       }
       
@@ -340,22 +395,31 @@ if (!telegramSplitter) {
     quickFormat: (text) => telegramSplitter.formatMessage(text),
     
     sendGPT5: async (bot, chatId, response) => {
-      return await telegramSplitter.sendMessage(bot, chatId, response);
+      return await telegramSplitter.sendMessage(bot, chatId, response, {
+        title: 'GPT-5 Railway'
+      });
     },
     
-    // ✅ SPEED UTILITIES
+    // Railway fallback functions
+    duplicateProtection: null,
+    getDuplicateStats: () => ({ 
+      enabled: false, 
+      railway_fallback: true,
+      note: 'Duplicate protection not available in fallback mode'
+    }),
+    clearDuplicateCache: () => {},
+    
     getSystemInfo: () => ({
-      mode: 'speed-optimized-fallback',
+      mode: 'railway-fallback-optimized',
       maxParts: 2,
-      features: ['Fast delivery', 'Smart 2-part splitting', 'Tiny chunk prevention'],
-      optimization: 'maximum-speed'
+      features: ['Railway optimized', 'Emergency fallbacks', 'Memory efficient'],
+      duplicateProtection: false,
+      deployment: 'railway'
     })
   };
   
-  console.log('[Import] ⚡ Using SPEED-OPTIMIZED fallback (max 2 parts, fast delivery)');
+  console.log('[Import] ⚡ Railway-optimized fallback system loaded');
 }
-
-console.log('✅ All imports completed with safety checks');
 // ════════════════════════════════════════════════════════════════════════════
 // ENHANCED CONFIGURATION CONSTANTS
 // ════════════════════════════════════════════════════════════════════════════
@@ -1360,209 +1424,347 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
   }
 }
 
-// ✅ FIXED: GPT-5 Telegram Delivery Compatible with Version 4
+// ✅ OPTIMIZED: Railway-Compatible Telegram Delivery with Duplicate Protection
 async function deliverToTelegram(bot, chatId, response, title) {
+  const startTime = Date.now();
+  
   try {
-    if (!bot || !chatId) {
-      console.log('[Delivery] ❌ Missing bot or chatId');
-      return false;
+    // Input validation
+    if (!bot || !bot.sendMessage) {
+      console.log('[Delivery] ❌ Invalid bot instance');
+      return { success: false, error: 'Invalid bot instance', method: 'validation_failed' };
+    }
+    
+    if (!chatId) {
+      console.log('[Delivery] ❌ Missing chatId');
+      return { success: false, error: 'Missing chatId', method: 'validation_failed' };
     }
     
     const safeResponse = safeString(response);
     const safeChatId = safeString(chatId);
     const safeTitle = safeString(title);
     
-    console.log(`[Delivery] 🚀 Starting delivery: ${safeResponse.length} chars`);
+    if (!safeResponse || safeResponse.length === 0) {
+      console.log('[Delivery] ❌ Empty response content');
+      return { success: false, error: 'Empty response content', method: 'validation_failed' };
+    }
+    
+    console.log(`[Delivery] 🚀 Starting Railway delivery: ${safeResponse.length} chars to chat ${safeChatId}`);
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // METHOD 1: Version 4 sendFormattedMessage (Primary)
+    // OPTIMIZED: Primary Method with Duplicate Protection
     // ═══════════════════════════════════════════════════════════════════════════
     
     if (telegramSplitter && typeof telegramSplitter.sendFormattedMessage === 'function') {
       try {
-        console.log('[Delivery] 🎯 Attempting Version 4 sendFormattedMessage');
+        console.log('[Delivery] 🎯 Using optimized sendFormattedMessage with duplicate protection');
         
         const result = await telegramSplitter.sendFormattedMessage(bot, safeChatId, safeResponse, {
           title: safeTitle,
-          includeHeaders: true,
-          enhanceFormatting: true,
-          model: 'gpt-5-mini'
-        });
-        
-        console.log('[Delivery] 📊 Result received:', typeof result, result);
-        
-        // ✅ FIXED: Handle Version 4 object format
-        if (result && typeof result === 'object' && !Array.isArray(result)) {
-          // Version 4 returns object with success/parts/delivered
-          if (result.success === true || result.delivered > 0 || result.parts > 0) {
-            console.log(`[Delivery] ✅ Version 4 success: ${result.parts || result.delivered || 'unknown'} parts delivered`);
-            return true;
-          }
-          
-          if (result.duplicatePrevented) {
-            console.log('[Delivery] 🛡️ Duplicate prevented by Version 4');
-            return true; // Duplicate prevention is success
-          }
-          
-          console.log('[Delivery] ⚠️ Version 4 returned unsuccessful result:', result);
-        }
-        // ✅ BACKWARD COMPATIBILITY: Handle Version 3 array format
-        else if (result && Array.isArray(result) && result.length > 0) {
-          console.log(`[Delivery] ✅ Version 3 compatibility: ${result.length} parts delivered`);
-          return true;
-        }
-        else {
-          console.log('[Delivery] ⚠️ Unexpected result format:', typeof result, result);
-        }
-        
-      } catch (v4Error) {
-        console.warn('[Delivery] ⚠️ Version 4 sendFormattedMessage failed:', v4Error.message);
-      }
-    }
-    
-    // ═══════════════════════════════════════════════════════════════════════════
-    // METHOD 2: Version 4 formatMessage + Manual Send
-    // ═══════════════════════════════════════════════════════════════════════════
-    
-    if (telegramSplitter && typeof telegramSplitter.formatMessage === 'function') {
-      try {
-        console.log('[Delivery] 🎯 Using Version 4 formatMessage');
-        
-        const parts = telegramSplitter.formatMessage(safeResponse, {
-          includeHeaders: true,
-          enhanceFormatting: true,
           model: 'gpt-5-mini',
-          title: safeTitle
+          mode: 'structured',
+          includeHeaders: true,
+          enhanceFormatting: true,
+          maxLength: 3800,        // Railway-optimized
+          maxParts: 3,           // Railway limit
+          delay: 600             // Railway-safe delay
         });
         
-        if (Array.isArray(parts) && parts.length > 0) {
-          console.log(`[Delivery] 📊 Version 4 formatted: ${parts.length} parts`);
+        console.log('[Delivery] 📊 Primary method result:', typeof result, result?.success, result?.parts);
+        
+        // Handle successful delivery
+        if (result && typeof result === 'object') {
+          const processingTime = Date.now() - startTime;
           
-          // Send all parts
-          for (let i = 0; i < parts.length; i++) {
-            try {
-              await bot.sendMessage(safeChatId, parts[i]);
-              console.log(`[Delivery] ✅ Sent part ${i + 1}/${parts.length}`);
-              
-              // Delay between parts
-              if (i < parts.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-              }
-              
-            } catch (sendError) {
-              console.error(`[Delivery] ❌ Failed to send part ${i + 1}:`, sendError.message);
-              
-              // Try fallback without special characters
-              try {
-                const cleanPart = parts[i].replace(/[^\x00-\x7F]/g, '');
-                await bot.sendMessage(safeChatId, cleanPart);
-                console.log(`[Delivery] 🔧 Sent part ${i + 1} with cleanup`);
-              } catch (cleanError) {
-                console.error(`[Delivery] ❌ Part ${i + 1} failed completely`);
-                // Continue with remaining parts
-              }
-            }
+          // Success cases
+          if (result.success === true || result.delivered > 0 || result.parts > 0) {
+            console.log(`[Delivery] ✅ Primary success: ${result.parts || result.delivered || 1} parts, ${processingTime}ms`);
+            return {
+              success: true,
+              method: 'primary_sendFormattedMessage',
+              parts: result.parts || result.delivered || 1,
+              duplicateProtected: result.duplicateProtected || false,
+              processingTime,
+              contentLength: safeResponse.length,
+              railwayOptimized: true
+            };
           }
           
-          console.log(`[Delivery] ✅ Version 4 manual send success: ${parts.length} parts delivered`);
-          return true;
+          // Duplicate prevention case
+          if (result.duplicatePrevented) {
+            console.log('[Delivery] 🛡️ Duplicate prevented - this is success');
+            return {
+              success: true,
+              method: 'duplicate_prevention',
+              parts: 1,
+              duplicatePrevented: true,
+              reason: result.reason,
+              similarity: result.similarity,
+              processingTime: Date.now() - startTime,
+              railwayOptimized: true
+            };
+          }
+          
+          // Partial success or unclear result
+          console.log('[Delivery] ⚠️ Primary method returned unclear result, trying fallback');
         }
         
-      } catch (formatError) {
-        console.warn('[Delivery] ⚠️ Version 4 formatMessage failed:', formatError.message);
+      } catch (primaryError) {
+        console.warn('[Delivery] ⚠️ Primary method failed:', primaryError.message);
+        // Continue to fallback
       }
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // METHOD 3: Quick Format Fallback
+    // FALLBACK: Direct Manual Delivery (Railway-Optimized)
     // ═══════════════════════════════════════════════════════════════════════════
     
-    if (telegramSplitter && typeof telegramSplitter.quickFormat === 'function') {
-      try {
-        console.log('[Delivery] 🎯 Using quickFormat fallback');
-        
-        const parts = telegramSplitter.quickFormat(safeResponse);
-        
-        if (Array.isArray(parts) && parts.length > 0) {
-          for (let i = 0; i < parts.length; i++) {
-            const header = parts.length > 1 ? 
-              `🧠 ${safeTitle || 'GPT-5'} (${i + 1}/${parts.length})\n\n` : 
-              (safeTitle ? `🧠 ${safeTitle}\n\n` : '');
-            
-            await bot.sendMessage(safeChatId, header + parts[i]);
-            
-            if (i < parts.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 800));
-            }
-          }
-          
-          console.log(`[Delivery] ✅ Quick format success: ${parts.length} parts delivered`);
-          return true;
-        }
-        
-      } catch (quickError) {
-        console.warn('[Delivery] ⚠️ Quick format failed:', quickError.message);
-      }
-    }
+    console.log('[Delivery] 🔄 Using Railway-optimized manual delivery');
     
-    // ═══════════════════════════════════════════════════════════════════════════
-    // METHOD 4: Emergency Fallback (Always Works)
-    // ═══════════════════════════════════════════════════════════════════════════
+    const maxLength = 3800; // Railway-safe limit
     
-    console.log('[Delivery] 🔄 Using emergency fallback');
-    
-    // Simple emergency splitting
-    const maxLength = 3800;
-    
+    // Single message case
     if (safeResponse.length <= maxLength) {
-      // Single message
-      const header = safeTitle ? `🧠 ${safeTitle}\n\n` : '';
-      await bot.sendMessage(safeChatId, header + safeResponse);
-      console.log('[Delivery] ✅ Emergency single message success');
-      return true;
-    }
-    
-    // Simple 2-part split
-    const midPoint = Math.floor(safeResponse.length / 2);
-    let splitPoint = midPoint;
-    
-    // Find good break point
-    const breakPoints = ['\n\n', '. ', '\n', ' '];
-    for (const breakChar of breakPoints) {
-      const breakIndex = safeResponse.lastIndexOf(breakChar, midPoint + 200);
-      if (breakIndex > midPoint - 200) {
-        splitPoint = breakIndex + breakChar.length;
-        break;
+      try {
+        const header = safeTitle ? `🧠 ${safeTitle}\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n` : '';
+        const fullMessage = header + safeResponse;
+        
+        await bot.sendMessage(safeChatId, fullMessage);
+        
+        const processingTime = Date.now() - startTime;
+        console.log(`[Delivery] ✅ Manual single message success: ${processingTime}ms`);
+        
+        return {
+          success: true,
+          method: 'manual_single',
+          parts: 1,
+          processingTime,
+          contentLength: safeResponse.length,
+          railwayOptimized: true
+        };
+        
+      } catch (singleError) {
+        console.error('[Delivery] ❌ Single message failed:', singleError.message);
+        // Continue to splitting
       }
     }
     
-    const part1 = safeResponse.slice(0, splitPoint).trim();
-    const part2 = safeResponse.slice(splitPoint).trim();
-    
-    // Send 2 parts
-    const header1 = `🧠 ${safeTitle || 'GPT-5'} (1/2)\n\n`;
-    const header2 = `🧠 ${safeTitle || 'GPT-5'} (2/2)\n\n`;
-    
-    await bot.sendMessage(safeChatId, header1 + part1);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    await bot.sendMessage(safeChatId, header2 + part2);
-    
-    console.log('[Delivery] ✅ Emergency 2-part split success');
-    return true;
-    
-  } catch (error) {
-    console.error('[Delivery] ❌ Complete delivery failure:', error.message);
-    
-    // Last resort error message
+    // Multi-part delivery (Railway-optimized)
     try {
-      const errorMsg = '🔧 Response processing encountered an issue. Please try again.';
-      await bot.sendMessage(safeString(chatId), errorMsg);
-      console.log('[Delivery] 📤 Error notification sent');
-      return false; // Return false for actual failures
-    } catch (lastError) {
-      console.error('[Delivery] ❌ Even error notification failed:', lastError.message);
-      return false;
+      console.log('[Delivery] 🔧 Splitting for Railway delivery');
+      
+      // Smart 2-part splitting for Railway efficiency
+      const midPoint = Math.floor(safeResponse.length / 2);
+      let splitPoint = midPoint;
+      
+      // Find optimal break point within Railway-safe range
+      const searchRange = 400;
+      const breakStrategies = [
+        { pattern: '\n\n\n', priority: 10 },  // Section break
+        { pattern: '\n\n', priority: 8 },     // Paragraph break
+        { pattern: '. ', priority: 6 },       // Sentence end
+        { pattern: '! ', priority: 6 },       // Exclamation
+        { pattern: '? ', priority: 6 },       // Question
+        { pattern: '\n', priority: 4 },       // Line break
+        { pattern: ', ', priority: 2 },       // Comma
+        { pattern: ' ', priority: 1 }         // Space
+      ];
+      
+      let bestBreak = { point: midPoint, priority: 0 };
+      
+      for (const strategy of breakStrategies) {
+        const searchStart = Math.max(0, midPoint - searchRange);
+        const searchEnd = Math.min(safeResponse.length, midPoint + searchRange);
+        
+        let lastIndex = safeResponse.lastIndexOf(strategy.pattern, searchEnd);
+        
+        if (lastIndex > searchStart && lastIndex <= maxLength) {
+          const candidatePoint = lastIndex + strategy.pattern.length;
+          
+          if (strategy.priority > bestBreak.priority) {
+            bestBreak = { point: candidatePoint, priority: strategy.priority };
+          }
+        }
+        
+        // Use good enough break
+        if (bestBreak.priority >= 6) break;
+      }
+      
+      splitPoint = bestBreak.point;
+      
+      const part1 = safeResponse.slice(0, splitPoint).trim();
+      const part2 = safeResponse.slice(splitPoint).trim();
+      
+      // Check if parts are reasonable
+      if (part1.length === 0 || part2.length === 0) {
+        throw new Error('Invalid split resulted in empty part');
+      }
+      
+      // Railway-optimized: combine small second part
+      if (part2.length < 500 && (part1.length + part2.length) < maxLength - 200) {
+        const combined = part1 + '\n\n' + part2;
+        const header = safeTitle ? `🧠 ${safeTitle}\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n` : '';
+        
+        await bot.sendMessage(safeChatId, header + combined);
+        
+        const processingTime = Date.now() - startTime;
+        console.log(`[Delivery] ✅ Manual combined delivery: ${processingTime}ms`);
+        
+        return {
+          success: true,
+          method: 'manual_combined',
+          parts: 1,
+          processingTime,
+          contentLength: safeResponse.length,
+          railwayOptimized: true,
+          combinedSmallPart: true
+        };
+      }
+      
+      // Send 2 parts with Railway headers
+      const parts = [part1, part2];
+      const results = [];
+      
+      for (let i = 0; i < parts.length; i++) {
+        try {
+          const header = `🧠 ${safeTitle || 'GPT-5'} (${i + 1}/${parts.length})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n`;
+          const fullPart = header + parts[i];
+          
+          const result = await bot.sendMessage(safeChatId, fullPart);
+          results.push(result);
+          
+          console.log(`[Delivery] ✅ Sent part ${i + 1}/${parts.length}: ${parts[i].length} chars`);
+          
+          // Railway-safe delay between parts
+          if (i < parts.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 700));
+          }
+          
+        } catch (partError) {
+          console.error(`[Delivery] ❌ Part ${i + 1} failed:`, partError.message);
+          
+          // Try without special characters
+          try {
+            const cleanPart = parts[i].replace(/[^\x00-\x7F]/g, '');
+            const simpleHeader = `GPT-5 (${i + 1}/${parts.length})\n\n`;
+            await bot.sendMessage(safeChatId, simpleHeader + cleanPart);
+            console.log(`[Delivery] 🔧 Part ${i + 1} sent with cleanup`);
+          } catch (cleanError) {
+            console.error(`[Delivery] ❌ Part ${i + 1} failed completely:`, cleanError.message);
+            // Continue with remaining parts
+          }
+        }
+      }
+      
+      const processingTime = Date.now() - startTime;
+      console.log(`[Delivery] ✅ Manual split delivery complete: ${results.length}/${parts.length} parts, ${processingTime}ms`);
+      
+      return {
+        success: results.length > 0,
+        method: 'manual_split',
+        parts: parts.length,
+        delivered: results.length,
+        processingTime,
+        contentLength: safeResponse.length,
+        railwayOptimized: true,
+        splitOptimization: bestBreak.priority >= 6 ? 'optimal' : 'acceptable'
+      };
+      
+    } catch (splitError) {
+      console.error('[Delivery] ❌ Split delivery failed:', splitError.message);
+      // Continue to emergency
     }
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // EMERGENCY: Truncated Delivery (Always Works)
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    console.log('[Delivery] 🚨 Using emergency truncated delivery');
+    
+    try {
+      const maxEmergencyLength = 3700; // Safe emergency limit
+      const truncated = safeResponse.slice(0, maxEmergencyLength);
+      const wasTruncated = safeResponse.length > maxEmergencyLength;
+      
+      let emergencyMessage = `🚨 Emergency Response\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n`;
+      
+      if (safeTitle) {
+        emergencyMessage += `📋 ${safeTitle}\n`;
+      }
+      
+      emergencyMessage += '\n' + truncated;
+      
+      if (wasTruncated) {
+        const truncatedChars = safeResponse.length - maxEmergencyLength;
+        emergencyMessage += `\n\n⚠️ Response truncated (${truncatedChars} chars) for Railway delivery.`;
+      }
+      
+      await bot.sendMessage(safeChatId, emergencyMessage);
+      
+      const processingTime = Date.now() - startTime;
+      console.log(`[Delivery] ✅ Emergency delivery success: ${processingTime}ms, truncated: ${wasTruncated}`);
+      
+      return {
+        success: true,
+        method: 'emergency_truncated',
+        parts: 1,
+        truncated: wasTruncated,
+        originalLength: safeResponse.length,
+        deliveredLength: truncated.length,
+        processingTime,
+        railwayOptimized: true
+      };
+      
+    } catch (emergencyError) {
+      console.error('[Delivery] ❌ Emergency delivery failed:', emergencyError.message);
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FINAL FALLBACK: Error Notification
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    console.log('[Delivery] 🔴 All delivery methods failed, sending error notification');
+    
+    try {
+      const errorMessage = `🔧 Response delivery failed\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\nPlease try a shorter request or contact support.`;
+      await bot.sendMessage(safeChatId, errorMessage);
+      
+      const processingTime = Date.now() - startTime;
+      console.log(`[Delivery] 📤 Error notification sent: ${processingTime}ms`);
+      
+      return {
+        success: false,
+        method: 'error_notification',
+        parts: 1,
+        error: 'All delivery methods failed',
+        processingTime,
+        railwayOptimized: true
+      };
+      
+    } catch (finalError) {
+      console.error('[Delivery] ❌ Even error notification failed:', finalError.message);
+      
+      return {
+        success: false,
+        method: 'complete_failure',
+        parts: 0,
+        error: `Complete delivery failure: ${finalError.message}`,
+        processingTime: Date.now() - startTime,
+        railwayOptimized: true
+      };
+    }
+    
+  } catch (criticalError) {
+    console.error('[Delivery] 💥 Critical delivery error:', criticalError.message);
+    
+    return {
+      success: false,
+      method: 'critical_error',
+      parts: 0,
+      error: `Critical error: ${criticalError.message}`,
+      processingTime: Date.now() - startTime,
+      railwayOptimized: true
+    };
   }
 }
 
