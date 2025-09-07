@@ -1462,9 +1462,6 @@ module.exports = {
   handleCallbackQuery,
   handleInlineQuery,
   
-  // Enhanced command execution (FIXED MEMORY)
-  executeEnhancedGPT5Command,
-  
   // Quick command functions
   quickGPT5Command,
   quickNanoCommand,
