@@ -1,6 +1,6 @@
 // utils/openaiClient.js - Official GPT-5 Client (Based on OpenAI Documentation)
 // ═══════════════════════════════════════════════════════════════════════════
-// Complete implementation with ALL GPT-5 features including Custom Tools & CFG
+// Accurate implementation using real GPT-5 models and official API features
 // Supports both Responses API and Chat Completions API as documented
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -14,7 +14,7 @@ if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is not set");
 }
 
-console.log('🧠 Loading Complete GPT-5 Client (August 2025 Release)...');
+console.log('🧠 Loading Official GPT-5 Client (August 2025 Release)...');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // UTILITY FUNCTIONS
@@ -58,16 +58,12 @@ function MetricsCollector() {
     apiUsageStats: { responses: 0, chat: 0 },
     errorTypes: {},
     responseTimes: [],
-    lastReset: new Date().toISOString(),
-    // NEW: Custom tools metrics
-    customToolsUsed: 0,
-    grammarConstraintsUsed: 0,
-    promptCacheHits: 0
+    lastReset: new Date().toISOString()
   };
   this.startTime = Date.now();
 }
 
-MetricsCollector.prototype.recordCall = function (model, apiType, success, tokens, cost, responseTime, error, extras) {
+MetricsCollector.prototype.recordCall = function (model, apiType, success, tokens, cost, responseTime, error) {
   const stats = this.stats;
   stats.totalCalls += 1;
   stats.apiUsageStats[apiType] = (stats.apiUsageStats[apiType] || 0) + 1;
@@ -83,13 +79,6 @@ MetricsCollector.prototype.recordCall = function (model, apiType, success, token
     
     if (times.length > 1000) {
       stats.responseTimes = times.slice(-1000);
-    }
-    
-    // NEW: Track advanced features usage
-    if (extras) {
-      if (extras.customToolsUsed) stats.customToolsUsed += extras.customToolsUsed;
-      if (extras.grammarUsed) stats.grammarConstraintsUsed += 1;
-      if (extras.cacheHit) stats.promptCacheHits += 1;
     }
   } else {
     stats.failedCalls += 1;
@@ -122,12 +111,7 @@ MetricsCollector.prototype.getStats = function () {
     lastReset: stats.lastReset,
     recentResponseTimes: stats.responseTimes.slice(-10),
     uptime: Date.now() - this.startTime,
-    successRate: stats.totalCalls > 0 ? ((stats.successfulCalls / stats.totalCalls) * 100).toFixed(2) : "0.00",
-    // NEW: Advanced features stats
-    customToolsUsed: stats.customToolsUsed,
-    grammarConstraintsUsed: stats.grammarConstraintsUsed,
-    promptCacheHits: stats.promptCacheHits,
-    cacheHitRate: stats.totalCalls > 0 ? ((stats.promptCacheHits / stats.totalCalls) * 100).toFixed(2) + "%" : "0%"
+    successRate: stats.totalCalls > 0 ? ((stats.successfulCalls / stats.totalCalls) * 100).toFixed(2) : "0.00"
   };
 };
 
@@ -261,7 +245,7 @@ CircuitBreaker.prototype.getState = function () {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// COMPLETE GPT-5 CONFIGURATION (Updated with ALL Features)
+// OFFICIAL GPT-5 CONFIGURATION (Based on OpenAI Documentation)
 // ═══════════════════════════════════════════════════════════════════════════
 
 const GPT5_CONFIG = {
@@ -269,13 +253,11 @@ const GPT5_CONFIG = {
   PRIMARY_MODEL: process.env.GPT5_PRIMARY_MODEL || "gpt-5",
   MINI_MODEL: process.env.GPT5_MINI_MODEL || "gpt-5-mini",
   NANO_MODEL: process.env.GPT5_NANO_MODEL || "gpt-5-nano",
-  CHAT_LATEST_MODEL: process.env.GPT5_CHAT_LATEST || "gpt-5-chat-latest", // NEW
   
-  // Updated context and token limits (Official August 2025 limits)
-  MAX_INPUT_TOKENS: 272000,    // NEW: 272K input limit
-  MAX_OUTPUT_TOKENS: 128000,   // NEW: 128K output limit  
-  CONTEXT_WINDOW: 400000,      // 400K total tokens
-  MAX_PROMPT_LENGTH: 270000,   // NEW: Based on input limit
+  // Context and token limits
+  MAX_OUTPUT_TOKENS: 16384,
+  CONTEXT_WINDOW: 400000, // 400K tokens
+  MAX_PROMPT_LENGTH: 350000,
   
   // Official reasoning efforts
   REASONING_EFFORTS: ["minimal", "low", "medium", "high"],
@@ -287,12 +269,11 @@ const GPT5_CONFIG = {
   
   DEFAULT_TEMPERATURE: 0.7,
   
-  // Official GPT-5 pricing with caching (from OpenAI documentation)
+  // Official GPT-5 pricing (from OpenAI documentation)
   MODEL_PRICING: {
-    "gpt-5": { input: 0.00125, output: 0.01, cached: 0.000125 }, // NEW: Added cached pricing
-    "gpt-5-mini": { input: 0.00025, output: 0.002, cached: 0.000025 },
-    "gpt-5-nano": { input: 0.00005, output: 0.0004, cached: 0.000005 },
-    "gpt-5-chat-latest": { input: 0.00125, output: 0.01, cached: 0.000125 } // NEW
+    "gpt-5": { input: 0.00125, output: 0.01 }, // $1.25/1M input, $10/1M output
+    "gpt-5-mini": { input: 0.00025, output: 0.002 }, // $0.25/1M input, $2/1M output
+    "gpt-5-nano": { input: 0.00005, output: 0.0004 } // $0.05/1M input, $0.40/1M output
   },
   
   // Smart API selection
@@ -300,7 +281,7 @@ const GPT5_CONFIG = {
     ENABLED: process.env.GPT5_DUAL_API !== "false",
     RESPONSES_FOR_REASONING: true,
     CHAT_FOR_SIMPLE: true,
-    CHAT_THRESHOLD: 100
+    CHAT_THRESHOLD: 100 // Short prompts go to chat API
   },
   
   // Smart model selection
@@ -309,27 +290,6 @@ const GPT5_CONFIG = {
     NANO_MAX_LENGTH: 2000,
     MINI_MAX_LENGTH: 10000,
     COMPLEXITY_KEYWORDS: ["analyze", "compare", "evaluate", "research", "complex", "detailed", "comprehensive"]
-  },
-  
-  // ═══════════════════════════════════════════════════════════════════════════
-  // NEW: CUSTOM TOOLS CONFIGURATION
-  // ═══════════════════════════════════════════════════════════════════════════
-  CUSTOM_TOOLS: {
-    ENABLED: process.env.GPT5_CUSTOM_TOOLS !== "false",
-    SUPPORTED_TYPES: ["custom"],
-    SUPPORTED_FORMATS: ["text", "grammar"],
-    SUPPORTED_SYNTAX: ["regex", "lark", "llguidance"],
-    MAX_TOOLS_PER_REQUEST: 10
-  },
-  
-  // ═══════════════════════════════════════════════════════════════════════════  
-  // NEW: PROMPT CACHING CONFIGURATION
-  // ═══════════════════════════════════════════════════════════════════════════
-  PROMPT_CACHING: {
-    ENABLED: process.env.GPT5_PROMPT_CACHING !== "false",
-    CACHE_CONTROL_HEADER: "ephemeral", // OpenAI's cache control
-    MIN_PROMPT_LENGTH_FOR_CACHE: 1000, // Minimum length to benefit from caching
-    CACHE_DISCOUNT_RATE: 0.9 // 90% discount on cached inputs
   }
 };
 
@@ -352,109 +312,11 @@ const openai = new OpenAI({
   timeout: Number(process.env.OPENAI_TIMEOUT_MS || 120000),
   maxRetries: Number(process.env.OPENAI_SDK_MAX_RETRIES || 2),
   defaultHeaders: {
-    "User-Agent": "GPT5-COMPLETE-CLIENT/1.0.0",
-    "X-Client-Version": "1.0.0-gpt5-complete",
+    "User-Agent": "GPT5-IMPERIUM-VAULT/1.0.0",
+    "X-Client-Version": "1.0.0-gpt5",
     "X-Environment": process.env.NODE_ENV || "development"
   }
 });
-
-// ═══════════════════════════════════════════════════════════════════════════
-// NEW: CUSTOM TOOLS BUILDER
-// ═══════════════════════════════════════════════════════════════════════════
-
-function buildCustomTool(name, description, options) {
-  options = options || {};
-  
-  const tool = {
-    type: "custom",
-    name: safeString(name),
-    description: safeString(description)
-  };
-  
-  // Add grammar constraints if specified
-  if (options.grammar) {
-    tool.format = {
-      type: "grammar",
-      syntax: options.grammar.syntax || "regex",
-      definition: options.grammar.definition
-    };
-  }
-  
-  // Add plaintext format (default for custom tools)
-  if (!tool.format) {
-    tool.format = { type: "text" };
-  }
-  
-  return tool;
-}
-
-function validateCustomTool(tool) {
-  if (!tool || typeof tool !== "object") {
-    throw new Error("Custom tool must be an object");
-  }
-  
-  if (tool.type !== "custom") {
-    throw new Error("Tool type must be 'custom' for custom tools");
-  }
-  
-  if (!tool.name || typeof tool.name !== "string") {
-    throw new Error("Custom tool must have a valid name");
-  }
-  
-  if (!tool.description || typeof tool.description !== "string") {
-    throw new Error("Custom tool must have a description");
-  }
-  
-  // Validate grammar format if present
-  if (tool.format && tool.format.type === "grammar") {
-    if (!GPT5_CONFIG.CUSTOM_TOOLS.SUPPORTED_SYNTAX.includes(tool.format.syntax)) {
-      throw new Error(`Unsupported grammar syntax: ${tool.format.syntax}. Supported: ${GPT5_CONFIG.CUSTOM_TOOLS.SUPPORTED_SYNTAX.join(", ")}`);
-    }
-    
-    if (!tool.format.definition || typeof tool.format.definition !== "string") {
-      throw new Error("Grammar tools must have a definition");
-    }
-  }
-  
-  return true;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// NEW: PROMPT CACHING HELPERS
-// ═══════════════════════════════════════════════════════════════════════════
-
-function shouldUsePromptCaching(prompt, options) {
-  if (!GPT5_CONFIG.PROMPT_CACHING.ENABLED) return false;
-  if (options && options.skipCache === true) return false;
-  
-  const text = safeString(prompt);
-  return text.length >= GPT5_CONFIG.PROMPT_CACHING.MIN_PROMPT_LENGTH_FOR_CACHE;
-}
-
-function addPromptCachingHeaders(request, options) {
-  if (shouldUsePromptCaching(request.input || "", options)) {
-    // Add cache control for OpenAI's prompt caching
-    if (!request.extra_headers) request.extra_headers = {};
-    request.extra_headers["Cache-Control"] = GPT5_CONFIG.PROMPT_CACHING.CACHE_CONTROL_HEADER;
-  }
-  return request;
-}
-
-function calculateCostWithCaching(model, inputTokens, outputTokens, cacheHitRatio) {
-  const pricing = GPT5_CONFIG.MODEL_PRICING[model];
-  if (!pricing) return 0;
-  
-  cacheHitRatio = Math.max(0, Math.min(1, Number(cacheHitRatio || 0)));
-  
-  // Calculate input cost with caching discount
-  const cachedTokens = Math.floor(inputTokens * cacheHitRatio);
-  const regularTokens = inputTokens - cachedTokens;
-  
-  const inputCost = (regularTokens * pricing.input) + (cachedTokens * (pricing.cached || pricing.input));
-  const outputCost = outputTokens * pricing.output;
-  
-  return inputCost + outputCost;
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SMART MODEL AND API SELECTION
@@ -518,7 +380,7 @@ function selectOptimalAPI(prompt, model, options) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// UPDATED: COST CALCULATION AND LOGGING
+// COST CALCULATION AND LOGGING
 // ═══════════════════════════════════════════════════════════════════════════
 
 function calculateCost(model, inputTokens, outputTokens) {
@@ -528,8 +390,8 @@ function calculateCost(model, inputTokens, outputTokens) {
   return (inputTokens * pricing.input) + (outputTokens * pricing.output);
 }
 
-function logApiCall(model, apiType, inputTokens, outputTokens, responseTime, success, error, extras) {
-  const cost = calculateCostWithCaching(model, inputTokens, outputTokens, extras?.cacheHitRatio || 0);
+function logApiCall(model, apiType, inputTokens, outputTokens, responseTime, success, error) {
+  const cost = calculateCost(model, inputTokens, outputTokens);
   
   const logData = {
     timestamp: new Date().toISOString(),
@@ -537,19 +399,15 @@ function logApiCall(model, apiType, inputTokens, outputTokens, responseTime, suc
     apiType: apiType,
     inputTokens: inputTokens,
     outputTokens: outputTokens,
-    cachedTokens: extras?.cachedTokens || 0,
-    cacheHitRatio: extras?.cacheHitRatio ? Math.round(extras.cacheHitRatio * 100) + "%" : "0%",
     totalTokens: inputTokens + outputTokens,
     cost: parseFloat(cost.toFixed(8)),
     responseTime: responseTime,
     success: success,
     error: error ? String(error) : null,
-    customTools: extras?.customToolsUsed || 0,
-    grammarUsed: extras?.grammarUsed || false,
     circuitBreakerState: circuitBreaker.getState()
   };
   
-  console.log("[GPT5-API-COMPLETE]", JSON.stringify(logData));
+  console.log("[GPT5-API]", JSON.stringify(logData));
   return cost;
 }
 
@@ -585,7 +443,7 @@ function withExponentialBackoff(operation) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ENHANCED REQUEST BUILDERS WITH ALL NEW FEATURES
+// REQUEST BUILDERS FOR BOTH APIS
 // ═══════════════════════════════════════════════════════════════════════════
 
 function buildResponsesRequest(model, input, options) {
@@ -594,55 +452,21 @@ function buildResponsesRequest(model, input, options) {
     input: safeString(input)
   };
   
-  // Add GPT-5 specific parameters
+  // Add GPT-5 specific parameters with correct structure
   const reasoning = options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING;
   if (GPT5_CONFIG.REASONING_EFFORTS.includes(reasoning)) {
+    // Correct parameter structure for Responses API
     request.reasoning = { effort: reasoning };
   }
   
   const verbosity = options.verbosity || GPT5_CONFIG.DEFAULT_VERBOSITY;
   if (GPT5_CONFIG.VERBOSITY_LEVELS.includes(verbosity)) {
+    // Correct parameter structure for verbosity in Responses API
     request.text = { verbosity: verbosity };
   }
   
-  // Updated token limits
   const maxTokens = options.max_output_tokens || options.max_completion_tokens || 8000;
   request.max_output_tokens = Math.min(maxTokens, GPT5_CONFIG.MAX_OUTPUT_TOKENS);
-  
-  // ═══════════════════════════════════════════════════════════════════════════
-  // NEW: ADD CUSTOM TOOLS SUPPORT
-  // ═══════════════════════════════════════════════════════════════════════════
-  if (options.tools && Array.isArray(options.tools) && GPT5_CONFIG.CUSTOM_TOOLS.ENABLED) {
-    const validTools = [];
-    
-    for (const tool of options.tools) {
-      try {
-        validateCustomTool(tool);
-        validTools.push(tool);
-      } catch (error) {
-        console.warn(`[GPT5-TOOLS] Invalid tool skipped: ${error.message}`);
-      }
-    }
-    
-    if (validTools.length > 0) {
-      request.tools = validTools.slice(0, GPT5_CONFIG.CUSTOM_TOOLS.MAX_TOOLS_PER_REQUEST);
-    }
-  }
-  
-  // Add tool choice if specified
-  if (options.tool_choice) {
-    request.tool_choice = options.tool_choice;
-  }
-  
-  // Add parallel tool calls setting
-  if (typeof options.parallel_tool_calls === "boolean") {
-    request.parallel_tool_calls = options.parallel_tool_calls;
-  }
-  
-  // ═══════════════════════════════════════════════════════════════════════════
-  // NEW: ADD PROMPT CACHING SUPPORT
-  // ═══════════════════════════════════════════════════════════════════════════
-  request = addPromptCachingHeaders(request, options);
   
   return request;
 }
@@ -653,7 +477,7 @@ function buildChatRequest(model, messages, options) {
     messages: messages
   };
   
-  // Updated token limits
+  // Use max_completion_tokens instead of max_tokens for GPT-5
   const maxTokens = options.max_tokens || options.max_completion_tokens || 8000;
   request.max_completion_tokens = Math.min(maxTokens, GPT5_CONFIG.MAX_OUTPUT_TOKENS);
   
@@ -662,119 +486,33 @@ function buildChatRequest(model, messages, options) {
   if (typeof options.frequency_penalty === "number") request.frequency_penalty = options.frequency_penalty;
   if (typeof options.presence_penalty === "number") request.presence_penalty = options.presence_penalty;
   
-  // Add reasoning effort for GPT-5 models (Chat API also supports this)
-  const reasoning = options.reasoning_effort || GPT5_CONFIG.DEFAULT_REASONING;
-  if (GPT5_CONFIG.REASONING_EFFORTS.includes(reasoning)) {
-    request.reasoning_effort = reasoning;
-  }
-  
-  // ═══════════════════════════════════════════════════════════════════════════
-  // NEW: ADD CUSTOM TOOLS SUPPORT FOR CHAT API
-  // ═══════════════════════════════════════════════════════════════════════════
-  if (options.tools && Array.isArray(options.tools) && GPT5_CONFIG.CUSTOM_TOOLS.ENABLED) {
-    const validTools = [];
-    
-    for (const tool of options.tools) {
-      try {
-        validateCustomTool(tool);
-        validTools.push(tool);
-      } catch (error) {
-        console.warn(`[GPT5-TOOLS] Invalid tool skipped: ${error.message}`);
-      }
-    }
-    
-    if (validTools.length > 0) {
-      request.tools = validTools.slice(0, GPT5_CONFIG.CUSTOM_TOOLS.MAX_TOOLS_PER_REQUEST);
-    }
-  }
-  
-  if (options.tool_choice) {
-    request.tool_choice = options.tool_choice;
-  }
-  
-  if (typeof options.parallel_tool_calls === "boolean") {
-    request.parallel_tool_calls = options.parallel_tool_calls;
-  }
-  
   return request;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ENHANCED RESPONSE EXTRACTION WITH TOOL SUPPORT
+// RESPONSE EXTRACTION
 // ═══════════════════════════════════════════════════════════════════════════
 
 function extractResponseText(completion, apiType) {
   try {
-    let content = "";
-    let toolCalls = [];
-    
     if (apiType === "responses") {
-      // Handle Responses API format
-      if (completion.output && Array.isArray(completion.output)) {
-        for (const outputItem of completion.output) {
-          if (outputItem.type === "message" && outputItem.content) {
-            for (const contentItem of outputItem.content) {
-              if (contentItem.type === "output_text" && contentItem.text) {
-                content += contentItem.text + "\n";
-              }
-            }
-          }
-          
-          // Extract tool calls from Responses API
-          if (outputItem.type === "tool_call") {
-            toolCalls.push({
-              name: outputItem.name,
-              input: outputItem.input,
-              type: outputItem.tool_type || "custom"
-            });
-          }
-        }
-      }
-      
-      // Fallback extraction methods
-      if (!content) {
-        content = safeGet(completion, "output_text", null) ||
-                 safeGet(completion, "choices.0.message.content", null) || "";
-      }
+      // Extract from Responses API format
+      const content = safeGet(completion, "output_text", null) ||
+                     safeGet(completion, "output.0.content.0.text.value", null) ||
+                     safeGet(completion, "choices.0.message.content", null);
+      return content ? String(content).trim() : "[No content in response]";
     } else {
-      // Handle Chat Completions API format
-      content = safeGet(completion, "choices.0.message.content", null) || "";
-      
-      // Extract tool calls from Chat API
-      const chatToolCalls = safeGet(completion, "choices.0.message.tool_calls", []);
-      if (Array.isArray(chatToolCalls)) {
-        toolCalls = chatToolCalls.map(tc => ({
-          name: tc.function?.name || tc.name,
-          input: tc.function?.arguments || tc.input,
-          type: tc.type || "function"
-        }));
-      }
+      // Extract from Chat Completions API format
+      const content = safeGet(completion, "choices.0.message.content", null);
+      return content ? String(content).trim() : "[No message content]";
     }
-    
-    content = content.trim();
-    if (!content && toolCalls.length === 0) {
-      return "[No content in response]";
-    }
-    
-    // If we have tool calls, include them in the response
-    if (toolCalls.length > 0) {
-      let toolOutput = content ? content + "\n\n" : "";
-      toolOutput += "[TOOL CALLS]\n";
-      toolCalls.forEach((call, index) => {
-        toolOutput += `${index + 1}. ${call.name}: ${call.input}\n`;
-      });
-      return toolOutput.trim();
-    }
-    
-    return content || "[No message content]";
-    
   } catch (error) {
     return "[Extraction error: " + error.message + "]";
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ENHANCED CORE GPT-5 FUNCTION WITH ALL NEW FEATURES
+// CORE GPT-5 FUNCTION
 // ═══════════════════════════════════════════════════════════════════════════
 
 function getGPT5Response(prompt, options) {
@@ -784,9 +522,6 @@ function getGPT5Response(prompt, options) {
   let outputTokens = 0;
   let selectedModel = "unknown";
   let selectedAPI = "unknown";
-  let cacheHitRatio = 0;
-  let customToolsUsed = 0;
-  let grammarUsed = false;
   
   return new Promise(function (resolve) {
     try {
@@ -815,13 +550,6 @@ function getGPT5Response(prompt, options) {
       
       console.log(`[GPT5-SELECT] Model: ${selectedModel}, API: ${selectedAPI}`);
       
-      // Log custom tools usage
-      if (options.tools && options.tools.length > 0) {
-        customToolsUsed = options.tools.length;
-        grammarUsed = options.tools.some(tool => tool.format && tool.format.type === "grammar");
-        console.log(`[GPT5-TOOLS] Using ${customToolsUsed} custom tools${grammarUsed ? ' (with grammar)' : ''}`);
-      }
-      
       // Estimate input tokens
       inputTokens = Math.ceil(text.length / 4);
       
@@ -838,7 +566,7 @@ function getGPT5Response(prompt, options) {
           }
         });
       }).then(function (completion) {
-        // Extract response with tool support
+        // Extract response
         const content = extractResponseText(completion, selectedAPI);
         if (!content || content.startsWith("[No ") || content.startsWith("[Extraction")) {
           throw new Error("Empty or invalid response");
@@ -849,21 +577,9 @@ function getGPT5Response(prompt, options) {
         inputTokens = usage.input_tokens || usage.prompt_tokens || inputTokens;
         outputTokens = usage.output_tokens || usage.completion_tokens || 0;
         
-        // Estimate cache hit ratio for cost calculation
-        const cachedTokens = usage.cached_tokens || 0;
-        cacheHitRatio = inputTokens > 0 ? cachedTokens / inputTokens : 0;
-        
         const responseTime = Date.now() - startTime;
-        const extras = {
-          cacheHitRatio: cacheHitRatio,
-          cachedTokens: cachedTokens,
-          customToolsUsed: customToolsUsed,
-          grammarUsed: grammarUsed,
-          cacheHit: cacheHitRatio > 0
-        };
-        
-        const cost = logApiCall(selectedModel, selectedAPI, inputTokens, outputTokens, responseTime, true, null, extras);
-        metrics.recordCall(selectedModel, selectedAPI, true, inputTokens + outputTokens, cost, responseTime, null, extras);
+        const cost = logApiCall(selectedModel, selectedAPI, inputTokens, outputTokens, responseTime, true);
+        metrics.recordCall(selectedModel, selectedAPI, true, inputTokens + outputTokens, cost, responseTime);
         
         // Cache successful response
         if (!options.skipCache && content.length > 10 && !content.startsWith("[CACHED]")) {
@@ -877,9 +593,8 @@ function getGPT5Response(prompt, options) {
         const responseTime = Date.now() - startTime;
         const errorMessage = safeGet(error, "message", String(error));
         
-        const extras = { customToolsUsed: customToolsUsed, grammarUsed: grammarUsed };
-        logApiCall(selectedModel, selectedAPI, inputTokens, outputTokens, responseTime, false, errorMessage, extras);
-        metrics.recordCall(selectedModel, selectedAPI, false, 0, 0, responseTime, errorMessage, extras);
+        logApiCall(selectedModel, selectedAPI, inputTokens, outputTokens, responseTime, false, errorMessage);
+        metrics.recordCall(selectedModel, selectedAPI, false, 0, 0, responseTime, errorMessage);
         
         resolve(`GPT-5 Error: ${errorMessage}`);
       });
@@ -925,7 +640,7 @@ function getGPT5ResponseWithMemory(prompt, memory, options) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SPECIALIZED GPT-5 FUNCTIONS (Updated with new limits)
+// SPECIALIZED GPT-5 FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
 function getQuickGPT5Response(prompt, options) {
@@ -943,7 +658,7 @@ function getDetailedGPT5Analysis(prompt, options) {
     model: GPT5_CONFIG.PRIMARY_MODEL,
     reasoning_effort: "high",
     verbosity: "high",
-    max_output_tokens: 32000 // Updated for new limits
+    max_output_tokens: 15000
   });
   return getGPT5Response(prompt, opts);
 }
@@ -959,70 +674,7 @@ function getEfficientGPT5Response(prompt, options) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// NEW: SPECIALIZED FUNCTIONS WITH CUSTOM TOOLS
-// ═══════════════════════════════════════════════════════════════════════════
-
-function getGPT5ResponseWithCustomTools(prompt, tools, options) {
-  const opts = Object.assign({}, options || {}, {
-    tools: tools || [],
-    parallel_tool_calls: true
-  });
-  return getGPT5Response(prompt, opts);
-}
-
-function getGPT5CodeExecution(prompt, options) {
-  const codeExecutionTool = buildCustomTool(
-    "code_executor",
-    "Executes Python code and returns the result",
-    { format: { type: "text" } }
-  );
-  
-  const opts = Object.assign({}, options || {}, {
-    tools: [codeExecutionTool],
-    tool_choice: "auto",
-    reasoning_effort: "medium",
-    verbosity: "medium"
-  });
-  
-  return getGPT5ResponseWithCustomTools(prompt, [codeExecutionTool], opts);
-}
-
-function getGPT5WithGrammar(prompt, grammarDefinition, syntax, options) {
-  const grammarTool = buildCustomTool(
-    "structured_output",
-    "Generate structured output following the specified grammar",
-    {
-      grammar: {
-        syntax: syntax || "regex",
-        definition: grammarDefinition
-      }
-    }
-  );
-  
-  const opts = Object.assign({}, options || {}, {
-    tools: [grammarTool],
-    tool_choice: "required",
-    reasoning_effort: "low"
-  });
-  
-  return getGPT5ResponseWithCustomTools(prompt, [grammarTool], opts);
-}
-
-function getGPT5ChatLatest(prompt, options) {
-  const opts = Object.assign({}, options || {}, {
-    model: GPT5_CONFIG.CHAT_LATEST_MODEL,
-    // Chat-latest doesn't use reasoning parameters
-    reasoning_effort: undefined
-  });
-  
-  // Remove reasoning-specific options for chat-latest
-  delete opts.reasoning_effort;
-  
-  return getGPT5Response(prompt, opts);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// HEALTH AND TESTING (Enhanced)
+// HEALTH AND TESTING
 // ═══════════════════════════════════════════════════════════════════════════
 
 function testGPT5Connection() {
@@ -1056,11 +708,8 @@ function checkGPT5SystemHealth() {
     gpt5Available: false,
     gpt5MiniAvailable: false,
     gpt5NanoAvailable: false,
-    gpt5ChatLatestAvailable: false, // NEW
     responsesAPIAvailable: false,
     chatAPIAvailable: false,
-    customToolsEnabled: GPT5_CONFIG.CUSTOM_TOOLS.ENABLED, // NEW
-    promptCachingEnabled: GPT5_CONFIG.PROMPT_CACHING.ENABLED, // NEW
     currentModel: null,
     circuitBreakerState: circuitBreaker.getState(),
     metrics: metrics.getStats(),
@@ -1089,8 +738,7 @@ function checkGPT5SystemHealth() {
   return Promise.all([
     testModel(GPT5_CONFIG.PRIMARY_MODEL, "gpt5Available"),
     testModel(GPT5_CONFIG.MINI_MODEL, "gpt5MiniAvailable"), 
-    testModel(GPT5_CONFIG.NANO_MODEL, "gpt5NanoAvailable"),
-    testModel(GPT5_CONFIG.CHAT_LATEST_MODEL, "gpt5ChatLatestAvailable") // NEW
+    testModel(GPT5_CONFIG.NANO_MODEL, "gpt5NanoAvailable")
   ]).then(function () {
     // Determine current best model
     if (health.gpt5Available) {
@@ -1099,15 +747,13 @@ function checkGPT5SystemHealth() {
       health.currentModel = GPT5_CONFIG.MINI_MODEL;
     } else if (health.gpt5NanoAvailable) {
       health.currentModel = GPT5_CONFIG.NANO_MODEL;
-    } else if (health.gpt5ChatLatestAvailable) {
-      health.currentModel = GPT5_CONFIG.CHAT_LATEST_MODEL;
     }
     
     health.overallHealth = Boolean(health.currentModel);
     
     // Test API availability
     health.responsesAPIAvailable = health.gpt5Available || health.gpt5MiniAvailable;
-    health.chatAPIAvailable = health.gpt5NanoAvailable || health.gpt5MiniAvailable || health.gpt5ChatLatestAvailable;
+    health.chatAPIAvailable = health.gpt5NanoAvailable || health.gpt5MiniAvailable;
     
     // Generate recommendations
     if (Number(health.metrics.successRate) < 95) {
@@ -1130,20 +776,12 @@ function checkGPT5SystemHealth() {
       health.recommendations.push("Dual API mode disabled - missing optimization");
     }
     
-    if (!GPT5_CONFIG.CUSTOM_TOOLS.ENABLED) {
-      health.recommendations.push("Custom tools disabled - missing advanced features");
-    }
-    
-    if (!GPT5_CONFIG.PROMPT_CACHING.ENABLED) {
-      health.recommendations.push("Prompt caching disabled - missing 90% cost savings");
-    }
-    
     return health;
   });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ADMIN FUNCTIONS (Enhanced)
+// ADMIN FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
 function clearGPT5Cache() {
@@ -1165,10 +803,7 @@ function getGPT5SystemStats() {
     configuration: {
       autoScale: GPT5_CONFIG.AUTO_SCALE.ENABLED,
       dualAPI: GPT5_CONFIG.DUAL_API.ENABLED,
-      customTools: GPT5_CONFIG.CUSTOM_TOOLS.ENABLED, // NEW
-      promptCaching: GPT5_CONFIG.PROMPT_CACHING.ENABLED, // NEW
       contextWindow: GPT5_CONFIG.CONTEXT_WINDOW,
-      maxInputTokens: GPT5_CONFIG.MAX_INPUT_TOKENS, // NEW
       maxOutputTokens: GPT5_CONFIG.MAX_OUTPUT_TOKENS
     },
     uptime: Date.now() - metrics.startTime
@@ -1176,7 +811,7 @@ function getGPT5SystemStats() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// COMPLETE MODULE EXPORTS WITH ALL NEW FEATURES
+// MODULE EXPORTS
 // ═══════════════════════════════════════════════════════════════════════════
 
 module.exports = {
@@ -1188,12 +823,6 @@ module.exports = {
   getQuickGPT5Response,
   getDetailedGPT5Analysis,
   getEfficientGPT5Response,
-  
-  // NEW: Custom tools functions
-  getGPT5ResponseWithCustomTools,
-  getGPT5CodeExecution,
-  getGPT5WithGrammar,
-  getGPT5ChatLatest,
   
   // Memory helpers
   attachMemoryToPrompt,
@@ -1211,14 +840,6 @@ module.exports = {
   selectOptimalModel,
   selectOptimalAPI,
   calculateCost,
-  
-  // NEW: Enhanced utility functions
-  calculateCostWithCaching,
-  shouldUsePromptCaching,
-  
-  // NEW: Custom tools utilities
-  buildCustomTool,
-  validateCustomTool,
   
   // Request builders
   buildResponsesRequest,
@@ -1263,60 +884,36 @@ module.exports = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ENHANCED INITIALIZATION AND STARTUP
+// INITIALIZATION AND STARTUP
 // ═══════════════════════════════════════════════════════════════════════════
 
 console.log('');
 console.log('🧠 ═══════════════════════════════════════════════════════════════');
-console.log('   COMPLETE GPT-5 CLIENT LOADED (AUGUST 2025 RELEASE)');
+console.log('   OFFICIAL GPT-5 CLIENT LOADED (AUGUST 2025 RELEASE)');
 console.log('   ═══════════════════════════════════════════════════════════════');
 console.log('');
-console.log('✅ ALL GPT-5 MODELS:');
+console.log('✅ OFFICIAL GPT-5 MODELS:');
 console.log(`   🧠 Primary: ${GPT5_CONFIG.PRIMARY_MODEL} ($1.25/$10 per 1M tokens)`);
 console.log(`   ⚡ Mini: ${GPT5_CONFIG.MINI_MODEL} ($0.25/$2 per 1M tokens)`);
 console.log(`   🔹 Nano: ${GPT5_CONFIG.NANO_MODEL} ($0.05/$0.40 per 1M tokens)`);
-console.log(`   💬 Chat-Latest: ${GPT5_CONFIG.CHAT_LATEST_MODEL} ($1.25/$10 per 1M tokens)`);
 console.log('');
-console.log('🚀 COMPLETE GPT-5 FEATURES:');
+console.log('🚀 OFFICIAL GPT-5 FEATURES:');
 console.log('   • Dual API support (Responses + Chat Completions)');
 console.log('   • Official reasoning_effort: minimal/low/medium/high');
 console.log('   • Official verbosity: low/medium/high');
-console.log(`   • ${GPT5_CONFIG.CONTEXT_WINDOW / 1000}K token context window (${GPT5_CONFIG.MAX_INPUT_TOKENS / 1000}K input + ${GPT5_CONFIG.MAX_OUTPUT_TOKENS / 1000}K output)`);
+console.log('   • 400K token context window');
+console.log('   • Up to 16K output tokens');
 console.log('   • Smart model and API selection');
 console.log('   • Circuit breaker protection');
 console.log('   • Response caching system');
 console.log('   • Comprehensive metrics collection');
-console.log('');
-console.log('🔧 NEW ADVANCED FEATURES:');
-console.log(`   • Custom Tools: ${GPT5_CONFIG.CUSTOM_TOOLS.ENABLED ? 'ENABLED' : 'DISABLED'}`);
-console.log(`   • Context-Free Grammar (CFG): ${GPT5_CONFIG.CUSTOM_TOOLS.ENABLED ? 'SUPPORTED' : 'DISABLED'}`);
-console.log(`   • Prompt Caching (90% discount): ${GPT5_CONFIG.PROMPT_CACHING.ENABLED ? 'ENABLED' : 'DISABLED'}`);
-console.log(`   • Free-form Tool Calls: ${GPT5_CONFIG.CUSTOM_TOOLS.ENABLED ? 'SUPPORTED' : 'DISABLED'}`);
-console.log(`   • Grammar Syntax: ${GPT5_CONFIG.CUSTOM_TOOLS.SUPPORTED_SYNTAX.join(', ')}`);
 console.log('');
 console.log('📊 PERFORMANCE FEATURES:');
 console.log(`   • Auto-scale: ${GPT5_CONFIG.AUTO_SCALE.ENABLED ? 'ENABLED' : 'DISABLED'}`);
 console.log(`   • Dual API: ${GPT5_CONFIG.DUAL_API.ENABLED ? 'ENABLED' : 'DISABLED'}`);
 console.log(`   • Cache size: ${cache.maxSize} entries`);
 console.log(`   • Circuit breaker: ${circuitBreaker.failureThreshold} failure threshold`);
-console.log(`   • Max tools per request: ${GPT5_CONFIG.CUSTOM_TOOLS.MAX_TOOLS_PER_REQUEST}`);
 console.log('');
-console.log('💰 COST OPTIMIZATION:');
-console.log('   • Smart model selection (auto-scale to nano/mini)');
-console.log('   • Prompt caching with 90% discount');
-console.log('   • Usage tracking and cost monitoring');
-console.log('   • Cache hit ratio monitoring');
-console.log('');
-console.log('🛠️  AVAILABLE FUNCTIONS:');
-console.log('   Core: getGPT5Response, getGPT5ResponseWithMemory');
-console.log('   Specialized: getQuickGPT5Response, getDetailedGPT5Analysis, getEfficientGPT5Response');
-console.log('   Advanced: getGPT5ResponseWithCustomTools, getGPT5CodeExecution, getGPT5WithGrammar');
-console.log('   Models: getGPT5ChatLatest (non-reasoning)');
-console.log('   Tools: buildCustomTool, validateCustomTool');
-console.log('   Health: testGPT5Connection, checkGPT5SystemHealth');
-console.log('   Admin: clearGPT5Cache, resetGPT5Metrics, getGPT5SystemStats');
-console.log('');
-console.log('✅ COMPLETE GPT-5 CLIENT READY FOR PRODUCTION');
-console.log('🎯 100% FEATURE COMPLETENESS WITH ALL LATEST GPT-5 CAPABILITIES');
+console.log('✅ OFFICIAL GPT-5 CLIENT READY FOR PRODUCTION');
 console.log('🧠 ═══════════════════════════════════════════════════════════════');
 console.log('');
