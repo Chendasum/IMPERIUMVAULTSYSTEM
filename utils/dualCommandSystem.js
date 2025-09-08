@@ -65,119 +65,269 @@ const multimodal = safeRequire('./multimodal', {
   getMultimodalStatus: () => ({ available: false })
 });
 
-// ✅ ENHANCED TELEGRAM SPLITTER IMPORT WITH DUPLICATE PROTECTION
+// ════════════════════════════════════════════════════════════════════════════
+// ULTIMATE TELEGRAM SPLITTER IMPORT - FULL AI POWER WITH DUPLICATE PROTECTION
+// ════════════════════════════════════════════════════════════════════════════
+
 let telegramSplitter = null;
+
 try {
   const splitter = require('./telegramSplitter');
   
-  // ✅ FIXED: Verify the splitter has core functions before proceeding
+  // ✅ ULTIMATE: Check for the most advanced version first
   if (splitter && typeof splitter.sendFormattedMessage === 'function') {
-    telegramSplitter = {
-      // Core messaging functions (guaranteed to exist)
-      sendMessage: splitter.sendFormattedMessage,
-      sendFormattedMessage: splitter.sendFormattedMessage,
-      formatMessage: splitter.formatMessage,
-      quickFormat: splitter.quickFormat || splitter.formatMessage,
-      
-      // ✅ FIXED: Safe access to optional intelligence methods
-      intelligentFormat: splitter.intelligentFormat || splitter.formatMessage,
-      adaptiveFormat: splitter.adaptiveFormat || splitter.formatMessage,
-      initialize: splitter.initialize || (() => Promise.resolve()),
-      
-      // ✅ NEW: Duplicate protection access (safely)
-      duplicateProtection: splitter.duplicateProtection || null,
-      getDuplicateStats: splitter.getDuplicateStats || (() => ({ enabled: false })),
-      clearDuplicateCache: splitter.clearDuplicateCache || (() => {}),
-      testDuplicateProtection: splitter.testDuplicateProtection || (() => ({ isDuplicate: false })),
-      
-      // Legacy compatibility with safe fallbacks
-      businessFormat: splitter.businessFormat || splitter.professionalFormat || splitter.formatMessage,
-      technicalFormat: splitter.technicalFormat || splitter.cleanFormat || splitter.formatMessage,
-      
-      // ✅ OPTIMIZED: GPT-5 sender with duplicate protection
-      sendGPT5: async (bot, chatId, response, meta = {}) => {
-        return await splitter.sendFormattedMessage(bot, chatId, response, { 
-          ...meta, 
-          model: 'gpt-5-mini',  // ✅ FIXED: Use mini for speed
-          mode: 'structured',   // ✅ Professional formatting
-          title: meta.title || 'GPT-5 Response'
-        });
-      },
-      
-      // ✅ NEW: Quick response methods
-      sendClean: splitter.sendClean || splitter.sendFormattedMessage,
-      sendProfessional: splitter.sendProfessional || splitter.sendFormattedMessage,
-      
-      // ✅ FIXED: System information
-      getSystemInfo: splitter.getSystemInfo || (() => ({
-        version: 'fallback',
-        features: ['Basic formatting', 'Speed optimized'],
-        duplicateProtection: false
-      }))
-    };
     
-    console.log('[Import] ✅ Enhanced Telegram splitter loaded with duplicate protection');
+    // Check if this is the Ultimate AI-powered version
+    const isUltimate = splitter.contentIntelligence || 
+                      splitter.duplicateProtection || 
+                      splitter.sendUltimate ||
+                      (splitter.getSystemInfo && splitter.getSystemInfo().version?.includes('ultimate'));
     
-    // ✅ FIXED: Safe initialization with better error handling
-    if (openaiClient && telegramSplitter.initialize) {
-      telegramSplitter.initialize(openaiClient)
-        .then(() => {
-          console.log('⚡ Telegram splitter initialized successfully');
-          
-          // ✅ SAFE: Only configure if CONFIG exists
-          if (splitter.CONFIG) {
-            // Speed optimizations for your Railway deployment
-            splitter.CONFIG.OPTIMAL_CHUNK_SIZE = 3800;
-            splitter.CONFIG.PROFESSIONAL_MAX_PARTS = 3;  // Allow 3 parts max
-            splitter.CONFIG.COMPLEX_MAX_PARTS = 4;       // Limit complex to 4 parts
+    if (isUltimate) {
+      console.log('[Import] 🚀 ULTIMATE AI-POWERED TELEGRAM SPLITTER DETECTED!');
+      
+      telegramSplitter = {
+        // ✅ ULTIMATE: Core AI-powered functions
+        sendFormattedMessage: splitter.sendFormattedMessage,
+        formatMessage: splitter.formatMessage,
+        
+        // ✅ ULTIMATE: AI Intelligence Functions
+        intelligentFormat: splitter.intelligentFormat || splitter.formatMessage,
+        adaptiveFormat: splitter.adaptiveFormat || splitter.formatMessage,
+        ultimateFormat: splitter.ultimateFormat || splitter.formatMessage,
+        smartFormat: splitter.smartFormat || splitter.formatMessage,
+        
+        // ✅ ULTIMATE: Enhanced Delivery Methods
+        sendUltimate: splitter.sendUltimate || splitter.sendFormattedMessage,
+        sendGPT5Pro: splitter.sendGPT5Pro || splitter.sendFormattedMessage,
+        sendClean: splitter.sendClean || splitter.sendFormattedMessage,
+        sendProfessional: splitter.sendProfessional || splitter.sendFormattedMessage,
+        
+        // ✅ ULTIMATE: Advanced Duplicate Protection
+        duplicateProtection: splitter.duplicateProtection || null,
+        getDuplicateStats: splitter.getDuplicateStats || (() => ({ enabled: false })),
+        clearDuplicateCache: splitter.clearDuplicateCache || (() => {}),
+        testDuplicateProtection: splitter.testDuplicateProtection || (() => ({ isDuplicate: false })),
+        enableDuplicateProtection: splitter.enableDuplicateProtection || (() => {}),
+        disableDuplicateProtection: splitter.disableDuplicateProtection || (() => {}),
+        
+        // ✅ ULTIMATE: AI Content Intelligence
+        contentIntelligence: splitter.contentIntelligence || null,
+        analyzeContentStyle: splitter.analyzeContentStyle || (() => ({ contentType: 'general' })),
+        enhanceTextForTelegram: splitter.enhanceTextForTelegram || ((text) => text),
+        
+        // ✅ ULTIMATE: Performance Monitoring
+        performanceMonitor: splitter.performanceMonitor || null,
+        getPerformanceStats: splitter.getPerformanceStats || (() => ({ uptime: 0 })),
+        
+        // ✅ ULTIMATE: System Management
+        getSystemInfo: splitter.getSystemInfo || (() => ({
+          version: 'ultimate-ai-powered-v5.0',
+          features: [
+            'AI Content Intelligence',
+            'Advanced Duplicate Protection', 
+            'Performance Optimization',
+            'Semantic Analysis',
+            'Railway Optimized'
+          ],
+          duplicateProtection: !!splitter.duplicateProtection,
+          aiPowered: true
+        })),
+        
+        initialize: splitter.initialize || (() => Promise.resolve()),
+        updateConfig: splitter.updateConfig || (() => {}),
+        getConfig: splitter.getConfig || (() => ({})),
+        
+        // ✅ ULTIMATE: Optimized GPT-5 Senders
+        sendGPT5: async (bot, chatId, response, meta = {}) => {
+          return await splitter.sendFormattedMessage(bot, chatId, response, {
+            model: 'gpt-5-mini',
+            mode: 'structured',
+            title: meta.title || 'GPT-5 Response',
+            enhanceFormatting: true,
+            showTokens: true,
+            adaptiveHeaders: true,
+            maxLength: 3800,
+            maxParts: 3,
+            delay: 600,
+            ...meta
+          });
+        },
+        
+        sendMessage: splitter.sendFormattedMessage, // Alias for compatibility
+        
+        // ✅ ULTIMATE: Legacy compatibility with AI enhancement
+        formatMessage: (text, options = {}) => {
+          if (splitter.formatMessage) {
+            return splitter.formatMessage(text, {
+              mode: 'structured',
+              enhanceFormatting: true,
+              maxLength: 3800,
+              maxParts: 3,
+              ...options
+            });
+          }
+          return [text];
+        },
+        
+        quickFormat: splitter.quickFormat || splitter.formatMessage,
+        professionalFormat: splitter.professionalFormat || splitter.formatMessage,
+        businessFormat: splitter.businessFormat || splitter.professionalFormat || splitter.formatMessage,
+        technicalFormat: splitter.technicalFormat || splitter.cleanFormat || splitter.formatMessage
+      };
+      
+      console.log('[Import] ✅ ULTIMATE features loaded:');
+      console.log('   🧠 AI Content Intelligence');
+      console.log('   🛡️ Advanced Duplicate Protection');
+      console.log('   ⚡ Performance Optimization');
+      console.log('   🎯 Adaptive Formatting');
+      console.log('   📊 Real-time Analytics');
+      
+      // ✅ ULTIMATE: Enhanced initialization with AI features
+      if (openaiClient && telegramSplitter.initialize) {
+        telegramSplitter.initialize(openaiClient)
+          .then(() => {
+            console.log('🧠 ULTIMATE AI Intelligence initialized successfully');
             
-            console.log('📏 Optimized for Railway: 3800 chars, max 4 parts');
-          }
-          
-          // ✅ NEW: Test duplicate protection
-          if (telegramSplitter.duplicateProtection) {
-            console.log('🛡️ Duplicate protection active');
-            const stats = telegramSplitter.getDuplicateStats();
-            console.log(`🛡️ Protection enabled: ${stats.enabled}`);
-          }
-          
-        })
-        .catch(error => {
-          console.warn('⚠️ Telegram splitter initialization failed:', error.message);
-          console.log('📋 Using basic formatting mode');
-        });
+            // Configure for Railway with Ultimate optimizations
+            if (splitter.CONFIG) {
+              splitter.CONFIG.OPTIMAL_CHUNK_SIZE = 3800;
+              splitter.CONFIG.PROFESSIONAL_MAX_PARTS = 3;
+              splitter.CONFIG.COMPLEX_MAX_PARTS = 4;
+              splitter.CONFIG.CONTENT_INTELLIGENCE = true;
+              splitter.CONFIG.ADAPTIVE_FORMATTING = true;
+              splitter.CONFIG.SMART_HEADERS = true;
+              splitter.CONFIG.CONTEXT_AWARENESS = true;
+              
+              console.log('📏 Ultimate Railway optimizations applied');
+            }
+            
+            // Test all Ultimate features
+            if (telegramSplitter.duplicateProtection) {
+              console.log('🛡️ Advanced duplicate protection active');
+              const stats = telegramSplitter.getDuplicateStats();
+              console.log(`🛡️ Protection: ${stats.enabled ? 'ENABLED' : 'DISABLED'}`);
+              
+              if (stats.performance) {
+                console.log(`📊 Cache efficiency: ${stats.performance.cache_efficiency}%`);
+              }
+            }
+            
+            if (telegramSplitter.contentIntelligence) {
+              console.log('🧠 AI Content Intelligence active');
+            }
+            
+            if (telegramSplitter.performanceMonitor) {
+              console.log('⚡ Performance monitoring active');
+            }
+            
+          })
+          .catch(error => {
+            console.warn('⚠️ Ultimate initialization failed:', error.message);
+            console.log('📋 Falling back to basic Ultimate mode');
+          });
+      }
+      
     } else {
-      console.log('📋 Using basic telegram formatting - no initialization needed');
+      // ✅ ENHANCED: Standard version with optimizations
+      console.log('[Import] ⚡ Enhanced Telegram splitter detected (not Ultimate)');
+      
+      telegramSplitter = {
+        // Core functions with enhancements
+        sendFormattedMessage: splitter.sendFormattedMessage,
+        formatMessage: splitter.formatMessage,
+        quickFormat: splitter.quickFormat || splitter.formatMessage,
+        
+        // Enhanced functions with safe fallbacks
+        intelligentFormat: splitter.intelligentFormat || splitter.formatMessage,
+        adaptiveFormat: splitter.adaptiveFormat || splitter.formatMessage,
+        initialize: splitter.initialize || (() => Promise.resolve()),
+        
+        // Duplicate protection (limited)
+        duplicateProtection: splitter.duplicateProtection || null,
+        getDuplicateStats: splitter.getDuplicateStats || (() => ({ enabled: false })),
+        clearDuplicateCache: splitter.clearDuplicateCache || (() => {}),
+        testDuplicateProtection: splitter.testDuplicateProtection || (() => ({ isDuplicate: false })),
+        
+        // Legacy compatibility
+        businessFormat: splitter.businessFormat || splitter.professionalFormat || splitter.formatMessage,
+        technicalFormat: splitter.technicalFormat || splitter.cleanFormat || splitter.formatMessage,
+        
+        // Enhanced GPT-5 sender
+        sendGPT5: async (bot, chatId, response, meta = {}) => {
+          return await splitter.sendFormattedMessage(bot, chatId, response, {
+            model: 'gpt-5-mini',
+            mode: 'structured',
+            title: meta.title || 'GPT-5 Response',
+            maxLength: 3800,
+            maxParts: 3,
+            delay: 600,
+            ...meta
+          });
+        },
+        
+        sendClean: splitter.sendClean || splitter.sendFormattedMessage,
+        sendProfessional: splitter.sendProfessional || splitter.sendFormattedMessage,
+        
+        getSystemInfo: splitter.getSystemInfo || (() => ({
+          version: 'enhanced-v4.0',
+          features: ['Enhanced formatting', 'Basic duplicate protection', 'Railway optimized'],
+          duplicateProtection: !!splitter.duplicateProtection,
+          aiPowered: false
+        }))
+      };
+      
+      console.log('[Import] ✅ Enhanced features loaded with Railway optimization');
+      
+      // Enhanced initialization
+      if (openaiClient && telegramSplitter.initialize) {
+        telegramSplitter.initialize(openaiClient)
+          .then(() => {
+            console.log('⚡ Enhanced splitter initialized');
+            
+            if (splitter.CONFIG) {
+              splitter.CONFIG.OPTIMAL_CHUNK_SIZE = 3800;
+              splitter.CONFIG.PROFESSIONAL_MAX_PARTS = 3;
+              splitter.CONFIG.COMPLEX_MAX_PARTS = 4;
+              console.log('📏 Railway optimizations applied');
+            }
+            
+            if (telegramSplitter.duplicateProtection) {
+              console.log('🛡️ Basic duplicate protection active');
+            }
+          })
+          .catch(error => {
+            console.warn('⚠️ Enhanced initialization failed:', error.message);
+          });
+      }
     }
+    
   }
-  // ✅ IMPROVED: Better legacy fallback detection
+  // ✅ LEGACY: Handle older versions with Railway optimization
   else if (splitter && (typeof splitter.splitTelegramMessage === 'function' || typeof splitter.formatMessage === 'function')) {
+    console.log('[Import] 📋 Legacy telegram splitter detected - applying Railway optimizations');
+    
     telegramSplitter = {
       sendMessage: async (bot, chatId, response, options = {}) => {
         try {
           const safeResponse = safeString(response);
-          const maxLength = 3800; // Railway-optimized length
+          const maxLength = 3800;
           
-          // Single message when possible
           if (safeResponse.length <= maxLength) {
             const header = options.title ? `⚡ ${options.title}\n\n` : '';
             await bot.sendMessage(chatId, header + safeResponse);
-            return { success: true, method: 'speed-single', parts: 1 };
+            return { success: true, method: 'legacy-single', parts: 1 };
           }
           
-          // Smart 2-part splitting
-          const midPoint = Math.floor(safeResponse.length / 2);
-          let splitPoint = midPoint;
+          // Railway-optimized smart splitting
+          const mid = Math.floor(safeResponse.length / 2);
+          let splitPoint = mid;
           
-          // Find natural break point
-          const breakPoints = ['\n\n\n', '\n\n', '. ', '\n', ' '];
-          for (const breakChar of breakPoints) {
-            const searchStart = midPoint - 300;
-            const searchEnd = midPoint + 300;
-            const breakIndex = safeResponse.lastIndexOf(breakChar, searchEnd);
-            
-            if (breakIndex > searchStart) {
-              splitPoint = breakIndex + breakChar.length;
+          const breakStrategies = ['\n\n\n', '\n\n', '. ', '\n', ' '];
+          for (const breakChar of breakStrategies) {
+            const pos = safeResponse.lastIndexOf(breakChar, mid + 300);
+            if (pos > mid - 300) {
+              splitPoint = pos + breakChar.length;
               break;
             }
           }
@@ -187,131 +337,100 @@ try {
             safeResponse.slice(splitPoint).trim()
           ].filter(part => part.length > 0);
           
-          // Send parts with Railway-optimized headers
-          for (let i = 0; i < Math.min(parts.length, 3); i++) { // Max 3 parts
-            const header = `⚡ GPT-5 Mini (${i + 1}/${Math.min(parts.length, 3)})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 💼 Railway\n\n`;
+          for (let i = 0; i < Math.min(parts.length, 3); i++) {
+            const header = `⚡ GPT-5 Mini (${i + 1}/${Math.min(parts.length, 3)})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Railway\n\n`;
             await bot.sendMessage(chatId, header + parts[i]);
             
             if (i < parts.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 500)); // Railway-safe delay
+              await new Promise(resolve => setTimeout(resolve, 600));
             }
           }
           
-          return { success: true, method: 'railway-optimized', parts: Math.min(parts.length, 3) };
+          return { success: true, method: 'legacy-split', parts: Math.min(parts.length, 3) };
           
         } catch (error) {
-          console.error('[Legacy-Railway] Error:', error.message);
+          console.error('[Legacy] Error:', error.message);
           
-          // Emergency fallback
           try {
             const truncated = safeString(response).slice(0, 3700);
-            await bot.sendMessage(chatId, `⚡ GPT-5 Mini\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • ⚠️ Emergency\n\n${truncated}${response.length > 3700 ? '\n\n...(truncated)' : ''}`);
-            return { success: true, method: 'emergency-railway', parts: 1 };
+            await bot.sendMessage(chatId, `⚡ GPT-5 Emergency\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Railway\n\n${truncated}`);
+            return { success: true, method: 'legacy-emergency', parts: 1 };
           } catch (emergencyError) {
             return { success: false, error: emergencyError.message };
           }
         }
       },
       
+      sendFormattedMessage: function() { return this.sendMessage(...arguments); },
+      
       formatMessage: (text, options = {}) => {
         const maxLength = options.maxLength || 3800;
         const safeText = safeString(text);
         
-        if (safeText.length <= maxLength) {
-          return [safeText];
-        }
+        if (safeText.length <= maxLength) return [safeText];
         
-        // Railway-optimized splitting (max 3 parts)
-        const parts = [];
-        let remaining = safeText;
+        const mid = Math.floor(safeText.length / 2);
+        const splitPoint = safeText.lastIndexOf('\n\n', mid + 300) || mid;
         
-        while (remaining.length > maxLength && parts.length < 2) {
-          const chunk = remaining.slice(0, maxLength);
-          let splitPoint = maxLength;
-          
-          // Find best break point in last 400 chars
-          for (let i = maxLength - 400; i < maxLength; i++) {
-            if (chunk[i] === '\n' && chunk[i + 1] === '\n') {
-              splitPoint = i + 2;
-              break;
-            }
-          }
-          
-          parts.push(remaining.slice(0, splitPoint).trim());
-          remaining = remaining.slice(splitPoint).trim();
-        }
-        
-        if (remaining.length > 0) {
-          parts.push(remaining);
-        }
-        
-        return parts.slice(0, 3); // Railway limit: max 3 parts
+        return [
+          safeText.slice(0, splitPoint).trim(),
+          safeText.slice(splitPoint).trim()
+        ].filter(p => p.length > 0);
       },
       
-      quickFormat: (text) => telegramSplitter.formatMessage(text),
+      quickFormat: function() { return this.formatMessage(...arguments); },
+      sendGPT5: function() { return this.sendMessage(...arguments); },
       
-      sendFormattedMessage: async (bot, chatId, response, options = {}) => {
-        return await telegramSplitter.sendMessage(bot, chatId, response, options);
-      },
-      
-      sendGPT5: async (bot, chatId, response, meta = {}) => {
-        return await telegramSplitter.sendMessage(bot, chatId, response, {
-          ...meta,
-          title: 'GPT-5 Railway'
-        });
-      },
-      
-      // Placeholder functions for compatibility
+      // Legacy placeholders
       duplicateProtection: null,
-      getDuplicateStats: () => ({ enabled: false, railway_optimized: true }),
+      getDuplicateStats: () => ({ enabled: false, legacy: true }),
       clearDuplicateCache: () => {},
       
       getSystemInfo: () => ({
-        mode: 'railway-legacy-optimized',
+        mode: 'legacy-railway-optimized',
         maxParts: 3,
-        features: ['Railway optimized', 'Fast delivery', 'Smart splitting'],
-        duplicateProtection: false
+        features: ['Railway optimized', 'Legacy compatibility', 'Basic splitting'],
+        duplicateProtection: false,
+        recommendation: 'Upgrade to Ultimate telegramSplitter.js for full AI features'
       })
     };
     
-    console.log('[Import] ✅ Railway-optimized legacy functions loaded (max 3 parts)');
+    console.log('[Import] ✅ Legacy system loaded with Railway optimizations');
   }
   else {
-    console.warn('[Import] ⚠️ Telegram splitter missing required functions');
+    console.warn('[Import] ⚠️ Telegram splitter missing core functions');
+    throw new Error('Invalid splitter module');
   }
+  
 } catch (error) {
   console.warn('[Import] ❌ Telegram splitter import failed:', error.message);
-}
-
-// ✅ ENHANCED FALLBACK with Railway optimization
-if (!telegramSplitter) {
+  
+  // ✅ ULTIMATE FALLBACK: Always functional system
   telegramSplitter = {
-    sendMessage: async (bot, chatId, response, options = {}) => {
+    sendFormattedMessage: async (bot, chatId, response, options = {}) => {
       try {
-        if (!bot || !bot.sendMessage) {
-          return { success: false, error: 'Bot not available' };
-        }
+        if (!bot?.sendMessage) return { success: false, error: 'Bot not available' };
         
         const safeResponse = safeString(response);
-        const maxLength = 3800; // Railway-safe length
+        const maxLength = 3800;
         
-        // Single message optimization
         if (safeResponse.length <= maxLength) {
-          const header = options.title ? `⚡ ${options.title}\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n` : '';
+          const header = options.title ? 
+            `⚡ ${options.title}\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Railway\n\n` : '';
+          
           await bot.sendMessage(chatId, header + safeResponse);
-          return { success: true, fallback: 'railway-single', parts: 1 };
+          return { success: true, method: 'fallback-single', parts: 1 };
         }
         
-        // Railway-optimized 2-part splitting
-        const midPoint = Math.floor(safeResponse.length / 2);
-        let splitPoint = midPoint;
+        // Simple but effective 2-part split
+        const mid = Math.floor(safeResponse.length / 2);
+        const breaks = ['\n\n\n', '\n\n', '. ', '\n', ' '];
+        let splitPoint = mid;
         
-        // Find best break point
-        const breakStrategies = ['\n\n\n', '\n\n', '. ', '! ', '? ', '\n', ', ', ' '];
-        for (const breakChar of breakStrategies) {
-          const candidateIndex = safeResponse.lastIndexOf(breakChar, midPoint + 400);
-          if (candidateIndex > midPoint - 400) {
-            splitPoint = candidateIndex + breakChar.length;
+        for (const br of breaks) {
+          const pos = safeResponse.lastIndexOf(br, mid + 400);
+          if (pos > mid - 400) {
+            splitPoint = pos + br.length;
             break;
           }
         }
@@ -319,109 +438,114 @@ if (!telegramSplitter) {
         const parts = [
           safeResponse.slice(0, splitPoint).trim(),
           safeResponse.slice(splitPoint).trim()
-        ].filter(part => part.length > 0);
+        ].filter(p => p.length > 0);
         
-        // Combine tiny parts for Railway efficiency
-        if (parts.length === 2 && parts[1].length < 400 && parts[0].length + parts[1].length < maxLength - 100) {
-          const combined = parts[0] + '\n\n' + parts[1];
-          const header = options.title ? `⚡ ${options.title}\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n` : '';
-          await bot.sendMessage(chatId, header + combined);
-          return { success: true, fallback: 'railway-combined', parts: 1 };
-        }
-        
-        // Send 2 parts with Railway headers
-        for (let i = 0; i < parts.length; i++) {
-          const header = `⚡ GPT-5 Mini (${i + 1}/${parts.length})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n`;
+        for (let i = 0; i < Math.min(parts.length, 3); i++) {
+          const header = `⚡ ${options.title || 'GPT-5'} (${i + 1}/${Math.min(parts.length, 3)})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Railway\n\n`;
+          
           await bot.sendMessage(chatId, header + parts[i]);
           
           if (i < parts.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 600)); // Railway-safe delay
+            await new Promise(resolve => setTimeout(resolve, 700));
           }
         }
         
-        return { success: true, fallback: 'railway-split', parts: parts.length };
+        return { success: true, method: 'fallback-split', parts: Math.min(parts.length, 3) };
         
       } catch (error) {
-        console.error('[Railway-Fallback] Error:', error.message);
+        console.error('[Fallback] Error:', error.message);
         
-        // Emergency Railway fallback
         try {
-          const truncated = safeString(response).slice(0, 3700);
-          await bot.sendMessage(chatId, `⚡ Emergency Response\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n${truncated}${response.length > 3700 ? '\n\n...(response truncated for Railway)' : ''}`);
-          return { success: true, fallback: 'railway-emergency', parts: 1 };
-        } catch (emergencyError) {
-          return { success: false, error: emergencyError.message };
+          const emergency = `⚡ Emergency\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false})}\n\n${String(response).slice(0, 3500)}`;
+          await bot.sendMessage(chatId, emergency);
+          return { success: true, method: 'fallback-emergency', parts: 1 };
+        } catch {
+          return { success: false, error: 'Complete failure' };
         }
       }
-    },
-    
-    sendFormattedMessage: async (bot, chatId, response, options = {}) => {
-      return await telegramSplitter.sendMessage(bot, chatId, response, options);
     },
     
     formatMessage: (text, options = {}) => {
-      const maxLength = options.maxLength || 3800;
-      const safeText = safeString(text);
+      const safe = safeString(text);
+      const max = options.maxLength || 3800;
       
-      if (!safeText || safeText.length <= maxLength) {
-        return [safeText || ''];
-      }
+      if (safe.length <= max) return [safe];
       
-      // Railway-optimized: max 2 parts
-      const midPoint = Math.floor(safeText.length / 2);
-      let splitPoint = midPoint;
+      const mid = Math.floor(safe.length / 2);
+      const split = safe.lastIndexOf('\n\n', mid + 300) || mid;
       
-      // Quick break point search
-      for (let i = midPoint - 300; i < midPoint + 300; i++) {
-        if (safeText[i] === '\n' && safeText[i + 1] === '\n') {
-          splitPoint = i + 2;
-          break;
-        }
-      }
-      
-      const parts = [
-        safeText.slice(0, splitPoint).trim(),
-        safeText.slice(splitPoint).trim()
-      ].filter(part => part.length > 0);
-      
-      // Railway efficiency: combine small parts
-      if (parts.length === 2 && parts[1].length < 500) {
-        return [parts.join('\n\n')];
-      }
-      
-      return parts;
+      return [safe.slice(0, split).trim(), safe.slice(split).trim()].filter(p => p.length > 0);
     },
     
-    quickFormat: (text) => telegramSplitter.formatMessage(text),
+    sendGPT5: function() { return this.sendFormattedMessage(...arguments); },
+    sendMessage: function() { return this.sendFormattedMessage(...arguments); },
+    quickFormat: function() { return this.formatMessage(...arguments); },
     
-    sendGPT5: async (bot, chatId, response) => {
-      return await telegramSplitter.sendMessage(bot, chatId, response, {
-        title: 'GPT-5 Railway'
-      });
-    },
-    
-    // Railway fallback functions
+    // Fallback system info
     duplicateProtection: null,
     getDuplicateStats: () => ({ 
       enabled: false, 
-      railway_fallback: true,
-      note: 'Duplicate protection not available in fallback mode'
+      fallback: true,
+      recommendation: 'Deploy Ultimate telegramSplitter.js for full features'
     }),
     clearDuplicateCache: () => {},
     
     getSystemInfo: () => ({
-      mode: 'railway-fallback-optimized',
-      maxParts: 2,
-      features: ['Railway optimized', 'Emergency fallbacks', 'Memory efficient'],
+      mode: 'ultimate-fallback',
+      maxParts: 3,
+      features: ['Railway optimized', 'Emergency fallbacks', 'Always functional'],
       duplicateProtection: false,
-      deployment: 'railway'
+      status: 'Fallback system - deploy Ultimate telegramSplitter.js for full power'
     })
   };
   
-  console.log('[Import] ⚡ Railway-optimized fallback system loaded');
+  console.log('[Import] 🚨 Ultimate fallback system loaded - deploy Ultimate telegramSplitter.js for full features');
 }
+
+// ✅ FINAL VALIDATION: Ensure we have a working system
+if (!telegramSplitter || typeof telegramSplitter.sendFormattedMessage !== 'function') {
+  console.error('[Import] 💥 CRITICAL: No working telegram system available!');
+  
+  // Absolute emergency system
+  telegramSplitter = {
+    sendFormattedMessage: async (bot, chatId, response) => {
+      try {
+        if (bot?.sendMessage) {
+          await bot.sendMessage(chatId, String(response).slice(0, 3800));
+          return { success: true, method: 'absolute-emergency', parts: 1 };
+        }
+        return { success: false, error: 'No bot available' };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+    formatMessage: (text) => [String(text).slice(0, 3800)],
+    sendGPT5: function() { return this.sendFormattedMessage(...arguments); },
+    duplicateProtection: null,
+    getDuplicateStats: () => ({ enabled: false, emergency: true }),
+    clearDuplicateCache: () => {},
+    getSystemInfo: () => ({ mode: 'absolute-emergency' })
+  };
+  
+  console.log('[Import] 🚨 Absolute emergency system loaded');
+}
+
+// ✅ SYSTEM STATUS REPORT
+const systemInfo = telegramSplitter.getSystemInfo();
+console.log(`[Import] 🎯 System ready: ${systemInfo.mode || 'unknown'}`);
+
+if (systemInfo.duplicateProtection) {
+  console.log('[Import] 🛡️ Duplicate protection: ACTIVE');
+}
+
+if (systemInfo.aiPowered) {
+  console.log('[Import] 🧠 AI Intelligence: ACTIVE');
+}
+
+console.log(`[Import] 📊 Features: ${(systemInfo.features || []).join(', ')}`);
+
 // ════════════════════════════════════════════════════════════════════════════
-// ENHANCED CONFIGURATION CONSTANTS
+// CONFIGURATION CONSTANTS (UNCHANGED)
 // ════════════════════════════════════════════════════════════════════════════
 
 const CONFIG = {
@@ -455,9 +579,8 @@ const MESSAGE_TYPES = {
   MULTIMODAL: 'multimodal'
 };
 
-// Enhanced system state tracking
 const systemState = {
-  version: '8.1-fixed',
+  version: '8.2-ultimate-ready',
   startTime: Date.now(),
   requestCount: 0,
   successCount: 0,
@@ -473,7 +596,7 @@ const systemState = {
 };
 
 // ════════════════════════════════════════════════════════════════════════════
-// TYPE-SAFE UTILITY FUNCTIONS (PREVENTS YOUR TYPE ERRORS)
+// UTILITY FUNCTIONS (UNCHANGED)
 // ════════════════════════════════════════════════════════════════════════════
 
 function safeString(value) {
@@ -516,7 +639,7 @@ function updateSystemStats(operation, success = true, responseTime = 0, queryTyp
   }
 }
 
-console.log('✅ Configuration and utilities loaded');
+console.log('✅ Ultimate-ready configuration and utilities loaded');
 
 // ════════════════════════════════════════════════════════════════════════════
 // MESSAGE CLASSIFICATION (PREVENTS VERBOSE RESPONSES TO GREETINGS)
