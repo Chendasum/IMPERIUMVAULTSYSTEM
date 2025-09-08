@@ -559,11 +559,13 @@ function createTelegramHeader(options = {}) {
         } = options;
         
         const modelInfo = MODELS[model] || MODELS['gpt-5-mini'];
-        const timestamp = new Date().toLocaleTimeString('en-US', {
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        
+        // Fixed Cambodia time formatting - prevents 24:04 display bug
+        const now = new Date();
+        const cambodiaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' }));
+        const hours = cambodiaTime.getHours();
+        const minutes = cambodiaTime.getMinutes();
+        const timestamp = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
         
         // Build clean, professional header with clear model identification
         let header = '';
@@ -611,7 +613,15 @@ function createTelegramHeader(options = {}) {
         
     } catch (error) {
         log('Header creation failed, using minimal fallback', error);
-        return `${MODELS['gpt-5-mini'].icon} **${MODELS['gpt-5-mini'].name}**\n🕐 ${new Date().toLocaleTimeString()}\n\n`;
+        
+        // Fixed fallback with proper Cambodia time
+        const fallbackTime = new Date();
+        const cambodiaFallback = new Date(fallbackTime.toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' }));
+        const fallbackHours = cambodiaFallback.getHours();
+        const fallbackMinutes = cambodiaFallback.getMinutes();
+        const fallbackTimestamp = `${fallbackHours.toString().padStart(2, '0')}:${fallbackMinutes.toString().padStart(2, '0')}`;
+        
+        return `${MODELS['gpt-5-mini'].icon} **${MODELS['gpt-5-mini'].name}**\n🕐 ${fallbackTimestamp}\n\n`;
     }
 }
 
