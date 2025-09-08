@@ -1,4 +1,4 @@
-// utils/logger.js - Fixed GPT-5 Response Extraction
+// utils/logger.js - Enhanced GPT-5 Response Extraction with Full Support
 'use strict';
 
 const fs = require('fs').promises;
@@ -23,12 +23,23 @@ class Logger {
     }
   }
 
-  // FIXED: Better GPT-5 response extraction
+  // Enhanced Cambodia time for consistency with your system
+  getCambodiaTimestamp() {
+    try {
+      const now = new Date();
+      const cambodiaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' }));
+      return cambodiaTime.toISOString().replace('Z', '+07:00');
+    } catch (error) {
+      return new Date().toISOString();
+    }
+  }
+
+  // Enhanced GPT-5 response extraction with full support
   extractGPTContent(gptResponse) {
     if (!gptResponse) return '[No response]';
     if (typeof gptResponse === 'string') return gptResponse;
 
-    // GPT-5 Responses API: Check output_text first
+    // GPT-5 Responses API: Check output_text first (primary method)
     if (typeof gptResponse === 'object' && typeof gptResponse.output_text === 'string') {
       if (gptResponse.output_text.trim() === '') {
         // Empty response - check if this is an error condition
@@ -86,6 +97,55 @@ class Logger {
     }
   }
 
+  // Enhanced GPT-5 metadata extraction
+  extractGPT5Metadata(gptResponse) {
+    if (!gptResponse || typeof gptResponse !== 'object') {
+      return { model: 'string_response' };
+    }
+
+    const metadata = {
+      model: gptResponse.model || 'unknown',
+      tokenUsage: gptResponse.usage || null,
+      finishReason: gptResponse.finish_reason || gptResponse.finishReason || null,
+      fallback: !!gptResponse.fallback,
+      error: !!gptResponse.error,
+      
+      // GPT-5 specific diagnostics
+      hasOutputText: 'output_text' in gptResponse,
+      outputTextEmpty: gptResponse.output_text === '',
+      hasOutputArray: Array.isArray(gptResponse.output),
+      outputTokens: gptResponse.usage?.output_tokens || 0,
+      inputTokens: gptResponse.usage?.input_tokens || 0,
+      totalTokens: gptResponse.usage?.total_tokens || 0,
+      
+      // GPT-5 reasoning metrics
+      reasoningTokens: gptResponse.usage?.output_tokens_details?.reasoning_tokens || 0,
+      thinkingTime: gptResponse.usage?.thinking_time_ms || null,
+      reasoningEffort: gptResponse.reasoning_effort || null,
+      
+      // GPT-5 model variants
+      modelVariant: this.detectModelVariant(gptResponse.model),
+      
+      // Performance metrics
+      responseTime: gptResponse.response_time_ms || null,
+      requestId: gptResponse.id || null
+    };
+
+    return metadata;
+  }
+
+  // Detect GPT-5 model variants
+  detectModelVariant(model) {
+    if (!model || typeof model !== 'string') return 'unknown';
+    
+    if (model.includes('gpt-5-nano')) return 'nano';
+    if (model.includes('gpt-5-mini')) return 'mini';
+    if (model.includes('gpt-5-chat')) return 'chat';
+    if (model.includes('gpt-5')) return 'full';
+    
+    return 'other';
+  }
+
   // Enhanced truncation with better handling
   safeTruncate(value, maxLength = 1000) {
     const content = this.extractGPTContent(value);
@@ -124,35 +184,17 @@ class Logger {
     return walk(obj);
   }
 
-  // Main GPT response logger with enhanced diagnostics
+  // Main GPT response logger with enhanced GPT-5 support
   logGPTResponse(data) {
     try {
-      const timestamp = new Date().toISOString();
+      const timestamp = this.getCambodiaTimestamp();
       const userId = data.userId || 'unknown';
       const username = data.username || 'unknown';
 
       const promptPreview = this.safeTruncate(data.prompt, 500);
       const gptContent = this.extractGPTContent(data.gptResponse);
       const truncatedResponse = this.safeTruncate(gptContent, MAX_FILE_LINE);
-
-      const isObj = typeof data.gptResponse === 'object' && data.gptResponse !== null;
-      
-      // Enhanced metadata with GPT-5 specific info
-      const metadata = isObj
-        ? {
-            model: data.gptResponse.model || 'unknown',
-            tokenUsage: data.gptResponse.usage || null,
-            finishReason: data.gptResponse.finish_reason || data.gptResponse.finishReason || null,
-            fallback: !!data.gptResponse.fallback,
-            error: !!data.gptResponse.error,
-            // GPT-5 specific diagnostics
-            hasOutputText: 'output_text' in data.gptResponse,
-            outputTextEmpty: data.gptResponse.output_text === '',
-            hasOutputArray: Array.isArray(data.gptResponse.output),
-            outputTokens: data.gptResponse.usage?.output_tokens || 0,
-            reasoningTokens: data.gptResponse.usage?.output_tokens_details?.reasoning_tokens || 0
-          }
-        : { model: 'string_response' };
+      const metadata = this.extractGPT5Metadata(data.gptResponse);
 
       const logEntry = {
         timestamp,
@@ -163,33 +205,64 @@ class Logger {
         metadata,
         responseLength: gptContent.length,
         truncated: gptContent.length > MAX_FILE_LINE,
+        
+        // Enhanced GPT-5 specific fields
+        gpt5Diagnostics: {
+          modelVariant: metadata.modelVariant,
+          hasReasoning: metadata.reasoningTokens > 0,
+          thinkingTimeMs: metadata.thinkingTime,
+          reasoningEffort: metadata.reasoningEffort,
+          tokenEfficiency: metadata.outputTokens > 0 ? 
+            (gptContent.length / metadata.outputTokens).toFixed(2) : null,
+          emptyResponse: metadata.outputTextEmpty,
+          apiType: metadata.hasOutputText ? 'responses' : 'chat'
+        }
       };
 
       // RAW attachment for debugging
       if (RAW_MODE) {
-        const redacted = isObj ? this.redactLargeStrings(data.gptResponse) : data.gptResponse;
+        const redacted = this.redactLargeStrings(data.gptResponse);
         logEntry.raw = redacted;
       }
 
-      // Enhanced console output with diagnostics
+      // Enhanced console output with GPT-5 diagnostics
       const diagnostics = {
         user: `${username} (${userId})`,
-        model: metadata.model,
+        model: `${metadata.model} (${metadata.modelVariant})`,
         promptLen: (typeof data.prompt === 'string' ? data.prompt.length : 0),
         responseLen: gptContent.length,
-        tokens: metadata.tokenUsage?.total_tokens ?? 'unknown',
-        outputTokens: metadata.outputTokens,
-        reasoningTokens: metadata.reasoningTokens,
-        fallback: metadata.fallback,
-        empty: metadata.outputTextEmpty,
-        raw: RAW_MODE ? 'on' : 'off',
+        tokens: {
+          input: metadata.inputTokens,
+          output: metadata.outputTokens,
+          reasoning: metadata.reasoningTokens,
+          total: metadata.totalTokens
+        },
+        performance: {
+          thinkingMs: metadata.thinkingTime,
+          responseMs: metadata.responseTime,
+          effort: metadata.reasoningEffort
+        },
+        status: {
+          fallback: metadata.fallback,
+          empty: metadata.outputTextEmpty,
+          error: metadata.error
+        },
+        raw: RAW_MODE ? 'on' : 'off'
       };
 
-      console.log('[Logger] GPT Response:', diagnostics);
+      console.log('[Logger] GPT-5 Response:', diagnostics);
 
-      // Flag potential issues
+      // Enhanced issue detection
       if (metadata.outputTextEmpty && metadata.outputTokens === 0) {
         console.warn('[Logger] ⚠️ Empty GPT-5 response detected - check API configuration');
+      }
+      
+      if (metadata.reasoningTokens > metadata.outputTokens * 2) {
+        console.warn('[Logger] ⚠️ High reasoning token usage detected - consider optimizing prompts');
+      }
+      
+      if (metadata.modelVariant === 'unknown' && metadata.model?.includes('gpt')) {
+        console.warn('[Logger] ⚠️ Unknown GPT model variant:', metadata.model);
       }
 
       this.writeLogEntry('gpt_responses', logEntry, { prettyRaw: RAW_PRETTY }).catch(err => {
@@ -203,16 +276,21 @@ class Logger {
         isArray: Array.isArray(data?.gptResponse),
         hasOutputText: data?.gptResponse && 'output_text' in data.gptResponse,
         outputTextValue: data?.gptResponse?.output_text,
+        model: data?.gptResponse?.model,
+        usage: data?.gptResponse?.usage,
         keys: data?.gptResponse && typeof data.gptResponse === 'object'
-          ? Object.keys(data.gptResponse).slice(0, 10) // Limit key output
+          ? Object.keys(data.gptResponse).slice(0, 10)
           : 'N/A',
       });
     }
   }
 
+  // Enhanced conversation logging
   logConversation(data) {
     try {
-      const timestamp = new Date().toISOString();
+      const timestamp = this.getCambodiaTimestamp();
+      const metadata = this.extractGPT5Metadata(data.gptResponse);
+      
       const entry = {
         timestamp,
         userId: data.userId || 'unknown',
@@ -223,8 +301,12 @@ class Logger {
         metadata: {
           chatId: data.chatId,
           messageId: data.messageId,
-          model: (typeof data.gptResponse === 'object' && data.gptResponse?.model) || 'string_response',
+          model: metadata.model,
+          modelVariant: metadata.modelVariant,
           processingTime: data.processingTime || null,
+          tokenUsage: metadata.tokenUsage,
+          reasoningTokens: metadata.reasoningTokens,
+          duplicateProtected: data.duplicateProtected || false
         },
       };
 
@@ -240,9 +322,43 @@ class Logger {
     }
   }
 
+  // New: Duplicate protection logging
+  logDuplicateProtection(data) {
+    try {
+      const timestamp = this.getCambodiaTimestamp();
+      const entry = {
+        timestamp,
+        type: 'duplicate_protection',
+        chatId: data.chatId,
+        userId: data.userId || 'unknown',
+        username: data.username || 'unknown',
+        reason: data.reason,
+        similarity: data.similarity || null,
+        originalLength: data.originalLength || null,
+        age: data.age || null,
+        prevented: true,
+        antiDuplicateResponse: data.antiDuplicateResponse || false
+      };
+
+      console.log('[Logger] Duplicate Protection:', {
+        chat: data.chatId,
+        reason: data.reason,
+        similarity: data.similarity ? `${Math.round(data.similarity * 100)}%` : 'N/A',
+        age: data.age ? `${Math.round(data.age / 1000)}s` : 'N/A'
+      });
+
+      this.writeLogEntry('duplicates', entry).catch(err => {
+        console.error('Failed to write duplicate protection log:', err);
+      });
+    } catch (error) {
+      console.error('❌ Failed to log duplicate protection:', error);
+    }
+  }
+
+  // Enhanced error logging
   logError(error, context = {}) {
     try {
-      const timestamp = new Date().toISOString();
+      const timestamp = this.getCambodiaTimestamp();
       const entry = {
         timestamp,
         type: 'error',
@@ -251,10 +367,16 @@ class Logger {
           stack: error?.stack || null,
           name: error?.name || 'Error',
         },
-        context,
+        context: {
+          ...context,
+          model: context.model || 'unknown',
+          userId: context.userId || 'unknown',
+          chatId: context.chatId || 'unknown',
+          operation: context.operation || 'unknown'
+        },
       };
 
-      console.error('[Logger] Error logged:', entry.error.message, context);
+      console.error('[Logger] Error logged:', entry.error.message, entry.context);
 
       this.writeLogEntry('errors', entry).catch(err => {
         console.error('Failed to write error log:', err);
@@ -264,15 +386,21 @@ class Logger {
     }
   }
 
+  // Enhanced system health logging
   logSystemHealth(healthData) {
     try {
-      const timestamp = new Date().toISOString();
+      const timestamp = this.getCambodiaTimestamp();
       const entry = {
         timestamp,
         type: 'system_health',
         health: healthData,
         uptime: process.uptime(),
         memory: process.memoryUsage(),
+        deployment: {
+          platform: 'railway',
+          nodeVersion: process.version,
+          environment: process.env.NODE_ENV || 'unknown'
+        }
       };
 
       this.writeLogEntry('system', entry).catch(err => {
@@ -319,24 +447,57 @@ class Logger {
       return `[Stringify Error: ${error.message}]`;
     }
   }
+
+  // Get logging statistics
+  getLoggingStats() {
+    return {
+      timestamp: this.getCambodiaTimestamp(),
+      logDirectory: this.logDir,
+      rawMode: RAW_MODE,
+      prettyRaw: RAW_PRETTY,
+      limits: {
+        maxFileLine: MAX_FILE_LINE,
+        maxConsoleText: MAX_CONSOLE_TEXT
+      },
+      features: [
+        'GPT-5 response extraction',
+        'Reasoning token tracking',
+        'Model variant detection',
+        'Duplicate protection logging',
+        'Cambodia timezone support',
+        'Railway deployment context'
+      ]
+    };
+  }
 }
 
 // Singleton instance
 const logger = new Logger();
 
-console.log('Enhanced Logger loaded with GPT-5 diagnostics');
+console.log('Enhanced GPT-5 Logger loaded with full support');
+console.log(`Cambodia timezone: ${logger.getCambodiaTimestamp()}`);
 console.log(`RAW mode: ${RAW_MODE ? 'ENABLED' : 'DISABLED'}`);
 console.log(`Pretty RAW: ${RAW_PRETTY ? 'ENABLED' : 'DISABLED'}`);
+console.log('GPT-5 features: Model variants, reasoning tokens, thinking time, duplicate protection');
 
 module.exports = {
   Logger,
   // Wrapper functions
   logGPTResponse: (data) => logger.logGPTResponse(data),
   logConversation: (data) => logger.logConversation(data),
+  logDuplicateProtection: (data) => logger.logDuplicateProtection(data),
   logError: (error, context) => logger.logError(error, context),
   logSystemHealth: (healthData) => logger.logSystemHealth(healthData),
+  
   // Utility functions
   extractGPTContent: (response) => logger.extractGPTContent(response),
+  extractGPT5Metadata: (response) => logger.extractGPT5Metadata(response),
   safeTruncate: (text, maxLength) => logger.safeTruncate(text, maxLength),
   safeStringify: (obj, maxLength) => logger.safeStringify(obj, maxLength),
+  getCambodiaTimestamp: () => logger.getCambodiaTimestamp(),
+  detectModelVariant: (model) => logger.detectModelVariant(model),
+  getLoggingStats: () => logger.getLoggingStats(),
+  
+  // Direct access to logger instance
+  logger
 };
