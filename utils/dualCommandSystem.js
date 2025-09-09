@@ -2722,61 +2722,6 @@ async function analyzeMarket(researchScope, analysisData, chatId, bot) {
 console.log('✅ Cambodia modules loaded (templated system)');
 
 // ════════════════════════════════════════════════════════════════════════════
-// 🚀 COMPLETE ENHANCED MODULE EXPORTS - GPT-5 RAILWAY SYSTEM v8.6
-// ════════════════════════════════════════════════════════════════════════════
-
-// Enhanced GPT-5 executor integration
-const { 
-  executeEnhancedGPT5Command, 
-  deliverToTelegramUltimate,
-  shouldUseUltimateMode,
-  getOptimalFormattingMode 
-} = (() => {
-  try {
-    return require('./enhanced-gpt5-executor');
-  } catch (error) {
-    console.warn('Enhanced GPT-5 executor not available:', error.message);
-    return {
-      executeEnhancedGPT5Command: null,
-      deliverToTelegramUltimate: null,
-      shouldUseUltimateMode: () => false,
-      getOptimalFormattingMode: () => 'professional'
-    };
-  }
-})();
-
-// Safe module loader
-const safeRequire = (modulePath, fallback = {}) => {
-  try {
-    return require(modulePath);
-  } catch (error) {
-    console.warn(`Module ${modulePath} not available:`, error.message);
-    return fallback;
-  }
-};
-
-// Core dependencies with safe loading
-const telegramSplitter = safeRequire('./telegramSplitter');
-const openaiClient = safeRequire('./openai-client');
-const memory = safeRequire('./memory-system');
-const database = safeRequire('./database');
-const multimodal = safeRequire('./multimodal');
-
-// System state tracking
-const systemState = safeRequire('./system/state').systemState || {
-  version: '8.6-ENHANCED',
-  startTime: Date.now(),
-  requestCount: 0,
-  successCount: 0,
-  errorCount: 0,
-  memorySuccessCount: 0,
-  memoryFailureCount: 0,
-  modelUsageStats: {},
-  healthStatus: 'unknown',
-  lastHealthCheck: null
-};
-
-// ════════════════════════════════════════════════════════════════════════════
 // SYSTEM HEALTH MONITORING
 // ════════════════════════════════════════════════════════════════════════════
 
