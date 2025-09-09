@@ -2933,6 +2933,8 @@ module.exports = {
 
   // Enhanced command execution (FIXED MEMORY)
   executeEnhancedGPT5Command,
+  shouldUseUltimateMode,
+  getOptimalFormattingMode,
   
   // Quick command functions
   quickGPT5Command,
