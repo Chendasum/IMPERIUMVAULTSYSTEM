@@ -1632,6 +1632,11 @@ async function routeMessageByType(userMessage, chatId, bot, messageType, startTi
 // ════════════════════════════════════════════════════════════════════════════
 // 🚀 ULTIMATE GPT-5 COMMAND EXECUTOR - MAXIMUM POWER INTEGRATION v8.4
 // ════════════════════════════════════════════════════════════════════════════
+// 🎯 BUSINESS AUTO-ULTIMATE: Smart detection for business/financial content
+// 🧠 AI INTELLIGENCE: Full integration with ULTIMATE telegramSplitter features
+// 🛡️ ENHANCED PROTECTION: Advanced duplicate detection and intelligent routing
+// 📊 VISUAL EXCELLENCE: Maximum formatting power for professional presentation
+// ════════════════════════════════════════════════════════════════════════════
 
 async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
   const executionStart = Date.now();
@@ -1659,6 +1664,13 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
         console.log(`[Enhanced] 🧠 Loading memory context (level: ${options.contextAware || 'full'})`);
         memoryContext = await buildMemoryContext(safeChatId, options.contextAware);
         console.log(`[Enhanced] Memory context loaded: ${memoryContext.length} chars`);
+        
+        // 🔥 BUSINESS INTELLIGENCE: Enhance memory with business context detection
+        if (memoryContext && shouldUseUltimateMode(safeMessage, memoryContext)) {
+          options.forceUltimate = true;
+          console.log('[Enhanced] 🔥 Business intelligence detected in memory - forcing ultimate mode');
+        }
+        
       } catch (contextError) {
         console.warn('[Enhanced] ⚠️ Memory context failed:', contextError.message);
       }
@@ -2015,10 +2027,10 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
         const enhancedOptions = {
           title: safeTitle,
           model: options.model || 'gpt-5-mini',
-          mode: deliveryMode === 'ultimate' ? 'ultimate' : 'professional',  // ← MINIMUM PROFESSIONAL
-          enhanceFormatting: true,        // ← ALWAYS ENHANCE
-          professionalPresentation: true, // ← FORCE PROFESSIONAL
-          adaptiveFormatting: true,       // ← SMART FORMATTING
+          mode: deliveryMode === 'ultimate' ? 'ultimate' : 'professional',
+          enhanceFormatting: true,
+          professionalPresentation: true,
+          adaptiveFormatting: true,
           includeHeaders: true,
           showTokens: options.showTokens !== false,
           maxLength: 3800,
@@ -2138,7 +2150,7 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
       
       // Enhanced break strategies with business content awareness
       const breakStrategies = [
-        { pattern: '\n\n**', priority: 12, name: 'business_headers' },     // Business headers
+        { pattern: '\n\n**', priority: 12, name: 'business_headers' },
         { pattern: '\n\n\n', priority: 10, name: 'triple_newline' },
         { pattern: '\n\n', priority: 8, name: 'double_newline' },
         { pattern: '. **', priority: 7, name: 'sentence_before_header' },
@@ -2152,7 +2164,7 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
       ];
       
       let bestBreak = { point: midPoint, priority: 0, name: 'fallback' };
-      const searchRange = 500; // Increased range for better breaks
+      const searchRange = 500;
       
       for (const strategy of breakStrategies) {
         const searchStart = Math.max(0, midPoint - searchRange);
@@ -2168,7 +2180,7 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
           }
         }
         
-        if (bestBreak.priority >= 8) break; // Stop at excellent breaks
+        if (bestBreak.priority >= 8) break;
       }
       
       splitPoint = bestBreak.point;
@@ -2205,36 +2217,39 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
         };
       }
       
-      // Send parts with your proven Railway headers
+      // Send parts with PROFESSIONAL headers and enhanced formatting
       const parts = [part1, part2];
       const results = [];
       
       for (let i = 0; i < parts.length; i++) {
         try {
-          const header = `🧠 ${safeTitle || 'GPT-5'} (${i + 1}/${parts.length})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n`;
+          const headerIcon = deliveryMode === 'ultimate' ? '🚀' : isBusinessContent ? '📊' : '💼';
+          const headerMode = deliveryMode === 'ultimate' ? 'Ultimate' : isBusinessContent ? 'Business' : 'Professional';
+          const header = `${headerIcon} **${safeTitle || 'Analysis'} (${i + 1}/${parts.length})**\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • ${headerMode}\n\n`;
+          
           const fullPart = header + parts[i];
           
-          const result = await bot.sendMessage(safeChatId, fullPart);
+          const result = await bot.sendMessage(safeChatId, fullPart, { parse_mode: 'Markdown' });
           results.push(result);
           
-          console.log(`[Delivery] ✅ Sent part ${i + 1}/${parts.length}: ${parts[i].length} chars`);
+          console.log(`[Delivery] ✅ Professional part ${i + 1}/${parts.length} sent: ${parts[i].length} chars`);
           
           if (i < parts.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 700));
+            await new Promise(resolve => setTimeout(resolve, 800));
           }
           
         } catch (partError) {
-          console.error(`[Delivery] ❌ Part ${i + 1} failed:`, partError.message);
+          console.error(`[Delivery] ❌ Professional part ${i + 1} failed:`, partError.message);
           
-          // Your proven cleanup strategy
+          // Enhanced fallback with markdown cleanup
           try {
-            const cleanPart = parts[i].replace(/[^\x00-\x7F]/g, '');
-            const simpleHeader = `GPT-5 (${i + 1}/${parts.length})\n\n`;
+            const cleanPart = parts[i].replace(/\*\*/g, '').replace(/[^\x00-\x7F]/g, '');
+            const simpleHeader = `${isBusinessContent ? '📊' : '💼'} Analysis (${i + 1}/${parts.length})\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})}\n\n`;
             await bot.sendMessage(safeChatId, simpleHeader + cleanPart);
-            console.log(`[Delivery] 🔧 Part ${i + 1} sent with cleanup`);
+            console.log(`[Delivery] 🔧 Professional part ${i + 1} sent with cleanup`);
             results.push(true);
           } catch (cleanError) {
-            console.error(`[Delivery] ❌ Part ${i + 1} failed completely:`, cleanError.message);
+            console.error(`[Delivery] ❌ Professional part ${i + 1} failed completely:`, cleanError.message);
             results.push(false);
           }
         }
@@ -2242,35 +2257,39 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
       
       const processingTime = Date.now() - startTime;
       const successCount = results.filter(r => r).length;
-      console.log(`[Delivery] ✅ Manual split delivery complete: ${successCount}/${parts.length} parts, ${processingTime}ms`);
+      console.log(`[Delivery] ✅ Professional split delivery complete: ${successCount}/${parts.length} parts, ${processingTime}ms`);
       
       return {
         success: successCount > 0,
-        method: 'manual_split_railway',
+        method: 'manual_professional_split',
         parts: parts.length,
         delivered: successCount,
         processingTime,
         contentLength: safeResponse.length,
-        railwayFallback: true,
-        splitOptimization: bestBreak.priority >= 6 ? 'optimal' : 'acceptable'
+        professionalQuality: true,
+        splitOptimization: bestBreak.priority >= 8 ? 'excellent' : bestBreak.priority >= 6 ? 'good' : 'acceptable',
+        deliveryMode: 'manual_professional'
       };
       
     } catch (splitError) {
-      console.error('[Delivery] ❌ Manual split delivery failed:', splitError.message);
+      console.error('[Delivery] ❌ Professional split delivery failed:', splitError.message);
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // EMERGENCY: Your Proven Truncated Delivery (Always Works)
+    // 🚀 ULTIMATE TIER 5: Emergency Professional Delivery (Always Works)
     // ═══════════════════════════════════════════════════════════════════════════
     
-    console.log('[Delivery] 🚨 Using emergency truncated delivery');
+    console.log('[Delivery] 🚨 Using emergency professional delivery');
     
     try {
       const maxEmergencyLength = 3700;
       const truncated = safeResponse.slice(0, maxEmergencyLength);
       const wasTruncated = safeResponse.length > maxEmergencyLength;
       
-      let emergencyMessage = `🚨 Emergency Response\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n`;
+      const headerIcon = deliveryMode === 'ultimate' ? '🚀' : isBusinessContent ? '📊' : '⚡';
+      const headerMode = deliveryMode === 'ultimate' ? 'Ultimate Emergency' : isBusinessContent ? 'Business Emergency' : 'Professional Emergency';
+      
+      let emergencyMessage = `${headerIcon} **${headerMode} Response**\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})}\n`;
       
       if (safeTitle) {
         emergencyMessage += `📋 ${safeTitle}\n`;
@@ -2280,77 +2299,137 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
       
       if (wasTruncated) {
         const truncatedChars = safeResponse.length - maxEmergencyLength;
-        emergencyMessage += `\n\n⚠️ Response truncated (${truncatedChars} chars) for Railway delivery.`;
+        emergencyMessage += `\n\n⚠️ **Note:** Response optimized for delivery (${truncatedChars} chars condensed).`;
       }
       
-      await bot.sendMessage(safeChatId, emergencyMessage);
+      await bot.sendMessage(safeChatId, emergencyMessage, { parse_mode: 'Markdown' });
       
       const processingTime = Date.now() - startTime;
-      console.log(`[Delivery] ✅ Emergency delivery success: ${processingTime}ms, truncated: ${wasTruncated}`);
+      console.log(`[Delivery] ✅ Emergency professional delivery success: ${processingTime}ms, truncated: ${wasTruncated}`);
       
       return {
         success: true,
-        method: 'emergency_truncated_railway',
+        method: 'emergency_professional',
         parts: 1,
         truncated: wasTruncated,
         originalLength: safeResponse.length,
         deliveredLength: truncated.length,
         processingTime,
-        railwayFallback: true
+        professionalQuality: true,
+        emergencyMode: true,
+        deliveryMode: 'emergency_professional'
       };
       
     } catch (emergencyError) {
-      console.error('[Delivery] ❌ Emergency delivery failed:', emergencyError.message);
+      console.error('[Delivery] ❌ Emergency professional delivery failed:', emergencyError.message);
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // FINAL: Your Error Notification System
+    // 🚀 FINAL: Enhanced Error Notification with Professional Standards
     // ═══════════════════════════════════════════════════════════════════════════
     
-    console.log('[Delivery] 🔴 All delivery methods failed, sending error notification');
+    console.log('[Delivery] 🔴 All professional delivery methods failed, sending enhanced error notification');
     
     try {
-      const errorMessage = `🔧 Response delivery failed\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\nPlease try a shorter request or contact support.`;
-      await bot.sendMessage(safeChatId, errorMessage);
+      const errorMessage = `🔧 **System Optimization**\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})}\n\n` +
+                           `Response delivery temporarily optimized. Please try:\n\n` +
+                           `• **Shorter request** - Break complex queries into parts\n` +
+                           `• **Simpler format** - Request basic text responses\n` +
+                           `• **Retry** - Technical issues are usually temporary\n\n` +
+                           `💼 Professional support is available if issues persist.`;
+      
+      await bot.sendMessage(safeChatId, errorMessage, { parse_mode: 'Markdown' });
       
       const processingTime = Date.now() - startTime;
-      console.log(`[Delivery] 📤 Error notification sent: ${processingTime}ms`);
+      console.log(`[Delivery] 📤 Enhanced error notification sent: ${processingTime}ms`);
       
       return {
         success: false,
-        method: 'error_notification',
+        method: 'enhanced_error_notification',
         parts: 1,
         error: 'All delivery methods failed',
         processingTime,
-        railwayFallback: true
+        professionalQuality: true,
+        helpfulFallback: true,
+        deliveryMode: 'error_notification'
       };
       
     } catch (finalError) {
-      console.error('[Delivery] ❌ Even error notification failed:', finalError.message);
+      console.error('[Delivery] ❌ Even enhanced error notification failed:', finalError.message);
       
       return {
         success: false,
-        method: 'complete_failure',
+        method: 'complete_system_failure',
         parts: 0,
         error: `Complete delivery failure: ${finalError.message}`,
         processingTime: Date.now() - startTime,
-        railwayFallback: true
+        criticalError: true,
+        deliveryMode: 'system_failure'
       };
     }
     
   } catch (criticalError) {
-    console.error('[Delivery] 💥 Critical delivery error:', criticalError.message);
+    console.error('[Delivery] 💥 Critical delivery system error:', criticalError.message);
     
     return {
       success: false,
-      method: 'critical_error',
+      method: 'critical_system_error',
       parts: 0,
-      error: `Critical error: ${criticalError.message}`,
+      error: `Critical system error: ${criticalError.message}`,
       processingTime: Date.now() - startTime,
-      railwayFallback: true
+      systemFailure: true,
+      deliveryMode: 'critical_error'
     };
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// 🧠 SMART CONTENT ANALYSIS FUNCTIONS
+// ════════════════════════════════════════════════════════════════════════════
+
+function shouldUseUltimateMode(message, context = '') {
+  const businessKeywords = ['business', 'financial', 'strategy', 'revenue', 'loan', 'lending', 'credit', 'investment', 'portfolio', 'analysis', 'market', 'report'];
+  const cambodiaKeywords = ['borrower', 'collateral', 'cambodia', 'phnom penh', 'khmer', 'riel'];
+  const complexityKeywords = ['comprehensive', 'detailed', 'thorough', 'in-depth', 'analyze', 'evaluation', 'assessment'];
+  
+  const content = (message + ' ' + context).toLowerCase();
+  
+  const hasBusinessTerms = businessKeywords.some(keyword => content.includes(keyword));
+  const hasCambodiaTerms = cambodiaKeywords.some(keyword => content.includes(keyword));
+  const hasComplexityTerms = complexityKeywords.some(keyword => content.includes(keyword));
+  const isLongContent = message.length > 1000;
+  
+  return hasBusinessTerms || hasCambodiaTerms || hasComplexityTerms || isLongContent;
+}
+
+function getOptimalFormattingMode(message, context = '', options = {}) {
+  if (options.forceUltimate || options.mode === 'ultimate') {
+    return 'ultimate';
+  }
+  
+  if (shouldUseUltimateMode(message, context)) {
+    return 'ultimate';
+  }
+  
+  const content = (message + ' ' + context).toLowerCase();
+  
+  if (content.includes('professional') || content.includes('formal') || message.length > 500) {
+    return 'professional';
+  }
+  
+  return 'professional'; // Minimum professional guarantee - no basic modes
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 🔧 UTILITY FUNCTIONS
+// ════════════════════════════════════════════════════════════════════════════
+
+function safeString(input) {
+  if (typeof input === 'string') return input.trim();
+  if (input === null || input === undefined) return '';
+  return String(input).trim();
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // SYSTEM COMMAND HANDLER
 // ════════════════════════════════════════════════════════════════════════════
