@@ -1,13 +1,14 @@
-// utils/dualCommandSystem.js - COMPLETE FIXED VERSION WITH MEMORY INTEGRATION
+// utils/dualCommandSystem.js - ULTIMATE POWER INTEGRATION v8.3
 // ════════════════════════════════════════════════════════════════════════════
-// 🔧 FIXED: Memory integration gap between dualCommandSystem ↔ memory.js ↔ database.js
-// 🔧 FIXED: Function name mismatches and type errors
-// 🔧 FIXED: Context building and memory saving failures
+// 🚀 ULTIMATE INTEGRATION: Full power telegramSplitter.js activation
+// 🎯 BUSINESS OPTIMIZATION: Auto-ultimate mode for business/financial content
+// 🛡️ ENHANCED PROTECTION: Advanced duplicate detection and intelligent caching
+// 🧠 AI INTELLIGENCE: Smart content analysis and adaptive formatting
 // ════════════════════════════════════════════════════════════════════════════
 
 'use strict';
 
-console.log('🔧 Loading FIXED dualCommandSystem with memory integration...');
+console.log('🚀 Loading ULTIMATE dualCommandSystem with full power integration...');
 
 // ════════════════════════════════════════════════════════════════════════════
 // SAFE IMPORTS WITH ENHANCED FALLBACKS
@@ -66,7 +67,7 @@ const multimodal = safeRequire('./multimodal', {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// ULTIMATE TELEGRAM SPLITTER IMPORT - FULL AI POWER WITH DUPLICATE PROTECTION
+// 🚀 ULTIMATE TELEGRAM SPLITTER IMPORT - MAXIMUM POWER ACTIVATION
 // ════════════════════════════════════════════════════════════════════════════
 
 let telegramSplitter = null;
@@ -74,77 +75,332 @@ let telegramSplitter = null;
 try {
   const splitter = require('./telegramSplitter');
   
-  // ✅ ULTIMATE: Check for the most advanced version first
+  // ✅ ULTIMATE: Check for the ULTIMATE AI-powered version
   if (splitter && typeof splitter.sendFormattedMessage === 'function') {
     
-    // Check if this is the Ultimate AI-powered version
+    // 🚀 Detect ULTIMATE features
     const isUltimate = splitter.contentIntelligence || 
                       splitter.duplicateProtection || 
                       splitter.sendUltimate ||
+                      splitter.ultimateFormat ||
+                      splitter.businessFormat ||
+                      splitter.financialFormat ||
                       (splitter.getSystemInfo && splitter.getSystemInfo().version?.includes('ultimate'));
     
     if (isUltimate) {
-      console.log('[Import] 🚀 ULTIMATE AI-POWERED TELEGRAM SPLITTER DETECTED!');
+      console.log('[Import] 🚀 ULTIMATE AI-POWERED TELEGRAM SPLITTER v5.1 DETECTED!');
       
       telegramSplitter = {
-        // ✅ ULTIMATE: Core AI-powered functions
+        // ✅ ULTIMATE: Core maximum power functions
         sendFormattedMessage: splitter.sendFormattedMessage,
         formatMessage: splitter.formatMessage,
         
-        // ✅ ULTIMATE: AI Intelligence Functions
-        intelligentFormat: splitter.intelligentFormat || splitter.formatMessage,
-        adaptiveFormat: splitter.adaptiveFormat || splitter.formatMessage,
+        // ✅ ULTIMATE: AI Intelligence Functions with FULL POWER
         ultimateFormat: splitter.ultimateFormat || splitter.formatMessage,
-        smartFormat: splitter.smartFormat || splitter.formatMessage,
+        professionalFormat: splitter.professionalFormat || splitter.formatMessage,
+        businessFormat: splitter.businessFormat || splitter.ultimateFormat || splitter.formatMessage,
+        financialFormat: splitter.financialFormat || splitter.ultimateFormat || splitter.formatMessage,
+        intelligentFormat: splitter.intelligentFormat || splitter.ultimateFormat || splitter.formatMessage,
+        adaptiveFormat: splitter.adaptiveFormat || splitter.businessFormat || splitter.formatMessage,
+        smartFormat: splitter.smartFormat || splitter.professionalFormat || splitter.formatMessage,
+        quickFormat: splitter.quickFormat || splitter.professionalFormat || splitter.formatMessage,
         
-        // ✅ ULTIMATE: Enhanced Delivery Methods
+        // ✅ ULTIMATE: Enhanced Delivery Methods with MAXIMUM IMPACT
         sendUltimate: splitter.sendUltimate || splitter.sendFormattedMessage,
-        sendGPT5Pro: splitter.sendGPT5Pro || splitter.sendFormattedMessage,
-        sendClean: splitter.sendClean || splitter.sendFormattedMessage,
+        sendGPT5Pro: splitter.sendGPT5Pro || splitter.sendUltimate || splitter.sendFormattedMessage,
+        sendGPT5: splitter.sendGPT5 || splitter.sendFormattedMessage,
         sendProfessional: splitter.sendProfessional || splitter.sendFormattedMessage,
+        sendBusiness: splitter.sendBusiness || splitter.sendUltimate || splitter.sendFormattedMessage,
+        sendFinancial: splitter.sendFinancial || splitter.sendUltimate || splitter.sendFormattedMessage,
+        sendClean: splitter.sendClean || splitter.sendProfessional || splitter.sendFormattedMessage,
         
-        // ✅ ULTIMATE: Advanced Duplicate Protection
+        // ✅ ULTIMATE: Advanced Duplicate Protection System
         duplicateProtection: splitter.duplicateProtection || null,
         getDuplicateStats: splitter.getDuplicateStats || (() => ({ enabled: false })),
         clearDuplicateCache: splitter.clearDuplicateCache || (() => {}),
         testDuplicateProtection: splitter.testDuplicateProtection || (() => ({ isDuplicate: false })),
         enableDuplicateProtection: splitter.enableDuplicateProtection || (() => {}),
         disableDuplicateProtection: splitter.disableDuplicateProtection || (() => {}),
+        enableUltimateFeatures: splitter.enableUltimateFeatures || (() => {}),
         
-        // ✅ ULTIMATE: AI Content Intelligence
+        // ✅ ULTIMATE: AI Content Intelligence with MAXIMUM POWER
         contentIntelligence: splitter.contentIntelligence || null,
-        analyzeContentStyle: splitter.analyzeContentStyle || (() => ({ contentType: 'general' })),
+        analyzeContentStyle: splitter.analyzeContentStyle || (() => ({ contentType: 'general', shouldUseUltimate: false })),
         enhanceTextForTelegram: splitter.enhanceTextForTelegram || ((text) => text),
         
-        // ✅ ULTIMATE: Performance Monitoring
+        // ✅ ULTIMATE: Performance Monitoring and Analytics
         performanceMonitor: splitter.performanceMonitor || null,
         getPerformanceStats: splitter.getPerformanceStats || (() => ({ uptime: 0 })),
+        getAnalytics: splitter.getAnalytics || (() => ({ ultimate_mode: false })),
         
-        // ✅ ULTIMATE: System Management
+        // ✅ ULTIMATE: System Management with FULL CONFIGURATION
         getSystemInfo: splitter.getSystemInfo || (() => ({
-          version: 'ultimate-ai-powered-v5.0',
+          version: 'ultimate-ai-powered-v5.1-maximum-power',
           features: [
-            'AI Content Intelligence',
-            'Advanced Duplicate Protection', 
-            'Performance Optimization',
-            'Semantic Analysis',
-            'Railway Optimized'
+            'ULTIMATE AI Content Intelligence',
+            'MAXIMUM Duplicate Protection', 
+            'ULTIMATE Performance Optimization',
+            'Advanced Semantic Analysis',
+            'Business/Financial Auto-Ultimate Mode',
+            'Railway Optimized with Full Power'
           ],
+          ultimate_mode: true,
           duplicateProtection: !!splitter.duplicateProtection,
-          aiPowered: true
+          aiPowered: true,
+          maximumPower: true
         })),
         
         initialize: splitter.initialize || (() => Promise.resolve()),
         updateConfig: splitter.updateConfig || (() => {}),
         getConfig: splitter.getConfig || (() => ({})),
         
-        // ✅ ULTIMATE: Optimized GPT-5 Senders
+        // ✅ ULTIMATE: Enhanced GPT-5 Senders with MAXIMUM POWER
+        sendGPT5Ultimate: async (bot, chatId, response, meta = {}) => {
+          if (splitter.sendUltimate) {
+            return await splitter.sendUltimate(bot, chatId, response, {
+              model: 'gpt-5',
+              title: meta.title || '🚀 GPT-5 Ultimate Analysis',
+              forceUltimate: true,
+              professionalPresentation: true,
+              maximumVisualImpact: true,
+              showTokens: true,
+              adaptiveHeaders: true,
+              enhanceFormatting: true,
+              maxLength: 3800,
+              maxParts: 4,
+              delay: 800,
+              ...meta
+            });
+          }
+          return await splitter.sendFormattedMessage(bot, chatId, response, {
+            model: 'gpt-5',
+            mode: 'ultimate',
+            title: meta.title || '🚀 GPT-5 Ultimate',
+            enhanceFormatting: true,
+            showTokens: true,
+            adaptiveHeaders: true,
+            forceUltimate: true,
+            professionalPresentation: true,
+            maxLength: 3800,
+            maxParts: 4,
+            delay: 800,
+            ...meta
+          });
+        },
+        
+        sendGPT5Business: async (bot, chatId, response, meta = {}) => {
+          if (splitter.sendBusiness || splitter.businessFormat) {
+            const formatter = splitter.sendBusiness || splitter.sendUltimate;
+            return await formatter(bot, chatId, response, {
+              title: meta.title || '📊 Business Analysis',
+              forceUltimate: true,
+              businessOptimized: true,
+              professionalPresentation: true,
+              maximumVisualImpact: true,
+              ...meta
+            });
+          }
+          return await splitter.sendFormattedMessage(bot, chatId, response, {
+            mode: 'ultimate',
+            title: meta.title || '📊 Business Analysis',
+            forceUltimate: true,
+            enhanceFormatting: true,
+            businessOptimized: true,
+            ...meta
+          });
+        },
+        
+        sendGPT5Financial: async (bot, chatId, response, meta = {}) => {
+          if (splitter.sendFinancial || splitter.financialFormat) {
+            const formatter = splitter.sendFinancial || splitter.sendUltimate;
+            return await formatter(bot, chatId, response, {
+              title: meta.title || '💰 Financial Analysis',
+              forceUltimate: true,
+              financialOptimized: true,
+              professionalPresentation: true,
+              maximumVisualImpact: true,
+              ...meta
+            });
+          }
+          return await splitter.sendFormattedMessage(bot, chatId, response, {
+            mode: 'ultimate',
+            title: meta.title || '💰 Financial Analysis',
+            forceUltimate: true,
+            enhanceFormatting: true,
+            financialOptimized: true,
+            ...meta
+          });
+        },
+        
+        // ✅ ULTIMATE: Smart message routing with auto-detection
+        sendMessage: async (bot, chatId, response, options = {}) => {
+          // 🧠 AUTO-DETECT content type for optimal formatting
+          const content = String(response || '').toLowerCase();
+          const isBusinessContent = /business|strategy|revenue|profit|market|analysis|portfolio|investment|loan|lending|credit|financial|client|customer|risk|assessment|capital|funding|borrower|collateral|cambodia|phnom penh|usd|interest rate/i.test(content);
+          const isFinancialContent = /financial|loan|lending|credit|interest|rate|payment|principal|collateral|investment|portfolio|revenue|profit|margin|capital|funding|assessment|risk|borrower|lender|default|recovery/i.test(content);
+          
+          // 🚀 Route to appropriate ULTIMATE sender
+          if (isFinancialContent && splitter.sendFinancial) {
+            return await telegramSplitter.sendGPT5Financial(bot, chatId, response, options);
+          } else if (isBusinessContent && splitter.sendBusiness) {
+            return await telegramSplitter.sendGPT5Business(bot, chatId, response, options);
+          } else if (splitter.sendUltimate && (isBusinessContent || isFinancialContent || (options.forceUltimate))) {
+            return await splitter.sendUltimate(bot, chatId, response, {
+              mode: 'ultimate',
+              forceUltimate: true,
+              professionalPresentation: true,
+              enhanceFormatting: true,
+              ...options
+            });
+          } else if (splitter.sendProfessional) {
+            return await splitter.sendProfessional(bot, chatId, response, {
+              mode: 'professional',
+              enhanceFormatting: true,
+              professionalPresentation: true,
+              ...options
+            });
+          } else {
+            return await splitter.sendFormattedMessage(bot, chatId, response, {
+              mode: 'professional',
+              enhanceFormatting: true,
+              includeHeaders: true,
+              ...options
+            });
+          }
+        },
+        
+        // ✅ ULTIMATE: Legacy compatibility with ENHANCED power
+        formatMessage: (text, options = {}) => {
+          if (splitter.formatMessage) {
+            return splitter.formatMessage(text, {
+              mode: options.mode || 'professional',  // ← MINIMUM PROFESSIONAL
+              enhanceFormatting: options.enhanceFormatting !== false,
+              forceUltimate: options.forceUltimate || false,
+              professionalPresentation: true,
+              maxLength: 3800,
+              maxParts: 4,
+              ...options
+            });
+          }
+          return [text];
+        },
+        
+        // ✅ ULTIMATE: Specialized format functions
+        technicalFormat: splitter.technicalFormat || splitter.professionalFormat || splitter.formatMessage,
+        academicFormat: splitter.academicFormat || splitter.professionalFormat || splitter.formatMessage
+      };
+      
+      console.log('[Import] ✅ ULTIMATE features loaded with MAXIMUM POWER:');
+      console.log('   🚀 ULTIMATE AI Content Intelligence');
+      console.log('   🛡️ MAXIMUM Duplicate Protection');
+      console.log('   ⚡ ULTIMATE Performance Optimization');
+      console.log('   🎯 Auto-Ultimate Business/Financial Detection');
+      console.log('   📊 Advanced Analytics and Monitoring');
+      console.log('   🎨 MAXIMUM Visual Impact Formatting');
+      
+      // ✅ ULTIMATE: Enhanced initialization with FULL AI POWER
+      if (openaiClient && telegramSplitter.initialize) {
+        telegramSplitter.initialize(openaiClient)
+          .then(() => {
+            console.log('🧠 ULTIMATE AI Intelligence initialized with MAXIMUM POWER');
+            
+            // 🚀 ACTIVATE ULTIMATE FEATURES
+            if (telegramSplitter.enableUltimateFeatures) {
+              telegramSplitter.enableUltimateFeatures();
+              console.log('🚀 ULTIMATE features explicitly activated');
+            }
+            
+            // Configure for Railway with ULTIMATE optimizations
+            if (splitter.CONFIG) {
+              splitter.CONFIG.ULTIMATE_MODE = true;
+              splitter.CONFIG.FORCE_PROFESSIONAL = true;
+              splitter.CONFIG.ALWAYS_ENHANCE = true;
+              splitter.CONFIG.MAXIMUM_VISUAL_POWER = true;
+              splitter.CONFIG.OPTIMAL_CHUNK_SIZE = 3800;
+              splitter.CONFIG.ULTIMATE_MAX_PARTS = 4;
+              splitter.CONFIG.PROFESSIONAL_MAX_PARTS = 3;
+              splitter.CONFIG.CONTENT_INTELLIGENCE = true;
+              splitter.CONFIG.ADAPTIVE_FORMATTING = true;
+              splitter.CONFIG.SMART_HEADERS = true;
+              splitter.CONFIG.CONTEXT_AWARENESS = true;
+              splitter.CONFIG.AUTO_ENHANCEMENT = true;
+              
+              console.log('📏 ULTIMATE Railway optimizations with MAXIMUM POWER applied');
+            }
+            
+            // 🛡️ Test ULTIMATE duplicate protection
+            if (telegramSplitter.duplicateProtection) {
+              console.log('🛡️ ULTIMATE duplicate protection active');
+              const stats = telegramSplitter.getDuplicateStats();
+              console.log(`🛡️ Protection Level: ${stats.enabled ? 'MAXIMUM' : 'DISABLED'}`);
+              
+              if (stats.protection) {
+                console.log(`📊 Duplicates prevented: ${stats.protection.duplicates_detected || 0}`);
+              }
+            }
+            
+            // 🧠 Test AI content intelligence
+            if (telegramSplitter.contentIntelligence) {
+              console.log('🧠 ULTIMATE AI Content Intelligence active');
+              
+              // Test business content detection
+              const testBusiness = "Strategic revenue analysis for Q4 portfolio optimization with risk assessment";
+              const analysis = telegramSplitter.analyzeContentStyle(testBusiness);
+              console.log(`🧠 AI Test: Business content detected as "${analysis.contentType}" (should be business/financial)`);
+            }
+            
+            // ⚡ Test performance monitoring
+            if (telegramSplitter.performanceMonitor) {
+              console.log('⚡ ULTIMATE Performance monitoring active');
+            }
+            
+            // 📊 Display system analytics
+            if (telegramSplitter.getAnalytics) {
+              const analytics = telegramSplitter.getAnalytics();
+              console.log(`📊 ULTIMATE System Analytics: ${analytics.ultimate_mode ? 'MAXIMUM POWER MODE' : 'Standard Mode'}`);
+            }
+            
+          })
+          .catch(error => {
+            console.warn('⚠️ ULTIMATE initialization failed:', error.message);
+            console.log('📋 Falling back to enhanced ULTIMATE mode');
+          });
+      }
+      
+    } else {
+      // ✅ ENHANCED: Standard version with PROFESSIONAL optimizations
+      console.log('[Import] ⚡ Enhanced Telegram splitter detected (upgrading to professional minimum)');
+      
+      telegramSplitter = {
+        // Core functions with PROFESSIONAL enhancements
+        sendFormattedMessage: splitter.sendFormattedMessage,
+        formatMessage: splitter.formatMessage,
+        quickFormat: splitter.quickFormat || splitter.formatMessage,
+        
+        // Enhanced functions with PROFESSIONAL fallbacks
+        intelligentFormat: splitter.intelligentFormat || splitter.formatMessage,
+        adaptiveFormat: splitter.adaptiveFormat || splitter.formatMessage,
+        professionalFormat: splitter.professionalFormat || splitter.formatMessage,
+        initialize: splitter.initialize || (() => Promise.resolve()),
+        
+        // Duplicate protection (enhanced)
+        duplicateProtection: splitter.duplicateProtection || null,
+        getDuplicateStats: splitter.getDuplicateStats || (() => ({ enabled: false })),
+        clearDuplicateCache: splitter.clearDuplicateCache || (() => {}),
+        testDuplicateProtection: splitter.testDuplicateProtection || (() => ({ isDuplicate: false })),
+        
+        // PROFESSIONAL compatibility with upgrades
+        businessFormat: splitter.businessFormat || splitter.professionalFormat || splitter.formatMessage,
+        technicalFormat: splitter.technicalFormat || splitter.professionalFormat || splitter.formatMessage,
+        
+        // Enhanced GPT-5 sender with PROFESSIONAL minimum
         sendGPT5: async (bot, chatId, response, meta = {}) => {
           return await splitter.sendFormattedMessage(bot, chatId, response, {
             model: 'gpt-5-mini',
-            mode: 'structured',
-            title: meta.title || 'GPT-5 Response',
-            enhanceFormatting: true,
+            mode: 'professional',  // ← UPGRADED from 'structured'
+            title: meta.title || 'GPT-5 Professional Response',
+            enhanceFormatting: true,  // ← FORCE ENHANCEMENT
+            professionalPresentation: true,  // ← FORCE PROFESSIONAL
             showTokens: true,
             adaptiveHeaders: true,
             maxLength: 3800,
@@ -154,115 +410,13 @@ try {
           });
         },
         
-        sendMessage: splitter.sendFormattedMessage, // Alias for compatibility
-        
-        // ✅ ULTIMATE: Legacy compatibility with AI enhancement
-        formatMessage: (text, options = {}) => {
-          if (splitter.formatMessage) {
-            return splitter.formatMessage(text, {
-              mode: 'structured',
-              enhanceFormatting: true,
-              maxLength: 3800,
-              maxParts: 3,
-              ...options
-            });
-          }
-          return [text];
-        },
-        
-        quickFormat: splitter.quickFormat || splitter.formatMessage,
-        professionalFormat: splitter.professionalFormat || splitter.formatMessage,
-        businessFormat: splitter.businessFormat || splitter.professionalFormat || splitter.formatMessage,
-        technicalFormat: splitter.technicalFormat || splitter.cleanFormat || splitter.formatMessage
-      };
-      
-      console.log('[Import] ✅ ULTIMATE features loaded:');
-      console.log('   🧠 AI Content Intelligence');
-      console.log('   🛡️ Advanced Duplicate Protection');
-      console.log('   ⚡ Performance Optimization');
-      console.log('   🎯 Adaptive Formatting');
-      console.log('   📊 Real-time Analytics');
-      
-      // ✅ ULTIMATE: Enhanced initialization with AI features
-      if (openaiClient && telegramSplitter.initialize) {
-        telegramSplitter.initialize(openaiClient)
-          .then(() => {
-            console.log('🧠 ULTIMATE AI Intelligence initialized successfully');
-            
-            // Configure for Railway with Ultimate optimizations
-            if (splitter.CONFIG) {
-              splitter.CONFIG.OPTIMAL_CHUNK_SIZE = 3800;
-              splitter.CONFIG.PROFESSIONAL_MAX_PARTS = 3;
-              splitter.CONFIG.COMPLEX_MAX_PARTS = 4;
-              splitter.CONFIG.CONTENT_INTELLIGENCE = true;
-              splitter.CONFIG.ADAPTIVE_FORMATTING = true;
-              splitter.CONFIG.SMART_HEADERS = true;
-              splitter.CONFIG.CONTEXT_AWARENESS = true;
-              
-              console.log('📏 Ultimate Railway optimizations applied');
-            }
-            
-            // Test all Ultimate features
-            if (telegramSplitter.duplicateProtection) {
-              console.log('🛡️ Advanced duplicate protection active');
-              const stats = telegramSplitter.getDuplicateStats();
-              console.log(`🛡️ Protection: ${stats.enabled ? 'ENABLED' : 'DISABLED'}`);
-              
-              if (stats.performance) {
-                console.log(`📊 Cache efficiency: ${stats.performance.cache_efficiency}%`);
-              }
-            }
-            
-            if (telegramSplitter.contentIntelligence) {
-              console.log('🧠 AI Content Intelligence active');
-            }
-            
-            if (telegramSplitter.performanceMonitor) {
-              console.log('⚡ Performance monitoring active');
-            }
-            
-          })
-          .catch(error => {
-            console.warn('⚠️ Ultimate initialization failed:', error.message);
-            console.log('📋 Falling back to basic Ultimate mode');
-          });
-      }
-      
-    } else {
-      // ✅ ENHANCED: Standard version with optimizations
-      console.log('[Import] ⚡ Enhanced Telegram splitter detected (not Ultimate)');
-      
-      telegramSplitter = {
-        // Core functions with enhancements
-        sendFormattedMessage: splitter.sendFormattedMessage,
-        formatMessage: splitter.formatMessage,
-        quickFormat: splitter.quickFormat || splitter.formatMessage,
-        
-        // Enhanced functions with safe fallbacks
-        intelligentFormat: splitter.intelligentFormat || splitter.formatMessage,
-        adaptiveFormat: splitter.adaptiveFormat || splitter.formatMessage,
-        initialize: splitter.initialize || (() => Promise.resolve()),
-        
-        // Duplicate protection (limited)
-        duplicateProtection: splitter.duplicateProtection || null,
-        getDuplicateStats: splitter.getDuplicateStats || (() => ({ enabled: false })),
-        clearDuplicateCache: splitter.clearDuplicateCache || (() => {}),
-        testDuplicateProtection: splitter.testDuplicateProtection || (() => ({ isDuplicate: false })),
-        
-        // Legacy compatibility
-        businessFormat: splitter.businessFormat || splitter.professionalFormat || splitter.formatMessage,
-        technicalFormat: splitter.technicalFormat || splitter.cleanFormat || splitter.formatMessage,
-        
-        // Enhanced GPT-5 sender
-        sendGPT5: async (bot, chatId, response, meta = {}) => {
+        sendMessage: async (bot, chatId, response, options = {}) => {
           return await splitter.sendFormattedMessage(bot, chatId, response, {
-            model: 'gpt-5-mini',
-            mode: 'structured',
-            title: meta.title || 'GPT-5 Response',
-            maxLength: 3800,
-            maxParts: 3,
-            delay: 600,
-            ...meta
+            mode: 'professional',  // ← MINIMUM PROFESSIONAL
+            enhanceFormatting: true,  // ← ALWAYS ENHANCE
+            professionalPresentation: true,  // ← FORCE PROFESSIONAL
+            includeHeaders: true,
+            ...options
           });
         },
         
@@ -270,30 +424,33 @@ try {
         sendProfessional: splitter.sendProfessional || splitter.sendFormattedMessage,
         
         getSystemInfo: splitter.getSystemInfo || (() => ({
-          version: 'enhanced-v4.0',
-          features: ['Enhanced formatting', 'Basic duplicate protection', 'Railway optimized'],
+          version: 'enhanced-professional-v4.0',
+          features: ['Professional formatting minimum', 'Enhanced duplicate protection', 'Railway optimized'],
           duplicateProtection: !!splitter.duplicateProtection,
-          aiPowered: false
+          aiPowered: false,
+          professionalMinimum: true
         }))
       };
       
-      console.log('[Import] ✅ Enhanced features loaded with Railway optimization');
+      console.log('[Import] ✅ Enhanced features loaded with PROFESSIONAL minimum quality');
       
-      // Enhanced initialization
+      // Enhanced initialization with PROFESSIONAL standards
       if (openaiClient && telegramSplitter.initialize) {
         telegramSplitter.initialize(openaiClient)
           .then(() => {
-            console.log('⚡ Enhanced splitter initialized');
+            console.log('⚡ Enhanced splitter initialized with PROFESSIONAL standards');
             
             if (splitter.CONFIG) {
               splitter.CONFIG.OPTIMAL_CHUNK_SIZE = 3800;
               splitter.CONFIG.PROFESSIONAL_MAX_PARTS = 3;
               splitter.CONFIG.COMPLEX_MAX_PARTS = 4;
-              console.log('📏 Railway optimizations applied');
+              splitter.CONFIG.FORCE_PROFESSIONAL = true;  // ← FORCE PROFESSIONAL MINIMUM
+              splitter.CONFIG.ALWAYS_ENHANCE = true;       // ← ALWAYS ENHANCE
+              console.log('📏 PROFESSIONAL Railway optimizations applied');
             }
             
             if (telegramSplitter.duplicateProtection) {
-              console.log('🛡️ Basic duplicate protection active');
+              console.log('🛡️ Enhanced duplicate protection active');
             }
           })
           .catch(error => {
@@ -303,9 +460,9 @@ try {
     }
     
   }
-  // ✅ LEGACY: Handle older versions with Railway optimization
+  // ✅ LEGACY: Handle older versions with PROFESSIONAL upgrades
   else if (splitter && (typeof splitter.splitTelegramMessage === 'function' || typeof splitter.formatMessage === 'function')) {
-    console.log('[Import] 📋 Legacy telegram splitter detected - applying Railway optimizations');
+    console.log('[Import] 📋 Legacy telegram splitter detected - upgrading to PROFESSIONAL standards');
     
     telegramSplitter = {
       sendMessage: async (bot, chatId, response, options = {}) => {
@@ -314,12 +471,12 @@ try {
           const maxLength = 3800;
           
           if (safeResponse.length <= maxLength) {
-            const header = options.title ? `⚡ ${options.title}\n\n` : '';
+            const header = options.title ? `💼 ${options.title}\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Professional\n\n` : '';
             await bot.sendMessage(chatId, header + safeResponse);
-            return { success: true, method: 'legacy-single', parts: 1 };
+            return { success: true, method: 'legacy-professional-single', parts: 1 };
           }
           
-          // Railway-optimized smart splitting
+          // PROFESSIONAL Railway-optimized smart splitting
           const mid = Math.floor(safeResponse.length / 2);
           let splitPoint = mid;
           
@@ -338,7 +495,7 @@ try {
           ].filter(part => part.length > 0);
           
           for (let i = 0; i < Math.min(parts.length, 3); i++) {
-            const header = `⚡ GPT-5 Mini (${i + 1}/${Math.min(parts.length, 3)})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Railway\n\n`;
+            const header = `💼 GPT-5 Professional (${i + 1}/${Math.min(parts.length, 3)})\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Professional\n\n`;
             await bot.sendMessage(chatId, header + parts[i]);
             
             if (i < parts.length - 1) {
@@ -346,15 +503,15 @@ try {
             }
           }
           
-          return { success: true, method: 'legacy-split', parts: Math.min(parts.length, 3) };
+          return { success: true, method: 'legacy-professional-split', parts: Math.min(parts.length, 3) };
           
         } catch (error) {
           console.error('[Legacy] Error:', error.message);
           
           try {
             const truncated = safeString(response).slice(0, 3700);
-            await bot.sendMessage(chatId, `⚡ GPT-5 Emergency\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Railway\n\n${truncated}`);
-            return { success: true, method: 'legacy-emergency', parts: 1 };
+            await bot.sendMessage(chatId, `💼 GPT-5 Professional Recovery\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Professional\n\n${truncated}`);
+            return { success: true, method: 'legacy-professional-emergency', parts: 1 };
           } catch (emergencyError) {
             return { success: false, error: emergencyError.message };
           }
@@ -381,21 +538,22 @@ try {
       quickFormat: function() { return this.formatMessage(...arguments); },
       sendGPT5: function() { return this.sendMessage(...arguments); },
       
-      // Legacy placeholders
+      // Legacy placeholders with PROFESSIONAL branding
       duplicateProtection: null,
-      getDuplicateStats: () => ({ enabled: false, legacy: true }),
+      getDuplicateStats: () => ({ enabled: false, legacy: true, upgraded: 'professional' }),
       clearDuplicateCache: () => {},
       
       getSystemInfo: () => ({
-        mode: 'legacy-railway-optimized',
+        mode: 'legacy-professional-optimized',
         maxParts: 3,
-        features: ['Railway optimized', 'Legacy compatibility', 'Basic splitting'],
+        features: ['Professional minimum', 'Legacy compatibility upgraded', 'Railway optimized'],
         duplicateProtection: false,
-        recommendation: 'Upgrade to Ultimate telegramSplitter.js for full AI features'
+        professionalUpgrade: true,
+        recommendation: 'Deploy ULTIMATE telegramSplitter.js v5.1 for maximum power'
       })
     };
     
-    console.log('[Import] ✅ Legacy system loaded with Railway optimizations');
+    console.log('[Import] ✅ Legacy system upgraded to PROFESSIONAL standards');
   }
   else {
     console.warn('[Import] ⚠️ Telegram splitter missing core functions');
@@ -405,7 +563,7 @@ try {
 } catch (error) {
   console.warn('[Import] ❌ Telegram splitter import failed:', error.message);
   
-  // ✅ ULTIMATE FALLBACK: Always functional system
+  // ✅ ULTIMATE FALLBACK: Always functional with PROFESSIONAL standards
   telegramSplitter = {
     sendFormattedMessage: async (bot, chatId, response, options = {}) => {
       try {
@@ -416,13 +574,13 @@ try {
         
         if (safeResponse.length <= maxLength) {
           const header = options.title ? 
-            `⚡ ${options.title}\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Railway\n\n` : '';
+            `💼 ${options.title}\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Professional Fallback\n\n` : '';
           
           await bot.sendMessage(chatId, header + safeResponse);
-          return { success: true, method: 'fallback-single', parts: 1 };
+          return { success: true, method: 'fallback-professional-single', parts: 1 };
         }
         
-        // Simple but effective 2-part split
+        // PROFESSIONAL 2-part split with enhanced headers
         const mid = Math.floor(safeResponse.length / 2);
         const breaks = ['\n\n\n', '\n\n', '. ', '\n', ' '];
         let splitPoint = mid;
@@ -441,7 +599,7 @@ try {
         ].filter(p => p.length > 0);
         
         for (let i = 0; i < Math.min(parts.length, 3); i++) {
-          const header = `⚡ ${options.title || 'GPT-5'} (${i + 1}/${Math.min(parts.length, 3)})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Railway\n\n`;
+          const header = `💼 ${options.title || 'GPT-5 Professional'} (${i + 1}/${Math.min(parts.length, 3)})\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false})} • 🚅 Professional Fallback\n\n`;
           
           await bot.sendMessage(chatId, header + parts[i]);
           
@@ -450,15 +608,15 @@ try {
           }
         }
         
-        return { success: true, method: 'fallback-split', parts: Math.min(parts.length, 3) };
+        return { success: true, method: 'fallback-professional-split', parts: Math.min(parts.length, 3) };
         
       } catch (error) {
         console.error('[Fallback] Error:', error.message);
         
         try {
-          const emergency = `⚡ Emergency\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false})}\n\n${String(response).slice(0, 3500)}`;
+          const emergency = `💼 Professional Emergency\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false})}\n\n${String(response).slice(0, 3500)}`;
           await bot.sendMessage(chatId, emergency);
-          return { success: true, method: 'fallback-emergency', parts: 1 };
+          return { success: true, method: 'fallback-professional-emergency', parts: 1 };
         } catch {
           return { success: false, error: 'Complete failure' };
         }
@@ -481,38 +639,41 @@ try {
     sendMessage: function() { return this.sendFormattedMessage(...arguments); },
     quickFormat: function() { return this.formatMessage(...arguments); },
     
-    // Fallback system info
+    // Fallback system info with PROFESSIONAL standards
     duplicateProtection: null,
     getDuplicateStats: () => ({ 
       enabled: false, 
       fallback: true,
-      recommendation: 'Deploy Ultimate telegramSplitter.js for full features'
+      professional: true,
+      recommendation: 'Deploy ULTIMATE telegramSplitter.js v5.1 for maximum power'
     }),
     clearDuplicateCache: () => {},
     
     getSystemInfo: () => ({
-      mode: 'ultimate-fallback',
+      mode: 'ultimate-professional-fallback',
       maxParts: 3,
-      features: ['Railway optimized', 'Emergency fallbacks', 'Always functional'],
+      features: ['Professional minimum guaranteed', 'Emergency fallbacks', 'Always functional', 'Railway optimized'],
       duplicateProtection: false,
-      status: 'Fallback system - deploy Ultimate telegramSplitter.js for full power'
+      professionalMinimum: true,
+      status: 'Professional fallback system - deploy ULTIMATE telegramSplitter.js v5.1 for maximum power'
     })
   };
   
-  console.log('[Import] 🚨 Ultimate fallback system loaded - deploy Ultimate telegramSplitter.js for full features');
+  console.log('[Import] 🚨 ULTIMATE Professional fallback system loaded - deploy ULTIMATE telegramSplitter.js v5.1 for maximum power');
 }
 
-// ✅ FINAL VALIDATION: Ensure we have a working system
+// ✅ FINAL VALIDATION: Ensure we have a working system with PROFESSIONAL minimum
 if (!telegramSplitter || typeof telegramSplitter.sendFormattedMessage !== 'function') {
   console.error('[Import] 💥 CRITICAL: No working telegram system available!');
   
-  // Absolute emergency system
+  // Absolute emergency system with PROFESSIONAL standards
   telegramSplitter = {
     sendFormattedMessage: async (bot, chatId, response) => {
       try {
         if (bot?.sendMessage) {
-          await bot.sendMessage(chatId, String(response).slice(0, 3800));
-          return { success: true, method: 'absolute-emergency', parts: 1 };
+          const header = `💼 Emergency Professional\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false})}\n\n`;
+          await bot.sendMessage(chatId, header + String(response).slice(0, 3500));
+          return { success: true, method: 'absolute-professional-emergency', parts: 1 };
         }
         return { success: false, error: 'No bot available' };
       } catch (error) {
@@ -522,27 +683,103 @@ if (!telegramSplitter || typeof telegramSplitter.sendFormattedMessage !== 'funct
     formatMessage: (text) => [String(text).slice(0, 3800)],
     sendGPT5: function() { return this.sendFormattedMessage(...arguments); },
     duplicateProtection: null,
-    getDuplicateStats: () => ({ enabled: false, emergency: true }),
+    getDuplicateStats: () => ({ enabled: false, emergency: true, professional: true }),
     clearDuplicateCache: () => {},
-    getSystemInfo: () => ({ mode: 'absolute-emergency' })
+    getSystemInfo: () => ({ mode: 'absolute-professional-emergency' })
   };
   
-  console.log('[Import] 🚨 Absolute emergency system loaded');
+  console.log('[Import] 🚨 Absolute emergency system loaded with PROFESSIONAL standards');
 }
 
-// ✅ SYSTEM STATUS REPORT
+// ✅ ULTIMATE SYSTEM STATUS REPORT
 const systemInfo = telegramSplitter.getSystemInfo();
 console.log(`[Import] 🎯 System ready: ${systemInfo.mode || 'unknown'}`);
 
-if (systemInfo.duplicateProtection) {
-  console.log('[Import] 🛡️ Duplicate protection: ACTIVE');
+// 🚀 ACTIVATE ULTIMATE FEATURES if available
+if (telegramSplitter.enableUltimateFeatures) {
+  telegramSplitter.enableUltimateFeatures();
+  console.log('[Import] 🚀 ULTIMATE features explicitly activated');
 }
 
-if (systemInfo.aiPowered) {
+// 🛡️ VERIFY DUPLICATE PROTECTION
+if (systemInfo.duplicateProtection || telegramSplitter.duplicateProtection) {
+  console.log('[Import] 🛡️ Duplicate protection: ACTIVE');
+  
+  if (telegramSplitter.getDuplicateStats) {
+    const dupStats = telegramSplitter.getDuplicateStats();
+    console.log(`[Import] 🛡️ Protection level: ${dupStats.enabled ? 'MAXIMUM' : 'BASIC'}`);
+  }
+}
+
+// 🧠 VERIFY AI INTELLIGENCE
+if (systemInfo.aiPowered || telegramSplitter.contentIntelligence) {
   console.log('[Import] 🧠 AI Intelligence: ACTIVE');
 }
 
+// 🚀 VERIFY ULTIMATE MODE
+if (systemInfo.ultimate_mode || systemInfo.maximumPower) {
+  console.log('[Import] 🚀 ULTIMATE MODE: ACTIVE');
+}
+
+// 💼 VERIFY PROFESSIONAL MINIMUM
+if (systemInfo.professionalMinimum || systemInfo.professionalUpgrade) {
+  console.log('[Import] 💼 Professional minimum: GUARANTEED');
+}
+
 console.log(`[Import] 📊 Features: ${(systemInfo.features || []).join(', ')}`);
+
+// ════════════════════════════════════════════════════════════════════════════
+// 🚀 BUSINESS CONTENT AUTO-DETECTION FOR ULTIMATE MODE
+// ════════════════════════════════════════════════════════════════════════════
+
+function shouldUseUltimateMode(message, context = '') {
+  const content = safeString(message + ' ' + context).toLowerCase();
+  
+  const businessKeywords = [
+    'business', 'financial', 'strategy', 'revenue', 'profit', 'investment',
+    'loan', 'lending', 'credit', 'portfolio', 'analysis', 'market',
+    'client', 'customer', 'risk', 'assessment', 'capital', 'funding'
+  ];
+  
+  const cambodiaBusinessKeywords = [
+    'borrower', 'collateral', 'cambodia', 'phnom penh', 'usd', 'interest rate',
+    'private lending', 'street lender', 'money multiplication'
+  ];
+  
+  const financialKeywords = [
+    'financial', 'loan', 'lending', 'credit', 'interest', 'rate', 'payment',
+    'principal', 'collateral', 'default', 'recovery', 'margin', 'yield'
+  ];
+  
+  const allKeywords = [...businessKeywords, ...cambodiaBusinessKeywords, ...financialKeywords];
+  const matches = allKeywords.filter(keyword => content.includes(keyword)).length;
+  
+  // 🚀 More aggressive ultimate mode detection
+  const hasBusinessContext = matches >= 2;
+  const hasFinancialTerms = financialKeywords.some(keyword => content.includes(keyword));
+  const hasCambodiaContext = cambodiaBusinessKeywords.some(keyword => content.includes(keyword));
+  const hasComplexContent = content.length > 500 && content.includes('analysis');
+  
+  return hasBusinessContext || hasFinancialTerms || hasCambodiaContext || hasComplexContent;
+}
+
+function getOptimalFormattingMode(message, context = '', options = {}) {
+  const shouldUseUltimate = shouldUseUltimateMode(message, context);
+  const content = safeString(message).toLowerCase();
+  
+  // 🚀 Force ultimate for specific scenarios
+  if (options.forceUltimate || shouldUseUltimate) {
+    return 'ultimate';
+  }
+  
+  // 💼 Professional for complex content
+  if (content.length > 800 || content.includes('comprehensive') || content.includes('detailed')) {
+    return 'professional';
+  }
+  
+  // 💼 Professional minimum for everything else
+  return 'professional';
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION CONSTANTS (UNCHANGED)
