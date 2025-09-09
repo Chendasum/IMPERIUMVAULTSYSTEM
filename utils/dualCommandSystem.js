@@ -1784,8 +1784,11 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
   }
 }
 
-// ✅ ULTIMATE-INTEGRATED: Railway-Compatible Telegram Delivery with Full AI Power
-async function deliverToTelegram(bot, chatId, response, title) {
+// ════════════════════════════════════════════════════════════════════════════
+// 🚀 ULTIMATE TELEGRAM DELIVERY WITH MAXIMUM POWER AND INTELLIGENCE
+// ════════════════════════════════════════════════════════════════════════════
+
+async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
   const startTime = Date.now();
   
   try {
@@ -1802,25 +1805,42 @@ async function deliverToTelegram(bot, chatId, response, title) {
     
     const safeResponse = safeString(response);
     const safeChatId = safeString(chatId);
-    const safeTitle = safeString(title);
+    const safeTitle = safeString(options.title);
     
     if (!safeResponse || safeResponse.length === 0) {
       console.log('[Delivery] ❌ Empty response content');
       return { success: false, error: 'Empty response content', method: 'validation_failed' };
     }
     
-    console.log(`[Delivery] 🚀 Starting Ultimate delivery: ${safeResponse.length} chars to chat ${safeChatId}`);
+    console.log(`[Delivery] 🚀 ULTIMATE delivery: ${safeResponse.length} chars, Mode: ${options.mode || 'auto'}, Ultimate: ${options.forceUltimate || false}`);
+    
+    // 🎯 SMART CONTENT ANALYSIS for delivery optimization
+    const contentType = options.businessOptimized ? 'business' :
+                       options.financialOptimized ? 'financial' :
+                       shouldUseUltimateMode(safeResponse) ? 'business' : 'general';
+    
+    const deliveryMode = options.mode || 
+                        (options.forceUltimate ? 'ultimate' : null) ||
+                        (contentType === 'business' || contentType === 'financial' ? 'ultimate' : null) ||
+                        'professional';
+    
+    console.log(`[Delivery] 🎯 Smart routing: ContentType=${contentType}, DeliveryMode=${deliveryMode}`);
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // ULTIMATE TIER 1: Maximum AI Power with All Features
+    // 🚀 ULTIMATE TIER 1: Maximum Power with Business/Financial Optimization
     // ═══════════════════════════════════════════════════════════════════════════
     
-    if (telegramSplitter && typeof telegramSplitter.sendUltimate === 'function') {
+    if (telegramSplitter && telegramSplitter.sendUltimate && (deliveryMode === 'ultimate' || options.forceUltimate)) {
       try {
-        console.log('[Delivery] 🧠 Using ULTIMATE AI delivery with full intelligence');
+        console.log('[Delivery] 🚀 Using ULTIMATE delivery with maximum visual impact');
         
-        const ultimateResult = await telegramSplitter.sendUltimate(bot, safeChatId, safeResponse, {
+        const ultimateOptions = {
           title: safeTitle,
+          mode: 'ultimate',
+          forceUltimate: true,
+          professionalPresentation: true,
+          maximumVisualImpact: true,
+          enhanceFormatting: true,
           adaptiveFormatting: true,
           contentAnalysis: true,
           duplicateProtection: true,
@@ -1828,11 +1848,18 @@ async function deliverToTelegram(bot, chatId, response, title) {
           smartHeaders: true,
           enhanceTypography: true,
           performanceOptimized: true,
-          railwayOptimized: true,
+          showTokens: options.showTokens !== false,
           maxLength: 3800,
-          maxParts: 3,
-          delay: 600
-        });
+          maxParts: 4,
+          delay: 800,
+          
+          // 🎯 Content-specific optimizations
+          businessOptimized: options.businessOptimized || contentType === 'business',
+          financialOptimized: options.financialOptimized || contentType === 'financial',
+          model: options.model || 'gpt-5-mini'
+        };
+        
+        const ultimateResult = await telegramSplitter.sendUltimate(bot, safeChatId, safeResponse, ultimateOptions);
         
         if (ultimateResult && (ultimateResult.success || ultimateResult.delivered > 0 || ultimateResult.parts > 0 || ultimateResult.duplicatePrevented)) {
           const processingTime = Date.now() - startTime;
@@ -1840,20 +1867,21 @@ async function deliverToTelegram(bot, chatId, response, title) {
           
           return {
             success: true,
-            method: 'ultimate_ai_delivery',
+            method: 'ultimate_maximum_power',
             parts: ultimateResult.parts || ultimateResult.delivered || 1,
             duplicateProtected: ultimateResult.duplicateProtected || ultimateResult.duplicatePrevented || false,
-            aiEnhanced: true,
-            contentAnalyzed: true,
-            adaptiveFormatting: ultimateResult.adaptiveFormatting || false,
+            ultimateFeatures: true,
+            contentOptimized: true,
+            businessOptimized: options.businessOptimized || contentType === 'business',
+            financialOptimized: options.financialOptimized || contentType === 'financial',
+            visualExcellence: true,
             processingTime,
             contentLength: safeResponse.length,
-            ultimateFeatures: true,
-            railwayOptimized: true
+            deliveryMode: 'ultimate'
           };
         }
         
-        console.log('[Delivery] ⚠️ Ultimate method unclear result, trying enhanced method');
+        console.log('[Delivery] ⚠️ Ultimate method unclear result, trying specialized business/financial');
         
       } catch (ultimateError) {
         console.warn('[Delivery] ⚠️ Ultimate method failed:', ultimateError.message);
