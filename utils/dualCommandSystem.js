@@ -1630,19 +1630,14 @@ async function routeMessageByType(userMessage, chatId, bot, messageType, startTi
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 🚀 ULTIMATE GPT-5 COMMAND EXECUTOR - MAXIMUM POWER INTEGRATION v8.4
-// ════════════════════════════════════════════════════════════════════════════
-// 🎯 BUSINESS AUTO-ULTIMATE: Smart detection for business/financial content
-// 🧠 AI INTELLIGENCE: Full integration with ULTIMATE telegramSplitter features
-// 🛡️ ENHANCED PROTECTION: Advanced duplicate detection and intelligent routing
-// 📊 VISUAL EXCELLENCE: Maximum formatting power for professional presentation
+// ENHANCED GPT-5 COMMAND EXECUTOR (MAIN EXECUTION ENGINE WITH FIXED MEMORY)
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
   const executionStart = Date.now();
   
   try {
-    console.log('[Enhanced] 🚀 Executing ULTIMATE GPT-5 command with full power integration');
+    console.log('[Enhanced] 🎯 Executing GPT-5 command with FIXED memory integration');
     
     const safeMessage = safeString(userMessage);
     const safeChatId = safeString(chatId);
@@ -1650,12 +1645,6 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
     if (safeMessage.length === 0) {
       throw new Error('Empty message provided');
     }
-    
-    // 🧠 SMART CONTENT ANALYSIS for optimal formatting
-    const shouldUseUltimate = shouldUseUltimateMode(safeMessage, options.context || '');
-    const optimalMode = getOptimalFormattingMode(safeMessage, options.context || '', options);
-    
-    console.log(`[Enhanced] 🎯 Content analysis: Ultimate=${shouldUseUltimate}, Mode=${optimalMode}`);
     
     // 🔧 FIXED: Build memory context based on contextAware setting
     let memoryContext = '';
@@ -1669,7 +1658,7 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       }
     }
     
-    // 🎯 ENHANCED: Analyze query with ULTIMATE context
+    // Analyze query for GPT-5 model selection
     const queryAnalysis = analyzeQuery(safeMessage, options.messageType || 'text', options.hasMedia === true, memoryContext);
     
     // Handle completion detection FIRST
@@ -1687,33 +1676,17 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
         costSaved: true,
         enhancedExecution: true,
         totalExecutionTime: responseTime,
-        telegramDelivered: await deliverToTelegramUltimate(bot, safeChatId, queryAnalysis.quickResponse, {
-          title: 'Task Completion',
-          mode: 'professional',
-          forceUltimate: false
-        })
+        telegramDelivered: await deliverToTelegram(bot, safeChatId, queryAnalysis.quickResponse, 'Task Completion')
       };
     }
     
-    // 🚀 ULTIMATE: Override model and mode based on content analysis
+    // Override model if forced
     if (options.forceModel && safeString(options.forceModel).indexOf('gpt-5') === 0) {
       queryAnalysis.gpt5Model = options.forceModel;
       queryAnalysis.reason = `Forced to use ${options.forceModel}`;
     }
     
-    // 🎯 SMART MODEL SELECTION: Business content gets better models
-    if (shouldUseUltimate && !options.forceModel) {
-      if (queryAnalysis.gpt5Model === 'gpt-5-nano') {
-        queryAnalysis.gpt5Model = 'gpt-5-mini'; // Upgrade nano to mini for business
-        console.log('[Enhanced] 📈 Upgraded model to gpt-5-mini for business content');
-      }
-      if (queryAnalysis.gpt5Model === 'gpt-5-mini' && safeMessage.length > 1000) {
-        queryAnalysis.gpt5Model = 'gpt-5'; // Upgrade to full for complex business
-        console.log('[Enhanced] 🚀 Upgraded model to gpt-5 for complex business content');
-      }
-    }
-    
-    console.log(`[Enhanced] Analysis: ${queryAnalysis.type}, Model: ${queryAnalysis.gpt5Model}, Memory: ${memoryContext.length > 0 ? 'Yes' : 'No'}, Ultimate: ${shouldUseUltimate}`);
+    console.log(`[Enhanced] Analysis: ${queryAnalysis.type}, Model: ${queryAnalysis.gpt5Model}, Memory: ${memoryContext.length > 0 ? 'Yes' : 'No'}`);
     
     // Execute through GPT-5 system
     let gpt5Result;
@@ -1741,21 +1714,18 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
             const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, {
               modelUsed: safeString(gpt5Result.modelUsed),
               processingTime: Number(gpt5Result.processingTime) || 0,
-              minimal: true,
-              ultimateMode: shouldUseUltimate
+              minimal: true
             });
             console.log(`[Enhanced] Memory save result:`, saveResult);
           }
         } else {
-          // Full memory save with ULTIMATE context
+          // Full memory save
           const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, {
             modelUsed: safeString(gpt5Result.modelUsed),
             processingTime: Number(gpt5Result.processingTime) || 0,
             priority: safeString(queryAnalysis.priority),
             complexity: safeString(queryAnalysis.type),
-            memoryContextLength: memoryContext.length,
-            ultimateMode: shouldUseUltimate,
-            contentMode: optimalMode
+            memoryContextLength: memoryContext.length
           });
           console.log(`[Enhanced] Memory save result:`, saveResult);
         }
@@ -1764,22 +1734,10 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       }
     }
     
-    // 🚀 ULTIMATE: Auto-deliver with MAXIMUM POWER
-    const telegramDelivered = await deliverToTelegramUltimate(bot, safeChatId, gpt5Result.response, {
-      title: options.title || (shouldUseUltimate ? '🚀 Ultimate Analysis' : '💼 Professional Analysis'),
-      mode: options.mode || optimalMode,
-      forceUltimate: options.forceUltimate || shouldUseUltimate,
-      businessOptimized: shouldUseUltimateMode(safeMessage) && safeMessage.toLowerCase().includes('business'),
-      financialOptimized: shouldUseUltimateMode(safeMessage) && /financial|loan|lending|credit|investment/i.test(safeMessage),
-      professionalPresentation: true,
-      enhanceFormatting: true,
-      showTokens: options.showTokens !== false,
-      model: gpt5Result.modelUsed,
-      contextAware: true,
-      adaptiveFormatting: true
-    });
+    // Auto-deliver to Telegram if bot provided
+    const telegramDelivered = await deliverToTelegram(bot, safeChatId, gpt5Result.response, options.title || 'GPT-5 Analysis');
     
-    // 🎯 ULTIMATE: Build comprehensive result with enhanced metadata
+    // Build comprehensive result
     const result = {
       response: gpt5Result.response,
       success: true,
@@ -1800,30 +1758,18 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       memoryContextUsed: memoryContext.length > 0,
       safetyChecksApplied: true,
       telegramDelivered,
-      fixedMemoryIntegration: true,
-      
-      // 🚀 ULTIMATE: Enhanced metadata
-      ultimateMode: shouldUseUltimate,
-      contentMode: optimalMode,
-      businessOptimized: shouldUseUltimateMode(safeMessage) && safeMessage.toLowerCase().includes('business'),
-      financialOptimized: shouldUseUltimateMode(safeMessage) && /financial|loan|lending|credit/i.test(safeMessage),
-      visualExcellence: telegramDelivered?.ultimateFeatures || false,
-      duplicateProtected: telegramDelivered?.duplicateProtected || false
+      fixedMemoryIntegration: true // Flag to indicate memory integration is fixed
     };
     
-    console.log(`[Enhanced] ✅ ULTIMATE command executed: ${result.modelUsed}, ${result.processingTime}ms, Memory: ${result.contextLength} chars, Ultimate: ${result.ultimateMode}`);
+    console.log(`[Enhanced] ✅ Command executed successfully: ${result.modelUsed}, ${result.processingTime}ms, Memory: ${result.contextLength} chars`);
     return result;
     
   } catch (error) {
     console.error('[Enhanced] ❌ Command execution error:', error.message);
     
-    // 🚀 ULTIMATE: Emergency fallback with professional standards
-    const errorMsg = `Analysis temporarily unavailable: ${error.message}.\n\nPlease try again or rephrase your request.`;
-    const telegramDelivered = await deliverToTelegramUltimate(bot, safeString(chatId), errorMsg, {
-      title: '🔧 System Recovery',
-      mode: 'professional',
-      forceUltimate: false
-    });
+    // Emergency fallback
+    const errorMsg = `Analysis failed: ${error.message}.\n\nPlease try a simpler request.`;
+    const telegramDelivered = await deliverToTelegram(bot, safeString(chatId), errorMsg, 'System Error');
     
     return {
       success: false,
@@ -1833,8 +1779,7 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       enhancedExecution: false,
       totalExecutionTime: Date.now() - executionStart,
       telegramDelivered,
-      safetyChecksApplied: true,
-      professionalFallback: true
+      safetyChecksApplied: true
     };
   }
 }
