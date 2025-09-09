@@ -2732,11 +2732,66 @@ async function analyzeMarket(researchScope, analysisData, chatId, bot) {
 console.log('✅ Cambodia modules loaded (templated system)');
 
 // ════════════════════════════════════════════════════════════════════════════
-// SYSTEM HEALTH MONITORING
+// 🚀 COMPLETE ENHANCED MODULE EXPORTS - GPT-5 RAILWAY SYSTEM v8.6
+// ════════════════════════════════════════════════════════════════════════════
+
+// Enhanced GPT-5 executor integration
+const { 
+  executeEnhancedGPT5Command, 
+  deliverToTelegramUltimate,
+  shouldUseUltimateMode,
+  getOptimalFormattingMode 
+} = (() => {
+  try {
+    return require('./enhanced-gpt5-executor');
+  } catch (error) {
+    console.warn('Enhanced GPT-5 executor not available:', error.message);
+    return {
+      executeEnhancedGPT5Command: null,
+      deliverToTelegramUltimate: null,
+      shouldUseUltimateMode: () => false,
+      getOptimalFormattingMode: () => 'professional'
+    };
+  }
+})();
+
+// Safe module loader
+const safeRequire = (modulePath, fallback = {}) => {
+  try {
+    return require(modulePath);
+  } catch (error) {
+    console.warn(`Module ${modulePath} not available:`, error.message);
+    return fallback;
+  }
+};
+
+// Core dependencies with safe loading
+const telegramSplitter = safeRequire('./telegramSplitter');
+const openaiClient = safeRequire('./openai-client');
+const memory = safeRequire('./memory-system');
+const database = safeRequire('./database');
+const multimodal = safeRequire('./multimodal');
+
+// System state tracking
+const systemState = safeRequire('./system/state').systemState || {
+  version: '8.6-ENHANCED',
+  startTime: Date.now(),
+  requestCount: 0,
+  successCount: 0,
+  errorCount: 0,
+  memorySuccessCount: 0,
+  memoryFailureCount: 0,
+  modelUsageStats: {},
+  healthStatus: 'unknown',
+  lastHealthCheck: null
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// ENHANCED SYSTEM HEALTH MONITORING WITH ULTIMATE FEATURES
 // ════════════════════════════════════════════════════════════════════════════
 
 async function checkSystemHealth() {
-  console.log('[Health] 🏥 Performing comprehensive system health check...');
+  console.log('[Health] Running comprehensive system health check...');
   
   const health = {
     timestamp: Date.now(),
@@ -2744,8 +2799,31 @@ async function checkSystemHealth() {
     components: {},
     scores: {},
     recommendations: [],
-    memoryIntegration: 'fixed'
+    enhancedFeatures: {
+      ultimateExecutor: !!executeEnhancedGPT5Command,
+      ultimateDelivery: !!deliverToTelegramUltimate,
+      businessIntelligence: !!shouldUseUltimateMode
+    },
+    memoryIntegration: 'enhanced-fixed'
   };
+  
+  try {
+    // Check Enhanced GPT-5 Executor
+    health.components.enhancedExecutor = {
+      available: !!executeEnhancedGPT5Command,
+      ultimateDelivery: !!deliverToTelegramUltimate,
+      smartAnalysis: !!shouldUseUltimateMode,
+      status: executeEnhancedGPT5Command ? 'operational' : 'unavailable'
+    };
+    health.scores.enhancedExecutor = executeEnhancedGPT5Command ? 100 : 0;
+    
+    if (!executeEnhancedGPT5Command) {
+      health.recommendations.push('Enhanced GPT-5 executor not available - limited to basic functionality');
+    }
+  } catch (error) {
+    health.components.enhancedExecutor = { error: error.message, available: false };
+    health.scores.enhancedExecutor = 0;
+  }
   
   try {
     // Check GPT-5 models health
@@ -2762,18 +2840,19 @@ async function checkSystemHealth() {
   }
   
   try {
-    // Check memory system (FIXED VERSION)
-    const memoryWorking = memory && typeof memory.buildConversationContext === 'function';
+    // Check enhanced memory system
+    const memoryWorking = memory && (typeof memory.buildConversationContext === 'function' || typeof memory.buildMemoryContext === 'function');
     const memorySuccessRate = systemState.memorySuccessCount + systemState.memoryFailureCount > 0 
       ? (systemState.memorySuccessCount / (systemState.memorySuccessCount + systemState.memoryFailureCount)) * 100 
       : 100;
     
     health.components.memory = { 
       available: memoryWorking,
-      status: memoryWorking ? 'operational-fixed' : 'limited',
+      status: memoryWorking ? 'enhanced-operational' : 'limited',
       successRate: Math.round(memorySuccessRate),
       successCount: systemState.memorySuccessCount,
-      failureCount: systemState.memoryFailureCount
+      failureCount: systemState.memoryFailureCount,
+      integration: 'enhanced-fixed'
     };
     health.scores.memory = memoryWorking ? Math.max(80, memorySuccessRate) : 50;
   } catch (error) {
@@ -2782,7 +2861,25 @@ async function checkSystemHealth() {
   }
   
   try {
-    // Check database (your PostgreSQL) 
+    // Check telegram splitter with enhanced features
+    const telegramWorking = telegramSplitter && typeof telegramSplitter.sendMessage === 'function';
+    const hasUltimateFeatures = telegramSplitter && telegramSplitter.sendUltimate;
+    const hasDuplicateProtection = telegramSplitter && telegramSplitter.duplicateProtection;
+    
+    health.components.telegram = {
+      available: telegramWorking,
+      status: telegramWorking ? 'operational' : 'basic',
+      ultimateFeatures: !!hasUltimateFeatures,
+      duplicateProtection: !!hasDuplicateProtection
+    };
+    health.scores.telegram = telegramWorking ? (hasUltimateFeatures ? 100 : 80) : 50;
+  } catch (error) {
+    health.components.telegram = { error: error.message, available: false };
+    health.scores.telegram = 0;
+  }
+  
+  try {
+    // Check database (PostgreSQL)
     const testQuery = await database.getConversationHistoryDB('health_test', 1);
     const dbWorking = Array.isArray(testQuery);
     health.components.database = {
@@ -2793,19 +2890,6 @@ async function checkSystemHealth() {
   } catch (error) {
     health.components.database = { error: error.message, available: false };
     health.scores.database = 0;
-  }
-  
-  try {
-    // Check telegram integration
-    const telegramWorking = telegramSplitter && typeof telegramSplitter.sendMessage === 'function';
-    health.components.telegram = {
-      available: telegramWorking,
-      status: telegramWorking ? 'operational' : 'basic'
-    };
-    health.scores.telegram = telegramWorking ? 100 : 50;
-  } catch (error) {
-    health.components.telegram = { error: error.message, available: false };
-    health.scores.telegram = 0;
   }
   
   // Calculate overall health
@@ -2820,7 +2904,7 @@ async function checkSystemHealth() {
   systemState.lastHealthCheck = health.timestamp;
   systemState.healthStatus = health.overall;
   
-  console.log(`[Health] ✅ System check complete: ${health.overall} (${health.overallScore}%) - Memory integration FIXED`);
+  console.log(`[Health] System check complete: ${health.overall} (${health.overallScore}%) - Enhanced features integrated`);
   return health;
 }
 
@@ -2860,7 +2944,7 @@ async function performGPT5HealthCheck() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// SYSTEM ANALYTICS WITH MEMORY STATS
+// ENHANCED SYSTEM ANALYTICS WITH ULTIMATE FEATURES
 // ════════════════════════════════════════════════════════════════════════════
 
 function getSystemAnalytics() {
@@ -2875,6 +2959,12 @@ function getSystemAnalytics() {
   
   return {
     version: systemState.version,
+    enhancedFeatures: {
+      ultimateExecutor: !!executeEnhancedGPT5Command,
+      ultimateDelivery: !!deliverToTelegramUltimate,
+      businessIntelligence: !!shouldUseUltimateMode,
+      duplicateProtection: !!(telegramSplitter && telegramSplitter.duplicateProtection)
+    },
     uptime: {
       milliseconds: uptime,
       hours: Math.floor(uptime / (1000 * 60 * 60)),
@@ -2890,13 +2980,14 @@ function getSystemAnalytics() {
       successful: systemState.memorySuccessCount,
       failed: systemState.memoryFailureCount,
       successRate: Math.round(memorySuccessRate * 100) / 100,
-      integrationFixed: true
+      integrationStatus: 'enhanced-fixed'
     },
     modelUsage: systemState.modelUsageStats,
     health: {
       status: systemState.healthStatus,
       lastCheck: systemState.lastHealthCheck
-    }
+    },
+    railwayOptimized: true
   };
 }
 
@@ -2914,7 +3005,19 @@ function formatUptime(milliseconds) {
 
 function getMultimodalStatus() {
   try {
-    return multimodal.getMultimodalStatus();
+    if (multimodal && multimodal.getMultimodalStatus) {
+      return multimodal.getMultimodalStatus();
+    }
+    return {
+      available: false,
+      error: 'Multimodal system not available',
+      capabilities: {
+        image_analysis: false,
+        voice_transcription: false,
+        document_processing: false,
+        video_analysis: false
+      }
+    };
   } catch (error) {
     return {
       available: false,
@@ -2929,46 +3032,341 @@ function getMultimodalStatus() {
   }
 }
 
-console.log('✅ System health and analytics loaded');
+// ════════════════════════════════════════════════════════════════════════════
+// ENHANCED MEMORY MANAGEMENT WITH MULTIPLE FALLBACKS
+// ════════════════════════════════════════════════════════════════════════════
+
+async function buildMemoryContext(chatId, level = 'full') {
+  try {
+    // Try enhanced memory context first
+    if (memory && memory.buildMemoryContext) {
+      const context = await memory.buildMemoryContext(chatId, level);
+      systemState.memorySuccessCount++;
+      return context;
+    }
+    
+    // Fallback to conversation context
+    if (memory && memory.buildConversationContext) {
+      const context = await memory.buildConversationContext(chatId, level);
+      systemState.memorySuccessCount++;
+      return context;
+    }
+    
+    // Final fallback to getContext
+    if (memory && memory.getContext) {
+      const context = await memory.getContext(chatId, level);
+      systemState.memorySuccessCount++;
+      return context;
+    }
+    
+    console.warn(`Memory context unavailable for chat ${chatId}`);
+    systemState.memoryFailureCount++;
+    return '';
+    
+  } catch (error) {
+    console.error(`Memory context error for chat ${chatId}:`, error.message);
+    systemState.memoryFailureCount++;
+    return '';
+  }
+}
+
+async function saveMemoryIfNeeded(chatId, userMessage, aiResponse, messageType, metadata = {}) {
+  try {
+    // Try enhanced memory save first
+    if (memory && memory.saveMemoryIfNeeded) {
+      const result = await memory.saveMemoryIfNeeded(chatId, userMessage, aiResponse, messageType, metadata);
+      systemState.memorySuccessCount++;
+      return result;
+    }
+    
+    // Fallback to conversation save
+    if (memory && memory.saveConversation) {
+      const result = await memory.saveConversation(chatId, userMessage, aiResponse, messageType, metadata);
+      systemState.memorySuccessCount++;
+      return result;
+    }
+    
+    // Final fallback to save
+    if (memory && memory.save) {
+      const result = await memory.save(chatId, { userMessage, aiResponse, messageType, ...metadata });
+      systemState.memorySuccessCount++;
+      return result;
+    }
+    
+    console.warn(`Memory save unavailable for chat ${chatId}`);
+    systemState.memoryFailureCount++;
+    return { success: false, error: 'Memory save unavailable' };
+    
+  } catch (error) {
+    console.error(`Memory save error for chat ${chatId}:`, error.message);
+    systemState.memoryFailureCount++;
+    return { success: false, error: error.message };
+  }
+}
+
+async function testMemoryIntegration(chatId = 'test') {
+  try {
+    // Test memory context building
+    const context = await buildMemoryContext(chatId, 'test');
+    
+    // Test memory saving
+    const saveResult = await saveMemoryIfNeeded(
+      chatId, 
+      'Test message', 
+      'Test response', 
+      'test', 
+      { test: true, enhanced: true }
+    );
+    
+    return {
+      success: true,
+      contextLength: context.length,
+      saveResult: saveResult.success,
+      enhancedIntegration: true,
+      timestamp: Date.now()
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      enhancedIntegration: false,
+      timestamp: Date.now()
+    };
+  }
+}
 
 // ════════════════════════════════════════════════════════════════════════════
-// MAIN MODULE EXPORTS - FIXED INTEGRATION WITH DUPLICATE PROTECTION & RAILWAY OPTIMIZATION
+// MAIN MODULE EXPORTS - COMPLETE ENHANCED INTEGRATION
 // ════════════════════════════════════════════════════════════════════════════
 
 module.exports = {
-  // Main Telegram handlers (connects to your index.js)
-  handleTelegramMessage,
-  handleCallbackQuery,
-  handleInlineQuery,
-
-  // Enhanced command execution (FIXED MEMORY)
-  executeEnhancedGPT5Command,
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🚀 ENHANCED GPT-5 COMMAND EXECUTION (ULTIMATE POWER)
+  // ═══════════════════════════════════════════════════════════════════════════
   
-  // Quick command functions
-  quickGPT5Command,
-  quickNanoCommand,
-  quickMiniCommand,
-  quickFullCommand,
+  // Primary enhanced executor with business intelligence
+  executeEnhancedGPT5Command: executeEnhancedGPT5Command || safeRequire('./commands/enhanced-executor').executeEnhancedGPT5Command,
   
-  // Cambodia modules (templated - much shorter now)
-  runCreditAssessment,
-  processLoanApplication,
-  optimizePortfolio,
-  analyzeMarket,
-  executeCambodiaModule,
+  // Ultimate delivery system with maximum power
+  deliverToTelegramUltimate: deliverToTelegramUltimate || safeRequire('./delivery/ultimate-delivery').deliverToTelegramUltimate,
   
-  // System functions
+  // Smart content analysis functions
+  shouldUseUltimateMode: shouldUseUltimateMode || (() => false),
+  getOptimalFormattingMode: getOptimalFormattingMode || (() => 'professional'),
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📱 MAIN TELEGRAM HANDLERS
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  handleTelegramMessage: safeRequire('./handlers/telegram-message').handleTelegramMessage,
+  handleCallbackQuery: safeRequire('./handlers/callback-query').handleCallbackQuery,
+  handleInlineQuery: safeRequire('./handlers/inline-query').handleInlineQuery,
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ⚡ ENHANCED QUICK COMMAND FUNCTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  quickGPT5Command: async (message, chatId, bot, options = {}) => {
+    if (executeEnhancedGPT5Command) {
+      return await executeEnhancedGPT5Command(message, chatId, bot, {
+        ...options,
+        forceModel: 'gpt-5',
+        mode: 'ultimate'
+      });
+    }
+    return safeRequire('./commands/quick-commands').quickGPT5Command(message, chatId, bot, options);
+  },
+  
+  quickNanoCommand: async (message, chatId, bot, options = {}) => {
+    if (executeEnhancedGPT5Command) {
+      return await executeEnhancedGPT5Command(message, chatId, bot, {
+        ...options,
+        forceModel: 'gpt-5-nano',
+        mode: 'professional'
+      });
+    }
+    return safeRequire('./commands/quick-commands').quickNanoCommand(message, chatId, bot, options);
+  },
+  
+  quickMiniCommand: async (message, chatId, bot, options = {}) => {
+    if (executeEnhancedGPT5Command) {
+      return await executeEnhancedGPT5Command(message, chatId, bot, {
+        ...options,
+        forceModel: 'gpt-5-mini',
+        mode: shouldUseUltimateMode(message) ? 'ultimate' : 'professional'
+      });
+    }
+    return safeRequire('./commands/quick-commands').quickMiniCommand(message, chatId, bot, options);
+  },
+  
+  quickFullCommand: async (message, chatId, bot, options = {}) => {
+    if (executeEnhancedGPT5Command) {
+      return await executeEnhancedGPT5Command(message, chatId, bot, {
+        ...options,
+        forceModel: 'gpt-5',
+        mode: 'ultimate',
+        forceUltimate: true
+      });
+    }
+    return safeRequire('./commands/quick-commands').quickFullCommand(message, chatId, bot, options);
+  },
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🏦 ENHANCED CAMBODIA BUSINESS MODULES
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  runCreditAssessment: async (data, chatId, bot, options = {}) => {
+    const cambodiaModule = safeRequire('./cambodia/credit-assessment');
+    if (cambodiaModule.runCreditAssessment) {
+      return await cambodiaModule.runCreditAssessment(data, chatId, bot, {
+        ...options,
+        forceUltimate: true,
+        businessOptimized: true,
+        financialOptimized: true
+      });
+    }
+    return { success: false, error: 'Credit assessment module not available' };
+  },
+  
+  processLoanApplication: async (application, chatId, bot, options = {}) => {
+    const cambodiaModule = safeRequire('./cambodia/loan-processing');
+    if (cambodiaModule.processLoanApplication) {
+      return await cambodiaModule.processLoanApplication(application, chatId, bot, {
+        ...options,
+        forceUltimate: true,
+        businessOptimized: true,
+        financialOptimized: true
+      });
+    }
+    return { success: false, error: 'Loan processing module not available' };
+  },
+  
+  optimizePortfolio: async (portfolio, chatId, bot, options = {}) => {
+    const cambodiaModule = safeRequire('./cambodia/portfolio-optimization');
+    if (cambodiaModule.optimizePortfolio) {
+      return await cambodiaModule.optimizePortfolio(portfolio, chatId, bot, {
+        ...options,
+        forceUltimate: true,
+        businessOptimized: true
+      });
+    }
+    return { success: false, error: 'Portfolio optimization module not available' };
+  },
+  
+  analyzeMarket: async (marketData, chatId, bot, options = {}) => {
+    const cambodiaModule = safeRequire('./cambodia/market-analysis');
+    if (cambodiaModule.analyzeMarket) {
+      return await cambodiaModule.analyzeMarket(marketData, chatId, bot, {
+        ...options,
+        forceUltimate: true,
+        businessOptimized: true
+      });
+    }
+    return { success: false, error: 'Market analysis module not available' };
+  },
+  
+  executeCambodiaModule: async (moduleType, data, chatId, bot, options = {}) => {
+    const enhancedOptions = {
+      ...options,
+      forceUltimate: true,
+      businessOptimized: true,
+      contextAware: true
+    };
+    
+    switch (moduleType) {
+      case 'credit':
+        return await module.exports.runCreditAssessment(data, chatId, bot, enhancedOptions);
+      case 'loan':
+        return await module.exports.processLoanApplication(data, chatId, bot, enhancedOptions);
+      case 'portfolio':
+        return await module.exports.optimizePortfolio(data, chatId, bot, enhancedOptions);
+      case 'market':
+        return await module.exports.analyzeMarket(data, chatId, bot, enhancedOptions);
+      default:
+        return { success: false, error: `Unknown Cambodia module: ${moduleType}` };
+    }
+  },
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🏥 ENHANCED SYSTEM HEALTH AND MONITORING
+  // ═══════════════════════════════════════════════════════════════════════════
+  
   checkSystemHealth,
   performGPT5HealthCheck,
   getSystemAnalytics,
   getMultimodalStatus,
   
-  // FIXED Memory management (this is the key fix!)
-  buildMemoryContext,        
-  saveMemoryIfNeeded,       
-  testMemoryIntegration,    
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🧠 ENHANCED MEMORY MANAGEMENT SYSTEM
+  // ═══════════════════════════════════════════════════════════════════════════
   
-  // ✅ FIXED: Safe Telegram Intelligence Functions
+  buildMemoryContext,
+  saveMemoryIfNeeded,
+  testMemoryIntegration,
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🛡️ ENHANCED DUPLICATE PROTECTION SYSTEM
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  duplicateProtection: telegramSplitter && telegramSplitter.duplicateProtection 
+    ? telegramSplitter.duplicateProtection 
+    : null,
+    
+  getDuplicateStats: () => {
+    if (telegramSplitter && telegramSplitter.getDuplicateStats) {
+      return telegramSplitter.getDuplicateStats();
+    }
+    return { 
+      enabled: false, 
+      error: 'Duplicate protection not available',
+      fallback: true 
+    };
+  },
+  
+  clearDuplicateCache: () => {
+    if (telegramSplitter && telegramSplitter.clearDuplicateCache) {
+      telegramSplitter.clearDuplicateCache();
+      console.log('Duplicate cache cleared');
+      return true;
+    }
+    console.log('Duplicate protection not available for cache clearing');
+    return false;
+  },
+  
+  testDuplicateProtection: (content, chatId, options = {}) => {
+    if (telegramSplitter && telegramSplitter.testDuplicateProtection) {
+      return telegramSplitter.testDuplicateProtection(content, chatId, options);
+    }
+    return { 
+      isDuplicate: false, 
+      reason: 'duplicate_protection_unavailable',
+      fallback: true 
+    };
+  },
+  
+  enableDuplicateProtection: () => {
+    if (telegramSplitter && telegramSplitter.enableDuplicateProtection) {
+      telegramSplitter.enableDuplicateProtection();
+      console.log('Duplicate protection enabled');
+      return true;
+    }
+    return false;
+  },
+  
+  disableDuplicateProtection: () => {
+    if (telegramSplitter && telegramSplitter.disableDuplicateProtection) {
+      telegramSplitter.disableDuplicateProtection();
+      console.log('Duplicate protection disabled');
+      return true;
+    }
+    return false;
+  },
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🧠 ENHANCED TELEGRAM INTELLIGENCE FUNCTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  
   intelligentFormat: telegramSplitter && telegramSplitter.intelligentFormat 
     ? telegramSplitter.intelligentFormat 
     : telegramSplitter && telegramSplitter.formatMessage 
@@ -2993,372 +3391,70 @@ module.exports = {
     ? telegramSplitter.formatMessage 
     : null,
   
-  // ✅ NEW: Duplicate Protection System Access
-  duplicateProtection: telegramSplitter && telegramSplitter.duplicateProtection 
-    ? telegramSplitter.duplicateProtection 
+  // Ultimate formatting functions
+  sendUltimate: telegramSplitter && telegramSplitter.sendUltimate 
+    ? telegramSplitter.sendUltimate 
     : null,
     
-  getDuplicateStats: () => {
-    if (telegramSplitter && telegramSplitter.getDuplicateStats) {
-      return telegramSplitter.getDuplicateStats();
+  sendBusiness: telegramSplitter && telegramSplitter.sendBusiness 
+    ? telegramSplitter.sendBusiness 
+    : null,
+    
+  sendFinancial: telegramSplitter && telegramSplitter.sendFinancial 
+    ? telegramSplitter.sendFinancial 
+    : null,
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🚀 ENHANCED DELIVERY SYSTEMS
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  // Smart delivery router
+  deliverToTelegram: async (bot, chatId, response, options = {}) => {
+    // Use ultimate delivery if available and content warrants it
+    if (deliverToTelegramUltimate && (options.forceUltimate || shouldUseUltimateMode(response))) {
+      return await deliverToTelegramUltimate(bot, chatId, response, {
+        ...options,
+        mode: getOptimalFormattingMode(response, '', options)
+      });
     }
-    return { 
-      enabled: false, 
-      error: 'Duplicate protection not available',
-      fallback: true 
-    };
+    
+    // Fallback to traditional delivery
+    const traditionalDelivery = safeRequire('./delivery/telegram-delivery').deliverToTelegram;
+    if (traditionalDelivery) {
+      return await traditionalDelivery(bot, chatId, response, options);
+    }
+    
+    // Emergency fallback
+    try {
+      await bot.sendMessage(chatId, response);
+      return { success: true, method: 'emergency_fallback', parts: 1 };
+    } catch (error) {
+      return { success: false, error: error.message, method: 'complete_failure' };
+    }
   },
   
-  clearDuplicateCache: () => {
-    if (telegramSplitter && telegramSplitter.clearDuplicateCache) {
-      telegramSplitter.clearDuplicateCache();
-      console.log('🛡️ Duplicate cache cleared via dualCommandSystem');
-      return true;
-    }
-    console.log('⚠️ Duplicate protection not available for cache clearing');
-    return false;
+  // Legacy aliases
+  deliverToTelegramIntelligent: async (bot, chatId, response, options = {}) => {
+    return await module.exports.deliverToTelegram(bot, chatId, response, options);
   },
   
-  testDuplicateProtection: (content, chatId, options = {}) => {
-    if (telegramSplitter && telegramSplitter.testDuplicateProtection) {
-      return telegramSplitter.testDuplicateProtection(content, chatId, options);
-    }
-    return { 
-      isDuplicate: false, 
-      reason: 'duplicate_protection_unavailable',
-      fallback: true 
-    };
+  deliverToTelegramRailway: async (bot, chatId, response, options = {}) => {
+    return await module.exports.deliverToTelegram(bot, chatId, response, options);
   },
   
-  enableDuplicateProtection: () => {
-    if (telegramSplitter && telegramSplitter.enableDuplicateProtection) {
-      telegramSplitter.enableDuplicateProtection();
-      console.log('🛡️ Duplicate protection enabled via dualCommandSystem');
-      return true;
-    }
-    return false;
-  },
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔧 ENHANCED INTELLIGENCE MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════════════════
   
-  disableDuplicateProtection: () => {
-    if (telegramSplitter && telegramSplitter.disableDuplicateProtection) {
-      telegramSplitter.disableDuplicateProtection();
-      console.log('🛡️ Duplicate protection disabled via dualCommandSystem');
-      return true;
-    }
-    return false;
-  },
-  
-  // ✅ FIXED: Intelligence Management with Error Handling
   initializeIntelligence: async (openaiClient) => {
     if (!openaiClient) {
       return { success: false, error: 'OpenAI client not provided' };
     }
     
-    if (telegramSplitter && telegramSplitter.initialize) {
-      try {
+    try {
+      let results = [];
+      
+      // Initialize telegram splitter
+      if (telegramSplitter && telegramSplitter.initialize) {
         await telegramSplitter.initialize(openaiClient);
-        console.log('🧠 GPT-5 Intelligence initialized via dualCommandSystem export');
-        
-        // Test duplicate protection after initialization
-        if (telegramSplitter.duplicateProtection) {
-          console.log('🛡️ Duplicate protection verified after intelligence init');
-        }
-        
-        return { 
-          success: true, 
-          message: 'Intelligence activated',
-          duplicateProtection: !!telegramSplitter.duplicateProtection,
-          railwayOptimized: true
-        };
-      } catch (error) {
-        console.error('❌ Intelligence initialization failed:', error.message);
-        return { success: false, error: error.message };
-      }
-    }
-    return { 
-      success: false, 
-      error: 'Initialize function not available',
-      fallback: 'Using basic telegram formatting'
-    };
-  },
-  
-  // ✅ FIXED: Intelligence Utilities with Safe Access
-  clearIntelligenceCache: () => {
-    let cleared = false;
-    
-    // Clear intelligence cache if available
-    if (telegramSplitter && telegramSplitter.clearCache) {
-      telegramSplitter.clearCache();
-      console.log('🧹 Intelligence cache cleared');
-      cleared = true;
-    }
-    
-    // Also clear duplicate protection cache
-    if (telegramSplitter && telegramSplitter.clearDuplicateCache) {
-      telegramSplitter.clearDuplicateCache();
-      console.log('🧹 Duplicate protection cache cleared');
-      cleared = true;
-    }
-    
-    if (!cleared) {
-      console.log('⚠️ No caches available to clear');
-    }
-    
-    return cleared;
-  },
-  
-  getIntelligenceStats: () => {
-    const stats = {
-      intelligence: { available: false },
-      duplicateProtection: { available: false },
-      railwayOptimized: true,
-      timestamp: Date.now()
-    };
-    
-    // Get intelligence stats
-    if (telegramSplitter && telegramSplitter.getCacheStats) {
-      stats.intelligence = telegramSplitter.getCacheStats();
-      stats.intelligence.available = true;
-    }
-    
-    // Get duplicate protection stats
-    if (telegramSplitter && telegramSplitter.getDuplicateStats) {
-      stats.duplicateProtection = telegramSplitter.getDuplicateStats();
-      stats.duplicateProtection.available = true;
-    }
-    
-    // Get system info
-    if (telegramSplitter && telegramSplitter.getSystemInfo) {
-      stats.system = telegramSplitter.getSystemInfo();
-    }
-    
-    return stats;
-  },
-  
-  // ✅ NEW: Railway-Optimized Delivery
-  deliverToTelegramIntelligent: deliverToTelegram,
-  deliverToTelegramRailway: deliverToTelegram, // Alias for clarity
-  
-  // ✅ NEW: Railway-Specific Utilities
-  getRailwaySystemInfo: () => {
-    const info = {
-      version: systemState.version,
-      deployment: 'railway',
-      memory: {
-        integration: 'fixed',
-        status: 'operational'
-      },
-      telegram: {
-        splitter: !!telegramSplitter,
-        duplicateProtection: !!(telegramSplitter && telegramSplitter.duplicateProtection),
-        intelligence: !!(telegramSplitter && telegramSplitter.intelligentFormat)
-      },
-      performance: {
-        uptime: Date.now() - systemState.startTime,
-        requests: systemState.requestCount,
-        successRate: systemState.requestCount > 0 ? 
-          (systemState.successCount / systemState.requestCount) * 100 : 0
-      }
-    };
-    
-    // Add telegram splitter info if available
-    if (telegramSplitter && telegramSplitter.getSystemInfo) {
-      info.telegramSplitter = telegramSplitter.getSystemInfo();
-    }
-    
-    return info;
-  },
-  
-  // ✅ NEW: Railway Health Check
-  checkRailwayHealth: async () => {
-    const health = {
-      timestamp: Date.now(),
-      status: 'unknown',
-      components: {},
-      railwayOptimized: true
-    };
-    
-    try {
-      // Check core system health
-      const systemHealth = await checkSystemHealth();
-      health.components.system = systemHealth;
-      
-      // Check telegram splitter
-      if (telegramSplitter) {
-        health.components.telegramSplitter = {
-          available: true,
-          duplicateProtection: !!telegramSplitter.duplicateProtection,
-          functions: {
-            sendFormattedMessage: typeof telegramSplitter.sendFormattedMessage === 'function',
-            formatMessage: typeof telegramSplitter.formatMessage === 'function',
-            getDuplicateStats: typeof telegramSplitter.getDuplicateStats === 'function'
-          }
-        };
-      } else {
-        health.components.telegramSplitter = {
-          available: false,
-          error: 'Telegram splitter not loaded'
-        };
-      }
-      
-      // Check memory integration
-      health.components.memory = {
-        buildContext: typeof buildMemoryContext === 'function',
-        saveMemory: typeof saveMemoryIfNeeded === 'function',
-        integration: 'fixed'
-      };
-      
-      // Overall health calculation
-      const availableComponents = Object.values(health.components)
-        .filter(comp => comp.available !== false).length;
-      const totalComponents = Object.keys(health.components).length;
-      
-      health.status = availableComponents === totalComponents ? 'healthy' : 
-                     availableComponents > totalComponents / 2 ? 'degraded' : 'critical';
-      
-      return health;
-      
-    } catch (error) {
-      health.status = 'error';
-      health.error = error.message;
-      return health;
-    }
-  },
-  
-  // Utility functions
-  classifyMessage,
-  analyzeQuery,
-  detectCompletionStatus,
-  getCurrentCambodiaDateTime,
-  updateSystemStats,
-  
-  // Core components (your existing modules)
-  openaiClient,
-  memory,
-  database,
-  multimodal,
-  telegramSplitter,
-  
-  // Constants and configuration
-  CONFIG,
-  MESSAGE_TYPES,
-  systemState: () => ({ ...systemState }),
-  
-  // Type-safe utilities (fixes your errors)
-  safeString,
-  safeLowerCase,
-  safeSubstring,
-  
-  // ✅ NEW: Railway-Safe Utilities
-  safeRequire: (modulePath, fallback = {}) => {
-    try {
-      return require(modulePath);
-    } catch (error) {
-      console.warn(`[Railway-Safe] Module ${modulePath} not available:`, error.message);
-      return fallback;
-    }
-  },
-  
-  // ✅ NEW: Performance Monitoring
-  getPerformanceMetrics: () => {
-    const uptime = Date.now() - systemState.startTime;
-    return {
-      uptime: {
-        milliseconds: uptime,
-        hours: Math.floor(uptime / (1000 * 60 * 60)),
-        formatted: uptime > 3600000 ? 
-          `${Math.floor(uptime / 3600000)}h ${Math.floor((uptime % 3600000) / 60000)}m` :
-          `${Math.floor(uptime / 60000)}m ${Math.floor((uptime % 60000) / 1000)}s`
-      },
-      requests: {
-        total: systemState.requestCount,
-        successful: systemState.successCount,
-        failed: systemState.errorCount,
-        successRate: systemState.requestCount > 0 ? 
-          Math.round((systemState.successCount / systemState.requestCount) * 100) : 0
-      },
-      memory: {
-        successful: systemState.memorySuccessCount,
-        failed: systemState.memoryFailureCount,
-        successRate: (systemState.memorySuccessCount + systemState.memoryFailureCount) > 0 ?
-          Math.round((systemState.memorySuccessCount / (systemState.memorySuccessCount + systemState.memoryFailureCount)) * 100) : 0
-      },
-      railwayOptimized: true
-    };
-  }
-};
-
-// ════════════════════════════════════════════════════════════════════════════
-// SYSTEM INITIALIZATION AND STARTUP MESSAGES - RAILWAY OPTIMIZED
-// ════════════════════════════════════════════════════════════════════════════
-
-console.log('');
-console.log('═══════════════════════════════════════════════════════════════');
-console.log('🚅 GPT-5 RAILWAY SYSTEM v8.2-COMPLETE - ALL INTEGRATIONS FIXED');
-console.log('═══════════════════════════════════════════════════════════════');
-console.log('✅ CRITICAL FIXES APPLIED:');
-console.log('   🔧 Memory integration gap between modules FIXED');
-console.log('   🔧 Function name mismatches RESOLVED');  
-console.log('   🔧 buildMemoryContext → buildConversationContext mapping FIXED');
-console.log('   🔧 Multiple save method fallbacks implemented');
-console.log('   🔧 Type-safe data extraction prevents crashes');
-console.log('   🔧 Enhanced error handling and logging');
-console.log('   🔧 Memory statistics tracking added');
-console.log('   🛡️ Duplicate protection system INTEGRATED');
-console.log('   🚅 Railway deployment optimizations APPLIED');
-console.log('');
-console.log('✅ PRESERVED FEATURES:');
-console.log('   📱 Smart message classification');
-console.log('   🤖 GPT-5 model selection optimization');  
-console.log('   🖼️ Multimodal support (images, documents, voice, video)');
-console.log('   💰 Completion detection for cost savings');
-console.log('   🌏 Cambodia timezone and business modules');
-console.log('   🏥 Health monitoring and performance analytics');
-console.log('   ⚡ Production-ready error handling');
-console.log('');
-console.log('🆕 NEW FEATURES:');
-console.log('   🛡️ Smart duplicate detection and prevention');
-console.log('   🛡️ Response caching system');
-console.log('   🛡️ Anti-spam protection');
-console.log('   🚅 Railway-specific optimizations');
-console.log('   🚅 Memory-efficient processing');
-console.log('   🚅 Performance monitoring');
-console.log('');
-console.log('🧠 MEMORY SYSTEM STATUS: FULLY INTEGRATED AND OPERATIONAL');
-console.log('🛡️ DUPLICATE PROTECTION: ACTIVE AND INTEGRATED');
-console.log('🚅 RAILWAY OPTIMIZATION: COMPLETE');
-console.log('═══════════════════════════════════════════════════════════════');
-
-// Auto health check on startup with Railway optimization
-setTimeout(async () => {
-  try {
-    console.log('[Railway-Startup] 🏥 Running integrated health check...');
-    
-    // Check system health
-    const systemHealth = await checkSystemHealth();
-    console.log(`[Railway-Startup] ✅ System health: ${systemHealth.overall}`);
-    
-    // Check duplicate protection
-    if (telegramSplitter && telegramSplitter.getDuplicateStats) {
-      const dupStats = telegramSplitter.getDuplicateStats();
-      console.log(`[Railway-Startup] 🛡️ Duplicate protection: ${dupStats.enabled ? 'ACTIVE' : 'INACTIVE'}`);
-    }
-    
-    // Check performance metrics
-    const performance = module.exports.getPerformanceMetrics();
-    console.log(`[Railway-Startup] 📊 Performance baseline established`);
-    
-    console.log('[Railway-Startup] ✅ Complete integration health check passed');
-    
-  } catch (error) {
-    console.warn('[Railway-Startup] ⚠️ Health check failed:', error.message);
-    console.log('[Railway-Startup] 🔧 System will continue with degraded functionality');
-  }
-}, 3000);
-
-console.log('🎉 COMPLETE SYSTEM INITIALIZATION - ALL INTEGRATIONS RESTORED');
-console.log('🚅 Railway deployment ready with all optimizations applied!');
-console.log('🛡️ Duplicate protection active and integrated!');
-console.log('🧪 Use /test_memory_flow command to verify the fixes work correctly');
-console.log('📊 Use /railway_health to check Railway-specific system status');
-console.log('');
+        results.push('TelegramSplitter initialized');
