@@ -2384,43 +2384,6 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 🧠 SMART CONTENT ANALYSIS FUNCTIONS
-// ════════════════════════════════════════════════════════════════════════════
-
-function shouldUseUltimateMode(message, context = '') {
-  const businessKeywords = ['business', 'financial', 'strategy', 'revenue', 'loan', 'lending', 'credit', 'investment', 'portfolio', 'analysis', 'market', 'report'];
-  const cambodiaKeywords = ['borrower', 'collateral', 'cambodia', 'phnom penh', 'khmer', 'riel'];
-  const complexityKeywords = ['comprehensive', 'detailed', 'thorough', 'in-depth', 'analyze', 'evaluation', 'assessment'];
-  
-  const content = (message + ' ' + context).toLowerCase();
-  
-  const hasBusinessTerms = businessKeywords.some(keyword => content.includes(keyword));
-  const hasCambodiaTerms = cambodiaKeywords.some(keyword => content.includes(keyword));
-  const hasComplexityTerms = complexityKeywords.some(keyword => content.includes(keyword));
-  const isLongContent = message.length > 1000;
-  
-  return hasBusinessTerms || hasCambodiaTerms || hasComplexityTerms || isLongContent;
-}
-
-function getOptimalFormattingMode(message, context = '', options = {}) {
-  if (options.forceUltimate || options.mode === 'ultimate') {
-    return 'ultimate';
-  }
-  
-  if (shouldUseUltimateMode(message, context)) {
-    return 'ultimate';
-  }
-  
-  const content = (message + ' ' + context).toLowerCase();
-  
-  if (content.includes('professional') || content.includes('formal') || message.length > 500) {
-    return 'professional';
-  }
-  
-  return 'professional'; // Minimum professional guarantee - no basic modes
-}
-
-// ════════════════════════════════════════════════════════════════════════════
 // SYSTEM COMMAND HANDLER
 // ════════════════════════════════════════════════════════════════════════════
 
