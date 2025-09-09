@@ -1664,13 +1664,6 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
         console.log(`[Enhanced] 🧠 Loading memory context (level: ${options.contextAware || 'full'})`);
         memoryContext = await buildMemoryContext(safeChatId, options.contextAware);
         console.log(`[Enhanced] Memory context loaded: ${memoryContext.length} chars`);
-        
-        // 🔥 BUSINESS INTELLIGENCE: Enhance memory with business context detection
-        if (memoryContext && shouldUseUltimateMode(safeMessage, memoryContext)) {
-          options.forceUltimate = true;
-          console.log('[Enhanced] 🔥 Business intelligence detected in memory - forcing ultimate mode');
-        }
-        
       } catch (contextError) {
         console.warn('[Enhanced] ⚠️ Memory context failed:', contextError.message);
       }
@@ -2027,10 +2020,10 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
         const enhancedOptions = {
           title: safeTitle,
           model: options.model || 'gpt-5-mini',
-          mode: deliveryMode === 'ultimate' ? 'ultimate' : 'professional',
-          enhanceFormatting: true,
-          professionalPresentation: true,
-          adaptiveFormatting: true,
+          mode: deliveryMode === 'ultimate' ? 'ultimate' : 'professional',  // ← MINIMUM PROFESSIONAL
+          enhanceFormatting: true,        // ← ALWAYS ENHANCE
+          professionalPresentation: true, // ← FORCE PROFESSIONAL
+          adaptiveFormatting: true,       // ← SMART FORMATTING
           includeHeaders: true,
           showTokens: options.showTokens !== false,
           maxLength: 3800,
@@ -2150,7 +2143,7 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
       
       // Enhanced break strategies with business content awareness
       const breakStrategies = [
-        { pattern: '\n\n**', priority: 12, name: 'business_headers' },
+        { pattern: '\n\n**', priority: 12, name: 'business_headers' },     // Business headers
         { pattern: '\n\n\n', priority: 10, name: 'triple_newline' },
         { pattern: '\n\n', priority: 8, name: 'double_newline' },
         { pattern: '. **', priority: 7, name: 'sentence_before_header' },
@@ -2164,7 +2157,7 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
       ];
       
       let bestBreak = { point: midPoint, priority: 0, name: 'fallback' };
-      const searchRange = 500;
+      const searchRange = 500; // Increased range for better breaks
       
       for (const strategy of breakStrategies) {
         const searchStart = Math.max(0, midPoint - searchRange);
@@ -2180,7 +2173,7 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
           }
         }
         
-        if (bestBreak.priority >= 8) break;
+        if (bestBreak.priority >= 8) break; // Stop at excellent breaks
       }
       
       splitPoint = bestBreak.point;
