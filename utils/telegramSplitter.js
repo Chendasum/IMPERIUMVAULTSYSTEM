@@ -643,6 +643,58 @@ function enhanceTextForTelegram(text, mode = 'ultimate', options = {}) {
             enhanced = enhanced.replace(/\n(\*\*[^*]+\*\*)/g, '\n\n$1');
             enhanced = enhanced.replace(/(\*\*[^*]+\*\*)\n([^*\n])/g, '$1\n\n$2');
             
+            // 🎯 BUSINESS DATA CODE BLOCKS - Generate copy-button blocks
+            if (enhanced.includes('Investor') || enhanced.includes('→') || enhanced.includes('Portfolio') || 
+                enhanced.includes('$') || /\d+%/.test(enhanced) || enhanced.includes('AUM')) {
+                
+                // Pattern 1: Investment allocation strategies (High-Value Investors → Best deals first)
+                enhanced = enhanced.replace(
+                    /((?:High-Value|Regular|New|VIP)\s*Investors?\s*→\s*[^\n]+(?:\n(?:High-Value|Regular|New|VIP)\s*Investors?\s*→\s*[^\n]+)*)/gi,
+                    '\n```\n$1\n```\n'
+                );
+                
+                // Pattern 2: Portfolio management data (Investor A: 3 deals, $500K total)
+                enhanced = enhanced.replace(
+                    /(Investor\s*[A-C]:\s*\d+[^\n]+(?:\nInvestor\s*[A-C]:\s*\d+[^\n]+)*(?:\n=\s*[^\n]+)?)/gi,
+                    '\n```\n$1\n```\n'
+                );
+                
+                // Pattern 3: Risk diversification percentages
+                enhanced = enhanced.replace(
+                    /((?:Real Estate|Manufacturing|Trading|Services|Technology|Healthcare|Energy):\s*\d+%[^\n]*(?:\n(?:Real Estate|Manufacturing|Trading|Services|Technology|Healthcare|Energy):\s*\d+%[^\n]*)*(?:\n=\s*[^\n]+)?)/gi,
+                    '\n```\n$1\n```\n'
+                );
+                
+                // Pattern 4: Financial summaries with calculations
+                enhanced = enhanced.replace(
+                    /((?:\w+\s*\w*):\s*\$[\d,KMB]+[^\n]*(?:\n(?:\w+\s*\w*):\s*\$[\d,KMB]+[^\n]*)*)/gi,
+                    '\n```\n$1\n```\n'
+                );
+                
+                // Pattern 5: Deal allocation strategy blocks
+                enhanced = enhanced.replace(
+                    /(Deal Allocation Strategy:[\s\S]*?(?=\n\n[#*]|\n\n\w+:|$))/gi,
+                    (match) => {
+                        if (match.includes('→') || match.includes('Investors')) {
+                            return match.replace(/(Deal Allocation Strategy:)\n([\s\S]*?)$/gi, '$1\n```\n$2\n```');
+                        }
+                        return match;
+                    }
+                );
+                
+                // Pattern 6: AUM and portfolio totals
+                enhanced = enhanced.replace(
+                    /(=\s*YOU\s*manage\s*\$[\d,\.]+[KMB]?\s*effective\s*AUM)/gi,
+                    '\n```\n$1\n```\n'
+                );
+                
+                // Pattern 7: Multi-line structured data with arrows
+                enhanced = enhanced.replace(
+                    /((?:[A-Za-z\s]+→[^\n]+\n){2,})/gi,
+                    '\n```\n$1```\n'
+                );
+            }
+            
             // 🎯 ENHANCED CODE BLOCK formatting
             enhanced = enhanced.replace(/\n(```)/g, '\n\n$1');
             enhanced = enhanced.replace(/(```)\n([^`])/g, '$1\n\n$2');
@@ -683,7 +735,6 @@ function enhanceTextForTelegram(text, mode = 'ultimate', options = {}) {
         return text;
     }
 }
-
 // ═══════════════════════════════════════════════════════════════════════════
 // 🎯 ULTIMATE HEADER GENERATION WITH MAXIMUM VISUAL IMPACT
 // ═══════════════════════════════════════════════════════════════════════════
@@ -700,7 +751,9 @@ function createTelegramHeader(options = {}) {
             tokens = null,
             contentType = null,
             complexity = null,
-            context = {}
+            context = {},
+            hasStructuredData = false,
+            hasCodeBlocks = false
         } = options;
         
         const modelInfo = MODELS[model] || MODELS['gpt-5-mini'];
@@ -738,6 +791,11 @@ function createTelegramHeader(options = {}) {
                     'conversational': '💬 Smart Response'
                 };
                 autoTitle = titleMap[contentType] || '🎯 Professional Analysis';
+                
+                // Enhanced title for structured data
+                if (hasStructuredData && (contentType === 'business' || contentType === 'financial')) {
+                    autoTitle = contentType === 'financial' ? '💰 Financial Strategy' : '📊 Business Strategy';
+                }
             }
             
             if (totalParts > 1) {
@@ -795,6 +853,17 @@ function createTelegramHeader(options = {}) {
             }
         }
         
+        // 🎯 STRUCTURED DATA INDICATOR
+        if (hasStructuredData || hasCodeBlocks) {
+            if (hasStructuredData && hasCodeBlocks) {
+                infoItems.push('📋 Structured');
+            } else if (hasStructuredData) {
+                infoItems.push('📊 Data');
+            } else if (hasCodeBlocks) {
+                infoItems.push('💻 Code');
+            }
+        }
+        
         // 🎯 ENHANCED TOKEN INFO with model context
         if (showTokens && tokens) {
             const tokenDisplay = tokens > 1000 ? `${Math.round(tokens/1000)}K` : `${tokens}`;
@@ -848,7 +917,13 @@ function analyzeContentStyle(text) {
     const hasLists = /^[\s]*[•▪▫◦\-\*]\s/m.test(content) || /^\s*\d+\.\s/m.test(content);
     const hasCodeBlocks = /```[\s\S]*?```/.test(content) || /`[^`\n]+`/.test(content);
     const hasHeaders = /^#{1,6}\s/m.test(content) || /^[A-Z][^.!?]*:$/m.test(content) || /^\*\*[^*]+\*\*$/m.test(content);
-    const hasStructure = hasLists || hasCodeBlocks || hasHeaders;
+    
+    // 🎯 STRUCTURED DATA DETECTION for code blocks
+    const hasStructuredData = /(\w+\s*→\s*[^\n]+|\$[\d,KMB]+|Investor\s*[A-C]:|Portfolio|AUM|Strategy|diversification|allocation)/i.test(content);
+    const hasFinancialData = /(\d+%\s*of\s*total|\$[\d,KMB]+\s*(total|effective)|deals?,\s*\$|manage\s*\$)/i.test(content);
+    const hasBusinessMetrics = /(ROI|KPI|revenue|profit|margin|growth|churn|acquisition)/i.test(content);
+    
+    const hasStructure = hasLists || hasCodeBlocks || hasHeaders || hasStructuredData;
     const hasParagraphs = (content.match(/\n\n/g) || []).length > 2;
     const hasEmphasis = /\*\*[^*]+\*\*/.test(content) || /__[^_]+__/.test(content);
     const hasTables = /\|.*\|/.test(content);
@@ -872,7 +947,7 @@ function analyzeContentStyle(text) {
         delay = CONFIG.PROFESSIONAL_DELAY;
     } 
     // 🚀 ULTIMATE MODE for business/financial content
-    else if (contentType.type === 'business' || contentType.type === 'financial' || complexityScore > 70) {
+    else if (contentType.type === 'business' || contentType.type === 'financial' || complexityScore > 70 || hasStructuredData || hasFinancialData) {
         contentStyle = 'ultimate';
         recommendedMode = 'ultimate';
         maxParts = CONFIG.ULTIMATE_MAX_PARTS;
@@ -897,7 +972,7 @@ function analyzeContentStyle(text) {
     }
     
     // 🎯 BUSINESS/FINANCIAL CONTENT gets ULTIMATE treatment
-    if (contentType.type === 'business' || contentType.type === 'financial') {
+    if (contentType.type === 'business' || contentType.type === 'financial' || hasStructuredData || hasFinancialData) {
         contentStyle = 'ultimate';
         recommendedMode = 'ultimate';
         maxParts = CONFIG.ULTIMATE_MAX_PARTS;
@@ -923,6 +998,11 @@ function analyzeContentStyle(text) {
         hasQuotes,
         hasLinks,
         
+        // Enhanced structured data detection
+        hasStructuredData,
+        hasFinancialData,
+        hasBusinessMetrics,
+        
         // Ultimate analysis
         complexityScore,
         contentType: contentType.type,
@@ -938,10 +1018,13 @@ function analyzeContentStyle(text) {
         // Ultimate features
         shouldUseUltimate: contentStyle === 'ultimate',
         forceEnhancement: true, // ← ALWAYS enhance
-        priority: contentType.confidence > 0.7 ? 'high' : 'normal'
+        priority: contentType.confidence > 0.7 ? 'high' : 'normal',
+        
+        // Code block recommendations
+        shouldGenerateCodeBlocks: hasStructuredData || hasFinancialData || hasBusinessMetrics,
+        codeBlockPriority: hasStructuredData && hasFinancialData ? 'high' : 'normal'
     };
 }
-
 // ═══════════════════════════════════════════════════════════════════════════
 // 🚀 ULTIMATE TELEGRAM SPLITTING WITH MAXIMUM INTELLIGENCE
 // ═══════════════════════════════════════════════════════════════════════════
