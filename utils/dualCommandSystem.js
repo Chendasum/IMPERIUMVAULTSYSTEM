@@ -1630,14 +1630,19 @@ async function routeMessageByType(userMessage, chatId, bot, messageType, startTi
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// ENHANCED GPT-5 COMMAND EXECUTOR (MAIN EXECUTION ENGINE WITH FIXED MEMORY)
+// 🚀 ULTIMATE GPT-5 COMMAND EXECUTOR - MAXIMUM POWER INTEGRATION v8.4
+// ════════════════════════════════════════════════════════════════════════════
+// 🎯 BUSINESS AUTO-ULTIMATE: Smart detection for business/financial content
+// 🧠 AI INTELLIGENCE: Full integration with ULTIMATE telegramSplitter features
+// 🛡️ ENHANCED PROTECTION: Advanced duplicate detection and intelligent routing
+// 📊 VISUAL EXCELLENCE: Maximum formatting power for professional presentation
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, options = {}) {
   const executionStart = Date.now();
   
   try {
-    console.log('[Enhanced] 🎯 Executing GPT-5 command with FIXED memory integration');
+    console.log('[Enhanced] 🚀 Executing ULTIMATE GPT-5 command with full power integration');
     
     const safeMessage = safeString(userMessage);
     const safeChatId = safeString(chatId);
@@ -1645,6 +1650,12 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
     if (safeMessage.length === 0) {
       throw new Error('Empty message provided');
     }
+    
+    // 🧠 SMART CONTENT ANALYSIS for optimal formatting
+    const shouldUseUltimate = shouldUseUltimateMode(safeMessage, options.context || '');
+    const optimalMode = getOptimalFormattingMode(safeMessage, options.context || '', options);
+    
+    console.log(`[Enhanced] 🎯 Content analysis: Ultimate=${shouldUseUltimate}, Mode=${optimalMode}`);
     
     // 🔧 FIXED: Build memory context based on contextAware setting
     let memoryContext = '';
@@ -1658,7 +1669,7 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       }
     }
     
-    // Analyze query for GPT-5 model selection
+    // 🎯 ENHANCED: Analyze query with ULTIMATE context
     const queryAnalysis = analyzeQuery(safeMessage, options.messageType || 'text', options.hasMedia === true, memoryContext);
     
     // Handle completion detection FIRST
@@ -1676,17 +1687,33 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
         costSaved: true,
         enhancedExecution: true,
         totalExecutionTime: responseTime,
-        telegramDelivered: await deliverToTelegram(bot, safeChatId, queryAnalysis.quickResponse, 'Task Completion')
+        telegramDelivered: await deliverToTelegramUltimate(bot, safeChatId, queryAnalysis.quickResponse, {
+          title: 'Task Completion',
+          mode: 'professional',
+          forceUltimate: false
+        })
       };
     }
     
-    // Override model if forced
+    // 🚀 ULTIMATE: Override model and mode based on content analysis
     if (options.forceModel && safeString(options.forceModel).indexOf('gpt-5') === 0) {
       queryAnalysis.gpt5Model = options.forceModel;
       queryAnalysis.reason = `Forced to use ${options.forceModel}`;
     }
     
-    console.log(`[Enhanced] Analysis: ${queryAnalysis.type}, Model: ${queryAnalysis.gpt5Model}, Memory: ${memoryContext.length > 0 ? 'Yes' : 'No'}`);
+    // 🎯 SMART MODEL SELECTION: Business content gets better models
+    if (shouldUseUltimate && !options.forceModel) {
+      if (queryAnalysis.gpt5Model === 'gpt-5-nano') {
+        queryAnalysis.gpt5Model = 'gpt-5-mini'; // Upgrade nano to mini for business
+        console.log('[Enhanced] 📈 Upgraded model to gpt-5-mini for business content');
+      }
+      if (queryAnalysis.gpt5Model === 'gpt-5-mini' && safeMessage.length > 1000) {
+        queryAnalysis.gpt5Model = 'gpt-5'; // Upgrade to full for complex business
+        console.log('[Enhanced] 🚀 Upgraded model to gpt-5 for complex business content');
+      }
+    }
+    
+    console.log(`[Enhanced] Analysis: ${queryAnalysis.type}, Model: ${queryAnalysis.gpt5Model}, Memory: ${memoryContext.length > 0 ? 'Yes' : 'No'}, Ultimate: ${shouldUseUltimate}`);
     
     // Execute through GPT-5 system
     let gpt5Result;
@@ -1714,18 +1741,21 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
             const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, {
               modelUsed: safeString(gpt5Result.modelUsed),
               processingTime: Number(gpt5Result.processingTime) || 0,
-              minimal: true
+              minimal: true,
+              ultimateMode: shouldUseUltimate
             });
             console.log(`[Enhanced] Memory save result:`, saveResult);
           }
         } else {
-          // Full memory save
+          // Full memory save with ULTIMATE context
           const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, {
             modelUsed: safeString(gpt5Result.modelUsed),
             processingTime: Number(gpt5Result.processingTime) || 0,
             priority: safeString(queryAnalysis.priority),
             complexity: safeString(queryAnalysis.type),
-            memoryContextLength: memoryContext.length
+            memoryContextLength: memoryContext.length,
+            ultimateMode: shouldUseUltimate,
+            contentMode: optimalMode
           });
           console.log(`[Enhanced] Memory save result:`, saveResult);
         }
@@ -1734,10 +1764,22 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       }
     }
     
-    // Auto-deliver to Telegram if bot provided
-    const telegramDelivered = await deliverToTelegram(bot, safeChatId, gpt5Result.response, options.title || 'GPT-5 Analysis');
+    // 🚀 ULTIMATE: Auto-deliver with MAXIMUM POWER
+    const telegramDelivered = await deliverToTelegramUltimate(bot, safeChatId, gpt5Result.response, {
+      title: options.title || (shouldUseUltimate ? '🚀 Ultimate Analysis' : '💼 Professional Analysis'),
+      mode: options.mode || optimalMode,
+      forceUltimate: options.forceUltimate || shouldUseUltimate,
+      businessOptimized: shouldUseUltimateMode(safeMessage) && safeMessage.toLowerCase().includes('business'),
+      financialOptimized: shouldUseUltimateMode(safeMessage) && /financial|loan|lending|credit|investment/i.test(safeMessage),
+      professionalPresentation: true,
+      enhanceFormatting: true,
+      showTokens: options.showTokens !== false,
+      model: gpt5Result.modelUsed,
+      contextAware: true,
+      adaptiveFormatting: true
+    });
     
-    // Build comprehensive result
+    // 🎯 ULTIMATE: Build comprehensive result with enhanced metadata
     const result = {
       response: gpt5Result.response,
       success: true,
@@ -1758,18 +1800,30 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       memoryContextUsed: memoryContext.length > 0,
       safetyChecksApplied: true,
       telegramDelivered,
-      fixedMemoryIntegration: true // Flag to indicate memory integration is fixed
+      fixedMemoryIntegration: true,
+      
+      // 🚀 ULTIMATE: Enhanced metadata
+      ultimateMode: shouldUseUltimate,
+      contentMode: optimalMode,
+      businessOptimized: shouldUseUltimateMode(safeMessage) && safeMessage.toLowerCase().includes('business'),
+      financialOptimized: shouldUseUltimateMode(safeMessage) && /financial|loan|lending|credit/i.test(safeMessage),
+      visualExcellence: telegramDelivered?.ultimateFeatures || false,
+      duplicateProtected: telegramDelivered?.duplicateProtected || false
     };
     
-    console.log(`[Enhanced] ✅ Command executed successfully: ${result.modelUsed}, ${result.processingTime}ms, Memory: ${result.contextLength} chars`);
+    console.log(`[Enhanced] ✅ ULTIMATE command executed: ${result.modelUsed}, ${result.processingTime}ms, Memory: ${result.contextLength} chars, Ultimate: ${result.ultimateMode}`);
     return result;
     
   } catch (error) {
     console.error('[Enhanced] ❌ Command execution error:', error.message);
     
-    // Emergency fallback
-    const errorMsg = `Analysis failed: ${error.message}.\n\nPlease try a simpler request.`;
-    const telegramDelivered = await deliverToTelegram(bot, safeString(chatId), errorMsg, 'System Error');
+    // 🚀 ULTIMATE: Emergency fallback with professional standards
+    const errorMsg = `Analysis temporarily unavailable: ${error.message}.\n\nPlease try again or rephrase your request.`;
+    const telegramDelivered = await deliverToTelegramUltimate(bot, safeString(chatId), errorMsg, {
+      title: '🔧 System Recovery',
+      mode: 'professional',
+      forceUltimate: false
+    });
     
     return {
       success: false,
@@ -1779,13 +1833,17 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       enhancedExecution: false,
       totalExecutionTime: Date.now() - executionStart,
       telegramDelivered,
-      safetyChecksApplied: true
+      safetyChecksApplied: true,
+      professionalFallback: true
     };
   }
 }
 
-// ✅ ULTIMATE-INTEGRATED: Railway-Compatible Telegram Delivery with Full AI Power
-async function deliverToTelegram(bot, chatId, response, title) {
+// ════════════════════════════════════════════════════════════════════════════
+// 🚀 ULTIMATE TELEGRAM DELIVERY WITH MAXIMUM POWER AND INTELLIGENCE
+// ════════════════════════════════════════════════════════════════════════════
+
+async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
   const startTime = Date.now();
   
   try {
@@ -1802,25 +1860,42 @@ async function deliverToTelegram(bot, chatId, response, title) {
     
     const safeResponse = safeString(response);
     const safeChatId = safeString(chatId);
-    const safeTitle = safeString(title);
+    const safeTitle = safeString(options.title);
     
     if (!safeResponse || safeResponse.length === 0) {
       console.log('[Delivery] ❌ Empty response content');
       return { success: false, error: 'Empty response content', method: 'validation_failed' };
     }
     
-    console.log(`[Delivery] 🚀 Starting Ultimate delivery: ${safeResponse.length} chars to chat ${safeChatId}`);
+    console.log(`[Delivery] 🚀 ULTIMATE delivery: ${safeResponse.length} chars, Mode: ${options.mode || 'auto'}, Ultimate: ${options.forceUltimate || false}`);
+    
+    // 🎯 SMART CONTENT ANALYSIS for delivery optimization
+    const contentType = options.businessOptimized ? 'business' :
+                       options.financialOptimized ? 'financial' :
+                       shouldUseUltimateMode(safeResponse) ? 'business' : 'general';
+    
+    const deliveryMode = options.mode || 
+                        (options.forceUltimate ? 'ultimate' : null) ||
+                        (contentType === 'business' || contentType === 'financial' ? 'ultimate' : null) ||
+                        'professional';
+    
+    console.log(`[Delivery] 🎯 Smart routing: ContentType=${contentType}, DeliveryMode=${deliveryMode}`);
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // ULTIMATE TIER 1: Maximum AI Power with All Features
+    // 🚀 ULTIMATE TIER 1: Maximum Power with Business/Financial Optimization
     // ═══════════════════════════════════════════════════════════════════════════
     
-    if (telegramSplitter && typeof telegramSplitter.sendUltimate === 'function') {
+    if (telegramSplitter && telegramSplitter.sendUltimate && (deliveryMode === 'ultimate' || options.forceUltimate)) {
       try {
-        console.log('[Delivery] 🧠 Using ULTIMATE AI delivery with full intelligence');
+        console.log('[Delivery] 🚀 Using ULTIMATE delivery with maximum visual impact');
         
-        const ultimateResult = await telegramSplitter.sendUltimate(bot, safeChatId, safeResponse, {
+        const ultimateOptions = {
           title: safeTitle,
+          mode: 'ultimate',
+          forceUltimate: true,
+          professionalPresentation: true,
+          maximumVisualImpact: true,
+          enhanceFormatting: true,
           adaptiveFormatting: true,
           contentAnalysis: true,
           duplicateProtection: true,
@@ -1828,11 +1903,18 @@ async function deliverToTelegram(bot, chatId, response, title) {
           smartHeaders: true,
           enhanceTypography: true,
           performanceOptimized: true,
-          railwayOptimized: true,
+          showTokens: options.showTokens !== false,
           maxLength: 3800,
-          maxParts: 3,
-          delay: 600
-        });
+          maxParts: 4,
+          delay: 800,
+          
+          // 🎯 Content-specific optimizations
+          businessOptimized: options.businessOptimized || contentType === 'business',
+          financialOptimized: options.financialOptimized || contentType === 'financial',
+          model: options.model || 'gpt-5-mini'
+        };
+        
+        const ultimateResult = await telegramSplitter.sendUltimate(bot, safeChatId, safeResponse, ultimateOptions);
         
         if (ultimateResult && (ultimateResult.success || ultimateResult.delivered > 0 || ultimateResult.parts > 0 || ultimateResult.duplicatePrevented)) {
           const processingTime = Date.now() - startTime;
@@ -1840,20 +1922,21 @@ async function deliverToTelegram(bot, chatId, response, title) {
           
           return {
             success: true,
-            method: 'ultimate_ai_delivery',
+            method: 'ultimate_maximum_power',
             parts: ultimateResult.parts || ultimateResult.delivered || 1,
             duplicateProtected: ultimateResult.duplicateProtected || ultimateResult.duplicatePrevented || false,
-            aiEnhanced: true,
-            contentAnalyzed: true,
-            adaptiveFormatting: ultimateResult.adaptiveFormatting || false,
+            ultimateFeatures: true,
+            contentOptimized: true,
+            businessOptimized: options.businessOptimized || contentType === 'business',
+            financialOptimized: options.financialOptimized || contentType === 'financial',
+            visualExcellence: true,
             processingTime,
             contentLength: safeResponse.length,
-            ultimateFeatures: true,
-            railwayOptimized: true
+            deliveryMode: 'ultimate'
           };
         }
         
-        console.log('[Delivery] ⚠️ Ultimate method unclear result, trying enhanced method');
+        console.log('[Delivery] ⚠️ Ultimate method unclear result, trying specialized business/financial');
         
       } catch (ultimateError) {
         console.warn('[Delivery] ⚠️ Ultimate method failed:', ultimateError.message);
@@ -1861,53 +1944,107 @@ async function deliverToTelegram(bot, chatId, response, title) {
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // ULTIMATE TIER 2: Enhanced AI Features with Smart Analysis
+    // 🚀 ULTIMATE TIER 2: Specialized Business/Financial Delivery
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    if (telegramSplitter && (contentType === 'business' || contentType === 'financial')) {
+      try {
+        let specializedResult = null;
+        
+        // 💰 FINANCIAL CONTENT: Use financial formatter
+        if (contentType === 'financial' && telegramSplitter.sendFinancial) {
+          console.log('[Delivery] 💰 Using specialized FINANCIAL delivery');
+          specializedResult = await telegramSplitter.sendFinancial(bot, safeChatId, safeResponse, {
+            title: safeTitle || '💰 Financial Analysis',
+            forceUltimate: true,
+            financialOptimized: true,
+            professionalPresentation: true,
+            maximumVisualImpact: true,
+            showTokens: options.showTokens !== false,
+            maxLength: 3800,
+            maxParts: 4
+          });
+        }
+        // 📊 BUSINESS CONTENT: Use business formatter
+        else if (contentType === 'business' && telegramSplitter.sendBusiness) {
+          console.log('[Delivery] 📊 Using specialized BUSINESS delivery');
+          specializedResult = await telegramSplitter.sendBusiness(bot, safeChatId, safeResponse, {
+            title: safeTitle || '📊 Business Analysis',
+            forceUltimate: true,
+            businessOptimized: true,
+            professionalPresentation: true,
+            maximumVisualImpact: true,
+            showTokens: options.showTokens !== false,
+            maxLength: 3800,
+            maxParts: 4
+          });
+        }
+        
+        if (specializedResult && (specializedResult.success || specializedResult.delivered > 0 || specializedResult.parts > 0)) {
+          const processingTime = Date.now() - startTime;
+          console.log(`[Delivery] ✅ SPECIALIZED SUCCESS: ${specializedResult.parts || specializedResult.delivered || 1} parts, ${processingTime}ms`);
+          
+          return {
+            success: true,
+            method: `specialized_${contentType}_delivery`,
+            parts: specializedResult.parts || specializedResult.delivered || 1,
+            duplicateProtected: specializedResult.duplicateProtected || false,
+            ultimateFeatures: true,
+            contentOptimized: true,
+            businessOptimized: contentType === 'business',
+            financialOptimized: contentType === 'financial',
+            visualExcellence: true,
+            processingTime,
+            contentLength: safeResponse.length,
+            deliveryMode: `specialized_${contentType}`
+          };
+        }
+        
+      } catch (specializedError) {
+        console.warn('[Delivery] ⚠️ Specialized delivery failed:', specializedError.message);
+      }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 🚀 ULTIMATE TIER 3: Professional Enhanced Delivery
     // ═══════════════════════════════════════════════════════════════════════════
     
     if (telegramSplitter && typeof telegramSplitter.sendFormattedMessage === 'function') {
       try {
-        console.log('[Delivery] 🎯 Using ENHANCED AI delivery with content intelligence');
+        console.log('[Delivery] 💼 Using PROFESSIONAL enhanced delivery with AI intelligence');
         
-        // Check if we have AI content analysis available
+        // 🧠 AI-powered content analysis
         const hasContentIntelligence = telegramSplitter.contentIntelligence || telegramSplitter.analyzeContentStyle;
         const hasDuplicateProtection = telegramSplitter.duplicateProtection;
         
-        let enhancedOptions = {
+        const enhancedOptions = {
           title: safeTitle,
-          model: 'gpt-5-mini',
+          model: options.model || 'gpt-5-mini',
+          mode: deliveryMode === 'ultimate' ? 'ultimate' : 'professional',  // ← MINIMUM PROFESSIONAL
+          enhanceFormatting: true,        // ← ALWAYS ENHANCE
+          professionalPresentation: true, // ← FORCE PROFESSIONAL
+          adaptiveFormatting: true,       // ← SMART FORMATTING
+          includeHeaders: true,
+          showTokens: options.showTokens !== false,
           maxLength: 3800,
-          maxParts: 3,
-          delay: 600,
-          railwayOptimized: true
+          maxParts: deliveryMode === 'ultimate' ? 4 : 3,
+          delay: deliveryMode === 'ultimate' ? 800 : 600,
+          
+          // 🧠 AI intelligence options
+          contentAnalysis: hasContentIntelligence,
+          smartHeaders: hasContentIntelligence,
+          adaptiveHeaders: hasContentIntelligence,
+          intelligentSplitting: hasContentIntelligence,
+          
+          // 🛡️ Protection options
+          duplicateProtection: hasDuplicateProtection,
+          contextAware: options.contextAware !== false,
+          
+          // 🎯 Content optimization
+          forceUltimate: deliveryMode === 'ultimate',
+          businessOptimized: options.businessOptimized || contentType === 'business',
+          financialOptimized: options.financialOptimized || contentType === 'financial'
         };
-        
-        // ✅ AI CONTENT ANALYSIS: Let Ultimate AI choose the best approach
-        if (hasContentIntelligence) {
-          enhancedOptions = {
-            ...enhancedOptions,
-            mode: 'adaptive',           // Let AI choose optimal mode
-            enhanceFormatting: true,    // AI-powered text enhancement
-            smartHeaders: true,         // Context-aware headers
-            adaptiveHeaders: true,      // Dynamic header generation
-            contentAnalysis: true,      // Enable content type detection
-            intelligentSplitting: true  // AI-powered break point detection
-          };
-          console.log('[Delivery] 🧠 AI content analysis enabled');
-        } else {
-          enhancedOptions = {
-            ...enhancedOptions,
-            mode: 'structured',
-            enhanceFormatting: true,
-            includeHeaders: true
-          };
-          console.log('[Delivery] 📋 Standard enhanced formatting enabled');
-        }
-        
-        // ✅ DUPLICATE PROTECTION: Enable if available
-        if (hasDuplicateProtection) {
-          enhancedOptions.duplicateProtection = true;
-          console.log('[Delivery] 🛡️ Duplicate protection enabled');
-        }
         
         const enhancedResult = await telegramSplitter.sendFormattedMessage(bot, safeChatId, safeResponse, enhancedOptions);
         
@@ -1916,27 +2053,28 @@ async function deliverToTelegram(bot, chatId, response, title) {
           
           // Handle all success cases
           if (enhancedResult.success === true || enhancedResult.delivered > 0 || enhancedResult.parts > 0) {
-            console.log(`[Delivery] ✅ ENHANCED SUCCESS: ${enhancedResult.parts || enhancedResult.delivered || 1} parts, ${processingTime}ms`);
+            console.log(`[Delivery] ✅ PROFESSIONAL SUCCESS: ${enhancedResult.parts || enhancedResult.delivered || 1} parts, ${processingTime}ms`);
             return {
               success: true,
-              method: hasContentIntelligence ? 'ai_enhanced_delivery' : 'enhanced_delivery',
+              method: hasContentIntelligence ? 'ai_professional_delivery' : 'professional_delivery',
               parts: enhancedResult.parts || enhancedResult.delivered || 1,
               duplicateProtected: enhancedResult.duplicateProtected || false,
               aiEnhanced: hasContentIntelligence,
               contentAnalyzed: hasContentIntelligence,
+              professionalQuality: true,
+              contentOptimized: true,
               processingTime,
               contentLength: safeResponse.length,
-              enhancedFeatures: true,
-              railwayOptimized: true
+              deliveryMode: 'professional'
             };
           }
           
-          // Handle duplicate prevention (this is actually success)
+          // Handle duplicate prevention (success case)
           if (enhancedResult.duplicatePrevented) {
-            console.log('[Delivery] 🛡️ DUPLICATE PREVENTED - Enhanced protection active');
+            console.log('[Delivery] 🛡️ DUPLICATE PREVENTED - Professional protection active');
             return {
               success: true,
-              method: 'duplicate_prevention_enhanced',
+              method: 'professional_duplicate_prevention',
               parts: 1,
               duplicatePrevented: true,
               reason: enhancedResult.reason,
@@ -1945,139 +2083,81 @@ async function deliverToTelegram(bot, chatId, response, title) {
               confidence: enhancedResult.confidence,
               processingTime: Date.now() - startTime,
               duplicateProtected: true,
-              railwayOptimized: true
+              deliveryMode: 'protection'
             };
           }
           
-          console.log('[Delivery] ⚠️ Enhanced method returned unclear result, trying professional fallback');
+          console.log('[Delivery] ⚠️ Professional method returned unclear result, trying manual fallback');
         }
         
       } catch (enhancedError) {
-        console.warn('[Delivery] ⚠️ Enhanced method failed:', enhancedError.message);
+        console.warn('[Delivery] ⚠️ Professional delivery failed:', enhancedError.message);
       }
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
-    // ULTIMATE TIER 3: Professional Methods with Specific Formatters
+    // 🚀 ULTIMATE TIER 4: Enhanced Manual Delivery with Professional Standards
     // ═══════════════════════════════════════════════════════════════════════════
     
-    if (telegramSplitter) {
-      // Try specialized senders based on content characteristics
-      const contentLength = safeResponse.length;
-      const hasCodeBlocks = /```[\s\S]*?```/.test(safeResponse);
-      const hasLists = /^[\s]*[•▪▫◦\-\*]\s/m.test(safeResponse) || /^\s*\d+\.\s/m.test(safeResponse);
-      const isBusinessContent = /strategy|analysis|report|revenue|market|business/i.test(safeResponse);
-      
-      try {
-        let professionalResult = null;
-        
-        // ✅ GPT-5 PRO: For complex, high-quality responses
-        if (telegramSplitter.sendGPT5Pro && (contentLength > 2000 || hasCodeBlocks)) {
-          console.log('[Delivery] 🚀 Trying GPT-5 Pro delivery for complex content');
-          professionalResult = await telegramSplitter.sendGPT5Pro(bot, safeChatId, safeResponse, {
-            title: safeTitle || 'GPT-5 Pro Analysis',
-            maxLength: 3800,
-            maxParts: 3
-          });
-        }
-        
-        // ✅ PROFESSIONAL: For business/formal content
-        else if (telegramSplitter.sendProfessional && (isBusinessContent || contentLength > 1000)) {
-          console.log('[Delivery] 💼 Trying professional delivery for business content');
-          professionalResult = await telegramSplitter.sendProfessional(bot, safeChatId, safeResponse, {
-            title: safeTitle || 'Professional Analysis',
-            showTokens: true,
-            maxLength: 3800,
-            maxParts: 3
-          });
-        }
-        
-        // ✅ CLEAN: For simple, quick responses
-        else if (telegramSplitter.sendClean) {
-          console.log('[Delivery] ⚡ Trying clean delivery for simple content');
-          professionalResult = await telegramSplitter.sendClean(bot, safeChatId, safeResponse, {
-            title: safeTitle || 'GPT-5 Response',
-            maxLength: 3800,
-            maxParts: 3
-          });
-        }
-        
-        if (professionalResult && (professionalResult.success || professionalResult.delivered > 0 || professionalResult.parts > 0)) {
-          const processingTime = Date.now() - startTime;
-          console.log(`[Delivery] ✅ PROFESSIONAL SUCCESS: ${professionalResult.parts || professionalResult.delivered || 1} parts, ${processingTime}ms`);
-          
-          return {
-            success: true,
-            method: 'professional_specialized_delivery',
-            parts: professionalResult.parts || professionalResult.delivered || 1,
-            duplicateProtected: professionalResult.duplicateProtected || false,
-            specialized: true,
-            contentOptimized: true,
-            processingTime,
-            contentLength: safeResponse.length,
-            railwayOptimized: true
-          };
-        }
-        
-      } catch (professionalError) {
-        console.warn('[Delivery] ⚠️ Professional methods failed:', professionalError.message);
-      }
-    }
-    
-    // ═══════════════════════════════════════════════════════════════════════════
-    // RAILWAY FALLBACK: Manual Delivery (Railway-Optimized, Your Original Logic)
-    // ═══════════════════════════════════════════════════════════════════════════
-    
-    console.log('[Delivery] 🔄 Using Railway-optimized manual delivery fallback');
+    console.log('[Delivery] 🔧 Using enhanced manual delivery with professional standards');
     
     const maxLength = 3800;
+    const isBusinessContent = /strategy|analysis|report|revenue|market|business|financial|loan|lending|credit|investment|portfolio/i.test(safeResponse);
     
-    // Single message case
+    // Single message case with PROFESSIONAL headers
     if (safeResponse.length <= maxLength) {
       try {
-        const header = safeTitle ? `🧠 ${safeTitle}\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n` : '';
+        const headerIcon = deliveryMode === 'ultimate' ? '🚀' : isBusinessContent ? '📊' : '💼';
+        const headerMode = deliveryMode === 'ultimate' ? 'Ultimate' : 'Professional';
+        const header = safeTitle ? 
+          `${headerIcon} **${safeTitle}**\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • ${headerMode}\n\n` : '';
+        
         const fullMessage = header + safeResponse;
         
-        await bot.sendMessage(safeChatId, fullMessage);
+        await bot.sendMessage(safeChatId, fullMessage, { parse_mode: 'Markdown' });
         
         const processingTime = Date.now() - startTime;
-        console.log(`[Delivery] ✅ Manual single message success: ${processingTime}ms`);
+        console.log(`[Delivery] ✅ Professional single message success: ${processingTime}ms`);
         
         return {
           success: true,
-          method: 'manual_single_railway',
+          method: 'manual_professional_single',
           parts: 1,
           processingTime,
           contentLength: safeResponse.length,
-          railwayFallback: true
+          professionalQuality: true,
+          deliveryMode: 'manual_professional'
         };
         
       } catch (singleError) {
-        console.error('[Delivery] ❌ Single message failed:', singleError.message);
+        console.error('[Delivery] ❌ Professional single message failed:', singleError.message);
       }
     }
     
-    // Multi-part delivery with your proven Railway algorithm
+    // Multi-part delivery with ENHANCED splitting and PROFESSIONAL headers
     try {
-      console.log('[Delivery] 🔧 Using proven Railway splitting algorithm');
+      console.log('[Delivery] 🔧 Using enhanced professional splitting algorithm');
       
       const midPoint = Math.floor(safeResponse.length / 2);
       let splitPoint = midPoint;
       
-      // Your proven break strategy algorithm
-      const searchRange = 400;
+      // Enhanced break strategies with business content awareness
       const breakStrategies = [
-        { pattern: '\n\n\n', priority: 10 },
-        { pattern: '\n\n', priority: 8 },
-        { pattern: '. ', priority: 6 },
-        { pattern: '! ', priority: 6 },
-        { pattern: '? ', priority: 6 },
-        { pattern: '\n', priority: 4 },
-        { pattern: ', ', priority: 2 },
-        { pattern: ' ', priority: 1 }
+        { pattern: '\n\n**', priority: 12, name: 'business_headers' },     // Business headers
+        { pattern: '\n\n\n', priority: 10, name: 'triple_newline' },
+        { pattern: '\n\n', priority: 8, name: 'double_newline' },
+        { pattern: '. **', priority: 7, name: 'sentence_before_header' },
+        { pattern: '. ', priority: 6, name: 'sentence_end' },
+        { pattern: '! ', priority: 6, name: 'exclamation' },
+        { pattern: '? ', priority: 6, name: 'question' },
+        { pattern: '\n• ', priority: 5, name: 'bullet_point' },
+        { pattern: '\n', priority: 4, name: 'single_newline' },
+        { pattern: ', ', priority: 2, name: 'comma' },
+        { pattern: ' ', priority: 1, name: 'space' }
       ];
       
-      let bestBreak = { point: midPoint, priority: 0 };
+      let bestBreak = { point: midPoint, priority: 0, name: 'fallback' };
+      const searchRange = 500; // Increased range for better breaks
       
       for (const strategy of breakStrategies) {
         const searchStart = Math.max(0, midPoint - searchRange);
@@ -2089,14 +2169,15 @@ async function deliverToTelegram(bot, chatId, response, title) {
           const candidatePoint = lastIndex + strategy.pattern.length;
           
           if (strategy.priority > bestBreak.priority) {
-            bestBreak = { point: candidatePoint, priority: strategy.priority };
+            bestBreak = { point: candidatePoint, priority: strategy.priority, name: strategy.name };
           }
         }
         
-        if (bestBreak.priority >= 6) break;
+        if (bestBreak.priority >= 8) break; // Stop at excellent breaks
       }
       
       splitPoint = bestBreak.point;
+      console.log(`[Delivery] 🎯 Using ${bestBreak.name} split strategy (priority: ${bestBreak.priority})`);
       
       const part1 = safeResponse.slice(0, splitPoint).trim();
       const part2 = safeResponse.slice(splitPoint).trim();
@@ -2105,54 +2186,60 @@ async function deliverToTelegram(bot, chatId, response, title) {
         throw new Error('Invalid split resulted in empty part');
       }
       
-      // Railway optimization: combine small parts
-      if (part2.length < 500 && (part1.length + part2.length) < maxLength - 200) {
+      // Smart combination for small parts
+      if (part2.length < 600 && (part1.length + part2.length) < maxLength - 300) {
         const combined = part1 + '\n\n' + part2;
-        const header = safeTitle ? `🧠 ${safeTitle}\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n` : '';
+        const headerIcon = deliveryMode === 'ultimate' ? '🚀' : isBusinessContent ? '📊' : '💼';
+        const headerMode = deliveryMode === 'ultimate' ? 'Ultimate' : isBusinessContent ? 'Business' : 'Professional';
+        const header = `${headerIcon} **${safeTitle || 'Analysis'}**\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • ${headerMode}\n\n`;
         
-        await bot.sendMessage(safeChatId, header + combined);
+        await bot.sendMessage(safeChatId, header + combined, { parse_mode: 'Markdown' });
         
         const processingTime = Date.now() - startTime;
-        console.log(`[Delivery] ✅ Manual combined delivery: ${processingTime}ms`);
+        console.log(`[Delivery] ✅ Professional combined delivery: ${processingTime}ms`);
         
         return {
           success: true,
-          method: 'manual_combined_railway',
+          method: 'manual_professional_combined',
           parts: 1,
           processingTime,
           contentLength: safeResponse.length,
-          railwayFallback: true,
-          combinedSmallPart: true
+          professionalQuality: true,
+          combinedSmallPart: true,
+          deliveryMode: 'manual_professional'
         };
       }
       
-      // Send parts with your proven Railway headers
+      // Send parts with PROFESSIONAL headers and enhanced formatting
       const parts = [part1, part2];
       const results = [];
       
       for (let i = 0; i < parts.length; i++) {
         try {
-          const header = `🧠 ${safeTitle || 'GPT-5'} (${i + 1}/${parts.length})\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\n`;
+          const headerIcon = deliveryMode === 'ultimate' ? '🚀' : isBusinessContent ? '📊' : '💼';
+          const headerMode = deliveryMode === 'ultimate' ? 'Ultimate' : isBusinessContent ? 'Business' : 'Professional';
+          const header = `${headerIcon} **${safeTitle || 'Analysis'} (${i + 1}/${parts.length})**\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • ${headerMode}\n\n`;
+          
           const fullPart = header + parts[i];
           
-          const result = await bot.sendMessage(safeChatId, fullPart);
+const result = await bot.sendMessage(safeChatId, fullPart, { parse_mode: 'Markdown' });
           results.push(result);
           
           console.log(`[Delivery] ✅ Sent part ${i + 1}/${parts.length}: ${parts[i].length} chars`);
           
           if (i < parts.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 700));
+            await new Promise(resolve => setTimeout(resolve, 800));
           }
           
         } catch (partError) {
           console.error(`[Delivery] ❌ Part ${i + 1} failed:`, partError.message);
           
-          // Your proven cleanup strategy
+          // Professional fallback strategy
           try {
             const cleanPart = parts[i].replace(/[^\x00-\x7F]/g, '');
-            const simpleHeader = `GPT-5 (${i + 1}/${parts.length})\n\n`;
+            const simpleHeader = `💼 Professional (${i + 1}/${parts.length})\n\n`;
             await bot.sendMessage(safeChatId, simpleHeader + cleanPart);
-            console.log(`[Delivery] 🔧 Part ${i + 1} sent with cleanup`);
+            console.log(`[Delivery] 🔧 Part ${i + 1} sent with professional cleanup`);
             results.push(true);
           } catch (cleanError) {
             console.error(`[Delivery] ❌ Part ${i + 1} failed completely:`, cleanError.message);
@@ -2163,35 +2250,35 @@ async function deliverToTelegram(bot, chatId, response, title) {
       
       const processingTime = Date.now() - startTime;
       const successCount = results.filter(r => r).length;
-      console.log(`[Delivery] ✅ Manual split delivery complete: ${successCount}/${parts.length} parts, ${processingTime}ms`);
+      console.log(`[Delivery] ✅ Professional split delivery complete: ${successCount}/${parts.length} parts, ${processingTime}ms`);
       
       return {
         success: successCount > 0,
-        method: 'manual_split_railway',
+        method: 'manual_professional_split',
         parts: parts.length,
         delivered: successCount,
         processingTime,
         contentLength: safeResponse.length,
-        railwayFallback: true,
-        splitOptimization: bestBreak.priority >= 6 ? 'optimal' : 'acceptable'
+        professionalQuality: true,
+        splitOptimization: bestBreak.priority >= 8 ? 'excellent' : 'good',
+        deliveryMode: 'manual_professional'
       };
       
     } catch (splitError) {
-      console.error('[Delivery] ❌ Manual split delivery failed:', splitError.message);
+      console.error('[Delivery] ❌ Professional split delivery failed:', splitError.message);
     }
     
-    // ═══════════════════════════════════════════════════════════════════════════
-    // EMERGENCY: Your Proven Truncated Delivery (Always Works)
-    // ═══════════════════════════════════════════════════════════════════════════
-    
-    console.log('[Delivery] 🚨 Using emergency truncated delivery');
+    // Emergency fallback with professional standards
+    console.log('[Delivery] 🚨 Using professional emergency delivery');
     
     try {
       const maxEmergencyLength = 3700;
       const truncated = safeResponse.slice(0, maxEmergencyLength);
       const wasTruncated = safeResponse.length > maxEmergencyLength;
       
-      let emergencyMessage = `🚨 Emergency Response\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n`;
+      const headerIcon = deliveryMode === 'ultimate' ? '🚀' : '💼';
+      const headerMode = deliveryMode === 'ultimate' ? 'Ultimate' : 'Professional';
+      let emergencyMessage = `${headerIcon} **Emergency ${headerMode}**\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})}\n`;
       
       if (safeTitle) {
         emergencyMessage += `📋 ${safeTitle}\n`;
@@ -2201,61 +2288,35 @@ async function deliverToTelegram(bot, chatId, response, title) {
       
       if (wasTruncated) {
         const truncatedChars = safeResponse.length - maxEmergencyLength;
-        emergencyMessage += `\n\n⚠️ Response truncated (${truncatedChars} chars) for Railway delivery.`;
+        emergencyMessage += `\n\n⚠️ Response optimized (${truncatedChars} chars) for professional delivery.`;
       }
       
-      await bot.sendMessage(safeChatId, emergencyMessage);
+      await bot.sendMessage(safeChatId, emergencyMessage, { parse_mode: 'Markdown' });
       
       const processingTime = Date.now() - startTime;
-      console.log(`[Delivery] ✅ Emergency delivery success: ${processingTime}ms, truncated: ${wasTruncated}`);
+      console.log(`[Delivery] ✅ Professional emergency delivery success: ${processingTime}ms`);
       
       return {
         success: true,
-        method: 'emergency_truncated_railway',
+        method: 'professional_emergency',
         parts: 1,
         truncated: wasTruncated,
         originalLength: safeResponse.length,
         deliveredLength: truncated.length,
         processingTime,
-        railwayFallback: true
+        professionalQuality: true,
+        deliveryMode: 'emergency_professional'
       };
       
     } catch (emergencyError) {
-      console.error('[Delivery] ❌ Emergency delivery failed:', emergencyError.message);
-    }
-    
-    // ═══════════════════════════════════════════════════════════════════════════
-    // FINAL: Your Error Notification System
-    // ═══════════════════════════════════════════════════════════════════════════
-    
-    console.log('[Delivery] 🔴 All delivery methods failed, sending error notification');
-    
-    try {
-      const errorMessage = `🔧 Response delivery failed\n📅 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})} • 🚅 Railway\n\nPlease try a shorter request or contact support.`;
-      await bot.sendMessage(safeChatId, errorMessage);
-      
-      const processingTime = Date.now() - startTime;
-      console.log(`[Delivery] 📤 Error notification sent: ${processingTime}ms`);
-      
-      return {
-        success: false,
-        method: 'error_notification',
-        parts: 1,
-        error: 'All delivery methods failed',
-        processingTime,
-        railwayFallback: true
-      };
-      
-    } catch (finalError) {
-      console.error('[Delivery] ❌ Even error notification failed:', finalError.message);
+      console.error('[Delivery] ❌ Professional emergency delivery failed:', emergencyError.message);
       
       return {
         success: false,
         method: 'complete_failure',
         parts: 0,
-        error: `Complete delivery failure: ${finalError.message}`,
-        processingTime: Date.now() - startTime,
-        railwayFallback: true
+        error: `Complete delivery failure: ${emergencyError.message}`,
+        processingTime: Date.now() - startTime
       };
     }
     
@@ -2267,8 +2328,7 @@ async function deliverToTelegram(bot, chatId, response, title) {
       method: 'critical_error',
       parts: 0,
       error: `Critical error: ${criticalError.message}`,
-      processingTime: Date.now() - startTime,
-      railwayFallback: true
+      processingTime: Date.now() - startTime
     };
   }
 }
