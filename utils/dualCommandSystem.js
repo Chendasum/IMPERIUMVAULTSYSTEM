@@ -2222,7 +2222,7 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
           
           const fullPart = header + parts[i];
           
-const result = await bot.sendMessage(safeChatId, fullPart, { parse_mode: 'Markdown' });
+          const result = await bot.sendMessage(safeChatId, fullPart, { parse_mode: 'Markdown' });
           results.push(result);
           
           console.log(`[Delivery] ✅ Sent part ${i + 1}/${parts.length}: ${parts[i].length} chars`);
@@ -2268,7 +2268,10 @@ const result = await bot.sendMessage(safeChatId, fullPart, { parse_mode: 'Markdo
       console.error('[Delivery] ❌ Professional split delivery failed:', splitError.message);
     }
     
-    // Emergency fallback with professional standards
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 🚀 ULTIMATE TIER 5: Emergency Professional Delivery (Always Works)
+    // ═══════════════════════════════════════════════════════════════════════════
+    
     console.log('[Delivery] 🚨 Using professional emergency delivery');
     
     try {
@@ -2294,7 +2297,7 @@ const result = await bot.sendMessage(safeChatId, fullPart, { parse_mode: 'Markdo
       await bot.sendMessage(safeChatId, emergencyMessage, { parse_mode: 'Markdown' });
       
       const processingTime = Date.now() - startTime;
-      console.log(`[Delivery] ✅ Professional emergency delivery success: ${processingTime}ms`);
+      console.log(`[Delivery] ✅ Professional emergency delivery success: ${processingTime}ms, truncated: ${wasTruncated}`);
       
       return {
         success: true,
@@ -2310,12 +2313,38 @@ const result = await bot.sendMessage(safeChatId, fullPart, { parse_mode: 'Markdo
       
     } catch (emergencyError) {
       console.error('[Delivery] ❌ Professional emergency delivery failed:', emergencyError.message);
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FINAL: Error Notification System
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    console.log('[Delivery] 🔴 All delivery methods failed, sending error notification');
+    
+    try {
+      const errorMessage = `🔧 **Delivery System Recovery**\n🕐 ${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})}\n\nTemporary delivery issue encountered. Please try again or rephrase your request.`;
+      await bot.sendMessage(safeChatId, errorMessage, { parse_mode: 'Markdown' });
+      
+      const processingTime = Date.now() - startTime;
+      console.log(`[Delivery] 📤 Error notification sent: ${processingTime}ms`);
+      
+      return {
+        success: false,
+        method: 'error_notification',
+        parts: 1,
+        error: 'All delivery methods failed',
+        processingTime,
+        professionalFallback: true
+      };
+      
+    } catch (finalError) {
+      console.error('[Delivery] ❌ Even error notification failed:', finalError.message);
       
       return {
         success: false,
         method: 'complete_failure',
         parts: 0,
-        error: `Complete delivery failure: ${emergencyError.message}`,
+        error: `Complete delivery failure: ${finalError.message}`,
         processingTime: Date.now() - startTime
       };
     }
@@ -2332,6 +2361,9 @@ const result = await bot.sendMessage(safeChatId, fullPart, { parse_mode: 'Markdo
     };
   }
 }
+
+// Compatibility alias for legacy function calls
+const deliverToTelegram = deliverToTelegramUltimate;
 // ════════════════════════════════════════════════════════════════════════════
 // SYSTEM COMMAND HANDLER
 // ════════════════════════════════════════════════════════════════════════════
