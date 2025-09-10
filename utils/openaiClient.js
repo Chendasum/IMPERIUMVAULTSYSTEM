@@ -1220,7 +1220,7 @@ class GPT5Client {
       }
       
       // Enhanced error handling
-      return this._formatError(error, selectedModel);
+      return GPT5Client._formatError(error, selectedModel);
     }
   }
   
