@@ -2988,7 +2988,6 @@ async function quickNanoCommand(message, chatId, bot = null) {
     max_completion_tokens: 1000,
     reasoning_effort: 'minimal',
     verbosity: 'low',
-    temperature: 0.7,
     title: '⚡ GPT-5 Nano',
     saveToMemory: 'minimal'
   });
@@ -3000,7 +2999,6 @@ async function quickMiniCommand(message, chatId, bot = null) {
     max_completion_tokens: 4000,
     reasoning_effort: 'medium',
     verbosity: 'medium',
-    temperature: 0.7,
     title: '🚀 GPT-5 Mini',
     saveToMemory: true
   });
@@ -3012,7 +3010,6 @@ async function quickFullCommand(message, chatId, bot = null) {
     max_completion_tokens: 12000,
     reasoning_effort: 'high',
     verbosity: 'high',
-    temperature: 0.3,  // Lower temp for more focused responses
     title: '🧠 GPT-5 Full',
     saveToMemory: true,
     showTokens: true
