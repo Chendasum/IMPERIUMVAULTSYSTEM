@@ -1340,8 +1340,9 @@ async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, me
     return { saved: false, reason: 'critical_error', error: error.message };
   }
 }
+
 // ════════════════════════════════════════════════════════════════════════════
-// GPT-5 EXECUTION WITH FALLBACK SYSTEM (CORRECTED API PARAMETERS)
+// GPT-5 EXECUTION WITH FALLBACK SYSTEM (TEMPERATURE ISSUE FIXED)
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeThroughGPT5System(userMessage, queryAnalysis, context = null, chatId = null) {
@@ -1396,14 +1397,8 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
       options.max_completion_tokens = queryAnalysis.max_completion_tokens;  // ← CORRECT parameter name
     }
     
-    // Add temperature based on priority
-    if (queryAnalysis.priority === 'speed') {
-      options.temperature = 0.3;  // Lower for consistent quick responses
-    } else if (queryAnalysis.priority === 'complex') {
-      options.temperature = 0.2;  // Lower for analytical work
-    } else {
-      options.temperature = 0.7;  // Default
-    }
+    // ✅ FIXED: No temperature setting - GPT-5 only supports default (1.0)
+    console.log(`[GPT-5] Using default temperature (1.0) for ${queryAnalysis.gpt5Model}`);
     
     console.log(`[GPT-5] 📋 API options:`, JSON.stringify(options, null, 2));
     
@@ -1439,7 +1434,7 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// FALLBACK SYSTEM WITH CORRECTED API PARAMETERS
+// FALLBACK SYSTEM WITH CORRECTED API PARAMETERS (TEMPERATURE FIXED)
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeGPT5Fallback(userMessage, queryAnalysis, context, originalProcessingTime, originalError) {
@@ -1450,7 +1445,7 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
   const fallbackModels = [
     { model: CONFIG.MODELS.NANO, reasoning: 'minimal', verbosity: 'low' },
     { model: CONFIG.MODELS.MINI, reasoning: 'low', verbosity: 'medium' },
-    { model: CONFIG.MODELS.FULL, reasoning: 'medium', verbosity: 'medium' }  // ← FIXED: Use FULL instead of CHAT
+    { model: CONFIG.MODELS.FULL, reasoning: 'medium', verbosity: 'medium' }
   ];
   
   let enhancedMessage = safeString(userMessage);
@@ -1462,10 +1457,10 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
     try {
       console.log(`[GPT-5] 🔄 Trying fallback: ${fallback.model}`);
       
-      // ✅ CORRECTED: All GPT-5 models use the same flat parameter structure
+      // ✅ FIXED: No temperature setting for GPT-5 models
       const options = { 
         model: fallback.model,
-        temperature: 0.5,  // Conservative temperature for fallbacks
+        // GPT-5 only supports default temperature (1.0) - don't set temperature
         max_completion_tokens: Math.min(6000, CONFIG.TOKEN_LIMITS.MINI_MAX)
       };
       
@@ -1514,8 +1509,7 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
   throw new Error(`All GPT-5 models failed. Original: ${originalError?.message}. Please try again with a simpler question.`);
 }
 
-console.log('✅ GPT-5 execution engine loaded with CORRECTED API parameters');
-
+console.log('✅ GPT-5 execution engine loaded with TEMPERATURE ISSUE FIXED');
 // ════════════════════════════════════════════════════════════════════════════
 // MAIN TELEGRAM MESSAGE HANDLER (CONNECTS TO YOUR INDEX.JS)
 // ════════════════════════════════════════════════════════════════════════════
