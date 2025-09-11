@@ -1689,15 +1689,23 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       queryAnalysis.verbosity = options.verbosity;
     }
     
-    // ✅ IMPROVED: Smart temperature based on priority and options
-    if (options.temperature !== undefined) {
-      queryAnalysis.temperature = Math.max(0, Math.min(2, options.temperature));
-    } else {
-      // Auto-select temperature based on content type
-      queryAnalysis.temperature = shouldUseUltimate ? 0.2 :  // Lower for business content
-                                  queryAnalysis.priority === 'speed' ? 0.5 :
-                                  queryAnalysis.priority === 'complex' ? 0.1 : 0.7;
-    }
+// ✅ FIXED: GPT-5 only supports default temperature (1.0)
+// Only set temperature for non-GPT-5 models
+if (options.temperature !== undefined) {
+  // Only apply custom temperature to non-GPT-5 models
+  if (!queryAnalysis.gpt5Model.includes('gpt-5')) {
+    queryAnalysis.temperature = Math.max(0, Math.min(2, options.temperature));
+  }
+  // GPT-5 models will use default temperature (1.0) automatically
+} else {
+  // Only auto-select temperature for non-GPT-5 models
+  if (!queryAnalysis.gpt5Model.includes('gpt-5')) {
+    queryAnalysis.temperature = shouldUseUltimate ? 0.2 :
+                                queryAnalysis.priority === 'speed' ? 0.5 :
+                                queryAnalysis.priority === 'complex' ? 0.1 : 0.7;
+  }
+  // GPT-5 models automatically use default temperature (1.0)
+}
     
     // Handle completion detection FIRST
     if (queryAnalysis.shouldSkipGPT5) {
