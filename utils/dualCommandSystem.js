@@ -1341,7 +1341,7 @@ async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, me
   }
 }
 // ════════════════════════════════════════════════════════════════════════════
-// ✅ CORRECTED GPT-5 EXECUTION WITH PROPER API PARAMETERS
+// GPT-5 EXECUTION WITH FALLBACK SYSTEM (FIXED API PARAMETERS)
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeThroughGPT5System(userMessage, queryAnalysis, context = null, chatId = null) {
@@ -1382,28 +1382,29 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
       enhancedMessage += `\n\n${safeSubstring(safeContext, 0, maxContextLength)}`;
     }
     
-    // ✅ CORRECTED: Build options with proper GPT-5 API parameters
+    // 🔧 FIXED: Build options with correct GPT-5 API parameter structure
     const options = { model: queryAnalysis.gpt5Model };
     
-    // ✅ ALL GPT-5 models use standard Chat Completions API parameters
-    if (queryAnalysis.max_completion_tokens) {
-      options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+    if (queryAnalysis.gpt5Model === CONFIG.MODELS.CHAT) {
+      // Chat API uses max_completion_tokens (FIXED: was using max_tokens)
+      if (queryAnalysis.max_completion_tokens) {
+        options.max_completion_tokens = queryAnalysis.max_completion_tokens;
+      }
+      options.temperature = 0.7;
+    } else {
+      // Responses API uses nested parameter structure (FIXED)
+      if (queryAnalysis.reasoning_effort) {
+        options.reasoning = { effort: queryAnalysis.reasoning_effort };  // ← FIXED: nested structure
+      }
+      if (queryAnalysis.verbosity) {
+        options.text = { verbosity: queryAnalysis.verbosity };  // ← FIXED: nested structure
+      }
+      if (queryAnalysis.max_completion_tokens) {
+        options.max_output_tokens = queryAnalysis.max_completion_tokens;  // ← FIXED: correct parameter name
+      }
     }
     
-    // ✅ Standard Chat Completions parameters (supported by all GPT-5 models)
-    options.temperature = queryAnalysis.priority === 'speed' ? 0.3 : 
-                         queryAnalysis.priority === 'complex' ? 0.1 : 0.7;
-    
-    // ✅ GPT-5 specific parameters (if supported by your openaiClient)
-    if (queryAnalysis.reasoning_effort) {
-      options.reasoning_effort = queryAnalysis.reasoning_effort;  // ← FLAT structure, not nested
-    }
-    
-    if (queryAnalysis.verbosity) {
-      options.verbosity = queryAnalysis.verbosity;  // ← FLAT structure, not nested
-    }
-    
-    console.log(`[GPT-5] 📋 CORRECTED API options:`, JSON.stringify(options, null, 2));
+    console.log(`[GPT-5] 📋 API options:`, JSON.stringify(options, null, 2));
     
     // Execute GPT-5 API call
     const result = await openaiClient.getGPT5Analysis(enhancedMessage, options);
@@ -1437,7 +1438,7 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// ✅ CORRECTED FALLBACK SYSTEM WITH PROPER API PARAMETERS
+// FALLBACK SYSTEM WITH FIXED API PARAMETERS
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeGPT5Fallback(userMessage, queryAnalysis, context, originalProcessingTime, originalError) {
@@ -1445,9 +1446,9 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
   const fallbackStart = Date.now();
   
   const fallbackModels = [
-    { model: CONFIG.MODELS.NANO, reasoning: 'minimal', verbosity: 'low', temp: 0.5 },
-    { model: CONFIG.MODELS.MINI, reasoning: 'low', verbosity: 'medium', temp: 0.7 },
-    { model: CONFIG.MODELS.FULL, reasoning: 'medium', verbosity: 'medium', temp: 0.7 }
+    { model: CONFIG.MODELS.NANO, reasoning: 'minimal', verbosity: 'low' },
+    { model: CONFIG.MODELS.MINI, reasoning: 'low', verbosity: 'medium' },
+    { model: CONFIG.MODELS.CHAT, reasoning: null, verbosity: null }
   ];
   
   let enhancedMessage = safeString(userMessage);
@@ -1459,23 +1460,25 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
     try {
       console.log(`[GPT-5] 🔄 Trying fallback: ${fallback.model}`);
       
-      // ✅ CORRECTED: Use standard Chat Completions API parameters for all models
-      const options = {
-        model: fallback.model,
-        temperature: fallback.temp,
-        max_completion_tokens: Math.min(6000, CONFIG.TOKEN_LIMITS.MINI_MAX)
-      };
+      // 🔧 FIXED: Use correct parameter structure for each model type
+      const options = { model: fallback.model };
       
-      // ✅ Add GPT-5 specific parameters (flat structure, not nested)
-      if (fallback.reasoning) {
-        options.reasoning_effort = fallback.reasoning;  // ← FLAT, not nested
+      if (fallback.model === CONFIG.MODELS.CHAT) {
+        // Chat API parameters (FIXED)
+        options.temperature = 0.7;
+        options.max_completion_tokens = CONFIG.TOKEN_LIMITS.CHAT_MAX;  // ← FIXED: correct parameter
+      } else {
+        // Responses API parameters with nested structure (FIXED)
+        if (fallback.reasoning) {
+          options.reasoning = { effort: fallback.reasoning };  // ← FIXED: nested structure
+        }
+        if (fallback.verbosity) {
+          options.text = { verbosity: fallback.verbosity };  // ← FIXED: nested structure
+        }
+        options.max_output_tokens = Math.min(6000, CONFIG.TOKEN_LIMITS.MINI_MAX);  // ← FIXED: correct parameter
       }
       
-      if (fallback.verbosity) {
-        options.verbosity = fallback.verbosity;  // ← FLAT, not nested
-      }
-      
-      console.log(`[GPT-5] 📋 CORRECTED fallback options for ${fallback.model}:`, JSON.stringify(options, null, 2));
+      console.log(`[GPT-5] 📋 Fallback options for ${fallback.model}:`, JSON.stringify(options, null, 2));
       
       const result = await openaiClient.getGPT5Analysis(enhancedMessage, options);
       const totalTime = originalProcessingTime + (Date.now() - fallbackStart);
@@ -1512,7 +1515,7 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
   throw new Error(`All GPT-5 models failed. Original: ${originalError?.message}. Please try again with a simpler question.`);
 }
 
-console.log('✅ GPT-5 execution engine loaded with CORRECTED API parameters');
+console.log('✅ GPT-5 execution engine loaded with fixed API parameters');
 
 // ════════════════════════════════════════════════════════════════════════════
 // MAIN TELEGRAM MESSAGE HANDLER (CONNECTS TO YOUR INDEX.JS)
@@ -1669,44 +1672,6 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
     // 🎯 ENHANCED: Analyze query with ULTIMATE context
     const queryAnalysis = analyzeQuery(safeMessage, options.messageType || 'text', options.hasMedia === true, memoryContext);
     
-    // ✅ IMPROVED: Apply options overrides to queryAnalysis BEFORE processing
-    if (options.forceModel && safeString(options.forceModel).indexOf('gpt-5') === 0) {
-      queryAnalysis.gpt5Model = options.forceModel;
-      queryAnalysis.reason = `Forced to use ${options.forceModel}`;
-      console.log(`[Enhanced] 🎯 Model forced to: ${options.forceModel}`);
-    }
-    
-    // ✅ IMPROVED: Apply options parameter overrides
-    if (options.max_completion_tokens) {
-      queryAnalysis.max_completion_tokens = Math.min(options.max_completion_tokens, 16000);
-    }
-    
-    if (options.reasoning_effort && ['minimal', 'low', 'medium', 'high'].includes(options.reasoning_effort)) {
-      queryAnalysis.reasoning_effort = options.reasoning_effort;
-    }
-    
-    if (options.verbosity && ['low', 'medium', 'high'].includes(options.verbosity)) {
-      queryAnalysis.verbosity = options.verbosity;
-    }
-    
-// ✅ FIXED: GPT-5 only supports default temperature (1.0)
-// Only set temperature for non-GPT-5 models
-if (options.temperature !== undefined) {
-  // Only apply custom temperature to non-GPT-5 models
-  if (!queryAnalysis.gpt5Model.includes('gpt-5')) {
-    queryAnalysis.temperature = Math.max(0, Math.min(2, options.temperature));
-  }
-  // GPT-5 models will use default temperature (1.0) automatically
-} else {
-  // Only auto-select temperature for non-GPT-5 models
-  if (!queryAnalysis.gpt5Model.includes('gpt-5')) {
-    queryAnalysis.temperature = shouldUseUltimate ? 0.2 :
-                                queryAnalysis.priority === 'speed' ? 0.5 :
-                                queryAnalysis.priority === 'complex' ? 0.1 : 0.7;
-  }
-  // GPT-5 models automatically use default temperature (1.0)
-}
-    
     // Handle completion detection FIRST
     if (queryAnalysis.shouldSkipGPT5) {
       const responseTime = Date.now() - executionStart;
@@ -1730,6 +1695,12 @@ if (options.temperature !== undefined) {
       };
     }
     
+    // 🚀 ULTIMATE: Override model and mode based on content analysis
+    if (options.forceModel && safeString(options.forceModel).indexOf('gpt-5') === 0) {
+      queryAnalysis.gpt5Model = options.forceModel;
+      queryAnalysis.reason = `Forced to use ${options.forceModel}`;
+    }
+    
     // 🎯 SMART MODEL SELECTION: Business content gets better models
     if (shouldUseUltimate && !options.forceModel) {
       if (queryAnalysis.gpt5Model === 'gpt-5-nano') {
@@ -1742,25 +1713,7 @@ if (options.temperature !== undefined) {
       }
     }
     
-    // ✅ IMPROVED: Enhanced token limit management
-    if (!queryAnalysis.max_completion_tokens) {
-      switch (queryAnalysis.gpt5Model) {
-        case 'gpt-5-nano':
-          queryAnalysis.max_completion_tokens = shouldUseUltimate ? 2000 : 1000;
-          break;
-        case 'gpt-5-mini':
-          queryAnalysis.max_completion_tokens = shouldUseUltimate ? 6000 : 4000;
-          break;
-        case 'gpt-5':
-          queryAnalysis.max_completion_tokens = shouldUseUltimate ? 12000 : 8000;
-          break;
-        default:
-          queryAnalysis.max_completion_tokens = 4000;
-      }
-    }
-    
     console.log(`[Enhanced] Analysis: ${queryAnalysis.type}, Model: ${queryAnalysis.gpt5Model}, Memory: ${memoryContext.length > 0 ? 'Yes' : 'No'}, Ultimate: ${shouldUseUltimate}`);
-    console.log(`[Enhanced] Parameters: tokens=${queryAnalysis.max_completion_tokens}, reasoning=${queryAnalysis.reasoning_effort}, temp=${queryAnalysis.temperature}`);
     
     // Execute through GPT-5 system
     let gpt5Result;
@@ -1768,75 +1721,43 @@ if (options.temperature !== undefined) {
       gpt5Result = await executeThroughGPT5System(safeMessage, queryAnalysis, memoryContext, safeChatId);
     } catch (gpt5Error) {
       console.error('[Enhanced] ❌ GPT-5 system failed:', gpt5Error.message);
-      
-      // ✅ IMPROVED: Try intelligent fallback before giving up
-      if (!options.noFallback) {
-        console.log('[Enhanced] 🔄 Attempting intelligent fallback...');
-        try {
-          // Create simplified query analysis for fallback
-          const fallbackAnalysis = {
-            ...queryAnalysis,
-            gpt5Model: 'gpt-5-mini',  // Always use mini for fallback
-            reasoning_effort: 'low',   // Reduce complexity
-            verbosity: 'medium',
-            max_completion_tokens: 3000,
-            temperature: 0.7,
-            priority: 'fallback'
-          };
-          
-          gpt5Result = await executeThroughGPT5System(safeMessage, fallbackAnalysis, '', safeChatId);
-          gpt5Result.fallbackFromEnhanced = true;
-          console.log('[Enhanced] ✅ Intelligent fallback succeeded');
-        } catch (fallbackError) {
-          console.error('[Enhanced] ❌ Intelligent fallback also failed:', fallbackError.message);
-          throw gpt5Error; // Throw original error
-        }
-      } else {
-        throw gpt5Error;
-      }
+      throw gpt5Error;
     }
     
     if (!gpt5Result || !gpt5Result.success) {
       throw new Error(gpt5Result?.error || 'GPT-5 execution failed');
     }
     
-    // 🔧 ENHANCED: Improved memory persistence with enhanced logic
+    // 🔧 FIXED: Handle memory persistence with enhanced logic
     if (options.saveToMemory !== false && gpt5Result.success) {
       try {
         const messageTypeForSave = classifyMessage(safeMessage);
         
         console.log(`[Enhanced] 💾 Saving to memory (mode: ${options.saveToMemory || 'full'})`);
         
-        // ✅ IMPROVED: More intelligent memory saving logic
-        const shouldSaveToMemory = options.saveToMemory === 'minimal' ? 
-          (gpt5Result.response && safeString(gpt5Result.response).length > 150) :
-          true;
-        
-        if (shouldSaveToMemory) {
-          const memoryMetadata = {
+        if (options.saveToMemory === 'minimal') {
+          // Only save substantial responses
+          if (gpt5Result.response && safeString(gpt5Result.response).length > 150) {
+            const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, {
+              modelUsed: safeString(gpt5Result.modelUsed),
+              processingTime: Number(gpt5Result.processingTime) || 0,
+              minimal: true,
+              ultimateMode: shouldUseUltimate
+            });
+            console.log(`[Enhanced] Memory save result:`, saveResult);
+          }
+        } else {
+          // Full memory save with ULTIMATE context
+          const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, {
             modelUsed: safeString(gpt5Result.modelUsed),
             processingTime: Number(gpt5Result.processingTime) || 0,
             priority: safeString(queryAnalysis.priority),
             complexity: safeString(queryAnalysis.type),
             memoryContextLength: memoryContext.length,
             ultimateMode: shouldUseUltimate,
-            contentMode: optimalMode,
-            tokensUsed: gpt5Result.tokensUsed || 0,
-            reasoning_effort: queryAnalysis.reasoning_effort,
-            verbosity: queryAnalysis.verbosity,
-            temperature: queryAnalysis.temperature,
-            enhancedExecution: true
-          };
-          
-          // Add minimal flag for minimal saves
-          if (options.saveToMemory === 'minimal') {
-            memoryMetadata.minimal = true;
-          }
-          
-          const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, memoryMetadata);
-          console.log(`[Enhanced] Memory save result:`, saveResult.saved ? 'SUCCESS' : `FAILED: ${saveResult.reason}`);
-        } else {
-          console.log('[Enhanced] 💾 Skipping memory save - response too short for minimal mode');
+            contentMode: optimalMode
+          });
+          console.log(`[Enhanced] Memory save result:`, saveResult);
         }
       } catch (memoryError) {
         console.warn('[Enhanced] ⚠️ Memory save failed:', memoryError.message);
@@ -1871,10 +1792,9 @@ if (options.temperature !== undefined) {
       tokensUsed: gpt5Result.tokensUsed,
       reasoning_effort: queryAnalysis.reasoning_effort,
       verbosity: queryAnalysis.verbosity,
-      temperature: queryAnalysis.temperature,  // ✅ ADDED: Include temperature in result
       memoryUsed: gpt5Result.memoryUsed,
       contextLength: memoryContext.length,
-      fallbackUsed: !!gpt5Result.fallbackUsed || !!gpt5Result.fallbackFromEnhanced,  // ✅ IMPROVED: Track enhanced fallback
+      fallbackUsed: !!gpt5Result.fallbackUsed,
       enhancedExecution: true,
       totalExecutionTime: Date.now() - executionStart,
       memoryContextUsed: memoryContext.length > 0,
@@ -1888,16 +1808,7 @@ if (options.temperature !== undefined) {
       businessOptimized: shouldUseUltimateMode(safeMessage) && safeMessage.toLowerCase().includes('business'),
       financialOptimized: shouldUseUltimateMode(safeMessage) && /financial|loan|lending|credit/i.test(safeMessage),
       visualExcellence: telegramDelivered?.ultimateFeatures || false,
-      duplicateProtected: telegramDelivered?.duplicateProtected || false,
-      
-      // ✅ IMPROVED: Additional metadata
-      parametersUsed: {
-        model: queryAnalysis.gpt5Model,
-        max_completion_tokens: queryAnalysis.max_completion_tokens,
-        reasoning_effort: queryAnalysis.reasoning_effort,
-        verbosity: queryAnalysis.verbosity,
-        temperature: queryAnalysis.temperature
-      }
+      duplicateProtected: telegramDelivered?.duplicateProtected || false
     };
     
     console.log(`[Enhanced] ✅ ULTIMATE command executed: ${result.modelUsed}, ${result.processingTime}ms, Memory: ${result.contextLength} chars, Ultimate: ${result.ultimateMode}`);
@@ -1923,15 +1834,7 @@ if (options.temperature !== undefined) {
       totalExecutionTime: Date.now() - executionStart,
       telegramDelivered,
       safetyChecksApplied: true,
-      professionalFallback: true,
-      
-      // ✅ IMPROVED: Include error context for debugging
-      errorContext: {
-        originalMessage: safeString(userMessage).substring(0, 100),
-        chatId: safeString(chatId),
-        options: Object.keys(options),
-        timestamp: new Date().toISOString()
-      }
+      professionalFallback: true
     };
   }
 }
@@ -2461,9 +2364,8 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
 
 // Compatibility alias for legacy function calls
 const deliverToTelegram = deliverToTelegramUltimate;
-
 // ════════════════════════════════════════════════════════════════════════════
-// ✅ ENHANCED SYSTEM COMMAND HANDLER
+// SYSTEM COMMAND HANDLER
 // ════════════════════════════════════════════════════════════════════════════
 
 async function handleSystemCommand(command, chatId, bot, baseOptions) {
@@ -2477,242 +2379,37 @@ async function handleSystemCommand(command, chatId, bot, baseOptions) {
                         `• Fixed memory integration 🧠\n` +
                         `• Image, document, and voice analysis\n` +
                         `• Smart memory integration\n` +
-                        `• Cost-optimized responses\n` +
-                        `• Ultimate telegram formatting\n` +
-                        `• Duplicate protection system\n\n` +
+                        `• Cost-optimized responses\n\n` +
                         `Just send me a message or upload media!\n\n` +
-                        `🔧 Memory system has been fixed and integrated!\n` +
-                        `🛡️ Duplicate protection is active!\n\n` +
-                        `Use /help for more commands.`;
+                        `🔧 Memory system has been fixed and integrated!`;
       await bot.sendMessage(chatId, welcomeMsg);
       return { success: true, response: welcomeMsg };
       
     case '/help':
       return await executeEnhancedGPT5Command(
-        'Explain available features and how to use this GPT-5 system effectively. Include information about: GPT-5 models (nano, mini, full), memory system integration, multimodal support (images, documents, voice), ultimate telegram formatting, duplicate protection, system commands like /health, /status, /test_memory, /debug, and Cambodia business modules.',
-        chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: '📖 Help Guide', saveToMemory: false }
+        'Explain available features and how to use this GPT-5 system effectively. Mention that the memory system has been fixed and integrated.',
+        chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: 'Help Guide' }
       );
-  
+      
     case '/health':
-      try {
-        const health = await checkSystemHealth();
-        const healthMsg = `🏥 System Health Report\n\n` +
-                         `Overall Status: ${health.overall.toUpperCase()} (${health.overallScore}%)\n\n` +
-                         `Components:\n` +
-                         `• GPT-5: ${health.components.gpt5?.available ? '✅' : '❌'} ${health.scores.gpt5}%\n` +
-                         `• Memory: ${health.components.memory?.available ? '✅' : '❌'} ${health.scores.memory}%\n` +
-                         `• Database: ${health.components.database?.available ? '✅' : '❌'} ${health.scores.database}%\n` +
-                         `• Telegram: ${health.components.telegram?.available ? '✅' : '❌'} ${health.scores.telegram}%\n\n` +
-                         `Memory Integration: FIXED ✅\n` +
-                         `Success Rate: ${health.components.memory?.successRate || 0}%\n\n` +
-                         `Use /status for detailed metrics.`;
-        await bot.sendMessage(chatId, healthMsg);
-        return { success: true, response: healthMsg };
-      } catch (healthError) {
-        return await executeEnhancedGPT5Command(
-          'System health check encountered an error. Please provide a general health status and troubleshooting advice.',
-          chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: '🏥 System Health', saveToMemory: false }
-        );
-      }
+      return await executeEnhancedGPT5Command(
+        'Provide system health status and performance metrics, including memory integration status',
+        chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: 'System Health' }
+      );
       
     case '/status':
-      try {
-        const analytics = getSystemAnalytics();
-        const statusMsg = `📊 System Status Report\n\n` +
-                         `Uptime: ${analytics.uptime.formatted}\n` +
-                         `Total Requests: ${analytics.requests.total}\n` +
-                         `Success Rate: ${analytics.requests.successRate}%\n\n` +
-                         `Memory System:\n` +
-                         `• Status: FIXED ✅\n` +
-                         `• Successful: ${analytics.memory.successful}\n` +
-                         `• Failed: ${analytics.memory.failed}\n` +
-                         `• Success Rate: ${analytics.memory.successRate}%\n\n` +
-                         `Model Usage:\n` +
-                         Object.entries(analytics.modelUsage).map(([model, count]) => 
-                           `• ${model}: ${count} calls`).join('\n') + 
-                         `\n\nVersion: ${analytics.version}`;
-        await bot.sendMessage(chatId, statusMsg);
-        return { success: true, response: statusMsg };
-      } catch (statusError) {
-        return await executeEnhancedGPT5Command(
-          'Show current system status, model availability, memory integration status, and operational metrics',
-          chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: '📊 System Status', saveToMemory: false }
-        );
-      }
-      
-      
-    // ✅ NEW: Memory testing command
-    case '/test_memory':
-    case '/memory_test':
-      try {
-        await testMemoryIntegration(chatId);
-        const testMsg = `🧪 Memory Integration Test Completed!\n\nCheck the console logs for detailed results.\n\nThe memory system has been tested for:\n• Context building\n• Memory saving\n• Database connectivity\n• Success rate tracking\n\nUse /debug for more detailed diagnostics.`;
-        await bot.sendMessage(chatId, testMsg);
-        return { success: true, response: testMsg };
-      } catch (testError) {
-        const errorMsg = `❌ Memory test failed: ${testError.message}\n\nPlease check the system logs and try /health for system status.`;
-        await bot.sendMessage(chatId, errorMsg);
-        return { success: false, error: testError.message };
-      }
-      
-    // ✅ NEW: Debug information command
-    case '/debug':
-    case '/system_debug':
-      try {
-        const debug = {
-          timestamp: new Date().toISOString(),
-          telegramSplitter: telegramSplitter ? {
-            available: true,
-            duplicateProtection: !!telegramSplitter.duplicateProtection,
-            functions: {
-              sendFormattedMessage: typeof telegramSplitter.sendFormattedMessage === 'function',
-              sendUltimate: typeof telegramSplitter.sendUltimate === 'function',
-              getDuplicateStats: typeof telegramSplitter.getDuplicateStats === 'function'
-            }
-          } : { available: false },
-          memory: {
-            moduleLoaded: !!memory,
-            buildFunction: typeof buildMemoryContext === 'function',
-            saveFunction: typeof saveMemoryIfNeeded === 'function'
-          },
-          database: {
-            moduleLoaded: !!database,
-            functions: {
-              getHistory: typeof database?.getConversationHistoryDB === 'function',
-              saveConversation: typeof database?.saveConversationDB === 'function'
-            }
-          },
-          multimodal: {
-            moduleLoaded: !!multimodal,
-            functions: {
-              analyzeImage: typeof multimodal?.analyzeImage === 'function',
-              analyzeDocument: typeof multimodal?.analyzeDocument === 'function'
-            }
-          }
-        };
-        
-        const debugMsg = `🔧 Debug Information\n\n` +
-                        `Telegram Splitter: ${debug.telegramSplitter.available ? '✅' : '❌'}\n` +
-                        `Duplicate Protection: ${debug.telegramSplitter.duplicateProtection ? '✅' : '❌'}\n` +
-                        `Memory Module: ${debug.memory.moduleLoaded ? '✅' : '❌'}\n` +
-                        `Database Module: ${debug.database.moduleLoaded ? '✅' : '❌'}\n` +
-                        `Multimodal Module: ${debug.multimodal.moduleLoaded ? '✅' : '❌'}\n\n` +
-                        `Memory Functions:\n` +
-                        `• Build Context: ${debug.memory.buildFunction ? '✅' : '❌'}\n` +
-                        `• Save Memory: ${debug.memory.saveFunction ? '✅' : '❌'}\n\n` +
-                        `Full debug data logged to console.`;
-        
-        console.log('[Debug] Full system debug:', JSON.stringify(debug, null, 2));
-        await bot.sendMessage(chatId, debugMsg);
-        return { success: true, response: debugMsg };
-        
-      } catch (debugError) {
-        const errorMsg = `❌ Debug failed: ${debugError.message}`;
-        await bot.sendMessage(chatId, errorMsg);
-        return { success: false, error: debugError.message };
-      }
-      
-    // ✅ NEW: Duplicate protection commands
-    case '/duplicate_stats':
-    case '/dup_stats':
-      try {
-        if (telegramSplitter && telegramSplitter.getDuplicateStats) {
-          const dupStats = telegramSplitter.getDuplicateStats();
-          const statsMsg = `🛡️ Duplicate Protection Stats\n\n` +
-                          `Status: ${dupStats.enabled ? 'ACTIVE ✅' : 'INACTIVE ❌'}\n` +
-                          `Duplicates Prevented: ${dupStats.protection?.duplicates_detected || 0}\n` +
-                          `Cache Size: ${dupStats.protection?.cache_size || 0}\n` +
-                          `Last Reset: ${dupStats.protection?.last_reset || 'Never'}\n\n` +
-                          `Use /clear_dup_cache to clear the cache.`;
-          await bot.sendMessage(chatId, statsMsg);
-          return { success: true, response: statsMsg };
-        } else {
-          const noStatsMsg = `🛡️ Duplicate protection not available or not configured.\n\nThis might be because you're using a basic telegram splitter. Deploy the ULTIMATE version for full protection.`;
-          await bot.sendMessage(chatId, noStatsMsg);
-          return { success: true, response: noStatsMsg };
-        }
-      } catch (statsError) {
-        const errorMsg = `❌ Failed to get duplicate stats: ${statsError.message}`;
-        await bot.sendMessage(chatId, errorMsg);
-        return { success: false, error: statsError.message };
-      }
-      
-    case '/clear_dup_cache':
-    case '/clear_duplicate_cache':
-      try {
-        if (telegramSplitter && telegramSplitter.clearDuplicateCache) {
-          telegramSplitter.clearDuplicateCache();
-          const clearMsg = `🧹 Duplicate protection cache cleared successfully!\n\nThe system will start fresh with duplicate detection.`;
-          await bot.sendMessage(chatId, clearMsg);
-          return { success: true, response: clearMsg };
-        } else {
-          const noClearMsg = `⚠️ Duplicate protection cache clearing not available.\n\nThis feature requires the ULTIMATE telegram splitter.`;
-          await bot.sendMessage(chatId, noClearMsg);
-          return { success: true, response: noClearMsg };
-        }
-      } catch (clearError) {
-        const errorMsg = `❌ Failed to clear duplicate cache: ${clearError.message}`;
-        await bot.sendMessage(chatId, errorMsg);
-        return { success: false, error: clearError.message };
-      }
-      
-    // ✅ NEW: Model testing commands
-    case '/test_nano':
-      return await quickNanoCommand('Test GPT-5 Nano model with this simple query. Respond briefly.', chatId, bot);
-      
-    case '/test_mini':
-      return await quickMiniCommand('Test GPT-5 Mini model with this medium complexity query. Provide a balanced response.', chatId, bot);
-      
-    case '/test_full':
-      return await quickFullCommand('Test GPT-5 Full model with this complex query. Provide a comprehensive analysis with detailed reasoning.', chatId, bot);
-      
-    // ✅ NEW: Cambodia business commands
-    case '/cambodia_help':
-    case '/business_help':
       return await executeEnhancedGPT5Command(
-        'Explain the Cambodia business intelligence features including: credit assessment, loan origination, portfolio optimization, market analysis, investment analysis, risk management, and how to use these specialized business modules.',
-        chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: '🏦 Cambodia Business Help', saveToMemory: false }
+        'Show current system status, model availability, memory integration status, and operational metrics',
+        chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: 'System Status' }
       );
       
-    // ✅ NEW: Performance command
-    case '/performance':
-    case '/perf':
-      try {
-        const perf = module.exports.getPerformanceMetrics();
-        const perfMsg = `⚡ Performance Metrics\n\n` +
-                       `Uptime: ${perf.uptime.formatted}\n` +
-                       `Total Requests: ${perf.requests.total}\n` +
-                       `Success Rate: ${perf.requests.successRate}%\n` +
-                       `Successful: ${perf.requests.successful}\n` +
-                       `Failed: ${perf.requests.failed}\n\n` +
-                       `Memory Performance:\n` +
-                       `• Success Rate: ${perf.memory.successRate}%\n` +
-                       `• Successful: ${perf.memory.successful}\n` +
-                       `• Failed: ${perf.memory.failed}\n\n` +
-                       `System optimized for Railway deployment ✅`;
-        await bot.sendMessage(chatId, perfMsg);
-        return { success: true, response: perfMsg };
-      } catch (perfError) {
-        const errorMsg = `❌ Performance metrics failed: ${perfError.message}`;
-        await bot.sendMessage(chatId, errorMsg);
-        return { success: false, error: perfError.message };
-      }
-      
     default:
-      // ✅ IMPROVED: Handle unknown commands more gracefully
-      if (command.startsWith('/')) {
-        const unknownMsg = `❓ Unknown command: ${command}\n\nUse /help to see available commands or just send a regular message for GPT-5 analysis.`;
-        await bot.sendMessage(chatId, unknownMsg);
-        return { success: true, response: unknownMsg };
-      }
-      
-      // Regular message - process with enhanced GPT-5
       return await executeEnhancedGPT5Command(command, chatId, bot, baseOptions);
   }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// ✅ ENHANCED MULTIMODAL CONTENT HANDLER
+// MULTIMODAL CONTENT HANDLER
 // ════════════════════════════════════════════════════════════════════════════
 
 async function handleMultimodalContent(message, bot, userMessage, startTime) {
@@ -2720,109 +2417,60 @@ async function handleMultimodalContent(message, bot, userMessage, startTime) {
   
   try {
     let result;
-    let mediaType = 'unknown';
     
     if (message.photo) {
       const photo = message.photo[message.photo.length - 1];
-      mediaType = 'image';
       result = await multimodal.analyzeImage(bot, photo.file_id, userMessage || 'Analyze this image', message.chat.id);
     }
     else if (message.document) {
-      mediaType = 'document';
       result = await multimodal.analyzeDocument(bot, message.document, userMessage || 'Analyze this document', message.chat.id);
     }
     else if (message.voice) {
-      mediaType = 'voice';
       result = await multimodal.analyzeVoice(bot, message.voice, userMessage || 'Transcribe and analyze', message.chat.id);
     }
     else if (message.audio) {
-      mediaType = 'audio';
       result = await multimodal.analyzeAudio(bot, message.audio, userMessage || 'Transcribe and analyze', message.chat.id);
     }
     else if (message.video) {
-      mediaType = 'video';
       result = await multimodal.analyzeVideo(bot, message.video, userMessage || 'Analyze this video', message.chat.id);
     }
     else if (message.video_note) {
-      mediaType = 'video_note';
       result = await multimodal.analyzeVideoNote(bot, message.video_note, userMessage || 'Analyze this video note', message.chat.id);
     }
     
     if (result && result.success) {
       const processingTime = Date.now() - startTime;
-      console.log(`[Multimodal] ✅ Success: ${result.type || mediaType} (${processingTime}ms)`);
+      console.log(`[Multimodal] ✅ Success: ${result.type} (${processingTime}ms)`);
       
-      // ✅ ENHANCED: Save multimodal interaction with better metadata
-      const saveResult = await saveMemoryIfNeeded(
+      // Save multimodal interaction with fixed memory system
+      await saveMemoryIfNeeded(
         message.chat.id,
-        `[${(result.type || mediaType).toUpperCase()}] ${userMessage || 'Media uploaded'}`,
-        result.analysis || result.response || 'Multimodal processing completed',
+        `[${result.type.toUpperCase()}] ${userMessage || 'Media uploaded'}`,
+        result.analysis || 'Multimodal processing completed',
         MESSAGE_TYPES.MULTIMODAL,
-        { 
-          type: 'multimodal', 
-          mediaType: result.type || mediaType, 
-          processingTime,
-          fileSize: message.document?.file_size || message.photo?.[0]?.file_size || 0,
-          fileName: message.document?.file_name || 'media_file',
-          success: true
-        }
+        { type: 'multimodal', mediaType: result.type, processingTime }
       );
-      
-      console.log(`[Multimodal] Memory save result: ${saveResult.saved ? 'SUCCESS' : 'FAILED'}`);
       
       return result;
     } else {
-      throw new Error('Multimodal processing failed - no valid result returned');
+      throw new Error('Multimodal processing failed');
     }
   } catch (error) {
     console.error('[Multimodal] ❌ Error:', error.message);
-    
-    // ✅ ENHANCED: Better error messaging with suggestions
-    let errorMsg = `🖼️ Media processing failed: ${error.message}\n\n`;
-    
-    if (error.message.includes('file too large')) {
-      errorMsg += `💡 Try uploading a smaller file (under 20MB).`;
-    } else if (error.message.includes('unsupported format')) {
-      errorMsg += `💡 Supported formats: Images (JPG, PNG), Documents (PDF, TXT, DOCX), Audio (MP3, OGG), Video (MP4).`;
-    } else if (error.message.includes('timeout')) {
-      errorMsg += `💡 Large files may take longer to process. Try again or use a smaller file.`;
-    } else {
-      errorMsg += `💡 Try adding a text description with your media for better results.`;
-    }
-    
+    const errorMsg = `Media processing failed: ${error.message}\n\nTry adding a text description with your media.`;
     await bot.sendMessage(message.chat.id, errorMsg);
-    
-    // Save failed multimodal attempt
-    await saveMemoryIfNeeded(
-      message.chat.id,
-      `[MEDIA_ERROR] ${userMessage || 'Media upload failed'}`,
-      `Media processing error: ${error.message}`,
-      MESSAGE_TYPES.MULTIMODAL,
-      { 
-        type: 'multimodal_error', 
-        error: error.message,
-        success: false
-      }
-    );
-    
     return { success: false, error: error.message };
   }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// ✅ ENHANCED OTHER TELEGRAM HANDLERS
+// OTHER TELEGRAM HANDLERS
 // ════════════════════════════════════════════════════════════════════════════
 
 async function handleCallbackQuery(callbackQuery, bot) {
   try {
     await bot.answerCallbackQuery(callbackQuery.id);
     console.log('[Callback] ✅ Query handled');
-    
-    // ✅ ENHANCED: Log callback data for debugging
-    if (callbackQuery.data) {
-      console.log(`[Callback] Data: ${callbackQuery.data}`);
-    }
-    
   } catch (error) {
     console.error('[Callback] ❌ Error:', error.message);
   }
@@ -2830,22 +2478,7 @@ async function handleCallbackQuery(callbackQuery, bot) {
 
 async function handleInlineQuery(inlineQuery, bot) {
   try {
-    // ✅ ENHANCED: Provide some basic inline results
-    const results = [];
-    
-    if (inlineQuery.query.length > 0) {
-      results.push({
-        type: 'article',
-        id: '1',
-        title: 'GPT-5 Analysis',
-        description: `Analyze: "${inlineQuery.query}"`,
-        input_message_content: {
-          message_text: `Please analyze: ${inlineQuery.query}`
-        }
-      });
-    }
-    
-    await bot.answerInlineQuery(inlineQuery.id, results, { cache_time: 1 });
+    await bot.answerInlineQuery(inlineQuery.id, [], { cache_time: 1 });
     console.log('[Inline] ✅ Query handled');
   } catch (error) {
     console.error('[Inline] ❌ Error:', error.message);
@@ -2854,21 +2487,7 @@ async function handleInlineQuery(inlineQuery, bot) {
 
 async function sendErrorMessage(bot, chatId, error, processingTime = 0) {
   try {
-    // ✅ ENHANCED: Better error message formatting
-    let errorMsg = `🔧 System Error (${processingTime}ms)\n\n`;
-    errorMsg += `${error.message}\n\n`;
-    
-    // Add helpful suggestions based on error type
-    if (error.message.includes('rate limit')) {
-      errorMsg += `💡 Rate limit reached. Please wait a moment and try again.`;
-    } else if (error.message.includes('timeout')) {
-      errorMsg += `💡 Request timed out. Try a simpler query or try again later.`;
-    } else if (error.message.includes('token')) {
-      errorMsg += `💡 Message too long. Try breaking it into smaller parts.`;
-    } else {
-      errorMsg += `💡 Use /health to check system status or /help for assistance.`;
-    }
-    
+    const errorMsg = `System error (${processingTime}ms): ${error.message}\n\nPlease try again or use /health to check system status.`;
     await bot.sendMessage(safeString(chatId), errorMsg);
   } catch (sendError) {
     console.error('[Error] ❌ Failed to send error message:', sendError.message);
@@ -2876,110 +2495,71 @@ async function sendErrorMessage(bot, chatId, error, processingTime = 0) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// ✅ ENHANCED MEMORY INTEGRATION TEST FUNCTION
+// 🧪 MEMORY INTEGRATION TEST FUNCTION (FOR DEBUGGING)
 // ════════════════════════════════════════════════════════════════════════════
 
 async function testMemoryIntegration(chatId) {
-  console.log(`\n[Memory-Test] 🧪 TESTING ENHANCED MEMORY INTEGRATION FOR ${chatId}`);
+  console.log(`\n[Memory-Test] 🧪 TESTING FIXED MEMORY INTEGRATION FOR ${chatId}`);
   console.log('═══════════════════════════════════════════════════════════');
   
-  const results = {
-    contextBuild: false,
-    memorySave: false,
-    databaseDirect: false,
-    overallSuccess: false
-  };
-  
-  // Test 1: Enhanced Context Building
-  console.log('[Memory-Test] Test 1: Enhanced Context Building...');
+  // Test 1: Context Building
+  console.log('[Memory-Test] Test 1: Context Building...');
   try {
     const context = await buildMemoryContext(chatId, 'full');
     console.log(`[Memory-Test] ✅ Context: ${context.length} chars`);
     if (context.length > 0) {
       console.log(`[Memory-Test] Preview: ${context.substring(0, 100)}...`);
-      results.contextBuild = true;
     }
   } catch (contextError) {
     console.log(`[Memory-Test] ❌ Context failed: ${contextError.message}`);
   }
   
-  // Test 2: Enhanced Memory Saving
-  console.log('[Memory-Test] Test 2: Enhanced Memory Saving...');
+  // Test 2: Memory Saving
+  console.log('[Memory-Test] Test 2: Memory Saving...');
   try {
     const saveResult = await saveMemoryIfNeeded(
       chatId, 
-      'TEST-ENHANCED: Advanced integration test with business content analysis and portfolio optimization strategies', 
-      'TEST-ENHANCED: Comprehensive system response with detailed business intelligence, financial metrics, and strategic recommendations for Cambodia market opportunities',
-      'test-enhanced',
-      { 
-        test: true, 
-        integration_enhanced: true,
-        timestamp: new Date().toISOString(),
-        testType: 'enhanced_memory_integration'
-      }
+      'TEST: Fixed integration test message', 
+      'TEST: Fixed integration test response',
+      'test',
+      { test: true, integration_fixed: true }
     );
     console.log(`[Memory-Test] Save result:`, saveResult);
-    if (saveResult.saved) {
-      results.memorySave = true;
-    }
   } catch (saveError) {
     console.log(`[Memory-Test] ❌ Save failed: ${saveError.message}`);
   }
   
-  // Test 3: Enhanced Database Direct
-  console.log('[Memory-Test] Test 3: Enhanced Database Direct...');
+  // Test 3: Database Direct
+  console.log('[Memory-Test] Test 3: Database Direct...');
   if (database && database.getConversationHistoryDB) {
     try {
-      const history = await database.getConversationHistoryDB(chatId, 5);
+      const history = await database.getConversationHistoryDB(chatId, 3);
       console.log(`[Memory-Test] ✅ Database: ${Array.isArray(history) ? history.length : 'invalid'} records`);
-      if (Array.isArray(history) && history.length > 0) {
-        results.databaseDirect = true;
-        console.log(`[Memory-Test] Sample record:`, {
-          user: history[0].user_message?.substring(0, 50) || 'N/A',
-          assistant: history[0].gpt_response?.substring(0, 50) || 'N/A'
-        });
-      }
     } catch (dbError) {
       console.log(`[Memory-Test] ❌ Database failed: ${dbError.message}`);
     }
   }
   
-  // Test 4: Enhanced System Stats
-  console.log('[Memory-Test] Test 4: Enhanced System Statistics...');
+  // Test 4: System Stats
+  console.log('[Memory-Test] Test 4: System Statistics...');
   console.log(`[Memory-Test] Memory successes: ${systemState.memorySuccessCount}`);
   console.log(`[Memory-Test] Memory failures: ${systemState.memoryFailureCount}`);
-  const totalOps = systemState.memorySuccessCount + systemState.memoryFailureCount;
-  const successRate = totalOps > 0 ? Math.round((systemState.memorySuccessCount / totalOps) * 100) : 0;
-  console.log(`[Memory-Test] Success rate: ${successRate}%`);
-  
-  // Overall assessment
-  const successCount = Object.values(results).filter(Boolean).length;
-  results.overallSuccess = successCount >= 2;
+  console.log(`[Memory-Test] Success rate: ${systemState.memorySuccessCount + systemState.memoryFailureCount > 0 ? 
+    Math.round((systemState.memorySuccessCount / (systemState.memorySuccessCount + systemState.memoryFailureCount)) * 100) : 0}%`);
   
   console.log('═══════════════════════════════════════════════════════════');
-  console.log(`[Memory-Test] 🏁 ENHANCED MEMORY INTEGRATION TEST COMPLETE`);
-  console.log(`[Memory-Test] 📊 Results: ${successCount}/3 tests passed`);
-  console.log(`[Memory-Test] 🎯 Overall: ${results.overallSuccess ? 'SUCCESS' : 'NEEDS_ATTENTION'}`);
-  console.log('═══════════════════════════════════════════════════════════\n');
-  
-  return results;
+  console.log('[Memory-Test] 🏁 FIXED MEMORY INTEGRATION TEST COMPLETE\n');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// ✅ ENHANCED QUICK COMMAND FUNCTIONS
+// QUICK COMMAND FUNCTIONS (SIMPLIFIED)
 // ════════════════════════════════════════════════════════════════════════════
 
 async function quickGPT5Command(message, chatId, bot = null, model = 'auto') {
-  const options = { 
-    title: `GPT-5 ${model.toUpperCase()}`, 
-    saveToMemory: true,
-    showTokens: true
-  };
-  
+  const options = { title: `GPT-5 ${model.toUpperCase()}`, saveToMemory: true };
   if (model !== 'auto') {
     options.forceModel = model.includes('gpt-5') ? model : `gpt-5-${model}`;
   }
-  
   return await executeEnhancedGPT5Command(message, chatId, bot, options);
 }
 
@@ -2989,275 +2569,112 @@ async function quickNanoCommand(message, chatId, bot = null) {
     max_completion_tokens: 1000,
     reasoning_effort: 'minimal',
     verbosity: 'low',
-    title: '⚡ GPT-5 Nano',
-    saveToMemory: 'minimal'
+    title: 'GPT-5 Nano'
   });
 }
 
 async function quickMiniCommand(message, chatId, bot = null) {
   return await executeEnhancedGPT5Command(message, chatId, bot, {
     forceModel: 'gpt-5-mini',
-    max_completion_tokens: 4000,
+    max_completion_tokens: 3000,
     reasoning_effort: 'medium',
     verbosity: 'medium',
-    title: '🚀 GPT-5 Mini',
-    saveToMemory: true
+    title: 'GPT-5 Mini'
   });
 }
 
 async function quickFullCommand(message, chatId, bot = null) {
   return await executeEnhancedGPT5Command(message, chatId, bot, {
     forceModel: 'gpt-5',
-    max_completion_tokens: 12000,
+    max_completion_tokens: 8000,
     reasoning_effort: 'high',
     verbosity: 'high',
-    title: '🧠 GPT-5 Full',
-    saveToMemory: true,
-    showTokens: true
+    title: 'GPT-5 Full'
   });
 }
 
-console.log('✅ Enhanced system handlers, multimodal support, and quick commands loaded');
-
 // ════════════════════════════════════════════════════════════════════════════
-// ✅ FIXED CAMBODIA MODULES - TEMPLATED SYSTEM WITH PROPER LAZY LOADING
+// CAMBODIA MODULES - TEMPLATED SYSTEM (MUCH SHORTER NOW)
 // ════════════════════════════════════════════════════════════════════════════
 
 const CAMBODIA_TEMPLATES = {
   creditAssessment: {
     model: 'gpt-5',
-    title: '🏦 Cambodia Credit Assessment',
-    prompt: 'CAMBODIA PRIVATE LENDING CREDIT ASSESSMENT\n\nQuery: {query}\n\nAnalyze with Cambodia market expertise:\n1. Borrower creditworthiness\n2. Risk score (0-100)\n3. Interest rate recommendation (USD)\n4. Required documentation\n5. Cambodia-specific risk factors\n6. Compliance requirements\n7. Recommended loan terms'
+    title: 'Cambodia Credit Assessment',
+    prompt: 'CAMBODIA PRIVATE LENDING CREDIT ASSESSMENT\n\nQuery: {query}\n\nAnalyze with Cambodia market expertise:\n1. Borrower creditworthiness\n2. Risk score (0-100)\n3. Interest rate recommendation (USD)\n4. Required documentation\n5. Cambodia-specific risk factors'
   },
   loanOrigination: {
     model: 'gpt-5',
-    title: '📋 Cambodia Loan Processing',
-    prompt: 'CAMBODIA LOAN APPLICATION PROCESSING\n\nData: {data}\n\nProcess with Cambodia standards:\n1. Application completeness check\n2. Financial analysis and verification\n3. Risk evaluation and scoring\n4. Terms and conditions recommendation\n5. Documentation requirements\n6. Regulatory compliance check\n7. Approval recommendation'
+    title: 'Cambodia Loan Processing',
+    prompt: 'CAMBODIA LOAN APPLICATION\n\nData: {data}\n\nProcess with Cambodia standards:\n1. Application completeness\n2. Financial analysis\n3. Risk evaluation\n4. Terms recommendation\n5. Documentation requirements'
   },
   portfolioOptimization: {
     model: 'gpt-5',
-    title: '📊 Portfolio Optimization',
-    prompt: 'PORTFOLIO OPTIMIZATION ANALYSIS\n\nPortfolio: {portfolioId}\nQuery: {query}\n\nProvide comprehensive analysis:\n1. Current allocation assessment\n2. Risk-return optimization strategies\n3. Diversification recommendations\n4. Rebalancing strategies\n5. Performance projections\n6. Risk mitigation measures'
+    title: 'Portfolio Optimization',
+    prompt: 'PORTFOLIO OPTIMIZATION\n\nPortfolio: {portfolioId}\nQuery: {query}\n\nAnalysis:\n1. Current allocation\n2. Risk-return optimization\n3. Diversification\n4. Rebalancing recommendations'
   },
   marketAnalysis: {
     model: 'gpt-5',
-    title: '🔍 Cambodia Market Analysis',
-    prompt: 'CAMBODIA MARKET RESEARCH & ANALYSIS\n\nScope: {scope}\nQuery: {query}\n\nProvide detailed analysis:\n1. Current economic conditions\n2. Market opportunities and threats\n3. Competitive landscape\n4. Regulatory environment\n5. Strategic recommendations\n6. Investment timing considerations'
-  },
-  riskAssessment: {
-    model: 'gpt-5',
-    title: '⚠️ Risk Assessment',
-    prompt: 'COMPREHENSIVE RISK ASSESSMENT\n\nSubject: {subject}\nData: {data}\n\nAnalyze all risk factors:\n1. Credit risk evaluation\n2. Market risk assessment\n3. Operational risk factors\n4. Regulatory compliance risks\n5. Mitigation strategies\n6. Risk scoring and rating'
-  },
-  investmentAnalysis: {
-    model: 'gpt-5',
-    title: '💎 Investment Analysis',
-    prompt: 'INVESTMENT OPPORTUNITY ANALYSIS\n\nInvestment: {investment}\nParameters: {parameters}\n\nProvide thorough evaluation:\n1. Financial viability assessment\n2. Risk-return analysis\n3. Market conditions impact\n4. Due diligence checklist\n5. Investment recommendation\n6. Exit strategy considerations'
+    title: 'Cambodia Market Analysis',
+    prompt: 'CAMBODIA MARKET RESEARCH\n\nScope: {scope}\nQuery: {query}\n\nAnalysis:\n1. Economic conditions\n2. Market opportunities\n3. Competition\n4. Strategic recommendations'
   }
 };
 
-// ✅ FIXED: Template execution function with better error handling
+// Template execution function
 async function executeCambodiaModule(moduleName, params, chatId, bot) {
-  try {
-    const template = CAMBODIA_TEMPLATES[moduleName];
-    if (!template) {
-      throw new Error(`Cambodia module '${moduleName}' not found. Available modules: ${Object.keys(CAMBODIA_TEMPLATES).join(', ')}`);
-    }
-    
-    // Replace template variables with proper escaping
-    let prompt = template.prompt;
-    Object.keys(params).forEach(key => {
-      const value = safeString(params[key]);
-      prompt = prompt.replace(new RegExp(`{${key}}`, 'g'), value);
-    });
-    
-    // Add metadata to the prompt for better context
-    const enhancedPrompt = `${prompt}\n\nCurrent Context:\n- Analysis Date: ${new Date().toLocaleDateString()}\n- Cambodia Time Zone: ICT (UTC+7)\n- Currency: USD (primary), KHR (local)\n- Regulatory Framework: National Bank of Cambodia guidelines`;
-    
-    return await executeEnhancedGPT5Command(enhancedPrompt, chatId, bot, {
-      title: template.title,
-      forceModel: template.model,
-      saveToMemory: true,
-      businessOptimized: true,
-      reasoning_effort: 'high',
-      verbosity: 'high',
-      temperature: 0.2 // Lower temperature for consistent business analysis
-    });
-  } catch (error) {
-    console.error(`[Cambodia] ❌ Template execution failed:`, error.message);
-    throw error;
+  const template = CAMBODIA_TEMPLATES[moduleName];
+  if (!template) {
+    throw new Error(`Cambodia module '${moduleName}' not found`);
   }
+  
+  // Replace template variables
+  let prompt = template.prompt;
+  Object.keys(params).forEach(key => {
+    prompt = prompt.replace(new RegExp(`{${key}}`, 'g'), safeString(params[key]));
+  });
+  
+  return executeEnhancedGPT5Command(prompt, chatId, bot, {
+    title: template.title,
+    forceModel: template.model,
+    saveToMemory: true
+  });
 }
 
-// ✅ FIXED: Consistent function signatures for Cambodia module functions
-async function runCreditAssessment(data, chatId, bot) {
-  return executeCambodiaModule('creditAssessment', { 
-    query: data.query || JSON.stringify(data) 
-  }, chatId, bot);
+// Individual Cambodia module functions (much shorter now)
+async function runCreditAssessment(chatId, data, _chatId2, bot) {
+  return executeCambodiaModule('creditAssessment', { query: data.query || JSON.stringify(data) }, chatId, bot);
 }
 
 async function processLoanApplication(applicationData, chatId, bot) {
-  return executeCambodiaModule('loanOrigination', { 
-    data: JSON.stringify(applicationData) 
-  }, chatId, bot);
+  return executeCambodiaModule('loanOrigination', { data: JSON.stringify(applicationData) }, chatId, bot);
 }
 
 async function optimizePortfolio(portfolioId, optimizationData, chatId, bot) {
   return executeCambodiaModule('portfolioOptimization', { 
-    portfolioId: safeString(portfolioId), 
+    portfolioId: portfolioId, 
     query: optimizationData.query || JSON.stringify(optimizationData) 
   }, chatId, bot);
 }
 
 async function analyzeMarket(researchScope, analysisData, chatId, bot) {
   return executeCambodiaModule('marketAnalysis', { 
-    scope: safeString(researchScope), 
+    scope: researchScope, 
     query: analysisData.query || JSON.stringify(analysisData) 
   }, chatId, bot);
 }
 
-async function assessRisk(riskSubject, riskData, chatId, bot) {
-  return executeCambodiaModule('riskAssessment', { 
-    subject: safeString(riskSubject), 
-    data: JSON.stringify(riskData) 
-  }, chatId, bot);
-}
+console.log('✅ Cambodia modules loaded (templated system)');
 
-async function analyzeInvestment(investmentData, parameters, chatId, bot) {
-  return executeCambodiaModule('investmentAnalysis', { 
-    investment: JSON.stringify(investmentData), 
-    parameters: JSON.stringify(parameters) 
-  }, chatId, bot);
-}
-
-console.log('✅ Cambodia modules loaded (fixed templated system)');
-
+// CAMBODIA INTEGRATION FOR EXISTING LAZY LOADING SYSTEM
 // ════════════════════════════════════════════════════════════════════════════
-// ✅ FIXED LAZY LOADING SYSTEM CREATION
+// 🏦 Add this after your existing lazy loading imports in dualCommandSystem.js
+// 📍 Location: After line with globalMarkets = _lazy(...) 
 // ════════════════════════════════════════════════════════════════════════════
-
-function createCambodiaLazyLoader(moduleName) {
-  return async () => {
-    try {
-      console.log(`[Cambodia-Lazy] 🏦 Loading ${moduleName}...`);
-      
-      // Try to load the actual module first
-      try {
-        const module = require(`./cambodia/${moduleName}`);
-        console.log(`[Cambodia-Lazy] ✅ ${moduleName} loaded successfully`);
-        return module;
-      } catch (requireError) {
-        console.log(`[Cambodia-Lazy] ⚠️ Module file not found, using template fallback for ${moduleName}`);
-        
-        // Fallback to template-based implementation
-        return createTemplateBasedModule(moduleName);
-      }
-    } catch (error) {
-      console.warn(`[Cambodia-Lazy] ❌ Failed to load ${moduleName}:`, error.message);
-      
-      // Return error-handling module
-      return {
-        [getDefaultFunctionName(moduleName)]: async (params) => {
-          throw new Error(`${moduleName} module not available: ${error.message}`);
-        }
-      };
-    }
-  };
-}
-
-function createTemplateBasedModule(moduleName) {
-  const functionName = getDefaultFunctionName(moduleName);
-  
-  return {
-    [functionName]: async (params, chatId, bot) => {
-      console.log(`[Cambodia-Template] 📋 Using template for ${moduleName}`);
-      
-      // Map module names to template names
-      const templateMap = {
-        'creditAssessment': 'creditAssessment',
-        'loanOrigination': 'loanOrigination',
-        'riskManagement': 'riskAssessment',
-        'portfolioManager': 'portfolioOptimization',
-        'marketResearch': 'marketAnalysis',
-        'investmentWealth': 'investmentAnalysis'
-      };
-      
-      const templateName = templateMap[moduleName] || 'marketAnalysis';
-      
-      return executeCambodiaModule(templateName, params, chatId, bot);
-    }
-  };
-}
-
-function getDefaultFunctionName(moduleName) {
-  const functionMap = {
-    'creditAssessment': 'analyzeBorrower',
-    'loanOrigination': 'processApplication',
-    'loanServicing': 'serviceLoan',
-    'riskManagement': 'assessRisk',
-    'loanRecovery': 'initiateRecovery',
-    'borrowerDueDiligence': 'performDueDiligence',
-    'cashFlowManagement': 'analyzeCashFlow',
-    'portfolioManager': 'optimizePortfolio',
-    'investmentWealth': 'analyzeInvestment',
-    'realEstateWealth': 'evaluateProperty',
-    'businessWealth': 'evaluateBusiness',
-    'agriculturalWealth': 'analyzeAgriInvestment',
-    'resourcesWealth': 'analyzeResources',
-    'marketResearch': 'conductResearch',
-    'economicIntelligence': 'analyzeEconomy',
-    'globalMarkets': 'analyzeGlobalMarkets',
-    'stockTrading': 'analyzeStock',
-    'cryptoTrading': 'analyzeCrypto',
-    'forexTrading': 'analyzeForex',
-    'performanceAnalytics': 'analyzePerformance',
-    'fundAccounting': 'processAccounting',
-    'investorReporting': 'generateReport',
-    'complianceMonitoring': 'checkCompliance',
-    'legalRegulatory': 'checkLegalCompliance',
-    'clientOnboarding': 'onboardClient',
-    'lpManagement': 'manageLPs',
-    'cambodiaHandler': 'processDeals',
-    'cambodiaLending': 'analyzeLending'
-  };
-  
-  return functionMap[moduleName] || 'execute';
-}
-
-// ✅ FIXED: Define all the lazy-loaded modules
-const creditAssessment = createCambodiaLazyLoader('creditAssessment');
-const loanOrigination = createCambodiaLazyLoader('loanOrigination');
-const loanServicing = createCambodiaLazyLoader('loanServicing');
-const riskManagement = createCambodiaLazyLoader('riskManagement');
-const loanRecovery = createCambodiaLazyLoader('loanRecovery');
-const borrowerDueDiligence = createCambodiaLazyLoader('borrowerDueDiligence');
-const cashFlowManagement = createCambodiaLazyLoader('cashFlowManagement');
-const portfolioManager = createCambodiaLazyLoader('portfolioManager');
-const investmentWealth = createCambodiaLazyLoader('investmentWealth');
-const realEstateWealth = createCambodiaLazyLoader('realEstateWealth');
-const businessWealth = createCambodiaLazyLoader('businessWealth');
-const agriculturalWealth = createCambodiaLazyLoader('agriculturalWealth');
-const resourcesWealth = createCambodiaLazyLoader('resourcesWealth');
-const marketResearch = createCambodiaLazyLoader('marketResearch');
-const economicIntelligence = createCambodiaLazyLoader('economicIntelligence');
-const globalMarkets = createCambodiaLazyLoader('globalMarkets');
-const stockTrading = createCambodiaLazyLoader('stockTrading');
-const cryptoTrading = createCambodiaLazyLoader('cryptoTrading');
-const forexTrading = createCambodiaLazyLoader('forexTrading');
-const performanceAnalytics = createCambodiaLazyLoader('performanceAnalytics');
-const fundAccounting = createCambodiaLazyLoader('fundAccounting');
-const investorReporting = createCambodiaLazyLoader('investorReporting');
-const complianceMonitoring = createCambodiaLazyLoader('complianceMonitoring');
-const legalRegulatory = createCambodiaLazyLoader('legalRegulatory');
-const clientOnboarding = createCambodiaLazyLoader('clientOnboarding');
-const lpManagement = createCambodiaLazyLoader('lpManagement');
-const cambodiaHandler = createCambodiaLazyLoader('cambodiaHandler');
-const cambodiaLending = createCambodiaLazyLoader('cambodiaLending');
 
 console.log('🏦 Cambodia Business Intelligence - Lazy Loading System Active');
 
 // ════════════════════════════════════════════════════════════════════════════
-// ✅ FIXED CAMBODIA COMMAND ROUTER WITH PROPER ERROR HANDLING
+// CAMBODIA COMMAND ROUTER WITH LAZY LOADING INTEGRATION
 // ════════════════════════════════════════════════════════════════════════════
 
 async function routeCambodiaCommand(command, parameters, chatId, bot) {
@@ -3266,7 +2683,7 @@ async function routeCambodiaCommand(command, parameters, chatId, bot) {
   try {
     console.log(`[Cambodia] 🏦 Processing command: ${command}`);
     
-    // Smart command routing with lazy-loaded modules
+    // Smart command routing with your lazy-loaded modules
     switch (command.toLowerCase()) {
       // ════════════════════════════════════════════════════════════════════
       // CORE LENDING OPERATIONS
@@ -3307,6 +2724,32 @@ async function routeCambodiaCommand(command, parameters, chatId, bot) {
           context: 'Comprehensive risk evaluation and mitigation strategies for Cambodia investments'
         });
         
+      case 'loan_recovery':
+      case 'recovery_analysis':
+      case 'default_management':
+        return await executeCambodiaLazyModule(loanRecovery, 'initiateRecovery', parameters, chatId, bot, {
+          title: '🔄 Loan Recovery Analysis',
+          context: 'Loan recovery strategies and default management for Cambodia private lending'
+        });
+        
+      case 'due_diligence':
+      case 'borrower_verification':
+      case 'verify_borrower':
+      case 'borrower_dd':
+        return await executeCambodiaLazyModule(borrowerDueDiligence, 'performDueDiligence', parameters, chatId, bot, {
+          title: '🔍 Borrower Due Diligence',
+          context: 'Comprehensive borrower verification and due diligence for Cambodia market'
+        });
+        
+      case 'cash_flow_analysis':
+      case 'cashflow_management':
+      case 'analyze_cashflow':
+      case 'cash_flow':
+        return await executeCambodiaLazyModule(cashFlowManagement, 'analyzeCashFlow', parameters, chatId, bot, {
+          title: '💰 Cash Flow Analysis',
+          context: 'Cash flow management, analysis and projection for Cambodia lending operations'
+        });
+        
       // ════════════════════════════════════════════════════════════════════
       // INVESTMENT & WEALTH MANAGEMENT
       // ════════════════════════════════════════════════════════════════════
@@ -3329,6 +2772,42 @@ async function routeCambodiaCommand(command, parameters, chatId, bot) {
           context: 'Investment opportunity evaluation and wealth management strategies'
         });
         
+      case 'real_estate_analysis':
+      case 'property_evaluation':
+      case 'real_estate_valuation':
+      case 'property_analysis':
+        return await executeCambodiaLazyModule(realEstateWealth, 'evaluateProperty', parameters, chatId, bot, {
+          title: '🏠 Real Estate Analysis',
+          context: 'Cambodia real estate market analysis, valuation and investment opportunities'
+        });
+        
+      case 'business_valuation':
+      case 'business_analysis':
+      case 'evaluate_business':
+      case 'business_wealth':
+        return await executeCambodiaLazyModule(businessWealth, 'evaluateBusiness', parameters, chatId, bot, {
+          title: '🏢 Business Valuation',
+          context: 'Business evaluation, valuation and growth analysis for Cambodia market'
+        });
+        
+      case 'agricultural_analysis':
+      case 'agri_investment':
+      case 'agricultural_evaluation':
+      case 'agri_wealth':
+        return await executeCambodiaLazyModule(agriculturalWealth, 'analyzeAgriInvestment', parameters, chatId, bot, {
+          title: '🌾 Agricultural Investment',
+          context: 'Agricultural investment analysis and rural wealth management for Cambodia'
+        });
+        
+      case 'resources_analysis':
+      case 'resource_evaluation':
+      case 'natural_resources':
+      case 'resource_wealth':
+        return await executeCambodiaLazyModule(resourcesWealth, 'analyzeResources', parameters, chatId, bot, {
+          title: '⛏️ Natural Resources Analysis',
+          context: 'Natural resources evaluation and resource wealth management'
+        });
+        
       // ════════════════════════════════════════════════════════════════════
       // MARKET INTELLIGENCE & RESEARCH
       // ════════════════════════════════════════════════════════════════════
@@ -3342,6 +2821,156 @@ async function routeCambodiaCommand(command, parameters, chatId, bot) {
           context: 'Cambodia market research, competitive analysis and industry intelligence'
         });
         
+      case 'economic_analysis':
+      case 'economic_intelligence':
+      case 'economy_analysis':
+      case 'economic_research':
+        return await executeCambodiaLazyModule(economicIntelligence, 'analyzeEconomy', parameters, chatId, bot, {
+          title: '📊 Economic Intelligence',
+          context: 'Cambodia economic analysis, trend forecasting and macroeconomic insights'
+        });
+        
+      case 'global_markets':
+      case 'global_analysis':
+      case 'international_markets':
+      case 'global_trends':
+        return await executeCambodiaLazyModule(globalMarkets, 'analyzeGlobalMarkets', parameters, chatId, bot, {
+          title: '🌍 Global Markets Analysis',
+          context: 'Global market analysis and international investment opportunities'
+        });
+        
+      // ════════════════════════════════════════════════════════════════════
+      // TRADING & INVESTMENT STRATEGIES
+      // ════════════════════════════════════════════════════════════════════
+      
+      case 'stock_analysis':
+      case 'stock_trading':
+      case 'equity_analysis':
+      case 'stock_investment':
+        return await executeCambodiaLazyModule(stockTrading, 'analyzeStock', parameters, chatId, bot, {
+          title: '📈 Stock Trading Analysis',
+          context: 'Stock market analysis, equity evaluation and trading strategies'
+        });
+        
+      case 'crypto_analysis':
+      case 'crypto_trading':
+      case 'cryptocurrency_analysis':
+      case 'digital_assets':
+        return await executeCambodiaLazyModule(cryptoTrading, 'analyzeCrypto', parameters, chatId, bot, {
+          title: '₿ Cryptocurrency Analysis',
+          context: 'Cryptocurrency market analysis, digital assets evaluation and trading signals'
+        });
+        
+      case 'forex_analysis':
+      case 'forex_trading':
+      case 'currency_analysis':
+      case 'fx_trading':
+        return await executeCambodiaLazyModule(forexTrading, 'analyzeForex', parameters, chatId, bot, {
+          title: '💱 Forex Analysis',
+          context: 'Foreign exchange market analysis, currency evaluation and FX trading strategies'
+        });
+        
+      // ════════════════════════════════════════════════════════════════════
+      // PERFORMANCE & ANALYTICS
+      // ════════════════════════════════════════════════════════════════════
+      
+      case 'performance_analysis':
+      case 'analyze_performance':
+      case 'portfolio_performance':
+      case 'performance_metrics':
+        return await executeCambodiaLazyModule(performanceAnalytics, 'analyzePerformance', parameters, chatId, bot, {
+          title: '📈 Performance Analytics',
+          context: 'Investment performance analysis, metrics evaluation and benchmarking'
+        });
+        
+      case 'fund_accounting':
+      case 'accounting_analysis':
+      case 'fund_performance':
+      case 'financial_accounting':
+        return await executeCambodiaLazyModule(fundAccounting, 'processAccounting', parameters, chatId, bot, {
+          title: '📚 Fund Accounting',
+          context: 'Fund accounting, financial reporting and accounting analysis'
+        });
+        
+      case 'investor_reporting':
+      case 'generate_report':
+      case 'investor_dashboard':
+      case 'reporting_analysis':
+        return await executeCambodiaLazyModule(investorReporting, 'generateReport', parameters, chatId, bot, {
+          title: '📊 Investor Reporting',
+          context: 'Investor reporting, dashboard generation and stakeholder communications'
+        });
+        
+      // ════════════════════════════════════════════════════════════════════
+      // COMPLIANCE & LEGAL
+      // ════════════════════════════════════════════════════════════════════
+      
+      case 'compliance_check':
+      case 'regulatory_compliance':
+      case 'compliance_analysis':
+      case 'compliance_monitoring':
+        return await executeCambodiaLazyModule(complianceMonitoring, 'checkCompliance', parameters, chatId, bot, {
+          title: '⚖️ Compliance Monitoring',
+          context: 'Regulatory compliance analysis and monitoring for Cambodia financial services'
+        });
+        
+      case 'legal_analysis':
+      case 'legal_compliance':
+      case 'legal_review':
+      case 'regulatory_analysis':
+        return await executeCambodiaLazyModule(legalRegulatory, 'checkLegalCompliance', parameters, chatId, bot, {
+          title: '⚖️ Legal & Regulatory Analysis',
+          context: 'Legal compliance analysis and regulatory framework evaluation'
+        });
+        
+      // ════════════════════════════════════════════════════════════════════
+      // CLIENT & LP MANAGEMENT
+      // ════════════════════════════════════════════════════════════════════
+      
+      case 'client_onboarding':
+      case 'onboard_client':
+      case 'client_verification':
+      case 'kyc_analysis':
+        return await executeCambodiaLazyModule(clientOnboarding, 'onboardClient', parameters, chatId, bot, {
+          title: '👥 Client Onboarding',
+          context: 'Client onboarding, KYC verification and due diligence process'
+        });
+        
+      case 'lp_management':
+      case 'limited_partner':
+      case 'lp_analysis':
+      case 'investor_management':
+        return await executeCambodiaLazyModule(lpManagement, 'manageLPs', parameters, chatId, bot, {
+          title: '🤝 LP Management',
+          context: 'Limited Partner management, investor relations and capital commitments'
+        });
+        
+      // ════════════════════════════════════════════════════════════════════
+      // DEAL PROCESSING (Handler)
+      // ════════════════════════════════════════════════════════════════════
+      
+      case 'deal_analysis':
+      case 'analyze_deal':
+      case 'deal_evaluation':
+      case 'process_deals':
+        return await executeCambodiaLazyHandler(cambodiaHandler, 'processDeals', parameters, chatId, bot, {
+          title: '💼 Deal Analysis',
+          context: 'Comprehensive deal evaluation, processing and deal flow management'
+        });
+        
+      // ════════════════════════════════════════════════════════════════════
+      // CAMBODIA LENDING (Special Utils Module)
+      // ════════════════════════════════════════════════════════════════════
+      
+      case 'cambodia_lending':
+      case 'private_lending':
+      case 'lending_analysis':
+      case 'cambodia_finance':
+        return await executeCambodiaLazyModule(cambodiaLending, 'analyzeLending', parameters, chatId, bot, {
+          title: '🏦 Cambodia Private Lending',
+          context: 'Cambodia private lending operations, market analysis and lending strategies'
+        });
+        
       // ════════════════════════════════════════════════════════════════════
       // DEFAULT: INTELLIGENT GPT-5 ANALYSIS
       // ════════════════════════════════════════════════════════════════════
@@ -3353,26 +2982,23 @@ async function routeCambodiaCommand(command, parameters, chatId, bot) {
   } catch (error) {
     console.error(`[Cambodia] ❌ Command routing error:`, error.message);
     
-    // Enhanced fallback to GPT-5 with Cambodia expertise
+    // Ultimate fallback to GPT-5 with Cambodia expertise
     return await executeEnhancedGPT5Command(
-      `Cambodia Financial Analysis Request: ${command}\n\nParameters: ${JSON.stringify(parameters)}\n\nProvide comprehensive professional analysis based on Cambodia private lending, investment management, and financial services expertise. Include risk assessment, market context, and actionable recommendations.`,
+      `Cambodia Financial Analysis Request: ${command}\n\nParameters: ${JSON.stringify(parameters)}\n\nProvide comprehensive professional analysis based on Cambodia private lending, investment management, and financial services expertise.`,
       chatId,
       bot,
       {
         title: '🏦 Cambodia Financial Analysis',
         forceModel: 'gpt-5',
         saveToMemory: true,
-        businessOptimized: true,
-        reasoning_effort: 'high',
-        verbosity: 'high',
-        temperature: 0.2
+        context: 'Cambodia financial services and private lending analysis'
       }
     );
   }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// ✅ FIXED LAZY MODULE EXECUTION WITH ENHANCED ERROR HANDLING
+// LAZY MODULE EXECUTION WITH GPT-5 ENHANCEMENT
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeCambodiaLazyModule(lazyModule, functionName, parameters, chatId, bot, options = {}) {
@@ -3381,11 +3007,8 @@ async function executeCambodiaLazyModule(lazyModule, functionName, parameters, c
   try {
     console.log(`[Cambodia] 🏦 Executing lazy module function: ${functionName}`);
     
-    // Load the lazy module with timeout
-    const module = await Promise.race([
-      lazyModule(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Module load timeout')), 5000))
-    ]);
+    // Load the lazy module
+    const module = await lazyModule();
     
     if (!module || !module[functionName]) {
       throw new Error(`Function ${functionName} not available in loaded module`);
@@ -3393,71 +3016,76 @@ async function executeCambodiaLazyModule(lazyModule, functionName, parameters, c
     
     // Execute the Cambodia module function
     console.log(`[Cambodia] 📋 Calling ${functionName} with parameters:`, JSON.stringify(parameters, null, 2));
-    const moduleResult = await module[functionName](parameters, chatId, bot);
+    const moduleResult = await module[functionName](parameters);
     
     if (moduleResult && moduleResult.error) {
       throw new Error(moduleResult.error);
     }
     
-    // If module returns a direct result, return it
-    if (moduleResult && (moduleResult.success || moduleResult.response)) {
-      return moduleResult;
-    }
-    
-    // Otherwise, enhance result with GPT-5 analysis
+    // Enhance result with GPT-5 analysis
     const enhancedPrompt = `
 CAMBODIA BUSINESS INTELLIGENCE ANALYSIS
 
 Module Function: ${functionName}
 Parameters: ${JSON.stringify(parameters)}
 Raw Module Results: ${JSON.stringify(moduleResult)}
+
 Context: ${options.context || 'Cambodia financial services analysis'}
 
-As a Cambodia financial expert, provide comprehensive business analysis including:
+As a Cambodia financial expert, please provide a comprehensive business analysis including:
 
 1. **Executive Summary** - Key findings and insights from the module results
-2. **Financial Analysis** - Quantitative insights and financial implications  
+2. **Financial Analysis** - Quantitative insights and financial implications
 3. **Risk Assessment** - Risk factors, mitigation strategies and risk scoring
 4. **Market Context** - Cambodia market-specific considerations and local factors
 5. **Strategic Recommendations** - Actionable business recommendations and next steps
 6. **Compliance & Legal** - Regulatory considerations for Cambodia market
 7. **Investment Implications** - Impact on portfolio, returns and investment strategy
 
-Focus on professional business presentation suitable for investors and stakeholders with Cambodia private lending and investment management expertise.
+Focus on:
+- Professional business presentation suitable for investors and stakeholders
+- Cambodia private lending and investment management expertise
+- Practical, actionable insights for financial decision-making
+- Risk-adjusted recommendations with clear rationale
+
+Format for professional business presentation with clear structure and visual hierarchy.
     `;
     
+    // Get GPT-5 enhanced analysis
     return await executeEnhancedGPT5Command(enhancedPrompt, chatId, bot, {
-      title: options.title || '🏦 Cambodia Analysis',
+      title: options.title || `🏦 Cambodia Analysis`,
       forceModel: 'gpt-5',
       saveToMemory: true,
+      context: 'Cambodia business intelligence analysis',
       businessOptimized: true,
-      reasoning_effort: 'high',
-      verbosity: 'high',
-      temperature: 0.2
+      showTokens: true,
+      enhanceFormatting: true,
+      professionalPresentation: true
     });
     
   } catch (error) {
     console.error(`[Cambodia] ❌ Lazy module execution failed:`, error.message);
     
-    // Intelligent fallback using template system
+    // Fallback: GPT-5 analysis with available context
     const fallbackPrompt = `
-CAMBODIA FINANCIAL ANALYSIS (ENHANCED FALLBACK)
+CAMBODIA FINANCIAL ANALYSIS REQUEST
 
 Function: ${functionName}
 Parameters: ${JSON.stringify(parameters)}
 Context: ${options.context || 'Cambodia financial services'}
-Error Encountered: ${error.message}
 
-Provide comprehensive professional analysis based on Cambodia private lending and investment expertise:
+The specific module encountered an issue: ${error.message}
+
+Please provide comprehensive professional analysis based on Cambodia private lending and investment expertise covering:
 
 1. **Analysis Framework** - How to approach this type of analysis
-2. **Cambodia Market Insights** - Relevant market considerations and local factors  
+2. **Cambodia Market Insights** - Relevant market considerations and local factors
 3. **Financial Evaluation** - Financial analysis methodology and key metrics
 4. **Risk Considerations** - Risk assessment and mitigation strategies
 5. **Business Recommendations** - Strategic recommendations and action items
 6. **Implementation Guide** - Practical steps for execution
 
-Focus on Cambodia private lending market expertise and professional business intelligence.
+Focus on Cambodia private lending market expertise, investment management best practices, and professional business intelligence.
     `;
     
     return await executeEnhancedGPT5Command(fallbackPrompt, chatId, bot, {
@@ -3465,37 +3093,34 @@ Focus on Cambodia private lending market expertise and professional business int
       forceModel: 'gpt-5',
       saveToMemory: true,
       businessOptimized: true,
-      reasoning_effort: 'high',
-      verbosity: 'high',
-      temperature: 0.2
+      context: 'Cambodia financial services expertise'
     });
   }
 }
 
-// ✅ FIXED: Lazy handler execution (same pattern as modules)
+// ════════════════════════════════════════════════════════════════════════════
+// LAZY HANDLER EXECUTION
+// ════════════════════════════════════════════════════════════════════════════
+
 async function executeCambodiaLazyHandler(lazyHandler, functionName, parameters, chatId, bot, options = {}) {
   try {
     console.log(`[Cambodia] 🔧 Executing lazy handler function: ${functionName}`);
     
+    // Load the lazy handler
     const handler = await lazyHandler();
     
     if (!handler || !handler[functionName]) {
       throw new Error(`Handler function ${functionName} not available`);
     }
     
-    console.log(`[Cambodia] 📋 Calling handler ${functionName}`);
-    const handlerResult = await handler[functionName](parameters, chatId, bot);
+    console.log(`[Cambodia] 📋 Calling handler ${functionName} with parameters:`, JSON.stringify(parameters, null, 2));
+    const handlerResult = await handler[functionName](parameters);
     
     if (handlerResult && handlerResult.error) {
       throw new Error(handlerResult.error);
     }
     
-    // If handler returns a direct result, return it
-    if (handlerResult && (handlerResult.success || handlerResult.response)) {
-      return handlerResult;
-    }
-    
-    // Otherwise enhance with GPT-5
+    // Enhance handler result with GPT-5
     const enhancedPrompt = `
 CAMBODIA BUSINESS HANDLER ANALYSIS
 
@@ -3503,7 +3128,7 @@ Handler Function: ${functionName}
 Processing Results: ${JSON.stringify(handlerResult)}
 Parameters: ${JSON.stringify(parameters)}
 
-Analyze these handler results and provide:
+Please analyze these handler results and provide:
 
 1. **Processing Summary** - Overview of what was processed and key outcomes
 2. **Business Insights** - Patterns, trends and business intelligence from the data
@@ -3512,24 +3137,29 @@ Analyze these handler results and provide:
 5. **Strategic Recommendations** - Business recommendations based on processing results
 6. **Next Steps** - Recommended follow-up actions and implementation plan
 
-Present in professional business format suitable for executive review.
+Present in professional business format suitable for executive review and decision-making.
     `;
     
     return await executeEnhancedGPT5Command(enhancedPrompt, chatId, bot, {
-      title: options.title || '🔧 Handler Results',
+      title: options.title || `🔧 Handler Results`,
       forceModel: 'gpt-5',
       saveToMemory: true,
       businessOptimized: true,
-      reasoning_effort: 'high'
+      context: 'Cambodia business handler processing'
     });
     
   } catch (error) {
     console.error(`[Cambodia] ❌ Lazy handler execution failed:`, error.message);
+    
+    // Fallback to intelligent analysis
     return await executeIntelligentCambodiaAnalysis(`Handler: ${functionName}`, parameters, chatId, bot);
   }
 }
 
-// ✅ FIXED: Enhanced intelligent analysis (unchanged but improved)
+// ════════════════════════════════════════════════════════════════════════════
+// INTELLIGENT CAMBODIA ANALYSIS WITH GPT-5 (FALLBACK)
+// ════════════════════════════════════════════════════════════════════════════
+
 async function executeIntelligentCambodiaAnalysis(command, parameters, chatId, bot) {
   console.log(`[Cambodia] 🧠 Intelligent analysis for: ${command}`);
   
@@ -3539,14 +3169,25 @@ CAMBODIA BUSINESS INTELLIGENCE ANALYSIS
 Request: ${command}
 Parameters: ${JSON.stringify(parameters)}
 
-As a senior Cambodia financial services expert, provide comprehensive analysis covering:
+As a senior Cambodia financial services expert with deep expertise in private lending, investment management, and business intelligence, please provide comprehensive analysis.
+
+**Your Expertise Areas:**
+• Private lending operations and credit assessment in Cambodia
+• Investment portfolio management and wealth optimization
+• Risk management and compliance in Cambodia financial sector
+• Real estate, business, and agricultural investment analysis
+• Market research and economic intelligence for Cambodia
+• Trading strategies across stocks, crypto, and forex markets
+• Legal and regulatory compliance for Cambodia financial services
+• Client management and investor relations
+• Fund accounting and performance analytics
 
 **Analysis Framework:**
 1. **Executive Summary** - Key insights and strategic overview
 2. **Market Context** - Cambodia-specific market conditions and opportunities
 3. **Financial Analysis** - Quantitative evaluation and financial modeling
 4. **Risk Assessment** - Comprehensive risk evaluation with scoring
-5. **Strategic Recommendations** - Actionable business recommendations  
+5. **Strategic Recommendations** - Actionable business recommendations
 6. **Implementation Roadmap** - Practical steps for execution
 7. **Compliance Considerations** - Regulatory and legal requirements
 8. **Investment Impact** - Portfolio and return implications
@@ -3555,10 +3196,11 @@ As a senior Cambodia financial services expert, provide comprehensive analysis c
 - Cambodia private lending market dynamics and opportunities
 - USD-based lending and investment strategies
 - Local regulatory environment and compliance requirements
+- Cross-border investment considerations
 - Risk-adjusted return optimization
 - Market timing and entry strategies
 
-Provide professional, actionable business intelligence suitable for investment decision-making.
+Provide professional, actionable business intelligence suitable for investment decision-making and strategic planning in Cambodia's financial services sector.
   `;
   
   return await executeEnhancedGPT5Command(analysisPrompt, chatId, bot, {
@@ -3566,48 +3208,86 @@ Provide professional, actionable business intelligence suitable for investment d
     forceModel: 'gpt-5',
     saveToMemory: true,
     businessOptimized: true,
-    reasoning_effort: 'high',
-    verbosity: 'high',
-    temperature: 0.2
+    enhanceFormatting: true,
+    showTokens: true,
+    professionalPresentation: true
   });
 }
 
-// ✅ FIXED: Module status function
+// ════════════════════════════════════════════════════════════════════════════
+// CAMBODIA MODULES STATUS WITH LAZY LOADING
+// ════════════════════════════════════════════════════════════════════════════
+
 function getCambodiaModulesStatus() {
-  const moduleNames = [
-    'creditAssessment', 'loanOrigination', 'loanServicing', 'riskManagement', 'loanRecovery',
-    'cashFlowManagement', 'borrowerDueDiligence', 'performanceAnalytics', 'fundAccounting',
-    'investorReporting', 'complianceMonitoring', 'marketResearch', 'portfolioManager', 
-    'investmentWealth', 'realEstateWealth', 'businessWealth', 'agriculturalWealth', 
-    'resourcesWealth', 'economicIntelligence', 'globalMarkets', 'stockTrading', 
-    'cryptoTrading', 'forexTrading', 'clientOnboarding', 'lpManagement', 
-    'legalRegulatory', 'cambodiaHandler', 'cambodiaLending'
-  ];
+  const modules = {
+    // Core Lending Modules
+    creditAssessment, loanOrigination, loanServicing, riskManagement, loanRecovery,
+    cashFlowManagement, borrowerDueDiligence, performanceAnalytics, fundAccounting,
+    investorReporting, complianceMonitoring, marketResearch,
+    
+    // Investment & Wealth Modules
+    portfolioManager, investmentWealth, realEstateWealth, businessWealth,
+    agriculturalWealth, resourcesWealth,
+    
+    // Market Intelligence
+    economicIntelligence, globalMarkets,
+    
+    // Trading Modules
+    stockTrading, cryptoTrading, forexTrading,
+    
+    // Client Management
+    clientOnboarding, lpManagement,
+    
+    // Legal & Compliance
+    legalRegulatory,
+    
+    // Handlers & Special Modules
+    cambodiaHandler, cambodiaLending
+  };
+  
+  const handlers = { cambodiaHandler };
   
   return {
     timestamp: new Date().toISOString(),
-    totalModules: moduleNames.length,
+    totalModules: Object.keys(modules).length,
+    totalHandlers: Object.keys(handlers).length,
     lazyLoadingEnabled: true,
-    modulesList: moduleNames,
+    modulesList: Object.keys(modules),
+    handlersList: Object.keys(handlers),
     availableCommands: [
+      // Core Lending
       'credit_assessment', 'loan_origination', 'loan_servicing', 'risk_assessment',
-      'loan_recovery', 'due_diligence', 'cash_flow_analysis', 'portfolio_optimization',
-      'investment_analysis', 'real_estate_analysis', 'business_valuation',
-      'agricultural_analysis', 'resources_analysis', 'market_research',
-      'economic_analysis', 'global_markets', 'stock_analysis', 'crypto_analysis',
-      'forex_analysis', 'performance_analysis', 'fund_accounting', 'investor_reporting',
-      'compliance_check', 'legal_analysis', 'client_onboarding', 'lp_management',
+      'loan_recovery', 'due_diligence', 'cash_flow_analysis',
+      
+      // Investment & Wealth
+      'portfolio_optimization', 'investment_analysis', 'real_estate_analysis',
+      'business_valuation', 'agricultural_analysis', 'resources_analysis',
+      
+      // Market Intelligence
+      'market_research', 'economic_analysis', 'global_markets',
+      
+      // Trading
+      'stock_analysis', 'crypto_analysis', 'forex_analysis',
+      
+      // Performance & Analytics
+      'performance_analysis', 'fund_accounting', 'investor_reporting',
+      
+      // Compliance & Legal
+      'compliance_check', 'legal_analysis',
+      
+      // Client Management
+      'client_onboarding', 'lp_management',
+      
+      // Deal Processing
       'deal_analysis', 'cambodia_lending'
     ],
-    systemReady: true,
-    fallbackMode: 'template_based_with_gpt5_enhancement'
+    systemReady: true
   };
 }
 
-console.log('🏦 Fixed Cambodia Lazy Loading Integration Complete!');
-console.log('🎯 All Cambodia modules integrated with proper lazy loading');
-console.log('📊 Template-based fallback system active');
-console.log('✅ Enhanced error handling and GPT-5 integration ready');
+console.log('🏦 Cambodia Lazy Loading Integration Complete!');
+console.log('🎯 All Cambodia modules integrated with lazy loading system');
+console.log('📊 Ready for comprehensive Cambodia financial analysis!');
 
 // ════════════════════════════════════════════════════════════════════════════
 // SYSTEM HEALTH MONITORING
