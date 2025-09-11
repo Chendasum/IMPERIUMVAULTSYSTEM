@@ -790,7 +790,7 @@ const CONFIG = {
     NANO: 'gpt-5-nano',
     MINI: 'gpt-5-mini', 
     FULL: 'gpt-5',
-    CHAT: 'gpt-5-chat-latest'
+    PRO: 'gpt-5-pro'  // ← FIXED: Replace CHAT with PRO
   },
   REASONING_LEVELS: ['minimal', 'low', 'medium', 'high'],
   VERBOSITY_LEVELS: ['low', 'medium', 'high'],
@@ -798,7 +798,7 @@ const CONFIG = {
     NANO_MAX: 4000,
     MINI_MAX: 8000,
     FULL_MAX: 16000,
-    CHAT_MAX: 8000
+    PRO_MAX: 32000  // ← FIXED: Replace CHAT_MAX with PRO_MAX
   },
   MEMORY: {
     MINIMAL_LIMIT: 1000,
@@ -828,7 +828,7 @@ const systemState = {
     'gpt-5': 0,
     'gpt-5-mini': 0,
     'gpt-5-nano': 0,
-    'gpt-5-chat-latest': 0
+    'gpt-5-pro': 0  // ← FIXED: Replace 'gpt-5-chat-latest' with 'gpt-5-pro'
   }
 };
 
@@ -1513,25 +1513,6 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
   
   throw new Error(`All GPT-5 models failed. Original: ${originalError?.message}. Please try again with a simpler question.`);
 }
-
-// ✅ CORRECTED: Also update your CONFIG.MODELS to remove chat reference
-const CONFIG = {
-  MODELS: {
-    NANO: 'gpt-5-nano',
-    MINI: 'gpt-5-mini', 
-    FULL: 'gpt-5',        // ← Main GPT-5 model
-    PRO: 'gpt-5-pro'      // ← For extended reasoning (replaces CHAT)
-  },
-  REASONING_LEVELS: ['minimal', 'low', 'medium', 'high'],
-  VERBOSITY_LEVELS: ['low', 'medium', 'high'],
-  TOKEN_LIMITS: {
-    NANO_MAX: 4000,
-    MINI_MAX: 8000,
-    FULL_MAX: 16000,
-    PRO_MAX: 32000      // ← Updated for PRO model
-  },
-  // ... rest of your config
-};
 
 console.log('✅ GPT-5 execution engine loaded with CORRECTED API parameters');
 
