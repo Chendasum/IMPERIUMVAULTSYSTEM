@@ -459,10 +459,13 @@ function buildChatRequest(model, prompt, options) {
   // ✅ CORRECTED: Add all supported parameters for GPT-5
   console.log(`[GPT5-PARAMS] Building request for ${model} with full parameter support`);
   
-  // Standard Chat Completions parameters (all supported by GPT-5)
-  if (typeof options.temperature === "number" && options.temperature >= 0 && options.temperature <= 2) {
+// Only set temperature for non-GPT-5 models (GPT-5 only supports default temperature of 1.0)
+if (typeof options.temperature === "number" && options.temperature >= 0 && options.temperature <= 2) {
+  if (!model.includes('gpt-5')) {
     request.temperature = options.temperature;
   }
+  // GPT-5 models automatically use default temperature (1.0)
+}
   
   if (typeof options.top_p === "number" && options.top_p >= 0 && options.top_p <= 1) {
     request.top_p = options.top_p;
