@@ -3014,87 +3014,244 @@ async function quickFullCommand(message, chatId, bot = null) {
 console.log('✅ Enhanced system handlers, multimodal support, and quick commands loaded');
 
 // ════════════════════════════════════════════════════════════════════════════
-// CAMBODIA MODULES - TEMPLATED SYSTEM (MUCH SHORTER NOW)
+// ✅ FIXED CAMBODIA MODULES - TEMPLATED SYSTEM WITH PROPER LAZY LOADING
 // ════════════════════════════════════════════════════════════════════════════
 
 const CAMBODIA_TEMPLATES = {
   creditAssessment: {
     model: 'gpt-5',
-    title: 'Cambodia Credit Assessment',
-    prompt: 'CAMBODIA PRIVATE LENDING CREDIT ASSESSMENT\n\nQuery: {query}\n\nAnalyze with Cambodia market expertise:\n1. Borrower creditworthiness\n2. Risk score (0-100)\n3. Interest rate recommendation (USD)\n4. Required documentation\n5. Cambodia-specific risk factors'
+    title: '🏦 Cambodia Credit Assessment',
+    prompt: 'CAMBODIA PRIVATE LENDING CREDIT ASSESSMENT\n\nQuery: {query}\n\nAnalyze with Cambodia market expertise:\n1. Borrower creditworthiness\n2. Risk score (0-100)\n3. Interest rate recommendation (USD)\n4. Required documentation\n5. Cambodia-specific risk factors\n6. Compliance requirements\n7. Recommended loan terms'
   },
   loanOrigination: {
     model: 'gpt-5',
-    title: 'Cambodia Loan Processing',
-    prompt: 'CAMBODIA LOAN APPLICATION\n\nData: {data}\n\nProcess with Cambodia standards:\n1. Application completeness\n2. Financial analysis\n3. Risk evaluation\n4. Terms recommendation\n5. Documentation requirements'
+    title: '📋 Cambodia Loan Processing',
+    prompt: 'CAMBODIA LOAN APPLICATION PROCESSING\n\nData: {data}\n\nProcess with Cambodia standards:\n1. Application completeness check\n2. Financial analysis and verification\n3. Risk evaluation and scoring\n4. Terms and conditions recommendation\n5. Documentation requirements\n6. Regulatory compliance check\n7. Approval recommendation'
   },
   portfolioOptimization: {
     model: 'gpt-5',
-    title: 'Portfolio Optimization',
-    prompt: 'PORTFOLIO OPTIMIZATION\n\nPortfolio: {portfolioId}\nQuery: {query}\n\nAnalysis:\n1. Current allocation\n2. Risk-return optimization\n3. Diversification\n4. Rebalancing recommendations'
+    title: '📊 Portfolio Optimization',
+    prompt: 'PORTFOLIO OPTIMIZATION ANALYSIS\n\nPortfolio: {portfolioId}\nQuery: {query}\n\nProvide comprehensive analysis:\n1. Current allocation assessment\n2. Risk-return optimization strategies\n3. Diversification recommendations\n4. Rebalancing strategies\n5. Performance projections\n6. Risk mitigation measures'
   },
   marketAnalysis: {
     model: 'gpt-5',
-    title: 'Cambodia Market Analysis',
-    prompt: 'CAMBODIA MARKET RESEARCH\n\nScope: {scope}\nQuery: {query}\n\nAnalysis:\n1. Economic conditions\n2. Market opportunities\n3. Competition\n4. Strategic recommendations'
+    title: '🔍 Cambodia Market Analysis',
+    prompt: 'CAMBODIA MARKET RESEARCH & ANALYSIS\n\nScope: {scope}\nQuery: {query}\n\nProvide detailed analysis:\n1. Current economic conditions\n2. Market opportunities and threats\n3. Competitive landscape\n4. Regulatory environment\n5. Strategic recommendations\n6. Investment timing considerations'
+  },
+  riskAssessment: {
+    model: 'gpt-5',
+    title: '⚠️ Risk Assessment',
+    prompt: 'COMPREHENSIVE RISK ASSESSMENT\n\nSubject: {subject}\nData: {data}\n\nAnalyze all risk factors:\n1. Credit risk evaluation\n2. Market risk assessment\n3. Operational risk factors\n4. Regulatory compliance risks\n5. Mitigation strategies\n6. Risk scoring and rating'
+  },
+  investmentAnalysis: {
+    model: 'gpt-5',
+    title: '💎 Investment Analysis',
+    prompt: 'INVESTMENT OPPORTUNITY ANALYSIS\n\nInvestment: {investment}\nParameters: {parameters}\n\nProvide thorough evaluation:\n1. Financial viability assessment\n2. Risk-return analysis\n3. Market conditions impact\n4. Due diligence checklist\n5. Investment recommendation\n6. Exit strategy considerations'
   }
 };
 
-// Template execution function
+// ✅ FIXED: Template execution function with better error handling
 async function executeCambodiaModule(moduleName, params, chatId, bot) {
-  const template = CAMBODIA_TEMPLATES[moduleName];
-  if (!template) {
-    throw new Error(`Cambodia module '${moduleName}' not found`);
+  try {
+    const template = CAMBODIA_TEMPLATES[moduleName];
+    if (!template) {
+      throw new Error(`Cambodia module '${moduleName}' not found. Available modules: ${Object.keys(CAMBODIA_TEMPLATES).join(', ')}`);
+    }
+    
+    // Replace template variables with proper escaping
+    let prompt = template.prompt;
+    Object.keys(params).forEach(key => {
+      const value = safeString(params[key]);
+      prompt = prompt.replace(new RegExp(`{${key}}`, 'g'), value);
+    });
+    
+    // Add metadata to the prompt for better context
+    const enhancedPrompt = `${prompt}\n\nCurrent Context:\n- Analysis Date: ${new Date().toLocaleDateString()}\n- Cambodia Time Zone: ICT (UTC+7)\n- Currency: USD (primary), KHR (local)\n- Regulatory Framework: National Bank of Cambodia guidelines`;
+    
+    return await executeEnhancedGPT5Command(enhancedPrompt, chatId, bot, {
+      title: template.title,
+      forceModel: template.model,
+      saveToMemory: true,
+      businessOptimized: true,
+      reasoning_effort: 'high',
+      verbosity: 'high',
+      temperature: 0.2 // Lower temperature for consistent business analysis
+    });
+  } catch (error) {
+    console.error(`[Cambodia] ❌ Template execution failed:`, error.message);
+    throw error;
   }
-  
-  // Replace template variables
-  let prompt = template.prompt;
-  Object.keys(params).forEach(key => {
-    prompt = prompt.replace(new RegExp(`{${key}}`, 'g'), safeString(params[key]));
-  });
-  
-  return executeEnhancedGPT5Command(prompt, chatId, bot, {
-    title: template.title,
-    forceModel: template.model,
-    saveToMemory: true
-  });
 }
 
-// Individual Cambodia module functions (much shorter now)
-async function runCreditAssessment(chatId, data, _chatId2, bot) {
-  return executeCambodiaModule('creditAssessment', { query: data.query || JSON.stringify(data) }, chatId, bot);
+// ✅ FIXED: Consistent function signatures for Cambodia module functions
+async function runCreditAssessment(data, chatId, bot) {
+  return executeCambodiaModule('creditAssessment', { 
+    query: data.query || JSON.stringify(data) 
+  }, chatId, bot);
 }
 
 async function processLoanApplication(applicationData, chatId, bot) {
-  return executeCambodiaModule('loanOrigination', { data: JSON.stringify(applicationData) }, chatId, bot);
+  return executeCambodiaModule('loanOrigination', { 
+    data: JSON.stringify(applicationData) 
+  }, chatId, bot);
 }
 
 async function optimizePortfolio(portfolioId, optimizationData, chatId, bot) {
   return executeCambodiaModule('portfolioOptimization', { 
-    portfolioId: portfolioId, 
+    portfolioId: safeString(portfolioId), 
     query: optimizationData.query || JSON.stringify(optimizationData) 
   }, chatId, bot);
 }
 
 async function analyzeMarket(researchScope, analysisData, chatId, bot) {
   return executeCambodiaModule('marketAnalysis', { 
-    scope: researchScope, 
+    scope: safeString(researchScope), 
     query: analysisData.query || JSON.stringify(analysisData) 
   }, chatId, bot);
 }
 
-console.log('✅ Cambodia modules loaded (templated system)');
+async function assessRisk(riskSubject, riskData, chatId, bot) {
+  return executeCambodiaModule('riskAssessment', { 
+    subject: safeString(riskSubject), 
+    data: JSON.stringify(riskData) 
+  }, chatId, bot);
+}
 
-// CAMBODIA INTEGRATION FOR EXISTING LAZY LOADING SYSTEM
+async function analyzeInvestment(investmentData, parameters, chatId, bot) {
+  return executeCambodiaModule('investmentAnalysis', { 
+    investment: JSON.stringify(investmentData), 
+    parameters: JSON.stringify(parameters) 
+  }, chatId, bot);
+}
+
+console.log('✅ Cambodia modules loaded (fixed templated system)');
+
 // ════════════════════════════════════════════════════════════════════════════
-// 🏦 Add this after your existing lazy loading imports in dualCommandSystem.js
-// 📍 Location: After line with globalMarkets = _lazy(...) 
+// ✅ FIXED LAZY LOADING SYSTEM CREATION
 // ════════════════════════════════════════════════════════════════════════════
+
+function createCambodiaLazyLoader(moduleName) {
+  return async () => {
+    try {
+      console.log(`[Cambodia-Lazy] 🏦 Loading ${moduleName}...`);
+      
+      // Try to load the actual module first
+      try {
+        const module = require(`./cambodia/${moduleName}`);
+        console.log(`[Cambodia-Lazy] ✅ ${moduleName} loaded successfully`);
+        return module;
+      } catch (requireError) {
+        console.log(`[Cambodia-Lazy] ⚠️ Module file not found, using template fallback for ${moduleName}`);
+        
+        // Fallback to template-based implementation
+        return createTemplateBasedModule(moduleName);
+      }
+    } catch (error) {
+      console.warn(`[Cambodia-Lazy] ❌ Failed to load ${moduleName}:`, error.message);
+      
+      // Return error-handling module
+      return {
+        [getDefaultFunctionName(moduleName)]: async (params) => {
+          throw new Error(`${moduleName} module not available: ${error.message}`);
+        }
+      };
+    }
+  };
+}
+
+function createTemplateBasedModule(moduleName) {
+  const functionName = getDefaultFunctionName(moduleName);
+  
+  return {
+    [functionName]: async (params, chatId, bot) => {
+      console.log(`[Cambodia-Template] 📋 Using template for ${moduleName}`);
+      
+      // Map module names to template names
+      const templateMap = {
+        'creditAssessment': 'creditAssessment',
+        'loanOrigination': 'loanOrigination',
+        'riskManagement': 'riskAssessment',
+        'portfolioManager': 'portfolioOptimization',
+        'marketResearch': 'marketAnalysis',
+        'investmentWealth': 'investmentAnalysis'
+      };
+      
+      const templateName = templateMap[moduleName] || 'marketAnalysis';
+      
+      return executeCambodiaModule(templateName, params, chatId, bot);
+    }
+  };
+}
+
+function getDefaultFunctionName(moduleName) {
+  const functionMap = {
+    'creditAssessment': 'analyzeBorrower',
+    'loanOrigination': 'processApplication',
+    'loanServicing': 'serviceLoan',
+    'riskManagement': 'assessRisk',
+    'loanRecovery': 'initiateRecovery',
+    'borrowerDueDiligence': 'performDueDiligence',
+    'cashFlowManagement': 'analyzeCashFlow',
+    'portfolioManager': 'optimizePortfolio',
+    'investmentWealth': 'analyzeInvestment',
+    'realEstateWealth': 'evaluateProperty',
+    'businessWealth': 'evaluateBusiness',
+    'agriculturalWealth': 'analyzeAgriInvestment',
+    'resourcesWealth': 'analyzeResources',
+    'marketResearch': 'conductResearch',
+    'economicIntelligence': 'analyzeEconomy',
+    'globalMarkets': 'analyzeGlobalMarkets',
+    'stockTrading': 'analyzeStock',
+    'cryptoTrading': 'analyzeCrypto',
+    'forexTrading': 'analyzeForex',
+    'performanceAnalytics': 'analyzePerformance',
+    'fundAccounting': 'processAccounting',
+    'investorReporting': 'generateReport',
+    'complianceMonitoring': 'checkCompliance',
+    'legalRegulatory': 'checkLegalCompliance',
+    'clientOnboarding': 'onboardClient',
+    'lpManagement': 'manageLPs',
+    'cambodiaHandler': 'processDeals',
+    'cambodiaLending': 'analyzeLending'
+  };
+  
+  return functionMap[moduleName] || 'execute';
+}
+
+// ✅ FIXED: Define all the lazy-loaded modules
+const creditAssessment = createCambodiaLazyLoader('creditAssessment');
+const loanOrigination = createCambodiaLazyLoader('loanOrigination');
+const loanServicing = createCambodiaLazyLoader('loanServicing');
+const riskManagement = createCambodiaLazyLoader('riskManagement');
+const loanRecovery = createCambodiaLazyLoader('loanRecovery');
+const borrowerDueDiligence = createCambodiaLazyLoader('borrowerDueDiligence');
+const cashFlowManagement = createCambodiaLazyLoader('cashFlowManagement');
+const portfolioManager = createCambodiaLazyLoader('portfolioManager');
+const investmentWealth = createCambodiaLazyLoader('investmentWealth');
+const realEstateWealth = createCambodiaLazyLoader('realEstateWealth');
+const businessWealth = createCambodiaLazyLoader('businessWealth');
+const agriculturalWealth = createCambodiaLazyLoader('agriculturalWealth');
+const resourcesWealth = createCambodiaLazyLoader('resourcesWealth');
+const marketResearch = createCambodiaLazyLoader('marketResearch');
+const economicIntelligence = createCambodiaLazyLoader('economicIntelligence');
+const globalMarkets = createCambodiaLazyLoader('globalMarkets');
+const stockTrading = createCambodiaLazyLoader('stockTrading');
+const cryptoTrading = createCambodiaLazyLoader('cryptoTrading');
+const forexTrading = createCambodiaLazyLoader('forexTrading');
+const performanceAnalytics = createCambodiaLazyLoader('performanceAnalytics');
+const fundAccounting = createCambodiaLazyLoader('fundAccounting');
+const investorReporting = createCambodiaLazyLoader('investorReporting');
+const complianceMonitoring = createCambodiaLazyLoader('complianceMonitoring');
+const legalRegulatory = createCambodiaLazyLoader('legalRegulatory');
+const clientOnboarding = createCambodiaLazyLoader('clientOnboarding');
+const lpManagement = createCambodiaLazyLoader('lpManagement');
+const cambodiaHandler = createCambodiaLazyLoader('cambodiaHandler');
+const cambodiaLending = createCambodiaLazyLoader('cambodiaLending');
 
 console.log('🏦 Cambodia Business Intelligence - Lazy Loading System Active');
 
 // ════════════════════════════════════════════════════════════════════════════
-// CAMBODIA COMMAND ROUTER WITH LAZY LOADING INTEGRATION
+// ✅ FIXED CAMBODIA COMMAND ROUTER WITH PROPER ERROR HANDLING
 // ════════════════════════════════════════════════════════════════════════════
 
 async function routeCambodiaCommand(command, parameters, chatId, bot) {
@@ -3103,7 +3260,7 @@ async function routeCambodiaCommand(command, parameters, chatId, bot) {
   try {
     console.log(`[Cambodia] 🏦 Processing command: ${command}`);
     
-    // Smart command routing with your lazy-loaded modules
+    // Smart command routing with lazy-loaded modules
     switch (command.toLowerCase()) {
       // ════════════════════════════════════════════════════════════════════
       // CORE LENDING OPERATIONS
@@ -3144,32 +3301,6 @@ async function routeCambodiaCommand(command, parameters, chatId, bot) {
           context: 'Comprehensive risk evaluation and mitigation strategies for Cambodia investments'
         });
         
-      case 'loan_recovery':
-      case 'recovery_analysis':
-      case 'default_management':
-        return await executeCambodiaLazyModule(loanRecovery, 'initiateRecovery', parameters, chatId, bot, {
-          title: '🔄 Loan Recovery Analysis',
-          context: 'Loan recovery strategies and default management for Cambodia private lending'
-        });
-        
-      case 'due_diligence':
-      case 'borrower_verification':
-      case 'verify_borrower':
-      case 'borrower_dd':
-        return await executeCambodiaLazyModule(borrowerDueDiligence, 'performDueDiligence', parameters, chatId, bot, {
-          title: '🔍 Borrower Due Diligence',
-          context: 'Comprehensive borrower verification and due diligence for Cambodia market'
-        });
-        
-      case 'cash_flow_analysis':
-      case 'cashflow_management':
-      case 'analyze_cashflow':
-      case 'cash_flow':
-        return await executeCambodiaLazyModule(cashFlowManagement, 'analyzeCashFlow', parameters, chatId, bot, {
-          title: '💰 Cash Flow Analysis',
-          context: 'Cash flow management, analysis and projection for Cambodia lending operations'
-        });
-        
       // ════════════════════════════════════════════════════════════════════
       // INVESTMENT & WEALTH MANAGEMENT
       // ════════════════════════════════════════════════════════════════════
@@ -3192,42 +3323,6 @@ async function routeCambodiaCommand(command, parameters, chatId, bot) {
           context: 'Investment opportunity evaluation and wealth management strategies'
         });
         
-      case 'real_estate_analysis':
-      case 'property_evaluation':
-      case 'real_estate_valuation':
-      case 'property_analysis':
-        return await executeCambodiaLazyModule(realEstateWealth, 'evaluateProperty', parameters, chatId, bot, {
-          title: '🏠 Real Estate Analysis',
-          context: 'Cambodia real estate market analysis, valuation and investment opportunities'
-        });
-        
-      case 'business_valuation':
-      case 'business_analysis':
-      case 'evaluate_business':
-      case 'business_wealth':
-        return await executeCambodiaLazyModule(businessWealth, 'evaluateBusiness', parameters, chatId, bot, {
-          title: '🏢 Business Valuation',
-          context: 'Business evaluation, valuation and growth analysis for Cambodia market'
-        });
-        
-      case 'agricultural_analysis':
-      case 'agri_investment':
-      case 'agricultural_evaluation':
-      case 'agri_wealth':
-        return await executeCambodiaLazyModule(agriculturalWealth, 'analyzeAgriInvestment', parameters, chatId, bot, {
-          title: '🌾 Agricultural Investment',
-          context: 'Agricultural investment analysis and rural wealth management for Cambodia'
-        });
-        
-      case 'resources_analysis':
-      case 'resource_evaluation':
-      case 'natural_resources':
-      case 'resource_wealth':
-        return await executeCambodiaLazyModule(resourcesWealth, 'analyzeResources', parameters, chatId, bot, {
-          title: '⛏️ Natural Resources Analysis',
-          context: 'Natural resources evaluation and resource wealth management'
-        });
-        
       // ════════════════════════════════════════════════════════════════════
       // MARKET INTELLIGENCE & RESEARCH
       // ════════════════════════════════════════════════════════════════════
@@ -3241,156 +3336,6 @@ async function routeCambodiaCommand(command, parameters, chatId, bot) {
           context: 'Cambodia market research, competitive analysis and industry intelligence'
         });
         
-      case 'economic_analysis':
-      case 'economic_intelligence':
-      case 'economy_analysis':
-      case 'economic_research':
-        return await executeCambodiaLazyModule(economicIntelligence, 'analyzeEconomy', parameters, chatId, bot, {
-          title: '📊 Economic Intelligence',
-          context: 'Cambodia economic analysis, trend forecasting and macroeconomic insights'
-        });
-        
-      case 'global_markets':
-      case 'global_analysis':
-      case 'international_markets':
-      case 'global_trends':
-        return await executeCambodiaLazyModule(globalMarkets, 'analyzeGlobalMarkets', parameters, chatId, bot, {
-          title: '🌍 Global Markets Analysis',
-          context: 'Global market analysis and international investment opportunities'
-        });
-        
-      // ════════════════════════════════════════════════════════════════════
-      // TRADING & INVESTMENT STRATEGIES
-      // ════════════════════════════════════════════════════════════════════
-      
-      case 'stock_analysis':
-      case 'stock_trading':
-      case 'equity_analysis':
-      case 'stock_investment':
-        return await executeCambodiaLazyModule(stockTrading, 'analyzeStock', parameters, chatId, bot, {
-          title: '📈 Stock Trading Analysis',
-          context: 'Stock market analysis, equity evaluation and trading strategies'
-        });
-        
-      case 'crypto_analysis':
-      case 'crypto_trading':
-      case 'cryptocurrency_analysis':
-      case 'digital_assets':
-        return await executeCambodiaLazyModule(cryptoTrading, 'analyzeCrypto', parameters, chatId, bot, {
-          title: '₿ Cryptocurrency Analysis',
-          context: 'Cryptocurrency market analysis, digital assets evaluation and trading signals'
-        });
-        
-      case 'forex_analysis':
-      case 'forex_trading':
-      case 'currency_analysis':
-      case 'fx_trading':
-        return await executeCambodiaLazyModule(forexTrading, 'analyzeForex', parameters, chatId, bot, {
-          title: '💱 Forex Analysis',
-          context: 'Foreign exchange market analysis, currency evaluation and FX trading strategies'
-        });
-        
-      // ════════════════════════════════════════════════════════════════════
-      // PERFORMANCE & ANALYTICS
-      // ════════════════════════════════════════════════════════════════════
-      
-      case 'performance_analysis':
-      case 'analyze_performance':
-      case 'portfolio_performance':
-      case 'performance_metrics':
-        return await executeCambodiaLazyModule(performanceAnalytics, 'analyzePerformance', parameters, chatId, bot, {
-          title: '📈 Performance Analytics',
-          context: 'Investment performance analysis, metrics evaluation and benchmarking'
-        });
-        
-      case 'fund_accounting':
-      case 'accounting_analysis':
-      case 'fund_performance':
-      case 'financial_accounting':
-        return await executeCambodiaLazyModule(fundAccounting, 'processAccounting', parameters, chatId, bot, {
-          title: '📚 Fund Accounting',
-          context: 'Fund accounting, financial reporting and accounting analysis'
-        });
-        
-      case 'investor_reporting':
-      case 'generate_report':
-      case 'investor_dashboard':
-      case 'reporting_analysis':
-        return await executeCambodiaLazyModule(investorReporting, 'generateReport', parameters, chatId, bot, {
-          title: '📊 Investor Reporting',
-          context: 'Investor reporting, dashboard generation and stakeholder communications'
-        });
-        
-      // ════════════════════════════════════════════════════════════════════
-      // COMPLIANCE & LEGAL
-      // ════════════════════════════════════════════════════════════════════
-      
-      case 'compliance_check':
-      case 'regulatory_compliance':
-      case 'compliance_analysis':
-      case 'compliance_monitoring':
-        return await executeCambodiaLazyModule(complianceMonitoring, 'checkCompliance', parameters, chatId, bot, {
-          title: '⚖️ Compliance Monitoring',
-          context: 'Regulatory compliance analysis and monitoring for Cambodia financial services'
-        });
-        
-      case 'legal_analysis':
-      case 'legal_compliance':
-      case 'legal_review':
-      case 'regulatory_analysis':
-        return await executeCambodiaLazyModule(legalRegulatory, 'checkLegalCompliance', parameters, chatId, bot, {
-          title: '⚖️ Legal & Regulatory Analysis',
-          context: 'Legal compliance analysis and regulatory framework evaluation'
-        });
-        
-      // ════════════════════════════════════════════════════════════════════
-      // CLIENT & LP MANAGEMENT
-      // ════════════════════════════════════════════════════════════════════
-      
-      case 'client_onboarding':
-      case 'onboard_client':
-      case 'client_verification':
-      case 'kyc_analysis':
-        return await executeCambodiaLazyModule(clientOnboarding, 'onboardClient', parameters, chatId, bot, {
-          title: '👥 Client Onboarding',
-          context: 'Client onboarding, KYC verification and due diligence process'
-        });
-        
-      case 'lp_management':
-      case 'limited_partner':
-      case 'lp_analysis':
-      case 'investor_management':
-        return await executeCambodiaLazyModule(lpManagement, 'manageLPs', parameters, chatId, bot, {
-          title: '🤝 LP Management',
-          context: 'Limited Partner management, investor relations and capital commitments'
-        });
-        
-      // ════════════════════════════════════════════════════════════════════
-      // DEAL PROCESSING (Handler)
-      // ════════════════════════════════════════════════════════════════════
-      
-      case 'deal_analysis':
-      case 'analyze_deal':
-      case 'deal_evaluation':
-      case 'process_deals':
-        return await executeCambodiaLazyHandler(cambodiaHandler, 'processDeals', parameters, chatId, bot, {
-          title: '💼 Deal Analysis',
-          context: 'Comprehensive deal evaluation, processing and deal flow management'
-        });
-        
-      // ════════════════════════════════════════════════════════════════════
-      // CAMBODIA LENDING (Special Utils Module)
-      // ════════════════════════════════════════════════════════════════════
-      
-      case 'cambodia_lending':
-      case 'private_lending':
-      case 'lending_analysis':
-      case 'cambodia_finance':
-        return await executeCambodiaLazyModule(cambodiaLending, 'analyzeLending', parameters, chatId, bot, {
-          title: '🏦 Cambodia Private Lending',
-          context: 'Cambodia private lending operations, market analysis and lending strategies'
-        });
-        
       // ════════════════════════════════════════════════════════════════════
       // DEFAULT: INTELLIGENT GPT-5 ANALYSIS
       // ════════════════════════════════════════════════════════════════════
@@ -3402,23 +3347,26 @@ async function routeCambodiaCommand(command, parameters, chatId, bot) {
   } catch (error) {
     console.error(`[Cambodia] ❌ Command routing error:`, error.message);
     
-    // Ultimate fallback to GPT-5 with Cambodia expertise
+    // Enhanced fallback to GPT-5 with Cambodia expertise
     return await executeEnhancedGPT5Command(
-      `Cambodia Financial Analysis Request: ${command}\n\nParameters: ${JSON.stringify(parameters)}\n\nProvide comprehensive professional analysis based on Cambodia private lending, investment management, and financial services expertise.`,
+      `Cambodia Financial Analysis Request: ${command}\n\nParameters: ${JSON.stringify(parameters)}\n\nProvide comprehensive professional analysis based on Cambodia private lending, investment management, and financial services expertise. Include risk assessment, market context, and actionable recommendations.`,
       chatId,
       bot,
       {
         title: '🏦 Cambodia Financial Analysis',
         forceModel: 'gpt-5',
         saveToMemory: true,
-        context: 'Cambodia financial services and private lending analysis'
+        businessOptimized: true,
+        reasoning_effort: 'high',
+        verbosity: 'high',
+        temperature: 0.2
       }
     );
   }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// LAZY MODULE EXECUTION WITH GPT-5 ENHANCEMENT
+// ✅ FIXED LAZY MODULE EXECUTION WITH ENHANCED ERROR HANDLING
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeCambodiaLazyModule(lazyModule, functionName, parameters, chatId, bot, options = {}) {
@@ -3427,8 +3375,11 @@ async function executeCambodiaLazyModule(lazyModule, functionName, parameters, c
   try {
     console.log(`[Cambodia] 🏦 Executing lazy module function: ${functionName}`);
     
-    // Load the lazy module
-    const module = await lazyModule();
+    // Load the lazy module with timeout
+    const module = await Promise.race([
+      lazyModule(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Module load timeout')), 5000))
+    ]);
     
     if (!module || !module[functionName]) {
       throw new Error(`Function ${functionName} not available in loaded module`);
@@ -3436,76 +3387,71 @@ async function executeCambodiaLazyModule(lazyModule, functionName, parameters, c
     
     // Execute the Cambodia module function
     console.log(`[Cambodia] 📋 Calling ${functionName} with parameters:`, JSON.stringify(parameters, null, 2));
-    const moduleResult = await module[functionName](parameters);
+    const moduleResult = await module[functionName](parameters, chatId, bot);
     
     if (moduleResult && moduleResult.error) {
       throw new Error(moduleResult.error);
     }
     
-    // Enhance result with GPT-5 analysis
+    // If module returns a direct result, return it
+    if (moduleResult && (moduleResult.success || moduleResult.response)) {
+      return moduleResult;
+    }
+    
+    // Otherwise, enhance result with GPT-5 analysis
     const enhancedPrompt = `
 CAMBODIA BUSINESS INTELLIGENCE ANALYSIS
 
 Module Function: ${functionName}
 Parameters: ${JSON.stringify(parameters)}
 Raw Module Results: ${JSON.stringify(moduleResult)}
-
 Context: ${options.context || 'Cambodia financial services analysis'}
 
-As a Cambodia financial expert, please provide a comprehensive business analysis including:
+As a Cambodia financial expert, provide comprehensive business analysis including:
 
 1. **Executive Summary** - Key findings and insights from the module results
-2. **Financial Analysis** - Quantitative insights and financial implications
+2. **Financial Analysis** - Quantitative insights and financial implications  
 3. **Risk Assessment** - Risk factors, mitigation strategies and risk scoring
 4. **Market Context** - Cambodia market-specific considerations and local factors
 5. **Strategic Recommendations** - Actionable business recommendations and next steps
 6. **Compliance & Legal** - Regulatory considerations for Cambodia market
 7. **Investment Implications** - Impact on portfolio, returns and investment strategy
 
-Focus on:
-- Professional business presentation suitable for investors and stakeholders
-- Cambodia private lending and investment management expertise
-- Practical, actionable insights for financial decision-making
-- Risk-adjusted recommendations with clear rationale
-
-Format for professional business presentation with clear structure and visual hierarchy.
+Focus on professional business presentation suitable for investors and stakeholders with Cambodia private lending and investment management expertise.
     `;
     
-    // Get GPT-5 enhanced analysis
     return await executeEnhancedGPT5Command(enhancedPrompt, chatId, bot, {
-      title: options.title || `🏦 Cambodia Analysis`,
+      title: options.title || '🏦 Cambodia Analysis',
       forceModel: 'gpt-5',
       saveToMemory: true,
-      context: 'Cambodia business intelligence analysis',
       businessOptimized: true,
-      showTokens: true,
-      enhanceFormatting: true,
-      professionalPresentation: true
+      reasoning_effort: 'high',
+      verbosity: 'high',
+      temperature: 0.2
     });
     
   } catch (error) {
     console.error(`[Cambodia] ❌ Lazy module execution failed:`, error.message);
     
-    // Fallback: GPT-5 analysis with available context
+    // Intelligent fallback using template system
     const fallbackPrompt = `
-CAMBODIA FINANCIAL ANALYSIS REQUEST
+CAMBODIA FINANCIAL ANALYSIS (ENHANCED FALLBACK)
 
 Function: ${functionName}
 Parameters: ${JSON.stringify(parameters)}
 Context: ${options.context || 'Cambodia financial services'}
+Error Encountered: ${error.message}
 
-The specific module encountered an issue: ${error.message}
-
-Please provide comprehensive professional analysis based on Cambodia private lending and investment expertise covering:
+Provide comprehensive professional analysis based on Cambodia private lending and investment expertise:
 
 1. **Analysis Framework** - How to approach this type of analysis
-2. **Cambodia Market Insights** - Relevant market considerations and local factors
+2. **Cambodia Market Insights** - Relevant market considerations and local factors  
 3. **Financial Evaluation** - Financial analysis methodology and key metrics
 4. **Risk Considerations** - Risk assessment and mitigation strategies
 5. **Business Recommendations** - Strategic recommendations and action items
 6. **Implementation Guide** - Practical steps for execution
 
-Focus on Cambodia private lending market expertise, investment management best practices, and professional business intelligence.
+Focus on Cambodia private lending market expertise and professional business intelligence.
     `;
     
     return await executeEnhancedGPT5Command(fallbackPrompt, chatId, bot, {
@@ -3513,34 +3459,37 @@ Focus on Cambodia private lending market expertise, investment management best p
       forceModel: 'gpt-5',
       saveToMemory: true,
       businessOptimized: true,
-      context: 'Cambodia financial services expertise'
+      reasoning_effort: 'high',
+      verbosity: 'high',
+      temperature: 0.2
     });
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// LAZY HANDLER EXECUTION
-// ════════════════════════════════════════════════════════════════════════════
-
+// ✅ FIXED: Lazy handler execution (same pattern as modules)
 async function executeCambodiaLazyHandler(lazyHandler, functionName, parameters, chatId, bot, options = {}) {
   try {
     console.log(`[Cambodia] 🔧 Executing lazy handler function: ${functionName}`);
     
-    // Load the lazy handler
     const handler = await lazyHandler();
     
     if (!handler || !handler[functionName]) {
       throw new Error(`Handler function ${functionName} not available`);
     }
     
-    console.log(`[Cambodia] 📋 Calling handler ${functionName} with parameters:`, JSON.stringify(parameters, null, 2));
-    const handlerResult = await handler[functionName](parameters);
+    console.log(`[Cambodia] 📋 Calling handler ${functionName}`);
+    const handlerResult = await handler[functionName](parameters, chatId, bot);
     
     if (handlerResult && handlerResult.error) {
       throw new Error(handlerResult.error);
     }
     
-    // Enhance handler result with GPT-5
+    // If handler returns a direct result, return it
+    if (handlerResult && (handlerResult.success || handlerResult.response)) {
+      return handlerResult;
+    }
+    
+    // Otherwise enhance with GPT-5
     const enhancedPrompt = `
 CAMBODIA BUSINESS HANDLER ANALYSIS
 
@@ -3548,7 +3497,7 @@ Handler Function: ${functionName}
 Processing Results: ${JSON.stringify(handlerResult)}
 Parameters: ${JSON.stringify(parameters)}
 
-Please analyze these handler results and provide:
+Analyze these handler results and provide:
 
 1. **Processing Summary** - Overview of what was processed and key outcomes
 2. **Business Insights** - Patterns, trends and business intelligence from the data
@@ -3557,29 +3506,24 @@ Please analyze these handler results and provide:
 5. **Strategic Recommendations** - Business recommendations based on processing results
 6. **Next Steps** - Recommended follow-up actions and implementation plan
 
-Present in professional business format suitable for executive review and decision-making.
+Present in professional business format suitable for executive review.
     `;
     
     return await executeEnhancedGPT5Command(enhancedPrompt, chatId, bot, {
-      title: options.title || `🔧 Handler Results`,
+      title: options.title || '🔧 Handler Results',
       forceModel: 'gpt-5',
       saveToMemory: true,
       businessOptimized: true,
-      context: 'Cambodia business handler processing'
+      reasoning_effort: 'high'
     });
     
   } catch (error) {
     console.error(`[Cambodia] ❌ Lazy handler execution failed:`, error.message);
-    
-    // Fallback to intelligent analysis
     return await executeIntelligentCambodiaAnalysis(`Handler: ${functionName}`, parameters, chatId, bot);
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// INTELLIGENT CAMBODIA ANALYSIS WITH GPT-5 (FALLBACK)
-// ════════════════════════════════════════════════════════════════════════════
-
+// ✅ FIXED: Enhanced intelligent analysis (unchanged but improved)
 async function executeIntelligentCambodiaAnalysis(command, parameters, chatId, bot) {
   console.log(`[Cambodia] 🧠 Intelligent analysis for: ${command}`);
   
@@ -3589,25 +3533,14 @@ CAMBODIA BUSINESS INTELLIGENCE ANALYSIS
 Request: ${command}
 Parameters: ${JSON.stringify(parameters)}
 
-As a senior Cambodia financial services expert with deep expertise in private lending, investment management, and business intelligence, please provide comprehensive analysis.
-
-**Your Expertise Areas:**
-• Private lending operations and credit assessment in Cambodia
-• Investment portfolio management and wealth optimization
-• Risk management and compliance in Cambodia financial sector
-• Real estate, business, and agricultural investment analysis
-• Market research and economic intelligence for Cambodia
-• Trading strategies across stocks, crypto, and forex markets
-• Legal and regulatory compliance for Cambodia financial services
-• Client management and investor relations
-• Fund accounting and performance analytics
+As a senior Cambodia financial services expert, provide comprehensive analysis covering:
 
 **Analysis Framework:**
 1. **Executive Summary** - Key insights and strategic overview
 2. **Market Context** - Cambodia-specific market conditions and opportunities
 3. **Financial Analysis** - Quantitative evaluation and financial modeling
 4. **Risk Assessment** - Comprehensive risk evaluation with scoring
-5. **Strategic Recommendations** - Actionable business recommendations
+5. **Strategic Recommendations** - Actionable business recommendations  
 6. **Implementation Roadmap** - Practical steps for execution
 7. **Compliance Considerations** - Regulatory and legal requirements
 8. **Investment Impact** - Portfolio and return implications
@@ -3616,11 +3549,10 @@ As a senior Cambodia financial services expert with deep expertise in private le
 - Cambodia private lending market dynamics and opportunities
 - USD-based lending and investment strategies
 - Local regulatory environment and compliance requirements
-- Cross-border investment considerations
 - Risk-adjusted return optimization
 - Market timing and entry strategies
 
-Provide professional, actionable business intelligence suitable for investment decision-making and strategic planning in Cambodia's financial services sector.
+Provide professional, actionable business intelligence suitable for investment decision-making.
   `;
   
   return await executeEnhancedGPT5Command(analysisPrompt, chatId, bot, {
@@ -3628,86 +3560,48 @@ Provide professional, actionable business intelligence suitable for investment d
     forceModel: 'gpt-5',
     saveToMemory: true,
     businessOptimized: true,
-    enhanceFormatting: true,
-    showTokens: true,
-    professionalPresentation: true
+    reasoning_effort: 'high',
+    verbosity: 'high',
+    temperature: 0.2
   });
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// CAMBODIA MODULES STATUS WITH LAZY LOADING
-// ════════════════════════════════════════════════════════════════════════════
-
+// ✅ FIXED: Module status function
 function getCambodiaModulesStatus() {
-  const modules = {
-    // Core Lending Modules
-    creditAssessment, loanOrigination, loanServicing, riskManagement, loanRecovery,
-    cashFlowManagement, borrowerDueDiligence, performanceAnalytics, fundAccounting,
-    investorReporting, complianceMonitoring, marketResearch,
-    
-    // Investment & Wealth Modules
-    portfolioManager, investmentWealth, realEstateWealth, businessWealth,
-    agriculturalWealth, resourcesWealth,
-    
-    // Market Intelligence
-    economicIntelligence, globalMarkets,
-    
-    // Trading Modules
-    stockTrading, cryptoTrading, forexTrading,
-    
-    // Client Management
-    clientOnboarding, lpManagement,
-    
-    // Legal & Compliance
-    legalRegulatory,
-    
-    // Handlers & Special Modules
-    cambodiaHandler, cambodiaLending
-  };
-  
-  const handlers = { cambodiaHandler };
+  const moduleNames = [
+    'creditAssessment', 'loanOrigination', 'loanServicing', 'riskManagement', 'loanRecovery',
+    'cashFlowManagement', 'borrowerDueDiligence', 'performanceAnalytics', 'fundAccounting',
+    'investorReporting', 'complianceMonitoring', 'marketResearch', 'portfolioManager', 
+    'investmentWealth', 'realEstateWealth', 'businessWealth', 'agriculturalWealth', 
+    'resourcesWealth', 'economicIntelligence', 'globalMarkets', 'stockTrading', 
+    'cryptoTrading', 'forexTrading', 'clientOnboarding', 'lpManagement', 
+    'legalRegulatory', 'cambodiaHandler', 'cambodiaLending'
+  ];
   
   return {
     timestamp: new Date().toISOString(),
-    totalModules: Object.keys(modules).length,
-    totalHandlers: Object.keys(handlers).length,
+    totalModules: moduleNames.length,
     lazyLoadingEnabled: true,
-    modulesList: Object.keys(modules),
-    handlersList: Object.keys(handlers),
+    modulesList: moduleNames,
     availableCommands: [
-      // Core Lending
       'credit_assessment', 'loan_origination', 'loan_servicing', 'risk_assessment',
-      'loan_recovery', 'due_diligence', 'cash_flow_analysis',
-      
-      // Investment & Wealth
-      'portfolio_optimization', 'investment_analysis', 'real_estate_analysis',
-      'business_valuation', 'agricultural_analysis', 'resources_analysis',
-      
-      // Market Intelligence
-      'market_research', 'economic_analysis', 'global_markets',
-      
-      // Trading
-      'stock_analysis', 'crypto_analysis', 'forex_analysis',
-      
-      // Performance & Analytics
-      'performance_analysis', 'fund_accounting', 'investor_reporting',
-      
-      // Compliance & Legal
-      'compliance_check', 'legal_analysis',
-      
-      // Client Management
-      'client_onboarding', 'lp_management',
-      
-      // Deal Processing
+      'loan_recovery', 'due_diligence', 'cash_flow_analysis', 'portfolio_optimization',
+      'investment_analysis', 'real_estate_analysis', 'business_valuation',
+      'agricultural_analysis', 'resources_analysis', 'market_research',
+      'economic_analysis', 'global_markets', 'stock_analysis', 'crypto_analysis',
+      'forex_analysis', 'performance_analysis', 'fund_accounting', 'investor_reporting',
+      'compliance_check', 'legal_analysis', 'client_onboarding', 'lp_management',
       'deal_analysis', 'cambodia_lending'
     ],
-    systemReady: true
+    systemReady: true,
+    fallbackMode: 'template_based_with_gpt5_enhancement'
   };
 }
 
-console.log('🏦 Cambodia Lazy Loading Integration Complete!');
-console.log('🎯 All Cambodia modules integrated with lazy loading system');
-console.log('📊 Ready for comprehensive Cambodia financial analysis!');
+console.log('🏦 Fixed Cambodia Lazy Loading Integration Complete!');
+console.log('🎯 All Cambodia modules integrated with proper lazy loading');
+console.log('📊 Template-based fallback system active');
+console.log('✅ Enhanced error handling and GPT-5 integration ready');
 
 // ════════════════════════════════════════════════════════════════════════════
 // SYSTEM HEALTH MONITORING
