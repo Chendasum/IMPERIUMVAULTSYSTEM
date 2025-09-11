@@ -1341,7 +1341,7 @@ async function saveMemoryIfNeeded(chatId, userMessage, response, messageType, me
   }
 }
 // ════════════════════════════════════════════════════════════════════════════
-// GPT-5 EXECUTION WITH FALLBACK SYSTEM (FIXED API PARAMETERS)
+// ✅ CORRECTED GPT-5 EXECUTION WITH PROPER API PARAMETERS
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeThroughGPT5System(userMessage, queryAnalysis, context = null, chatId = null) {
@@ -1382,29 +1382,28 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
       enhancedMessage += `\n\n${safeSubstring(safeContext, 0, maxContextLength)}`;
     }
     
-    // 🔧 FIXED: Build options with correct GPT-5 API parameter structure
+    // ✅ CORRECTED: Build options with proper GPT-5 API parameters
     const options = { model: queryAnalysis.gpt5Model };
     
-    if (queryAnalysis.gpt5Model === CONFIG.MODELS.CHAT) {
-      // Chat API uses max_completion_tokens (FIXED: was using max_tokens)
-      if (queryAnalysis.max_completion_tokens) {
-        options.max_completion_tokens = queryAnalysis.max_completion_tokens;
-      }
-      options.temperature = 0.7;
-    } else {
-      // Responses API uses nested parameter structure (FIXED)
-      if (queryAnalysis.reasoning_effort) {
-        options.reasoning = { effort: queryAnalysis.reasoning_effort };  // ← FIXED: nested structure
-      }
-      if (queryAnalysis.verbosity) {
-        options.text = { verbosity: queryAnalysis.verbosity };  // ← FIXED: nested structure
-      }
-      if (queryAnalysis.max_completion_tokens) {
-        options.max_output_tokens = queryAnalysis.max_completion_tokens;  // ← FIXED: correct parameter name
-      }
+    // ✅ ALL GPT-5 models use standard Chat Completions API parameters
+    if (queryAnalysis.max_completion_tokens) {
+      options.max_completion_tokens = queryAnalysis.max_completion_tokens;
     }
     
-    console.log(`[GPT-5] 📋 API options:`, JSON.stringify(options, null, 2));
+    // ✅ Standard Chat Completions parameters (supported by all GPT-5 models)
+    options.temperature = queryAnalysis.priority === 'speed' ? 0.3 : 
+                         queryAnalysis.priority === 'complex' ? 0.1 : 0.7;
+    
+    // ✅ GPT-5 specific parameters (if supported by your openaiClient)
+    if (queryAnalysis.reasoning_effort) {
+      options.reasoning_effort = queryAnalysis.reasoning_effort;  // ← FLAT structure, not nested
+    }
+    
+    if (queryAnalysis.verbosity) {
+      options.verbosity = queryAnalysis.verbosity;  // ← FLAT structure, not nested
+    }
+    
+    console.log(`[GPT-5] 📋 CORRECTED API options:`, JSON.stringify(options, null, 2));
     
     // Execute GPT-5 API call
     const result = await openaiClient.getGPT5Analysis(enhancedMessage, options);
@@ -1438,7 +1437,7 @@ async function executeThroughGPT5System(userMessage, queryAnalysis, context = nu
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// FALLBACK SYSTEM WITH FIXED API PARAMETERS
+// ✅ CORRECTED FALLBACK SYSTEM WITH PROPER API PARAMETERS
 // ════════════════════════════════════════════════════════════════════════════
 
 async function executeGPT5Fallback(userMessage, queryAnalysis, context, originalProcessingTime, originalError) {
@@ -1446,9 +1445,9 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
   const fallbackStart = Date.now();
   
   const fallbackModels = [
-    { model: CONFIG.MODELS.NANO, reasoning: 'minimal', verbosity: 'low' },
-    { model: CONFIG.MODELS.MINI, reasoning: 'low', verbosity: 'medium' },
-    { model: CONFIG.MODELS.CHAT, reasoning: null, verbosity: null }
+    { model: CONFIG.MODELS.NANO, reasoning: 'minimal', verbosity: 'low', temp: 0.5 },
+    { model: CONFIG.MODELS.MINI, reasoning: 'low', verbosity: 'medium', temp: 0.7 },
+    { model: CONFIG.MODELS.FULL, reasoning: 'medium', verbosity: 'medium', temp: 0.7 }
   ];
   
   let enhancedMessage = safeString(userMessage);
@@ -1460,25 +1459,23 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
     try {
       console.log(`[GPT-5] 🔄 Trying fallback: ${fallback.model}`);
       
-      // 🔧 FIXED: Use correct parameter structure for each model type
-      const options = { model: fallback.model };
+      // ✅ CORRECTED: Use standard Chat Completions API parameters for all models
+      const options = {
+        model: fallback.model,
+        temperature: fallback.temp,
+        max_completion_tokens: Math.min(6000, CONFIG.TOKEN_LIMITS.MINI_MAX)
+      };
       
-      if (fallback.model === CONFIG.MODELS.CHAT) {
-        // Chat API parameters (FIXED)
-        options.temperature = 0.7;
-        options.max_completion_tokens = CONFIG.TOKEN_LIMITS.CHAT_MAX;  // ← FIXED: correct parameter
-      } else {
-        // Responses API parameters with nested structure (FIXED)
-        if (fallback.reasoning) {
-          options.reasoning = { effort: fallback.reasoning };  // ← FIXED: nested structure
-        }
-        if (fallback.verbosity) {
-          options.text = { verbosity: fallback.verbosity };  // ← FIXED: nested structure
-        }
-        options.max_output_tokens = Math.min(6000, CONFIG.TOKEN_LIMITS.MINI_MAX);  // ← FIXED: correct parameter
+      // ✅ Add GPT-5 specific parameters (flat structure, not nested)
+      if (fallback.reasoning) {
+        options.reasoning_effort = fallback.reasoning;  // ← FLAT, not nested
       }
       
-      console.log(`[GPT-5] 📋 Fallback options for ${fallback.model}:`, JSON.stringify(options, null, 2));
+      if (fallback.verbosity) {
+        options.verbosity = fallback.verbosity;  // ← FLAT, not nested
+      }
+      
+      console.log(`[GPT-5] 📋 CORRECTED fallback options for ${fallback.model}:`, JSON.stringify(options, null, 2));
       
       const result = await openaiClient.getGPT5Analysis(enhancedMessage, options);
       const totalTime = originalProcessingTime + (Date.now() - fallbackStart);
@@ -1515,7 +1512,7 @@ async function executeGPT5Fallback(userMessage, queryAnalysis, context, original
   throw new Error(`All GPT-5 models failed. Original: ${originalError?.message}. Please try again with a simpler question.`);
 }
 
-console.log('✅ GPT-5 execution engine loaded with fixed API parameters');
+console.log('✅ GPT-5 execution engine loaded with CORRECTED API parameters');
 
 // ════════════════════════════════════════════════════════════════════════════
 // MAIN TELEGRAM MESSAGE HANDLER (CONNECTS TO YOUR INDEX.JS)
