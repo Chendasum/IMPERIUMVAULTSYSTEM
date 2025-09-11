@@ -2492,6 +2492,19 @@ async function handleSystemCommand(command, chatId, bot, baseOptions) {
         'Explain available features and how to use this GPT-5 system effectively. Include information about: GPT-5 models (nano, mini, full), memory system integration, multimodal support (images, documents, voice), ultimate telegram formatting, duplicate protection, system commands like /health, /status, /test_memory, /debug, and Cambodia business modules.',
         chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: '📖 Help Guide', saveToMemory: false }
       );
+
+case '/test_gpt5_params':
+case '/test_parameters':
+  try {
+    await testGPT5Parameters(chatId, bot);
+    const testMsg = `🧪 GPT-5 Parameter Test Completed!\n\nCheck the console logs for detailed results.`;
+    await bot.sendMessage(chatId, testMsg);
+    return { success: true, response: testMsg };
+  } catch (testError) {
+    const errorMsg = `❌ Parameter test failed: ${testError.message}`;
+    await bot.sendMessage(chatId, errorMsg);
+    return { success: false, error: testError.message };
+  }
       
     case '/health':
       try {
@@ -2539,6 +2552,7 @@ async function handleSystemCommand(command, chatId, bot, baseOptions) {
           chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: '📊 System Status', saveToMemory: false }
         );
       }
+      
       
     // ✅ NEW: Memory testing command
     case '/test_memory':
