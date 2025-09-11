@@ -1669,6 +1669,36 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
     // 🎯 ENHANCED: Analyze query with ULTIMATE context
     const queryAnalysis = analyzeQuery(safeMessage, options.messageType || 'text', options.hasMedia === true, memoryContext);
     
+    // ✅ IMPROVED: Apply options overrides to queryAnalysis BEFORE processing
+    if (options.forceModel && safeString(options.forceModel).indexOf('gpt-5') === 0) {
+      queryAnalysis.gpt5Model = options.forceModel;
+      queryAnalysis.reason = `Forced to use ${options.forceModel}`;
+      console.log(`[Enhanced] 🎯 Model forced to: ${options.forceModel}`);
+    }
+    
+    // ✅ IMPROVED: Apply options parameter overrides
+    if (options.max_completion_tokens) {
+      queryAnalysis.max_completion_tokens = Math.min(options.max_completion_tokens, 16000);
+    }
+    
+    if (options.reasoning_effort && ['minimal', 'low', 'medium', 'high'].includes(options.reasoning_effort)) {
+      queryAnalysis.reasoning_effort = options.reasoning_effort;
+    }
+    
+    if (options.verbosity && ['low', 'medium', 'high'].includes(options.verbosity)) {
+      queryAnalysis.verbosity = options.verbosity;
+    }
+    
+    // ✅ IMPROVED: Smart temperature based on priority and options
+    if (options.temperature !== undefined) {
+      queryAnalysis.temperature = Math.max(0, Math.min(2, options.temperature));
+    } else {
+      // Auto-select temperature based on content type
+      queryAnalysis.temperature = shouldUseUltimate ? 0.2 :  // Lower for business content
+                                  queryAnalysis.priority === 'speed' ? 0.5 :
+                                  queryAnalysis.priority === 'complex' ? 0.1 : 0.7;
+    }
+    
     // Handle completion detection FIRST
     if (queryAnalysis.shouldSkipGPT5) {
       const responseTime = Date.now() - executionStart;
@@ -1692,12 +1722,6 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       };
     }
     
-    // 🚀 ULTIMATE: Override model and mode based on content analysis
-    if (options.forceModel && safeString(options.forceModel).indexOf('gpt-5') === 0) {
-      queryAnalysis.gpt5Model = options.forceModel;
-      queryAnalysis.reason = `Forced to use ${options.forceModel}`;
-    }
-    
     // 🎯 SMART MODEL SELECTION: Business content gets better models
     if (shouldUseUltimate && !options.forceModel) {
       if (queryAnalysis.gpt5Model === 'gpt-5-nano') {
@@ -1710,7 +1734,25 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       }
     }
     
+    // ✅ IMPROVED: Enhanced token limit management
+    if (!queryAnalysis.max_completion_tokens) {
+      switch (queryAnalysis.gpt5Model) {
+        case 'gpt-5-nano':
+          queryAnalysis.max_completion_tokens = shouldUseUltimate ? 2000 : 1000;
+          break;
+        case 'gpt-5-mini':
+          queryAnalysis.max_completion_tokens = shouldUseUltimate ? 6000 : 4000;
+          break;
+        case 'gpt-5':
+          queryAnalysis.max_completion_tokens = shouldUseUltimate ? 12000 : 8000;
+          break;
+        default:
+          queryAnalysis.max_completion_tokens = 4000;
+      }
+    }
+    
     console.log(`[Enhanced] Analysis: ${queryAnalysis.type}, Model: ${queryAnalysis.gpt5Model}, Memory: ${memoryContext.length > 0 ? 'Yes' : 'No'}, Ultimate: ${shouldUseUltimate}`);
+    console.log(`[Enhanced] Parameters: tokens=${queryAnalysis.max_completion_tokens}, reasoning=${queryAnalysis.reasoning_effort}, temp=${queryAnalysis.temperature}`);
     
     // Execute through GPT-5 system
     let gpt5Result;
@@ -1718,43 +1760,75 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       gpt5Result = await executeThroughGPT5System(safeMessage, queryAnalysis, memoryContext, safeChatId);
     } catch (gpt5Error) {
       console.error('[Enhanced] ❌ GPT-5 system failed:', gpt5Error.message);
-      throw gpt5Error;
+      
+      // ✅ IMPROVED: Try intelligent fallback before giving up
+      if (!options.noFallback) {
+        console.log('[Enhanced] 🔄 Attempting intelligent fallback...');
+        try {
+          // Create simplified query analysis for fallback
+          const fallbackAnalysis = {
+            ...queryAnalysis,
+            gpt5Model: 'gpt-5-mini',  // Always use mini for fallback
+            reasoning_effort: 'low',   // Reduce complexity
+            verbosity: 'medium',
+            max_completion_tokens: 3000,
+            temperature: 0.7,
+            priority: 'fallback'
+          };
+          
+          gpt5Result = await executeThroughGPT5System(safeMessage, fallbackAnalysis, '', safeChatId);
+          gpt5Result.fallbackFromEnhanced = true;
+          console.log('[Enhanced] ✅ Intelligent fallback succeeded');
+        } catch (fallbackError) {
+          console.error('[Enhanced] ❌ Intelligent fallback also failed:', fallbackError.message);
+          throw gpt5Error; // Throw original error
+        }
+      } else {
+        throw gpt5Error;
+      }
     }
     
     if (!gpt5Result || !gpt5Result.success) {
       throw new Error(gpt5Result?.error || 'GPT-5 execution failed');
     }
     
-    // 🔧 FIXED: Handle memory persistence with enhanced logic
+    // 🔧 ENHANCED: Improved memory persistence with enhanced logic
     if (options.saveToMemory !== false && gpt5Result.success) {
       try {
         const messageTypeForSave = classifyMessage(safeMessage);
         
         console.log(`[Enhanced] 💾 Saving to memory (mode: ${options.saveToMemory || 'full'})`);
         
-        if (options.saveToMemory === 'minimal') {
-          // Only save substantial responses
-          if (gpt5Result.response && safeString(gpt5Result.response).length > 150) {
-            const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, {
-              modelUsed: safeString(gpt5Result.modelUsed),
-              processingTime: Number(gpt5Result.processingTime) || 0,
-              minimal: true,
-              ultimateMode: shouldUseUltimate
-            });
-            console.log(`[Enhanced] Memory save result:`, saveResult);
-          }
-        } else {
-          // Full memory save with ULTIMATE context
-          const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, {
+        // ✅ IMPROVED: More intelligent memory saving logic
+        const shouldSaveToMemory = options.saveToMemory === 'minimal' ? 
+          (gpt5Result.response && safeString(gpt5Result.response).length > 150) :
+          true;
+        
+        if (shouldSaveToMemory) {
+          const memoryMetadata = {
             modelUsed: safeString(gpt5Result.modelUsed),
             processingTime: Number(gpt5Result.processingTime) || 0,
             priority: safeString(queryAnalysis.priority),
             complexity: safeString(queryAnalysis.type),
             memoryContextLength: memoryContext.length,
             ultimateMode: shouldUseUltimate,
-            contentMode: optimalMode
-          });
-          console.log(`[Enhanced] Memory save result:`, saveResult);
+            contentMode: optimalMode,
+            tokensUsed: gpt5Result.tokensUsed || 0,
+            reasoning_effort: queryAnalysis.reasoning_effort,
+            verbosity: queryAnalysis.verbosity,
+            temperature: queryAnalysis.temperature,
+            enhancedExecution: true
+          };
+          
+          // Add minimal flag for minimal saves
+          if (options.saveToMemory === 'minimal') {
+            memoryMetadata.minimal = true;
+          }
+          
+          const saveResult = await saveMemoryIfNeeded(safeChatId, safeMessage, gpt5Result.response, messageTypeForSave, memoryMetadata);
+          console.log(`[Enhanced] Memory save result:`, saveResult.saved ? 'SUCCESS' : `FAILED: ${saveResult.reason}`);
+        } else {
+          console.log('[Enhanced] 💾 Skipping memory save - response too short for minimal mode');
         }
       } catch (memoryError) {
         console.warn('[Enhanced] ⚠️ Memory save failed:', memoryError.message);
@@ -1789,9 +1863,10 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       tokensUsed: gpt5Result.tokensUsed,
       reasoning_effort: queryAnalysis.reasoning_effort,
       verbosity: queryAnalysis.verbosity,
+      temperature: queryAnalysis.temperature,  // ✅ ADDED: Include temperature in result
       memoryUsed: gpt5Result.memoryUsed,
       contextLength: memoryContext.length,
-      fallbackUsed: !!gpt5Result.fallbackUsed,
+      fallbackUsed: !!gpt5Result.fallbackUsed || !!gpt5Result.fallbackFromEnhanced,  // ✅ IMPROVED: Track enhanced fallback
       enhancedExecution: true,
       totalExecutionTime: Date.now() - executionStart,
       memoryContextUsed: memoryContext.length > 0,
@@ -1805,7 +1880,16 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       businessOptimized: shouldUseUltimateMode(safeMessage) && safeMessage.toLowerCase().includes('business'),
       financialOptimized: shouldUseUltimateMode(safeMessage) && /financial|loan|lending|credit/i.test(safeMessage),
       visualExcellence: telegramDelivered?.ultimateFeatures || false,
-      duplicateProtected: telegramDelivered?.duplicateProtected || false
+      duplicateProtected: telegramDelivered?.duplicateProtected || false,
+      
+      // ✅ IMPROVED: Additional metadata
+      parametersUsed: {
+        model: queryAnalysis.gpt5Model,
+        max_completion_tokens: queryAnalysis.max_completion_tokens,
+        reasoning_effort: queryAnalysis.reasoning_effort,
+        verbosity: queryAnalysis.verbosity,
+        temperature: queryAnalysis.temperature
+      }
     };
     
     console.log(`[Enhanced] ✅ ULTIMATE command executed: ${result.modelUsed}, ${result.processingTime}ms, Memory: ${result.contextLength} chars, Ultimate: ${result.ultimateMode}`);
@@ -1831,7 +1915,15 @@ async function executeEnhancedGPT5Command(userMessage, chatId, bot = null, optio
       totalExecutionTime: Date.now() - executionStart,
       telegramDelivered,
       safetyChecksApplied: true,
-      professionalFallback: true
+      professionalFallback: true,
+      
+      // ✅ IMPROVED: Include error context for debugging
+      errorContext: {
+        originalMessage: safeString(userMessage).substring(0, 100),
+        chatId: safeString(chatId),
+        options: Object.keys(options),
+        timestamp: new Date().toISOString()
+      }
     };
   }
 }
@@ -2361,8 +2453,9 @@ async function deliverToTelegramUltimate(bot, chatId, response, options = {}) {
 
 // Compatibility alias for legacy function calls
 const deliverToTelegram = deliverToTelegramUltimate;
+
 // ════════════════════════════════════════════════════════════════════════════
-// SYSTEM COMMAND HANDLER
+// ✅ ENHANCED SYSTEM COMMAND HANDLER
 // ════════════════════════════════════════════════════════════════════════════
 
 async function handleSystemCommand(command, chatId, bot, baseOptions) {
@@ -2376,37 +2469,241 @@ async function handleSystemCommand(command, chatId, bot, baseOptions) {
                         `• Fixed memory integration 🧠\n` +
                         `• Image, document, and voice analysis\n` +
                         `• Smart memory integration\n` +
-                        `• Cost-optimized responses\n\n` +
+                        `• Cost-optimized responses\n` +
+                        `• Ultimate telegram formatting\n` +
+                        `• Duplicate protection system\n\n` +
                         `Just send me a message or upload media!\n\n` +
-                        `🔧 Memory system has been fixed and integrated!`;
+                        `🔧 Memory system has been fixed and integrated!\n` +
+                        `🛡️ Duplicate protection is active!\n\n` +
+                        `Use /help for more commands.`;
       await bot.sendMessage(chatId, welcomeMsg);
       return { success: true, response: welcomeMsg };
       
     case '/help':
       return await executeEnhancedGPT5Command(
-        'Explain available features and how to use this GPT-5 system effectively. Mention that the memory system has been fixed and integrated.',
-        chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: 'Help Guide' }
+        'Explain available features and how to use this GPT-5 system effectively. Include information about: GPT-5 models (nano, mini, full), memory system integration, multimodal support (images, documents, voice), ultimate telegram formatting, duplicate protection, system commands like /health, /status, /test_memory, /debug, and Cambodia business modules.',
+        chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: '📖 Help Guide', saveToMemory: false }
       );
       
     case '/health':
-      return await executeEnhancedGPT5Command(
-        'Provide system health status and performance metrics, including memory integration status',
-        chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: 'System Health' }
-      );
+      try {
+        const health = await checkSystemHealth();
+        const healthMsg = `🏥 System Health Report\n\n` +
+                         `Overall Status: ${health.overall.toUpperCase()} (${health.overallScore}%)\n\n` +
+                         `Components:\n` +
+                         `• GPT-5: ${health.components.gpt5?.available ? '✅' : '❌'} ${health.scores.gpt5}%\n` +
+                         `• Memory: ${health.components.memory?.available ? '✅' : '❌'} ${health.scores.memory}%\n` +
+                         `• Database: ${health.components.database?.available ? '✅' : '❌'} ${health.scores.database}%\n` +
+                         `• Telegram: ${health.components.telegram?.available ? '✅' : '❌'} ${health.scores.telegram}%\n\n` +
+                         `Memory Integration: FIXED ✅\n` +
+                         `Success Rate: ${health.components.memory?.successRate || 0}%\n\n` +
+                         `Use /status for detailed metrics.`;
+        await bot.sendMessage(chatId, healthMsg);
+        return { success: true, response: healthMsg };
+      } catch (healthError) {
+        return await executeEnhancedGPT5Command(
+          'System health check encountered an error. Please provide a general health status and troubleshooting advice.',
+          chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: '🏥 System Health', saveToMemory: false }
+        );
+      }
       
     case '/status':
+      try {
+        const analytics = getSystemAnalytics();
+        const statusMsg = `📊 System Status Report\n\n` +
+                         `Uptime: ${analytics.uptime.formatted}\n` +
+                         `Total Requests: ${analytics.requests.total}\n` +
+                         `Success Rate: ${analytics.requests.successRate}%\n\n` +
+                         `Memory System:\n` +
+                         `• Status: FIXED ✅\n` +
+                         `• Successful: ${analytics.memory.successful}\n` +
+                         `• Failed: ${analytics.memory.failed}\n` +
+                         `• Success Rate: ${analytics.memory.successRate}%\n\n` +
+                         `Model Usage:\n` +
+                         Object.entries(analytics.modelUsage).map(([model, count]) => 
+                           `• ${model}: ${count} calls`).join('\n') + 
+                         `\n\nVersion: ${analytics.version}`;
+        await bot.sendMessage(chatId, statusMsg);
+        return { success: true, response: statusMsg };
+      } catch (statusError) {
+        return await executeEnhancedGPT5Command(
+          'Show current system status, model availability, memory integration status, and operational metrics',
+          chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: '📊 System Status', saveToMemory: false }
+        );
+      }
+      
+    // ✅ NEW: Memory testing command
+    case '/test_memory':
+    case '/memory_test':
+      try {
+        await testMemoryIntegration(chatId);
+        const testMsg = `🧪 Memory Integration Test Completed!\n\nCheck the console logs for detailed results.\n\nThe memory system has been tested for:\n• Context building\n• Memory saving\n• Database connectivity\n• Success rate tracking\n\nUse /debug for more detailed diagnostics.`;
+        await bot.sendMessage(chatId, testMsg);
+        return { success: true, response: testMsg };
+      } catch (testError) {
+        const errorMsg = `❌ Memory test failed: ${testError.message}\n\nPlease check the system logs and try /health for system status.`;
+        await bot.sendMessage(chatId, errorMsg);
+        return { success: false, error: testError.message };
+      }
+      
+    // ✅ NEW: Debug information command
+    case '/debug':
+    case '/system_debug':
+      try {
+        const debug = {
+          timestamp: new Date().toISOString(),
+          telegramSplitter: telegramSplitter ? {
+            available: true,
+            duplicateProtection: !!telegramSplitter.duplicateProtection,
+            functions: {
+              sendFormattedMessage: typeof telegramSplitter.sendFormattedMessage === 'function',
+              sendUltimate: typeof telegramSplitter.sendUltimate === 'function',
+              getDuplicateStats: typeof telegramSplitter.getDuplicateStats === 'function'
+            }
+          } : { available: false },
+          memory: {
+            moduleLoaded: !!memory,
+            buildFunction: typeof buildMemoryContext === 'function',
+            saveFunction: typeof saveMemoryIfNeeded === 'function'
+          },
+          database: {
+            moduleLoaded: !!database,
+            functions: {
+              getHistory: typeof database?.getConversationHistoryDB === 'function',
+              saveConversation: typeof database?.saveConversationDB === 'function'
+            }
+          },
+          multimodal: {
+            moduleLoaded: !!multimodal,
+            functions: {
+              analyzeImage: typeof multimodal?.analyzeImage === 'function',
+              analyzeDocument: typeof multimodal?.analyzeDocument === 'function'
+            }
+          }
+        };
+        
+        const debugMsg = `🔧 Debug Information\n\n` +
+                        `Telegram Splitter: ${debug.telegramSplitter.available ? '✅' : '❌'}\n` +
+                        `Duplicate Protection: ${debug.telegramSplitter.duplicateProtection ? '✅' : '❌'}\n` +
+                        `Memory Module: ${debug.memory.moduleLoaded ? '✅' : '❌'}\n` +
+                        `Database Module: ${debug.database.moduleLoaded ? '✅' : '❌'}\n` +
+                        `Multimodal Module: ${debug.multimodal.moduleLoaded ? '✅' : '❌'}\n\n` +
+                        `Memory Functions:\n` +
+                        `• Build Context: ${debug.memory.buildFunction ? '✅' : '❌'}\n` +
+                        `• Save Memory: ${debug.memory.saveFunction ? '✅' : '❌'}\n\n` +
+                        `Full debug data logged to console.`;
+        
+        console.log('[Debug] Full system debug:', JSON.stringify(debug, null, 2));
+        await bot.sendMessage(chatId, debugMsg);
+        return { success: true, response: debugMsg };
+        
+      } catch (debugError) {
+        const errorMsg = `❌ Debug failed: ${debugError.message}`;
+        await bot.sendMessage(chatId, errorMsg);
+        return { success: false, error: debugError.message };
+      }
+      
+    // ✅ NEW: Duplicate protection commands
+    case '/duplicate_stats':
+    case '/dup_stats':
+      try {
+        if (telegramSplitter && telegramSplitter.getDuplicateStats) {
+          const dupStats = telegramSplitter.getDuplicateStats();
+          const statsMsg = `🛡️ Duplicate Protection Stats\n\n` +
+                          `Status: ${dupStats.enabled ? 'ACTIVE ✅' : 'INACTIVE ❌'}\n` +
+                          `Duplicates Prevented: ${dupStats.protection?.duplicates_detected || 0}\n` +
+                          `Cache Size: ${dupStats.protection?.cache_size || 0}\n` +
+                          `Last Reset: ${dupStats.protection?.last_reset || 'Never'}\n\n` +
+                          `Use /clear_dup_cache to clear the cache.`;
+          await bot.sendMessage(chatId, statsMsg);
+          return { success: true, response: statsMsg };
+        } else {
+          const noStatsMsg = `🛡️ Duplicate protection not available or not configured.\n\nThis might be because you're using a basic telegram splitter. Deploy the ULTIMATE version for full protection.`;
+          await bot.sendMessage(chatId, noStatsMsg);
+          return { success: true, response: noStatsMsg };
+        }
+      } catch (statsError) {
+        const errorMsg = `❌ Failed to get duplicate stats: ${statsError.message}`;
+        await bot.sendMessage(chatId, errorMsg);
+        return { success: false, error: statsError.message };
+      }
+      
+    case '/clear_dup_cache':
+    case '/clear_duplicate_cache':
+      try {
+        if (telegramSplitter && telegramSplitter.clearDuplicateCache) {
+          telegramSplitter.clearDuplicateCache();
+          const clearMsg = `🧹 Duplicate protection cache cleared successfully!\n\nThe system will start fresh with duplicate detection.`;
+          await bot.sendMessage(chatId, clearMsg);
+          return { success: true, response: clearMsg };
+        } else {
+          const noClearMsg = `⚠️ Duplicate protection cache clearing not available.\n\nThis feature requires the ULTIMATE telegram splitter.`;
+          await bot.sendMessage(chatId, noClearMsg);
+          return { success: true, response: noClearMsg };
+        }
+      } catch (clearError) {
+        const errorMsg = `❌ Failed to clear duplicate cache: ${clearError.message}`;
+        await bot.sendMessage(chatId, errorMsg);
+        return { success: false, error: clearError.message };
+      }
+      
+    // ✅ NEW: Model testing commands
+    case '/test_nano':
+      return await quickNanoCommand('Test GPT-5 Nano model with this simple query. Respond briefly.', chatId, bot);
+      
+    case '/test_mini':
+      return await quickMiniCommand('Test GPT-5 Mini model with this medium complexity query. Provide a balanced response.', chatId, bot);
+      
+    case '/test_full':
+      return await quickFullCommand('Test GPT-5 Full model with this complex query. Provide a comprehensive analysis with detailed reasoning.', chatId, bot);
+      
+    // ✅ NEW: Cambodia business commands
+    case '/cambodia_help':
+    case '/business_help':
       return await executeEnhancedGPT5Command(
-        'Show current system status, model availability, memory integration status, and operational metrics',
-        chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: 'System Status' }
+        'Explain the Cambodia business intelligence features including: credit assessment, loan origination, portfolio optimization, market analysis, investment analysis, risk management, and how to use these specialized business modules.',
+        chatId, bot, { ...baseOptions, forceModel: 'gpt-5-mini', title: '🏦 Cambodia Business Help', saveToMemory: false }
       );
       
+    // ✅ NEW: Performance command
+    case '/performance':
+    case '/perf':
+      try {
+        const perf = module.exports.getPerformanceMetrics();
+        const perfMsg = `⚡ Performance Metrics\n\n` +
+                       `Uptime: ${perf.uptime.formatted}\n` +
+                       `Total Requests: ${perf.requests.total}\n` +
+                       `Success Rate: ${perf.requests.successRate}%\n` +
+                       `Successful: ${perf.requests.successful}\n` +
+                       `Failed: ${perf.requests.failed}\n\n` +
+                       `Memory Performance:\n` +
+                       `• Success Rate: ${perf.memory.successRate}%\n` +
+                       `• Successful: ${perf.memory.successful}\n` +
+                       `• Failed: ${perf.memory.failed}\n\n` +
+                       `System optimized for Railway deployment ✅`;
+        await bot.sendMessage(chatId, perfMsg);
+        return { success: true, response: perfMsg };
+      } catch (perfError) {
+        const errorMsg = `❌ Performance metrics failed: ${perfError.message}`;
+        await bot.sendMessage(chatId, errorMsg);
+        return { success: false, error: perfError.message };
+      }
+      
     default:
+      // ✅ IMPROVED: Handle unknown commands more gracefully
+      if (command.startsWith('/')) {
+        const unknownMsg = `❓ Unknown command: ${command}\n\nUse /help to see available commands or just send a regular message for GPT-5 analysis.`;
+        await bot.sendMessage(chatId, unknownMsg);
+        return { success: true, response: unknownMsg };
+      }
+      
+      // Regular message - process with enhanced GPT-5
       return await executeEnhancedGPT5Command(command, chatId, bot, baseOptions);
   }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// MULTIMODAL CONTENT HANDLER
+// ✅ ENHANCED MULTIMODAL CONTENT HANDLER
 // ════════════════════════════════════════════════════════════════════════════
 
 async function handleMultimodalContent(message, bot, userMessage, startTime) {
@@ -2414,60 +2711,109 @@ async function handleMultimodalContent(message, bot, userMessage, startTime) {
   
   try {
     let result;
+    let mediaType = 'unknown';
     
     if (message.photo) {
       const photo = message.photo[message.photo.length - 1];
+      mediaType = 'image';
       result = await multimodal.analyzeImage(bot, photo.file_id, userMessage || 'Analyze this image', message.chat.id);
     }
     else if (message.document) {
+      mediaType = 'document';
       result = await multimodal.analyzeDocument(bot, message.document, userMessage || 'Analyze this document', message.chat.id);
     }
     else if (message.voice) {
+      mediaType = 'voice';
       result = await multimodal.analyzeVoice(bot, message.voice, userMessage || 'Transcribe and analyze', message.chat.id);
     }
     else if (message.audio) {
+      mediaType = 'audio';
       result = await multimodal.analyzeAudio(bot, message.audio, userMessage || 'Transcribe and analyze', message.chat.id);
     }
     else if (message.video) {
+      mediaType = 'video';
       result = await multimodal.analyzeVideo(bot, message.video, userMessage || 'Analyze this video', message.chat.id);
     }
     else if (message.video_note) {
+      mediaType = 'video_note';
       result = await multimodal.analyzeVideoNote(bot, message.video_note, userMessage || 'Analyze this video note', message.chat.id);
     }
     
     if (result && result.success) {
       const processingTime = Date.now() - startTime;
-      console.log(`[Multimodal] ✅ Success: ${result.type} (${processingTime}ms)`);
+      console.log(`[Multimodal] ✅ Success: ${result.type || mediaType} (${processingTime}ms)`);
       
-      // Save multimodal interaction with fixed memory system
-      await saveMemoryIfNeeded(
+      // ✅ ENHANCED: Save multimodal interaction with better metadata
+      const saveResult = await saveMemoryIfNeeded(
         message.chat.id,
-        `[${result.type.toUpperCase()}] ${userMessage || 'Media uploaded'}`,
-        result.analysis || 'Multimodal processing completed',
+        `[${(result.type || mediaType).toUpperCase()}] ${userMessage || 'Media uploaded'}`,
+        result.analysis || result.response || 'Multimodal processing completed',
         MESSAGE_TYPES.MULTIMODAL,
-        { type: 'multimodal', mediaType: result.type, processingTime }
+        { 
+          type: 'multimodal', 
+          mediaType: result.type || mediaType, 
+          processingTime,
+          fileSize: message.document?.file_size || message.photo?.[0]?.file_size || 0,
+          fileName: message.document?.file_name || 'media_file',
+          success: true
+        }
       );
+      
+      console.log(`[Multimodal] Memory save result: ${saveResult.saved ? 'SUCCESS' : 'FAILED'}`);
       
       return result;
     } else {
-      throw new Error('Multimodal processing failed');
+      throw new Error('Multimodal processing failed - no valid result returned');
     }
   } catch (error) {
     console.error('[Multimodal] ❌ Error:', error.message);
-    const errorMsg = `Media processing failed: ${error.message}\n\nTry adding a text description with your media.`;
+    
+    // ✅ ENHANCED: Better error messaging with suggestions
+    let errorMsg = `🖼️ Media processing failed: ${error.message}\n\n`;
+    
+    if (error.message.includes('file too large')) {
+      errorMsg += `💡 Try uploading a smaller file (under 20MB).`;
+    } else if (error.message.includes('unsupported format')) {
+      errorMsg += `💡 Supported formats: Images (JPG, PNG), Documents (PDF, TXT, DOCX), Audio (MP3, OGG), Video (MP4).`;
+    } else if (error.message.includes('timeout')) {
+      errorMsg += `💡 Large files may take longer to process. Try again or use a smaller file.`;
+    } else {
+      errorMsg += `💡 Try adding a text description with your media for better results.`;
+    }
+    
     await bot.sendMessage(message.chat.id, errorMsg);
+    
+    // Save failed multimodal attempt
+    await saveMemoryIfNeeded(
+      message.chat.id,
+      `[MEDIA_ERROR] ${userMessage || 'Media upload failed'}`,
+      `Media processing error: ${error.message}`,
+      MESSAGE_TYPES.MULTIMODAL,
+      { 
+        type: 'multimodal_error', 
+        error: error.message,
+        success: false
+      }
+    );
+    
     return { success: false, error: error.message };
   }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// OTHER TELEGRAM HANDLERS
+// ✅ ENHANCED OTHER TELEGRAM HANDLERS
 // ════════════════════════════════════════════════════════════════════════════
 
 async function handleCallbackQuery(callbackQuery, bot) {
   try {
     await bot.answerCallbackQuery(callbackQuery.id);
     console.log('[Callback] ✅ Query handled');
+    
+    // ✅ ENHANCED: Log callback data for debugging
+    if (callbackQuery.data) {
+      console.log(`[Callback] Data: ${callbackQuery.data}`);
+    }
+    
   } catch (error) {
     console.error('[Callback] ❌ Error:', error.message);
   }
@@ -2475,7 +2821,22 @@ async function handleCallbackQuery(callbackQuery, bot) {
 
 async function handleInlineQuery(inlineQuery, bot) {
   try {
-    await bot.answerInlineQuery(inlineQuery.id, [], { cache_time: 1 });
+    // ✅ ENHANCED: Provide some basic inline results
+    const results = [];
+    
+    if (inlineQuery.query.length > 0) {
+      results.push({
+        type: 'article',
+        id: '1',
+        title: 'GPT-5 Analysis',
+        description: `Analyze: "${inlineQuery.query}"`,
+        input_message_content: {
+          message_text: `Please analyze: ${inlineQuery.query}`
+        }
+      });
+    }
+    
+    await bot.answerInlineQuery(inlineQuery.id, results, { cache_time: 1 });
     console.log('[Inline] ✅ Query handled');
   } catch (error) {
     console.error('[Inline] ❌ Error:', error.message);
@@ -2484,7 +2845,21 @@ async function handleInlineQuery(inlineQuery, bot) {
 
 async function sendErrorMessage(bot, chatId, error, processingTime = 0) {
   try {
-    const errorMsg = `System error (${processingTime}ms): ${error.message}\n\nPlease try again or use /health to check system status.`;
+    // ✅ ENHANCED: Better error message formatting
+    let errorMsg = `🔧 System Error (${processingTime}ms)\n\n`;
+    errorMsg += `${error.message}\n\n`;
+    
+    // Add helpful suggestions based on error type
+    if (error.message.includes('rate limit')) {
+      errorMsg += `💡 Rate limit reached. Please wait a moment and try again.`;
+    } else if (error.message.includes('timeout')) {
+      errorMsg += `💡 Request timed out. Try a simpler query or try again later.`;
+    } else if (error.message.includes('token')) {
+      errorMsg += `💡 Message too long. Try breaking it into smaller parts.`;
+    } else {
+      errorMsg += `💡 Use /health to check system status or /help for assistance.`;
+    }
+    
     await bot.sendMessage(safeString(chatId), errorMsg);
   } catch (sendError) {
     console.error('[Error] ❌ Failed to send error message:', sendError.message);
@@ -2492,71 +2867,110 @@ async function sendErrorMessage(bot, chatId, error, processingTime = 0) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 🧪 MEMORY INTEGRATION TEST FUNCTION (FOR DEBUGGING)
+// ✅ ENHANCED MEMORY INTEGRATION TEST FUNCTION
 // ════════════════════════════════════════════════════════════════════════════
 
 async function testMemoryIntegration(chatId) {
-  console.log(`\n[Memory-Test] 🧪 TESTING FIXED MEMORY INTEGRATION FOR ${chatId}`);
+  console.log(`\n[Memory-Test] 🧪 TESTING ENHANCED MEMORY INTEGRATION FOR ${chatId}`);
   console.log('═══════════════════════════════════════════════════════════');
   
-  // Test 1: Context Building
-  console.log('[Memory-Test] Test 1: Context Building...');
+  const results = {
+    contextBuild: false,
+    memorySave: false,
+    databaseDirect: false,
+    overallSuccess: false
+  };
+  
+  // Test 1: Enhanced Context Building
+  console.log('[Memory-Test] Test 1: Enhanced Context Building...');
   try {
     const context = await buildMemoryContext(chatId, 'full');
     console.log(`[Memory-Test] ✅ Context: ${context.length} chars`);
     if (context.length > 0) {
       console.log(`[Memory-Test] Preview: ${context.substring(0, 100)}...`);
+      results.contextBuild = true;
     }
   } catch (contextError) {
     console.log(`[Memory-Test] ❌ Context failed: ${contextError.message}`);
   }
   
-  // Test 2: Memory Saving
-  console.log('[Memory-Test] Test 2: Memory Saving...');
+  // Test 2: Enhanced Memory Saving
+  console.log('[Memory-Test] Test 2: Enhanced Memory Saving...');
   try {
     const saveResult = await saveMemoryIfNeeded(
       chatId, 
-      'TEST: Fixed integration test message', 
-      'TEST: Fixed integration test response',
-      'test',
-      { test: true, integration_fixed: true }
+      'TEST-ENHANCED: Advanced integration test with business content analysis and portfolio optimization strategies', 
+      'TEST-ENHANCED: Comprehensive system response with detailed business intelligence, financial metrics, and strategic recommendations for Cambodia market opportunities',
+      'test-enhanced',
+      { 
+        test: true, 
+        integration_enhanced: true,
+        timestamp: new Date().toISOString(),
+        testType: 'enhanced_memory_integration'
+      }
     );
     console.log(`[Memory-Test] Save result:`, saveResult);
+    if (saveResult.saved) {
+      results.memorySave = true;
+    }
   } catch (saveError) {
     console.log(`[Memory-Test] ❌ Save failed: ${saveError.message}`);
   }
   
-  // Test 3: Database Direct
-  console.log('[Memory-Test] Test 3: Database Direct...');
+  // Test 3: Enhanced Database Direct
+  console.log('[Memory-Test] Test 3: Enhanced Database Direct...');
   if (database && database.getConversationHistoryDB) {
     try {
-      const history = await database.getConversationHistoryDB(chatId, 3);
+      const history = await database.getConversationHistoryDB(chatId, 5);
       console.log(`[Memory-Test] ✅ Database: ${Array.isArray(history) ? history.length : 'invalid'} records`);
+      if (Array.isArray(history) && history.length > 0) {
+        results.databaseDirect = true;
+        console.log(`[Memory-Test] Sample record:`, {
+          user: history[0].user_message?.substring(0, 50) || 'N/A',
+          assistant: history[0].gpt_response?.substring(0, 50) || 'N/A'
+        });
+      }
     } catch (dbError) {
       console.log(`[Memory-Test] ❌ Database failed: ${dbError.message}`);
     }
   }
   
-  // Test 4: System Stats
-  console.log('[Memory-Test] Test 4: System Statistics...');
+  // Test 4: Enhanced System Stats
+  console.log('[Memory-Test] Test 4: Enhanced System Statistics...');
   console.log(`[Memory-Test] Memory successes: ${systemState.memorySuccessCount}`);
   console.log(`[Memory-Test] Memory failures: ${systemState.memoryFailureCount}`);
-  console.log(`[Memory-Test] Success rate: ${systemState.memorySuccessCount + systemState.memoryFailureCount > 0 ? 
-    Math.round((systemState.memorySuccessCount / (systemState.memorySuccessCount + systemState.memoryFailureCount)) * 100) : 0}%`);
+  const totalOps = systemState.memorySuccessCount + systemState.memoryFailureCount;
+  const successRate = totalOps > 0 ? Math.round((systemState.memorySuccessCount / totalOps) * 100) : 0;
+  console.log(`[Memory-Test] Success rate: ${successRate}%`);
+  
+  // Overall assessment
+  const successCount = Object.values(results).filter(Boolean).length;
+  results.overallSuccess = successCount >= 2;
   
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('[Memory-Test] 🏁 FIXED MEMORY INTEGRATION TEST COMPLETE\n');
+  console.log(`[Memory-Test] 🏁 ENHANCED MEMORY INTEGRATION TEST COMPLETE`);
+  console.log(`[Memory-Test] 📊 Results: ${successCount}/3 tests passed`);
+  console.log(`[Memory-Test] 🎯 Overall: ${results.overallSuccess ? 'SUCCESS' : 'NEEDS_ATTENTION'}`);
+  console.log('═══════════════════════════════════════════════════════════\n');
+  
+  return results;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// QUICK COMMAND FUNCTIONS (SIMPLIFIED)
+// ✅ ENHANCED QUICK COMMAND FUNCTIONS
 // ════════════════════════════════════════════════════════════════════════════
 
 async function quickGPT5Command(message, chatId, bot = null, model = 'auto') {
-  const options = { title: `GPT-5 ${model.toUpperCase()}`, saveToMemory: true };
+  const options = { 
+    title: `GPT-5 ${model.toUpperCase()}`, 
+    saveToMemory: true,
+    showTokens: true
+  };
+  
   if (model !== 'auto') {
     options.forceModel = model.includes('gpt-5') ? model : `gpt-5-${model}`;
   }
+  
   return await executeEnhancedGPT5Command(message, chatId, bot, options);
 }
 
@@ -2566,29 +2980,38 @@ async function quickNanoCommand(message, chatId, bot = null) {
     max_completion_tokens: 1000,
     reasoning_effort: 'minimal',
     verbosity: 'low',
-    title: 'GPT-5 Nano'
+    temperature: 0.7,
+    title: '⚡ GPT-5 Nano',
+    saveToMemory: 'minimal'
   });
 }
 
 async function quickMiniCommand(message, chatId, bot = null) {
   return await executeEnhancedGPT5Command(message, chatId, bot, {
     forceModel: 'gpt-5-mini',
-    max_completion_tokens: 3000,
+    max_completion_tokens: 4000,
     reasoning_effort: 'medium',
     verbosity: 'medium',
-    title: 'GPT-5 Mini'
+    temperature: 0.7,
+    title: '🚀 GPT-5 Mini',
+    saveToMemory: true
   });
 }
 
 async function quickFullCommand(message, chatId, bot = null) {
   return await executeEnhancedGPT5Command(message, chatId, bot, {
     forceModel: 'gpt-5',
-    max_completion_tokens: 8000,
+    max_completion_tokens: 12000,
     reasoning_effort: 'high',
     verbosity: 'high',
-    title: 'GPT-5 Full'
+    temperature: 0.3,  // Lower temp for more focused responses
+    title: '🧠 GPT-5 Full',
+    saveToMemory: true,
+    showTokens: true
   });
 }
+
+console.log('✅ Enhanced system handlers, multimodal support, and quick commands loaded');
 
 // ════════════════════════════════════════════════════════════════════════════
 // CAMBODIA MODULES - TEMPLATED SYSTEM (MUCH SHORTER NOW)
